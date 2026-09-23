@@ -8148,11 +8148,11 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     var readyShotMemoryPromptHtml = '';
     if (isMyRecord && showTemplateFront) {
-      readyShotMemoryPromptHtml = '<button type="button" id="readyShotMemoryPrompt_' + cardId + '" class="ready-shot-memory-prompt" data-card-id="' + cardId + '" onclick="event.stopPropagation(); triggerHaptic(10); var card=document.getElementById(\'feedSnapCard_\' + this.dataset.cardId); var wrap=card&&card.querySelector(\'.postcard-3d-wrapper\'); if(wrap){wrap.classList.add(\'flipped\');}" style="margin:0 auto; padding:0; border:none; background:transparent; cursor:pointer; -webkit-tap-highlight-color:transparent;">' +
+      readyShotMemoryPromptHtml = '<button type="button" id="readyShotMemoryPrompt_' + cardId + '" class="ready-shot-memory-prompt" data-card-id="' + cardId + '" onclick="event.stopPropagation(); triggerHaptic(10); var card=document.getElementById(\'feedSnapCard_\' + this.dataset.cardId); var wrap=card&&card.querySelector(\'.postcard-3d-wrapper\'); if(wrap){wrap.classList.toggle(\'flipped\');}" style="margin:0 auto; padding:0; border:none; background:transparent; cursor:pointer; -webkit-tap-highlight-color:transparent;">' +
         (ddayLabel
-          ? '<span style="display:inline-flex; align-items:center; background:#0c1017; border:1px solid rgba(255,255,255,0.18); border-radius:6px; padding:3px 8px; font-size:0.72rem; color:#e2e8f0; font-weight:900; font-family:\'Space Grotesk\', sans-serif; letter-spacing:0.4px; line-height:1;">' + escapeHtml(ddayLabel) + '</span>'
+          ? '<span style="display:inline-flex; align-items:center; background:#0c1017; border:1px solid rgba(255,255,255,0.18); border-radius:6px; padding:3px 8px; font-size:calc(0.72rem + 3pt); color:#e2e8f0; font-weight:900; font-family:\'Space Grotesk\', sans-serif; letter-spacing:0.4px; line-height:1;">' + escapeHtml(ddayLabel) + '</span>'
           : '') +
-        '<span style="font-size:0.78rem; font-weight:800; color:#f1f5f9; letter-spacing:-0.2px; text-shadow:0 1px 4px rgba(0,0,0,0.85);">추억을 기록해주세요</span>' +
+        '<span style="font-size:calc(0.78rem + 3pt); font-weight:800; color:#f1f5f9; letter-spacing:-0.2px; text-shadow:0 1px 4px rgba(0,0,0,0.85);">추억을 기록해주세요</span>' +
       '</button>';
     }
 
@@ -8173,7 +8173,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       '<div class="reel-media-stage">' +
         '<div style="width:100% !important; height:100% !important; position:relative; overflow:hidden; background:#000000;">' +
           (centerDDayOverlayHtml && !showTemplateFront ? centerDDayOverlayHtml : '') +
-          '<div class="postcard-3d-wrapper"' + (showTemplateFront ? ' data-no-flip="1"' : '') + ' onclick="var locked=this.hasAttribute(\'data-no-flip\'); if(locked && !this.classList.contains(\'flipped\')) return; this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
+          '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
             '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
               (totalPhotosCount > 0 ? (
                 '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \`' + cardId + '\`);">' + horizontalSlidesHtml + '</div>' + dotsHtml
