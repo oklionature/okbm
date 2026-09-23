@@ -11079,8 +11079,12 @@ function okbmNoteCachedPhoto(userId) {
 }
 
 function okbmApplyUserAvatarSrc(userId, url) {
+  if (typeof window.okbmPaintUserAvatarNodes === 'function') {
+    window.okbmPaintUserAvatarNodes(userId, url);
+    return;
+  }
   var uid = String(userId || '').trim();
-  var src = String(url || '').trim();
+  var src = (typeof okbmSafeImageUrl === 'function') ? (okbmSafeImageUrl(url) || '') : String(url || '').trim();
   if (!uid || src.indexOf('http') !== 0) return;
   window.__userProfilePhotoMap = window.__userProfilePhotoMap || {};
   window.__userProfilePhotoMap[uid] = src;
@@ -11117,6 +11121,11 @@ window.okbmPrefetchUserPhotos = async function(userIds) {
       if (uid && remoteUrl.indexOf('http') === 0) okbmApplyUserAvatarSrc(uid, remoteUrl);
     });
   } catch (e) {}
+  need.forEach(function(id) {
+    if (window.__userProfileFetchingMap && window.__userProfileFetchingMap[id] === true) {
+      delete window.__userProfileFetchingMap[id];
+    }
+  });
 };
 
 function okbmNoteAvatarHtml(userId, size) {

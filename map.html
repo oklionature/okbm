@@ -203,8 +203,8 @@
         bindLazy('openGearPresetModal', window.okbmEnsurePlan);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.9.2" defer></script>
-    <script src="romantic-history.js?v=2.7.71" defer></script>
+    <script src="romantic-sync.js?v=2.9.3" defer></script>
+    <script src="romantic-history.js?v=2.7.72" defer></script>
 
     <style>
       @font-face {
@@ -3639,18 +3639,99 @@ function updateSmartResetButtons() {
       }
 
       const entryCoordsCache = new Map();
-      async function navigateToNaviApp(type, spotName, address, fallbackLat, fallbackLng) {
-        triggerHaptic(10);
-        const targetQuery = (address && address.trim()) ? address.trim() : spotName;
-        const naviTitle = `${spotName} 들머리`;
+      const nearbyPoiCache = new Map();
+      const NAVI_GENERIC_TRAIL_WORDS = ['주차장', '주차', '입구', '갓길', '선착장', '터미널', '도선', '등산로', '임도', '들머리', '인근', '앞', '후문', '일주문', '사찰', '펜션', '산장', '관광지', '해변', '자갈'];
 
-        let targetLat = null, targetLng = null;
+      function extractTrailheadCoreName(trailheadName) {
+        var raw = String(trailheadName || '').trim();
+        if (!raw) return '';
+        var core = raw
+          .replace(/[\(\[（].*?[\)\]）]/g, ' ')
+          .replace(/[\/|,·•]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        NAVI_GENERIC_TRAIL_WORDS.forEach(function(w) {
+          core = core.split(w).join(' ');
+        });
+        core = core.replace(/\s+/g, ' ').trim();
+        if (core.length < 2) return '';
+        return core;
+      }
+
+      function haversineMeters(lat1, lng1, lat2, lng2) {
+        var toRad = Math.PI / 180;
+        var dLat = (lat2 - lat1) * toRad;
+        var dLng = (lng2 - lng1) * toRad;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+          Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      }
+
+      function searchNearbyMatchingPoi(trailheadName, baseLat, baseLng) {
+        return new Promise(function(resolve) {
+          if (!trailheadName || !isFinite(baseLat) || !isFinite(baseLng)) return resolve(null);
+          if (typeof kakao === 'undefined' || !kakao.maps || !kakao.maps.services) return resolve(null);
+
+          var coreName = extractTrailheadCoreName(trailheadName);
+          if (!coreName) return resolve(null);
+
+          var cacheKey = trailheadName + '|' + baseLat.toFixed(5) + ',' + baseLng.toFixed(5);
+          if (nearbyPoiCache.has(cacheKey)) return resolve(nearbyPoiCache.get(cacheKey));
+
+          var places = new kakao.maps.services.Places();
+          var opts = {
+            location: new kakao.maps.LatLng(baseLat, baseLng),
+            radius: 700,
+            sort: kakao.maps.services.SortBy.DISTANCE
+          };
+
+          places.keywordSearch(trailheadName, function(data, status) {
+            if (status !== kakao.maps.services.Status.OK || !Array.isArray(data) || !data.length) {
+              limitedMapSet(nearbyPoiCache, cacheKey, null, 100);
+              return resolve(null);
+            }
+
+            var picked = null;
+            for (var i = 0; i < data.length; i++) {
+              var item = data[i];
+              if (!item) continue;
+              var placeName = String(item.place_name || '').trim();
+              if (!placeName) continue;
+              if (placeName.indexOf(coreName) === -1) continue;
+              var pLat = parseFloat(item.y);
+              var pLng = parseFloat(item.x);
+              if (!isFinite(pLat) || !isFinite(pLng)) continue;
+              var dist = haversineMeters(baseLat, baseLng, pLat, pLng);
+              if (dist > 700) continue;
+              picked = {
+                lat: pLat,
+                lng: pLng,
+                title: placeName,
+                address: item.road_address_name || item.address_name || ''
+              };
+              break;
+            }
+
+            limitedMapSet(nearbyPoiCache, cacheKey, picked, 100);
+            resolve(picked);
+          }, opts);
+        });
+      }
+
+      async function navigateToNaviApp(type, trailheadName, address, fallbackLat, fallbackLng) {
+        triggerHaptic(10);
+        var labelName = String(trailheadName || '').trim();
+        var targetQuery = (address && String(address).trim()) ? String(address).trim() : labelName;
+        var naviTitle = labelName || targetQuery;
+
+        var targetLat = null, targetLng = null;
         if (entryCoordsCache.has(targetQuery)) {
-          const cached = entryCoordsCache.get(targetQuery);
+          var cached = entryCoordsCache.get(targetQuery);
           targetLat = cached.lat; targetLng = cached.lng;
-        } else if (address && address.trim()) {
+        } else if (address && String(address).trim()) {
           try {
-            const coords = await searchCoordsByQuery(targetQuery);
+            var coords = await searchCoordsByQuery(targetQuery);
             if (coords && coords.lat && coords.lng) {
               targetLat = coords.lat; targetLng = coords.lng;
               limitedMapSet(entryCoordsCache, targetQuery, { lat: targetLat, lng: targetLng }, 100);
@@ -3658,7 +3739,21 @@ function updateSmartResetButtons() {
           } catch (e) { console.warn('[map.html:navigateToNaviApp:searchCoords]', e); }
         }
 
-        const hasValidCoords = (targetLat !== null && targetLng !== null);
+        // 주소 좌표 근처에서 들머리 이름과 맞는 등록 장소만 채택 (전국 이름 검색 금지)
+        if (targetLat !== null && targetLng !== null && labelName) {
+          try {
+            var matchedPoi = await searchNearbyMatchingPoi(labelName, targetLat, targetLng);
+            if (matchedPoi && matchedPoi.lat && matchedPoi.lng) {
+              targetLat = matchedPoi.lat;
+              targetLng = matchedPoi.lng;
+              if (matchedPoi.title) naviTitle = matchedPoi.title;
+            }
+          } catch (poiErr) {
+            console.warn('[map.html:navigateToNaviApp:nearbyPoi]', poiErr);
+          }
+        }
+
+        var hasValidCoords = (targetLat !== null && targetLng !== null);
 
         if (type === 'kakao') {
           if (hasValidCoords) window.open(`https://map.kakao.com/link/to/${encodeURIComponent(naviTitle)},${targetLat},${targetLng}`, '_blank');
@@ -3973,10 +4068,10 @@ function updateSmartResetButtons() {
                 </div>
                 ${guide ? `<div class="entry-guide-chip">${ICONS.TIP} 길 안내: ${escapeHtml(guide)}</div>` : ''}
                 <div class="entry-row-2">
-                  <button type="button" class="navi-btn-cell cell-kakao js-navi-app" data-navi="kakao" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">카카오</button>
-                  <button type="button" class="navi-btn-cell cell-tmap js-navi-app" data-navi="tmap" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">티맵</button>
-                  <button type="button" class="navi-btn-cell cell-naver js-navi-app" data-navi="naver" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">네이버</button>
-                  <button type="button" class="navi-btn-cell cell-reserve js-navi-app" data-navi="roadview" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">${ICONS.ROADVIEW} 로드뷰</button>
+                  <button type="button" class="navi-btn-cell cell-kakao js-navi-app" data-navi="kakao" data-name="${escapeHtml(tName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">카카오</button>
+                  <button type="button" class="navi-btn-cell cell-tmap js-navi-app" data-navi="tmap" data-name="${escapeHtml(tName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">티맵</button>
+                  <button type="button" class="navi-btn-cell cell-naver js-navi-app" data-navi="naver" data-name="${escapeHtml(tName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">네이버</button>
+                  <button type="button" class="navi-btn-cell cell-reserve js-navi-app" data-navi="roadview" data-name="${escapeHtml(tName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">${ICONS.ROADVIEW} 로드뷰</button>
                 </div>
 
                 ${summary.access ? `

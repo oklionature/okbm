@@ -2113,44 +2113,125 @@ window.normalizeHistoryRecord = function(r, idx) {
   // 👤 [마이데이터 유저 프로필 SSOT 맵 & 실시간 백그라운드 인출기]
   window.__userProfilePhotoMap = window.__userProfilePhotoMap || {};
 
+  function okbmAvatarDisplayUrl(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return '';
+    return okbmSafeImageUrl(s) || '';
+  }
+
+  window.okbmPaintUserAvatarNodes = function(userId, url) {
+    var uid = String(userId || '').trim();
+    var src = okbmAvatarDisplayUrl(url);
+    if (!uid || !src) return;
+    window.__userProfilePhotoMap = window.__userProfilePhotoMap || {};
+    window.__userProfilePhotoMap[uid] = src;
+    var imgs = document.querySelectorAll('img[data-user-avatar-id]');
+    for (var i = 0; i < imgs.length; i++) {
+      if (String(imgs[i].getAttribute('data-user-avatar-id') || '') !== uid) continue;
+      var imgEl = imgs[i];
+      if (imgEl.getAttribute('src') !== src) imgEl.setAttribute('src', src);
+      imgEl.style.position = 'absolute';
+      imgEl.style.inset = '0';
+      imgEl.style.width = '100%';
+      imgEl.style.height = '100%';
+      imgEl.style.objectFit = 'cover';
+      imgEl.style.zIndex = '1';
+      imgEl.style.display = 'block';
+      var parent = imgEl.parentElement;
+      if (parent) {
+        if (window.getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
+        var placeholder = parent.querySelector('.avatar-placeholder-svg');
+        if (placeholder) placeholder.style.display = 'none';
+      }
+      imgEl.onerror = function() {
+        this.onerror = null;
+        this.style.display = 'none';
+        var holder = this.parentElement;
+        var icon = holder && holder.querySelector('.avatar-placeholder-svg');
+        if (icon) icon.style.display = 'block';
+      };
+    }
+  };
+
+  window.okbmRepaintVisibleAvatars = function(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    var imgs = scope.querySelectorAll('img[data-user-avatar-id]');
+    var seen = {};
+    for (var i = 0; i < imgs.length; i++) {
+      var uid = String(imgs[i].getAttribute('data-user-avatar-id') || '').trim();
+      if (!uid || seen[uid]) continue;
+      seen[uid] = true;
+      var known = (window.__userProfilePhotoMap && window.__userProfilePhotoMap[uid]) || '';
+      if (known) window.okbmPaintUserAvatarNodes(uid, known);
+    }
+  };
+
+  function okbmScheduleProfilePhotoRetry(uId) {
+    window.__userProfilePhotoAttempts = window.__userProfilePhotoAttempts || {};
+    var n = window.__userProfilePhotoAttempts[uId] || 0;
+    if (n >= 3) return;
+    window.__userProfilePhotoAttempts[uId] = n + 1;
+    setTimeout(function() {
+      if (window.__userProfilePhotoMap && window.__userProfilePhotoMap[uId]) {
+        window.okbmPaintUserAvatarNodes(uId, window.__userProfilePhotoMap[uId]);
+        return;
+      }
+      var again = window.resolveUserMasterPhoto(uId, '', '');
+      if (again) window.okbmPaintUserAvatarNodes(uId, again);
+    }, 800 * (n + 1));
+  }
+
   window.resolveUserMasterPhoto = function(userId, authorName, fallbackPhoto) {
     var uId = String(userId || '').trim();
-    if (!uId || uId === 'guest') return fallbackPhoto || '';
+    if (!uId || uId === 'guest') return okbmAvatarDisplayUrl(fallbackPhoto);
 
     var profile = safeGetJSON('user_profile', null);
     var myId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
     if (!myId && typeof window.okbmGetCurrentUserId === 'function') {
       try { myId = String(window.okbmGetCurrentUserId() || '').trim(); } catch (eMy) { myId = ''; }
     }
-    var isMe = Boolean(myId && (uId === myId || (window.isCurrentUserId && window.isCurrentUserId(uId))));
-    var myCover = localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : '');
+    var sameAccount = Boolean(myId && typeof window.okbmSameAccountId === 'function' && window.okbmSameAccountId(myId, uId));
+    var isMe = Boolean(myId && (uId === myId || sameAccount || (window.isCurrentUserId && window.isCurrentUserId(uId))));
+    var myCover = okbmAvatarDisplayUrl(localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : ''));
 
-    if (isMe && myCover && String(myCover).startsWith('http')) {
+    if (isMe && myCover) {
       window.__userProfilePhotoMap[uId] = myCover;
       return myCover;
     }
 
     if (window.__userProfilePhotoMap[uId]) {
-      var cached = window.__userProfilePhotoMap[uId];
-      if (!isMe && myCover && cached === myCover) {
+      var cached = okbmAvatarDisplayUrl(window.__userProfilePhotoMap[uId]) || String(window.__userProfilePhotoMap[uId] || '');
+      if (!isMe && myCover && (cached === myCover || okbmAvatarDisplayUrl(cached) === myCover)) {
         delete window.__userProfilePhotoMap[uId];
-      } else {
-        return cached;
+      } else if (okbmAvatarDisplayUrl(cached)) {
+        window.__userProfilePhotoMap[uId] = okbmAvatarDisplayUrl(cached);
+        return window.__userProfilePhotoMap[uId];
       }
     }
 
-    var safeFallback = fallbackPhoto || '';
-    if (!isMe && myCover && String(safeFallback) === String(myCover)) {
-      safeFallback = '';
-    }
-
-    if (safeFallback && String(safeFallback).startsWith('http')) {
-      window.__userProfilePhotoMap[uId] = safeFallback;
-    }
+    var safeFallback = okbmAvatarDisplayUrl(fallbackPhoto);
+    if (!isMe && myCover && safeFallback === myCover) safeFallback = '';
+    if (safeFallback) window.__userProfilePhotoMap[uId] = safeFallback;
 
     window.__userProfileFetchingMap = window.__userProfileFetchingMap || {};
-    if (!window.__userProfileFetchingMap[uId]) {
-      window.__userProfileFetchingMap[uId] = true;
+    var inflight = window.__userProfileFetchingMap[uId];
+    if (inflight && typeof inflight.then === 'function') {
+      inflight.then(function(url) {
+        var paintUrl = url || (window.__userProfilePhotoMap && window.__userProfilePhotoMap[uId]) || '';
+        if (paintUrl) window.okbmPaintUserAvatarNodes(uId, paintUrl);
+      });
+    } else if (inflight === true) {
+      setTimeout(function() {
+        var known = (window.__userProfilePhotoMap && window.__userProfilePhotoMap[uId]) || '';
+        if (known) {
+          window.okbmPaintUserAvatarNodes(uId, known);
+          return;
+        }
+        if (window.__userProfileFetchingMap && window.__userProfileFetchingMap[uId]) return;
+        var again = window.resolveUserMasterPhoto(uId, '', fallbackPhoto || '');
+        if (again) window.okbmPaintUserAvatarNodes(uId, again);
+      }, 900);
+    } else if (!inflight) {
       var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
       var targetKey = window.SUPABASE_ANON_KEY || '';
       if (targetUrl && targetKey) {
@@ -2165,20 +2246,26 @@ window.normalizeHistoryRecord = function(r, idx) {
               },
               body: JSON.stringify({ p_id: uId })
             }).then(function(res) { return res.ok ? res.json() : null; });
-        Promise.resolve(profileReq)
-        .then(function(uData) {
-          if (!uData || !uData.id) return;
-          var remoteUrl = uData.hero_cover_url || uData.photo_url || '';
-          if (remoteUrl && String(remoteUrl).startsWith('http')) {
-            window.__userProfilePhotoMap[uId] = remoteUrl;
-            document.querySelectorAll('[data-user-avatar-id="' + uId + '"]').forEach(function(imgEl) {
-              imgEl.src = remoteUrl;
-              imgEl.style.display = 'block';
-              var placeholder = imgEl.parentElement ? imgEl.parentElement.querySelector('.avatar-placeholder-svg') : null;
-              if (placeholder) placeholder.style.display = 'none';
-            });
+        var job = Promise.resolve(profileReq).then(function(uData) {
+          var remoteUrl = (uData && uData.id) ? okbmAvatarDisplayUrl(uData.hero_cover_url || uData.photo_url || '') : '';
+          if (remoteUrl) {
+            window.__userProfilePhotoAttempts = window.__userProfilePhotoAttempts || {};
+            window.__userProfilePhotoAttempts[uId] = 0;
+            window.okbmPaintUserAvatarNodes(uId, remoteUrl);
+            return remoteUrl;
           }
-        }).catch(function() {});
+          return '';
+        }).catch(function() {
+          return '';
+        }).finally(function() {
+          if (window.__userProfileFetchingMap && window.__userProfileFetchingMap[uId] === job) {
+            delete window.__userProfileFetchingMap[uId];
+          }
+        });
+        window.__userProfileFetchingMap[uId] = job;
+        job.then(function(url) {
+          if (!url) okbmScheduleProfilePhotoRetry(uId);
+        });
       }
     }
 
@@ -7800,6 +7887,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
             if (img.complete) window.applySmartPhotoFit(img);
             else img.addEventListener('load', function() { window.applySmartPhotoFit(img); }, { once: true });
           });
+          if (typeof window.okbmRepaintVisibleAvatars === 'function') window.okbmRepaintVisibleAvatars(fresh);
           return;
         }
       }
@@ -7841,13 +7929,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       var targetAvatarUrl = (typeof window.resolveUserMasterPhoto === 'function')
         ? window.resolveUserMasterPhoto(recordUserId, authorName, record.authorPhoto)
         : (record.authorPhoto || '');
-      if (targetAvatarUrl && String(targetAvatarUrl).startsWith('http')) {
-        card.querySelectorAll('img[data-user-avatar-id]').forEach(function(img) {
-          if (img.getAttribute('src') !== targetAvatarUrl) {
-            img.setAttribute('src', targetAvatarUrl);
-            img.style.display = 'block';
-          }
-        });
+      if (targetAvatarUrl && typeof window.okbmPaintUserAvatarNodes === 'function') {
+        window.okbmPaintUserAvatarNodes(recordUserId, targetAvatarUrl);
       }
 
       if (typeof window.okbmSyncFeedCardMedia === 'function') {
@@ -7953,6 +8036,12 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var cardPureId = String(record.id || '').trim();
 
     var isMyRecord = Boolean(record._isLocalOwner || (isLogged && (typeof window.isRecordOwner === 'function') && window.isRecordOwner(record)));
+    if (!recordUserId && isMyRecord) {
+      recordUserId = String(myUserId || '').trim();
+      if (!recordUserId && typeof window.okbmGetCurrentUserId === 'function') {
+        try { recordUserId = String(window.okbmGetCurrentUserId() || '').trim(); } catch (eUid) { recordUserId = ''; }
+      }
+    }
 
     // 🌐 SNS 배지
     var rawSnsText = String(record.instagram || record.youtube || record.youtubeUrl || '').trim();
@@ -8012,15 +8101,24 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       spotName !== '힐링 장소';
     var centerDDayOverlayHtml = '';
 
+    var avatarFallback = record.authorPhoto || '';
+    if (isMyRecord && !okbmAvatarDisplayUrl(avatarFallback)) {
+      avatarFallback = localStorage.getItem('okbm_hero_cover_url') || avatarFallback;
+    }
     var targetAvatarUrl = (typeof window.resolveUserMasterPhoto === 'function')
-      ? window.resolveUserMasterPhoto(recordUserId, authorName, record.authorPhoto)
-      : (record.authorPhoto || '');
+      ? window.resolveUserMasterPhoto(recordUserId, authorName, avatarFallback)
+      : (avatarFallback || '');
+    targetAvatarUrl = okbmAvatarDisplayUrl(targetAvatarUrl);
 
-    var hasValidImg = Boolean(targetAvatarUrl && String(targetAvatarUrl).startsWith('http'));
+    var hasValidImg = Boolean(targetAvatarUrl);
+    var avatarImgStyle = 'position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1;';
 
     var avatarMarkup = hasValidImg
-      ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(okbmSafeImageUrl(targetAvatarUrl)) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
-      : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="width:100%; height:100%; object-fit:cover; display:none;" /><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
+      ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(targetAvatarUrl) + '" style="' + avatarImgStyle + ' display:block;" />'
+      : '<div style="position:relative; width:100%; height:100%; background:#090d14;">' +
+          '<svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="position:absolute; left:50%; top:50%; width:18px; height:18px; transform:translate(-50%,-50%);" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+          '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="' + avatarImgStyle + ' display:none;" />' +
+        '</div>';
 
     var diffDays = null;
     var ddayLabel = '';
@@ -8307,6 +8405,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       reel.scrollTop = Math.max(0, anchor.offsetTop + anchorDelta);
     }
 
+    if (typeof window.okbmRepaintVisibleAvatars === 'function') window.okbmRepaintVisibleAvatars(reel);
+
     freshNodes.forEach(function(node) {
       node.querySelectorAll('.reel-photo-target').forEach(function(img) {
         if (typeof window.applySmartPhotoFit !== 'function') return;
@@ -8511,6 +8611,7 @@ window.renderHistoryStage = function(isLoading, opts) {
     content.innerHTML = '<div id="reelsVerticalContainer" class="reel-vertical-container" style="flex:1 1 auto; min-height:0; height:auto; contain:content;" onscroll="window.__handleReelsVerticalScroll(this);">' +
       reelSlidesHtml +
     '</div>';
+    if (typeof window.okbmRepaintVisibleAvatars === 'function') window.okbmRepaintVisibleAvatars(content);
 
     if (window.__okbmScrollRouterTop) {
       window.__okbmScrollRouterTop = false;
@@ -8567,6 +8668,7 @@ window.renderHistoryStage = function(isLoading, opts) {
       }).join('');
 
       reelContainer.insertAdjacentHTML('beforeend', appendedHtml);
+      if (typeof window.okbmRepaintVisibleAvatars === 'function') window.okbmRepaintVisibleAvatars(reelContainer);
 
       var newImgs = reelContainer.querySelectorAll('.reel-photo-target');
       newImgs.forEach(function(img) {
