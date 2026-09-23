@@ -425,6 +425,18 @@
         background: linear-gradient(to top, rgba(0,0,0,0.82), rgba(0,0,0,0.35) 62%, rgba(0,0,0,0)) !important;
         border-top: none !important;
       }
+      .ready-shot-memory-prompt {
+        position: absolute !important;
+        left: 14px !important;
+        right: 14px !important;
+        top: 6px !important;
+        z-index: 18 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        pointer-events: auto !important;
+      }
 
       .reel-memo-fixed-slot {
         display: block !important;
@@ -1915,6 +1927,18 @@ function getRecordPhotos(record) {
     return window.NATURAL_BORDER_PALETTES[paletteIdx];
   };
 
+  window.okbmBlankAutoPackingCaption = function(text, spot) {
+    var raw = String(text == null ? '' : text).trim();
+    if (!raw) return '';
+    var t = raw.replace(/\s+/g, ' ');
+    if (t === '기록 준비 완료' || t === '자연 속 힐링 백패킹' || t === '패킹 카드') return '';
+    var s = String(spot || '').replace(/\s+/g, ' ').trim();
+    var core = s.replace(/\s*\([^)]*\)\s*$/, '').trim();
+    if (core && (t === core + ' 패킹' || t === core + ' 백패킹')) return '';
+    if (s && (t === s + ' 패킹' || t === s + ' 백패킹')) return '';
+    return raw;
+  };
+
 window.normalizeHistoryRecord = function(r, idx) {
     var now = new Date();
     var y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
@@ -1973,8 +1997,9 @@ window.normalizeHistoryRecord = function(r, idx) {
     var rawTemplateId = (r && (r.template_id !== undefined ? r.template_id : r.templateId));
     var finalTemplateId = (rawTemplateId !== undefined && rawTemplateId !== null) ? parseInt(rawTemplateId, 10) : savedTmplId;
 
-    var userMemo = (r && r.memo !== undefined && r.memo !== null) ? String(r.memo).trim() : '';
     var spotTitle = (r && (r.spot || r.spotName)) ? String(r.spot || r.spotName).trim() : '';
+    var userMemo = (r && r.memo !== undefined && r.memo !== null) ? String(r.memo).trim() : '';
+    userMemo = window.okbmBlankAutoPackingCaption(userMemo, spotTitle);
 
     var rawAuthor = r ? (r.author || r.nickname || r.authorName || r.nick) : '';
     var currentAuthor = (rawAuthor && String(rawAuthor).trim()) ? String(rawAuthor).trim() : '';
@@ -1997,7 +2022,9 @@ window.normalizeHistoryRecord = function(r, idx) {
         if (Array.isArray(parsedMemos)) resolvedPhotoMemos = parsedMemos;
       } catch (e) {}
     }
-    resolvedPhotoMemos = resolvedPhotoMemos.map(function(m) { return m != null ? String(m).trim() : ''; });
+    resolvedPhotoMemos = resolvedPhotoMemos.map(function(m) {
+      return window.okbmBlankAutoPackingCaption(m != null ? String(m) : '', spotTitle);
+    });
 
     var hasServerPublishFlag = Boolean(r && (r.is_published !== undefined || r.isPublished !== undefined));
     var resolvedPublished = false;
@@ -2061,7 +2088,7 @@ window.normalizeHistoryRecord = function(r, idx) {
       weightGrams: (r && r.weightGrams) ? r.weightGrams : totalGrams,
       itemCount: cleanItems.length,
       memo: userMemo,
-      oneLineMemo: (r && r.oneLineMemo) ? r.oneLineMemo : userMemo,
+      oneLineMemo: window.okbmBlankAutoPackingCaption((r && r.oneLineMemo) ? r.oneLineMemo : '', spotTitle) || userMemo,
       photoMemos: resolvedPhotoMemos,
       isPublished: resolvedPublished,
       likes: finalLikes,
@@ -2192,7 +2219,7 @@ window.normalizeHistoryRecord = function(r, idx) {
     var items = Array.isArray(cur.items) ? cur.items : [];
     var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
     var tmplId = cur.templateId || savedTmplId;
-    var shortCardMemo = cur.oneLineMemo || (cur.spot ? (cur.spot + ' 백패킹') : '자연 속 힐링 백패킹');
+    var shortCardMemo = window.okbmBlankAutoPackingCaption(cur.oneLineMemo || cur.memo || '', cur.spot);
 
     var isCompleted = Boolean(cur.memo && cur.memo.trim().length > 0);
     var statusBadgeHtml = isCompleted
@@ -4305,7 +4332,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     });
 
     var photoMemos = Array.isArray(log.photoMemos) ? log.photoMemos : [];
-    var fallbackMemo = (log.memo || log.oneLineMemo || '').trim();
+    var fallbackMemo = window.okbmBlankAutoPackingCaption(log.memo || log.oneLineMemo || '', log.spot);
 
     var packingSheetMarkup = '';
     var isReadyShotMode = (typeof window.recordUsesPhotoTemplate === 'function')
@@ -4323,7 +4350,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     } else {
       var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
       if (genFn) {
-        packingSheetMarkup = genFn(tmplId, log, items, log.spot, fallbackMemo || (log.spot + ' 패킹'), photosList[0] || '');
+        packingSheetMarkup = genFn(tmplId, log, items, log.spot, fallbackMemo, photosList[0] || '');
       } else {
         packingSheetMarkup = '<div style="height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#f4f1ea; color:#1c1917; padding:12px; border-radius:13px;">' +
           '<div>' +
@@ -4342,7 +4369,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
 
     var photoSectionsHtml = photosList.map(function(pUrl, pIdx) {
-      var curMemo = (photoMemos[pIdx] !== undefined && photoMemos[pIdx] !== null) ? String(photoMemos[pIdx]).trim() : '';
+      var curMemo = (photoMemos[pIdx] !== undefined && photoMemos[pIdx] !== null) ? window.okbmBlankAutoPackingCaption(photoMemos[pIdx], log.spot) : '';
       if (!curMemo && pIdx === 0 && fallbackMemo) {
         curMemo = fallbackMemo;
       }
@@ -6630,9 +6657,11 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     window.__tempPhotoMemos = [];
     if (Array.isArray(record.photoMemos) && record.photoMemos.length > 0) {
-      window.__tempPhotoMemos = record.photoMemos.slice();
+      window.__tempPhotoMemos = record.photoMemos.map(function(m) {
+        return window.okbmBlankAutoPackingCaption(m, record.spot).slice(0, 120);
+      });
     } else {
-      var initMemo = (record.memo || record.oneLineMemo || '').slice(0, 120);
+      var initMemo = window.okbmBlankAutoPackingCaption(record.memo || record.oneLineMemo || '', record.spot).slice(0, 120);
       window.__tempPhotoMemos.push(initMemo);
     }
 
@@ -6646,7 +6675,10 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     // 🌟 [메모 모드 판별: 한 번에 쓰기(single) vs 사진별 쓰기(per_photo)]
     var hasMultiMemos = Array.isArray(record.photoMemos) && record.photoMemos.filter(function(m) { return m && m.trim().length > 0; }).length > 1;
     window.__tempMemoMode = record.memoMode || (hasMultiMemos ? 'per_photo' : 'single');
-    window.__tempSingleMemo = (record.memo || record.oneLineMemo || (record.photoMemos && record.photoMemos[0]) || '').slice(0, 120);
+    window.__tempSingleMemo = window.okbmBlankAutoPackingCaption(
+      record.memo || record.oneLineMemo || (record.photoMemos && record.photoMemos[0]) || '',
+      record.spot
+    ).slice(0, 120);
 
     window.__switchMemoMode = function(mode) {
       triggerHaptic(8);
@@ -7620,20 +7652,25 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     });
   }
 
+  function okbmBuildEmptyFieldPhotoCtaHtml(spotName, recordId) {
+    var cardPureId = String(recordId || '').trim();
+    return '<div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:24px 18px; box-sizing:border-box; text-align:center; background:#000000; pointer-events:none;">' +
+      '<div style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:20px; pointer-events:none;">' +
+        '<button type="button" data-record-id="' + escapeHtml(cardPureId) + '" onclick="event.stopPropagation(); triggerHaptic(12); window.openRichAfterTripModal(window.okbmFindFeedRecord(this.dataset.recordId));" style="pointer-events:auto; width:58px; height:58px; border-radius:50%; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; color:#e2e8f0; box-shadow:0 4px 18px rgba(0,0,0,0.5); cursor:pointer; padding:0; outline:none; transition:transform 0.15s ease, background 0.15s ease;" onmousedown="this.style.transform=\'scale(0.92)\'; this.style.background=\'rgba(255,255,255,0.14)\';" onmouseup="this.style.transform=\'scale(1)\'; this.style.background=\'rgba(255,255,255,0.06)\';" ontouchstart="this.style.transform=\'scale(0.92)\'; this.style.background=\'rgba(255,255,255,0.14)\';" ontouchend="this.style.transform=\'scale(1)\'; this.style.background=\'rgba(255,255,255,0.06)\';">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px; pointer-events:none;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
+        '</button>' +
+        '<div style="font-size:1.02rem; font-weight:900; color:#ffffff;">' + escapeHtml(spotName || '나의 힐링 스팟') + '</div>' +
+        '<div style="font-size:0.74rem; color:#94a3b8; line-height:1.5; word-break:keep-all;">아이콘을 터치하여 사진을 등록하거나,<br>카드를 탭하여 패킹 정보를 확인하세요.</div>' +
+      '</div>' +
+    '</div>';
+  }
+
   function okbmBuildReelPhotoFrontHtml(cardId, mediaItems, spotName, recordId) {
     var totalPhotosCount = Array.isArray(mediaItems) ? mediaItems.length : 0;
     var cardPureId = String(recordId || cardId || '').trim();
     var safeCardId = String(cardId || '');
     if (totalPhotosCount === 0) {
-      return '<div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:24px 18px; box-sizing:border-box; text-align:center; background:#000000; pointer-events:none;">' +
-        '<div style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:20px; pointer-events:none;">' +
-          '<button type="button" data-record-id="' + escapeHtml(cardPureId) + '" onclick="event.stopPropagation(); triggerHaptic(12); window.openRichAfterTripModal(window.okbmFindFeedRecord(this.dataset.recordId));" style="pointer-events:auto; width:58px; height:58px; border-radius:50%; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; color:#e2e8f0; box-shadow:0 4px 18px rgba(0,0,0,0.5); cursor:pointer; padding:0; outline:none;">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px; pointer-events:none;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
-          '</button>' +
-          '<div style="font-size:1.02rem; font-weight:900; color:#ffffff;">' + escapeHtml(spotName || '나의 힐링 스팟') + '</div>' +
-          '<div style="font-size:0.74rem; color:#94a3b8; line-height:1.5; word-break:keep-all;">아이콘을 터치하여 사진을 등록하거나,<br>카드를 탭하여 패킹 정보를 확인하세요.</div>' +
-        '</div>' +
-      '</div>';
+      return okbmBuildEmptyFieldPhotoCtaHtml(spotName, cardPureId);
     }
 
     var horizontalSlidesHtml = mediaItems.map(function(pUrl) {
@@ -7685,7 +7722,22 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     if (photosChanged) {
       if (nextSrcs.length) {
         var flipWrap = card.querySelector('.postcard-3d-wrapper');
-        if (flipWrap) flipWrap.removeAttribute('data-no-flip');
+        if (flipWrap) {
+          flipWrap.removeAttribute('data-no-flip');
+          flipWrap.classList.remove('flipped');
+        }
+        var promptEl = card.querySelector('.ready-shot-memory-prompt');
+        if (promptEl && promptEl.parentNode) promptEl.parentNode.removeChild(promptEl);
+
+        var backFace = card.querySelector('.postcard-face-back');
+        if (backFace) {
+          var readyShotUrl = String(rec.readyShotPhoto || rec.ready_shot_photo || rec.customTemplatePhoto || '').trim();
+          if (readyShotUrl && typeof window.generateReadyShotMarkup === 'function') {
+            backFace.innerHTML = '<div class="postcard-template-container">' +
+              window.generateReadyShotMarkup(rec, { photo: readyShotUrl }) +
+              '</div>';
+          }
+        }
       }
       front.innerHTML = okbmBuildReelPhotoFrontHtml(cardIdEsc, nextSrcs, rec.spot || '나의 힐링 스팟', cleanCardId);
       front.querySelectorAll('.reel-photo-target').forEach(function(img) {
@@ -7693,8 +7745,10 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       });
     }
 
-    var memo120 = String(rec.memo || rec.oneLineMemo || '').slice(0, 120);
-    var photoMemosArr = (Array.isArray(rec.photoMemos) && rec.photoMemos.length > 0) ? rec.photoMemos.slice() : [memo120];
+    var memo120 = window.okbmBlankAutoPackingCaption(rec.memo || rec.oneLineMemo || '', rec.spot).slice(0, 120);
+    var photoMemosArr = (Array.isArray(rec.photoMemos) && rec.photoMemos.length > 0)
+      ? rec.photoMemos.map(function(m) { return window.okbmBlankAutoPackingCaption(m, rec.spot); })
+      : [memo120];
     while (photoMemosArr.length < nextSrcs.length) photoMemosArr.push('');
     card.setAttribute('data-photo-memos', JSON.stringify(photoMemosArr));
     var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
@@ -7881,7 +7935,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var spotName = record.spot || '나의 힐링 스팟';
     var tripDate = record.date || '';
     var weightKg = record.weightKg || '0.00';
-    var memo120 = (record.memo || record.oneLineMemo || '').slice(0, 120);
+    var memo120 = window.okbmBlankAutoPackingCaption(record.memo || record.oneLineMemo || '', record.spot).slice(0, 120);
     var authorName = record.author || record.nick || record.nickname || '';
     if (window.okbmIsOwnPostRecord && window.okbmIsOwnPostRecord(record, myUserId) && window.okbmIsPlaceholderNick && window.okbmIsPlaceholderNick(authorName) && savedNick && !window.okbmIsPlaceholderNick(savedNick)) {
       authorName = savedNick;
@@ -7969,6 +8023,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="width:100%; height:100%; object-fit:cover; display:none;" /><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
 
     var diffDays = null;
+    var ddayLabel = '';
     var dParts = String(tripDate || '').match(/\d+/g);
     if (dParts && dParts.length >= 3) {
       var targetD = new Date(parseInt(dParts[0], 10), parseInt(dParts[1], 10) - 1, parseInt(dParts[2], 10));
@@ -7976,9 +8031,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       todayD.setHours(0, 0, 0, 0);
       targetD.setHours(0, 0, 0, 0);
       diffDays = Math.round((targetD.getTime() - todayD.getTime()) / 86400000);
+      ddayLabel = diffDays > 0 ? ('D-' + diffDays) : (diffDays === 0 ? 'D-DAY' : ('D+' + Math.abs(diffDays)));
 
       if (totalPhotosCount === 0) {
-        var ddayLabel = diffDays > 0 ? ('D-' + diffDays) : (diffDays === 0 ? 'D-DAY' : ('D+' + Math.abs(diffDays)));
         centerDDayOverlayHtml = '<div id="dDayBadgeWrap_' + cardId + '" style="position:absolute; top:14px; right:14px; z-index:25; pointer-events:none; display:inline-flex; align-items:center; background:#0c1017; border:1px solid rgba(255,255,255,0.14); border-radius:6px; padding:3px 8px;">' +
           '<span style="font-size:0.75rem; color:#e2e8f0; font-weight:900; font-family:\'Space Grotesk\', sans-serif; letter-spacing:0.4px; line-height:1;">' + ddayLabel + '</span>' +
         '</div>';
@@ -8053,7 +8108,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var backTemplateCardHtml = '';
 
     if (genFn) {
-      backTemplateCardHtml = genFn(tmplId, record, record.items || [], spotName, memo120 || spotName, rawPhoto);
+      backTemplateCardHtml = genFn(tmplId, record, record.items || [], spotName, memo120, rawPhoto);
     } else {
       backTemplateCardHtml = '<div style="width:100%; height:100%; background:#090d15; padding:16px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">' +
         '<div>' +
@@ -8088,8 +8143,22 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     // 현장 사진 없이 READY SHOT만 있는 기록은 뒤집지 않아도 템플릿이 보이도록 앞면에도 그린다
     var showTemplateFront = totalPhotosCount === 0 && !!actualReadyShot;
+    var emptyFieldPhotoCtaHtml = okbmBuildEmptyFieldPhotoCtaHtml(spotName, cardPureId);
+    var backFaceMarkup = showTemplateFront ? emptyFieldPhotoCtaHtml : studioCardMarkup;
 
-    var photoMemosArr = (Array.isArray(record.photoMemos) && record.photoMemos.length > 0) ? record.photoMemos.slice() : [memo120];
+    var readyShotMemoryPromptHtml = '';
+    if (isMyRecord && showTemplateFront) {
+      readyShotMemoryPromptHtml = '<button type="button" id="readyShotMemoryPrompt_' + cardId + '" class="ready-shot-memory-prompt" data-card-id="' + cardId + '" onclick="event.stopPropagation(); triggerHaptic(10); var card=document.getElementById(\'feedSnapCard_\' + this.dataset.cardId); var wrap=card&&card.querySelector(\'.postcard-3d-wrapper\'); if(wrap){wrap.classList.add(\'flipped\');}" style="margin:0 auto; padding:0; border:none; background:transparent; cursor:pointer; -webkit-tap-highlight-color:transparent;">' +
+        (ddayLabel
+          ? '<span style="display:inline-flex; align-items:center; background:#0c1017; border:1px solid rgba(255,255,255,0.18); border-radius:6px; padding:3px 8px; font-size:0.72rem; color:#e2e8f0; font-weight:900; font-family:\'Space Grotesk\', sans-serif; letter-spacing:0.4px; line-height:1;">' + escapeHtml(ddayLabel) + '</span>'
+          : '') +
+        '<span style="font-size:0.78rem; font-weight:800; color:#f1f5f9; letter-spacing:-0.2px; text-shadow:0 1px 4px rgba(0,0,0,0.85);">추억을 기록해주세요</span>' +
+      '</button>';
+    }
+
+    var photoMemosArr = (Array.isArray(record.photoMemos) && record.photoMemos.length > 0)
+      ? record.photoMemos.map(function(m) { return window.okbmBlankAutoPackingCaption(m, record.spot); })
+      : [memo120];
     while (photoMemosArr.length < totalPhotosCount) photoMemosArr.push('');
     var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
     var cleanMemoContentHtml = initialPhotoMemo.trim()
@@ -8104,32 +8173,25 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       '<div class="reel-media-stage">' +
         '<div style="width:100% !important; height:100% !important; position:relative; overflow:hidden; background:#000000;">' +
           (centerDDayOverlayHtml && !showTemplateFront ? centerDDayOverlayHtml : '') +
-          '<div class="postcard-3d-wrapper"' + (showTemplateFront ? ' data-no-flip="1"' : '') + ' onclick="if (this.hasAttribute(\'data-no-flip\')) return; this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
+          '<div class="postcard-3d-wrapper"' + (showTemplateFront ? ' data-no-flip="1"' : '') + ' onclick="var locked=this.hasAttribute(\'data-no-flip\'); if(locked && !this.classList.contains(\'flipped\')) return; this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
             '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
               (totalPhotosCount > 0 ? (
                 '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \`' + cardId + '\`);">' + horizontalSlidesHtml + '</div>' + dotsHtml
               ) : showTemplateFront ? (
                 studioCardMarkup
               ) : (
-                '<div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:24px 18px; box-sizing:border-box; text-align:center; background:#000000; pointer-events:none;">' +
-                  '<div style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:20px; pointer-events:none;">' +
-                    '<button type="button" data-record-id="' + cardPureId + '" onclick="event.stopPropagation(); triggerHaptic(12); window.openRichAfterTripModal(window.okbmFindFeedRecord(this.dataset.recordId));" style="pointer-events:auto; width:58px; height:58px; border-radius:50%; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; color:#e2e8f0; box-shadow:0 4px 18px rgba(0,0,0,0.5); cursor:pointer; padding:0; outline:none; transition:transform 0.15s ease, background 0.15s ease;" onmousedown="this.style.transform=\'scale(0.92)\'; this.style.background=\'rgba(255,255,255,0.14)\';" onmouseup="this.style.transform=\'scale(1)\'; this.style.background=\'rgba(255,255,255,0.06)\';" ontouchstart="this.style.transform=\'scale(0.92)\'; this.style.background=\'rgba(255,255,255,0.14)\';" ontouchend="this.style.transform=\'scale(1)\'; this.style.background=\'rgba(255,255,255,0.06)\;\'">' +
-                      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px; pointer-events:none;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
-                    '</button>' +
-                    '<div style="font-size:1.02rem; font-weight:900; color:#ffffff;">' + escapeHtml(spotName) + '</div>' +
-                    '<div style="font-size:0.74rem; color:#94a3b8; line-height:1.5; word-break:keep-all;">아이콘을 터치하여 사진을 등록하거나,<br>카드를 탭하여 패킹 정보를 확인하세요.</div>' +
-                  '</div>' +
-                '</div>'
+                emptyFieldPhotoCtaHtml
               )) +
             '</div>' +
             '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; box-sizing:border-box;">' +
-              studioCardMarkup +
+              backFaceMarkup +
             '</div>' +
           '</div>' +
         '</div>' +
       '</div>' +
 
       '<div class="reel-bottom-interactive-bar">' +
+        readyShotMemoryPromptHtml +
         '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
           '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
             '<button type="button" data-star-card-id="' + escapeHtml(cleanCardId) + '" data-star-stop-touch="1" style="background:none; border:none; padding:6px 4px; margin:-6px -4px; cursor:pointer; display:flex; align-items:center; gap:4px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; pointer-events:auto; z-index:20;">' +

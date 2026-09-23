@@ -3728,6 +3728,9 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     var liveMemo = (memoInput && memoInput.value.trim().length > 0)
       ? memoInput.value.trim()
       : (window.currentShareRecord && window.currentShareRecord.oneLineMemo ? window.currentShareRecord.oneLineMemo : '');
+    if (typeof window.okbmBlankAutoPackingCaption === 'function') {
+      liveMemo = window.okbmBlankAutoPackingCaption(liveMemo, liveSpot);
+    }
 
     var now = new Date();
     var cleanDateStr = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
@@ -3774,8 +3777,10 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       id: rec.id || ('pack_' + Date.now()),
       date: rec.date || cleanDateStr,
       spot: liveSpot,
-      memo: rec.memo || liveMemo || '',
-      oneLineMemo: liveMemo || (liveSpot ? (liveSpot + ' 패킹') : '기록 준비 완료'),
+      memo: (typeof window.okbmBlankAutoPackingCaption === 'function')
+        ? (window.okbmBlankAutoPackingCaption(rec.memo || '', liveSpot) || liveMemo || '')
+        : (rec.memo || liveMemo || ''),
+      oneLineMemo: liveMemo || '',
       photoMemos: Array.isArray(rec.photoMemos) ? rec.photoMemos : [],
       elevation: rec.elevation || '',
       weightKg: weightKg,
@@ -4298,7 +4303,9 @@ window.openPackShareModal = function(record, items, forceStudio) {
   }
 
   currentShareRecord.spot = autoSpot || '나의 힐링 스팟';
-  currentShareRecord.oneLineMemo = currentShareRecord.oneLineMemo || '';
+  currentShareRecord.oneLineMemo = (typeof window.okbmBlankAutoPackingCaption === 'function')
+    ? window.okbmBlankAutoPackingCaption(currentShareRecord.oneLineMemo || '', currentShareRecord.spot)
+    : (currentShareRecord.oneLineMemo || '');
   currentShareRecord.readyShotMode = window.currentStudioCardMode;
 
   if (spotLabel) {
