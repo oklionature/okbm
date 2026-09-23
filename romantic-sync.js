@@ -404,7 +404,7 @@ if (window.supabase && typeof window.supabase.createClient === 'function' && !wi
   var okbmLoopbackHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
   window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
-      detectSessionInUrl: true,
+      detectSessionInUrl: !window.__okbmNativeOAuthBounce,
       persistSession: true,
       flowType: (window.isSecureContext || okbmLoopbackHost) ? 'pkce' : 'implicit'
     }
@@ -9480,6 +9480,99 @@ async function okbmPatchUserEmail(userId, email) {
   }
 }
 
+function okbmIsCapacitorNative() {
+  try {
+    return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+  } catch (e) {
+    return false;
+  }
+}
+
+function okbmNativeOAuthReturnUrl() {
+  return 'https://oklionature.github.io/okbm/';
+}
+
+function okbmHandleNativeOAuthUrl(rawUrl, fromLaunch) {
+  var url = String(rawUrl || '');
+  if (url.indexOf('com.romanticroute.app://login-callback') !== 0) return;
+  var parsed;
+  try { parsed = new URL(url); } catch (e) { return; }
+  var code = String(parsed.searchParams.get('code') || '').trim();
+  var oauthError = String(parsed.searchParams.get('error') || '').trim();
+  var Browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+  if (Browser && typeof Browser.close === 'function') {
+    Browser.close().catch(function() {});
+  }
+  if (!code || oauthError) {
+    okbmMarkSocialButtonsBusy(false);
+    if (oauthError && typeof showToast === 'function') showToast('로그인을 끝내지 못했습니다.', 'warn');
+    return;
+  }
+  window.__okbmNativeOAuthCodes = window.__okbmNativeOAuthCodes || {};
+  if (window.__okbmNativeOAuthCodes[code]) return;
+  window.__okbmNativeOAuthCodes[code] = true;
+  if (!window.supabaseClient || !window.supabaseClient.auth || typeof window.supabaseClient.auth.exchangeCodeForSession !== 'function') {
+    okbmMarkSocialButtonsBusy(false);
+    return;
+  }
+  window.__okbmOAuthBootstrapping = true;
+  window.supabaseClient.auth.exchangeCodeForSession(code).then(function(res) {
+    window.__okbmOAuthBootstrapping = false;
+    if (res && res.error) throw res.error;
+    var session = res && res.data ? res.data.session : null;
+    if (session) {
+      window.__okbmNativeOAuthExpecting = false;
+      okbmWriteSessionCache(session);
+      okbmConsumeSupabaseOAuthSession(session);
+    } else {
+      okbmMarkSocialButtonsBusy(false);
+    }
+  }).catch(function(err) {
+    window.__okbmOAuthBootstrapping = false;
+    okbmMarkSocialButtonsBusy(false);
+    console.warn('[native oauth]', err);
+    if (!fromLaunch && typeof showToast === 'function') showToast('로그인을 끝내지 못했습니다.', 'warn');
+  });
+}
+
+function okbmBindNativeOAuthReturn() {
+  if (!okbmIsCapacitorNative() || window.__okbmNativeOAuthBound) return;
+  var App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if (!App) return;
+  window.__okbmNativeOAuthBound = true;
+  if (typeof App.addListener === 'function') {
+    App.addListener('appUrlOpen', function(event) {
+      okbmHandleNativeOAuthUrl(event && event.url);
+    });
+  }
+  if (typeof App.getLaunchUrl === 'function') {
+    App.getLaunchUrl().then(function(res) {
+      okbmHandleNativeOAuthUrl(res && res.url, true);
+    }).catch(function() {});
+  }
+}
+
+async function okbmOpenOAuthUrl(url) {
+  if (!okbmIsCapacitorNative()) {
+    window.location.assign(url);
+    return;
+  }
+  var Browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+  if (!Browser || typeof Browser.open !== 'function') {
+    throw new Error('browser plugin missing');
+  }
+  if (!window.__okbmOAuthBrowserFinished && typeof Browser.addListener === 'function') {
+    window.__okbmOAuthBrowserFinished = true;
+    Browser.addListener('browserFinished', function() {
+      if (window.__okbmOAuthBootstrapping) return;
+      window.__okbmNativeOAuthExpecting = false;
+      okbmMarkSocialButtonsBusy(false);
+    });
+  }
+  window.__okbmNativeOAuthExpecting = true;
+  await Browser.open({ url: url });
+}
+
 function okbmOAuthRedirectTo() {
   var protocol = window.location.protocol || 'http:';
   var hostname = window.location.hostname || '127.0.0.1';
@@ -9502,7 +9595,11 @@ async function okbmStartSupabaseOAuth(provider, activeClass, busyMessage) {
     if (typeof showToast === 'function') showToast('로그인 서버에 연결할 수 없습니다.', 'warn');
     return;
   }
-  var redirectTo = okbmOAuthRedirectTo();
+  var redirectTo = okbmIsCapacitorNative() ? okbmNativeOAuthReturnUrl() : okbmOAuthRedirectTo();
+  if (okbmIsCapacitorNative()) {
+    try { sessionStorage.setItem('okbm_oauth_redirect', redirectTo); } catch (e) {}
+  }
+  okbmBindNativeOAuthReturn();
   okbmMarkSocialButtonsBusy(true, busyMessage, activeClass);
   try {
     var res = await window.supabaseClient.auth.signInWithOAuth({
@@ -9521,11 +9618,14 @@ async function okbmStartSupabaseOAuth(provider, activeClass, busyMessage) {
       url = parsed.toString();
     } catch (e) {}
     console.log('[OAuth authorize]', url);
-    window.location.assign(url);
+    await okbmOpenOAuthUrl(url);
   } catch (err) {
     console.warn('[Supabase OAuth ' + provider + ']', err);
     okbmMarkSocialButtonsBusy(false);
-    if (typeof showToast === 'function') showToast('로그인을 시작하지 못했습니다.', 'warn');
+    var missingBrowser = err && String(err.message || err).indexOf('browser plugin missing') !== -1;
+    if (typeof showToast === 'function') {
+      showToast(missingBrowser ? '앱을 업데이트한 뒤 다시 로그인해 주세요.' : '로그인을 시작하지 못했습니다.', 'warn');
+    }
   }
 }
 
@@ -10104,6 +10204,7 @@ async function loginWithGoogle() {
 }
 window.loginWithGoogle = loginWithGoogle;
 
+okbmBindNativeOAuthReturn();
 okbmConsumeNaverOAuthCallback().then(function(consumedNaver) {
   if (!consumedNaver) okbmInitSupabaseOAuthBridge();
 }).catch(function() {
@@ -10741,7 +10842,7 @@ window.okbmEnsureSupabaseClient = function() {
     var loopback = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
     window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: {
-        detectSessionInUrl: true,
+        detectSessionInUrl: !window.__okbmNativeOAuthBounce,
         persistSession: true,
         flowType: (window.isSecureContext || loopback) ? 'pkce' : 'implicit'
       }

@@ -538,6 +538,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=JetBrains+Mono:wght@700;800&family=Noto+Serif+KR:wght@600&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   
   <script>
+    (function okbmBounceGoogleLoginToApp() {
+      try {
+        if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return;
+        var params = new URLSearchParams(location.search || '');
+        var code = String(params.get('code') || '').trim();
+        if (!code) return;
+        var state = String(params.get('state') || '').trim();
+        var savedState = sessionStorage.getItem('okbm_naver_oauth_state') || '';
+        if (savedState && state === savedState) return;
+        var hasVerifier = false;
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i) || '';
+          if (key.indexOf('code-verifier') !== -1) { hasVerifier = true; break; }
+        }
+        if (hasVerifier) return;
+        window.__okbmNativeOAuthBounce = true;
+        location.replace('com.romanticroute.app://login-callback?' + params.toString());
+      } catch (e) {}
+    })();
+  </script>
+  <script>
     (function okbmStashNaverOAuthCodeEarly() {
       try {
         var params = new URLSearchParams(location.search || '');
@@ -563,7 +584,7 @@
         var loopback = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
         window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
           auth: {
-            detectSessionInUrl: true,
+            detectSessionInUrl: !window.__okbmNativeOAuthBounce,
             persistSession: true,
             flowType: (window.isSecureContext || loopback) ? 'pkce' : 'implicit'
           }
@@ -680,7 +701,7 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.8.99" defer></script>
+    <script src="romantic-sync.js?v=2.9.0" defer></script>
     <script src="romantic-history.js?v=2.7.67" defer></script>
 
   <style>
