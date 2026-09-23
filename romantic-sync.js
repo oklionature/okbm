@@ -7323,6 +7323,21 @@ window.handlePastTripPhotoUpload = async function(event) {
     return;
   }
   var filesToProcess = Array.from(files).slice(0, maxSlots);
+  var rejectedCount = 0;
+  filesToProcess = filesToProcess.filter(function(file) {
+    if (typeof window.okbmIsSupportedPhotoFile === 'function' && !window.okbmIsSupportedPhotoFile(file)) {
+      rejectedCount++;
+      return false;
+    }
+    return true;
+  });
+  if (rejectedCount && typeof showToast === 'function') {
+    showToast('지원하는 파일형식이 아닙니다.', 'warn', 2200);
+  }
+  if (!filesToProcess.length) {
+    inputEl.value = '';
+    return;
+  }
   var statusEl = document.getElementById('pastTripPhotoStatus');
   var submitBtn = document.getElementById('pastTripSubmitBtn');
   if (typeof showToast === 'function') showToast('사진추가중', 'info', 1800);
@@ -7330,41 +7345,56 @@ window.handlePastTripPhotoUpload = async function(event) {
   if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.55'; }
   triggerHaptic(10);
 
-  var compressOne = function(file) {
+  function withPastPhotoTimeout(promise, ms) {
+    return new Promise(function(resolve) {
+      var settled = false;
+      var timer = setTimeout(function() {
+        if (settled) return;
+        settled = true;
+        resolve('');
+      }, ms);
+      Promise.resolve(promise).then(function(url) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(url && String(url).indexOf('https://') === 0 ? url : '');
+      }).catch(function() {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve('');
+      });
+    });
+  }
+
+  function uploadPastPhotoFile(file) {
+    if (typeof window.processSinglePhotoSmart === 'function' && typeof window.uploadCompressedPhotoToR2 === 'function') {
+      return window.processSinglePhotoSmart(file, { maxDim: 1200, quality: 0.82 }).then(function(blob) {
+        if (!blob) return '';
+        return window.uploadCompressedPhotoToR2(blob, 'past');
+      });
+    }
     return new Promise(function(resolve) {
       var blobUrl = '';
       try { blobUrl = URL.createObjectURL(file); } catch (e) { resolve(''); return; }
       var img = new Image();
-      var done = false;
-      var timer = setTimeout(function() {
-        if (!done) { done = true; if (blobUrl) URL.revokeObjectURL(blobUrl); resolve(''); }
-      }, 12000);
       img.onload = function() {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
         try {
           var canvas = document.createElement('canvas');
           var ctx = canvas.getContext('2d');
-          var MAX_DIM = 1200;
           var maxLen = Math.max(img.width, img.height);
-          var scale = maxLen > MAX_DIM ? (MAX_DIM / maxLen) : 1;
+          var scale = maxLen > 1200 ? (1200 / maxLen) : 1;
           canvas.width = Math.round(img.width * scale);
           canvas.height = Math.round(img.height * scale);
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob(async function(blob) {
+          canvas.toBlob(function(blob) {
             if (blobUrl) URL.revokeObjectURL(blobUrl);
-            if (!blob) { resolve(''); return; }
+            if (!blob || typeof window.uploadSinglePhotoSmart !== 'function') { resolve(''); return; }
             var reader = new FileReader();
-            reader.onload = async function() {
-              var dataUrl = String(reader.result || '');
-              var url = '';
-              if (typeof window.uploadSinglePhotoSmart === 'function') {
-                url = await window.uploadSinglePhotoSmart(dataUrl, 'past_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.jpg');
-              }
-              resolve(url && String(url).startsWith('http') ? url : '');
+            reader.onload = function() {
+              Promise.resolve(window.uploadSinglePhotoSmart(String(reader.result || ''), 'past_' + Date.now() + '.jpg')).then(function(url) {
+                resolve(url || '');
+              }).catch(function() { resolve(''); });
             };
             reader.onerror = function() { resolve(''); };
             reader.readAsDataURL(blob);
@@ -7375,24 +7405,43 @@ window.handlePastTripPhotoUpload = async function(event) {
         }
       };
       img.onerror = function() {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
         if (blobUrl) URL.revokeObjectURL(blobUrl);
         resolve('');
       };
       img.src = blobUrl;
     });
-  };
+  }
 
-  for (var i = 0; i < filesToProcess.length; i++) {
-    if (statusEl) statusEl.textContent = '사진 ' + (i + 1) + '/' + filesToProcess.length + ' 업로드 중...';
-    var uploaded = await compressOne(filesToProcess[i]);
-    if (uploaded) {
-      photos.push(uploaded);
-      st.photoMemos = st.photoMemos || [];
-      st.photoMemos.push('');
-    }
+  var results = new Array(filesToProcess.length);
+  var cursor = 0;
+  var doneCount = 0;
+  var concurrency = Math.min(3, filesToProcess.length);
+
+  function runPastPhotoSlot() {
+    if (cursor >= filesToProcess.length) return Promise.resolve();
+    var index = cursor++;
+    if (statusEl) statusEl.textContent = '사진 ' + (doneCount + 1) + '/' + filesToProcess.length + ' 업로드 중...';
+    return withPastPhotoTimeout(uploadPastPhotoFile(filesToProcess[index]), 12000).then(function(url) {
+      results[index] = url || '';
+      doneCount++;
+      if (statusEl) statusEl.textContent = '사진 ' + doneCount + '/' + filesToProcess.length + ' 처리됨';
+      return runPastPhotoSlot();
+    });
+  }
+
+  var workers = [];
+  for (var w = 0; w < concurrency; w++) workers.push(runPastPhotoSlot());
+  try {
+    await Promise.all(workers);
+  } catch (poolErr) {
+    console.warn('[romantic-sync.js:handlePastTripPhotoUpload]', poolErr);
+  }
+
+  st.photoMemos = st.photoMemos || [];
+  for (var r = 0; r < results.length; r++) {
+    if (!results[r]) continue;
+    photos.push(results[r]);
+    st.photoMemos.push('');
   }
   st.photos = photos;
   st.photoIndex = Math.max(0, photos.length - 1);

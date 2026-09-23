@@ -5591,6 +5591,21 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
 
     var filesToProcess = Array.from(files).slice(0, maxSlots);
+    var rejectedCount = 0;
+    filesToProcess = filesToProcess.filter(function(file) {
+      if (typeof window.okbmIsSupportedPhotoFile === 'function' && !window.okbmIsSupportedPhotoFile(file)) {
+        rejectedCount++;
+        return false;
+      }
+      return true;
+    });
+    if (rejectedCount && typeof showToast === 'function') {
+      showToast('지원하는 파일형식이 아닙니다.', 'warn', 2200);
+    }
+    if (!filesToProcess.length) {
+      inputEl.value = '';
+      return;
+    }
     triggerHaptic(10);
 
     // 🔒 [비동기 락 활성화]: 압축 중에는 저장 버튼 비활성화 (타이밍 역전 100% 차단)

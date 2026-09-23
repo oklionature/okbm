@@ -834,8 +834,8 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.9.0" defer></script>
-    <script src="romantic-history.js?v=2.7.67" defer></script>
+    <script src="romantic-sync.js?v=2.9.2" defer></script>
+    <script src="romantic-history.js?v=2.7.68" defer></script>
 
   <style>
   @font-face {
@@ -5179,6 +5179,16 @@ var adBannersHtml = `
       }
 
       var toProcess = files.slice(0, available);
+      var rejectedCount = 0;
+      toProcess = toProcess.filter(function(file) {
+        if (typeof window.okbmIsSupportedPhotoFile === 'function' && !window.okbmIsSupportedPhotoFile(file)) {
+          rejectedCount++;
+          return false;
+        }
+        return true;
+      });
+      if (rejectedCount) showToast('지원하는 파일형식이 아닙니다.', 'warn', 2200);
+      if (!toProcess.length) return;
       triggerHaptic(10);
       showToast('사진 ' + toProcess.length + '장을 등록하는 중입니다...', 2500);
       if (typeof window.showPhotoLoadingModal === 'function') {
@@ -5960,6 +5970,16 @@ var adBannersHtml = `
         console.warn('[uploadCompressedPhotoToR2]', err);
       }
       return '';
+    };
+
+    window.okbmIsSupportedPhotoFile = function(file) {
+      var type = String(file && file.type || '').toLowerCase();
+      var name = String(file && file.name || '').toLowerCase();
+      var typeOk = type.indexOf('jpeg') !== -1 || type.indexOf('jpg') !== -1 || type.indexOf('png') !== -1 || type.indexOf('webp') !== -1;
+      var nameOk = /\.jpe?g$|\.png$|\.webp$/.test(name);
+      if (type.indexOf('heic') !== -1 || type.indexOf('heif') !== -1 || type.indexOf('gif') !== -1 || type.indexOf('avif') !== -1) return false;
+      if (!typeOk && /\.heic$|\.heif$|\.gif$|\.avif$/.test(name)) return false;
+      return typeOk || nameOk;
     };
 
     window.processSinglePhotoSmart = function(file, opts) {
