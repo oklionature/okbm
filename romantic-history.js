@@ -7440,12 +7440,12 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       }
     }, 80);
 
-    // 백그라운드에서 최신 피드를 조용히 동기화
+    // 이미 떠 있는 카드는 유지하고, 서버에서 달라진 글만 끼워 넣는다.
     window.fetchCommunityFeeds(true).then(function(feeds) {
       if (!window.__okbmHistoryModalOpen) return;
       if (feeds == null) return;
       if (typeof window.renderHistoryStage === 'function') {
-        window.renderHistoryStage();
+        window.renderHistoryStage(false, { sync: true });
       }
     }).catch(function() {});
   };
@@ -8115,7 +8115,115 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     '</div>';
   };
 
-window.renderHistoryStage = function(isLoading) {
+  function okbmSyncHistoryReelInPlace(currentList, ctx) {
+    var reel = document.getElementById('reelsVerticalContainer');
+    if (!reel || !currentList || !currentList.length) return false;
+    if (typeof window.buildReelSingleSnapCardHtml !== 'function') return false;
+    if (typeof window.normalizeHistoryRecord !== 'function') return false;
+
+    var existing = [];
+    for (var c = 0; c < reel.children.length; c++) {
+      var el = reel.children[c];
+      if (el.classList && el.classList.contains('reel-page-snap') && el.id && el.id.indexOf('feedSnapCard_') === 0) {
+        existing.push(el);
+      }
+    }
+    if (!existing.length) return false;
+
+    var byId = Object.create(null);
+    existing.forEach(function(card) { byId[card.id] = card; });
+
+    var anchor = null;
+    var anchorDelta = 0;
+    var viewTop = reel.scrollTop;
+    for (var a = 0; a < existing.length; a++) {
+      var card = existing[a];
+      if ((card.offsetTop + card.offsetHeight) > viewTop + 4) {
+        anchor = card;
+        anchorDelta = viewTop - card.offsetTop;
+        break;
+      }
+    }
+
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var frag = document.createDocumentFragment();
+    var freshNodes = [];
+    var used = Object.create(null);
+
+    for (var i = 0; i < currentList.length; i++) {
+      var rec = window.normalizeHistoryRecord(currentList[i], i);
+      var rawId = String(rec.id || i).replace(/^["']|["']$/g, '').trim();
+      var domId = 'feedSnapCard_' + rawId;
+      var domIdEsc = 'feedSnapCard_' + (typeof escapeHtml === 'function' ? escapeHtml(String(rec.id || i)) : rawId);
+      var node = byId[domId] || byId[domIdEsc];
+      if (node) {
+        used[node.id] = true;
+        frag.appendChild(node);
+      } else {
+        var holder = document.createElement('template');
+        holder.innerHTML = String(window.buildReelSingleSnapCardHtml(currentList[i], i, ctx) || '').trim();
+        var fresh = holder.content.firstElementChild;
+        if (!fresh) continue;
+        used[fresh.id] = true;
+        if (!reduceMotion) fresh.style.opacity = '0';
+        frag.appendChild(fresh);
+        freshNodes.push(fresh);
+      }
+    }
+
+    existing.forEach(function(card) {
+      if (!used[card.id] && card.parentNode) card.parentNode.removeChild(card);
+    });
+
+    var stale = [];
+    for (var s = 0; s < reel.children.length; s++) {
+      var child = reel.children[s];
+      if (child.classList && child.classList.contains('reel-page-snap')) stale.push(child);
+    }
+    stale.forEach(function(child) {
+      if (child.parentNode) child.parentNode.removeChild(child);
+    });
+
+    reel.appendChild(frag);
+
+    var ordered = [];
+    for (var o = 0; o < reel.children.length; o++) {
+      var child2 = reel.children[o];
+      if (child2.classList && child2.classList.contains('reel-page-snap')) ordered.push(child2);
+    }
+    ordered.forEach(function(cardEl, idx) {
+      cardEl.setAttribute('data-reel-idx', String(idx));
+    });
+
+    if (window.__okbmScrollRouterTop || viewTop < 8) {
+      window.__okbmScrollRouterTop = false;
+      reel.scrollTop = 0;
+    } else if (anchor && anchor.parentNode === reel) {
+      reel.scrollTop = Math.max(0, anchor.offsetTop + anchorDelta);
+    }
+
+    freshNodes.forEach(function(node) {
+      node.querySelectorAll('.reel-photo-target').forEach(function(img) {
+        if (typeof window.applySmartPhotoFit !== 'function') return;
+        if (img.complete) window.applySmartPhotoFit(img);
+        else img.addEventListener('load', function() { window.applySmartPhotoFit(img); }, { once: true });
+      });
+      if (!reduceMotion) {
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            node.style.transition = 'opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1)';
+            node.style.opacity = '1';
+          });
+        });
+      }
+    });
+
+    return true;
+  }
+
+window.renderHistoryStage = function(isLoading, opts) {
+    opts = opts || {};
+    var syncRefresh = !!opts.sync;
     var modal = document.getElementById('romanticHistoryModal');
     if (!modal) return;
 
@@ -8234,6 +8342,27 @@ window.renderHistoryStage = function(isLoading) {
             return;
           }
         }
+      }
+    }
+
+    if (syncRefresh && currentList.length > 0) {
+      var syncCtx = {
+        myUserId: myUserId,
+        savedNick: savedNick,
+        starsMap: starsMap,
+        starCounts: starCounts,
+        savedFeedsList: savedFeedsList,
+        isLogged: isLogged
+      };
+      if (okbmSyncHistoryReelInPlace(currentList, syncCtx)) {
+        okbmPatchHistoryFeedRows(currentList, starsMap, starCounts, savedFeedsList, myUserId, savedNick);
+        if (typeof window.ensureMasterBottomDock === 'function') {
+          window.ensureMasterBottomDock('history');
+        }
+        if (typeof window.okbmBindReelFeedObserver === 'function') {
+          window.okbmBindReelFeedObserver();
+        }
+        return;
       }
     }
 
@@ -8601,7 +8730,7 @@ window.renderHistoryStage = function(isLoading) {
       if (!window.__okbmHistoryModalOpen) return;
       if (feeds == null) return;
       if (typeof window.renderHistoryStage === 'function') {
-        window.renderHistoryStage();
+        window.renderHistoryStage(false, { sync: true });
       }
     });
 
