@@ -6003,8 +6003,8 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       for (var d = 0; d < dots.length; d++) {
         if (d === curIdx) {
           dots[d].style.width = '14px';
-          dots[d].style.background = '#38bdf8';
-          dots[d].style.boxShadow = '0 0 8px rgba(56,189,248,0.8)';
+          dots[d].style.background = '#ffffff';
+          dots[d].style.boxShadow = 'none';
         } else {
           dots[d].style.width = '5px';
           dots[d].style.background = 'rgba(255,255,255,0.3)';
@@ -6020,9 +6020,9 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var n = Number(len) || 0;
     charCounter.innerText = n + '/120자';
     if (window.__tempMemoMode === 'single') {
-      charCounter.style.color = (n >= 30 && n <= 120) ? '#34d399' : '#38bdf8';
+      charCounter.style.color = (n >= 30 && n <= 120) ? '#34d399' : '#ffffff';
     } else {
-      charCounter.style.color = '#38bdf8';
+      charCounter.style.color = '#ffffff';
     }
   };
 
@@ -6106,8 +6106,8 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
       if (window.__touchTargetThumbEl) {
         window.__touchTargetThumbEl.style.transform = 'scale(1.15)';
-        window.__touchTargetThumbEl.style.borderColor = '#38bdf8';
-        window.__touchTargetThumbEl.style.boxShadow = '0 0 16px rgba(56,189,248,0.9)';
+        window.__touchTargetThumbEl.style.borderColor = '#ffffff';
+        window.__touchTargetThumbEl.style.boxShadow = 'none';
         window.__touchTargetThumbEl.style.zIndex = '99';
       }
     }, 300);
@@ -6134,8 +6134,8 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     thumbNodes.forEach(function(node) {
       var nIdx = parseInt(node.dataset.thumbIdx, 10);
       var isCur = (nIdx === targetIdx);
-      node.style.border = isCur ? '2.5px solid #38bdf8' : '1px solid rgba(255,255,255,0.18)';
-      node.style.boxShadow = isCur ? '0 0 12px rgba(56,189,248,0.85)' : 'none';
+      node.style.border = isCur ? '2.5px solid #ffffff' : '1px solid rgba(255,255,255,0.18)';
+      node.style.boxShadow = 'none';
       node.style.transform = isCur ? 'scale(1.08)' : 'scale(1)';
       node.style.opacity = isCur ? '1' : '0.65';
       node.style.zIndex = isCur ? '3' : '1';
@@ -6249,11 +6249,11 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     if (count === 0) {
       stageContainer.innerHTML = `
-        <div onclick="document.getElementById('richMultiPhotoInput').click();" style="width:100%; aspect-ratio:3/4; max-height:420px; border:1.5px dashed rgba(56,189,248,0.35); border-radius:14px; background:radial-gradient(circle at 50% 40%, #0e1726 0%, #06090e 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-sizing:border-box;">
-          <div style="width:52px; height:52px; border-radius:50%; background:rgba(56,189,248,0.12); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
+        <div onclick="document.getElementById('richMultiPhotoInput').click();" style="width:100%; aspect-ratio:3/4; max-height:420px; border:1.5px dashed rgba(255,255,255,0.28); border-radius:14px; background:radial-gradient(circle at 50% 40%, #141414 0%, #06090e 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-sizing:border-box;">
+          <div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; color:#ffffff;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </div>
-          <span style="font-size:0.90rem; font-weight:900; color:#38bdf8; letter-spacing:-0.02em;">현장 사진 추가하기</span>
+          <span style="font-size:0.90rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">현장 사진 추가하기</span>
         </div>
       `;
     } else {
@@ -6273,7 +6273,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       var dragThumbsHtml = photos.map(function(tUrl, tIdx) {
         var isCurrentView = (window.__currentSwipePhotoIndex === tIdx);
         var activeBorderStyle = isCurrentView
-          ? 'border:2.5px solid #38bdf8; box-shadow:0 0 12px rgba(56,189,248,0.85); transform:scale(1.08); z-index:3;'
+          ? 'border:2.5px solid #ffffff; box-shadow:none; transform:scale(1.08); z-index:3;'
           : 'border:1px solid rgba(255,255,255,0.18); opacity:0.65;';
 
         return `
@@ -6301,8 +6301,8 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
             ${slidesHtml}
           </div>
           ${count < 10 ? `
-            <button type="button" onclick="document.getElementById('richMultiPhotoInput').click();" style="position:absolute; bottom:12px; right:12px; z-index:10; background:#0c1017; border:1px solid rgba(56,189,248,0.5); color:#38bdf8; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer; display:flex; align-items:center; gap:4px;">
-              <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#38bdf8; fill:none; stroke-width:2.5;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <button type="button" onclick="document.getElementById('richMultiPhotoInput').click();" style="position:absolute; bottom:12px; right:12px; z-index:10; background:#0c1017; border:1px solid rgba(255,255,255,0.35); color:#ffffff; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+              <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#ffffff; fill:none; stroke-width:2.5;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>사진추가</span>
             </button>
           ` : ''}
@@ -6849,7 +6849,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
       if (btnSingle && btnPerPhoto) {
         if (mode === 'single') {
-          btnSingle.style.background = '#38bdf8';
+          btnSingle.style.background = '#ffffff';
           btnSingle.style.color = '#000000';
           btnSingle.style.fontWeight = '900';
           btnPerPhoto.style.background = 'transparent';
@@ -6859,7 +6859,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
           if (memoInput) memoInput.value = window.__tempSingleMemo;
           window.__paintRichMemoCounter((window.__tempSingleMemo || '').length);
         } else {
-          btnPerPhoto.style.background = '#38bdf8';
+          btnPerPhoto.style.background = '#ffffff';
           btnPerPhoto.style.color = '#000000';
           btnPerPhoto.style.fontWeight = '900';
           btnSingle.style.background = 'transparent';
@@ -6889,8 +6889,8 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
           <span style="font-size:0.65rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; flex-shrink:0;">· ${escapeHtml(record.date)}</span>
         </div>
 
-        <button type="button" id="btnSubmitRichTrip" data-record-id="${escapeHtml(String(record.id))}" style="white-space:nowrap !important; flex-shrink:0 !important; background:linear-gradient(135deg, #0284c7, #0369a1); border:none; color:#ffffff; font-size:0.78rem; font-weight:900; height:32px; padding:0 12px; border-radius:8px; cursor:pointer; box-shadow:0 2px 8px rgba(2,132,199,0.4); display:inline-flex; align-items:center; justify-content:center; gap:3px;">
-          <svg viewBox="0 0 24 24" style="width:13px; height:13px; flex-shrink:0;" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <button type="button" id="btnSubmitRichTrip" data-record-id="${escapeHtml(String(record.id))}" style="white-space:nowrap !important; flex-shrink:0 !important; background:#ffffff; border:none; color:#000000; font-size:0.78rem; font-weight:900; height:32px; padding:0 12px; border-radius:8px; cursor:pointer; box-shadow:none; display:inline-flex; align-items:center; justify-content:center; gap:3px;">
+          <svg viewBox="0 0 24 24" style="width:13px; height:13px; flex-shrink:0;" fill="none" stroke="#000000" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           <span>저장</span>
         </button>
       </div>
@@ -6905,12 +6905,8 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
               <span id="richPhotoCountLabel" style="font-size:0.82rem; color:#ffffff; font-weight:900;">
                 등록된 사진 (${window.__tempUploadedPhotos.length}장 / 최대 ${maxPhotoLimit}장)
               </span>
-              <span id="richPhotoActiveIndexBadge" style="font-size:0.62rem; color:#38bdf8; background:rgba(56,189,248,0.14); padding:1px 6px; border-radius:10px; font-weight:900; font-family:'Space Grotesk', sans-serif;">1 / 1</span>
+              <span id="richPhotoActiveIndexBadge" style="font-size:0.62rem; color:#ffffff; background:rgba(255,255,255,0.12); padding:1px 6px; border-radius:10px; font-weight:900; font-family:'Space Grotesk', sans-serif;">1 / 1</span>
             </div>
-            <button type="button" data-record-id="${escapeHtml(String(record.id))}" onclick="window.__deleteCurrentRichTrip(this.dataset.recordId);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); color:#fda4af; font-size:0.68rem; font-weight:800; padding:3px 8px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:3px;">
-              <svg viewBox="0 0 24 24" style="width:11px; height:11px; stroke:currentColor; fill:none; stroke-width:2.2;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              <span>일지삭제</span>
-            </button>
           </div>
 
           <div id="richLargePhotoStageContainer" class="rich-photo-stage" style="width:100%; min-width:0; max-width:100%; display:flex; flex-direction:column; align-items:stretch;">
@@ -6922,10 +6918,10 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         <div style="display:flex; flex-direction:column; gap:6px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; gap:3px; background:rgba(255,255,255,0.06); padding:2px; border-radius:8px; border:1px solid rgba(255,255,255,0.12);">
-              <button type="button" id="btnMemoModeSingle" onclick="window.__switchMemoMode('single');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:${window.__tempMemoMode==='single'?'#38bdf8':'transparent'}; color:${window.__tempMemoMode==='single'?'#000000':'#94a3b8'}; font-weight:${window.__tempMemoMode==='single'?'900':'700'}; transition:all 0.15s ease;">한 번에 쓰기</button>
-              <button type="button" id="btnMemoModePerPhoto" onclick="window.__switchMemoMode('per_photo');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:${window.__tempMemoMode==='per_photo'?'#38bdf8':'transparent'}; color:${window.__tempMemoMode==='per_photo'?'#000000':'#94a3b8'}; font-weight:${window.__tempMemoMode==='per_photo'?'900':'700'}; transition:all 0.15s ease;">사진별 쓰기</button>
+              <button type="button" id="btnMemoModeSingle" onclick="window.__switchMemoMode('single');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:${window.__tempMemoMode==='single'?'#ffffff':'transparent'}; color:${window.__tempMemoMode==='single'?'#000000':'#94a3b8'}; font-weight:${window.__tempMemoMode==='single'?'900':'700'}; transition:all 0.15s ease;">한 번에 쓰기</button>
+              <button type="button" id="btnMemoModePerPhoto" onclick="window.__switchMemoMode('per_photo');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:${window.__tempMemoMode==='per_photo'?'#ffffff':'transparent'}; color:${window.__tempMemoMode==='per_photo'?'#000000':'#94a3b8'}; font-weight:${window.__tempMemoMode==='per_photo'?'900':'700'}; transition:all 0.15s ease;">사진별 쓰기</button>
             </div>
-            <span id="richMemoCharCounter" style="font-size:0.70rem; color:#38bdf8; font-family:'Space Grotesk', sans-serif; font-weight:800;">0/120자</span>
+            <span id="richMemoCharCounter" style="font-size:0.70rem; color:#ffffff; font-family:'Space Grotesk', sans-serif; font-weight:800;">0/120자</span>
           </div>
           <div id="richMemoModeHelperLabel" style="font-size:0.62rem; color:#64748b; margin-top:-2px;">
             ${window.__tempMemoMode==='single' ? '대표 일지 30자 이상, 최대 120자' : '사진별 메모는 선택, 최대 120자'}
