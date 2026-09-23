@@ -2,15 +2,15 @@
   "version_file": "gears_master.json",
   "categories": {
     "shelter": {
-      "count": 1189,
+      "count": 1181,
       "file": "gears/shelter.json"
     },
     "sleep": {
-      "count": 424,
+      "count": 427,
       "file": "gears/sleep.json"
     },
     "pack": {
-      "count": 205,
+      "count": 207,
       "file": "gears/pack.json"
     },
     "food": {
@@ -18,15 +18,15 @@
       "file": "gears/food.json"
     },
     "kitchen": {
-      "count": 344,
+      "count": 345,
       "file": "gears/kitchen.json"
     },
     "wear": {
-      "count": 51,
+      "count": 44,
       "file": "gears/wear.json"
     },
     "electronics": {
-      "count": 89,
+      "count": 93,
       "file": "gears/electronics.json"
     },
     "camp": {
@@ -34,7 +34,7 @@
       "file": "gears/camp.json"
     },
     "other": {
-      "count": 60,
+      "count": 65,
       "file": "gears/other.json"
     }
   }

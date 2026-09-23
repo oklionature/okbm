@@ -1234,7 +1234,23 @@
       });
     }
 
-    // 같은 날짜만으로 기존 기록을 덮어쓰지 않음. id가 다를 때는 새 일지로 저장.
+    // 같은 id 수정은 그대로. 새 id로 저장할 때만 같은 날짜 기존 피드를 지우고 1건으로 교체.
+    var resolveRecDateKey = function(rec) {
+      if (typeof window.okbmGetRecordPlanDateKey === 'function') {
+        return window.okbmGetRecordPlanDateKey(rec) || '';
+      }
+      if (!rec) return '';
+      if (rec.date || rec.tripDate || rec.trip_date) {
+        return String(rec.date || rec.tripDate || rec.trip_date).replace(/[-/]/g, '.');
+      }
+      var y = Number(rec.year);
+      var m = Number(rec.month);
+      var d = Number(rec.day);
+      if (y && m && d) {
+        return y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0');
+      }
+      return '';
+    };
 
     if (existIdx !== -1) {
       normalized.id = list[existIdx].id;
@@ -1257,6 +1273,64 @@
       } else {
         normalized.id = targetId;
       }
+
+      var saveDateKey = resolveRecDateKey(normalized);
+      if (saveDateKey) {
+        var sameDateIdSet = {};
+        var collectSameDateId = function(it) {
+          if (!it || resolveRecDateKey(it) !== saveDateKey) return;
+          var sid = String(it.id || '').trim();
+          if (!sid || sid === String(normalized.id).trim()) return;
+          sameDateIdSet[sid] = true;
+        };
+        list.forEach(collectSameDateId);
+        [].concat(window.interactiveHistory || [], window.__allLoadedFeeds || [], window.heroTopRecords || []).forEach(collectSameDateId);
+
+        var sameDateIds = Object.keys(sameDateIdSet);
+        if (sameDateIds.length > 0) {
+          if (typeof showToast === 'function') {
+            showToast('기존 피드는 삭제 됩니다.', 'info', 2800);
+          }
+
+          var isLocalOnlyFeedId = function(id) {
+            var s = String(id || '');
+            return s.indexOf('pack_') === 0 || s.indexOf('local_') === 0;
+          };
+          var serverSameDateIds = sameDateIds.filter(function(id) { return !isLocalOnlyFeedId(id); });
+          var replaceTargetUrl = window.SUPABASE_URL || '';
+          var replaceTargetKey = window.SUPABASE_ANON_KEY || '';
+          if (serverSameDateIds.length > 0 && replaceTargetUrl && replaceTargetKey) {
+            try {
+              var replaceHeaders = (typeof window.okbmWriteHeaders === 'function')
+                ? window.okbmWriteHeaders({ Prefer: 'return=representation' })
+                : null;
+              if (replaceHeaders) {
+                var inClause = 'in.(' + serverSameDateIds.map(encodeURIComponent).join(',') + ')';
+                await fetch(replaceTargetUrl + '/rest/v1/feeds?id=' + inClause, {
+                  method: 'DELETE',
+                  headers: replaceHeaders
+                });
+              }
+            } catch (replaceDelErr) {
+              console.warn('[romantic-history.js:savePackingHistoryRecord sameDateReplace]', replaceDelErr);
+            }
+          }
+
+          var keepIfNotSameDate = function(r) {
+            if (!r) return false;
+            var rid = String(r.id || '').trim();
+            return !rid || !sameDateIdSet[rid];
+          };
+          list = list.filter(keepIfNotSameDate);
+          if (Array.isArray(window.__allLoadedFeeds)) {
+            window.__allLoadedFeeds = window.__allLoadedFeeds.filter(keepIfNotSameDate);
+          }
+          if (Array.isArray(window.heroTopRecords)) {
+            window.heroTopRecords = window.heroTopRecords.filter(keepIfNotSameDate);
+          }
+        }
+      }
+
       list.unshift(normalized);
     }
 
