@@ -324,7 +324,7 @@
     food:        { color: '#f97316', label: '음식',     bg: 'rgba(249,115,22,0.08)',  border: 'rgba(249,115,22,0.25)' },
     kitchen:     { color: '#84cc16', label: '취사',     bg: 'rgba(132,204,22,0.08)',  border: 'rgba(132,204,22,0.25)' },
     wear:        { color: '#a855f7', label: '의류',     bg: 'rgba(168,85,247,0.08)',  border: 'rgba(168,85,247,0.25)' },
-    electronics: { color: '#eab308', label: '기기·소품', bg: 'rgba(234,179,8,0.08)',   border: 'rgba(234,179,8,0.25)' },
+    electronics: { color: '#eab308', label: '전자·조명', bg: 'rgba(234,179,8,0.08)',   border: 'rgba(234,179,8,0.25)' },
     camp:        { color: '#06b6d4', label: '테이블·체어',bg: 'rgba(6,182,212,0.08)',  border: 'rgba(6,182,212,0.25)' },
     other:       { color: '#94a3b8', label: '기타·소품', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.25)' }
   };
@@ -348,6 +348,7 @@
       '취사': 'kitchen',
       '의류': 'wear',
       '기기': 'electronics', '기기·소품': 'electronics', '기기 · 소품': 'electronics',
+      '전자': 'electronics', '전자 조명': 'electronics', '전자·조명': 'electronics', '전자 · 조명': 'electronics', '전자소품': 'electronics', '전자 소품': 'electronics', '전자·소품': 'electronics',
       '테이블': 'camp', '체어': 'camp', '테이블·체어': 'camp', '테이블 · 체어': 'camp',
       '기타': 'other', '기타·소품': 'other', '기타 · 소품': 'other'
     };
@@ -535,7 +536,7 @@
     },
     {
       id: 'electronics',
-      title: '기기 · 소품',
+      title: '전자 · 조명',
       icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#facc15; stroke-width:2.2;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
       db: []
     },
@@ -1198,7 +1199,7 @@
         { id: 'food', title: '음식' },
         { id: 'kitchen', title: '취사' },
         { id: 'wear', title: '의류' },
-        { id: 'electronics', title: '기기·소품' },
+        { id: 'electronics', title: '전자·조명' },
         { id: 'camp', title: '테이블·체어' },
         { id: 'other', title: '기타·소품' }
       ];
@@ -4392,7 +4393,7 @@ window.saveCurrentPackingRecord = function() {
       { id: 'food', label: '음식' },
       { id: 'kitchen', label: '취사' },
       { id: 'wear', label: '의류' },
-      { id: 'electronics', label: '기기·소품' },
+      { id: 'electronics', label: '전자·조명' },
       { id: 'camp', label: '테이블·체어' },
       { id: 'other', label: '기타·소품' }
     ];
