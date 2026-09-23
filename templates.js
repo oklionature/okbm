@@ -1820,17 +1820,9 @@ function decodeReadyShotImage(url) {
       return;
     }
     var img = new Image();
-    var done = function(ok) {
-      resolve(!!ok);
-    };
-    img.onload = function() {
-      if (typeof img.decode === 'function') {
-        img.decode().then(function() { done(true); }).catch(function() { done(true); });
-      } else {
-        done(true);
-      }
-    };
-    img.onerror = function() { done(false); };
+    // onload만 기다린다. img.decode() 이중 대기는 WebView에서만 체감을 늘린다.
+    img.onload = function() { resolve(true); };
+    img.onerror = function() { resolve(false); };
     img.src = src;
   });
 }
@@ -1854,7 +1846,7 @@ function commitReadyShotHttpsUrl(url) {
 
 function persistReadyShotPhotoNow(url) {
   var photoUrl = String(url || '').trim();
-  if (photoUrl.indexOf('https://') !== 0) return;
+  if (photoUrl.indexOf('https://') !== 0) return null;
   var rec = (window.currentShareRecord && typeof window.currentShareRecord.then !== 'function')
     ? window.currentShareRecord
     : {};
@@ -1869,12 +1861,18 @@ function persistReadyShotPhotoNow(url) {
   if (Array.isArray(window.currentShareItems) && window.currentShareItems.length) {
     rec.items = window.currentShareItems;
   }
-  if (window.__isSavingCardLock) return;
+  if (window.__isSavingCardLock) return null;
   if (typeof window.savePackingHistoryRecord === 'function') {
-    window.savePackingHistoryRecord(rec).catch(function(err) {
+    var p = window.savePackingHistoryRecord(rec);
+    window.__readyShotPersistPromise = p;
+    p.catch(function(err) {
       console.warn('[templates.js:persistReadyShotPhotoNow]', err);
+    }).then(function() {
+      if (window.__readyShotPersistPromise === p) window.__readyShotPersistPromise = null;
     });
+    return p;
   }
+  return null;
 }
 // 🎨 [내장 SVG 아이콘 팩 - 참조 에러 원천 방지]
 SVG_ICONS = window.SVG_ICONS || {
@@ -3778,8 +3776,16 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       newRecord.isPublished = true;
     }
 
+    // 업로드 직후 persist와 같은 id로 합쳐지도록 공유 레코드 id를 맞춘다.
+    if (window.currentShareRecord && typeof window.currentShareRecord.then !== 'function') {
+      window.currentShareRecord.id = newRecord.id;
+      window.currentShareRecord.readyShotPhoto = finalReadyShot || window.currentShareRecord.readyShotPhoto;
+      window.currentShareRecord.ready_shot_photo = window.currentShareRecord.readyShotPhoto;
+    }
+
     var savedRec = null;
     if (typeof window.savePackingHistoryRecord === 'function') {
+      // 같은 id의 대기 중 persist가 있으면 최신 newRecord로 덮어쓰고 서버에는 한 번만 보낸다.
       savedRec = await window.savePackingHistoryRecord(newRecord);
     }
     if (savedRec && savedRec.__serverSaveFailed) {
@@ -3789,6 +3795,7 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       return;
     }
 
+    window.__readyShotPersistPromise = null;
     window.__studioMultiPhotos = null;
 
     if (typeof window.openHistoryModal === 'function') window.openHistoryModal();

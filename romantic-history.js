@@ -1438,10 +1438,28 @@
   };
 
   window.savePackingHistoryRecord = function(record) {
+    var id = String((record && record.id) || '').trim() || '__noid__';
+    window.__packingSaveTail = window.__packingSaveTail || {};
+
+    // 같은 id로 아직 본문이 시작되지 않은 저장이 있으면 최신 레코드로 덮어쓰고 한 번만 보낸다.
+    var existing = window.__packingSaveTail[id];
+    if (existing && existing.pending) {
+      existing.record = record;
+      return existing.promise;
+    }
+
+    var slot = { record: record, pending: true };
     var prev = window.__packingSaveChain || Promise.resolve();
     var next = prev.catch(function() {}).then(function() {
-      return window.__savePackingHistoryRecordBody(record);
+      slot.pending = false;
+      var latest = slot.record;
+      if (window.__packingSaveTail[id] === slot) {
+        delete window.__packingSaveTail[id];
+      }
+      return window.__savePackingHistoryRecordBody(latest);
     });
+    slot.promise = next;
+    window.__packingSaveTail[id] = slot;
     window.__packingSaveChain = next;
     return next;
   };

@@ -6020,22 +6020,24 @@ var adBannersHtml = `
 
       async function fromBitmap(bitmap) {
         var d = fitDims(bitmap.width, bitmap.height);
-        if (d.w !== bitmap.width || d.h !== bitmap.height) {
-          try {
-            var resized = await createImageBitmap(bitmap, {
-              resizeWidth: d.w,
-              resizeHeight: d.h,
-              resizeQuality: 'medium'
-            });
-            if (typeof bitmap.close === 'function') {
-              try { bitmap.close(); } catch (e1) {}
-            }
-            return encodeBitmapToJpeg(resized, d.w, d.h);
-          } catch (eResize) {
-            return encodeBitmapToJpeg(bitmap, d.w, d.h);
-          }
+        // 이미 긴 변이 maxDim 이하면 추가 createImageBitmap 없이 JPEG만 인코딩
+        if (d.w === bitmap.width && d.h === bitmap.height) {
+          return encodeBitmapToJpeg(bitmap, d.w, d.h);
         }
-        return encodeBitmapToJpeg(bitmap, d.w, d.h);
+        // 축소 디코드가 실패한 기기만 여기서 한 번 더 줄인다
+        try {
+          var resized = await createImageBitmap(bitmap, {
+            resizeWidth: d.w,
+            resizeHeight: d.h,
+            resizeQuality: 'medium'
+          });
+          if (typeof bitmap.close === 'function') {
+            try { bitmap.close(); } catch (e1) {}
+          }
+          return encodeBitmapToJpeg(resized, d.w, d.h);
+        } catch (eResize) {
+          return encodeBitmapToJpeg(bitmap, d.w, d.h);
+        }
       }
 
       function fromImageElement(img) {
@@ -6146,7 +6148,7 @@ var adBannersHtml = `
             dh = size.w;
           }
           if (Math.max(dw, dh) > maxDim) {
-            var opts = { imageOrientation: 'from-image', resizeQuality: 'high' };
+            var opts = { imageOrientation: 'from-image', resizeQuality: 'medium' };
             if (dw >= dh) opts.resizeWidth = maxDim;
             else opts.resizeHeight = maxDim;
             try { return await createImageBitmap(f, opts); } catch (eOpt) {}
@@ -6156,7 +6158,7 @@ var adBannersHtml = `
             return await createImageBitmap(f, {
               imageOrientation: 'from-image',
               resizeWidth: maxDim,
-              resizeQuality: 'high'
+              resizeQuality: 'medium'
             });
           } catch (eGuess) {}
         }
