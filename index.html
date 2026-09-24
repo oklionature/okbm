@@ -3129,10 +3129,6 @@
 
       var spotName = matchedFeed ? (matchedFeed.spot || matchedFeed.spotName) : (matchedSpot.name || matchedSpot.spot_main || '장소');
       var cleanMapSpotName = String(spotName).replace(/\s*\(.*?\)/g, '').trim();
-      var region = matchedSpot ? (matchedSpot.region || matchedSpot.cityName || '전국') : '전국';
-      var elev = (matchedFeed && matchedFeed.elevation) 
-        ? (String(matchedFeed.elevation).includes('m') ? matchedFeed.elevation : matchedFeed.elevation + 'm')
-        : (matchedSpot && matchedSpot.elevation ? (String(matchedSpot.elevation).includes('m') ? matchedSpot.elevation : matchedSpot.elevation + 'm') : 'FIELD');
       var desc = (matchedFeed && (matchedFeed.memo || matchedFeed.oneLineMemo))
         ? (matchedFeed.memo || matchedFeed.oneLineMemo)
         : (matchedSpot ? (matchedSpot.desc || matchedSpot.desc_summary || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.') : '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.');
@@ -3220,10 +3216,6 @@
               ${dotsHtml}
 
               <div style="position:absolute; bottom:22px; left:0; right:0; padding:0 14px; z-index:20; pointer-events:none; display:flex; flex-direction:column; gap:2px;">
-                <span style="font-size:0.68rem; color:#38bdf8; font-weight:800; display:flex; align-items:center; gap:3px;">
-                  <svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  <span>${escapeHtml(region)} · ${escapeHtml(elev)} · ${escapeHtml(author)}</span>
-                </span>
                 <div style="font-size:1.15rem; font-weight:900; color:#ffffff; text-shadow:0 2px 8px rgba(0,0,0,0.9);">${escapeHtml(spotName)}</div>
               </div>
             </div>
