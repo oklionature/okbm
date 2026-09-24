@@ -6478,7 +6478,23 @@ window.commitPlanDestination = async function(dateKey) {
     modal.style.setProperty('z-index', '1000005', 'important');
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
-    document.body.classList.add('plan-modal-open');
+    var pageRoot = document.documentElement;
+    var pageEntering = pageRoot.classList.contains('okbm-page-enter') && !pageRoot.classList.contains('okbm-page-enter-go');
+    if (pageEntering) {
+      document.body.classList.add('plan-modal-open');
+    } else {
+      modal.classList.add('okbm-plan-reveal');
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          modal.classList.add('is-in');
+        });
+      });
+      setTimeout(function() {
+        if (document.getElementById('romanticPlanModal')) {
+          document.body.classList.add('plan-modal-open');
+        }
+      }, 320);
+    }
     if (typeof window.okbmStartNotifPoll === 'function') window.okbmStartNotifPoll();
 
     if (typeof window.ensureMasterBottomDock === 'function') {
@@ -6497,7 +6513,30 @@ window.commitPlanDestination = async function(dateKey) {
     triggerHaptic(10);
   };
 
-  window.closePlanModal = function() {
+  window.closePlanModal = function(opts) {
+    opts = opts || {};
+    var modal = document.getElementById('romanticPlanModal');
+    if (modal && modal.classList.contains('is-closing') && !opts.immediate) return;
+    if (modal && !opts.immediate && !window.__okbmPageLeaving && !modal.classList.contains('is-closing')) {
+      if (typeof window.okbmCleanupModalWatchers === 'function') {
+        window.okbmCleanupModalWatchers();
+      }
+      var memoEarly = document.getElementById('planDailyMemoInput');
+      if (memoEarly && typeof window.autoSavePlanMemo === 'function') {
+        var memoDateEarly = window.activeSelectedDateKey || '';
+        var skipKeyEarly = window.__okbmSkipPlanMemoAutosaveFor || '';
+        var normMemoEarly = (typeof window.okbmNormalizePlanDateKey === 'function')
+          ? window.okbmNormalizePlanDateKey(memoDateEarly)
+          : String(memoDateEarly).replace(/[-/]/g, '.');
+        if (memoDateEarly && normMemoEarly !== skipKeyEarly) {
+          window.autoSavePlanMemo(memoDateEarly, memoEarly.value);
+        }
+      }
+      document.body.classList.remove('plan-modal-open');
+      modal.classList.add('is-closing');
+      setTimeout(function() { window.closePlanModal({ immediate: true }); }, 200);
+      return;
+    }
     if (typeof window.okbmCleanupModalWatchers === 'function') {
       window.okbmCleanupModalWatchers();
     }

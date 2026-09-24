@@ -7714,6 +7714,71 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     }
   };
 
+  var VAULT_BOOT_FRESH_MS = 120000;
+
+  window.okbmPrefetchVaultFeeds = function() {
+    if (window.__okbmVaultBootPromise) return window.__okbmVaultBootPromise;
+    var path = (typeof window.location !== 'undefined' && window.location.pathname) ? window.location.pathname : '';
+    if (path.indexOf('map.html') !== -1) return Promise.resolve(null);
+    window.__okbmVaultBootState = 'pending';
+    window.__okbmVaultBootPromise = (async function() {
+      try {
+        if (typeof window.okbmEnsureUgcSafetyFromServer === 'function') {
+          try { await window.okbmEnsureUgcSafetyFromServer(); } catch (eSafe) {}
+        }
+        var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
+        var targetKey = window.SUPABASE_ANON_KEY || '';
+        if (!targetUrl || !targetKey) {
+          window.__okbmVaultBootState = 'failed';
+          return null;
+        }
+        var headers = (typeof window.okbmPublicRestHeaders === 'function')
+          ? window.okbmPublicRestHeaders()
+          : {
+            'apikey': targetKey,
+            'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + targetKey)),
+            'Content-Type': 'application/json'
+          };
+        var profile = safeGetJSON('user_profile', null);
+        var currentUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+        var projectionColumns = 'id,user_id,author,author_photo,spot,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+        var filterParam = currentUserId
+          ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
+          : '&is_published=eq.true';
+        var queryUrl = targetUrl + '/rest/v1/feeds?select=' + projectionColumns + filterParam + '&order=created_at.desc&offset=0&limit=10';
+        var res = await ((typeof window.okbmPublicFetch === 'function')
+          ? window.okbmPublicFetch(queryUrl, { headers: headers })
+          : fetch(queryUrl, { headers: headers }));
+        if (!res || !res.ok) {
+          window.__okbmVaultBootState = 'failed';
+          return null;
+        }
+        var rows = await res.json();
+        if (!Array.isArray(rows)) rows = [];
+        rows = rows.filter(function(row) {
+          if (!row) return false;
+          var rowUserId = String(row.user_id || row.userId || '').trim();
+          var isOwner = (currentUserId && rowUserId && currentUserId === rowUserId);
+          if (isOwner) return true;
+          if (window.okbmIsExplicitlyPrivate && window.okbmIsExplicitlyPrivate(row)) return false;
+          return true;
+        });
+        window.__okbmVaultBootFeeds = rows;
+        window.__okbmVaultBootAt = Date.now();
+        window.__okbmVaultBootState = 'server';
+        return rows;
+      } catch (eBoot) {
+        window.__okbmVaultBootState = 'failed';
+        return null;
+      }
+    })();
+    return window.__okbmVaultBootPromise;
+  };
+
+  if (typeof window.location === 'undefined' || String(window.location.pathname || '').indexOf('map.html') === -1) {
+    window.okbmPrefetchVaultFeeds();
+  }
+
   window.fetchMoreCommunityFeeds = async function() {
     if (!window.__okbmHistoryModalOpen) return;
     if (window.__isFetchingMoreFeeds || window.__feedHasMore === false) return;
@@ -9151,17 +9216,15 @@ window.renderHistoryStage = function(isLoading, opts) {
       window.okbmBindOverlayViewportFit(modal, { reserveDock: true });
     }
 
-    var feedRefBeforeOpen = window.__allLoadedFeeds;
-    window.fetchCommunityFeeds(true).then(function(feeds) {
+    var paintVaultFromList = function(list, fromServer) {
       var liveModal = document.getElementById('romanticHistoryModal');
       var liveContent = liveModal ? liveModal.querySelector('.romantic-history-content') : null;
       if (!window.__okbmHistoryModalOpen) return;
-      if (feeds == null) {
-        if (liveContent) liveContent.style.visibility = '';
-        return;
-      }
-      var serverOk = Array.isArray(feeds) && feeds === window.__allLoadedFeeds && feeds !== feedRefBeforeOpen;
-      if (!serverOk) {
+      if (fromServer) {
+        window.__allLoadedFeeds = Array.isArray(list) ? list : [];
+        window.__feedPaginationOffset = window.__allLoadedFeeds.length;
+        window.__feedHasMore = window.__allLoadedFeeds.length >= 10;
+      } else {
         var cachedFeeds = [];
         try {
           cachedFeeds = (typeof safeGetJSON === 'function') ? (safeGetJSON('okbm_cached_community_feeds', []) || []) : [];
@@ -9175,7 +9238,44 @@ window.renderHistoryStage = function(isLoading, opts) {
       var reel = document.getElementById('reelsVerticalContainer');
       if (reel) reel.scrollTop = 0;
       if (liveContent) liveContent.style.visibility = '';
-    });
+    };
+
+    var loadVaultFromNetwork = function() {
+      var feedRefBeforeOpen = window.__allLoadedFeeds;
+      window.fetchCommunityFeeds(true).then(function(feeds) {
+        var liveModal = document.getElementById('romanticHistoryModal');
+        var liveContent = liveModal ? liveModal.querySelector('.romantic-history-content') : null;
+        if (!window.__okbmHistoryModalOpen) return;
+        if (feeds == null) {
+          if (liveContent) liveContent.style.visibility = '';
+          return;
+        }
+        var serverOk = Array.isArray(feeds) && feeds === window.__allLoadedFeeds && feeds !== feedRefBeforeOpen;
+        paintVaultFromList(serverOk ? feeds : null, serverOk);
+      });
+    };
+
+    var bootFresh = window.__okbmVaultBootState === 'server'
+      && window.__okbmVaultBootAt
+      && (Date.now() - window.__okbmVaultBootAt) < VAULT_BOOT_FRESH_MS
+      && !window.__okbmVaultBootConsumed
+      && Array.isArray(window.__okbmVaultBootFeeds);
+    if (bootFresh) {
+      window.__okbmVaultBootConsumed = true;
+      paintVaultFromList(window.__okbmVaultBootFeeds, true);
+    } else if (window.__okbmVaultBootPromise && window.__okbmVaultBootState === 'pending' && !window.__okbmVaultBootConsumed) {
+      window.__okbmVaultBootConsumed = true;
+      window.__okbmVaultBootPromise.then(function(rows) {
+        if (!window.__okbmHistoryModalOpen) return;
+        if (window.__okbmVaultBootState === 'server' && Array.isArray(rows)) {
+          paintVaultFromList(rows, true);
+          return;
+        }
+        loadVaultFromNetwork();
+      });
+    } else {
+      loadVaultFromNetwork();
+    }
 
     triggerHaptic(10);
   };

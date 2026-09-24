@@ -6237,20 +6237,16 @@ window.navigateToDockTab = function(tabId) {
 
   // 3. 5대 탭별 정밀 라우팅 (현 위치 스크롤 카메라 100% 유지)
   if (tabId === 'router' || tabId === 'route') {
-    if (typeof closePlanModal === 'function') closePlanModal();
-    if (typeof closeHistoryModal === 'function') closeHistoryModal();
-    if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
-    
     if (isMap) {
       if (typeof window.smoothNavigate === 'function') window.smoothNavigate('index.html');
       else window.location.assign('index.html');
       return;
     }
-    // 🎯 홈 화면에서는 위로 튕기지 않고 내가 보던 그 자리 그대로 편안하게 유지
-  } else if (tabId === 'map') {
     if (typeof closePlanModal === 'function') closePlanModal();
     if (typeof closeHistoryModal === 'function') closeHistoryModal();
     if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
+    // 🎯 홈 화면에서는 위로 튕기지 않고 내가 보던 그 자리 그대로 편안하게 유지
+  } else if (tabId === 'map') {
     if (!isMap) {
       var mapUrl = 'map.html';
       try {
@@ -6272,6 +6268,9 @@ window.navigateToDockTab = function(tabId) {
       else window.location.assign(mapUrl);
       return;
     }
+    if (typeof closePlanModal === 'function') closePlanModal();
+    if (typeof closeHistoryModal === 'function') closeHistoryModal();
+    if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
     if (typeof setMobileSidebarCollapsed === 'function') {
       setMobileSidebarCollapsed(true);
     } else {
@@ -6281,32 +6280,28 @@ window.navigateToDockTab = function(tabId) {
     if (typeof closeMobileBottomSheet === 'function') closeMobileBottomSheet();
     if (typeof closePcSlidingDrawer === 'function') closePcSlidingDrawer();
   } else if (tabId === 'plan') {
-    if (typeof closeHistoryModal === 'function') closeHistoryModal();
-    if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
-
-    // 🗺️ 지도 화면에서 플랜을 누르면 파라미터를 들고 index.html로 즉시 이동
     if (isMap) {
       if (typeof window.smoothNavigate === 'function') window.smoothNavigate('index.html?open=plan');
       else window.location.assign('index.html?open=plan');
       return;
     }
+    if (typeof closeHistoryModal === 'function') closeHistoryModal();
+    if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
     if (typeof openPlanModal === 'function') {
       openPlanModal('calendar');
     }
   } else if (tabId === 'history') {
-    if (typeof closePlanModal === 'function') closePlanModal();
-    if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
     if (isMap) {
       if (typeof window.smoothNavigate === 'function') window.smoothNavigate('index.html?open=history');
       else window.location.assign('index.html?open=history');
       return;
     }
+    if (typeof closePlanModal === 'function') closePlanModal();
+    if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
     if (typeof openHistoryModal === 'function') {
       openHistoryModal();
     }
   } else if (tabId === 'report') {
-    if (typeof closePlanModal === 'function') closePlanModal();
-    if (typeof closeHistoryModal === 'function') closeHistoryModal();
     if (!isUserLoggedIn()) {
       openLoginModal();
       return;
@@ -6316,6 +6311,8 @@ window.navigateToDockTab = function(tabId) {
       else window.location.assign('index.html?open=report');
       return;
     }
+    if (typeof closePlanModal === 'function') closePlanModal();
+    if (typeof closeHistoryModal === 'function') closeHistoryModal();
     if (typeof openUserProfileModal === 'function') {
       openUserProfileModal();
     }
