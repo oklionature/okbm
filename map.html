@@ -7,6 +7,7 @@
       (function okbmLeaveKakaoInApp() {
         try {
           if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return;
+          document.documentElement.classList.add('okbm-web');
           var ua = navigator.userAgent || '';
           if (!/KAKAOTALK/i.test(ua)) return;
           var isIpadOs = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
@@ -41,6 +42,9 @@
     <link rel="apple-touch-icon" href="logo.png" />
     <style id="okbmPageTransition">
       html { background: #000000 !important; }
+      :root { --okbm-status-top: max(32px, env(safe-area-inset-top, 32px)); }
+      html.okbm-web { --okbm-status-top: env(safe-area-inset-top, 0px); }
+      html.okbm-web .app-status-bar-scrim { border-bottom: none !important; }
       html.okbm-page-enter body { opacity: 0 !important; }
       html.okbm-page-enter.okbm-page-enter-go body {
         opacity: 1 !important;
@@ -423,7 +427,7 @@
          top: 0 !important;
          left: 0 !important;
          right: 0 !important;
-         height: max(32px, env(safe-area-inset-top, 32px)) !important;
+         height: var(--okbm-status-top) !important;
          background: linear-gradient(to bottom, #1e2430 0%, #0b0f16 100%) !important;
          border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
          z-index: 999999 !important;
@@ -432,7 +436,7 @@
 
        .floating-top-search-wrap {
          position: absolute !important;
-         top: calc(max(32px, env(safe-area-inset-top, 32px)) + 6px) !important;
+         top: calc(var(--okbm-status-top) + 6px) !important;
         left: 12px !important;
         right: 12px !important;
         max-width: 480px !important;
@@ -1013,7 +1017,7 @@
         border: 1px solid #334155 !important;
       }
 
-      .app-toast { position: fixed; top: calc(max(32px, env(safe-area-inset-top, 32px)) + 56px); left: 50%; transform: translateX(-50%) translateY(8px); background: var(--bg-surface); border: 1.5px solid var(--border-titanium); color: var(--text-primary); padding: 6px 13px; border-radius: 14px; font-size: 0.57rem; font-weight: 700; box-shadow: 0 6px 16px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; z-index: var(--z-toast); transition: all 0.22s ease; display: inline-flex; align-items: center; gap: 4px; max-width: calc(100vw - 24px); }
+      .app-toast { position: fixed; top: calc(var(--okbm-status-top) + 56px); left: 50%; transform: translateX(-50%) translateY(8px); background: var(--bg-surface); border: 1.5px solid var(--border-titanium); color: var(--text-primary); padding: 6px 13px; border-radius: 14px; font-size: 0.57rem; font-weight: 700; box-shadow: 0 6px 16px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; z-index: var(--z-toast); transition: all 0.22s ease; display: inline-flex; align-items: center; gap: 4px; max-width: calc(100vw - 24px); }
       .app-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
       body.clean-map-mode .clean-hide { display: none !important; }
 
@@ -1082,7 +1086,7 @@
 
       .pin-picker-banner {
         position: fixed;
-        top: calc(max(32px, env(safe-area-inset-top, 32px)) + 56px);
+        top: calc(var(--okbm-status-top) + 56px);
         left: 50%;
         transform: translateX(-50%);
         background: #0c1017;
@@ -1184,7 +1188,7 @@
           border-right: none; 
           border-bottom: 1px solid var(--border-hairline); 
           transform: translateY(0);
-          padding-top: max(32px, env(safe-area-inset-top, 32px)) !important;
+          padding-top: var(--okbm-status-top) !important;
           box-sizing: border-box !important;
         }
         .sidebar.collapsed { transform: translateY(-130%) !important; }

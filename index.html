@@ -17,6 +17,7 @@
       }
 
       var inNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+      if (!inNativeApp) document.documentElement.classList.add('okbm-web');
       if (!inNativeApp && isKakao && isAndroid) {
         skipSplashOnce();
         var href = String(location.href || '');
@@ -149,6 +150,8 @@
   <link rel="apple-touch-icon" href="logo.png" />
   <style id="okbmPageTransition">
     html { background: #000000 !important; }
+    :root { --okbm-status-top: max(32px, env(safe-area-inset-top, 32px)); }
+    html.okbm-web { --okbm-status-top: env(safe-area-inset-top, 0px); }
     html.okbm-page-enter body { opacity: 0 !important; }
     html.okbm-page-enter.okbm-page-enter-go body {
       opacity: 1 !important;
