@@ -1367,7 +1367,6 @@ window.okbmSyncUgcSafetyFromServer = async function() {
 };
 
 window.blockCommunityUser = async function(userId, nickname) {
-  triggerHaptic(12);
   var targetId = String(userId || '').trim();
   if (!targetId) {
     if (typeof showToast === 'function') showToast('차단할 사용자를 확인할 수 없습니다.', 'warn');
@@ -1427,13 +1426,11 @@ window.blockCommunityUser = async function(userId, nickname) {
   okbmRememberBlockedNickname(targetId, nickname);
   window.closeOpenUgcFeedModals({ blockedUserId: targetId });
   window.rerenderCommunityFeedsNow();
-  triggerHaptic(15);
   if (typeof showToast === 'function') showToast('사용자가 차단되었습니다.', 'success', 2200);
   return true;
 };
 
 window.unblockCommunityUser = async function(userId) {
-  triggerHaptic(10);
   var targetId = String(userId || '').trim();
   if (!targetId) return false;
   if (!confirm('이 사용자의 차단을 해제할까요?')) return false;
@@ -1491,7 +1488,6 @@ window.unblockCommunityUser = async function(userId) {
 };
 
 window.openFeedReportModal = function(feedId, userId) {
-  triggerHaptic(10);
   var sFeedId = String(feedId || '').trim();
   if (!sFeedId) return;
   if (window.isFeedReported(sFeedId)) {
@@ -1566,7 +1562,6 @@ window.syncMyFeedReportsFromServer = async function() {
 };
 
 window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId) {
-  triggerHaptic(12);
   var sFeedId = String(feedId || '').trim();
   if (!sFeedId) return;
 
@@ -1648,6 +1643,7 @@ window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId
 
   window.closeOpenUgcFeedModals({});
   window.rerenderCommunityFeedsNow();
+  triggerHaptic(15);
   if (typeof showToast === 'function') {
     showToast('신고가 접수되었습니다. 24시간 이내에 검토 및 조치됩니다.', 'success', 2800);
   }
@@ -1765,7 +1761,6 @@ function okbmMountAdminReportInspectorEntry() {
 }
 
 window.openAdminReportInspector = async function() {
-  triggerHaptic(10);
   if (!(await window.okbmRefreshAdminFlagFromServer())) return;
 
   var old = document.getElementById('adminReportInspectorModal');
@@ -1861,7 +1856,6 @@ window.okbmRenderAdminReportInspectorList = async function() {
 };
 
 window.okbmAdminInspectOpenFeed = async function(feedId) {
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
   if (!window.okbmIsCurrentUserAdmin()) return;
   var sId = String(feedId || '').trim();
   if (!sId) return;
@@ -2018,7 +2012,6 @@ window.buildUgcSafetyButtonsHtml = function(feedId, userId, nickname, layout) {
 
 window.openUgcSafetyMenu = function(feedId, userId, nickname, e) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
 
   var sFeedId = String(feedId || '').trim();
   var sUserId = String(userId || '').trim();
@@ -2119,7 +2112,6 @@ function okbmCloseAccountLayerModals() {
 window.openBlockedUserProfile = function(userId) {
   var id = String(userId || '').trim();
   if (!id) return;
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
 
   window.__okbmInspectBlockedUserId = id;
   var nick = (typeof window.resolveBlockedUserNickname === 'function')
@@ -2157,7 +2149,6 @@ window.openBlockedUserProfile = function(userId) {
 };
 
 window.openBlockedUsersModal = function() {
-  triggerHaptic(10);
   var old = document.getElementById('blockedUsersManageModal');
   if (old) old.remove();
 
@@ -3695,19 +3686,19 @@ window.renderUserSnsBadgesHtml = function(rawInsta, rawYt, rawBlog, isOwner, raw
 
   var badges = [];
   if (instaTarget && okbmSafeExternalUrl(instaTarget) !== '#') {
-    badges.push('<a href="' + escapeHtml(okbmSafeExternalUrl(instaTarget)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:24px; height:24px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="인스타그램"><svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></a>');
+    badges.push('<a href="' + escapeHtml(okbmSafeExternalUrl(instaTarget)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="width:24px; height:24px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="인스타그램"><svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></a>');
   }
 
   if (ytTarget && okbmSafeExternalUrl(ytTarget) !== '#') {
-    badges.push('<a href="' + escapeHtml(okbmSafeExternalUrl(ytTarget)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:24px; height:24px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="유튜브"><svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/><path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/></svg></a>');
+    badges.push('<a href="' + escapeHtml(okbmSafeExternalUrl(ytTarget)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="width:24px; height:24px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="유튜브"><svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/><path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/></svg></a>');
   }
 
   if (blogTarget && okbmSafeExternalUrl(blogTarget) !== '#') {
-    badges.push('<a href="' + escapeHtml(okbmSafeExternalUrl(blogTarget)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:24px; height:24px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="네이버 블로그"><svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none"><path d="M16.273 12.845 7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" fill="#03c75a"/></svg></a>');
+    badges.push('<a href="' + escapeHtml(okbmSafeExternalUrl(blogTarget)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="width:24px; height:24px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="네이버 블로그"><svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none"><path d="M16.273 12.845 7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" fill="#03c75a"/></svg></a>');
   }
 
   if (isOwner) {
-    var editActionBtn = '<button type="button" onclick="window.openSnsEditorModal(); triggerHaptic(8);" style="height:24px; padding:0 8px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); color:#94a3b8; font-size:0.65rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:3px;">' +
+    var editActionBtn = '<button type="button" onclick="window.openSnsEditorModal();" style="height:24px; padding:0 8px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); color:#94a3b8; font-size:0.65rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:3px;">' +
       (badges.length > 0 ? '<svg viewBox="0 0 24 24" style="width:10px; height:10px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' : '<span style="color:#38bdf8; font-size:0.8rem; line-height:1;">+</span><span>SNS 등록</span>') +
     '</button>';
     badges.push(editActionBtn);
@@ -3745,8 +3736,8 @@ window.renderUserProfileHeaderSection = function(config) {
 
   var safePhotoAttr = photoUrl ? _escapeReportPropHtml(photoUrl) : '';
   var avatarClickAttr = isOwner
-    ? 'onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="설정"'
-    : (photoUrl ? 'data-photo-url="' + safePhotoAttr + '" onclick="triggerHaptic(10); window.previewUserPhotoLarge(this.getAttribute(\'data-photo-url\'));" title="사진 보기"' : '');
+    ? 'onclick="window.openAccountSettingsModal();" title="설정"'
+    : (photoUrl ? 'data-photo-url="' + safePhotoAttr + '" onclick="window.previewUserPhotoLarge(this.getAttribute(\'data-photo-url\'));" title="사진 보기"' : '');
   var avatarCursor = (isOwner || photoUrl) ? 'cursor:pointer; ' : '';
 
   var avatarImgHtml = '<div style="position:relative; width:100%; height:100%; border-radius:50%; background:#121212; overflow:hidden;">' +
@@ -3766,11 +3757,11 @@ window.renderUserProfileHeaderSection = function(config) {
       '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openFeedsInterestFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
         '<span>관심피드</span>' +
       '</button>' +
-      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); triggerHaptic(8); window.openUserNotificationInbox(\'note\', event);" style="position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+      '<button type="button" onclick="event.preventDefault(); event.stopPropagation();  window.openUserNotificationInbox(\'note\', event);" style="position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
         '<span>쪽지</span>' +
         '<span id="reportNoteCountBadge" style="display:none; position:absolute; top:3px; right:8px; min-width:14px; height:14px; padding:0 4px; border-radius:8px; background:#f43f5e; color:#fff; font-size:0.62rem; font-weight:900; align-items:center; justify-content:center;"></span>' +
       '</button>' +
-      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); triggerHaptic(8); window.openUserNotificationInbox(\'notif\', event);" style="position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+      '<button type="button" onclick="event.preventDefault(); event.stopPropagation();  window.openUserNotificationInbox(\'notif\', event);" style="position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
         '<span>알림</span>' +
         '<span id="reportNotifCountBadge" style="display:none; position:absolute; top:3px; right:8px; min-width:14px; height:14px; padding:0 4px; border-radius:8px; background:#f43f5e; color:#fff; font-size:0.62rem; font-weight:900; align-items:center; justify-content:center;"></span>' +
       '</button>' +
@@ -3788,7 +3779,7 @@ window.renderUserProfileHeaderSection = function(config) {
       ? ('<button type="button" data-user-id="' + _escapeReportPropHtml(uid) + '" data-author="' + _escapeReportPropHtml(nick) + '" onclick="event.preventDefault(); event.stopPropagation(); window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="' + chipBase + ' background:#ffffff; border:1px solid #ffffff; color:#000000; cursor:pointer;"><svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>관심</span></button>')
       : ('<button type="button" data-user-id="' + _escapeReportPropHtml(uid) + '" data-author="' + _escapeReportPropHtml(nick) + '" onclick="event.preventDefault(); event.stopPropagation(); window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="' + chipBase + ' ' + chipIdle + ' cursor:pointer;"><svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>관심</span></button>');
     var noteChip = canMessage
-      ? ('<button type="button" data-user-id="' + _escapeReportPropHtml(uid) + '" data-author="' + _escapeReportPropHtml(nick) + '" onclick="event.preventDefault(); event.stopPropagation(); triggerHaptic(8); window.openDirectMessageThread(this.dataset.userId, this.dataset.author);" style="' + chipBase + ' ' + chipIdle + ' cursor:pointer;">쪽지</button>')
+      ? ('<button type="button" data-user-id="' + _escapeReportPropHtml(uid) + '" data-author="' + _escapeReportPropHtml(nick) + '" onclick="event.preventDefault(); event.stopPropagation();  window.openDirectMessageThread(this.dataset.userId, this.dataset.author);" style="' + chipBase + ' ' + chipIdle + ' cursor:pointer;">쪽지</button>')
       : '';
     var yearCardHtml = hideYearActivity ? '' : (
       '<div role="button" onclick="window.toggleVisitorActivity(\'year\', event)" style="cursor:pointer; position:relative; min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none; box-sizing:border-box;">' +
@@ -3925,7 +3916,6 @@ window._renderVisitorActivityList = function(mode) {
 
 window.toggleVisitorYearDropdown = function(e) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
-  if (typeof triggerHaptic === 'function') triggerHaptic(8);
   var menu = document.getElementById('visitorYearDropdownMenu');
   if (!menu) return;
   if (menu.style.display === 'flex') {
@@ -3949,7 +3939,6 @@ window.toggleVisitorYearDropdown = function(e) {
 
 window.selectVisitorYear = function(yearStr, e) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
   var year = String(yearStr || '').trim();
   if (!/^\d{4}$/.test(year)) return;
   window.__visitorSelectedYear = year;
@@ -3979,7 +3968,6 @@ window.selectVisitorYear = function(yearStr, e) {
 
 window.toggleVisitorActivity = function(mode, e) {
   if (e) e.stopPropagation();
-  if (typeof triggerHaptic === 'function') triggerHaptic(8);
   var yearBox = document.getElementById('visitorYearActivityContainer');
   var totalBox = document.getElementById('visitorTotalActivityContainer');
   var yearArrow = document.getElementById('visitorYearListArrow');
@@ -4006,7 +3994,6 @@ window.toggleVisitorActivity = function(mode, e) {
 };
 
 window.openSnsEditorModal = function() {
-  triggerHaptic(10);
   var curInsta = localStorage.getItem('okbm_user_instagram') || '';
   var curYt = localStorage.getItem('okbm_user_youtube') || '';
   var curBlog = localStorage.getItem('okbm_user_blog') || '';
@@ -4048,7 +4035,6 @@ window.openSnsEditorModal = function() {
 };
 
 window.saveSnsFromEditorModal = function() {
-  triggerHaptic(12);
   var inInsta = document.getElementById('snsInputInsta');
   var inYt = document.getElementById('snsInputYt');
   var inBlog = document.getElementById('snsInputBlog');
@@ -4098,6 +4084,7 @@ window.saveSnsFromEditorModal = function() {
     }
   });
 
+  triggerHaptic(15);
   showToast('SNS 채널이 저장되었습니다.', 'success', 1500);
 };
 
@@ -4144,7 +4131,6 @@ function _okbmCloseModuleCustomDropdowns() {
 // [상단 듀얼 카운터] 연도 선택 팝오버 토글러
 window.toggleReportYearDropdown = function(e) {
   if (e) e.stopPropagation();
-  triggerHaptic(8);
   var menu = document.getElementById('reportYearDropdownMenu');
   if (!menu) return;
   var isOpen = menu.style.display === 'flex';
@@ -4189,7 +4175,6 @@ window.toggleReportYearDropdown = function(e) {
 // [선택 연도 활동 메모 인라인 인출 & 토글 엔진]
 window.toggleReportYearActivities = function(e) {
   if (e) e.stopPropagation();
-  triggerHaptic(8);
   var container = document.getElementById('reportYearActivityContainer');
   var arrow = document.getElementById('reportYearListArrow');
   if (!container) return;
@@ -4213,7 +4198,6 @@ window.toggleReportYearActivities = function(e) {
 
 window.toggleReportTotalActivities = function(e) {
   if (e) e.stopPropagation();
-  triggerHaptic(8);
   var container = document.getElementById('reportTotalActivityContainer');
   var arrow = document.getElementById('reportTotalListArrow');
   if (!container) return;
@@ -4337,7 +4321,6 @@ window.renderReportYearActivityList = function() {
 window.openReportActivityFeed = function(feedId) {
   var id = String(feedId || '').trim();
   if (!id) return;
-  if (typeof triggerHaptic === 'function') triggerHaptic(8);
   if (typeof window.okbmOpenDirectFeed === 'function') {
     window.okbmOpenDirectFeed(id);
   }
@@ -4370,7 +4353,6 @@ window.okbmApplyActivityPrivacyButtons = function() {
 
 window.toggleReportActivityPublic = function(kind, e) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
   var key = kind === 'total' ? 'okbm_hide_total_activity' : 'okbm_hide_year_activity';
   var nextHide = localStorage.getItem(key) !== '1';
   if (nextHide) localStorage.setItem(key, '1');
@@ -4389,7 +4371,6 @@ window.toggleReportActivityPublic = function(kind, e) {
 
 window.selectReportYear = function(yearStr, e) {
   if (e) e.stopPropagation();
-  triggerHaptic(10);
   window._selectedReportYear = yearStr;
 
   _okbmCloseReportYearDropdown();
@@ -4425,7 +4406,6 @@ window.selectReportYear = function(yearStr, e) {
 // [지형/시즌/지역 커스텀 다크 팝오버 셀렉터 토글러]
 window.toggleModuleCustomDropdown = function(moduleKey, e) {
   if (e) e.stopPropagation();
-  triggerHaptic(8);
   var menu = document.getElementById('customDropdownMenu_' + moduleKey);
   if (!menu) return;
   var isOpen = menu.style.display === 'flex';
@@ -4767,7 +4747,6 @@ function _escapeReportPropHtml(str) {
 }
 
 window.handleReportSecClick = function(secKey) {
-  triggerHaptic(8);
   var body = document.getElementById('accBody_' + secKey);
   var arrow = document.getElementById('accArrow_' + secKey);
   if (!body) return;
@@ -4908,7 +4887,6 @@ window._renderMyPropsModule = function(el) {
 };
 
 window.triggerEditProposalFromReport = function(propId) {
-  triggerHaptic(12);
   var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
     ? window.RomanticVault.read('okbm_my_proposals', [])
     : (typeof window.safeGetStorage === 'function' ? window.safeGetStorage('okbm_my_proposals', []) : safeGetJSON('okbm_my_proposals', []));
@@ -4927,7 +4905,6 @@ window.triggerEditProposalFromReport = function(propId) {
 };
 
 window.triggerCorrectionFromMyProposal = function(propId) {
-  triggerHaptic(12);
   var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
     ? window.RomanticVault.read('okbm_my_proposals', [])
     : (typeof window.safeGetStorage === 'function' ? window.safeGetStorage('okbm_my_proposals', []) : safeGetJSON('okbm_my_proposals', []));
@@ -4951,7 +4928,6 @@ window.triggerCorrectionFromMyProposal = function(propId) {
 
 window.triggerDeleteProposalFromReport = function(propId) {
   if (!propId) return;
-  triggerHaptic(12);
   var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
     ? window.RomanticVault.read('okbm_my_proposals', [])
     : (typeof window.safeGetStorage === 'function' ? window.safeGetStorage('okbm_my_proposals', []) : safeGetJSON('okbm_my_proposals', []));
@@ -5007,7 +4983,6 @@ window._gearModuleState = window._gearModuleState || {
 };
 
 window._setGearSeasonFilter = function(seasonKey) {
-  triggerHaptic(8);
   window._gearModuleState.season = seasonKey;
   var body = document.getElementById('accBody_gear');
   var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
@@ -5017,7 +4992,6 @@ window._setGearSeasonFilter = function(seasonKey) {
 };
 
 window._setGearDietMode = function(modeKey) {
-  triggerHaptic(8);
   window._gearModuleState.dietMode = modeKey;
   var body = document.getElementById('accBody_gear');
   var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
@@ -5027,7 +5001,6 @@ window._setGearDietMode = function(modeKey) {
 };
 
 window._toggleGearSlotTop5 = function(slotName) {
-  triggerHaptic(10);
   window._gearModuleState.activeSlot = (window._gearModuleState.activeSlot === slotName) ? null : slotName;
   var body = document.getElementById('accBody_gear');
   var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
@@ -5381,7 +5354,6 @@ window._terrainModuleState = window._terrainModuleState || {
 };
 
 window._setTerrainYearSelect = function(yearVal) {
-  triggerHaptic(8);
   _okbmCloseModuleCustomDropdowns();
   window._terrainModuleState.selectedYear = yearVal;
   var body = document.getElementById('accBody_terrain');
@@ -5392,7 +5364,6 @@ window._setTerrainYearSelect = function(yearVal) {
 };
 
 window._toggleTerrainElevDetail = function(mode) {
-  triggerHaptic(8);
   var st = window._terrainModuleState;
   st.elevDetailMode = (st.elevDetailMode === mode) ? null : mode;
   var body = document.getElementById('accBody_terrain');
@@ -5403,7 +5374,6 @@ window._toggleTerrainElevDetail = function(mode) {
 };
 
 window._toggleTerrainThemeTop5 = function(themeKey) {
-  triggerHaptic(10);
   var st = window._terrainModuleState;
   st.expandedTheme = (st.expandedTheme === themeKey) ? null : themeKey;
   var body = document.getElementById('accBody_terrain');
@@ -5414,7 +5384,6 @@ window._toggleTerrainThemeTop5 = function(themeKey) {
 };
 
 window._toggleTopElevationRank = function() {
-  triggerHaptic(10);
   var st = window._terrainModuleState;
   st.showTopElevation = !st.showTopElevation;
   var body = document.getElementById('accBody_terrain');
@@ -5744,7 +5713,6 @@ window._seasonModuleState = window._seasonModuleState || {
 };
 
 window._setSeasonYearSelect = function(yearVal) {
-  triggerHaptic(8);
   _okbmCloseModuleCustomDropdowns();
   window._seasonModuleState.selectedYear = yearVal;
   var body = document.getElementById('accBody_season');
@@ -5755,7 +5723,6 @@ window._setSeasonYearSelect = function(yearVal) {
 };
 
 window._toggleSeasonDetail = function(seasonKey) {
-  triggerHaptic(10);
   var st = window._seasonModuleState;
   st.expandedSeason = (st.expandedSeason === seasonKey) ? null : seasonKey;
   var body = document.getElementById('accBody_season');
@@ -5884,7 +5851,6 @@ window._regionModuleState = window._regionModuleState || {
 };
 
 window._setRegionYearSelect = function(yearVal) {
-  triggerHaptic(8);
   _okbmCloseModuleCustomDropdowns();
   window._regionModuleState.selectedYear = yearVal;
   var body = document.getElementById('accBody_region');
@@ -5895,7 +5861,6 @@ window._setRegionYearSelect = function(yearVal) {
 };
 
 window._toggleRegionDetail = function(regionKey) {
-  triggerHaptic(10);
   var st = window._regionModuleState;
   st.expandedRegion = (st.expandedRegion === regionKey) ? null : regionKey;
   var body = document.getElementById('accBody_region');
@@ -6026,7 +5991,6 @@ window._renderRegionModule = function(validLogs, el) {
 
 // 6. 마이데이터(마이리포트) & 로그인 모달 제어
 function handleAuthBtnClick() {
-  triggerHaptic(12);
   ensureMyReportAndAuthModalsInDOM();
   if (isUserLoggedIn()) {
     openUserProfileModal();
@@ -6045,7 +6009,6 @@ function openLoginModal() {
     ensureMyReportAndAuthModalsInDOM();
     var modal = document.getElementById('loginModalOverlay');
     if (modal) modal.style.setProperty('display', 'flex', 'important');
-    triggerHaptic(12);
   } catch (e) {}
 }
 window.openLoginModal = openLoginModal;
@@ -6152,7 +6115,6 @@ window.ensureMasterBottomDock = function(activeTabId) {
 
 // 🧭 [5대 탭 전역 중앙 네비게이션 디스패처 - 선제적 탭 색상 고정 & DOM 파괴 없는 초고속 라우팅]
 window.navigateToDockTab = function(tabId) {
-  triggerHaptic(10);
   window.__okbmInspectBlockedUserId = '';
   if (Array.isArray(window.__modalHistoryStack)) {
     window.__modalHistoryStack = [];
@@ -6327,7 +6289,6 @@ if (typeof window !== 'undefined') {
 }
 
 window.editReportUserBio = function() {
-  triggerHaptic(10);
   var currentBio = okbmNormalizeUserBio(localStorage.getItem('okbm_user_bio') || '');
   var oldModal = document.getElementById('reportBioEditorModalOverlay');
   if (oldModal) oldModal.remove();
@@ -6372,12 +6333,11 @@ window.editReportUserBio = function() {
   };
 
   cancelBtn.onclick = function() {
-    triggerHaptic(8);
     modal.remove();
   };
 
   saveBtn.onclick = function() {
-    triggerHaptic(12);
+    triggerHaptic(15);
     var clean = okbmNormalizeUserBio(textarea.value);
     localStorage.setItem('okbm_user_bio', clean);
 
@@ -6483,7 +6443,6 @@ window._pastTripSyncDateDisplay = function() {
 };
 
 window.openPastTripDatePicker = function() {
-  triggerHaptic(10);
   var old = document.getElementById('pastTripDatePickerModal');
   if (old) old.remove();
   var hidden = document.getElementById('pastTripDateInput');
@@ -6514,13 +6473,11 @@ window.openPastTripDatePicker = function() {
 };
 
 window.setPastTripPickerView = function(view) {
-  triggerHaptic(8);
   window.__pastTripPickerView = view || 'days';
   window.renderPastTripDatePicker();
 };
 
 window.selectPastTripPickerYear = function(year) {
-  triggerHaptic(8);
   var y = parseInt(year, 10);
   var maxY = new Date().getFullYear();
   if (!y || y > maxY || y < 2000) return;
@@ -6534,7 +6491,6 @@ window.selectPastTripPickerYear = function(year) {
 };
 
 window.selectPastTripPickerMonth = function(month) {
-  triggerHaptic(8);
   var m = parseInt(month, 10);
   if (!m || m < 1 || m > 12) return;
   var y = Number(window.__pastTripPickerYear) || new Date().getFullYear();
@@ -6546,7 +6502,6 @@ window.selectPastTripPickerMonth = function(month) {
 };
 
 window.selectPastTripPickerDay = function(day) {
-  triggerHaptic(10);
   var y = Number(window.__pastTripPickerYear);
   var m = Number(window.__pastTripPickerMonth);
   var d = parseInt(day, 10);
@@ -7282,7 +7237,6 @@ window.focusPastTripPhoto = function(idx) {
     track.scrollTo({ left: st.photoIndex * track.offsetWidth, behavior: 'smooth' });
     window._pastTripSyncPhotoThumbs();
     window._pastTripSyncMemoInput();
-    triggerHaptic(8);
     return;
   }
   window._pastTripRenderPhotoStage();
@@ -7304,7 +7258,6 @@ window._pastTripThumbDragStart = function(e, idx) {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', String(idx));
   }
-  triggerHaptic(10);
 };
 
 window._pastTripThumbDragOver = function(e) {
@@ -7326,7 +7279,6 @@ window._pastTripMovePhoto = function(fromIdx, toIdx) {
   st.photoIndex = toIdx;
   window.__pastTripRegisterState = st;
   window._pastTripRenderPhotoStage();
-  triggerHaptic(14);
 };
 
 window._pastTripThumbDrop = function(e, dropIdx) {
@@ -7434,7 +7386,6 @@ window._pastTripSyncMemoInput = function() {
 };
 
 window.switchPastTripMemoMode = function(mode) {
-  triggerHaptic(8);
   window._pastTripCommitMemoInput();
   var st = window.__pastTripRegisterState || {};
   st.memoMode = (mode === 'per_photo') ? 'per_photo' : 'single';
@@ -7558,7 +7509,6 @@ window.onPastTripGearTyped = function() {
 
 window.addPastTripGearItem = function(gear) {
   if (!gear || !gear.name) return;
-  triggerHaptic(8);
   var st = window.__pastTripRegisterState || {};
   st.items = Array.isArray(st.items) ? st.items : [];
   var exists = st.items.some(function(it) { return String(it.name) === String(gear.name); });
@@ -7580,7 +7530,6 @@ window.addPastTripGearItem = function(gear) {
 };
 
 window.removePastTripGearItem = function(idx) {
-  triggerHaptic(8);
   var st = window.__pastTripRegisterState || {};
   st.items = Array.isArray(st.items) ? st.items : [];
   st.items = st.items.filter(function(_, i) { return i !== idx; });
@@ -7593,7 +7542,6 @@ window._pastTripRenderPresetChips = function() {
 };
 
 window.togglePastTripPresetSheet = function() {
-  triggerHaptic(8);
   var sheet = document.getElementById('pastTripPresetSheet');
   if (!sheet) return;
   var opening = sheet.style.display === 'none' || !sheet.style.display;
@@ -7625,7 +7573,6 @@ window.togglePastTripPresetSheet = function() {
 };
 
 window.selectPastTripPreset = function(presetId) {
-  triggerHaptic(8);
   var st = window.__pastTripRegisterState || {};
   st.items = Array.isArray(st.items) ? st.items : [];
   var presets = window._pastTripReadPresets();
@@ -7649,7 +7596,6 @@ window.selectPastTripPreset = function(presetId) {
 };
 
 window.removePastTripPhoto = function(idx) {
-  triggerHaptic(8);
   window._pastTripCommitMemoInput();
   var st = window.__pastTripRegisterState || { photos: [], photoMemos: [] };
   st.photos = (st.photos || []).filter(function(_, i) { return i !== idx; });
@@ -7692,7 +7638,6 @@ window.handlePastTripPhotoUpload = async function(event) {
   if (typeof showToast === 'function') showToast('사진추가중', 'info', 1800);
   if (statusEl) statusEl.textContent = '사진추가중';
   if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.55'; }
-  triggerHaptic(10);
 
   function withPastPhotoTimeout(promise, ms) {
     return new Promise(function(resolve) {
@@ -7955,7 +7900,6 @@ window.confirmPastTripCustomSpot = function() {
     if (typeof showToast === 'function') showToast('장소 이름을 입력해주세요.', 'warn');
     return;
   }
-  triggerHaptic(10);
   var st = window.__pastTripRegisterState || {};
   st.spotName = name;
   st.spotId = '';
@@ -8014,7 +7958,6 @@ window._pastTripParkForProposal = function() {
 };
 
 window.choosePastTripSpotRegister = function() {
-  triggerHaptic(10);
   window._pastTripShowSpotChoice(false);
   var st = window.__pastTripRegisterState || {};
   var name = st.spotName || '';
@@ -8044,7 +7987,6 @@ window.choosePastTripSpotRegister = function() {
 };
 
 window.choosePastTripSpotSkip = function() {
-  triggerHaptic(8);
   window._pastTripShowSpotChoice(false);
   var st = window.__pastTripRegisterState || {};
   st.spotPath = 'skip';
@@ -8169,7 +8111,6 @@ if (typeof document !== 'undefined') {
 }
 
 window.selectPastTripSpot = function(spot, isUnregistered) {
-  triggerHaptic(10);
   var st = window.__pastTripRegisterState || {};
   var region = String((spot && (spot.cityName || spot.region)) || '').trim();
   var name = window._pastTripComposeSpotLabel(
@@ -8214,7 +8155,6 @@ window.openPastTripRegisterModal = function(ev) {
     if (typeof ev.preventDefault === 'function') ev.preventDefault();
     if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
   }
-  triggerHaptic(10);
   if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
     if (typeof showToast === 'function') showToast('로그인 후 과거 일정을 등록할 수 있습니다.', 'info', 2200);
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
@@ -8586,7 +8526,6 @@ window.openMyPastTripsFromReport = function(ev) {
     if (typeof ev.preventDefault === 'function') ev.preventDefault();
     if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
   }
-  triggerHaptic(10);
   if (typeof window.recordModalHistoryStep === 'function') {
     window.recordModalHistoryStep('userProfileModalOverlay', function() {
       if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
@@ -8609,7 +8548,6 @@ window.openRoutersInterestFromReport = function(ev) {
     if (typeof ev.preventDefault === 'function') ev.preventDefault();
     if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
   }
-  triggerHaptic(10);
   if (typeof window.recordModalHistoryStep === 'function') {
     window.recordModalHistoryStep('userProfileModalOverlay', function() {
       if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
@@ -8632,7 +8570,6 @@ window.openFeedsInterestFromReport = function(ev) {
     if (typeof ev.preventDefault === 'function') ev.preventDefault();
     if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
   }
-  triggerHaptic(10);
   if (typeof window.recordModalHistoryStep === 'function') {
     window.recordModalHistoryStep('userProfileModalOverlay', function() {
       if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
@@ -8772,7 +8709,6 @@ function openUserProfileModal() {
     }
 
     window.ensureMasterBottomDock('report');
-    triggerHaptic(12);
   } catch (e) { console.warn('[romantic-sync.js:openUserProfileModal]', e); }
 }
 window.openUserProfileModal = openUserProfileModal;
@@ -8846,7 +8782,7 @@ window.previewUserPhotoLarge = function(photoUrl) {
   var viewer = document.createElement('div');
   viewer.id = 'masterCoverLargeViewerModal';
   viewer.style.cssText = 'position:fixed; inset:0; z-index:2147483646 !important; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:20px; box-sizing:border-box; cursor:pointer;';
-  viewer.onclick = function() { viewer.remove(); triggerHaptic(8); };
+  viewer.onclick = function() { viewer.remove();  };
 
   var profileModal = document.getElementById('userFeedCollectionModal');
   var moreBtn = '';
@@ -8863,7 +8799,6 @@ window.previewUserPhotoLarge = function(photoUrl) {
 
 // 🔍 [메인 대표 사진 대형 확대 뷰어 라이트박스]
 window.previewMasterUserCoverPhotoLarge = function() {
-  triggerHaptic(10);
   var profile = safeGetJSON('user_profile', null);
   var photoUrl = okbmSafeImageUrl(localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '');
 
@@ -8877,7 +8812,6 @@ window.previewMasterUserCoverPhotoLarge = function() {
 
 // [메인 대표 사진 초기화]
 window.resetMasterUserCoverPhoto = function() {
-  triggerHaptic(12);
   localStorage.removeItem('okbm_hero_cover_url');
   var profile = safeGetJSON('user_profile', null);
   if (profile) {
@@ -8905,7 +8839,6 @@ window.uploadMasterUserCoverPhoto = function(event) {
 };
 
 window.openCoverPhotoCropperModal = function(imageSrc) {
-  triggerHaptic(10);
   var oldModal = document.getElementById('coverPhotoCropperModal');
   if (oldModal) oldModal.remove();
 
@@ -8968,7 +8901,6 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
   var cropperSignal = cropperAbort.signal;
 
   cancelBtn.onclick = function() {
-    triggerHaptic(8);
     cropperAbort.abort(); // 🛡️ window 리스너 일괄 해제
     modal.remove();
   };
@@ -9055,7 +8987,6 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
   }, { signal: cropperSignal });
 
   confirmBtn.onclick = async function() {
-    triggerHaptic(12);
     confirmBtn.disabled = true;
     confirmBtn.innerText = '등록 중...';
 
@@ -9139,7 +9070,6 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
 
 // 계정 설정 모달 제어 (가입날짜 완전 보존 & 14일 쿨다운 정밀 잠금)
 window.openAccountSettingsModal = function() {
-  triggerHaptic(10);
   ensureMyReportAndAuthModalsInDOM();
   var modal = document.getElementById('userAccountSettingsModal');
   if (!modal) return;
@@ -9348,7 +9278,6 @@ window.saveNicknameFromSettingsModal = async function() {
 
 // 로그아웃 및 세션 완전 롤백
 function logoutUser() {
-  triggerHaptic(15);
   if (typeof window.okbmCleanupModalWatchers === 'function') {
     try { window.okbmCleanupModalWatchers(); } catch (e) {}
   }
@@ -9467,7 +9396,6 @@ function logoutUser() {
 window.logoutUser = logoutUser;
 
 window.confirmUserAccountDeletion = async function() {
-  triggerHaptic(12);
 
   if (!confirm('정말 탈퇴하시겠습니까? 작성한 모든 피드와 활동 기록, 개인 세팅이 영구 삭제되며 복구할 수 없습니다.')) {
     return;
@@ -9997,7 +9925,6 @@ function okbmOAuthRedirectTo() {
 }
 
 async function okbmStartSupabaseOAuth(provider, activeClass, busyMessage) {
-  triggerHaptic(12);
   if (!window.supabaseClient || !window.supabaseClient.auth || typeof window.supabaseClient.auth.signInWithOAuth !== 'function') {
     okbmMarkSocialButtonsBusy(false);
     if (typeof showToast === 'function') showToast('로그인 서버에 연결할 수 없습니다.', 'warn');
@@ -10307,7 +10234,6 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
 window.handleSocialLoginSuccess = handleSocialLoginSuccess;
 
 function loginWithKakao(options) {
-  triggerHaptic(12);
   var isLink = !!(options && options.link);
   if (isLink && typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
     if (typeof showToast === 'function') showToast('계정 연결은 로그인 후 설정에서 진행해주세요.', 'warn');
@@ -10576,7 +10502,6 @@ async function okbmConsumeNaverOAuthCallback() {
 }
 
 function loginWithNaver(options) {
-  triggerHaptic(12);
   var isLink = !!(options && options.link);
   if (isLink && typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
     if (typeof showToast === 'function') showToast('계정 연결은 로그인 후 설정에서 진행해주세요.', 'warn');
@@ -11755,7 +11680,6 @@ window.deleteDirectMessageThread = async function(threadId, theirId, ev, skipCon
     ev.preventDefault();
     ev.stopPropagation();
   }
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
   var myId = okbmNoteMyId();
   var otherId = String(theirId || '').trim();
   var tid = String(threadId || '').trim() || okbmNoteThreadId(myId, otherId);
@@ -11908,7 +11832,6 @@ window.okbmPaintNoteThreadMessages = async function(silent, fromRealtime) {
 };
 
 window.sendDirectMessage = async function() {
-  if (typeof triggerHaptic === 'function') triggerHaptic(8);
   var modal = document.getElementById('directMessageThreadModal');
   var input = document.getElementById('directMessageInput');
   if (!modal || !input) return;
@@ -11958,6 +11881,7 @@ window.sendDirectMessage = async function() {
       if (btn) btn.disabled = false;
       return;
     }
+    triggerHaptic(15);
     input.value = '';
     window.__okbmNoteRtPaintAt = '';
     await window.okbmPaintNoteThreadMessages(false);
@@ -11968,7 +11892,6 @@ window.sendDirectMessage = async function() {
 };
 
 window.openDirectMessageThread = async function(userId, nickname) {
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
   if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
     if (typeof showToast === 'function') showToast('쪽지는 로그인 후 이용할 수 있습니다.', 'info', 2000);
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
@@ -12273,7 +12196,6 @@ window.openUserNotificationInbox = async function(initialTab, ev) {
     if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
     if (typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
   }
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
   if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
     if (typeof showToast === 'function') showToast('로그인 후 이용할 수 있습니다.', 'info', 2000);
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
@@ -12821,7 +12743,7 @@ if (typeof window !== 'undefined') {
           if (typeof App.exitApp === 'function') App.exitApp();
         } else {
           lastBackTime = currentTime;
-          if (typeof triggerHaptic === 'function') triggerHaptic(12);
+          if (typeof triggerHaptic === 'function') triggerHaptic(20);
           showExitNotice('뒤로가기 버튼을 한 번 더 누르면 종료됩니다');
         }
       } finally {

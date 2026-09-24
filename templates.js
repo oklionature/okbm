@@ -392,7 +392,6 @@ window.resetStudioPhotoFraming = function() {
   if (typeof isReadyShotFrameModalOpen === 'function' && isReadyShotFrameModalOpen() && typeof window.refreshReadyShotFramePreview === 'function') {
     window.refreshReadyShotFramePreview(false);
   }
-  if (typeof triggerHaptic === 'function') triggerHaptic(8);
 };
 
 window.openPhotoStudio = function() {
@@ -426,7 +425,6 @@ window.openPhotoStudio = function() {
   window.updateStudioCardLive();
   var target = document.getElementById('photoStudioCardTarget');
   if (target) setupStudioPhotoDrag(target);
-  if (typeof triggerHaptic === 'function') triggerHaptic(15);
 };
 
 window.syncGlobalModalScrollLock = function() {
@@ -472,13 +470,11 @@ window.closePhotoStudio = function() {
   syncReadyShotPhotoButtons();
   initCardSwipeGesture();
   window.syncGlobalModalScrollLock();
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
 
 window.applyStudioCardToTemplate = async function() {
   var card = document.getElementById('photoStudioCardTarget');
   if (!card) return;
-  if (typeof triggerHaptic === 'function') triggerHaptic(12);
 
   var btn = document.getElementById('btnStudioApplyCard');
   var prevHtml = btn ? btn.innerHTML : '';
@@ -615,7 +611,6 @@ window.switchStudioMode = function(mode) {
   }
   syncStudioModeButtons(mode);
   window.updateStudioCardLive();
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
 
 window.updateStudioUI = function() {
@@ -1292,7 +1287,6 @@ window.saveStudioCardToPhone = async function() {
     if (typeof showToast === 'function') showToast('이미지 처리 엔진을 불러오는 중입니다. 잠시 후 다시 시도해주세요.', 'warn');
     return;
   }
-  if (typeof triggerHaptic === 'function') triggerHaptic(15);
 
   var btn = document.getElementById('btnStudioSaveCard');
   var prevHtml = btn ? btn.innerHTML : '';
@@ -1312,6 +1306,7 @@ window.saveStudioCardToPhone = async function() {
     link.href = url;
     link.click();
     setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
+    if (typeof triggerHaptic === 'function') triggerHaptic(15);
     if (typeof showToast === 'function') showToast('📸 인스타 공유용 고화질 레디샷이 저장되었습니다!', 'success', 2400);
   } catch (e) {
     console.error('saveStudioCardToPhone error:', e);
@@ -3697,7 +3692,6 @@ window.openReadyShotFrameModal = function() {
   window.refreshReadyShotFramePreview(true);
   var stage = document.getElementById('readyShotFrameCard') || document.getElementById('readyShotFrameStage');
   if (stage) setupStudioPhotoDrag(stage);
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
 
 window.closeReadyShotFrameModal = function(cancel) {
@@ -3736,7 +3730,6 @@ window.applyReadyShotFrameModal = function() {
   __readyShotFrameSnapshot = null;
   window.closeReadyShotFrameModal(false);
   if (typeof showToast === 'function') showToast('사진 위치가 적용되었습니다.', 'success', 1400);
-  if (typeof triggerHaptic === 'function') triggerHaptic(12);
 };
 
 window.switchReadyShotFamily = function(family) {
@@ -3746,7 +3739,6 @@ window.switchReadyShotFamily = function(family) {
   syncReadyShotFamilyToggle();
   renderTemplateChips();
   updateShareCardLive();
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
 
 window.switchStudioModeFromReadyShot = function(mode) {
@@ -3763,7 +3755,6 @@ window.switchStudioModeFromReadyShot = function(mode) {
   syncReadyShotFamilyToggle();
   renderTemplateChips();
   updateShareCardLive();
-  if (typeof triggerHaptic === 'function') triggerHaptic(12);
 };
 
 window.openReadyShotCropEditor = function() {
@@ -3826,9 +3817,6 @@ window.handleSpotSearchInput = function(val) {
     if (typeof updateShareCardLive === 'function') {
       updateShareCardLive();
     }
-    if (typeof triggerHaptic === 'function') {
-      triggerHaptic(10);
-    }
   };
 
   window.handleSpotSearchItemClick = function(el) {
@@ -3874,7 +3862,6 @@ window.toggleSpotDropdownList = function() {
   } else {
     window.handleSpotSearchInput(input ? input.value : '');
   }
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
 
 window.clearSpotSearchInput = function() {
@@ -3888,7 +3875,6 @@ window.clearSpotSearchInput = function() {
   if (clearBtn) clearBtn.style.display = 'none';
   if (dropdown) dropdown.style.display = 'none';
   if (typeof updateShareCardLive === 'function') updateShareCardLive();
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
 
 window.sharePackCardDirect = async function() {
@@ -3898,7 +3884,6 @@ window.sharePackCardDirect = async function() {
     btn.style.pointerEvents = 'none';
     btn.style.opacity = '0.7';
   }
-  if (typeof triggerHaptic === 'function') triggerHaptic(15);
 
   try {
     var blob = await takeReadyShotPrecapturedBlob();
@@ -4411,7 +4396,6 @@ window.closePackShareModal = function() {
   }
   document.body.classList.remove('pack-share-open');
   window.syncGlobalModalScrollLock();
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
 
 window.openPackShareModal = function(record, items, forceStudio) {
@@ -4602,7 +4586,6 @@ function switchShareCardTemplate(tmplId, isSwipe) {
   // 🛡️ 헤더 타이틀은 항상 READY SHOT으로 고정 (템플릿 이름 덮어쓰기 완전 제거)
 
   updateShareCardLive();
-  if (typeof triggerHaptic === 'function') triggerHaptic(12);
 }
 
 // 🖼️ 4. 카드 실시간 화면 갱신

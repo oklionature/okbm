@@ -691,7 +691,6 @@
             shareFeedBtn.getAttribute('data-memo') || ''
           );
         } else {
-          triggerHaptic(10);
           if (navigator.clipboard) {
             navigator.clipboard.writeText(location.href);
             if (typeof showToast === 'function') showToast('피드 링크가 복사되었습니다.', 'success');
@@ -2544,7 +2543,6 @@ window.normalizeHistoryRecord = function(r, idx) {
 
   window.goBackModal = function(e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    triggerHaptic(10);
 
     var currentTopModal = null;
     var openModalSelectors = [
@@ -2599,7 +2597,6 @@ window.normalizeHistoryRecord = function(r, idx) {
 
   window.switchPastTripsTab = function(targetTab) {
     window.__pastTripsActiveTab = targetTab;
-    triggerHaptic(10);
     window.openPastTripsListModal();
   };
 
@@ -2610,7 +2607,6 @@ window.normalizeHistoryRecord = function(r, idx) {
   window.togglePastTripsSelectMode = function() {
     window.__isPastTripsSelectMode = !window.__isPastTripsSelectMode;
     window.__selectedPastTripIds.clear();
-    triggerHaptic(12);
     window.openPastTripsListModal();
   };
 
@@ -2619,10 +2615,8 @@ window.normalizeHistoryRecord = function(r, idx) {
     var sId = String(recordId).trim();
     if (window.__selectedPastTripIds.has(sId)) {
       window.__selectedPastTripIds.delete(sId);
-      triggerHaptic(8);
     } else {
       window.__selectedPastTripIds.add(sId);
-      triggerHaptic(12);
     }
     window.updatePastTripsSelectionUI();
   };
@@ -2631,12 +2625,10 @@ window.normalizeHistoryRecord = function(r, idx) {
     var logs = (window.interactiveHistory || []).filter(Boolean);
     if (window.__selectedPastTripIds.size === logs.length) {
       window.__selectedPastTripIds.clear();
-      triggerHaptic(8);
     } else {
       logs.forEach(function(r) {
         if (r && r.id) window.__selectedPastTripIds.add(String(r.id).trim());
       });
-      triggerHaptic(12);
     }
     window.updatePastTripsSelectionUI();
   };
@@ -2740,7 +2732,6 @@ window.normalizeHistoryRecord = function(r, idx) {
     var selectedCount = window.__selectedPastTripIds.size;
     if (selectedCount === 0) return;
 
-    triggerHaptic(20);
     var confirmMsg = '선택한 ' + selectedCount + '개의 기록을 영구 삭제하시겠습니까?\n\n' +
       window.okbmFeedDeletePlanWarning;
 
@@ -2866,7 +2857,7 @@ window.normalizeHistoryRecord = function(r, idx) {
       }
     }
 
-    triggerHaptic(15);
+    triggerHaptic(20);
     window.__isPastTripsSelectMode = false;
     window.__selectedPastTripIds.clear();
     window.openPastTripsListModal();
@@ -2883,7 +2874,6 @@ window.normalizeHistoryRecord = function(r, idx) {
     }
     var modalEl = document.getElementById('pastTripsListModal');
     if (modalEl) modalEl.remove();
-    triggerHaptic(10);
   };
 
   window.__renderPastTripCardRow = function(r, isSelectMode, activeTab) {
@@ -3146,7 +3136,6 @@ window.normalizeHistoryRecord = function(r, idx) {
 
       document.body.appendChild(modalEl);
       if (typeof window.okbmLiftReportChildModal === 'function') window.okbmLiftReportChildModal(modalEl);
-      triggerHaptic(12);
 
       var targetUrl = window.SUPABASE_URL || '';
       var targetKey = window.SUPABASE_ANON_KEY || '';
@@ -3450,7 +3439,6 @@ window.toggleFeedStar = async function(cardId, e) {
   var canonicalUserId = window.okbmGetNormalizedUserId();
 
   if (!isLogged || !canonicalUserId) {
-    triggerHaptic(12);
     var toastFn = window.showToast || (typeof showToast === 'function' ? showToast : null);
     if (toastFn) {
       toastFn('로그인 후 이용할 수 있습니다.', 'info', 2200);
@@ -3517,9 +3505,7 @@ window.toggleFeedStar = async function(cardId, e) {
   var nextCount = nextStarred ? (currentCount + 1) : Math.max(0, currentCount - 1);
 
   if (nextStarred) {
-    triggerHaptic(14);
   } else {
-    triggerHaptic(8);
   }
 
   var updateStarDOMElements = function(idVal, starredVal, countVal) {
@@ -3721,7 +3707,6 @@ window.toggleFeedStar = async function(cardId, e) {
   };
 
   window.shareCurrentFeed = function(recordId, spotName, memoText) {
-    triggerHaptic(10);
     var payload = window.okbmBuildFeedSharePayload(recordId, spotName, memoText);
     window.__okbmLastFeedShare = payload;
     var safeId = escapeHtml(payload.id);
@@ -3782,7 +3767,6 @@ window.toggleFeedStar = async function(cardId, e) {
 
   window.copyShareLinkFallback = function(text, toastMsg, toastOpts) {
     if (!text) return;
-    triggerHaptic(12);
     var msg = toastMsg || '✓ 피드 링크가 복사되었습니다!';
 
     if (navigator.clipboard && window.isSecureContext) {
@@ -3823,7 +3807,6 @@ window.toggleFeedStar = async function(cardId, e) {
   };
 
   window.sendFeedToKakaoTalk = function(recordId) {
-    triggerHaptic(12);
     var p = window.okbmResolveFeedSharePayload(recordId);
     var sendKakao = function() {
       if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
@@ -3864,7 +3847,6 @@ window.toggleFeedStar = async function(cardId, e) {
   };
 
   window.sendFeedToInstagram = function(recordId) {
-    triggerHaptic(12);
     var p = window.okbmResolveFeedSharePayload(recordId);
     window.copyShareLinkFallback(p.body, '같은 공유 내용 복사 완료. 인스타그램에 붙여넣기 하세요.', { html: HISTORY_TOAST_VEC.camera });
     setTimeout(function() {
@@ -3881,7 +3863,6 @@ window.toggleFeedStar = async function(cardId, e) {
   };
 
   window.triggerNativeShare = function(title, desc, url) {
-    triggerHaptic(10);
     var p = window.__okbmLastFeedShare;
     var shareTitle = (p && p.title) || title;
     var shareText = (p && p.description) || desc;
@@ -3910,7 +3891,6 @@ window.toggleFeedStar = async function(cardId, e) {
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) {
-      triggerHaptic(12);
       if (typeof showToast === 'function') showToast('기록 관리는 로그인 후 이용할 수 있습니다.', 'info', 2200, { html: HISTORY_TOAST_VEC.lock });
       if (typeof openLoginModal === 'function') openLoginModal();
       return;
@@ -3933,7 +3913,6 @@ window.toggleFeedStar = async function(cardId, e) {
     }
 
     if (typeof window.isRecordOwner === 'function' && !window.isRecordOwner(target) && !target._isLocalOwner) {
-      triggerHaptic(12);
       if (typeof showToast === 'function') showToast('본인 기록만 공개 설정을 변경할 수 있습니다.', 'warn', 2200, { html: HISTORY_TOAST_VEC.lock });
       return;
     }
@@ -3946,7 +3925,6 @@ window.toggleFeedStar = async function(cardId, e) {
     if (nextStatus === true) {
       var canPublish = (typeof window.okbmCanPublishFeed === 'function') ? window.okbmCanPublishFeed(target) : false;
       if (!canPublish) {
-        triggerHaptic(14);
         var spotName = String(target.spot || '').trim();
         var isRegistered = typeof window.isSpotRegisteredInMasterDB === 'function' &&
           window.isSpotRegisteredInMasterDB(spotName) &&
@@ -3997,7 +3975,6 @@ window.toggleFeedStar = async function(cardId, e) {
 
     paintLockButton(nextStatus);
 
-    triggerHaptic(12);
     if (typeof showToast === 'function') {
       showToast(nextStatus ? '[함께보기]로 전환되었습니다.' : '[나만보기]로 전환되었습니다.', 'info', 1600, { html: nextStatus ? HISTORY_TOAST_VEC.globe : HISTORY_TOAST_VEC.lock });
     }
@@ -4073,7 +4050,6 @@ window.toggleFeedStar = async function(cardId, e) {
 
   window.openTripActionMenu = function(recordId, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    triggerHaptic(10);
     var log = window.okbmFindFeedRecord(recordId);
     if (!log && typeof window.__findCurrentDualFeedRecord === 'function') {
       var curFeed = window.__findCurrentDualFeedRecord();
@@ -4161,7 +4137,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       if (!(await window.okbmConfirmFeedDeleteWithPlanWarning())) return;
     }
 
-    triggerHaptic(15);
 
     // [삭제 검증] 서버에서 실제로 행이 삭제되었음을 확인하기 전까지는
     // 로컬 화면에서 절대 지우지 않습니다. 이전에는 로컬을 먼저 지우고 서버
@@ -4230,6 +4205,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
 
     // 여기까지 왔다면 서버 삭제가 확인되었으므로(또는 서버 설정이 없으므로) 로컬 캐시를 정리합니다.
+    triggerHaptic(20);
     var purgeFn = function(r) {
       return r && String(r.id).trim() !== sId;
     };
@@ -4439,7 +4415,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       .trim();
     var cleanId = String(rawSpotId || '').trim();
     if (!cleanSpot && !cleanId) return;
-    triggerHaptic(12);
 
     if ((!cleanSpot || cleanSpot === '나의 힐링 스팟' || cleanSpot === '힐링 장소') && !cleanId) {
       if (typeof showToast === 'function') showToast('정확한 장소 위치 정보가 등록되지 않았습니다.', 'info', 1800);
@@ -4669,7 +4644,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
  window.toggleSaveFeed = function(feedId, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    triggerHaptic(12);
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) {
@@ -4745,7 +4719,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
   };
 
  window.openFollowedRoutersModal = function(isRestored) {
-    triggerHaptic(12);
 
     var activeReport = document.getElementById('userProfileModalOverlay');
     if (!isRestored && activeReport && activeReport.style.display !== 'none') {
@@ -4873,7 +4846,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
   };
 
   window.openSavedFeedsModal = function(isRestored) {
-    triggerHaptic(12);
 
     var activeReport = document.getElementById('userProfileModalOverlay');
     if (!isRestored && activeReport && activeReport.style.display !== 'none') {
@@ -5014,7 +4986,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
  // 👥 [단방향 관심루터/크루 팔로우 토글 엔진]
  window.toggleFollowUser = function(targetUserId, targetAuthor, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    triggerHaptic(12);
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) {
@@ -5196,7 +5167,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
   window.openRouterProfileMoreMenu = function(userId, nickname, feedId, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    triggerHaptic(10);
 
     var sUserId = String(userId || '').trim();
     var sNick = String(nickname || '').trim();
@@ -5348,7 +5318,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
   window.openUserFeedCollectionModal = function(authorName, userId, initialTab, isRestored) {
     if (!authorName && !userId) return;
-    triggerHaptic(12);
 
     var followedModal = document.getElementById('followedRoutersModal');
     if (!isRestored && followedModal) {
@@ -5877,7 +5846,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     window.__triggerCurrentFeedMoreMenu = function(e) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
-      triggerHaptic(10);
       var targetLog = window.__findCurrentDualFeedRecord();
       if (!targetLog) {
         if (typeof showToast === 'function') showToast('대상을 찾을 수 없습니다.', 'warn');
@@ -5894,7 +5862,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     };
 
     window.__triggerEditCurrentActiveFeed = function() {
-      triggerHaptic(10);
       var targetLog = window.__findCurrentDualFeedRecord();
       if (targetLog) {
         if (!window.isRecordOwner(targetLog)) {
@@ -5916,7 +5883,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       if (scroller && typeof window.__growDualFeedWindow === 'function') window.__growDualFeedWindow(scroller);
     }, 40);
 
-    triggerHaptic(12);
   };
 
 /// [대형 사진 스와이프 뷰어 & 모바일 createObjectURL 초고속 1200px 다중 압축 엔진 - 상태 머신 락 적용]
@@ -5956,7 +5922,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       inputEl.value = '';
       return;
     }
-    triggerHaptic(10);
 
     // 🔒 [비동기 락 활성화]: 압축 중에는 저장 버튼 비활성화 (타이밍 역전 100% 차단)
     window.__isPhotoCompressing = true;
@@ -6067,7 +6032,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     window.__currentSwipePhotoIndex = Math.max(0, window.__tempUploadedPhotos.length - 1);
     window.__renderRichPhotoStage();
-    triggerHaptic(12);
   };
 
   window.__removeRichSinglePhoto = function(index) {
@@ -6078,7 +6042,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         window.__currentSwipePhotoIndex = Math.max(0, window.__tempUploadedPhotos.length - 1);
       }
       window.__renderRichPhotoStage();
-      triggerHaptic(8);
     }
   };
 
@@ -6087,7 +6050,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     window.__tempPhotoMemos = [];
     window.__currentSwipePhotoIndex = 0;
     window.__renderRichPhotoStage();
-    triggerHaptic(10);
   };
 
  window.__commitCurrentMemoInput = function() {
@@ -6195,7 +6157,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', String(idx));
     }
-    triggerHaptic(10);
   };
 
   window.__handleThumbDragOver = function(e) {
@@ -6222,7 +6183,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
       window.__currentSwipePhotoIndex = dropIdx;
       window.__renderRichPhotoStage();
-      triggerHaptic(14);
     }
     window.__draggedThumbIdx = null;
     return false;
@@ -6313,7 +6273,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     window.__syncRichPhotoThumbStrip(targetIdx);
     window.__syncActivePhotoMemoUI();
-    triggerHaptic(8);
   };
 
   window.__handleTouchThumbEnd = function(e) {
@@ -6348,7 +6307,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
           window.__currentSwipePhotoIndex = toIdx;
           window.__renderRichPhotoStage();
-          triggerHaptic(16);
           window.__touchStartThumbIdx = null;
           window.__isLongPressActive = false;
           window.__touchTargetThumbEl = null;
@@ -6382,7 +6340,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
   window.__deleteCurrentRichTrip = function(recordId) {
     if (!recordId) return;
-    triggerHaptic(14);
     if (typeof window.deleteTripRecord === 'function') {
       window.deleteTripRecord(recordId);
     }
@@ -6434,7 +6391,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
                ontouchstart="window.__handleTouchThumbStart(event, ${tIdx});"
                ontouchmove="window.__handleTouchThumbMove(event);"
                ontouchend="window.__handleTouchThumbEnd(event);"
-               onclick="window.__commitCurrentMemoInput(); window.__currentSwipePhotoIndex = ${tIdx}; window.__renderRichPhotoStage(); triggerHaptic(8);" 
+               onclick="window.__commitCurrentMemoInput(); window.__currentSwipePhotoIndex = ${tIdx}; window.__renderRichPhotoStage();" 
                class="rich-photo-thumb"
                style="width:54px; height:54px; border-radius:9px; overflow:hidden; position:relative; flex:0 0 54px; cursor:grab; background:#000; box-sizing:border-box; transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); user-select:none; -webkit-user-select:none; touch-action:pan-x; ${activeBorderStyle}">
             <img src="${escapeHtml(okbmSafeImageUrl(tUrl))}" data-okbm-photo-record-id="${escapeHtml(String(window.__richCurrentRecord && window.__richCurrentRecord.id || ''))}" data-okbm-photo-index="${tIdx}" data-okbm-photo-kind="phone" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
@@ -6481,7 +6438,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
   // 하위 호환성 영구 보존 알리아스
 // 🔍 [기록 작성 모달 전용 장소 검색 & 실시간 연관검색어 엔진]
   window.openSpotSearchModalForRichTrip = function() {
-    triggerHaptic(10);
     var old = document.getElementById('richTripSpotSearchModal');
     if (old) old.remove();
 
@@ -6812,14 +6768,12 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       if (regBtn) {
         regBtn.onclick = function() {
           ov.remove();
-          triggerHaptic(10);
           window.__openRichSpotProposal(name);
         };
       }
       if (skipBtn) {
         skipBtn.onclick = function() {
           ov.remove();
-          triggerHaptic(8);
         };
       }
     };
@@ -6827,7 +6781,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     window.__selectSpotForRichTrip = function(spotName, elevation, opts) {
       if (!spotName) return;
       opts = opts || {};
-      triggerHaptic(12);
 
       // 인풋 포커스 먼저 해제하여 브라우저 강제 스크롤 차단
       var input = document.getElementById('richSpotSearchInput');
@@ -6935,7 +6888,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var isNew = Boolean(record.isNewPost);
 
     if (isNew && record.date && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(record)) {
-      triggerHaptic(12);
       if (typeof showToast === 'function') {
         showToast('출발일 당일 이후에 현장 사진과 일지를 등록할 수 있습니다.', 'info', 2400, { html: HISTORY_TOAST_VEC.clock });
       }
@@ -6944,7 +6896,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     var isOwner = Boolean(record._isLocalOwner || (typeof window.isRecordOwner === 'function' && window.isRecordOwner(record)));
     if (!isNew && !isOwner) {
-      triggerHaptic(15);
       if (typeof showToast === 'function') {
         showToast('본인이 작성한 기록만 수정할 수 있습니다.', 'warn', 2200, { html: HISTORY_TOAST_VEC.lock });
       }
@@ -6986,7 +6937,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     ).slice(0, 120);
 
     window.__switchMemoMode = function(mode) {
-      triggerHaptic(8);
       window.__commitCurrentMemoInput();
       window.__tempMemoMode = mode;
 
@@ -7029,7 +6979,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     formModal.innerHTML = `
       <!-- 1. 상단 고정 헤더: 뒤로가기 + 장소/일상 뱃지 + 수정 완료 -->
       <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10; gap:8px;">
-        <button type="button" onclick="document.getElementById('modalRichAfterTrip').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>
+        <button type="button" onclick="document.getElementById('modalRichAfterTrip').remove();" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>
         
         <div style="display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:4px 10px; border-radius:20px; min-height:32px; min-width:0; flex:1; justify-content:center;" title="위치와 날짜는 수정할 수 없습니다">
           <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -7123,7 +7073,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
 
     if (target.date && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(target)) {
-      triggerHaptic(12);
+      triggerHaptic(20);
       if (typeof showToast === 'function') {
         showToast('출발일 당일 이후에 현장 사진과 일지를 등록할 수 있습니다.', 'info', 2400, { html: HISTORY_TOAST_VEC.clock });
       }
@@ -7137,7 +7087,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         }).slice(0, 10)
       : [];
     if (photosToProcess.length === 0) {
-      triggerHaptic(14);
+      triggerHaptic(20);
       if (typeof showToast === 'function') showToast('현장 사진을 1장 이상 추가해주세요.', 'warn', 2400, { html: HISTORY_TOAST_VEC.camera, position: 'center' });
       window.__isSubmittingRichTrip = false;
       var submitBtnEl = document.getElementById('btnSubmitRichTrip');
@@ -7157,14 +7107,14 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         window.__tempSingleMemo || (memoInputEl ? memoInputEl.value : '') || ''
       ).trim().slice(0, 120);
       if (!singleMemoCheck) {
-        triggerHaptic(14);
+        triggerHaptic(20);
         if (typeof showToast === 'function') showToast('대표 일지를 작성해주세요.', 'warn', 2400, 'center');
         window.__isSubmittingRichTrip = false;
         if (memoInputEl) memoInputEl.focus();
         return;
       }
       if (singleMemoCheck.length < 30) {
-        triggerHaptic(14);
+        triggerHaptic(20);
         if (typeof showToast === 'function') {
           showToast('대표 일지는 30자 이상 작성해주세요. (현재 ' + singleMemoCheck.length + '자)', 'warn', 2800, 'center');
         }
@@ -7810,7 +7760,6 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
   window.switchHistoryFeedTab = async function(tab) {
     if (window.activeHistoryFeedTab === tab) return;
     window.activeHistoryFeedTab = tab;
-    triggerHaptic(10);
 
     // 🌊 [부드러운 크로스페이드 1단계]: 기존 화면을 80ms 동안 자연스럽게 페이드아웃
     var container = document.getElementById('reelsVerticalContainer');
@@ -7851,7 +7800,6 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
   // 🔄 [피드 스트림 2단 직통 토글]: 전체피드 ⇄ 내 보관함 1:1 스위치
   window.toggleFeedStreamMode = function(e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    triggerHaptic(10);
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     var currentMode = window.activeHistoryFeedTab || 'explore';
@@ -7873,7 +7821,6 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
   };
 
   window.openNewRouterSnapModal = function() {
-    triggerHaptic(10);
     if (typeof showToast === 'function') {
       showToast('낭만루트 기록에서 사진을 등록할 수 있습니다.', 'info');
     }
@@ -8022,7 +7969,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var cardPureId = String(recordId || '').trim();
     return '<div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:24px 18px; box-sizing:border-box; text-align:center; background:#000000; pointer-events:none;">' +
       '<div style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:20px; pointer-events:none;">' +
-        '<button type="button" data-record-id="' + escapeHtml(cardPureId) + '" onclick="event.stopPropagation(); triggerHaptic(12); window.openRichAfterTripModal(window.okbmFindFeedRecord(this.dataset.recordId));" style="pointer-events:auto; width:58px; height:58px; border-radius:50%; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; color:#e2e8f0; box-shadow:0 4px 18px rgba(0,0,0,0.5); cursor:pointer; padding:0; outline:none; transition:transform 0.15s ease, background 0.15s ease;" onmousedown="this.style.transform=\'scale(0.92)\'; this.style.background=\'rgba(255,255,255,0.14)\';" onmouseup="this.style.transform=\'scale(1)\'; this.style.background=\'rgba(255,255,255,0.06)\';" ontouchstart="this.style.transform=\'scale(0.92)\'; this.style.background=\'rgba(255,255,255,0.14)\';" ontouchend="this.style.transform=\'scale(1)\'; this.style.background=\'rgba(255,255,255,0.06)\';">' +
+        '<button type="button" data-record-id="' + escapeHtml(cardPureId) + '" onclick="event.stopPropagation();  window.openRichAfterTripModal(window.okbmFindFeedRecord(this.dataset.recordId));" style="pointer-events:auto; width:58px; height:58px; border-radius:50%; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; color:#e2e8f0; box-shadow:0 4px 18px rgba(0,0,0,0.5); cursor:pointer; padding:0; outline:none; transition:transform 0.15s ease, background 0.15s ease;" onmousedown="this.style.transform=\'scale(0.92)\'; this.style.background=\'rgba(255,255,255,0.14)\';" onmouseup="this.style.transform=\'scale(1)\'; this.style.background=\'rgba(255,255,255,0.06)\';" ontouchstart="this.style.transform=\'scale(0.92)\'; this.style.background=\'rgba(255,255,255,0.14)\';" ontouchend="this.style.transform=\'scale(1)\'; this.style.background=\'rgba(255,255,255,0.06)\';">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px; pointer-events:none;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
         '</button>' +
         '<div style="font-size:1.02rem; font-weight:900; color:#ffffff;">' + escapeHtml(spotName || '나의 힐링 스팟') + '</div>' +
@@ -8221,7 +8168,6 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
   // 🧰 [하단 4대 도구 인라인 슬라이드 서랍 토글]
   window.toggleFeedBottomTools = function(cardId, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    triggerHaptic(10);
 
     var drawer = document.getElementById('bottomToolsDrawer_' + cardId);
     var triggerBtn = document.getElementById('btnToggleBottomTools_' + cardId);
@@ -8356,12 +8302,12 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var socialBadgesHtml = '';
     if (!isMyRecord) {
       if (instaTargetUrl && okbmSafeExternalUrl(instaTargetUrl) !== '#') {
-        socialBadgesHtml += '<a href="' + escapeHtml(okbmSafeExternalUrl(instaTargetUrl)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="인스타그램">' +
+        socialBadgesHtml += '<a href="' + escapeHtml(okbmSafeExternalUrl(instaTargetUrl)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="인스타그램">' +
           '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' +
           '</a>';
       }
       if (youtubeTargetUrl && okbmSafeExternalUrl(youtubeTargetUrl) !== '#') {
-        socialBadgesHtml += '<a href="' + escapeHtml(okbmSafeExternalUrl(youtubeTargetUrl)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="유튜브">' +
+        socialBadgesHtml += '<a href="' + escapeHtml(okbmSafeExternalUrl(youtubeTargetUrl)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="유튜브">' +
           '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none">' +
             '<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/>' +
             '<path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/>' +
@@ -8426,7 +8372,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     if (isMyRecord) {
       bottomToolsHtml = '<div style="display:flex; align-items:center; justify-content:flex-end; position:relative; flex-shrink:0;">' +
         '<div id="bottomToolsDrawer_' + cardId + '" data-opened="false" style="display:flex; align-items:center; gap:6px; max-width:0px; opacity:0; transform:scale(0.85) translateX(12px); transform-origin:right center; overflow:hidden; transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1); pointer-events:none; margin-right:6px; box-sizing:border-box;">' +
-          '<button type="button" onclick="window.openPastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8; flex-shrink:0;" title="보관함 모아보기">' +
+          '<button type="button" onclick="window.openPastTripsListModal();" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8; flex-shrink:0;" title="보관함 모아보기">' +
             '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
           '</button>' +
           '<button type="button" data-record-id="' + cardId + '" data-lock-btn-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:' + (isPub ? '#34d399' : '#38bdf8') + '; flex-shrink:0;" title="' + (isPub ? '전체 공개 중' : (!isRegisteredSpot ? '비공개 (등록 박지만 함께보기 가능)' : (hasRealFieldPhotos ? '비공개 (나만보기)' : '비공개 (디데이 이후 사진 등록 시 함께보기 가능)'))) + '">' +
@@ -8435,7 +8381,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
               : '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
             ) +
           '</button>' +
-          '<button type="button" data-record-id="' + cardId + '" onclick="window.openRichAfterTripModal(window.okbmFindFeedRecord(this.dataset.recordId)); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fde047; flex-shrink:0;" title="일지 및 사진 수정">' +
+          '<button type="button" data-record-id="' + cardId + '" onclick="window.openRichAfterTripModal(window.okbmFindFeedRecord(this.dataset.recordId));" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fde047; flex-shrink:0;" title="일지 및 사진 수정">' +
             '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
           '</button>' +
           '<button type="button" data-record-id="' + cardPureId + '" onclick="window.deleteTripRecord(this.dataset.recordId, event);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#f43f5e; flex-shrink:0;" title="기록 삭제">' +
@@ -8526,7 +8472,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var readyShotMemoryPromptHtml = '';
     var ddayPassedWithoutPhoto = diffDays !== null && diffDays < 0 && totalPhotosCount === 0;
     if (isMyRecord && showTemplateFront && (ddayLabel || ddayPassedWithoutPhoto)) {
-      readyShotMemoryPromptHtml = '<button type="button" id="readyShotMemoryPrompt_' + cardId + '" class="ready-shot-memory-prompt" data-card-id="' + cardId + '" onclick="event.stopPropagation(); triggerHaptic(10); var card=document.getElementById(\'feedSnapCard_\' + this.dataset.cardId); var wrap=card&&card.querySelector(\'.postcard-3d-wrapper\'); if(wrap){wrap.classList.toggle(\'flipped\');}" style="margin:0 auto; padding:0; border:none; background:transparent; cursor:pointer; -webkit-tap-highlight-color:transparent;">' +
+      readyShotMemoryPromptHtml = '<button type="button" id="readyShotMemoryPrompt_' + cardId + '" class="ready-shot-memory-prompt" data-card-id="' + cardId + '" onclick="event.stopPropagation();  var card=document.getElementById(\'feedSnapCard_\' + this.dataset.cardId); var wrap=card&&card.querySelector(\'.postcard-3d-wrapper\'); if(wrap){wrap.classList.toggle(\'flipped\');}" style="margin:0 auto; padding:0; border:none; background:transparent; cursor:pointer; -webkit-tap-highlight-color:transparent;">' +
         (ddayPassedWithoutPhoto
           ? '<span style="font-size:calc(0.78rem + 3pt); font-weight:800; color:#f1f5f9; letter-spacing:-0.2px; text-shadow:0 1px 4px rgba(0,0,0,0.85);">추억을 기록해 주세요</span>'
           : (ddayLabel
@@ -8552,7 +8498,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       '<div class="reel-media-stage">' +
         '<div style="width:100% !important; height:100% !important; position:relative; overflow:hidden; background:#000000;">' +
           (centerDDayOverlayHtml && !showTemplateFront ? centerDDayOverlayHtml : '') +
-          '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
+          '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\');" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
             '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
               (totalPhotosCount > 0 ? (
                 '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \`' + cardId + '\`);">' + horizontalSlidesHtml + '</div>' + dotsHtml
@@ -9169,7 +9115,6 @@ window.renderHistoryStage = function(isLoading, opts) {
     }
 
     if (isAlreadyOpen) {
-      triggerHaptic(10);
       var scroller = document.getElementById('reelsVerticalContainer');
       if (scroller) scroller.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -9277,7 +9222,6 @@ window.renderHistoryStage = function(isLoading, opts) {
       loadVaultFromNetwork();
     }
 
-    triggerHaptic(10);
   };
 
   window.closeHistoryModal = function() {
@@ -9306,7 +9250,6 @@ window.renderHistoryStage = function(isLoading, opts) {
     if (planStillOpen && planStillOpen.style.display !== 'none' && typeof window.okbmStartNotifPoll === 'function') {
       window.okbmStartNotifPoll();
     }
-    triggerHaptic(10);
   };
 
   // 하위 호환 매핑

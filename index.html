@@ -2099,7 +2099,7 @@
     </div>
 
     <div class="header-top-row">
-      <a href="index.html" class="brand-line" onclick="triggerHaptic(10)" title="낭만루트 홈">
+      <a href="index.html" class="brand-line" title="낭만루트 홈">
         <div class="brand-sym-box">
           <img src="logo.png" alt="낭만루트 로고" class="brand-logo-img" />
         </div>
@@ -2177,7 +2177,7 @@
           </span>
           <span>테마 스팟</span>
         </h2>
-        <span style="font-size:0.65rem; color:#38bdf8; font-weight:800; cursor:pointer;" onclick="openThemeSpotAllModal(); triggerHaptic(10);">전체 보기</span>
+        <span style="font-size:0.65rem; color:#38bdf8; font-weight:800; cursor:pointer;" onclick="openThemeSpotAllModal();">전체 보기</span>
       </div>
 
       <!-- 순수 SVG 벡터 기반 테마 필터 바 (이모지 0%) -->
@@ -2389,7 +2389,7 @@
           <svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:none; stroke:#cbd5e1; stroke-width:2.2; flex-shrink:0;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           <span>비우기</span>
         </button>
-        <button type="button" onclick="triggerHaptic(12); closeGearPresetModal();" style="flex:1; height:44px; background:#ffffff; color:#000000; font-size:0.84rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <button type="button" onclick="closeGearPresetModal();" style="flex:1; height:44px; background:#ffffff; color:#000000; font-size:0.84rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
           <span>장비 선택 완료</span>
           <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#000000; stroke-width:2.5; flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
@@ -2401,7 +2401,6 @@
 
   <script>
     window.smoothNavigate = function(url, e) {
-      triggerHaptic(10);
       var currentPath = window.location.pathname;
       var targetPath = (url || '').split('?')[0];
       var isTargetHome = (targetPath.includes('index.html') || targetPath === '/' || targetPath === '');
@@ -2765,7 +2764,6 @@
     window.currentThemeSpotAllTab = 'all';
 
     window.openThemeSpotAllModal = function() {
-      triggerHaptic(10);
       var old = document.getElementById('themeSpotAllModal');
       if (old) old.remove();
 
@@ -2813,7 +2811,6 @@
     window.closeThemeSpotAllModal = function() {
       var modal = document.getElementById('themeSpotAllModal');
       if (!modal) return;
-      triggerHaptic(8);
       if (typeof window.unregisterModalClose === 'function') {
         window.unregisterModalClose('themeSpotAllModal');
       }
@@ -2830,7 +2827,6 @@
         parent.querySelectorAll('.n-cat-chip').forEach(function(b) { b.classList.remove('active'); });
         btnEl.classList.add('active');
       }
-      triggerHaptic(10);
       window.renderThemeSpotAllGrid(themeKey);
     };
 
@@ -2918,7 +2914,6 @@
       window.currentSecretSpotTheme = themeKey;
       document.querySelectorAll('#heroTrailerSectionWrap .n-cat-chip').forEach(function(b) { b.classList.remove('active'); });
       if (btnEl) btnEl.classList.add('active');
-      triggerHaptic(10);
       renderSecretSpotTrailerRail();
     }
 
@@ -3048,7 +3043,6 @@
     window.closeSecretSpotHeroModal = function() {
       var modalEl = document.getElementById('secretSpotHeroModal');
       if (!modalEl) return;
-      triggerHaptic(8);
       if (typeof window.unregisterModalClose === 'function') {
         window.unregisterModalClose('secretSpotHeroModal');
       }
@@ -3104,7 +3098,6 @@
 
     // 🖼️ [3:4 대형 화보 뷰어: 풀커버 + 사진 속 닷 + 하단 5대 메인독 탑재]
     window.openSecretSpotHeroViewer = function(spotOrFeedId) {
-      triggerHaptic(12);
       var old = document.getElementById('secretSpotHeroModal');
       if (old) old.remove();
 
@@ -3276,7 +3269,6 @@
 
     // 📖 [특정 장소 피드로 다이렉트 점프 엔진]
     window.openSpotFeedArchive = function(spotName) {
-      triggerHaptic(12);
       if (typeof window.openHistoryModal === 'function') {
         window.openHistoryModal();
         setTimeout(function() {
@@ -3298,7 +3290,6 @@
 
     function handleHeroNavClick(e) {
       if (e) e.stopPropagation();
-      triggerHaptic(10);
       var record = window.currentHeroRecord;
       var spotName = (record && (record.spot || record.spotName)) ? (record.spot || record.spotName) : '대관령 선자령';
       location.href = 'map.html?spot=' + encodeURIComponent(spotName.replace(/\s*\(.*?\)/g, ''));
@@ -3306,7 +3297,6 @@
 
     function openCurrentTemplateModal(e) {
       if (e) e.stopPropagation();
-      triggerHaptic(12);
       var record = window.currentHeroRecord;
       if (!record) return;
 
@@ -3326,7 +3316,6 @@
  // 👤 [1위 등록자 피드 모아보기 직통 연동]
     window.openHeroAuthorCollection = function(e) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
-      triggerHaptic(12);
 
       var rec = window.currentHeroRecord;
       if (!rec) return;
@@ -3352,7 +3341,6 @@
     };
 
     window.openTripAuthorProfile = function(authorName, userId) {
-      triggerHaptic(10);
       window.closeTripAuthorProfile();
 
       var targetNick = String(authorName || '낭만대원').trim();
@@ -3557,7 +3545,6 @@
     window.closeTripAuthorProfile = function() {
       var modal = document.getElementById('tripUserProfileModal');
       if (!modal) return;
-      triggerHaptic(8);
       if (typeof window.unregisterModalClose === 'function') {
         window.unregisterModalClose('tripUserProfileModal');
       }
@@ -3754,7 +3741,6 @@
       if (records.length <= 1) return;
 
       window.currentHeroCardIndex = (window.currentHeroCardIndex + delta + records.length) % records.length;
-      triggerHaptic(12);
 
       var card = document.getElementById('instaMainCard');
       if (card) {
@@ -4239,7 +4225,6 @@ var adBannersHtml = `
       var embedUrl = rawId ? ('https://www.youtube-nocookie.com/embed/' + rawId + '?playsinline=1&rel=0&autoplay=0') : '';
       if (iframe) iframe.src = embedUrl;
       if (modal) modal.style.display = 'flex';
-      triggerHaptic(12);
     }
 
     function closeVideoDetailModal() {
@@ -4247,7 +4232,6 @@ var adBannersHtml = `
       var iframe = document.getElementById('videoModalIframe');
       if (iframe) iframe.src = '';
       if (modal) modal.style.display = 'none';
-      triggerHaptic(10);
     }
 
     async function loadFeaturedVideosFromSupabase() {
@@ -4558,7 +4542,6 @@ var adBannersHtml = `
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       if (!skipConfirm && !confirm('이 원정대 공고를 삭제하시겠습니까?\n달력과 홈 화면에서 즉시 삭제됩니다.')) return;
 
-      triggerHaptic(15);
       var targetIdStr = String(tripId).trim();
 
       var modal = document.getElementById('tripDetailSheetModal');
@@ -4586,6 +4569,7 @@ var adBannersHtml = `
       });
       if (typeof renderHomeTripJoinSlider === 'function') renderHomeTripJoinSlider();
 
+      triggerHaptic(20);
       showToast('원정대 공고가 삭제되었습니다.', 'info');
       if (typeof window.renderPlanStage === 'function') window.renderPlanStage();
     };
@@ -4671,7 +4655,6 @@ var adBannersHtml = `
         return;
       }
 
-      triggerHaptic(12);
       var nextClosed = !trip.isClosed;
       trip.isClosed = nextClosed;
 
@@ -4701,7 +4684,6 @@ var adBannersHtml = `
     };
 
     window.viewTripHostProfile = function(authorName, userId) {
-      triggerHaptic(10);
       if (typeof window.openUserFeedCollectionModal === 'function') {
         window.openUserFeedCollectionModal(authorName, userId, 'route');
         var coll = document.getElementById('userFeedCollectionModal');
@@ -4733,7 +4715,6 @@ var adBannersHtml = `
     };
 
     window.openTripDetailModal = function(tripId) {
-      triggerHaptic(10);
       window.__currentActiveTripId = String(tripId);
       if (typeof window.lockHomeScrollForTripModal === 'function') {
         window.lockHomeScrollForTripModal();
@@ -4995,7 +4976,6 @@ var adBannersHtml = `
             } else {
               window.__currentTripJoinModalIdx = (window.__currentTripJoinModalIdx - 1 + totalTrips) % totalTrips;
             }
-            triggerHaptic(10);
             renderTripDetailSheet(activeTrips);
           }
         }, { passive: true });
@@ -5024,7 +5004,6 @@ var adBannersHtml = `
 
     window.handleTripChatJoinClick = function(chatUrl) {
       if (!(typeof isUserLoggedIn === 'function' && isUserLoggedIn())) {
-        triggerHaptic(12);
         showToast('원정대 동행 문의는 로그인 후 이용하실 수 있습니다.', 2200);
         if (typeof openLoginModal === 'function') {
           openLoginModal();
@@ -5038,7 +5017,6 @@ var adBannersHtml = `
         return;
       }
 
-      triggerHaptic(10);
       window.open(chatUrl, '_blank');
     };
 
@@ -5059,13 +5037,11 @@ var adBannersHtml = `
 
     function openTripCreateModal() {
       if (!(typeof isUserLoggedIn === 'function' && isUserLoggedIn())) {
-        triggerHaptic(10);
         showToast('원정대 모집은 로그인 후 이용 가능합니다.', 2200);
         if (typeof openLoginModal === 'function') openLoginModal();
         return;
       }
 
-      triggerHaptic(10);
       if (typeof window.lockHomeScrollForTripModal === 'function') {
         window.lockHomeScrollForTripModal();
       } else {
@@ -5095,7 +5071,7 @@ var adBannersHtml = `
               <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:none; stroke:#38bdf8; stroke-width:2.2; flex-shrink:0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               <span>동행 모집 (원정대 만들기)</span>
             </div>
-            <button type="button" onclick="window.closeTripCreateModal(); triggerHaptic(10);" style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#cbd5e1; font-size:1.1rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
+            <button type="button" onclick="window.closeTripCreateModal();" style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#cbd5e1; font-size:1.1rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
           </div>
 
           <!-- Scrollable Form Container -->
@@ -5261,7 +5237,6 @@ var adBannersHtml = `
         if (total <= 1) return;
 
         if (Math.abs(diffX) > 25 || (Math.abs(diffX) < 10 && Math.abs(diffY) < 10)) {
-          triggerHaptic(8);
           cycleTripPhotoToBack();
         }
       }, { passive: true });
@@ -5270,7 +5245,6 @@ var adBannersHtml = `
         if (e.target.closest('button')) return;
         var total = (window.__tempTripCreatePhotos || []).length;
         if (total > 1) {
-          triggerHaptic(8);
           cycleTripPhotoToBack();
         }
       });
@@ -5285,7 +5259,6 @@ var adBannersHtml = `
 
     function removeTripCreatePhoto(idx, e) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
-      triggerHaptic(10);
       window.__tempTripCreatePhotos.splice(idx, 1);
       if (window.__currentTripCreatePhotoIdx >= window.__tempTripCreatePhotos.length) {
         window.__currentTripCreatePhotoIdx = Math.max(0, window.__tempTripCreatePhotos.length - 1);
@@ -5317,7 +5290,6 @@ var adBannersHtml = `
       });
       if (rejectedCount) showToast('지원하는 파일형식이 아닙니다.', 'warn', 2200);
       if (!toProcess.length) return;
-      triggerHaptic(10);
       showToast('사진 ' + toProcess.length + '장을 등록하는 중입니다...', 2500);
       if (typeof window.showPhotoLoadingModal === 'function') {
         window.showPhotoLoadingModal(1, toProcess.length);
@@ -5357,7 +5329,6 @@ var adBannersHtml = `
       window.__tempTripCreatePhotos = (window.__tempTripCreatePhotos || []).concat(valids).slice(0, MAX_PHOTOS);
       window.__currentTripCreatePhotoIdx = 0;
       renderTripPhotoStack();
-      triggerHaptic(12);
       showToast('사진 ' + valids.length + '장이 등록되었습니다!', 'success');
     }
 
@@ -5366,7 +5337,6 @@ var adBannersHtml = `
     window.__tripPickerSelectedDate = '';
 
     window.openTripEditModal = function(tripId) {
-      triggerHaptic(10);
       var targetId = String(tripId || '').trim();
       var trip = (window.TRIP_JOINS_DATABASE || []).find(function(t) { return String(t.tripId).trim() === targetId; });
       if (!trip) {
@@ -5487,7 +5457,7 @@ var adBannersHtml = `
         localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
 
         showToast('원정대 공고가 성공적으로 수정되었습니다!', 'success');
-        triggerHaptic(12);
+        triggerHaptic(15);
 
         if (typeof window.closeTripCreateModal === 'function') window.closeTripCreateModal();
         if (typeof renderHomeTripJoinSlider === 'function') renderHomeTripJoinSlider();
@@ -5504,7 +5474,6 @@ var adBannersHtml = `
     };
 
     window.openTripDatePickerModal = function() {
-      triggerHaptic(10);
       var old = document.getElementById('tripDatePickerModal');
       if (old) old.remove();
 
@@ -5583,14 +5552,12 @@ var adBannersHtml = `
       else if (nextMonth > 12) { nextMonth = 1; nextYear++; }
 
       if (nextYear < curYear || (nextYear === curYear && nextMonth < curMonth)) {
-        triggerHaptic(6);
         return;
       }
 
       window.__tripPickerYear = nextYear;
       window.__tripPickerMonth = nextMonth;
       window.renderTripDatePickerCalendar();
-      triggerHaptic(8);
     };
 
     window.renderTripDatePickerCalendar = function() {
@@ -5683,7 +5650,6 @@ var adBannersHtml = `
     window.selectTripPickerDate = function(dateKey) {
       window.__tripPickerSelectedDate = dateKey;
       window.renderTripDatePickerCalendar();
-      triggerHaptic(10);
     };
 
     window.confirmTripDateSelection = function() {
@@ -5693,7 +5659,6 @@ var adBannersHtml = `
       }
       var modal = document.getElementById('tripDatePickerModal');
       if (modal) modal.remove();
-      triggerHaptic(12);
     };
 
     function handleTripSpotSearch(query) {
@@ -5752,7 +5717,6 @@ var adBannersHtml = `
         previewSlot.innerHTML = '';
       }
       window.__matchedMasterSpotData = null;
-      triggerHaptic(8);
     };
 
     window.selectTripSpot = function(spotName) {
@@ -5804,7 +5768,6 @@ var adBannersHtml = `
         previewSlot.innerHTML = '';
       }
 
-      triggerHaptic(8);
     };
 
     async function submitNewTripJoin() {
@@ -5952,7 +5915,6 @@ var adBannersHtml = `
   
 
     function openTripJoinListModal() {
-      triggerHaptic(10);
       var old = document.getElementById('tripJoinListModal');
       if (old) old.remove();
 
@@ -6010,7 +5972,6 @@ var adBannersHtml = `
 
     window.handleIndexHomeTabClick = function(e) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
-      triggerHaptic(8);
       if (typeof window.closeAllTripModals === 'function') {
         window.closeAllTripModals();
       } else {
@@ -6045,7 +6006,6 @@ var adBannersHtml = `
       if (typeof window.renderPresetGearList === 'function') {
         window.renderPresetGearList('');
       }
-      triggerHaptic(10);
     }
 
     // 🚀 [포토 스튜디오 / 엽서 캡처 및 공유 파이프라인은 templates.js로 완전 이관 완료]
@@ -6742,7 +6702,6 @@ var adBannersHtml = `
         var diffY = Math.abs(e.touches[0].clientY - touchStartY);
         if (diffX > 60 && diffX > diffY * 1.5) {
           isEdgeTracking = false;
-          triggerHaptic(12);
           window.closeTopmostModal();
         }
       }, { passive: true });

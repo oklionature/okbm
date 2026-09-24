@@ -1294,7 +1294,7 @@
 
     <!-- 모바일 50dvh 바텀 시트 -->
     <div class="mobile-bottom-sheet" id="mobileBottomSheet" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
-      <button type="button" class="fixed-floating-close-btn" onclick="triggerHaptic(10); closeMobileBottomSheet();" title="닫기">
+      <button type="button" class="fixed-floating-close-btn" onclick="closeMobileBottomSheet();" title="닫기">
         <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; fill:none;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
       <div class="sheet-content" id="mobileSheetContent"></div>
@@ -1304,15 +1304,15 @@
     <!-- 2. 수정 코드 (초기화 ── 장소목록 ── 위성 3대 허브 배치) -->
     <!-- 🧭 지도 전용 플로팅 퀵 허브 (초기화 · 장소목록 · 위성 3대 제어 일체형) -->
     <div class="map-floating-quick-bar clean-hide" id="mapFloatingQuickBar">
-      <button type="button" class="btn-floating-hub" id="dockResetMapBtn" onclick="triggerHaptic(12); handleSmartResetClick();">
+      <button type="button" class="btn-floating-hub" id="dockResetMapBtn" onclick="handleSmartResetClick();">
         <svg id="dockResetMapIcon" viewBox="0 0 24 24" style="width:13px; height:13px; fill:currentColor;"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
         <span id="dockResetMapText" style="display:inline-block; width:50px; text-align:center;">초기화</span>
       </button>
-      <button type="button" class="btn-floating-hub highlight" id="dockSpotListBtn" onclick="triggerHaptic(12); toggleMobileSidebar();">
+      <button type="button" class="btn-floating-hub highlight" id="dockSpotListBtn" onclick="toggleMobileSidebar();">
         <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
         <span id="dockSpotListText">장소목록</span>
       </button>
-      <button type="button" class="btn-floating-hub" id="dockMapLayerBtn" onclick="triggerHaptic(12); toggleMapTypeMode();" title="일반/위성/지형도 전환">
+      <button type="button" class="btn-floating-hub" id="dockMapLayerBtn" onclick="toggleMapTypeMode();" title="일반/위성/지형도 전환">
         <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
         <span id="dockMapLayerText" style="display:inline-block; width:38px; text-align:center;">일반</span>
       </button>
@@ -1507,7 +1507,6 @@
       };
 
       window.openLoginModal = function() {
-        triggerHaptic(12);
         var overlay = document.getElementById('loginModalOverlay');
         if (overlay) {
           overlay.style.setProperty('display', 'flex', 'important');
@@ -1517,14 +1516,12 @@
       };
 
       window.closeLoginModal = function() {
-        triggerHaptic(10);
         var overlay = document.getElementById('loginModalOverlay');
         if (overlay) overlay.style.display = 'none';
       };
 
       window.smoothNavigate = function(url, e) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
-        triggerHaptic(10);
         var oldModal = document.getElementById('mapSpotFeedDetailModal');
         if (oldModal) oldModal.remove();
 
@@ -2019,7 +2016,6 @@
         }
         var lntModal = document.getElementById('lntModalOverlay');
         if (lntModal) lntModal.style.display = 'none';
-        triggerHaptic(20);
         showToast('들머리 주소와 4대 내비가 해금되었습니다!', { html: ICONS.UNLOCK });
         refreshCurrentSpotPopup();
       }
@@ -2278,7 +2274,6 @@
       ];
       let cycleDiffIdx = 0;
       function cycleDifficultyFilter() {
-        triggerHaptic(10);
         cycleDiffIdx = (cycleDiffIdx + 1) % CYCLE_DIFF_LIST.length;
         const cur = CYCLE_DIFF_LIST[cycleDiffIdx];
         const btn = document.getElementById('btnCycleDifficulty');
@@ -2299,7 +2294,6 @@
       ];
       let cycleStatusIdx = 0;
       function cycleStatusFilter() {
-        triggerHaptic(10);
         cycleStatusIdx = (cycleStatusIdx + 1) % CYCLE_STATUS_LIST.length;
         const cur = CYCLE_STATUS_LIST[cycleStatusIdx];
         const btn = document.getElementById('btnCycleStatus');
@@ -2322,7 +2316,6 @@
       ];
       let cycleTerrainIdx = 0;
       function cycleTerrainFilter() {
-        triggerHaptic(10);
         cycleTerrainIdx = (cycleTerrainIdx + 1) % CYCLE_TERRAIN_LIST.length;
         const cur = CYCLE_TERRAIN_LIST[cycleTerrainIdx];
         const btn = document.getElementById('btnCycleTerrain');
@@ -2409,7 +2402,6 @@
           });
 
          kakao.maps.event.addListener(globalClusterer, 'clusterclick', (cluster) => {
-            triggerHaptic(10);
             map.setLevel(Math.max(1, map.getLevel() - 1), { anchor: cluster.getCenter(), animate: { duration: 300 } });
           });
 
@@ -2546,7 +2538,6 @@
 
     function zoomInMap(e) { 
         if (e) e.stopPropagation(); 
-        triggerHaptic(10);
         if (map) {
           clearTimeout(lodDebounceTimer);
           map.setLevel(Math.max(1, map.getLevel() - 1), { animate: { duration: 250 } }); 
@@ -2554,7 +2545,6 @@
       }
       function zoomOutMap(e) { 
         if (e) e.stopPropagation(); 
-        triggerHaptic(10);
         if (map) {
           clearTimeout(lodDebounceTimer);
           map.setLevel(Math.min(14, map.getLevel() + 1), { animate: { duration: 250 } }); 
@@ -2562,7 +2552,6 @@
       }
 
       function toggleMapTypeMode() {
-        triggerHaptic(10);
         if (!map) return;
         const textEl = document.getElementById('dockMapLayerText'), btnEl = document.getElementById('dockMapLayerBtn');
         currentMapLayerState = (currentMapLayerState + 1) % 3;
@@ -2586,7 +2575,6 @@
 
       function locateUserPosition(e) {
         if (e) e.stopPropagation();
-        triggerHaptic(15);
         if (!navigator.geolocation) return showToast('위치 서비스를 지원하지 않습니다.', { html: ICONS.ALERT_CARD });
         navigator.geolocation.getCurrentPosition((pos) => {
           if (!map) return;
@@ -2602,7 +2590,6 @@
       }
 
       function switchMasterTab(tabName) {
-        triggerHaptic(12);
         currentMasterTab = tabName;
         document.querySelectorAll('.master-tab-btn').forEach(btn => btn.classList.remove('active'));
         const activeIdx = { 'REGION': 0, 'TERRAIN': 1, 'COURSE': 2, 'MY': 3 }[tabName];
@@ -2619,7 +2606,7 @@
             const btn = document.createElement('button');
             btn.className = `filter-chip ${currentRegionFilter === r ? 'active' : ''}`;
             btn.innerHTML = `${r === 'ALL' ? '전체' : r}`;
-            btn.onclick = () => { triggerHaptic(10); currentRegionFilter = r; renderSubChips(); renderSpots(); };
+            btn.onclick = () => {  currentRegionFilter = r; renderSubChips(); renderSpots(); };
             container.appendChild(btn);
           });
     
@@ -2628,7 +2615,7 @@
             const btn = document.createElement('button');
             btn.className = `filter-chip ${currentTerrainFilter === t.key ? 'active' : ''}`;
             btn.innerHTML = t.label;
-            btn.onclick = () => { triggerHaptic(10); currentTerrainFilter = t.key; renderSubChips(); renderSpots(); };
+            btn.onclick = () => {  currentTerrainFilter = t.key; renderSubChips(); renderSpots(); };
             container.appendChild(btn);
           });
         } else if (currentMasterTab === 'COURSE') {
@@ -2636,7 +2623,7 @@
             const btn = document.createElement('button');
             btn.className = `filter-chip chip-status ${currentCourseFilter === c.key ? 'active' : ''}`;
             btn.innerHTML = c.label;
-            btn.onclick = () => { triggerHaptic(10); currentCourseFilter = c.key; renderSubChips(); renderSpots(); };
+            btn.onclick = () => {  currentCourseFilter = c.key; renderSubChips(); renderSpots(); };
             container.appendChild(btn);
           });
         } else if (currentMasterTab === 'MY') {
@@ -2648,7 +2635,7 @@
             const btn = document.createElement('button');
             btn.className = `filter-chip ${currentMyFilter === m.key ? 'active' : ''}`;
             btn.innerHTML = m.label;
-            btn.onclick = () => { triggerHaptic(10); currentMyFilter = m.key; renderSubChips(); renderSpots(); };
+            btn.onclick = () => {  currentMyFilter = m.key; renderSubChips(); renderSpots(); };
             container.appendChild(btn);
           });
         }
@@ -2832,7 +2819,6 @@
           showToast('관리자 권한이 확인되지 않았습니다.');
           return;
         }
-        triggerHaptic(15);
         applyAdminPermissions(!isAdminMode);
         if (isKakaoMapReady()) renderSpots(true);
         else window.__pendingRenderSpots = 'force';
@@ -2899,7 +2885,7 @@ function updateSmartResetButtons() {
       }
 
       function handleSmartResetClick() {
-        triggerHaptic(15);
+        triggerHaptic(20);
         const isMobile = window.innerWidth <= 768;
         const isListOpen = isMobile ? !isSidebarCollapsed : true;
         if (isListOpen && document.querySelectorAll('.region-group').length > 0) {
@@ -3128,7 +3114,6 @@ function updateSmartResetButtons() {
       }
 
       async function fetchElevationForModal() {
-        triggerHaptic(10);
         let lat = modalPendingData.lat || (modalMode === 'EDIT' && spots[modalEditIndex] ? spots[modalEditIndex].lat : 0);
         let lng = modalPendingData.lng || (modalMode === 'EDIT' && spots[modalEditIndex] ? spots[modalEditIndex].lng : 0);
 
@@ -3159,7 +3144,6 @@ function updateSmartResetButtons() {
         }
 
         if (measuredElev) {
-          triggerHaptic(15);
           showToast('해발고도 ' + measuredElev + ' 측정 완료!', { html: ICONS.MOUNTAIN });
         } else {
           showToast('고도 측정에 실패했습니다. 직접 입력해주세요.', { html: ICONS.ALERT_CARD });
@@ -3489,7 +3473,6 @@ function updateSmartResetButtons() {
           clearTimeout(window.__okbmSpotFocusTimer);
           window.__okbmSpotFocusTimer = null;
         }
-        triggerHaptic(12);
         isMarkerClickProcessing = true;
         setTimeout(() => { isMarkerClickProcessing = false; }, 400);
 
@@ -3524,7 +3507,6 @@ function updateSmartResetButtons() {
       function toggleUserBookmark(spotId, e = null) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         if (!isUserLoggedIn()) {
-          triggerHaptic(10);
           openLoginModal();
           showToast('찜하기는 로그인 후 이용하실 수 있습니다.', { html: ICONS.LOCK });
           return;
@@ -3548,7 +3530,6 @@ function updateSmartResetButtons() {
         }
 
         userBookmarks = new Set((safeGetJSON('okbm_bookmarks', [])).map(s => String(s).trim()));
-        triggerHaptic(isNowBookmarked ? 15 : 10);
         if (isNowBookmarked) {
           showToast('찜 목록에 추가되었습니다!', { html: ICONS.HEART });
         }
@@ -3575,7 +3556,6 @@ function updateSmartResetButtons() {
       function toggleUserVisited(spotId, e = null) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         if (!isUserLoggedIn()) {
-          triggerHaptic(10);
           openLoginModal();
           showToast('클리어 등록은 로그인 후 이용하실 수 있습니다.', { html: ICONS.LOCK });
           return;
@@ -3603,7 +3583,6 @@ function updateSmartResetButtons() {
 
         userVisited = new Set((safeGetJSON('okbm_visited', [])).map(s => String(s).trim()));
         userBookmarks = new Set((safeGetJSON('okbm_bookmarks', [])).map(s => String(s).trim()));
-        triggerHaptic(isNowVisited ? 15 : 10);
         if (isNowVisited) {
           showToast('장소 정복 클리어!', { html: ICONS.FLAG });
         }
@@ -3632,7 +3611,6 @@ function updateSmartResetButtons() {
      function shareSpotCard(spotId) {
         const spot = spots.find(s => String(s.id).trim() === String(spotId).trim());
         if (!spot) return;
-        triggerHaptic(10);
 
         const titleName = spot.fullName || `${spot.spot_main} (${spot.spot_sub || ''})`;
         const shareSpotName = String(spot.spot_main || spot.name || '').trim();
@@ -3795,7 +3773,6 @@ function updateSmartResetButtons() {
       }
 
       async function navigateToNaviApp(type, trailheadName, address, fallbackLat, fallbackLng) {
-        triggerHaptic(10);
         var labelName = String(trailheadName || '').trim();
         var targetQuery = (address && String(address).trim()) ? String(address).trim() : labelName;
         var naviTitle = labelName || targetQuery;
@@ -3891,7 +3868,6 @@ function updateSmartResetButtons() {
 
       async function toggleGpxTrack(spotId, gpxUrl) {
         const sId = String(spotId).trim();
-        triggerHaptic(10);
         if (currentGpxPolyline && activeGpxSpotId === sId) {
           currentGpxPolyline.setMap(null);
           currentGpxPolyline = null;
@@ -3948,7 +3924,6 @@ function updateSmartResetButtons() {
             strokeStyle: 'solid'
           });
           activeGpxSpotId = sId;
-          triggerHaptic(15);
           showToast('지도에 등산로 코스선(주황색)이 표시되었습니다!', { html: ICONS.HIKING });
           refreshCurrentSpotPopup();
         } catch (err) {
@@ -4080,7 +4055,7 @@ function updateSmartResetButtons() {
                 var authorName = rawAuthor || '오라네';
 
                 return `
-                  <button type="button" data-author="${escapeHtml(authorName)}" data-user-id="${escapeHtml(authorUserId)}" onclick="triggerHaptic(8); event.stopPropagation(); if(typeof window.openUserFeedCollectionModal==='function'){ window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId); }" style="display:inline-flex; align-items:center; gap:4px; background:rgba(251,191,36,0.10); border:1px solid rgba(251,191,36,0.38); padding:2px 8px; border-radius:12px; cursor:pointer; flex-shrink:0; margin-left:auto;" title="등록자 정보 보기">
+                  <button type="button" data-author="${escapeHtml(authorName)}" data-user-id="${escapeHtml(authorUserId)}" onclick="event.stopPropagation(); if(typeof window.openUserFeedCollectionModal==='function'){ window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId); }" style="display:inline-flex; align-items:center; gap:4px; background:rgba(251,191,36,0.10); border:1px solid rgba(251,191,36,0.38); padding:2px 8px; border-radius:12px; cursor:pointer; flex-shrink:0; margin-left:auto;" title="등록자 정보 보기">
                     <span style="font-size:0.63rem; color:#f59e0b; font-weight:800;">제보</span>
                     <span style="font-size:0.70rem; color:#fde047; font-weight:900;">${escapeHtml(authorName)}</span>
                   </button>
@@ -4131,7 +4106,7 @@ function updateSmartResetButtons() {
                 <div style="font-size:0.72rem; color:var(--text-secondary); line-height:1.45;">
                   소중한 장소 보존과 클린 백패킹 문화를 위해<br><strong>[들머리 내비/2~4단계 실전 팁]</strong>은 로그인 후 공개됩니다.
                 </div>
-                <button type="button" class="btn-quick-login-unlock" style="width:100%; padding:9px; font-size:0.80rem;" onclick="triggerHaptic(10); openLoginModal();">
+                <button type="button" class="btn-quick-login-unlock" style="width:100%; padding:9px; font-size:0.80rem;" onclick="openLoginModal();">
                   ${ICONS.AUTH} 1초 간편 로그인하고 즉시 확인하기
                 </button>
               </div>
@@ -5033,7 +5008,6 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
 
       // 📱 [유튜브 실제 제목 자동 바인딩 & 메인 16:9 대형 썸네일 + 추가 영상 순차 서랍 엔진]
       window.toggleSpotMediaDrawer = function(type, spotId, spotName, rawList) {
-        triggerHaptic(8);
         var drawer = document.getElementById('spotMediaDrawerBox_' + spotId);
         var btnYt = document.getElementById('btnMediaTab_yt_' + spotId);
         var btnBlog = document.getElementById('btnMediaTab_blog_' + spotId);
@@ -5101,7 +5075,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             }, 10);
           }
           return `
-            <a href="${escapeHtml(okbmSafeExternalUrl(item.url))}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(10);" style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:5px; text-decoration:none; box-sizing:border-box; width:100%;">
+            <a href="${escapeHtml(okbmSafeExternalUrl(item.url))}" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:5px; text-decoration:none; box-sizing:border-box; width:100%;">
               <div style="flex:0 0 calc(50% - 4px); width:calc(50% - 4px); aspect-ratio:16/9; border-radius:6px; overflow:hidden; background:#000; position:relative; box-sizing:border-box;">
                 <img src="${escapeHtml(okbmSafeImageUrl(item.thumb))}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';" />
                 <div style="position:absolute; inset:0; background:rgba(0,0,0,0.18); display:flex; align-items:center; justify-content:center;">
@@ -5245,7 +5219,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             }, 10);
           }
           return `
-            <a href="${escapeHtml(okbmSafeExternalUrl(item.url))}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(10);" style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:46px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:6px 10px; text-decoration:none; box-sizing:border-box; width:100%; transition:background 0.15s ease;">
+            <a href="${escapeHtml(okbmSafeExternalUrl(item.url))}" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:46px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:6px 10px; text-decoration:none; box-sizing:border-box; width:100%; transition:background 0.15s ease;">
               <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
                 <div style="display:flex; align-items:center; gap:5px;">
                   <span style="display:inline-flex; align-items:center; justify-content:center; background:#03c75a; color:#ffffff; font-size:0.55rem; font-weight:900; padding:0 3px; height:13px; border-radius:2px; font-family:'Space Grotesk',sans-serif; flex-shrink:0;">N</span>
@@ -5534,7 +5508,6 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
 
     // 📱 [글래스모피즘 순수 피드 히어로 모달 - 피드 주소 1:1 직통 정밀 매칭 엔진]
       window.openMapSpotFeedDetailModal = function(feedId, spotId) {
-        triggerHaptic(12);
         var old = document.getElementById('mapSpotFeedDetailModal');
         if (old) old.remove();
 
@@ -5906,7 +5879,6 @@ var liveSearchTimer = null;
         }
         if (clearBtn) clearBtn.style.display = 'none';
         if (dropdown) dropdown.style.display = 'none';
-        triggerHaptic(10);
       }
 
      function showTopRankings(mode = 'pc') {
@@ -5974,7 +5946,6 @@ var liveSearchTimer = null;
             </div>`;
 
           li.addEventListener('click', () => {
-            triggerHaptic(10);
             dropdown.style.display = 'none';
             focusSpotOnMap(item);
           });
@@ -6319,7 +6290,6 @@ var liveSearchTimer = null;
               groupItemsContainer.style.display = shouldBeOpen ? 'block' : 'none';
 
               groupTitle.addEventListener('click', () => {
-                triggerHaptic(10);
                 const isClosed = groupItemsContainer.style.display === 'none';
                 groupItemsContainer.style.display = isClosed ? 'block' : 'none';
                 const currentCount = regionVisibleCounts[regionKey] || 0;
@@ -6461,7 +6431,6 @@ var liveSearchTimer = null;
       window.__currentEditingProposalId = null;
 
       window.openUserProposalModal = function(defaultName = "", lat = 0, lng = 0, defaultSub = "", existingProp = null) {
-        triggerHaptic(12);
 
         var isLogged = isUserLoggedIn();
 
@@ -6566,7 +6535,6 @@ var overlay = document.getElementById('customModalOverlay');
 
       window.openSpotCorrectionModal = function(spotId, e) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
-        triggerHaptic(12);
 
         var targetSpot = (spots || []).find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
         if (!targetSpot) {
@@ -6987,7 +6955,6 @@ var overlay = document.getElementById('customModalOverlay');
         if (isKakaoMapReady()) renderSpots();
         focusSpotOnMap(target);
         refreshCurrentSpotPopup();
-        triggerHaptic(12);
       }
 
       function allocateNextSpotId() {
@@ -7564,7 +7531,6 @@ var overlay = document.getElementById('customModalOverlay');
       }
 
       function startPinPicking() {
-        triggerHaptic(12);
         isPickingLocationMode = true;
         revealMapForPinPick();
         setPinPickerBanner('pick');
@@ -7600,7 +7566,6 @@ var overlay = document.getElementById('customModalOverlay');
       window.startAdminPinMove = startAdminPinMove;
 
       function cancelPinPicking() {
-        triggerHaptic(10);
         isPickingLocationMode = false;
         window.__adminPinMoveConfirming = false;
         window.__adminPinMovePending = null;
@@ -7646,7 +7611,7 @@ var overlay = document.getElementById('customModalOverlay');
           clearTimeout(pressTimer);
           pressTimer = setTimeout(function() {
             if (!isMoved && map) {
-              triggerHaptic(20);
+              triggerHaptic(25);
               var rect = container.getBoundingClientRect();
               var point = new kakao.maps.Point(clientX - rect.left, clientY - rect.top);
               var proj = map.getProjection();
@@ -7738,7 +7703,6 @@ var overlay = document.getElementById('customModalOverlay');
             e.stopPropagation();
             e.preventDefault();
           }
-          triggerHaptic(12);
           var tLat = parseFloat(btn.getAttribute('data-lat'));
           var tLng = parseFloat(btn.getAttribute('data-lng'));
           window.hideLongPressProposalTooltip();
@@ -7941,7 +7905,6 @@ var overlay = document.getElementById('customModalOverlay');
           return;
         }
         applyAdminPermissions(true);
-        triggerHaptic(10);
         var old = document.getElementById('adminSpotInboxModal');
         if (old) old.remove();
 
@@ -8244,7 +8207,6 @@ var overlay = document.getElementById('customModalOverlay');
               </div>`;
 
             li.addEventListener('click', () => {
-              triggerHaptic(10);
               dropdown.style.display = 'none';
               if (window.innerWidth <= 768) {
                 setMobileSidebarCollapsed(true);
