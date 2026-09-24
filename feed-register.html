@@ -2,6 +2,31 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
+  <script>
+    (function okbmLeaveKakaoInApp() {
+      try {
+        if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return;
+        var ua = navigator.userAgent || '';
+        if (!/KAKAOTALK/i.test(ua)) return;
+        var isIpadOs = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+        var isIOS = /iPhone|iPad|iPod/i.test(ua) || isIpadOs;
+        if (/Android/i.test(ua)) {
+          var href = String(location.href || '');
+          var hash = '';
+          var hashIdx = href.indexOf('#');
+          if (hashIdx !== -1) {
+            hash = href.slice(hashIdx + 1);
+            href = href.slice(0, hashIdx);
+          }
+          var stripped = href.replace(/^https?:\/\//i, '');
+          if (hash) stripped += '%23' + hash;
+          location.href = 'intent://' + stripped + '#Intent;scheme=https;package=com.android.chrome;end';
+          return;
+        }
+        if (isIOS) location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+      } catch (e) {}
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex,nofollow" />
   <meta name="theme-color" content="#0c0c0c" />

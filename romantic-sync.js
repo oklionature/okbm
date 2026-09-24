@@ -9825,7 +9825,7 @@ function okbmIsCapacitorNative() {
 }
 
 function okbmNativeOAuthReturnUrl() {
-  return 'https://romanticroute.kr/';
+  return 'com.romanticroute.app://login-callback';
 }
 
 function okbmHandleNativeOAuthUrl(rawUrl, fromLaunch) {

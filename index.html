@@ -16,7 +16,8 @@
         try { sessionStorage.setItem('okbm_skip_splash_once', '1'); } catch (e) {}
       }
 
-      if (isKakao && isAndroid) {
+      var inNativeApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+      if (!inNativeApp && isKakao && isAndroid) {
         skipSplashOnce();
         var href = String(location.href || '');
         var hash = '';
@@ -30,14 +31,13 @@
         location.href = 'intent://' + stripped + '#Intent;scheme=https;package=com.android.chrome;end';
         return;
       }
-
-      if (isKakao && isIOS) {
+      if (!inNativeApp && isKakao && isIOS) {
         skipSplashOnce();
         location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
         return;
       }
 
-      if (isMobile) return;
+      if (isMobile || isKakao) return;
 
       skipSplashOnce();
       document.documentElement.classList.add('okbm-pc-gate');
