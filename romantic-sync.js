@@ -6077,7 +6077,7 @@ window.ensureMasterBottomDock = function(activeTabId) {
     document.body.appendChild(dock);
   }
 
-  dock.style.cssText = 'position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; max-width:480px !important; margin:0 auto !important; height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; padding:0 0 env(safe-area-inset-bottom, 8px) 0 !important; background:#000000 !important; border-top:none !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:2147483647 !important; box-sizing:border-box !important; pointer-events:auto !important; transform:translateZ(0) !important; -webkit-transform:translateZ(0) !important; contain:paint !important; overscroll-behavior:none !important;';
+  dock.style.cssText = 'position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; max-width:480px !important; margin:0 auto !important; height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; padding:0 0 env(safe-area-inset-bottom, 8px) 0 !important; background:#000000 !important; border-top:none !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:2147483647 !important; box-sizing:border-box !important; pointer-events:auto !important; transform:none !important; -webkit-transform:none !important; contain:none !important; overscroll-behavior:none !important;';
 
   var tabs = [
     { id: 'router', name: '낭만루터', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>', action: "window.navigateToDockTab('router')" },
@@ -6093,9 +6093,12 @@ window.ensureMasterBottomDock = function(activeTabId) {
     for (var i = 0; i < tabs.length; i++) {
       var btn = buttons[i];
       var isAct = (tabs[i].id === activeTab);
+      btn.setAttribute('title', tabs[i].name);
+      btn.setAttribute('onclick', tabs[i].action);
       btn.classList.toggle('active', isAct);
       btn.style.setProperty('color', isAct ? '#ffffff' : '#94a3b8', 'important');
       btn.style.fontWeight = isAct ? '900' : '700';
+      btn.style.pointerEvents = 'auto';
     }
   } else {
     dock.innerHTML = tabs.map(function(t) {
@@ -6115,6 +6118,11 @@ window.ensureMasterBottomDock = function(activeTabId) {
 
 // 🧭 [5대 탭 전역 중앙 네비게이션 디스패처 - 선제적 탭 색상 고정 & DOM 파괴 없는 초고속 라우팅]
 window.navigateToDockTab = function(tabId) {
+  var splashEl = document.getElementById('okbmSplashOverlay');
+  if (!splashEl || splashEl.classList.contains('is-leaving')) {
+    document.documentElement.classList.remove('okbm-splash-active');
+    document.documentElement.classList.remove('okbm-splash-reveal');
+  }
   window.__okbmInspectBlockedUserId = '';
   if (Array.isArray(window.__modalHistoryStack)) {
     window.__modalHistoryStack = [];
