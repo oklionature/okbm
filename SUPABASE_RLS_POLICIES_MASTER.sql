@@ -347,7 +347,9 @@ BEGIN
     'created_at', u.created_at,
     'instagram', COALESCE(u.my_gears -> 'sns' ->> 'instagram', ''),
     'youtube', COALESCE(u.my_gears -> 'sns' ->> 'youtube', ''),
-    'blog', COALESCE(u.my_gears -> 'sns' ->> 'blog', '')
+    'blog', COALESCE(u.my_gears -> 'sns' ->> 'blog', ''),
+    'hide_year_activity', COALESCE((u.my_gears ->> 'hide_year_activity')::boolean, false),
+    'hide_total_activity', COALESCE((u.my_gears ->> 'hide_total_activity')::boolean, false)
   )
   INTO result
   FROM public.users u
@@ -398,7 +400,9 @@ BEGIN
     'created_at', u.created_at,
     'instagram', COALESCE(u.my_gears -> 'sns' ->> 'instagram', ''),
     'youtube', COALESCE(u.my_gears -> 'sns' ->> 'youtube', ''),
-    'blog', COALESCE(u.my_gears -> 'sns' ->> 'blog', '')
+    'blog', COALESCE(u.my_gears -> 'sns' ->> 'blog', ''),
+    'hide_year_activity', COALESCE((u.my_gears ->> 'hide_year_activity')::boolean, false),
+    'hide_total_activity', COALESCE((u.my_gears ->> 'hide_total_activity')::boolean, false)
   )), '[]'::jsonb)
   INTO result
   FROM public.users u

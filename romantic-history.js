@@ -2320,6 +2320,9 @@ window.normalizeHistoryRecord = function(r, idx) {
               body: JSON.stringify({ p_id: uId })
             }).then(function(res) { return res.ok ? res.json() : null; });
         var job = Promise.resolve(profileReq).then(function(uData) {
+          if (uData && uData.id && typeof window.okbmApplyRouterPublicProfile === 'function') {
+            window.okbmApplyRouterPublicProfile(uData);
+          }
           var remoteUrl = (uData && uData.id) ? okbmAvatarDisplayUrl(uData.hero_cover_url || uData.photo_url || '') : '';
           if (remoteUrl) {
             window.__userProfilePhotoAttempts = window.__userProfilePhotoAttempts || {};
@@ -5249,6 +5252,64 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
   };
 
+  window.okbmApplyRouterPublicProfile = function(uRow) {
+    if (!uRow || !uRow.id) return;
+    var modal = document.getElementById('userFeedCollectionModal');
+    if (!modal || String(modal.dataset.userId || '') !== String(uRow.id)) return;
+    var wrapEl = document.getElementById('userCollectionHeaderWrapper');
+    if (!wrapEl || typeof window.renderUserProfileHeaderSection !== 'function') return;
+    var viewerId = '';
+    try { viewerId = String((typeof window.okbmGetCurrentUserId === 'function' && window.okbmGetCurrentUserId()) || localStorage.getItem('okbm_user_id') || '').trim(); } catch (eViewer) { viewerId = ''; }
+    var viewingSelf = Boolean(viewerId && viewerId === String(uRow.id));
+    var gears = (uRow.my_gears && typeof uRow.my_gears === 'object') ? uRow.my_gears : {};
+    var sns = (gears.sns && typeof gears.sns === 'object') ? gears.sns : {};
+    var photo = String(uRow.hero_cover_url || uRow.photo_url || '').trim();
+    var hideYearActivity = uRow.hide_year_activity === true || uRow.hide_year_activity === '1' || uRow.hide_year_activity === 1;
+    var hideTotalActivity = uRow.hide_total_activity === true || uRow.hide_total_activity === '1' || uRow.hide_total_activity === 1;
+    if (!hideYearActivity && gears.hide_year_activity != null) {
+      hideYearActivity = gears.hide_year_activity === true || gears.hide_year_activity === '1' || gears.hide_year_activity === 1;
+    }
+    if (!hideTotalActivity && gears.hide_total_activity != null) {
+      hideTotalActivity = gears.hide_total_activity === true || gears.hide_total_activity === '1' || gears.hide_total_activity === 1;
+    }
+    var alreadyFollowing = modal.dataset.following === '1';
+    var canMessage = !viewingSelf && modal.dataset.canMessage !== '0';
+    var countBadge = document.getElementById('userModalRouteCountBadge');
+    var yearBadge = document.getElementById('userModalYearCount');
+    var feedCount = 0;
+    var yearCount = 0;
+    if (countBadge) {
+      var countMatch = String(countBadge.textContent || '').match(/\d+/);
+      if (countMatch) feedCount = parseInt(countMatch[0], 10);
+    }
+    if (yearBadge) {
+      var yearMatch = String(yearBadge.textContent || '').match(/\d+/);
+      if (yearMatch) yearCount = parseInt(yearMatch[0], 10);
+    }
+    wrapEl.innerHTML = window.renderUserProfileHeaderSection({
+      isOwner: viewingSelf,
+      userId: String(uRow.id),
+      nickname: String(uRow.nickname || modal.dataset.author || '').trim(),
+      bio: String(uRow.bio || '').trim(),
+      photoUrl: photo,
+      instagram: String(uRow.instagram || sns.instagram || '').trim(),
+      youtube: String(uRow.youtube || sns.youtube || '').trim(),
+      blog: String(uRow.blog || sns.blog || '').trim(),
+      snsChannel: '',
+      feedCount: feedCount,
+      yearCount: yearCount,
+      isFollowing: alreadyFollowing,
+      canMessage: canMessage,
+      hideYearActivity: viewingSelf ? false : hideYearActivity,
+      hideTotalActivity: viewingSelf ? false : hideTotalActivity,
+      showProfileMore: !viewingSelf,
+      moreFeedId: String(modal.dataset.feedId || '')
+    });
+    if (photo && photo.indexOf('http') === 0 && typeof window.okbmPaintUserAvatarNodes === 'function') {
+      window.okbmPaintUserAvatarNodes(String(uRow.id), photo);
+    }
+  };
+
   window.openUserFeedCollectionModal = function(authorName, userId, initialTab, isRestored) {
     if (!authorName && !userId) return;
     triggerHaptic(12);
@@ -5359,21 +5420,11 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
 
     var firstFeedId = (initialRenderList[0] && initialRenderList[0].id) ? String(initialRenderList[0].id).trim() : '';
-    var followBtnHtml = '';
-    var moreBtnHtml = '';
-    var noteBtnHtml = '';
-    if (!isSelf) {
-      var canNote = Boolean(targetUserId) && !(typeof window.isUserBlocked === 'function' && window.isUserBlocked(targetUserId));
-      if (canNote) {
-        noteBtnHtml = '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.openDirectMessageThread(this.dataset.userId, this.dataset.author);" style="background:rgba(56,189,248,0.14); border:1px solid rgba(56,189,248,0.4); color:#7dd3fc; padding:5px 12px; border-radius:14px; font-size:0.78rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">쪽지</button>';
-      }
-      followBtnHtml = isFollowing
-        ? '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(52,211,153,0.15); border:1px solid #34d399; color:#34d399; padding:5px 12px; border-radius:14px; font-size:0.78rem; font-weight:900; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>관심</span></button>'
-        : '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#ffffff; padding:5px 12px; border-radius:14px; font-size:0.78rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>관심</span></button>';
-      moreBtnHtml = '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" data-feed-id="' + escapeHtml(firstFeedId) + '" onclick="window.openRouterProfileMoreMenu(this.dataset.userId, this.dataset.author, this.dataset.feedId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#94a3b8; flex-shrink:0; padding:0;" title="더보기">' +
-        '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
-      '</button>';
-    }
+    var canNote = !isSelf && Boolean(targetUserId) && !(typeof window.isUserBlocked === 'function' && window.isUserBlocked(targetUserId));
+    var visitorYear = String(new Date().getFullYear());
+    var visitorYearCount = initialRenderList.filter(function(r) {
+      return String((r && r.date) || '').indexOf(visitorYear) !== -1;
+    }).length;
 
     var cardsHtml = '';
     if (initialRenderList.length === 0) {
@@ -5408,22 +5459,25 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     modalEl.id = 'userFeedCollectionModal';
     modalEl.dataset.author = targetAuthor;
     modalEl.dataset.userId = targetUserId;
+    modalEl.dataset.following = isFollowing ? '1' : '0';
+    modalEl.dataset.canMessage = canNote ? '1' : '0';
+    modalEl.dataset.feedId = firstFeedId;
+    window.__visitorSelectedYear = String(new Date().getFullYear());
+    window.__visitorProfileLogs = initialRenderList.slice();
     var inspectBlocked = Boolean(window.__okbmInspectBlockedUserId && String(window.__okbmInspectBlockedUserId).trim() === targetUserId);
     if (inspectBlocked) modalEl.dataset.fromBlocked = '1';
     var collectionZ = inspectBlocked ? '2147483645' : '2147483642';
     modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + collectionZ + ' !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     modalEl.innerHTML = `
-      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(10px + max(47px, env(safe-area-inset-top, 0px))); box-sizing:border-box; z-index:10;">
-        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-          <button type="button" onclick="window.goBackModal(event);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>
-          <span style="font-size:0.92rem; font-weight:900; color:#ffffff; flex-shrink:0;">루터 정보</span>
-          <span id="userModalRouteCountBadge" style="font-size:0.65rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:5px; border:1px solid rgba(56,189,248,0.3); flex-shrink:0;">기록 (${initialRenderList.length})</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-          ${noteBtnHtml}
-          ${followBtnHtml}
-          ${moreBtnHtml}
+      <div style="flex-shrink:0 !important; position:relative; width:100%; height:calc(47px + env(safe-area-inset-top, 0px)); min-height:calc(47px + env(safe-area-inset-top, 0px)); background:#000000; padding:0 16px; padding-top:env(safe-area-inset-top, 0px); box-sizing:border-box; z-index:10;">
+        <div style="height:47px; display:flex; align-items:center; justify-content:flex-start; max-width:480px; margin:0 auto;">
+          <button type="button" onclick="window.navigateToDockTab('router');" style="height:47px; display:inline-flex; align-items:center; gap:8px; background:none; border:none; padding:0; cursor:pointer;">
+            <span style="width:30px; height:30px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <img src="logo.png" alt="낭만루트 로고" style="width:28px; height:28px; object-fit:contain; display:block;" />
+            </span>
+            <span style="font-family:var(--font-display), 'SUIT', sans-serif; font-size:1.2rem; font-weight:900; letter-spacing:-0.035em; line-height:1; background:linear-gradient(135deg, #ffffff 0%, #e2e8f0 30%, #94a3b8 52%, #ffffff 78%, #cbd5e1 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.9)) drop-shadow(0 0 8px rgba(255,255,255,0.15));">낭만루트</span>
+          </button>
         </div>
       </div>
 
@@ -5439,7 +5493,11 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
           blog: isSelf ? (localStorage.getItem('okbm_user_blog') || '') : otherBlog,
           snsChannel: isSelf ? (localStorage.getItem('okbm_user_sns_channel') || '') : '',
           feedCount: initialRenderList.length,
-          isFollowing: isFollowing
+          yearCount: visitorYearCount,
+          isFollowing: isFollowing,
+          canMessage: canNote,
+          showProfileMore: !isSelf,
+          moreFeedId: firstFeedId
         }) : ''}
       </div>
 
@@ -5481,39 +5539,9 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       Promise.resolve(headerProfileReq)
       .then(function(uRow) {
         if (uRow && uRow.id) {
-          var fetchedBio = String(uRow.bio || '').trim();
-          var fetchedPhoto = String(uRow.hero_cover_url || uRow.photo_url || '').trim();
-          var fetchedNick = String(uRow.nickname || targetAuthor).trim();
-          var fetchedGears = (uRow.my_gears && typeof uRow.my_gears === 'object') ? uRow.my_gears : {};
-          var fetchedSns = (fetchedGears.sns && typeof fetchedGears.sns === 'object') ? fetchedGears.sns : {};
-
-          var remoteInsta = fetchedSns.instagram || uRow.instagram || otherInsta;
-          var remoteYt = fetchedSns.youtube || uRow.youtube || otherYt;
-          var remoteBlog = fetchedSns.blog || uRow.blog || otherBlog;
-
-          var livePhotoUrl = (fetchedPhoto && fetchedPhoto.startsWith('http')) ? fetchedPhoto : initialPhotoUrl;
-          if (!isSelf && myCoverUrl && livePhotoUrl === myCoverUrl) livePhotoUrl = '';
-          if (targetUserId && livePhotoUrl && livePhotoUrl.startsWith('http')) {
-            window.__userProfilePhotoMap = window.__userProfilePhotoMap || {};
-            window.__userProfilePhotoMap[targetUserId] = livePhotoUrl;
-          }
-
-          var wrapEl = document.getElementById('userCollectionHeaderWrapper');
-          if (wrapEl && typeof window.renderUserProfileHeaderSection === 'function') {
-            var liveConfig = {
-              isOwner: isSelf,
-              userId: targetUserId,
-              nickname: isSelf ? targetAuthor : fetchedNick,
-              bio: isSelf ? ((profile && profile.bio) || localStorage.getItem('okbm_user_bio') || '') : fetchedBio,
-              photoUrl: livePhotoUrl,
-              instagram: isSelf ? (localStorage.getItem('okbm_user_instagram') || '') : remoteInsta,
-              youtube: isSelf ? (localStorage.getItem('okbm_user_youtube') || '') : remoteYt,
-              blog: isSelf ? (localStorage.getItem('okbm_user_blog') || '') : remoteBlog,
-              snsChannel: isSelf ? (localStorage.getItem('okbm_user_sns_channel') || '') : '',
-              feedCount: initialRenderList.length,
-              isFollowing: isFollowing
-            };
-            wrapEl.innerHTML = window.renderUserProfileHeaderSection(liveConfig);
+          if (uRow.id && targetUserId && String(uRow.id) !== String(targetUserId)) return;
+          if (typeof window.okbmApplyRouterPublicProfile === 'function') {
+            window.okbmApplyRouterPublicProfile(uRow);
           }
         }
       }).catch(function() {});
@@ -5540,11 +5568,47 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         var cr = res.headers.get('content-range');
         if (cr && cr.includes('/')) {
           var totalCount = cr.split('/')[1];
-          var badgeEl = document.getElementById('userModalRouteCountBadge');
-          if (totalCount && totalCount !== '*' && badgeEl) {
-            badgeEl.innerText = '기록 (' + totalCount + ')';
+          if (totalCount && totalCount !== '*') {
+            var badgeEl = document.getElementById('userModalRouteCountBadge');
+            var totalEl = document.getElementById('userModalTotalCount');
+            if (badgeEl) badgeEl.innerText = totalCount;
+            if (totalEl) totalEl.innerText = totalCount;
           }
         }
+      }).catch(function() {});
+
+      var yearCountQuery = countQuery + '&date=like.' + encodeURIComponent(visitorYear + '*');
+      fetch(yearCountQuery, {
+        method: 'HEAD',
+        headers: {
+          'apikey': targetKey,
+          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
+          'Prefer': 'count=exact'
+        }
+      }).then(function(res) {
+        var cr = res.headers.get('content-range');
+        if (cr && cr.includes('/')) {
+          var yearTotal = cr.split('/')[1];
+          var yearEl = document.getElementById('userModalYearCount');
+          if (yearTotal && yearTotal !== '*' && yearEl && String(window.__visitorSelectedYear || visitorYear) === String(visitorYear)) yearEl.innerText = yearTotal;
+        }
+      }).catch(function() {});
+
+      var activityQuery = targetUrl + '/rest/v1/feeds?' + filterParam + '&select=id,spot,date&order=date.desc&limit=1000';
+      if (!isSelf) activityQuery += '&is_published=eq.true';
+      fetch(activityQuery, {
+        headers: {
+          'apikey': targetKey,
+          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
+          'Content-Type': 'application/json'
+        }
+      }).then(function(r) { return r.ok ? r.json() : []; }).then(function(rows) {
+        if (!Array.isArray(rows) || !rows.length) return;
+        window.__visitorProfileLogs = rows;
+        var yearBox = document.getElementById('visitorYearActivityContainer');
+        var totalBox = document.getElementById('visitorTotalActivityContainer');
+        if (yearBox && yearBox.style.display === 'flex') window._renderVisitorActivityList('year');
+        if (totalBox && totalBox.style.display === 'flex') window._renderVisitorActivityList('all');
       }).catch(function() {});
 
       var fetchQuery = targetUrl + '/rest/v1/feeds?' + filterParam + '&order=date.desc,created_at.desc&offset=0&limit=10';

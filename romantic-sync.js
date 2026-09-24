@@ -2733,6 +2733,17 @@ window.RomanticVault = window.RomanticVault || {
 
           if (blogVal) localStorage.setItem('okbm_user_blog', blogVal);
 
+          if (mg.hide_year_activity === true || mg.hide_year_activity === '1' || mg.hideYearActivity === true) {
+            localStorage.setItem('okbm_hide_year_activity', '1');
+          } else {
+            localStorage.removeItem('okbm_hide_year_activity');
+          }
+          if (mg.hide_total_activity === true || mg.hide_total_activity === '1' || mg.hideTotalActivity === true) {
+            localStorage.setItem('okbm_hide_total_activity', '1');
+          } else {
+            localStorage.removeItem('okbm_hide_total_activity');
+          }
+
           var curSnsProf = safeGetJSON('user_profile_' + userId, null) || safeGetJSON('user_profile', null);
           if (curSnsProf) {
             curSnsProf.instagram = instaVal;
@@ -3669,6 +3680,9 @@ window.refreshMyReportFullStats = function() {
 
     snsWrap.innerHTML = window.renderUserSnsBadgesHtml(rawInsta, rawYt, rawBlog, true, rawSns);
   }
+  if (typeof window.okbmApplyActivityPrivacyButtons === 'function') {
+    window.okbmApplyActivityPrivacyButtons();
+  }
 };
 
 window.renderUserSnsBadgesHtml = function(rawInsta, rawYt, rawBlog, isOwner, rawSns) {
@@ -3756,9 +3770,10 @@ window.renderUserProfileHeaderSection = function(config) {
     : (photoUrl ? 'data-photo-url="' + safePhotoAttr + '" onclick="triggerHaptic(10); window.previewUserPhotoLarge(this.getAttribute(\'data-photo-url\'));" title="사진 보기"' : '');
   var avatarCursor = (isOwner || photoUrl) ? 'cursor:pointer; ' : '';
 
-  var avatarImgHtml = photoUrl
-    ? '<div class="user-profile-avatar-img" style="width:100%; height:100%; border-radius:50%; background:#121212; background-size:cover; background-position:center; background-repeat:no-repeat; background-image:url(\'' + escapeHtml(photoUrl) + '\'); display:flex; align-items:center; justify-content:center; overflow:hidden;"></div>'
-    : '<div class="user-profile-avatar-img" style="width:100%; height:100%; border-radius:50%; background:#121212; display:flex; align-items:center; justify-content:center; overflow:hidden;"><svg viewBox="0 0 24 24" style="width:34px; height:34px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
+  var avatarImgHtml = '<div style="position:relative; width:100%; height:100%; border-radius:50%; background:#121212; overflow:hidden;">' +
+    '<img class="user-profile-avatar-img" data-user-avatar-id="' + _escapeReportPropHtml(uid) + '" src="' + (photoUrl ? escapeHtml(photoUrl) : '') + '" alt="" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:' + (photoUrl ? 'block' : 'none') + ';" />' +
+    '<svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="position:absolute; left:50%; top:50%; width:34px; height:34px; transform:translate(-50%,-50%); display:' + (photoUrl ? 'none' : 'block') + ';" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+  '</div>';
 
   var actionGridHtml = '';
   if (isOwner) {
@@ -3782,9 +3797,57 @@ window.renderUserProfileHeaderSection = function(config) {
       '</button>' +
     '</div>';
   } else if (uid) {
-    actionGridHtml = '<div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">' +
-      '<button type="button" data-user-id="' + _escapeReportPropHtml(uid) + '" data-author="' + _escapeReportPropHtml(nick) + '" onclick="event.preventDefault(); event.stopPropagation(); triggerHaptic(8); window.openDirectMessageThread(this.dataset.userId, this.dataset.author);" style="width:100%; height:36px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); border-radius:8px; color:#7dd3fc; font-size:0.78rem; font-weight:900; cursor:pointer;">쪽지 보내기</button>' +
-    '</div>';
+    var chipBase = 'min-width:0; flex:1; height:36px; padding:0 8px; border-radius:8px; display:inline-flex; flex-direction:row; align-items:center; justify-content:center; gap:4px; box-sizing:border-box; font-size:0.74rem; font-weight:800; white-space:nowrap;';
+    var chipIdle = 'background:#000000; border:1px solid rgba(255,255,255,0.35); color:#ffffff;';
+    var yearCount = (config && typeof config.yearCount === 'number') ? config.yearCount : 0;
+    var isFollowingVisitor = Boolean(config && config.isFollowing);
+    var canMessage = !(config && config.canMessage === false);
+    var hideYearActivity = Boolean(config && config.hideYearActivity);
+    var hideTotalActivity = Boolean(config && config.hideTotalActivity);
+    var recordChip = '<div style="' + chipBase + ' ' + chipIdle + '"><span>기록</span><span id="userModalRouteCountBadge" style="font-family:var(--font-en);">' + feedCount + '</span></div>';
+    var followChip = isFollowingVisitor
+      ? ('<button type="button" data-user-id="' + _escapeReportPropHtml(uid) + '" data-author="' + _escapeReportPropHtml(nick) + '" onclick="event.preventDefault(); event.stopPropagation(); window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="' + chipBase + ' background:#ffffff; border:1px solid #ffffff; color:#000000; cursor:pointer;"><svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>관심</span></button>')
+      : ('<button type="button" data-user-id="' + _escapeReportPropHtml(uid) + '" data-author="' + _escapeReportPropHtml(nick) + '" onclick="event.preventDefault(); event.stopPropagation(); window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="' + chipBase + ' ' + chipIdle + ' cursor:pointer;"><svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>관심</span></button>');
+    var noteChip = canMessage
+      ? ('<button type="button" data-user-id="' + _escapeReportPropHtml(uid) + '" data-author="' + _escapeReportPropHtml(nick) + '" onclick="event.preventDefault(); event.stopPropagation(); triggerHaptic(8); window.openDirectMessageThread(this.dataset.userId, this.dataset.author);" style="' + chipBase + ' ' + chipIdle + ' cursor:pointer;">쪽지</button>')
+      : '';
+    var yearCardHtml = hideYearActivity ? '' : (
+      '<div role="button" onclick="window.toggleVisitorActivity(\'year\', event)" style="cursor:pointer; position:relative; min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none; box-sizing:border-box;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-width:0;"><span id="visitorYearCardLabel" style="font-size:0.77rem; color:#64748b; font-weight:700;">' + (String(window.__visitorSelectedYear || new Date().getFullYear()) === String(new Date().getFullYear()) ? '올해 활동' : (String(window.__visitorSelectedYear) + '년 활동')) + '</span><button type="button" id="visitorYearBadgeBtn" onclick="event.preventDefault(); event.stopPropagation(); window.toggleVisitorYearDropdown(event);" style="font-size:0.70rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; background:rgba(186,230,253,0.08); border:1px solid rgba(186,230,253,0.25); padding:2px 7px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; flex-shrink:0;"><span id="visitorYearBadge">' + String(window.__visitorSelectedYear || new Date().getFullYear()) + '</span><svg viewBox="0 0 24 24" style="width:9px; height:9px; stroke:#bae6fd; fill:none; stroke-width:2.5;"><path d="m6 9 6 6 6-6"/></svg></button></div>' +
+        '<div style="margin-top:4px; display:flex; justify-content:space-between; align-items:flex-end; gap:6px;">' +
+          '<div><span id="userModalYearCount" style="font-size:1.72rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); line-height:1;">' + yearCount + '</span><span style="font-size:0.87rem; font-weight:700; color:#7dd3fc; margin-left:2px;">회</span></div>' +
+          '<span id="visitorYearListArrow" style="font-size:0.64rem; color:#64748b; font-weight:800; margin-bottom:2px; flex-shrink:0;">기록보기 ▼</span>' +
+        '</div>' +
+        '<div id="visitorYearDropdownMenu" style="display:none; position:absolute; top:36px; right:10px; min-width:86px; max-height:180px; overflow-y:auto; background:#0d121d; border:1px solid rgba(186,230,253,0.25); border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.85); z-index:100; padding:4px; box-sizing:border-box; flex-direction:column; gap:2px;"></div>' +
+      '</div>'
+    );
+    var totalCardHtml = hideTotalActivity ? '' : (
+      '<div role="button" onclick="window.toggleVisitorActivity(\'all\', event)" style="cursor:pointer; min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none; box-sizing:border-box;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px;"><span style="font-size:0.77rem; color:#64748b; font-weight:700;">누적 총 활동</span><span style="font-size:0.68rem; color:#fde68a; font-weight:700; background:rgba(253,230,138,0.08); border:1px solid rgba(253,230,138,0.2); padding:1px 5px; border-radius:4px;">전체</span></div>' +
+        '<div style="margin-top:4px; display:flex; justify-content:space-between; align-items:flex-end; gap:6px;">' +
+          '<div><span id="userModalTotalCount" style="font-size:1.72rem; font-weight:900; color:#fde68a; font-family:var(--font-en); line-height:1;">' + feedCount + '</span><span style="font-size:0.87rem; font-weight:700; color:#fef08a; margin-left:2px;">회</span></div>' +
+          '<span id="visitorTotalListArrow" style="font-size:0.64rem; color:#64748b; font-weight:800; margin-bottom:2px; flex-shrink:0;">기록보기 ▼</span>' +
+        '</div>' +
+      '</div>'
+    );
+    var activityGridCols = (!hideYearActivity && !hideTotalActivity) ? 'minmax(0,1fr) minmax(0,1fr)' : 'minmax(0,1fr)';
+    var activityCardsHtml = (yearCardHtml || totalCardHtml)
+      ? ('<div style="display:grid; grid-template-columns:' + activityGridCols + '; gap:6px;">' + yearCardHtml + totalCardHtml + '</div>')
+      : '';
+    actionGridHtml = '<div style="display:flex; align-items:center; gap:4px; padding-top:2px;">' +
+      recordChip + followChip + noteChip +
+    '</div>' +
+    activityCardsHtml +
+    (hideYearActivity ? '' : (
+    '<div id="visitorYearActivityContainer" style="display:none; flex-direction:column; gap:4px; background:#080b11; border:1px solid rgba(186,230,253,0.15); border-radius:10px; padding:8px 10px; box-sizing:border-box;">' +
+      '<div id="visitorYearActivityTitle" style="font-size:0.70rem; color:#bae6fd; font-weight:800;">올해 활동 기록</div>' +
+      '<div id="visitorYearActivityList" style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto;"></div>' +
+    '</div>')) +
+    (hideTotalActivity ? '' : (
+    '<div id="visitorTotalActivityContainer" style="display:none; flex-direction:column; gap:4px; background:#080b11; border:1px solid rgba(253,230,138,0.15); border-radius:10px; padding:8px 10px; box-sizing:border-box;">' +
+      '<div style="font-size:0.70rem; color:#fde68a; font-weight:800;">누적 활동 기록</div>' +
+      '<div id="visitorTotalActivityList" style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto;"></div>' +
+    '</div>'));
   }
 
   var cardPaddingBottom = actionGridHtml ? '14px' : '16px';
@@ -3809,6 +3872,116 @@ window.renderUserProfileHeaderSection = function(config) {
     '</div>' +
     actionGridHtml +
   '</div>';
+};
+
+window._renderVisitorActivityList = function(mode) {
+  var listEl = document.getElementById(mode === 'year' ? 'visitorYearActivityList' : 'visitorTotalActivityList');
+  if (!listEl) return;
+  var curYear = String(window.__visitorSelectedYear || new Date().getFullYear());
+  var titleEl = document.getElementById('visitorYearActivityTitle');
+  if (mode === 'year' && titleEl) {
+    titleEl.innerText = (curYear === String(new Date().getFullYear()) ? '올해' : curYear + '년') + ' 활동 기록';
+  }
+  var logs = (window.__visitorProfileLogs || []).slice().filter(function(r) {
+    if (mode !== 'year') return true;
+    return String((r && r.date) || '').indexOf(curYear) !== -1;
+  }).sort(function(a, b) {
+    return String(b.date || '').localeCompare(String(a.date || ''));
+  });
+  if (!logs.length) {
+    listEl.innerHTML = '<div style="font-size:0.66rem; color:#64748b; text-align:center; padding:10px 0;">기록이 없습니다.</div>';
+    return;
+  }
+  var numColor = mode === 'year' ? '#bae6fd' : '#fde68a';
+  listEl.innerHTML = logs.map(function(r, idx) {
+    var spotName = r.spot || r.spotName || '-';
+    var dStr = String(r.date || '').slice(0, 10);
+    return '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0;">' +
+      '<div style="display:flex; align-items:center; gap:5px; min-width:0; flex:1;">' +
+        '<span style="font-size:0.64rem; color:' + numColor + '; font-family:var(--font-en); font-weight:800; flex-shrink:0;">' + (idx + 1) + '.</span>' +
+        '<span style="font-size:0.72rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;">' + _escapeReportPropHtml(spotName) + '</span>' +
+      '</div>' +
+      '<span style="font-size:0.64rem; color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + _escapeReportPropHtml(dStr) + '</span>' +
+    '</div>';
+  }).join('');
+};
+
+window.toggleVisitorYearDropdown = function(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  if (typeof triggerHaptic === 'function') triggerHaptic(8);
+  var menu = document.getElementById('visitorYearDropdownMenu');
+  if (!menu) return;
+  if (menu.style.display === 'flex') {
+    menu.style.display = 'none';
+    return;
+  }
+  var yearSet = {};
+  yearSet[String(new Date().getFullYear())] = true;
+  (window.__visitorProfileLogs || []).forEach(function(r) {
+    var y = String((r && r.date) || '').slice(0, 4);
+    if (/^\d{4}$/.test(y)) yearSet[y] = true;
+  });
+  var selected = String(window.__visitorSelectedYear || new Date().getFullYear());
+  var years = Object.keys(yearSet).sort().reverse();
+  menu.innerHTML = years.map(function(y) {
+    var on = y === selected;
+    return '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.selectVisitorYear(\'' + y + '\', event);" style="width:100%; text-align:left; background:' + (on ? 'rgba(186,230,253,0.12)' : 'transparent') + '; color:' + (on ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 8px; font-size:0.74rem; font-weight:800; font-family:var(--font-en); border-radius:4px; cursor:pointer;">' + y + '년</button>';
+  }).join('');
+  menu.style.display = 'flex';
+};
+
+window.selectVisitorYear = function(yearStr, e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+  var year = String(yearStr || '').trim();
+  if (!/^\d{4}$/.test(year)) return;
+  window.__visitorSelectedYear = year;
+  var badge = document.getElementById('visitorYearBadge');
+  if (badge) badge.innerText = year;
+  var label = document.getElementById('visitorYearCardLabel');
+  if (label) label.innerText = year === String(new Date().getFullYear()) ? '올해 활동' : (year + '년 활동');
+  var menu = document.getElementById('visitorYearDropdownMenu');
+  if (menu) menu.style.display = 'none';
+  var count = (window.__visitorProfileLogs || []).filter(function(r) {
+    return String((r && r.date) || '').slice(0, 4) === year;
+  }).length;
+  var countEl = document.getElementById('userModalYearCount');
+  if (countEl) countEl.innerText = String(count);
+  var totalBox = document.getElementById('visitorTotalActivityContainer');
+  var totalArrow = document.getElementById('visitorTotalListArrow');
+  if (totalBox) totalBox.style.display = 'none';
+  if (totalArrow) totalArrow.innerText = '기록보기 ▼';
+  var box = document.getElementById('visitorYearActivityContainer');
+  var arrow = document.getElementById('visitorYearListArrow');
+  if (box) box.style.display = 'flex';
+  if (arrow) arrow.innerText = '접기 ▲';
+  window._renderVisitorActivityList('year');
+};
+
+window.toggleVisitorActivity = function(mode, e) {
+  if (e) e.stopPropagation();
+  if (typeof triggerHaptic === 'function') triggerHaptic(8);
+  var yearBox = document.getElementById('visitorYearActivityContainer');
+  var totalBox = document.getElementById('visitorTotalActivityContainer');
+  var yearArrow = document.getElementById('visitorYearListArrow');
+  var totalArrow = document.getElementById('visitorTotalListArrow');
+  var openYear = mode === 'year';
+  var box = openYear ? yearBox : totalBox;
+  var arrow = openYear ? yearArrow : totalArrow;
+  var other = openYear ? totalBox : yearBox;
+  var otherArrow = openYear ? totalArrow : yearArrow;
+  if (other) other.style.display = 'none';
+  if (otherArrow) otherArrow.innerText = '기록보기 ▼';
+  if (!box) return;
+  var isOpen = box.style.display === 'flex';
+  if (isOpen) {
+    box.style.display = 'none';
+    if (arrow) arrow.innerText = '기록보기 ▼';
+    return;
+  }
+  box.style.display = 'flex';
+  if (arrow) arrow.innerText = '접기 ▲';
+  window._renderVisitorActivityList(mode);
 };
 
 window.openSnsEditorModal = function() {
@@ -4007,9 +4180,73 @@ window.toggleReportYearActivities = function(e) {
     return;
   }
 
+  var totalBox = document.getElementById('reportTotalActivityContainer');
+  var totalArrow = document.getElementById('reportTotalListArrow');
+  if (totalBox) totalBox.style.display = 'none';
+  if (totalArrow) totalArrow.innerText = '기록보기 ▼';
+
   container.style.display = 'flex';
   if (arrow) arrow.innerText = '접기 ▲';
   window.renderReportYearActivityList();
+};
+
+window.toggleReportTotalActivities = function(e) {
+  if (e) e.stopPropagation();
+  triggerHaptic(8);
+  var container = document.getElementById('reportTotalActivityContainer');
+  var arrow = document.getElementById('reportTotalListArrow');
+  if (!container) return;
+
+  var isOpen = container.style.display === 'flex';
+  if (isOpen) {
+    container.style.display = 'none';
+    if (arrow) arrow.innerText = '기록보기 ▼';
+    return;
+  }
+
+  var yearBox = document.getElementById('reportYearActivityContainer');
+  var yearArrow = document.getElementById('reportYearListArrow');
+  if (yearBox) yearBox.style.display = 'none';
+  if (yearArrow) yearArrow.innerText = '기록보기 ▼';
+
+  container.style.display = 'flex';
+  if (arrow) arrow.innerText = '접기 ▲';
+  window.renderReportTotalActivityList();
+};
+
+window.renderReportTotalActivityList = function() {
+  var listEl = document.getElementById('reportTotalActivityList');
+  var titleEl = document.getElementById('reportTotalActivityTitle');
+  if (!listEl) return;
+
+  var validLogs = window._getRomanticRouteOutdoorLogs().slice().sort(function(a, b) {
+    var ta = new Date(String(a.date || '').replace(/\./g, '-')).getTime() || 0;
+    var tb = new Date(String(b.date || '').replace(/\./g, '-')).getTime() || 0;
+    return tb - ta;
+  });
+
+  if (titleEl) titleEl.innerText = '누적 활동 기록 (' + validLogs.length + ')';
+
+  if (validLogs.length === 0) {
+    listEl.innerHTML = '<div style="font-size:0.66rem; color:#64748b; text-align:center; padding:10px 0;">기록이 없습니다.</div>';
+    return;
+  }
+
+  listEl.innerHTML = validLogs.map(function(r, idx) {
+    var spotName = r.spot || r.spotName || '-';
+    var dStr = String(r.date || '').slice(0, 10);
+    var feedId = String(r.id || '').trim();
+    var clickAttr = feedId
+      ? (' data-feed-id="' + _escapeReportPropHtml(feedId) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openReportActivityFeed(this.dataset.feedId);" style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0; cursor:pointer;"')
+      : ' style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0;"';
+    return '<div' + clickAttr + '>' +
+      '<div style="display:flex; align-items:center; gap:5px; min-width:0; flex:1;">' +
+        '<span style="font-size:0.64rem; color:#fde68a; font-family:var(--font-en); font-weight:800; flex-shrink:0;">' + (idx + 1) + '.</span>' +
+        '<span style="font-size:0.72rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;">' + _escapeReportPropHtml(spotName) + '</span>' +
+      '</div>' +
+      '<span style="font-size:0.64rem; color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + _escapeReportPropHtml(dStr) + '</span>' +
+    '</div>';
+  }).join('');
 };
 
 window.renderReportYearActivityList = function() {
@@ -4043,8 +4280,12 @@ window.renderReportYearActivityList = function() {
   listEl.innerHTML = yearLogs.map(function(r, idx) {
     var spotName = r.spot || r.spotName || '-';
     var dStr = String(r.date || '').slice(0, 10);
+    var feedId = String(r.id || '').trim();
+    var clickAttr = feedId
+      ? (' data-feed-id="' + _escapeReportPropHtml(feedId) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openReportActivityFeed(this.dataset.feedId);" style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0; cursor:pointer;"')
+      : ' style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0;"';
 
-    return '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0;">' +
+    return '<div' + clickAttr + '>' +
       '<div style="display:flex; align-items:center; gap:5px; min-width:0; flex:1;">' +
         '<span style="font-size:0.64rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; flex-shrink:0;">' + (idx + 1) + '.</span>' +
         '<span style="font-size:0.72rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;">' + _escapeReportPropHtml(spotName) + '</span>' +
@@ -4052,6 +4293,59 @@ window.renderReportYearActivityList = function() {
       '<span style="font-size:0.64rem; color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + _escapeReportPropHtml(dStr) + '</span>' +
     '</div>';
   }).join('');
+};
+
+window.openReportActivityFeed = function(feedId) {
+  var id = String(feedId || '').trim();
+  if (!id) return;
+  if (typeof triggerHaptic === 'function') triggerHaptic(8);
+  if (typeof window.okbmOpenDirectFeed === 'function') {
+    window.okbmOpenDirectFeed(id);
+  }
+};
+
+window.okbmReadActivityPrivacy = function() {
+  return {
+    hideYear: localStorage.getItem('okbm_hide_year_activity') === '1',
+    hideTotal: localStorage.getItem('okbm_hide_total_activity') === '1'
+  };
+};
+
+window.okbmApplyActivityPrivacyButtons = function() {
+  var flags = window.okbmReadActivityPrivacy();
+  var yearBtn = document.getElementById('reportYearPublicBtn');
+  var totalBtn = document.getElementById('reportTotalPublicBtn');
+  if (yearBtn) {
+    yearBtn.innerText = flags.hideYear ? '루터 비공개' : '루터 공개';
+    yearBtn.style.color = flags.hideYear ? '#94a3b8' : '#bae6fd';
+    yearBtn.style.borderColor = flags.hideYear ? 'rgba(148,163,184,0.35)' : 'rgba(186,230,253,0.25)';
+    yearBtn.style.background = flags.hideYear ? 'rgba(148,163,184,0.08)' : 'rgba(186,230,253,0.08)';
+  }
+  if (totalBtn) {
+    totalBtn.innerText = flags.hideTotal ? '루터 비공개' : '루터 공개';
+    totalBtn.style.color = flags.hideTotal ? '#94a3b8' : '#fde68a';
+    totalBtn.style.borderColor = flags.hideTotal ? 'rgba(148,163,184,0.35)' : 'rgba(253,230,138,0.25)';
+    totalBtn.style.background = flags.hideTotal ? 'rgba(148,163,184,0.08)' : 'rgba(253,230,138,0.08)';
+  }
+};
+
+window.toggleReportActivityPublic = function(kind, e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+  var key = kind === 'total' ? 'okbm_hide_total_activity' : 'okbm_hide_year_activity';
+  var nextHide = localStorage.getItem(key) !== '1';
+  if (nextHide) localStorage.setItem(key, '1');
+  else localStorage.removeItem(key);
+  window.okbmApplyActivityPrivacyButtons();
+  var profile = (typeof safeGetJSON === 'function' ? safeGetJSON('user_profile', null) : null) || {};
+  if (typeof window.saveUserToSupabase === 'function') {
+    window.saveUserToSupabase(profile).catch(function(err) {
+      console.warn('[romantic-sync.js:toggleReportActivityPublic]', err);
+    });
+  }
+  if (typeof showToast === 'function') {
+    showToast(nextHide ? '루터 정보에서 숨겼습니다.' : '루터 정보에 공개합니다.', 'success', 1400);
+  }
 };
 
 window.selectReportYear = function(yearStr, e) {
@@ -4201,10 +4495,13 @@ function ensureMyReportAndAuthModalsInDOM() {
             <div role="button" onclick="window.toggleReportYearActivities(event)" style="cursor:pointer; position:relative; min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none; box-sizing:border-box;">
               <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-width:0;">
                 <span id="reportYearCardLabel" style="font-size:0.77rem; color:#64748b; font-weight:700;">올해 활동</span>
-                <button type="button" id="reportYearBadgeBtn" onclick="event.stopPropagation(); window.toggleReportYearDropdown(event);" style="font-size:0.70rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; background:rgba(186,230,253,0.08); border:1px solid rgba(186,230,253,0.25); padding:2px 7px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; outline:none; flex-shrink:0;">
-                  <span id="reportYearBadge">2026</span>
-                  <svg viewBox="0 0 24 24" style="width:9px; height:9px; stroke:#bae6fd; fill:none; stroke-width:2.5;"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
+                <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                  <button type="button" id="reportYearPublicBtn" onclick="event.preventDefault(); event.stopPropagation(); window.toggleReportActivityPublic('year', event);" style="font-size:0.60rem; font-weight:800; padding:2px 6px; border-radius:5px; cursor:pointer; outline:none; border:1px solid rgba(186,230,253,0.25); background:rgba(186,230,253,0.08); color:#bae6fd;">루터 공개</button>
+                  <button type="button" id="reportYearBadgeBtn" onclick="event.stopPropagation(); window.toggleReportYearDropdown(event);" style="font-size:0.70rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; background:rgba(186,230,253,0.08); border:1px solid rgba(186,230,253,0.25); padding:2px 7px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; outline:none;">
+                    <span id="reportYearBadge">2026</span>
+                    <svg viewBox="0 0 24 24" style="width:9px; height:9px; stroke:#bae6fd; fill:none; stroke-width:2.5;"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                </div>
               </div>
               <div style="margin-top:4px; display:flex; justify-content:space-between; align-items:flex-end; gap:6px; min-width:0;">
                 <div>
@@ -4216,14 +4513,20 @@ function ensureMyReportAndAuthModalsInDOM() {
               <div id="reportYearDropdownMenu" style="display:none; position:absolute; top:36px; right:10px; min-width:86px; max-height:180px; overflow-y:auto; background:#0d121d; border:1px solid rgba(186,230,253,0.25); border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.85); z-index:100; padding:4px; box-sizing:border-box; flex-direction:column; gap:2px;"></div>
             </div>
 
-            <div style="min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; box-sizing:border-box;">
+            <div role="button" onclick="window.toggleReportTotalActivities(event)" style="cursor:pointer; min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none; box-sizing:border-box;">
               <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
                 <span style="font-size:0.77rem; color:#64748b; font-weight:700;">누적 총 활동</span>
-                <span style="font-size:0.68rem; color:#fde68a; font-weight:700; background:rgba(253,230,138,0.08); border:1px solid rgba(253,230,138,0.2); padding:1px 5px; border-radius:4px; flex-shrink:0;">전체</span>
+                <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                  <button type="button" id="reportTotalPublicBtn" onclick="event.preventDefault(); event.stopPropagation(); window.toggleReportActivityPublic('total', event);" style="font-size:0.60rem; font-weight:800; padding:2px 6px; border-radius:5px; cursor:pointer; outline:none; border:1px solid rgba(253,230,138,0.25); background:rgba(253,230,138,0.08); color:#fde68a;">루터 공개</button>
+                  <span style="font-size:0.68rem; color:#fde68a; font-weight:700; background:rgba(253,230,138,0.08); border:1px solid rgba(253,230,138,0.2); padding:1px 5px; border-radius:4px;">전체</span>
+                </div>
               </div>
-              <div style="margin-top:4px;">
-                <span id="reportTotalCountNumber" style="font-size:1.72rem; font-weight:900; color:#fde68a; font-family:var(--font-en); line-height:1;">0</span>
-                <span style="font-size:0.87rem; font-weight:700; color:#fef08a; margin-left:2px;">회</span>
+              <div style="margin-top:4px; display:flex; justify-content:space-between; align-items:flex-end; gap:6px; min-width:0;">
+                <div>
+                  <span id="reportTotalCountNumber" style="font-size:1.72rem; font-weight:900; color:#fde68a; font-family:var(--font-en); line-height:1;">0</span>
+                  <span style="font-size:0.87rem; font-weight:700; color:#fef08a; margin-left:2px;">회</span>
+                </div>
+                <span id="reportTotalListArrow" style="font-size:0.64rem; color:#64748b; font-weight:800; margin-bottom:2px; flex-shrink:0;">기록보기 ▼</span>
               </div>
             </div>
           </div>
@@ -4234,6 +4537,13 @@ function ensureMyReportAndAuthModalsInDOM() {
               <span id="reportYearActivityTitle" style="font-size:0.70rem; color:#bae6fd; font-weight:800; font-family:var(--font-en);">활동 기록</span>
             </div>
             <div id="reportYearActivityList" style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-right:2px;"></div>
+          </div>
+
+          <div id="reportTotalActivityContainer" style="display:none; flex-direction:column; gap:4px; background:#080b11; border:1px solid rgba(253,230,138,0.15); border-radius:10px; padding:8px 10px; box-sizing:border-box; flex-shrink:0; min-width:0; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.06);">
+              <span id="reportTotalActivityTitle" style="font-size:0.70rem; color:#fde68a; font-weight:800;">누적 활동 기록</span>
+            </div>
+            <div id="reportTotalActivityList" style="display:flex; flex-direction:column; gap:2px; max-height:280px; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-right:2px;"></div>
           </div>
 
           <!-- 1. 장비 & 세팅 무게 -->
@@ -5765,7 +6075,7 @@ window.ensureMasterBottomDock = function(activeTabId) {
     document.body.appendChild(dock);
   }
 
-  dock.style.cssText = 'position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; max-width:480px !important; margin:0 auto !important; height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; padding:0 0 env(safe-area-inset-bottom, 8px) 0 !important; background:#000000 !important; border-top:1px solid rgba(255,255,255,0.1) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:2147483647 !important; box-sizing:border-box !important; pointer-events:auto !important; transform:translateZ(0) !important; -webkit-transform:translateZ(0) !important; contain:paint !important; overscroll-behavior:none !important;';
+  dock.style.cssText = 'position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; max-width:480px !important; margin:0 auto !important; height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; padding:0 0 env(safe-area-inset-bottom, 8px) 0 !important; background:#000000 !important; border-top:none !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:2147483647 !important; box-sizing:border-box !important; pointer-events:auto !important; transform:translateZ(0) !important; -webkit-transform:translateZ(0) !important; contain:paint !important; overscroll-behavior:none !important;';
 
   var tabs = [
     { id: 'router', name: '낭만루터', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>', action: "window.navigateToDockTab('router')" },
@@ -5782,13 +6092,13 @@ window.ensureMasterBottomDock = function(activeTabId) {
       var btn = buttons[i];
       var isAct = (tabs[i].id === activeTab);
       btn.classList.toggle('active', isAct);
-      btn.style.setProperty('color', isAct ? '#38bdf8' : '#94a3b8', 'important');
+      btn.style.setProperty('color', isAct ? '#ffffff' : '#94a3b8', 'important');
       btn.style.fontWeight = isAct ? '900' : '700';
     }
   } else {
     dock.innerHTML = tabs.map(function(t) {
       var isAct = (t.id === activeTab);
-      var col = isAct ? '#38bdf8' : '#94a3b8';
+      var col = isAct ? '#ffffff' : '#94a3b8';
       var fw = isAct ? '900' : '700';
       return '<button type="button" class="dock-item ' + (isAct ? 'active' : '') + '" title="' + t.name + '" onclick="' + t.action + '" style="background:none; border:none; padding:0; margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:' + col + ' !important; font-size:0.67rem; font-weight:' + fw + '; gap:3px; flex:1; height:56px; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent;">' +
         t.svg +
@@ -8504,8 +8814,14 @@ window.previewUserPhotoLarge = function(photoUrl) {
   viewer.style.cssText = 'position:fixed; inset:0; z-index:2147483646 !important; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:20px; box-sizing:border-box; cursor:pointer;';
   viewer.onclick = function() { viewer.remove(); triggerHaptic(8); };
 
-  viewer.innerHTML = '<div style="position:relative; width:250px; height:250px; border-radius:50%; border:2px solid rgba(186,230,253,0.6); box-shadow:0 0 35px rgba(56,189,248,0.35); overflow:hidden; background:#07090e; flex-shrink:0;">' +
+  var profileModal = document.getElementById('userFeedCollectionModal');
+  var moreBtn = '';
+  if (profileModal && profileModal.dataset.userId) {
+      moreBtn = '<button type="button" data-user-id="' + _escapeReportPropHtml(profileModal.dataset.userId) + '" data-author="' + _escapeReportPropHtml(profileModal.dataset.author || '') + '" data-feed-id="' + _escapeReportPropHtml(profileModal.dataset.feedId || '') + '" onclick="event.stopPropagation(); var v=document.getElementById(\'masterCoverLargeViewerModal\'); if(v) v.remove(); window.openRouterProfileMoreMenu(this.dataset.userId, this.dataset.author, this.dataset.feedId, event);" style="position:absolute; right:36px; bottom:36px; width:28px; height:28px; border-radius:50%; border:none; background:rgba(0,0,0,0.62); color:#ffffff; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; z-index:2;" title="더보기"><svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>';
+  }
+  viewer.innerHTML = '<div style="position:relative; width:250px; height:250px; border-radius:50%; border:2px solid rgba(255,255,255,0.35); box-shadow:0 8px 28px rgba(0,0,0,0.55); overflow:hidden; background:#07090e; flex-shrink:0;">' +
       '<img src="' + escapeHtml(url) + '" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
+      moreBtn +
     '</div>';
 
   document.body.appendChild(viewer);
@@ -9393,7 +9709,13 @@ window.okbmFetchPublicProfile = async function(userId) {
     });
     if (!res.ok) return null;
     var row = await res.json();
+    if (Array.isArray(row)) row = row[0];
+    if (typeof row === 'string') {
+      try { row = JSON.parse(row); } catch (eRow) { row = null; }
+    }
     if (!row || typeof row !== 'object' || !row.id) return null;
+    window.__okbmPublicProfileCache = window.__okbmPublicProfileCache || {};
+    window.__okbmPublicProfileCache[String(row.id)] = row;
     return row;
   } catch (e) {
     return null;
@@ -12053,6 +12375,8 @@ window.saveUserToSupabase = async function(profileData) {
       gearMeta: gearMeta || {},
       planMemos: planMemos || {},
       planSpots: planSpots || {},
+      hide_year_activity: localStorage.getItem('okbm_hide_year_activity') === '1',
+      hide_total_activity: localStorage.getItem('okbm_hide_total_activity') === '1',
       sns: {
         instagram: userInsta,
         youtube: userYt,
