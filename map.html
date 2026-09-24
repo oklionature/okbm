@@ -4581,8 +4581,29 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         return variants[0] || ((window.extractMountainSearchName(spotName) || String(spotName || '').trim()) + ' 백패킹');
       };
 
+      window.countSpotsWithMountainName = function(mountain) {
+        var name = String(mountain || '').trim();
+        if (!name || !Array.isArray(spots)) return 0;
+        var n = 0;
+        spots.forEach(function(s) {
+          if (!s) return;
+          var m = window.extractMountainSearchName(s.spot_main || s.name || '');
+          if (m === name) n += 1;
+        });
+        return n;
+      };
+
       window.buildSpotBlogQueryVariants = function(spotName, areaName) {
-        return window.buildSpotMediaQueryVariants(spotName, areaName);
+        var variants = window.buildSpotMediaQueryVariants(spotName, areaName);
+        var mountain = window.extractMountainSearchName(spotName);
+        var area = window.normalizeSearchAreaName(areaName) || String(areaName || '').trim();
+        if (area && mountain && window.countSpotsWithMountainName(mountain) > 1) {
+          variants = variants.filter(function(q) {
+            return q.indexOf(area) !== -1 && q.indexOf(mountain) !== -1;
+          });
+          if (!variants.length) variants = [area + ' ' + mountain + ' 백패킹'];
+        }
+        return variants;
       };
 
       window.rankMediaBySpot = function(list, spotName, areaName, limit) {
@@ -4675,16 +4696,18 @@ window.__ytMetaCache = window.__ytMetaCache || {};
       window.fetchRealNaverBlogsForSpot = async function(spotName, areaName) {
         if (!spotName) return [];
         var mountain = window.extractMountainSearchName(spotName);
+        var area = window.normalizeSearchAreaName(areaName) || String(areaName || '').trim();
         var variants = window.buildSpotBlogQueryVariants(spotName, areaName);
         if (!variants.length) variants = [window.buildSpotMediaQuery(spotName, areaName)];
-        var cacheKey = 'mt:v8:' + (mountain || variants[0]);
+        var sharedMountain = window.countSpotsWithMountainName(mountain) > 1 && !!area;
+        var cacheKey = 'mt:v9:' + (mountain || variants[0]) + (sharedMountain ? ('|' + area) : '');
 
         if (window.__spotAutoBlogsCache.has(cacheKey)) {
           return window.__spotAutoBlogsCache.get(cacheKey);
         }
 
         try {
-          var sessionCached = sessionStorage.getItem('okbm_blog_cache_v8_' + cacheKey);
+          var sessionCached = sessionStorage.getItem('okbm_blog_cache_v9_' + cacheKey);
           if (sessionCached) {
             var parsed = JSON.parse(sessionCached);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -4747,11 +4770,18 @@ window.__ytMetaCache = window.__ytMetaCache || {};
           console.warn('[map.html:fetchRealNaverBlogsForSpot]', e);
         }
 
-        var extracted = window.rankMediaBySpot(allRanked(), spotName, areaName, 5);
+        var ranked = allRanked();
+        if (sharedMountain) {
+          var localOnly = ranked.filter(function(item) {
+            return String(item.title || '').indexOf(area) !== -1;
+          });
+          if (localOnly.length) ranked = localOnly;
+        }
+        var extracted = window.rankMediaBySpot(ranked, spotName, areaName, 5);
 
         if (extracted.length > 0) {
           limitedMapSet(window.__spotAutoBlogsCache, cacheKey, extracted, 80);
-          try { sessionStorage.setItem('okbm_blog_cache_v8_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
+          try { sessionStorage.setItem('okbm_blog_cache_v9_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
         }
         return extracted;
       };
