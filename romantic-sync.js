@@ -4512,8 +4512,8 @@ function ensureMyReportAndAuthModalsInDOM() {
           <!-- 올해 vs 누적 활동 듀얼 카운터 -->
           <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px; flex-shrink:0;">
             <div role="button" onclick="window.toggleReportYearActivities(event)" style="cursor:pointer; position:relative; min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none; box-sizing:border-box;">
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-width:0;">
-                <span id="reportYearCardLabel" style="font-size:0.77rem; color:#64748b; font-weight:700;"> 활동</span>
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:4px; min-width:0;">
+                <span id="reportYearCardLabel" style="font-size:0.77rem; color:#64748b; font-weight:700; letter-spacing:-0.06em; white-space:nowrap; line-height:1;">올해 활동</span>
                 <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
                   <button type="button" id="reportYearPublicBtn" onclick="event.preventDefault(); event.stopPropagation(); window.toggleReportActivityPublic('year', event);" style="font-size:0.60rem; font-weight:800; padding:2px 6px; border-radius:5px; cursor:pointer; outline:none; border:1px solid rgba(186,230,253,0.25); background:rgba(186,230,253,0.08); color:#bae6fd;">루터 공개</button>
                   <button type="button" id="reportYearBadgeBtn" onclick="event.stopPropagation(); window.toggleReportYearDropdown(event);" style="font-size:0.70rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; background:rgba(186,230,253,0.08); border:1px solid rgba(186,230,253,0.25); padding:2px 7px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; outline:none;">
@@ -4534,7 +4534,7 @@ function ensureMyReportAndAuthModalsInDOM() {
 
             <div role="button" onclick="window.toggleReportTotalActivities(event)" style="cursor:pointer; min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none; box-sizing:border-box;">
               <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
-                <span style="font-size:0.77rem; color:#64748b; font-weight:700;">누적 총 활동</span>
+                <span style="font-size:0.77rem; color:#64748b; font-weight:700; white-space:nowrap; line-height:1;">누적 총 활동</span>
                 <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
                   <button type="button" id="reportTotalPublicBtn" onclick="event.preventDefault(); event.stopPropagation(); window.toggleReportActivityPublic('total', event);" style="font-size:0.60rem; font-weight:800; padding:2px 6px; border-radius:5px; cursor:pointer; outline:none; border:1px solid rgba(253,230,138,0.25); background:rgba(253,230,138,0.08); color:#fde68a;">루터 공개</button>
                   <span style="font-size:0.68rem; color:#fde68a; font-weight:700; background:rgba(253,230,138,0.08); border:1px solid rgba(253,230,138,0.2); padding:1px 5px; border-radius:4px;">전체</span>
