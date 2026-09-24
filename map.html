@@ -96,6 +96,7 @@
             return;
           }
 
+          if (spot || id || feed) return;
           if (sessionStorage.getItem('okbm_entered_via_index') === '1') return;
           var homeParams = new URLSearchParams();
           if (spot) {
@@ -3650,7 +3651,7 @@ function updateSmartResetButtons() {
         const shareParams = new URLSearchParams();
         if (shareSpotName) shareParams.set('spot', shareSpotName);
         if (shareSpotId) shareParams.set('id', shareSpotId);
-        const shareUrl = `${publicBase}index.html${shareParams.toString() ? '?' + shareParams.toString() : ''}`;
+        const shareUrl = `${publicBase}map.html${shareParams.toString() ? '?' + shareParams.toString() : ''}`;
         const shareLogoImg = publicBase + 'fulllogoblk.png?v=20260919_v3';
 
         const summary = parseStructuredSummary(spot.desc_summary || spot.desc);
@@ -3685,7 +3686,6 @@ function updateSmartResetButtons() {
                       }
                     }
                   ],
-                  installTalk: true
                 });
                 return true;
               }

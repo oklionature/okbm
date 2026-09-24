@@ -6530,7 +6530,12 @@ var adBannersHtml = `
       }
 
       if (spotParam || idParam) {
-        releaseGuard();
+        var mapParams = [];
+        if (spotParam) mapParams.push('spot=' + encodeURIComponent(spotParam));
+        if (idParam) mapParams.push('id=' + encodeURIComponent(idParam));
+        sessionStorage.setItem('okbm_entered_via_index', '1');
+        window.location.replace('map.html' + (mapParams.length ? '?' + mapParams.join('&') : ''));
+        return;
       }
 
       if (tabParam === 'history' || openParam === 'history') {
