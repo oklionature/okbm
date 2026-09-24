@@ -3567,10 +3567,7 @@ window.refreshMyReportFullStats = function() {
   };
 
   var paint = applyLocalCounts();
-  var validLogs = paint.validLogs;
   var curYear = paint.curYear;
-  var yEl = paint.yEl;
-  var tEl = paint.tEl;
 
   var curUserId = okbmGetCurrentUserId();
   var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
@@ -3583,55 +3580,37 @@ window.refreshMyReportFullStats = function() {
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
 
-  var syncFromServer = function() {
-    if (!(curUserId && targetUrl && targetKey)) return;
-    fetch(targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(curUserId) + '&select=id,date', {
-      headers: {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
-        'Range-Unit': 'items',
-        'Prefer': 'count=exact'
-      }
-    }).then(function(res) {
-      if (res.ok) {
-        var contentRange = res.headers.get('content-range');
-        var serverTotal = 0;
-        if (contentRange && contentRange.includes('/')) {
-          var parsedCount = parseInt(contentRange.split('/')[1], 10);
-          if (!isNaN(parsedCount)) serverTotal = parsedCount;
-        }
-        return res.json().then(function(rows) {
-          return { rows: Array.isArray(rows) ? rows : [], total: serverTotal };
-        });
-      }
-      return { rows: [], total: 0 };
-    }).then(function(data) {
-      var localAgain = applyLocalCounts();
-      yEl = localAgain.yEl;
-      tEl = localAgain.tEl;
-      curYear = localAgain.curYear;
+  window.__reportCountReq = (window.__reportCountReq || 0) + 1;
+  var countReq = window.__reportCountReq;
 
-      var serverRows = data.rows;
-      var serverTotalCount = (typeof data.total === 'number') ? data.total : serverRows.length;
-      // 서버 총건수 기준으로 맞춤 (슈퍼베이스 삭제 시 감소 반영)
-      if (tEl) tEl.innerText = String(serverTotalCount);
-      if (yEl && Array.isArray(serverRows) && serverRows.length > 0
-          && (serverRows.length >= serverTotalCount || serverTotalCount === 0)) {
-        yEl.innerText = String(serverRows.filter(function(r) {
-          return String(r.date || '').includes(curYear);
-        }).length);
-      }
-    }).catch(function() {});
-  };
-  if (typeof window.okbmReconcileLocalFeedsWithServer === 'function') {
-    window.okbmReconcileLocalFeedsWithServer().then(function() {
-      applyLocalCounts();
-      syncFromServer();
-    }).catch(function() {
-      syncFromServer();
-    });
-  } else {
-    syncFromServer();
+  if (curUserId && targetUrl && targetKey) {
+    var countHeaders = {
+      'apikey': targetKey,
+      'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+      'Prefer': 'count=exact',
+      'Range-Unit': 'items'
+    };
+    var countBase = targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(curUserId) + '&select=id';
+    var readHeadCount = function(res) {
+      if (!res || !res.ok) return null;
+      var contentRange = res.headers.get('content-range');
+      if (!contentRange || contentRange.indexOf('/') === -1) return null;
+      var parsedCount = parseInt(contentRange.split('/')[1], 10);
+      return isNaN(parsedCount) ? null : parsedCount;
+    };
+    var applyHeadCount = function(elId, count) {
+      if (countReq !== window.__reportCountReq || count == null) return;
+      var el = document.getElementById(elId);
+      if (el) el.innerText = String(count);
+    };
+    fetch(countBase, { method: 'HEAD', headers: countHeaders })
+      .then(readHeadCount)
+      .then(function(count) { applyHeadCount('reportTotalCountNumber', count); })
+      .catch(function() {});
+    fetch(countBase + '&date=like.' + encodeURIComponent(curYear + '*'), { method: 'HEAD', headers: countHeaders })
+      .then(readHeadCount)
+      .then(function(count) { applyHeadCount('reportYearCountNumber', count); })
+      .catch(function() {});
   }
 
   var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
@@ -3874,6 +3853,58 @@ window.renderUserProfileHeaderSection = function(config) {
   '</div>';
 };
 
+window.__visitorActivityCache = window.__visitorActivityCache || {};
+window.__visitorActivityWaiters = window.__visitorActivityWaiters || {};
+
+window.__ensureVisitorActivityLogs = function(done) {
+  var finish = function() { if (typeof done === 'function') done(); };
+  var modal = document.getElementById('userFeedCollectionModal');
+  var userId = modal ? String(modal.dataset.userId || '').trim() : '';
+  var author = modal ? String(modal.dataset.author || '').trim() : '';
+  var key = userId || author;
+  if (!key) { finish(); return; }
+  if (window.__visitorActivityCache[key]) {
+    window.__visitorProfileLogs = window.__visitorActivityCache[key];
+    finish();
+    return;
+  }
+  if (window.__visitorActivityWaiters[key]) {
+    window.__visitorActivityWaiters[key].push(finish);
+    return;
+  }
+  window.__visitorActivityWaiters[key] = [finish];
+  var targetUrl = window.SUPABASE_URL || '';
+  var targetKey = window.SUPABASE_ANON_KEY || '';
+  var release = function(rows) {
+    var list = Array.isArray(rows) ? rows : (window.__visitorProfileLogs || []);
+    window.__visitorActivityCache[key] = list;
+    window.__visitorProfileLogs = list;
+    var waiters = window.__visitorActivityWaiters[key] || [];
+    delete window.__visitorActivityWaiters[key];
+    waiters.forEach(function(fn) { try { fn(); } catch (e) {} });
+  };
+  if (!targetUrl || !targetKey) { release(window.__visitorProfileLogs || []); return; }
+  var filterParam = userId
+    ? ('user_id=eq.' + encodeURIComponent(userId))
+    : ('author=eq.' + encodeURIComponent(author));
+  var myId = '';
+  try { myId = String((typeof window.okbmGetCurrentUserId === 'function' && window.okbmGetCurrentUserId()) || '').trim(); } catch (eId) { myId = ''; }
+  var isSelf = Boolean(myId && userId && myId === userId);
+  var activityQuery = targetUrl + '/rest/v1/feeds?' + filterParam + '&select=id,spot,date&order=date.desc&limit=1000';
+  if (!isSelf) activityQuery += '&is_published=eq.true';
+  fetch(activityQuery, {
+    headers: {
+      'apikey': targetKey,
+      'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + targetKey)),
+      'Content-Type': 'application/json'
+    }
+  }).then(function(r) { return r.ok ? r.json() : []; }).then(function(rows) {
+    release(Array.isArray(rows) && rows.length ? rows : (window.__visitorProfileLogs || []));
+  }).catch(function() {
+    release(window.__visitorProfileLogs || []);
+  });
+};
+
 window._renderVisitorActivityList = function(mode) {
   var listEl = document.getElementById(mode === 'year' ? 'visitorYearActivityList' : 'visitorTotalActivityList');
   if (!listEl) return;
@@ -3888,22 +3919,8 @@ window._renderVisitorActivityList = function(mode) {
   }).sort(function(a, b) {
     return String(b.date || '').localeCompare(String(a.date || ''));
   });
-  if (!logs.length) {
-    listEl.innerHTML = '<div style="font-size:0.66rem; color:#64748b; text-align:center; padding:10px 0;">기록이 없습니다.</div>';
-    return;
-  }
   var numColor = mode === 'year' ? '#bae6fd' : '#fde68a';
-  listEl.innerHTML = logs.map(function(r, idx) {
-    var spotName = r.spot || r.spotName || '-';
-    var dStr = String(r.date || '').slice(0, 10);
-    return '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0;">' +
-      '<div style="display:flex; align-items:center; gap:5px; min-width:0; flex:1;">' +
-        '<span style="font-size:0.64rem; color:' + numColor + '; font-family:var(--font-en); font-weight:800; flex-shrink:0;">' + (idx + 1) + '.</span>' +
-        '<span style="font-size:0.72rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;">' + _escapeReportPropHtml(spotName) + '</span>' +
-      '</div>' +
-      '<span style="font-size:0.64rem; color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + _escapeReportPropHtml(dStr) + '</span>' +
-    '</div>';
-  }).join('');
+  window.__okbmPaintActivityList(listEl, logs, numColor, false);
 };
 
 window.toggleVisitorYearDropdown = function(e) {
@@ -3955,7 +3972,9 @@ window.selectVisitorYear = function(yearStr, e) {
   var arrow = document.getElementById('visitorYearListArrow');
   if (box) box.style.display = 'flex';
   if (arrow) arrow.innerText = '접기 ▲';
-  window._renderVisitorActivityList('year');
+  window.__ensureVisitorActivityLogs(function() {
+    if (box && box.style.display === 'flex') window._renderVisitorActivityList('year');
+  });
 };
 
 window.toggleVisitorActivity = function(mode, e) {
@@ -3981,7 +4000,9 @@ window.toggleVisitorActivity = function(mode, e) {
   }
   box.style.display = 'flex';
   if (arrow) arrow.innerText = '접기 ▲';
-  window._renderVisitorActivityList(mode);
+  window.__ensureVisitorActivityLogs(function() {
+    if (box.style.display === 'flex') window._renderVisitorActivityList(mode);
+  });
 };
 
 window.openSnsEditorModal = function() {
@@ -4214,6 +4235,65 @@ window.toggleReportTotalActivities = function(e) {
   window.renderReportTotalActivityList();
 };
 
+window.__okbmActivityPageSize = 40;
+
+window.__okbmActivityRowHtml = function(r, idx, numColor, clickable) {
+  var spotName = r.spot || r.spotName || '-';
+  var dStr = String(r.date || '').slice(0, 10);
+  var feedId = String(r.id || '').trim();
+  var clickAttr = (clickable && feedId)
+    ? (' data-feed-id="' + _escapeReportPropHtml(feedId) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openReportActivityFeed(this.dataset.feedId);" style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0; cursor:pointer;"')
+    : ' style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0;"';
+  return '<div' + clickAttr + '>' +
+    '<div style="display:flex; align-items:center; gap:5px; min-width:0; flex:1;">' +
+      '<span style="font-size:0.64rem; color:' + numColor + '; font-family:var(--font-en); font-weight:800; flex-shrink:0;">' + (idx + 1) + '.</span>' +
+      '<span style="font-size:0.72rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;">' + _escapeReportPropHtml(spotName) + '</span>' +
+    '</div>' +
+    '<span style="font-size:0.64rem; color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + _escapeReportPropHtml(dStr) + '</span>' +
+  '</div>';
+};
+
+window.__okbmAppendActivityRows = function(listEl) {
+  if (!listEl) return;
+  var logs = listEl.__activityLogs || [];
+  var shown = listEl.__activityShown || 0;
+  if (shown >= logs.length) return;
+  var page = window.__okbmActivityPageSize || 40;
+  var next = logs.slice(shown, shown + page);
+  var color = listEl.__activityColor || '#e2e8f0';
+  var clickable = Boolean(listEl.__activityClickable);
+  listEl.insertAdjacentHTML('beforeend', next.map(function(r, i) {
+    return window.__okbmActivityRowHtml(r, shown + i, color, clickable);
+  }).join(''));
+  listEl.__activityShown = shown + next.length;
+};
+
+window.__okbmBindActivityPager = function(listEl) {
+  if (!listEl || listEl.getAttribute('data-activity-pager') === '1') return;
+  listEl.setAttribute('data-activity-pager', '1');
+  listEl.addEventListener('scroll', function() {
+    if ((listEl.__activityShown || 0) >= (listEl.__activityLogs || []).length) return;
+    if (listEl.scrollHeight - (listEl.scrollTop + listEl.clientHeight) > 48) return;
+    window.__okbmAppendActivityRows(listEl);
+  });
+};
+
+window.__okbmPaintActivityList = function(listEl, logs, color, clickable) {
+  if (!listEl) return;
+  window.__okbmBindActivityPager(listEl);
+  listEl.__activityLogs = logs || [];
+  listEl.__activityShown = 0;
+  listEl.__activityColor = color;
+  listEl.__activityClickable = Boolean(clickable);
+  listEl.scrollTop = 0;
+  if (!logs || !logs.length) {
+    listEl.innerHTML = '<div style="font-size:0.66rem; color:#64748b; text-align:center; padding:10px 0;">기록이 없습니다.</div>';
+    return;
+  }
+  listEl.innerHTML = '';
+  window.__okbmAppendActivityRows(listEl);
+};
+
 window.renderReportTotalActivityList = function() {
   var listEl = document.getElementById('reportTotalActivityList');
   var titleEl = document.getElementById('reportTotalActivityTitle');
@@ -4226,27 +4306,7 @@ window.renderReportTotalActivityList = function() {
   });
 
   if (titleEl) titleEl.innerText = '누적 활동 기록 (' + validLogs.length + ')';
-
-  if (validLogs.length === 0) {
-    listEl.innerHTML = '<div style="font-size:0.66rem; color:#64748b; text-align:center; padding:10px 0;">기록이 없습니다.</div>';
-    return;
-  }
-
-  listEl.innerHTML = validLogs.map(function(r, idx) {
-    var spotName = r.spot || r.spotName || '-';
-    var dStr = String(r.date || '').slice(0, 10);
-    var feedId = String(r.id || '').trim();
-    var clickAttr = feedId
-      ? (' data-feed-id="' + _escapeReportPropHtml(feedId) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openReportActivityFeed(this.dataset.feedId);" style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0; cursor:pointer;"')
-      : ' style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0;"';
-    return '<div' + clickAttr + '>' +
-      '<div style="display:flex; align-items:center; gap:5px; min-width:0; flex:1;">' +
-        '<span style="font-size:0.64rem; color:#fde68a; font-family:var(--font-en); font-weight:800; flex-shrink:0;">' + (idx + 1) + '.</span>' +
-        '<span style="font-size:0.72rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;">' + _escapeReportPropHtml(spotName) + '</span>' +
-      '</div>' +
-      '<span style="font-size:0.64rem; color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + _escapeReportPropHtml(dStr) + '</span>' +
-    '</div>';
-  }).join('');
+  window.__okbmPaintActivityList(listEl, validLogs, '#fde68a', true);
 };
 
 window.renderReportYearActivityList = function() {
@@ -4271,28 +4331,7 @@ window.renderReportYearActivityList = function() {
   if (titleEl) {
     titleEl.innerText = curYear + '년 활동 (' + yearLogs.length + ')';
   }
-
-  if (yearLogs.length === 0) {
-    listEl.innerHTML = '<div style="font-size:0.66rem; color:#64748b; text-align:center; padding:10px 0;">기록이 없습니다.</div>';
-    return;
-  }
-
-  listEl.innerHTML = yearLogs.map(function(r, idx) {
-    var spotName = r.spot || r.spotName || '-';
-    var dStr = String(r.date || '').slice(0, 10);
-    var feedId = String(r.id || '').trim();
-    var clickAttr = feedId
-      ? (' data-feed-id="' + _escapeReportPropHtml(feedId) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openReportActivityFeed(this.dataset.feedId);" style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0; cursor:pointer;"')
-      : ' style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0;"';
-
-    return '<div' + clickAttr + '>' +
-      '<div style="display:flex; align-items:center; gap:5px; min-width:0; flex:1;">' +
-        '<span style="font-size:0.64rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; flex-shrink:0;">' + (idx + 1) + '.</span>' +
-        '<span style="font-size:0.72rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;">' + _escapeReportPropHtml(spotName) + '</span>' +
-      '</div>' +
-      '<span style="font-size:0.64rem; color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + _escapeReportPropHtml(dStr) + '</span>' +
-    '</div>';
-  }).join('');
+  window.__okbmPaintActivityList(listEl, yearLogs, '#bae6fd', true);
 };
 
 window.openReportActivityFeed = function(feedId) {
@@ -8698,25 +8737,23 @@ function openUserProfileModal() {
       window.applyMasterCoverPhotoToAllUI(targetPhoto);
     }
 
-    if (typeof window.saveUserToSupabase === 'function' && profile) {
-      window.saveUserToSupabase(profile);
-    }
-
     if (typeof window.refreshMyReportFullStats === 'function') {
       window.refreshMyReportFullStats();
     }
-    if (typeof window.refreshProposalInboxForUser === 'function') {
-      window.refreshProposalInboxForUser().then(function() {
-        var body = document.getElementById('accBody_myprops');
-        if (body && body.style.display === 'flex') window._renderMyPropsModule(body);
-      }).catch(function() {});
-    }
-    if (typeof window.pollUserNotifications === 'function') {
-      window.pollUserNotifications(true).catch(function() {});
-    }
-    if (typeof window.okbmRefreshNoteBadge === 'function') {
-      window.okbmRefreshNoteBadge().catch(function() {});
-    }
+    setTimeout(function() {
+      if (typeof window.refreshProposalInboxForUser === 'function') {
+        window.refreshProposalInboxForUser().then(function() {
+          var body = document.getElementById('accBody_myprops');
+          if (body && body.style.display === 'flex') window._renderMyPropsModule(body);
+        }).catch(function() {});
+      }
+      if (typeof window.pollUserNotifications === 'function') {
+        window.pollUserNotifications(true).catch(function() {});
+      }
+      if (typeof window.okbmRefreshNoteBadge === 'function') {
+        window.okbmRefreshNoteBadge().catch(function() {});
+      }
+    }, 0);
 
     var modal = document.getElementById('userProfileModalOverlay');
     if (modal) {

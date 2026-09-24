@@ -220,6 +220,22 @@
         box-shadow: none !important;
         flex: 0 1 auto !important;
       }
+      .reel-horizontal-track .reel-photo-target,
+      #mapHeroPhotoTrack .reel-photo-target {
+        opacity: 0 !important;
+        transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1) !important;
+      }
+      .reel-horizontal-track .reel-photo-target.is-photo-ready,
+      #mapHeroPhotoTrack .reel-photo-target.is-photo-ready {
+        opacity: 1 !important;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .reel-horizontal-track .reel-photo-target,
+        #mapHeroPhotoTrack .reel-photo-target {
+          opacity: 1 !important;
+          transition: none !important;
+        }
+      }
       .reel-photo-target.is-portrait,
       .reel-photo-target.is-portrait-crop {
         width: 100% !important;
@@ -554,10 +570,25 @@
   window.applySmartPhotoFit = function(img) {
     if (!img) return;
     if (img.closest && (img.closest('.postcard-template-container') || img.closest('.postcard-face-back'))) return;
+    var reveal = function() {
+      if (img.classList.contains('is-photo-ready')) return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        img.classList.add('is-photo-ready');
+        return;
+      }
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          img.classList.add('is-photo-ready');
+        });
+      });
+    };
     var fit = function() {
       var w = img.naturalWidth || img.videoWidth || 0;
       var h = img.naturalHeight || img.videoHeight || 0;
-      if (w <= 0 || h <= 0) return;
+      if (w <= 0 || h <= 0) {
+        if (img.complete) reveal();
+        return;
+      }
       var ratio = w / h;
       var inReel = !!(img.closest && (img.closest('.reel-horizontal-track') || img.closest('#mapHeroPhotoTrack')));
       img.classList.remove('is-landscape', 'is-square', 'is-portrait', 'is-portrait-crop', 'is-keep-ratio');
@@ -590,6 +621,7 @@
           img.classList.add('is-square', 'is-keep-ratio');
         }
       }
+      reveal();
     };
     if (img.complete && (img.naturalWidth || img.videoWidth)) {
       fit();
@@ -1685,6 +1717,9 @@
   // 슈퍼베이스에서 삭제된 feeds 행을 로컬 피드/마이데이터 캐시에서 제거 (SSOT)
   window.okbmReconcileLocalFeedsWithServer = function(opts) {
     opts = opts || {};
+    if (window.__okbmReconcileSessionDone && !opts.force) {
+      return Promise.resolve({ skipped: true, purgedMine: 0, purgedLoaded: 0 });
+    }
     if (window.__okbmReconcileInflight) return window.__okbmReconcileInflight;
 
     window.__okbmReconcileInflight = (async function() {
@@ -1835,6 +1870,7 @@
         try { window.renderHistoryStage(); } catch (eR) {}
       }
 
+      window.__okbmReconcileSessionDone = true;
       return { purgedMine: purgedMine, purgedLoaded: purgedLoaded, myCount: Object.keys(allMyServerIds).length, myIdFetchOk: myIdFetchOk };
     })().catch(function(err) {
       console.warn('[romantic-history.js:okbmReconcileLocalFeedsWithServer]', err);
@@ -4568,7 +4604,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
       return '<div style="width:100%; display:flex; flex-direction:column; background:#000000;">' +
         '<div style="width:100%; overflow:hidden; background:#000000; position:relative; display:flex; align-items:center; justify-content:center;">' +
-          '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
+          '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" loading="lazy" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
           (photosList.length > 1 ? '<span style="position:absolute; top:10px; right:10px; background:#0c1017; color:#ffffff; font-size:0.62rem; font-weight:800; font-family:\'Space Grotesk\', sans-serif; padding:2px 7px; border-radius:10px; border:1px solid rgba(255,255,255,0.15);">' + (pIdx + 1) + ' / ' + photosList.length + '</span>' : '') +
         '</div>' +
         memoMarkup +
@@ -5383,17 +5419,18 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var initialRenderList = Array.from(dedupMap.values()).sort(function(a, b) {
       return String(b.date || '').localeCompare(String(a.date || ''));
     });
+    var previewList = initialRenderList.slice(0, 10);
 
     window.__scopedUserFilteredFeedsMap = window.__scopedUserFilteredFeedsMap || {};
-    window.__scopedUserFilteredFeedsMap[targetAuthor] = initialRenderList.slice();
+    window.__scopedUserFilteredFeedsMap[targetAuthor] = previewList.slice();
 
     window.__userCollectionPagingState = {
       targetAuthor: targetAuthor,
       targetUserId: targetUserId,
-      offset: initialRenderList.length,
+      offset: previewList.length,
       limit: 10,
       hasMore: true,
-      isLoading: false
+      isLoading: Boolean((window.SUPABASE_URL || '') && (window.SUPABASE_ANON_KEY || '') && (targetUserId || targetAuthor))
     };
 
     var repSnsBadgeHtml = '';
@@ -5427,10 +5464,10 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }).length;
 
     var cardsHtml = '';
-    if (initialRenderList.length === 0) {
+    if (previewList.length === 0) {
       cardsHtml = '<div style="width:100%; padding:60px 20px; text-align:center; color:#94a3b8; font-size:0.80rem;">등록된 낭만루트 기록이 없습니다.</div>';
     } else {
-      cardsHtml = initialRenderList.map(function(f) {
+      cardsHtml = previewList.map(function(f) {
         return window.__buildUserCollectionFeedRowHtml(f, targetAuthor, targetUserId);
       }).join('');
     }
@@ -5594,23 +5631,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         }
       }).catch(function() {});
 
-      var activityQuery = targetUrl + '/rest/v1/feeds?' + filterParam + '&select=id,spot,date&order=date.desc&limit=1000';
-      if (!isSelf) activityQuery += '&is_published=eq.true';
-      fetch(activityQuery, {
-        headers: {
-          'apikey': targetKey,
-          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
-          'Content-Type': 'application/json'
-        }
-      }).then(function(r) { return r.ok ? r.json() : []; }).then(function(rows) {
-        if (!Array.isArray(rows) || !rows.length) return;
-        window.__visitorProfileLogs = rows;
-        var yearBox = document.getElementById('visitorYearActivityContainer');
-        var totalBox = document.getElementById('visitorTotalActivityContainer');
-        if (yearBox && yearBox.style.display === 'flex') window._renderVisitorActivityList('year');
-        if (totalBox && totalBox.style.display === 'flex') window._renderVisitorActivityList('all');
-      }).catch(function() {});
-
       var fetchQuery = targetUrl + '/rest/v1/feeds?' + filterParam + '&order=date.desc,created_at.desc&offset=0&limit=10';
       if (!isSelf) {
         fetchQuery += '&is_published=eq.true';
@@ -5641,7 +5661,10 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
             }).join('');
           }
         }
-      }).catch(function() {});
+        if (window.__userCollectionPagingState) window.__userCollectionPagingState.isLoading = false;
+      }).catch(function() {
+        if (window.__userCollectionPagingState) window.__userCollectionPagingState.isLoading = false;
+      });
     }
   };
 
@@ -5726,9 +5749,13 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var old = document.getElementById('singleTripFeedModal');
     if (old) old.remove();
 
-    var allCardsHtml = logs.map(function(item) {
-      return window.buildSingleFeedCardHtml(item);
-    }).join('');
+    var dualFrom = Math.max(0, startIdx - 1);
+    var dualTo = Math.min(logs.length - 1, startIdx + 1);
+    window.__dualFeedWindow = { from: dualFrom, to: dualTo, logs: logs, growing: false };
+    var allCardsHtml = '';
+    for (var dualI = dualFrom; dualI <= dualTo; dualI++) {
+      allCardsHtml += window.buildSingleFeedCardHtml(logs[dualI]);
+    }
 
     var feedModal = document.createElement('div');
     feedModal.id = 'singleTripFeedModal';
@@ -5777,8 +5804,41 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       }
     };
 
+   window.__growDualFeedWindow = function(container) {
+      var state = window.__dualFeedWindow;
+      if (!state || state.growing || !container) return;
+      var wrapper = document.getElementById('dualFeedCardsWrapper');
+      if (!wrapper) return;
+      var fitNew = function(node) {
+        if (!node || typeof window.applySmartPhotoFit !== 'function') return;
+        node.querySelectorAll('.reel-photo-target').forEach(function(img) {
+          window.applySmartPhotoFit(img);
+        });
+      };
+      var remainBottom = container.scrollHeight - (container.scrollTop + container.clientHeight);
+      if ((remainBottom < 480 || container.scrollHeight <= container.clientHeight + 80) && state.to < state.logs.length - 1) {
+        state.growing = true;
+        state.to += 1;
+        wrapper.insertAdjacentHTML('beforeend', window.buildSingleFeedCardHtml(state.logs[state.to]));
+        fitNew(wrapper.lastElementChild);
+        state.growing = false;
+        return;
+      }
+      if (container.scrollTop < 240 && state.from > 0) {
+        state.growing = true;
+        state.from -= 1;
+        var beforeH = container.scrollHeight;
+        wrapper.insertAdjacentHTML('afterbegin', window.buildSingleFeedCardHtml(state.logs[state.from]));
+        var delta = container.scrollHeight - beforeH;
+        if (delta > 0) container.scrollTop += delta;
+        fitNew(wrapper.firstElementChild);
+        state.growing = false;
+      }
+    };
+
    window.__onDualFeedContainerScroll = function(container) {
       if (!container) return;
+      window.__growDualFeedWindow(container);
       var cards = container.querySelectorAll('.single-feed-block');
       var containerCenter = container.scrollTop + (container.clientHeight / 2);
       for (var i = 0; i < cards.length; i++) {
@@ -5852,6 +5912,8 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       if (targetCard) {
         targetCard.scrollIntoView({ behavior: 'auto', block: 'start' });
       }
+      var scroller = document.getElementById('dualFeedScrollContainer');
+      if (scroller && typeof window.__growDualFeedWindow === 'function') window.__growDualFeedWindow(scroller);
     }, 40);
 
     triggerHaptic(12);
@@ -8626,9 +8688,12 @@ window.renderHistoryStage = function(isLoading, opts) {
     // [제1조 SSOT] __allLoadedFeeds가 유일한 진실 공급원입니다.
     // __allLoadedFeeds가 비어있어도 interactiveHistory와 Union 결합하지 않습니다.
     // 서버 동기화 전이라면 로컬 소유 피드만 표시합니다.
-    var ssotFeedPool = Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0
-      ? window.__allLoadedFeeds
-      : window.interactiveHistory.filter(function(r) { return r && r._isLocalOwner; });
+    // serverOnly는 보관함을 여는 경로 전용입니다. 저장·삭제·탭 전환은 기존 분기를 그대로 탑니다.
+    var ssotFeedPool = opts.serverOnly
+      ? (Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : [])
+      : (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0
+        ? window.__allLoadedFeeds
+        : window.interactiveHistory.filter(function(r) { return r && r._isLocalOwner; }));
 
     var combinedList = [];
     var addedIds = new Set();
@@ -9079,20 +9144,37 @@ window.renderHistoryStage = function(isLoading, opts) {
       window.ensureMasterBottomDock('history');
     }
 
-    if (typeof window.renderHistoryStage === 'function') {
-      window.renderHistoryStage();
-    }
+    historyContent = modal.querySelector('.romantic-history-content');
+    if (historyContent) historyContent.style.visibility = 'hidden';
 
     if (typeof window.okbmBindOverlayViewportFit === 'function') {
       window.okbmBindOverlayViewportFit(modal, { reserveDock: true });
     }
 
+    var feedRefBeforeOpen = window.__allLoadedFeeds;
     window.fetchCommunityFeeds(true).then(function(feeds) {
+      var liveModal = document.getElementById('romanticHistoryModal');
+      var liveContent = liveModal ? liveModal.querySelector('.romantic-history-content') : null;
       if (!window.__okbmHistoryModalOpen) return;
-      if (feeds == null) return;
-      if (typeof window.renderHistoryStage === 'function') {
-        window.renderHistoryStage(false, { sync: true });
+      if (feeds == null) {
+        if (liveContent) liveContent.style.visibility = '';
+        return;
       }
+      var serverOk = Array.isArray(feeds) && feeds === window.__allLoadedFeeds && feeds !== feedRefBeforeOpen;
+      if (!serverOk) {
+        var cachedFeeds = [];
+        try {
+          cachedFeeds = (typeof safeGetJSON === 'function') ? (safeGetJSON('okbm_cached_community_feeds', []) || []) : [];
+        } catch (eCache) { cachedFeeds = []; }
+        if (!Array.isArray(cachedFeeds)) cachedFeeds = [];
+        window.__allLoadedFeeds = cachedFeeds;
+      }
+      if (typeof window.renderHistoryStage === 'function') {
+        window.renderHistoryStage(false, { serverOnly: true });
+      }
+      var reel = document.getElementById('reelsVerticalContainer');
+      if (reel) reel.scrollTop = 0;
+      if (liveContent) liveContent.style.visibility = '';
     });
 
     triggerHaptic(10);
