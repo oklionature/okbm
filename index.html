@@ -4325,15 +4325,54 @@ var adBannersHtml = `
       }) || null;
     }
 
+    function collectSpotMediaImageUrls(spot) {
+      if (!spot) return [];
+      var raw = spot.mediaUrls || spot.mediaurls || '';
+      var bits = [];
+      if (Array.isArray(raw)) bits = raw;
+      else bits = String(raw).split(/[\r\n,]+/);
+      return collectHttpsPhotoUrls(bits.filter(function(u) {
+        return /\.(jpe?g|png|webp|gif|avif)(\?|$)/i.test(String(u || '')) || String(u || '').indexOf('/storage/') !== -1;
+      }));
+    }
+
+    async function fetchSpotFeedPhotos(spotName) {
+      var targetUrl = window.SUPABASE_URL || '';
+      var targetKey = window.SUPABASE_ANON_KEY || '';
+      var key = String(spotName || '').replace(/\s*\(.*?\)/g, '').trim();
+      if (!targetUrl || !targetKey || key.length < 2) return [];
+      try {
+        var query = targetUrl + '/rest/v1/feeds?spot=ilike.*' + encodeURIComponent(key) + '*&is_published=eq.true&select=photos,spot&order=created_at.desc&limit=12';
+        var res = await (typeof window.okbmPublicFetch === 'function'
+          ? window.okbmPublicFetch(query)
+          : fetch(query, {
+            headers: {
+              'apikey': targetKey,
+              'Authorization': 'Bearer ' + targetKey,
+              'Content-Type': 'application/json'
+            }
+          }));
+        if (!res.ok) return [];
+        var rows = await res.json();
+        var urls = [];
+        (Array.isArray(rows) ? rows : []).forEach(function(row) {
+          urls = collectHttpsPhotoUrls(urls.concat(row && row.photos ? row.photos : []));
+        });
+        return urls.slice(0, 5);
+      } catch (e) {
+        return [];
+      }
+    }
+
     function getRegisteredSpotPhotos(spotName) {
       var matched = findRegisteredTripSpot(spotName);
-      if (!matched) return [];
-
-      var urls = collectHttpsPhotoUrls(matched.photos || matched.images || []);
-      var compactKey = String(matched.name || matched.spot_main || spotName || '')
+      var urls = collectHttpsPhotoUrls((matched && (matched.photos || matched.images)) || []);
+      urls = collectHttpsPhotoUrls(urls.concat(collectSpotMediaImageUrls(matched)));
+      var compactKey = String((matched && (matched.name || matched.spot_main)) || spotName || '')
         .replace(/\s*\(.*?\)/g, '')
         .replace(/[\s\(\[\]\)]/g, '')
         .toLowerCase();
+      if (!compactKey) return urls.slice(0, 5);
 
       var feedPool = [];
       if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
@@ -4363,10 +4402,27 @@ var adBannersHtml = `
       return urls.slice(0, 5);
     }
 
-    function resolveTripJoinPhotos(userPhotos, spotName) {
+    async function resolveTripJoinPhotos(userPhotos, spotName) {
+      if (window.__tripCreateUserPhotos) {
+        return collectHttpsPhotoUrls(userPhotos || []);
+      }
+      var local = getRegisteredSpotPhotos(spotName);
+      if (local.length > 0) return local;
       var own = collectHttpsPhotoUrls(userPhotos || []);
-      if (own.length > 0) return own;
-      return getRegisteredSpotPhotos(spotName);
+      if (own.length > 0 && !window.__tripCreatePhotosFromSpot) return own;
+      var remote = await fetchSpotFeedPhotos(spotName);
+      return remote.length ? remote : own;
+    }
+
+    async function fillTripCreatePhotosFromSpot(spotName) {
+      if (window.__tripCreateUserPhotos) return;
+      var photos = getRegisteredSpotPhotos(spotName);
+      if (!photos.length) photos = await fetchSpotFeedPhotos(spotName);
+      if (window.__tripCreateUserPhotos) return;
+      window.__tripCreatePhotosFromSpot = photos.length > 0;
+      window.__tempTripCreatePhotos = photos.slice(0, 5);
+      window.__currentTripCreatePhotoIdx = 0;
+      if (typeof renderTripPhotoStack === 'function') renderTripPhotoStack();
     }
 
     function getTripDDayBadge(dateStr) {
@@ -4695,8 +4751,7 @@ var adBannersHtml = `
         window.openUserFeedCollectionModal(authorName, userId, 'route');
         var coll = document.getElementById('userFeedCollectionModal');
         if (coll) {
-          coll.style.zIndex = '2147483645';
-          coll.style.bottom = 'auto';
+          coll.style.setProperty('z-index', '2147483645', 'important');
         }
         return;
       }
@@ -5059,6 +5114,8 @@ var adBannersHtml = `
 
       window.__tempTripCreatePhotos = [];
       window.__currentTripCreatePhotoIdx = 0;
+      window.__tripCreateUserPhotos = false;
+      window.__tripCreatePhotosFromSpot = false;
       window.__matchedMasterSpotData = null;
 
       if (typeof window.registerModalClose === 'function') {
@@ -5197,7 +5254,8 @@ var adBannersHtml = `
             <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 40%, rgba(0,0,0,0.6) 100%); pointer-events:none;"></div>
             
             ${offset === 0 ? `
-              <div style="position:absolute; top:8px; left:8px; right:8px; display:flex; justify-content:flex-end; align-items:center; z-index:5;">
+              <div style="position:absolute; top:8px; left:8px; right:8px; display:flex; justify-content:space-between; align-items:center; z-index:5;">
+                ${window.__tripCreatePhotosFromSpot ? '<span style="background:rgba(0,0,0,0.72); color:#e2e8f0; font-size:0.58rem; font-weight:800; padding:3px 7px; border-radius:8px;">박지 사진</span>' : '<span></span>'}
                 <button type="button" onclick="removeTripCreatePhoto(${i}, event)" style="width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.85); border:1px solid rgba(255,255,255,0.3); color:#fff; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
               </div>
               <div style="position:absolute; bottom:8px; left:0; right:0; text-align:center; font-size:0.58rem; color:#cbd5e1; font-weight:800; text-shadow:0 1px 3px #000; pointer-events:none;">
@@ -5266,6 +5324,10 @@ var adBannersHtml = `
 
     function removeTripCreatePhoto(idx, e) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
+      if (window.__tripCreatePhotosFromSpot) {
+        window.__tripCreatePhotosFromSpot = false;
+        window.__tripCreateUserPhotos = true;
+      }
       window.__tempTripCreatePhotos.splice(idx, 1);
       if (window.__currentTripCreatePhotoIdx >= window.__tempTripCreatePhotos.length) {
         window.__currentTripCreatePhotoIdx = Math.max(0, window.__tempTripCreatePhotos.length - 1);
@@ -5333,7 +5395,10 @@ var adBannersHtml = `
         return;
       }
 
-      window.__tempTripCreatePhotos = (window.__tempTripCreatePhotos || []).concat(valids).slice(0, MAX_PHOTOS);
+      var basePhotos = window.__tripCreatePhotosFromSpot ? [] : (window.__tempTripCreatePhotos || []);
+      window.__tripCreatePhotosFromSpot = false;
+      window.__tripCreateUserPhotos = true;
+      window.__tempTripCreatePhotos = basePhotos.concat(valids).slice(0, MAX_PHOTOS);
       window.__currentTripCreatePhotoIdx = 0;
       renderTripPhotoStack();
       showToast('사진 ' + valids.length + '장이 등록되었습니다!', 'success');
@@ -5370,6 +5435,8 @@ var adBannersHtml = `
       if (descInput) descInput.value = trip.desc || '';
 
       var existPhotos = getTripPhotosList(trip);
+      window.__tripCreateUserPhotos = existPhotos.length > 0;
+      window.__tripCreatePhotosFromSpot = false;
       window.__tempTripCreatePhotos = existPhotos;
       window.__currentTripCreatePhotoIdx = 0;
       renderTripPhotoStack();
@@ -5411,7 +5478,7 @@ var adBannersHtml = `
         regBtn.innerText = '수정 처리 중...';
       }
 
-      var photoList = resolveTripJoinPhotos(window.__tempTripCreatePhotos, spot);
+      var photoList = await resolveTripJoinPhotos(window.__tempTripCreatePhotos, spot);
       var safeDate = date.replace(/\./g, '-');
 
       var updateRow = {
@@ -5724,6 +5791,12 @@ var adBannersHtml = `
         previewSlot.innerHTML = '';
       }
       window.__matchedMasterSpotData = null;
+      if (!window.__tripCreateUserPhotos) {
+        window.__tripCreatePhotosFromSpot = false;
+        window.__tempTripCreatePhotos = [];
+        window.__currentTripCreatePhotoIdx = 0;
+        if (typeof renderTripPhotoStack === 'function') renderTripPhotoStack();
+      }
     };
 
     window.selectTripSpot = function(spotName) {
@@ -5747,6 +5820,7 @@ var adBannersHtml = `
       });
 
       window.__matchedMasterSpotData = matched || null;
+      fillTripCreatePhotosFromSpot(spotName);
 
       if (matched && previewSlot) {
         var regionStr = matched.cityName || matched.region || '전국';
@@ -5861,7 +5935,7 @@ var adBannersHtml = `
         ? window.okbmCanonicalUserId(rawUid)
         : ((/^(kakao_|naver_|apple_|google_|guest_|user_)/.test(rawUid)) ? rawUid : ('kakao_' + rawUid));
       
-      var photoList = resolveTripJoinPhotos(window.__tempTripCreatePhotos, spot);
+      var photoList = await resolveTripJoinPhotos(window.__tempTripCreatePhotos, spot);
 
       var pad = function(n) { return String(n).padStart(2, '0'); };
       var d = new Date();

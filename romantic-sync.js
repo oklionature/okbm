@@ -11598,6 +11598,27 @@ window.okbmIsNotePairBlocked = async function(theirId, force) {
   return { blocked: false, reason: '' };
 };
 
+function okbmHoldLayersForNoteThread() {
+  ['userFeedCollectionModal', 'tripUserProfileModal', 'tripDetailSheetModal'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el || el.dataset.heldForNote === '1') return;
+    el.dataset.heldForNote = '1';
+    el.dataset.heldVisibility = el.style.visibility || '';
+    el.style.setProperty('visibility', 'hidden', 'important');
+  });
+}
+
+function okbmReleaseLayersForNoteThread() {
+  ['userFeedCollectionModal', 'tripUserProfileModal', 'tripDetailSheetModal'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el || el.dataset.heldForNote !== '1') return;
+    el.dataset.heldForNote = '';
+    if (el.dataset.heldVisibility) el.style.visibility = el.dataset.heldVisibility;
+    else el.style.removeProperty('visibility');
+    el.dataset.heldVisibility = '';
+  });
+}
+
 window.closeDirectMessageModals = function(options) {
   options = options || {};
   var thread = document.getElementById('directMessageThreadModal');
@@ -11606,6 +11627,7 @@ window.closeDirectMessageModals = function(options) {
       okbmStopNoteThreadPoll();
       if (typeof window.okbmNoteRealtimeStop === 'function') window.okbmNoteRealtimeStop('thread');
       thread.remove();
+      okbmReleaseLayersForNoteThread();
     }
   }
 };
@@ -11761,7 +11783,7 @@ function okbmRenderNoteBubbles(rows, myId, theirId) {
     var r = rows[i];
     var day = okbmNoteDayKey(r.created_at);
     if (day && day !== prevDay) {
-      html += '<div style="display:flex; justify-content:center; margin:10px 0 8px;"><span style="font-size:0.62rem; color:#94a3b8; background:rgba(15,23,42,0.55); border-radius:999px; padding:5px 10px;">' + _escapeReportPropHtml(okbmNoteDateChip(r.created_at)) + '</span></div>';
+      html += '<div style="display:flex; flex-shrink:0; justify-content:center; margin:10px 0 8px;"><span style="font-size:0.62rem; color:#94a3b8; background:rgba(15,23,42,0.55); border-radius:999px; padding:5px 10px;">' + _escapeReportPropHtml(okbmNoteDateChip(r.created_at)) + '</span></div>';
       prevDay = day;
     }
     var mine = okbmNoteIdsMatch(r.sender_id, myId);
@@ -11777,14 +11799,14 @@ function okbmRenderNoteBubbles(rows, myId, theirId) {
     var topGap = groupStart ? '8px' : '2px';
     if (mine) {
       var radius = groupStart && groupEnd ? '18px 18px 4px 18px' : (groupStart ? '18px 18px 4px 18px' : (groupEnd ? '18px 4px 4px 18px' : '18px 4px 4px 18px'));
-      html += '<div style="display:flex; justify-content:flex-end; align-items:flex-end; gap:6px; margin:' + topGap + ' 0 0;">' +
+      html += '<div style="display:flex; flex-shrink:0; justify-content:flex-end; align-items:flex-end; gap:6px; margin:' + topGap + ' 0 0;">' +
         timeHtml +
         '<div style="max-width:72%; background:#fee500; color:#191919; border-radius:' + radius + '; padding:8px 11px; font-size:0.82rem; line-height:1.45; white-space:pre-wrap; word-break:break-word; box-shadow:0 1px 2px rgba(0,0,0,0.18);">' + body + '</div>' +
       '</div>';
     } else {
       var radius = groupStart && groupEnd ? '18px 18px 18px 4px' : (groupStart ? '18px 18px 18px 4px' : (groupEnd ? '4px 18px 18px 4px' : '4px 18px 18px 4px'));
       var avatar = groupStart ? okbmNoteAvatarHtml(theirId || r.sender_id, 28) : '<span style="width:28px; flex-shrink:0; display:inline-block;"></span>';
-      html += '<div style="display:flex; justify-content:flex-start; align-items:flex-end; gap:6px; margin:' + topGap + ' 0 0;">' +
+      html += '<div style="display:flex; flex-shrink:0; justify-content:flex-start; align-items:flex-end; gap:6px; margin:' + topGap + ' 0 0;">' +
         avatar +
         '<div style="max-width:68%; background:#2b3344; color:#f8fafc; border-radius:' + radius + '; padding:8px 11px; font-size:0.82rem; line-height:1.45; white-space:pre-wrap; word-break:break-word;">' + body + '</div>' +
         timeHtml +
@@ -11938,7 +11960,7 @@ window.openDirectMessageThread = async function(userId, nickname) {
       '<span style="font-size:0.95rem; font-weight:900; color:#ffffff; max-width:72%; overflow:hidden; display:inline-flex; align-items:center;">' + okbmNoteNameWithLoginHtml(theirId, theirNick, 36) + '</span>' +
       '<div style="width:32px;"></div>' +
     '</div>' +
-    '<div id="directMessageThreadList" style="flex:1; min-height:0; overflow-y:auto; padding:10px 12px 16px; display:flex; flex-direction:column; background:#15202b;"></div>' +
+    '<div id="directMessageThreadList" style="flex:1; min-height:0; overflow-y:auto; padding:10px 12px 16px; display:block; background:#15202b;"></div>' +
     '<div id="directMessageBlockedHint" style="display:none; flex-shrink:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); color:#fda4af; font-size:0.78rem; text-align:center;">차단된 상대와는 쪽지를 주고받을 수 없습니다.</div>' +
     '<div id="directMessageComposer" style="flex-shrink:0; display:flex; gap:8px; align-items:flex-end; padding:8px 10px calc(10px + env(safe-area-inset-bottom, 0px)); border-top:1px solid rgba(255,255,255,0.08); background:#0f1720;">' +
       '<textarea id="directMessageInput" maxlength="500" rows="1" placeholder="메시지를 입력하세요" style="flex:1; min-height:38px; max-height:90px; resize:none; background:#1e293b; border:1px solid rgba(255,255,255,0.08); border-radius:20px; color:#e2e8f0; font-size:0.84rem; padding:9px 14px; outline:none; line-height:1.4;"></textarea>' +
@@ -11947,6 +11969,8 @@ window.openDirectMessageThread = async function(userId, nickname) {
   '</div>';
   document.body.appendChild(overlay);
   if (typeof window.okbmLiftInboxAboveDock === 'function') window.okbmLiftInboxAboveDock(overlay);
+  overlay.style.setProperty('z-index', '2147483646', 'important');
+  okbmHoldLayersForNoteThread();
   var input = document.getElementById('directMessageInput');
   if (input) {
     input.addEventListener('keydown', function(ev) {
