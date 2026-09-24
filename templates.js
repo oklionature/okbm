@@ -2502,8 +2502,8 @@ function renderPhotoOverlayMarkup(opts) {
         '<div style="position:relative; z-index:2; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">' +
           '<div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); column-gap:8px; row-gap:8px; align-items:start; min-width:0;">' + cells + '</div>' +
           '<div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px;">' +
-            '<div style="font-family:\'Nanum Pen Script\', cursive; font-size:0.92rem; color:#4a433a; line-height:1.15; min-width:0; flex:1;">불편함<br>그럼에도 불구하고' +
-              (memoText ? '<span style="display:inline; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.62rem; font-weight:700; color:#5c5348; margin-left:6px; vertical-align:middle; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"> · ' + escapeHtml(memoText) + '</span>' : '') +
+            '<div style="font-family:\'Nanum Pen Script\', cursive; font-size:0.92rem; color:#4a433a; line-height:1.15; min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">불편함 그럼에도 불구하고' +
+              (memoText ? '<span style="display:inline; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.62rem; font-weight:700; color:#5c5348; margin-left:6px; vertical-align:middle;"> · ' + escapeHtml(memoText) + '</span>' : '') +
             '</div>' +
             renderIssueStyleBrandMark() +
           '</div>' +
