@@ -3105,30 +3105,42 @@
       var cleanTargetKey = targetKey.replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
 
       var cachedFeeds = window.__allLoadedFeeds || safeGetJSON('okbm_cached_community_feeds', []) || [];
+      var visibleFeeds = cachedFeeds;
       if (typeof window.filterHiddenUgcFeeds === 'function') {
-        cachedFeeds = window.filterHiddenUgcFeeds(cachedFeeds);
+        visibleFeeds = window.filterHiddenUgcFeeds(cachedFeeds);
       }
+      function findThemeFeed(list) {
+        return (list || []).find(function(f) {
+          if (!f) return false;
+          if (String(f.id).trim() === targetKey) return true;
+          var fSpot = String(f.spot || f.spotName || '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+          return fSpot === cleanTargetKey;
+        });
+      }
+      var matchedFeed = findThemeFeed(visibleFeeds) || findThemeFeed(cachedFeeds);
       var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
         ? registeredSpots : (safeGetJSON('okbm_spots_cache', []) || []);
 
-      var matchedFeed = cachedFeeds.find(function(f) {
-        if (!f) return false;
-        if (String(f.id).trim() === targetKey) return true;
-        var fSpot = String(f.spot || f.spotName || '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
-        return fSpot === cleanTargetKey;
-      });
-
-      var matchedSpot = spotPool.find(function(s) {
-        if (!s) return false;
-        if (String(s.id).trim() === targetKey) return true;
-        var sName = String(s.name || s.spot_main || '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
-        return sName === cleanTargetKey;
-      });
+      var matchedSpot = null;
+      if (matchedFeed && typeof findThemeSpotMaster === 'function') {
+        matchedSpot = findThemeSpotMaster(matchedFeed, spotPool);
+      }
+      if (!matchedSpot) {
+        matchedSpot = spotPool.find(function(s) {
+          if (!s) return false;
+          if (String(s.id).trim() === targetKey) return true;
+          var sName = String(s.name || s.spot_main || '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+          return sName === cleanTargetKey;
+        });
+      }
 
       if (!matchedFeed && !matchedSpot) return;
 
       var spotName = matchedFeed ? (matchedFeed.spot || matchedFeed.spotName) : (matchedSpot.name || matchedSpot.spot_main || '장소');
-      var cleanMapSpotName = String(spotName).replace(/\s*\(.*?\)/g, '').trim();
+      var cleanMapSpotName = matchedSpot
+        ? String(matchedSpot.spot_main || matchedSpot.name || spotName).replace(/\s*\(.*?\)/g, '').trim()
+        : String(spotName).replace(/\s*\(.*?\)/g, '').trim();
+      var mapSpotId = matchedSpot ? String(matchedSpot.id || '').trim() : '';
       var desc = (matchedFeed && (matchedFeed.memo || matchedFeed.oneLineMemo))
         ? (matchedFeed.memo || matchedFeed.oneLineMemo)
         : (matchedSpot ? (matchedSpot.desc || matchedSpot.desc_summary || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.') : '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.');
@@ -3148,6 +3160,9 @@
       var photosList = [];
       if (matchedFeed) {
         photosList = (window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(matchedFeed)) || [];
+        if (!photosList.length && typeof getArchivePhotosList === 'function') {
+          photosList = getArchivePhotosList(matchedFeed) || [];
+        }
       }
 
       if (photosList.length === 0 && !matchedFeed && matchedSpot) {
@@ -3227,7 +3242,7 @@
               </div>
 
               <div class="insta-memo-actions-row" style="margin-top:2px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.12); display:flex; gap:6px; flex-wrap:nowrap; align-items:center;">
-                <button type="button" class="btn-insta-action btn-action-map" data-spot="${escapeHtml(cleanMapSpotName)}" onclick="window.closeSecretSpotHeroModal(); location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="flex:1;">
+                <button type="button" class="btn-insta-action btn-action-map" data-map-id="${escapeHtml(mapSpotId)}" data-spot="${escapeHtml(cleanMapSpotName)}" onclick="window.closeSecretSpotHeroModal(); location.href='map.html?' + (this.dataset.mapId ? ('id=' + encodeURIComponent(this.dataset.mapId)) : ('spot=' + encodeURIComponent(this.dataset.spot)));" style="flex:1;">
                   <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   <span>자세히보기</span>
                 </button>
