@@ -3810,7 +3810,7 @@ window.renderUserProfileHeaderSection = function(config) {
     activityCardsHtml +
     (hideYearActivity ? '' : (
     '<div id="visitorYearActivityContainer" style="display:none; flex-direction:column; gap:4px; background:#080b11; border:1px solid rgba(186,230,253,0.15); border-radius:10px; padding:8px 10px; box-sizing:border-box;">' +
-      '<div id="visitorYearActivityTitle" style="font-size:0.70rem; color:#bae6fd; font-weight:800;">올해 활동 기록</div>' +
+      '<div id="visitorYearActivityTitle" style="font-size:0.70rem; color:#bae6fd; font-weight:800;"> 활동 기록</div>' +
       '<div id="visitorYearActivityList" style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto;"></div>' +
     '</div>')) +
     (hideTotalActivity ? '' : (
@@ -4513,7 +4513,7 @@ function ensureMyReportAndAuthModalsInDOM() {
           <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px; flex-shrink:0;">
             <div role="button" onclick="window.toggleReportYearActivities(event)" style="cursor:pointer; position:relative; min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none; box-sizing:border-box;">
               <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-width:0;">
-                <span id="reportYearCardLabel" style="font-size:0.77rem; color:#64748b; font-weight:700;">올해 활동</span>
+                <span id="reportYearCardLabel" style="font-size:0.77rem; color:#64748b; font-weight:700;"> 활동</span>
                 <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
                   <button type="button" id="reportYearPublicBtn" onclick="event.preventDefault(); event.stopPropagation(); window.toggleReportActivityPublic('year', event);" style="font-size:0.60rem; font-weight:800; padding:2px 6px; border-radius:5px; cursor:pointer; outline:none; border:1px solid rgba(186,230,253,0.25); background:rgba(186,230,253,0.08); color:#bae6fd;">루터 공개</button>
                   <button type="button" id="reportYearBadgeBtn" onclick="event.stopPropagation(); window.toggleReportYearDropdown(event);" style="font-size:0.70rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; background:rgba(186,230,253,0.08); border:1px solid rgba(186,230,253,0.25); padding:2px 7px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; outline:none;">
