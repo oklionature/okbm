@@ -1255,12 +1255,11 @@ window.handleReadyShotShareAction = async function(act) {
                 imageUrl: imageUrl,
                 imageWidth: 1080,
                 imageHeight: 1440,
-                link: { mobileWebUrl: location.href, webUrl: location.href }
+                link: { mobileWebUrl: 'https://romanticroute.kr/', webUrl: 'https://romanticroute.kr/' }
               },
               buttons: [
-                { title: '앱에서 보기', link: { mobileWebUrl: location.href, webUrl: location.href } }
-              ],
-              installTalk: true
+                { title: '앱에서 보기', link: { mobileWebUrl: 'https://romanticroute.kr/', webUrl: 'https://romanticroute.kr/' } }
+              ]
             });
             return true;
           }
@@ -2090,6 +2089,8 @@ var OVERLAY_GEAR_ICON_PATHS = {
   cooking: '<path d="M16 30.5H48V45C48 51.5 42.5 54.5 32 54.5C21.5 54.5 16 51.5 16 45V30.5Z" stroke-width="2.3"/><path d="M14 30.5H50C50 24 44.5 21.5 32 21.5C19.5 21.5 14 24 14 30.5Z" stroke-width="2.2"/><circle cx="32" cy="21.5" r="2.6" stroke-width="1.7"/><path d="M18.5 31C18.5 15.5 45.5 15.5 45.5 31" stroke-width="1.9"/><path d="M21 38.5H27" stroke-width="1.55"/><path d="M48 34.5C51.5 34.5 53.5 36.5 53.5 39.5C53.5 42.5 51.5 44.5 48 44.5" stroke-width="1.7"/>',
   clothing: '<path d="M26 16C26 9.5 28.8 7 32 7C35.2 7 38 9.5 38 16V18.5" stroke-width="2.2"/><path d="M22 21L16.5 36L14.5 50C14.5 53.8 17.5 56 22 56H42C46.5 56 49.5 53.8 49.5 50L47.5 36L42 21C40 18.8 36.2 17.8 32 17.8C27.8 17.8 24 18.8 22 21Z" stroke-width="2.3"/><path d="M16.5 36H22.5M47.5 36H41.5" stroke-width="1.6"/><path d="M32 20.5V50.5" stroke-width="1.7"/><path d="M21.5 39H29.5V49H21.5Z" stroke-width="1.55"/><path d="M28.5 16.5C29.6 18.2 34.4 18.2 35.5 16.5" stroke-width="1.5"/>',
   food: '<path d="M16.5 20H38.5L41 49C41 53.2 37.2 55.5 29 55.5C20.8 55.5 17 53.2 17 49L16.5 20Z" stroke-width="2.3"/><path d="M18 20V15.5H37V20" stroke-width="1.85"/><path d="M35.5 13L39.5 17.5" stroke-width="1.55"/><rect x="21.5" y="29" width="14" height="11" rx="1.6" stroke-width="1.6"/><path d="M48.5 16.5C51.2 16.5 52.8 18.6 52.8 21.2V32.5C54 34.8 52.2 37.2 49.4 37.2C46.6 37.2 44.8 34.8 46 32.5V21.2C46 18.6 47.6 16.5 48.5 16.5Z" stroke-width="1.9"/><path d="M46.6 16.5H50.4" stroke-width="1.55"/><path d="M47.2 16.5V13.8M48.5 16.5V13.2M49.8 16.5V13.8" stroke-width="1.5"/>',
+  electronics: '<path d="M24 10H40L44 22H20L24 10Z" stroke-width="2.2"/><path d="M22 22H42V40C42 44 38.5 47 32 47C25.5 47 22 44 22 40V22Z" stroke-width="2.3"/><path d="M27 28H37" stroke-width="1.7"/><path d="M32 16V8" stroke-width="1.8"/><path d="M28 8H36" stroke-width="1.7"/><path d="M46 18L52 12M46 26H54M46 34L52 40" stroke-width="1.6"/>',
+  camp: '<path d="M10 28H54" stroke-width="2.3"/><path d="M14 28L18 48M50 28L46 48" stroke-width="2.1"/><path d="M18 48H46" stroke-width="2"/><path d="M22 28V20H42V28" stroke-width="1.8"/><path d="M27 20V28M37 20V28" stroke-width="1.5"/>',
   other: '<path d="M25 13C16 13 13.5 20.5 13.5 31C13.5 43.5 17.5 51 27 51C35 51 38.5 46 38.5 38.5V25" stroke-width="2.3"/><path d="M25 13C32 13 37.5 16.5 38.5 25" stroke-width="2.15"/><path d="M38.5 24.5C38.5 21.8 36.4 20 33.8 20" stroke-width="1.7"/><rect x="40.5" y="29" width="13.5" height="16.5" rx="2.2" stroke-width="2.1"/><path d="M47.2 29V25.2" stroke-width="1.7"/><circle cx="47.2" cy="37.2" r="3.4" stroke-width="1.65"/><path d="M47.2 32.2V30.8M47.2 43.6V42.2" stroke-width="1.5"/>'
 };
 
@@ -2132,6 +2133,8 @@ function overlayIconIdFromItem(it) {
   if (cat === 'kitchen' || /취사|스토브|버너|코펠|stove|pot|windmaster/.test(name)) return 'cooking';
   if (cat === 'wear' || /의류|자켓|재킷|바지|셔츠|jacket|pants|shell/.test(name)) return 'clothing';
   if (cat === 'food' || /식량|음식|라면|햇반|리필|meal|food|pasta/.test(name)) return 'food';
+  if (cat === 'electronics' || /전기|전자|헤드램프|랜턴|손전등|배터리|파워뱅크|조명|light|lamp/.test(name)) return 'electronics';
+  if (cat === 'camp' || /테이블|체어|의자|chair|table/.test(name)) return 'camp';
   return 'other';
 }
 
@@ -2277,7 +2280,7 @@ function overlayPickShowcaseItems(items, limit) {
   Object.keys(buckets).forEach(function(key) {
     buckets[key].sort(function(a, b) { return (Number(b.weight) || 0) - (Number(a.weight) || 0); });
   });
-  var order = ['tent', 'tarp', 'backpack', 'mat', 'sleeping-bag', 'cooking', 'clothing', 'other', 'food'];
+  var order = ['tent', 'tarp', 'backpack', 'mat', 'sleeping-bag', 'cooking', 'clothing', 'food', 'electronics', 'camp', 'other'];
   var picked = [];
   order.forEach(function(key) {
     if (picked.length >= limit) return;
@@ -2450,7 +2453,7 @@ function renderPhotoOverlayMarkup(opts) {
   var imgErr = opts.onerror || '';
   var allItems = overlayNormalizeItems(collapseDuplicatePackItems(opts.items));
   var totalCount = (opts.itemCount !== undefined) ? opts.itemCount : allItems.reduce(function(sum, it) { return sum + (Number(it.count) || 1); }, 0);
-  var shown = overlayPickShowcaseItems(opts.items, 8);
+  var shown = overlayPickShowcaseItems(opts.items, 12);
   var n = shown.length;
   var iconPx = n > 8 ? 13 : 16;
   var makerSize = n > 8 ? '0.32rem' : '0.38rem';
@@ -2527,7 +2530,7 @@ function renderEditorialOverlayMarkup(opts) {
   var imgErr = opts.onerror || '';
   var allItems = overlayNormalizeItems(collapseDuplicatePackItems(opts.items));
   var totalCount = (opts.itemCount !== undefined) ? opts.itemCount : allItems.reduce(function(sum, it) { return sum + (Number(it.count) || 1); }, 0);
-  var shown = overlayPickShowcaseItems(opts.items, 8);
+  var shown = overlayPickShowcaseItems(opts.items, 12);
   var memoText = readyShotOneLineMemo(opts.memo);
   var n = shown.length;
   var iconPx = n > 6 ? 15 : 17;

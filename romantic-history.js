@@ -3810,42 +3810,39 @@ window.toggleFeedStar = async function(cardId, e) {
 
   window.sendFeedToKakaoTalk = function(recordId) {
     var p = window.okbmResolveFeedSharePayload(recordId);
-    var sendKakao = function() {
-      if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
-        try {
-          var shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
-          if (shareFn) {
-            shareFn({
-              objectType: 'feed',
-              content: {
-                title: p.title,
-                description: p.description,
-                imageUrl: p.image,
-                imageWidth: 800,
-                imageHeight: 800,
-                link: { mobileWebUrl: p.url, webUrl: p.url }
-              },
-              buttons: [
-                { title: '앱에서 보기', link: { mobileWebUrl: p.url, webUrl: p.url } }
-              ],
-              installTalk: true
-            });
-            return true;
-          }
-        } catch (e) { console.warn('[romantic-history.js:sendFeedToKakaoTalk]', e); }
-      }
-      return false;
-    };
-    var fallback = function() {
-      window.copyShareLinkFallback(p.body, '✓ 같은 공유 내용이 복사되었습니다!');
-    };
-    if (typeof window.okbmEnsureKakaoSdk === 'function') {
-      window.okbmEnsureKakaoSdk().then(function() {
-        if (!sendKakao()) fallback();
-      }).catch(fallback);
-      return;
+    var image = String(p.image || '');
+    if (image.indexOf('https://') !== 0 || image.length > 240) {
+      image = window.OKBM_PUBLIC_SHARE_BASE + 'fulllogoblk.png?v=20260919_v3';
     }
-    if (!sendKakao()) fallback();
+    var page = String(p.url || window.OKBM_PUBLIC_SHARE_BASE);
+    if (page.indexOf('https://') !== 0 || page.length > 180) page = window.OKBM_PUBLIC_SHARE_BASE;
+    try {
+      if (typeof Kakao !== 'undefined' && typeof Kakao.init === 'function' && Kakao.isInitialized && !Kakao.isInitialized()) {
+        Kakao.init(window.KAKAO_APP_KEY || '557f5de0f6391a2419bc5592e6a9c9c1');
+      }
+    } catch (initErr) { console.warn('[romantic-history.js:sendFeedToKakaoTalk init]', initErr); }
+    if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
+      try {
+        var shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
+        if (shareFn) {
+          shareFn({
+            objectType: 'feed',
+            content: {
+              title: String(p.title || '낭만루트').slice(0, 40),
+              description: String(p.description || '').slice(0, 80),
+              imageUrl: image,
+              link: { mobileWebUrl: page, webUrl: page }
+            },
+            buttons: [
+              { title: '앱에서 보기', link: { mobileWebUrl: page, webUrl: page } }
+            ]
+          });
+          return;
+        }
+      } catch (e) { console.warn('[romantic-history.js:sendFeedToKakaoTalk]', e); }
+    }
+    window.copyShareLinkFallback(p.body, '✓ 같은 공유 내용이 복사되었습니다!');
+    if (typeof window.okbmEnsureKakaoSdk === 'function') window.okbmEnsureKakaoSdk().catch(function() {});
   };
 
   window.sendFeedToInstagram = function(recordId) {
