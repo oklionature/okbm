@@ -117,7 +117,7 @@ async function searchOpenApi(query: string, map: Map<string, Item>): Promise<boo
   const keyId = String(Deno.env.get("NCP_APIGW_API_KEY_ID") || NCP_API_KEY_ID).trim();
   if (!secret || !keyId) return false;
   const res = await fetch(
-    "https://naverapihub.apigw.ntruss.com/search/v1/blog?display=8&sort=sim&format=json&query=" + encodeURIComponent(query),
+    "https://naverapihub.apigw.ntruss.com/search/v1/blog?display=30&start=1&sort=sim&format=json&query=" + encodeURIComponent(query),
     {
       headers: {
         "X-NCP-APIGW-API-KEY-ID": keyId,
@@ -160,6 +160,6 @@ Deno.serve(async (req: Request) => {
 
   const items = Array.from(found.values())
     .sort((a, b) => (b.title.length >= 6 ? 1 : 0) - (a.title.length >= 6 ? 1 : 0) || b.title.length - a.title.length)
-    .slice(0, 8);
+    .slice(0, 30);
   return json(req, { ok: true, items });
 });
