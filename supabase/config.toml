@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.place-research]
 verify_jwt = true
+
+[functions.blog-search]
+verify_jwt = true

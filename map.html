@@ -4677,14 +4677,14 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         var mountain = window.extractMountainSearchName(spotName);
         var variants = window.buildSpotBlogQueryVariants(spotName, areaName);
         if (!variants.length) variants = [window.buildSpotMediaQuery(spotName, areaName)];
-        var cacheKey = 'mt:v7:' + (mountain || variants[0]);
+        var cacheKey = 'mt:v8:' + (mountain || variants[0]);
 
         if (window.__spotAutoBlogsCache.has(cacheKey)) {
           return window.__spotAutoBlogsCache.get(cacheKey);
         }
 
         try {
-          var sessionCached = sessionStorage.getItem('okbm_blog_cache_v7_' + cacheKey);
+          var sessionCached = sessionStorage.getItem('okbm_blog_cache_v8_' + cacheKey);
           if (sessionCached) {
             var parsed = JSON.parse(sessionCached);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -4727,33 +4727,31 @@ window.__ytMetaCache = window.__ytMetaCache || {};
           return (titled.length >= 3 ? titled : list).slice(0, 8);
         }
 
-        async function searchBlogQuery(query) {
-          var encoded = encodeURIComponent(query);
-          await Promise.all([
-            window.fetchTextFast('https://r.jina.ai/https://search.naver.com/search.naver?where=post&sm=tab_jum&query=' + encoded, 10000)
-              .then(function(html) { absorb(window.extractNaverBlogsFromText(html, 12)); })
-              .catch(function() {}),
-            window.fetchTextFast('https://r.jina.ai/https://search.naver.com/search.naver?ssc=tab.blog.all&query=' + encoded, 10000)
-              .then(function(html) { absorb(window.extractNaverBlogsFromText(html, 12)); })
-              .catch(function() {})
-          ]);
-        }
-
-        var primary = variants.slice(0, 2);
-        for (var i = 0; i < primary.length && Object.keys(merged).length < 5; i++) {
-          await searchBlogQuery(primary[i]);
-        }
-        if (Object.keys(merged).length < 3) {
-          for (var j = 2; j < Math.min(variants.length, 4) && Object.keys(merged).length < 5; j++) {
-            await searchBlogQuery(variants[j]);
+        try {
+          var base = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
+          var key = window.SUPABASE_ANON_KEY || '';
+          var res = await fetch(base + '/functions/v1/blog-search', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': key,
+              'Authorization': 'Bearer ' + key
+            },
+            body: JSON.stringify({ queries: variants.slice(0, 4) })
+          });
+          if (res.ok) {
+            var payload = await res.json();
+            absorb(payload && payload.items);
           }
+        } catch (e) {
+          console.warn('[map.html:fetchRealNaverBlogsForSpot]', e);
         }
 
         var extracted = window.rankMediaBySpot(allRanked(), spotName, areaName, 5);
 
         if (extracted.length > 0) {
           limitedMapSet(window.__spotAutoBlogsCache, cacheKey, extracted, 80);
-          try { sessionStorage.setItem('okbm_blog_cache_v7_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
+          try { sessionStorage.setItem('okbm_blog_cache_v8_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
         }
         return extracted;
       };
