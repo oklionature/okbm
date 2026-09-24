@@ -21,9 +21,9 @@
       function goBack() {
         var ret = sessionStorage.getItem('okbm_naver_return') || '/index.html';
         if (ret.charAt(0) !== '/') ret = '/' + ret;
-        var hasOkbmInRet = ret.indexOf('/okbm') === 0;
-        var basePath = (!hasOkbmInRet && window.location.pathname.indexOf('/okbm') !== -1) ? '/okbm' : '';
-        window.location.replace(window.location.origin + basePath + ret);
+        if (ret.indexOf('/okbm/') === 0) ret = ret.substring('/okbm'.length);
+        else if (ret === '/okbm') ret = '/';
+        window.location.replace(window.location.origin + ret);
       }
 
       function fail(msg) {

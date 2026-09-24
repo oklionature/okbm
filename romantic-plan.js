@@ -2535,7 +2535,7 @@ window.saveCurrentPackingRecord = function() {
   })();
 
   function okbmGearAssetBase() {
-    return (window.location && window.location.pathname.indexOf('/okbm') !== -1) ? '/okbm/' : '';
+    return '';
   }
 
   function okbmYieldToMain() {

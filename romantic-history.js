@@ -3663,7 +3663,7 @@ window.toggleFeedStar = async function(cardId, e) {
 
 
 // 🔗 [2. 스마트 멀티 공유 모달 엔진 - 3채널 동일 페이로드]
-  window.OKBM_PUBLIC_SHARE_BASE = 'https://oklionature.github.io/okbm/';
+  window.OKBM_PUBLIC_SHARE_BASE = 'https://romanticroute.kr/';
 
   window.okbmBuildFeedSharePayload = function(recordId, spotName, memoText) {
     var rec = (typeof window.okbmFindFeedRecord === 'function') ? window.okbmFindFeedRecord(recordId) : null;

@@ -9825,7 +9825,7 @@ function okbmIsCapacitorNative() {
 }
 
 function okbmNativeOAuthReturnUrl() {
-  return 'https://oklionature.github.io/okbm/';
+  return 'https://romanticroute.kr/';
 }
 
 function okbmHandleNativeOAuthUrl(rawUrl, fromLaunch) {
@@ -10509,8 +10509,7 @@ function loginWithNaver(options) {
   }
   var state = okbmRandomOAuthState();
   var clientId = NAVER_CLIENT_ID;
-  var basePath = window.location.pathname.indexOf('/okbm') !== -1 ? '/okbm' : '';
-  var cleanRedirect = window.location.origin + basePath + '/naver-callback.html';
+  var cleanRedirect = window.location.origin + '/naver-callback.html';
   sessionStorage.setItem('okbm_naver_oauth_state', state);
   sessionStorage.setItem('okbm_naver_client_id', clientId);
   sessionStorage.setItem('okbm_naver_return', window.location.pathname + window.location.search);

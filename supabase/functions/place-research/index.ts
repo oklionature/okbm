@@ -7,7 +7,8 @@ const SKIP =
 type Source = { title: string; url: string; text: string };
 
 const DEFAULT_ALLOWED_ORIGINS = [
-  "https://oklionature.github.io",
+  "https://romanticroute.kr",
+  "https://www.romanticroute.kr",
   "https://okbm.kr",
   "https://www.okbm.kr",
 ];
