@@ -6008,7 +6008,11 @@ function openLoginModal() {
     }
     ensureMyReportAndAuthModalsInDOM();
     var modal = document.getElementById('loginModalOverlay');
-    if (modal) modal.style.setProperty('display', 'flex', 'important');
+    if (modal) {
+      modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('z-index', '2147483646', 'important');
+      if (modal.parentElement === document.body) document.body.appendChild(modal);
+    }
   } catch (e) {}
 }
 window.openLoginModal = openLoginModal;
@@ -9671,6 +9675,7 @@ window.okbmFetchPublicProfile = async function(userId) {
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
   if (!id || !targetUrl || !targetKey) return null;
+  if (typeof window.okbmAccessToken === 'function' && !window.okbmAccessToken()) return null;
   try {
     var res = await fetch(targetUrl + '/rest/v1/rpc/get_public_profile', {
       method: 'POST',
@@ -9702,6 +9707,7 @@ window.okbmFetchPublicProfiles = async function(userIds) {
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
   if (!ids.length || !targetUrl || !targetKey) return [];
+  if (typeof window.okbmAccessToken === 'function' && !window.okbmAccessToken()) return [];
   var out = [];
   var i;
   for (i = 0; i < ids.length; i += 50) {
@@ -11937,15 +11943,10 @@ window.openDirectMessageThread = async function(userId, nickname) {
     okbmNoteBlockedToast('self');
     return;
   }
-  var pair = await window.okbmIsNotePairBlocked(theirId, true);
-  if (pair.blocked) {
-    okbmNoteBlockedToast(pair.reason);
-    return;
-  }
   okbmStopNoteThreadPoll();
   if (typeof window.okbmBindNoteLiveRefresh === 'function') window.okbmBindNoteLiveRefresh();
   if (typeof window.okbmPrefetchUserPhotos === 'function') {
-    await window.okbmPrefetchUserPhotos([theirId]);
+    window.okbmPrefetchUserPhotos([theirId]).catch(function() {});
   }
   var old = document.getElementById('directMessageThreadModal');
   if (old) old.remove();
@@ -11971,6 +11972,12 @@ window.openDirectMessageThread = async function(userId, nickname) {
   if (typeof window.okbmLiftInboxAboveDock === 'function') window.okbmLiftInboxAboveDock(overlay);
   overlay.style.setProperty('z-index', '2147483646', 'important');
   okbmHoldLayersForNoteThread();
+  var pair = await window.okbmIsNotePairBlocked(theirId, true);
+  if (pair.blocked) {
+    window.closeDirectMessageModals({});
+    okbmNoteBlockedToast(pair.reason);
+    return;
+  }
   var input = document.getElementById('directMessageInput');
   if (input) {
     input.addEventListener('keydown', function(ev) {

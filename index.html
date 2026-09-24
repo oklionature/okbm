@@ -879,7 +879,7 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.9.11" defer></script>
+    <script src="romantic-sync.js?v=2.9.12" defer></script>
     <script src="romantic-history.js?v=2.7.83" defer></script>
 
   <style>
@@ -5013,6 +5013,17 @@ var adBannersHtml = `
         </div>
       `;
       document.body.appendChild(modal);
+
+      if (photoList.length === 0 && trip.spotName) {
+        var tripIdForPhotos = String(trip.tripId || '');
+        fetchSpotFeedPhotos(trip.spotName).then(function(remote) {
+          if (!remote || !remote.length) return;
+          if (String(window.__currentActiveTripId || '') !== tripIdForPhotos) return;
+          if (!document.getElementById('tripDetailSheetModal')) return;
+          trip.photos = remote;
+          renderTripDetailSheet(activeTrips);
+        });
+      }
 
       if (typeof window.registerModalOpen === 'function') {
         window.registerModalOpen('tripDetailSheetModal', window.closeTripDetailModal);
