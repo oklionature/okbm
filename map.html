@@ -232,6 +232,7 @@
             }
           });
         };
+        window.okbmEnsureKakaoSdk().catch(function() {});
 
         window.okbmEnsureTemplates = function() {
           return window.okbmLoadScript(window.__okbmTemplatesSrc);
@@ -3660,6 +3661,11 @@ function updateSmartResetButtons() {
         const kakaoDesc = descText.length > 80 ? descText.slice(0, 79) + '…' : descText;
 
         const sendKakao = function() {
+          try {
+            if (typeof Kakao !== 'undefined' && typeof Kakao.init === 'function' && Kakao.isInitialized && !Kakao.isInitialized()) {
+              Kakao.init(window.KAKAO_APP_KEY || '557f5de0f6391a2419bc5592e6a9c9c1');
+            }
+          } catch (initErr) { console.warn('[map.html:shareSpotCard:init]', initErr); }
           if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
             try {
               const shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
@@ -3667,7 +3673,7 @@ function updateSmartResetButtons() {
                 shareFn({
                   objectType: 'feed',
                   content: {
-                    title: `[낭만루트] ${titleName}`,
+                    title: `[낭만루트] ${titleName}`.slice(0, 40),
                     description: kakaoDesc,
                     imageUrl: shareLogoImg,
                     imageWidth: 800,
@@ -3695,29 +3701,39 @@ function updateSmartResetButtons() {
         };
 
         const fallbackShare = function() {
-          const labeledShareText = `[낭만루트] ${titleName}\n${descText}\n\n앱에서 보기`;
+          const labeledShareText = `[낭만루트] ${titleName}\n${descText}\n\n${shareUrl}`;
+          const nativeShare = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+          if (nativeShare && typeof nativeShare.share === 'function') {
+            nativeShare.share({
+              title: `[낭만루트] ${titleName}`,
+              text: descText,
+              url: shareUrl,
+              dialogTitle: '공유'
+            }).catch(function(e) {
+              console.warn('[map.html:shareSpotCard:capacitor]', e);
+              copyTextToClipboard(labeledShareText, '공유 링크가 복사되었습니다.');
+            });
+            return;
+          }
           if (navigator.share) {
             const isApple = /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
             const shareData = isApple
-              ? { title: '앱에서 보기', url: shareUrl }
-              : { title: '앱에서 보기', text: labeledShareText, url: shareUrl };
+              ? { title: `[낭만루트] ${titleName}`, url: shareUrl }
+              : { title: `[낭만루트] ${titleName}`, text: labeledShareText, url: shareUrl };
             navigator.share(shareData).catch((e) => {
               if (e && e.name === 'AbortError') return;
               console.warn('[map.html:shareSpotCard:navigator]', e);
-              copyTextToClipboard('앱에서 보기\n' + shareUrl, '앱에서 보기 링크가 복사되었습니다!');
+              copyTextToClipboard(labeledShareText, '공유 링크가 복사되었습니다.');
             });
-          } else {
-            copyTextToClipboard('앱에서 보기\n' + shareUrl, '앱에서 보기 링크가 복사되었습니다!');
+            return;
           }
+          copyTextToClipboard(labeledShareText, '공유 링크가 복사되었습니다.');
         };
 
-        if (typeof window.okbmEnsureKakaoSdk === 'function') {
-          window.okbmEnsureKakaoSdk().then(function() {
-            if (!sendKakao()) fallbackShare();
-          }).catch(fallbackShare);
-          return;
-        }
         if (!sendKakao()) fallbackShare();
+        if (typeof window.okbmEnsureKakaoSdk === 'function') {
+          window.okbmEnsureKakaoSdk().catch(function() {});
+        }
       }
 
       const entryCoordsCache = new Map();
