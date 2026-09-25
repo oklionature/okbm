@@ -2469,6 +2469,7 @@ window.saveCurrentPackingRecord = function() {
       for (var i = 0; i < historyList.length; i++) {
         var rec = historyList[i];
         if (!rec || String(rec.id || '') === recordId) continue;
+        if (!window.okbmRecordIsSavedPlanFeed(rec)) continue;
         if (dateOf(rec) === norm) return true;
       }
       return false;
@@ -3238,6 +3239,24 @@ window.saveCurrentPackingRecord = function() {
     });
   };
 
+  window.okbmRecordTemplatePhoto = function(rec) {
+    if (!rec) return '';
+    var tmpl = String(rec.readyShotPhoto || rec.ready_shot_photo || rec.customTemplatePhoto || '').trim();
+    if (tmpl.indexOf('https://') !== 0 || tmpl.indexOf('unsplash.com') !== -1) return '';
+    return tmpl;
+  };
+
+  window.okbmRecordIsSavedPlanFeed = function(rec) {
+    if (!rec || !window.okbmRecordTemplatePhoto(rec)) return false;
+    var mode = String(rec.readyShotMode || rec.ready_shot_mode || '').trim();
+    if (mode === 'nrc') mode = 'overlay';
+    if (mode === 'packing') mode = 'magazine';
+    if (mode === 'pamphlet') return true;
+    return mode === 'balance' || mode === 'kuchi' || mode === 'issue' || mode === 'spread' ||
+      mode === 'magazine' || mode === 'overlay' || mode === 'minimal' || mode === 'chic' ||
+      mode === 'essay' || mode === 'sage' || mode === 'editorial';
+  };
+
   window.renderPlanStage = function() {
     var modal = document.getElementById('romanticPlanModal');
     if (!modal) return;
@@ -3610,23 +3629,16 @@ window.saveCurrentPackingRecord = function() {
           if (p && p.length >= 3) hD = parseInt(p[2], 10);
         }
       }
-      if (hD && !monthHistoryByDay[hD]) {
+      if (!hD) return;
+      var prev = monthHistoryByDay[hD];
+      if (!prev) {
         monthHistoryByDay[hD] = h;
+        return;
       }
+      var prevSaved = window.okbmRecordIsSavedPlanFeed(prev);
+      var nextSaved = window.okbmRecordIsSavedPlanFeed(h);
+      if (!prevSaved && nextSaved) monthHistoryByDay[hD] = h;
     });
-
-    var tripJoinsDateSet = new Set();
-    if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
-      window.TRIP_JOINS_DATABASE.forEach(function(t) {
-        if (!t || !t.date || t.isClosed) return;
-        var tUid = String(t.userId || '').trim();
-        var tAuthor = String(t.authorName || '').trim();
-        var isHost = Boolean((curUid && tUid && curUid === tUid) || (curNick && tAuthor && curNick === tAuthor));
-        if (isHost) {
-          tripJoinsDateSet.add(String(t.date).replace(/[-/]/g, '.'));
-        }
-      });
-    }
 
     for (var d = 1; d <= lastDayOfMonth; d++) {
       var isSelected = (d === activeDay);
@@ -3635,13 +3647,11 @@ window.saveCurrentPackingRecord = function() {
 
       var dayRecord = monthHistoryByDay[d] || null;
       var hasFieldPhoto = Boolean(window.hasRecordFieldPhotos && window.hasRecordFieldPhotos(dayRecord, thisDateKey));
-      var isCompleted = Boolean(dayRecord && hasFieldPhoto);
+      var isSavedPlan = Boolean(dayRecord && window.okbmRecordIsSavedPlanFeed(dayRecord));
+      var isPastDay = window.isPastPlanDate(thisDateKey);
+      var isCompleted = Boolean(isPastDay && dayRecord && hasFieldPhoto);
       var isRecorded = !!dayRecord;
-      var hasPlanMemo = Boolean(planMemosObj[thisDateKey] && String(planMemosObj[thisDateKey]).trim().length > 0);
-      var rawDaySpots = planSpotsObj[thisDateKey];
-      var hasPlanSpot = Boolean((Array.isArray(rawDaySpots) && rawDaySpots.length > 0) || (rawDaySpots && rawDaySpots.name));
-      var hasTripJoin = tripJoinsDateSet.has(thisDateKey);
-      var hasPlan = hasPlanMemo || hasPlanSpot || hasTripJoin || Boolean(dayRecord && !isCompleted);
+      var hasPlan = isSavedPlan && !isCompleted;
 
       var circleStyle = 'position:relative; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.78rem; font-weight:800; transition:all 0.15s ease;';
       var indicatorDot = '';
@@ -5396,21 +5406,6 @@ window.saveCurrentPackingRecord = function() {
       : String(dateStr || '').replace(/[-/]/g, '.');
     if (!norm) return false;
 
-    var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-      ? window.RomanticVault.read('okbm_plan_spots', {})
-      : safeGetJSON('okbm_plan_spots', {});
-    if (planSpots && typeof planSpots === 'object') {
-      var spotKeys = Object.keys(planSpots);
-      for (var i = 0; i < spotKeys.length; i++) {
-        var nk = (typeof window.okbmNormalizePlanDateKey === 'function')
-          ? window.okbmNormalizePlanDateKey(spotKeys[i])
-          : String(spotKeys[i]).replace(/[-/]/g, '.');
-        if (nk !== norm) continue;
-        var entry = planSpots[spotKeys[i]];
-        if (Array.isArray(entry) ? entry.length > 0 : !!(entry && entry.name)) return true;
-      }
-    }
-
     var historyList = (typeof window.safeGetStorage === 'function')
       ? (window.safeGetStorage('okbm_packing_history', []) || [])
       : (safeGetJSON('okbm_packing_history', []) || []);
@@ -5420,7 +5415,7 @@ window.saveCurrentPackingRecord = function() {
     if (Array.isArray(historyList)) {
       for (var h = 0; h < historyList.length; h++) {
         var rec = historyList[h];
-        if (!rec) continue;
+        if (!rec || !window.okbmRecordIsSavedPlanFeed(rec)) continue;
         var hk = (typeof window.okbmGetRecordPlanDateKey === 'function')
           ? window.okbmGetRecordPlanDateKey(rec)
           : String(rec.date || '').replace(/[-/]/g, '.');
@@ -6220,7 +6215,7 @@ window.saveCurrentPackingRecord = function() {
       : safeGetJSON('okbm_packing_history', []);
     if (!Array.isArray(historyList)) historyList = [];
     historyList.forEach(function(h) {
-      if (!h) return;
+      if (!h || !window.okbmRecordIsSavedPlanFeed(h)) return;
       var hk = (typeof window.okbmGetRecordPlanDateKey === 'function')
         ? window.okbmGetRecordPlanDateKey(h)
         : (typeof window.okbmNormalizePlanDateKey === 'function' ? window.okbmNormalizePlanDateKey(h.date) : '');
@@ -6229,7 +6224,6 @@ window.saveCurrentPackingRecord = function() {
       if (hs) historyNames.push(hs);
     });
 
-    var hasOtherSpot = prevNames.some(function(n) { return n !== name; }) || prevNames.length > 1;
     var hasOtherHistory = historyNames.some(function(n) { return n && n !== name && n !== '자유 일정'; });
     var hasHostTrip = false;
     if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
@@ -6241,7 +6235,7 @@ window.saveCurrentPackingRecord = function() {
         if (tD === normDate) hasHostTrip = true;
       });
     }
-    var shouldReplace = hasOtherSpot || hasOtherHistory || hasHostTrip;
+    var shouldReplace = hasOtherHistory || hasHostTrip;
 
     if (shouldReplace) {
       if (typeof showToast === 'function') {

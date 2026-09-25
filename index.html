@@ -774,7 +774,7 @@
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" defer></script>
   <script>
     window.__okbmTemplatesSrc = 'templates.js?v=2.9.26';
-    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.36';
+    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.37';
     (function okbmBootLoader() {
       var loaded = window.__okbmScriptPromises || {};
       window.__okbmScriptPromises = loaded;
@@ -4316,9 +4316,21 @@ var adBannersHtml = `
       return collectHttpsPhotoUrls(trip.photos);
     }
 
-    function findRegisteredTripSpot(spotName) {
-      var pool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
+    function tripSpotPool() {
+      return (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
         ? registeredSpots : ((typeof safeGetJSON === 'function' ? safeGetJSON('okbm_spots_cache', []) : []) || []);
+    }
+
+    function findRegisteredTripSpot(spotName) {
+      var pool = tripSpotPool();
+      if (typeof window.okbmFindSpotByFocusQuery === 'function') {
+        var focused = window.okbmFindSpotByFocusQuery(pool, spotName);
+        if (focused) return focused;
+      }
+      if (typeof findThemeSpotMaster === 'function') {
+        var themed = findThemeSpotMaster(String(spotName || ''), pool);
+        if (themed) return themed;
+      }
       var searchKey = String(spotName || '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
       if (!searchKey) return null;
       var k = searchKey.replace(/[\s\(\[\]\)]/g, '');
@@ -4326,6 +4338,61 @@ var adBannersHtml = `
         var n = String(s.name || s.spot_main || s.fullName || '').replace(/[\s\(\[\]\)]/g, '').toLowerCase();
         return k && n && (n.indexOf(k) !== -1 || k.indexOf(n) !== -1);
       }) || null;
+    }
+
+    function feedNameHitsSpotMain(feedSpot, spotMain) {
+      var main = String(spotMain || '').replace(/\s+/g, '').toLowerCase();
+      if (!main || main.length < 2) return false;
+      var tokens = String(feedSpot || '').replace(/\s*\(.*?\)/g, ' ').toLowerCase().split(/[\s\[\]·,./]+/).filter(Boolean);
+      for (var i = 0; i < tokens.length; i++) {
+        if (tokens[i].replace(/\s+/g, '') === main) return true;
+      }
+      return tokens.join('') === main;
+    }
+
+    function feedMatchesRegisteredSpot(feed, spot, pool) {
+      if (!feed || !spot) return false;
+      var sid = String(spot.id || spot.spot_id || '').trim();
+      var fid = String(feed.spot_id || feed.spotId || '').trim();
+      if (sid && fid && sid === fid) return true;
+      if (typeof findThemeSpotMaster === 'function') {
+        var master = findThemeSpotMaster(feed, pool || tripSpotPool());
+        if (master) return sid ? String(master.id || master.spot_id || '') === sid : master === spot;
+      }
+      return feedNameHitsSpotMain(feed.spot || feed.spotName, spot.spot_main || spot.name);
+    }
+
+    function feedPopularity(feed) {
+      if (!feed) return 0;
+      var stars = 0;
+      try {
+        var counts = (typeof safeGetJSON === 'function') ? (safeGetJSON('okbm_feed_stars_counts', {}) || {}) : {};
+        if (feed.id != null && counts[feed.id] != null) stars = Number(counts[feed.id]) || 0;
+      } catch (e) {}
+      var likes = Number(feed.likes_count != null ? feed.likes_count : (feed.likes || 0)) || 0;
+      return Math.max(stars, likes);
+    }
+
+    function photosFromPopularSpotFeed(feeds, spot) {
+      var pool = tripSpotPool();
+      var ranked = (feeds || []).filter(function(f) {
+        if (!f) return false;
+        try {
+          if (window.okbmIsPublicFeedItem && !window.okbmIsPublicFeedItem(f)) return false;
+        } catch (ePub) {
+          if (f.isPublished === false || f.is_published === false) return false;
+        }
+        return !spot || feedMatchesRegisteredSpot(f, spot, pool);
+      }).sort(function(a, b) {
+        var diff = feedPopularity(b) - feedPopularity(a);
+        if (diff) return diff;
+        var ta = new Date(a.created_at || a.createdAt || 0).getTime() || 0;
+        var tb = new Date(b.created_at || b.createdAt || 0).getTime() || 0;
+        return tb - ta;
+      });
+      if (!ranked.length) return [];
+      var list = (window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(ranked[0])) || getArchivePhotosList(ranked[0]) || ranked[0].photos || [];
+      return collectHttpsPhotoUrls(list).slice(0, 5);
     }
 
     function collectSpotMediaImageUrls(spot) {
@@ -4342,10 +4409,21 @@ var adBannersHtml = `
     async function fetchSpotFeedPhotos(spotName) {
       var targetUrl = window.SUPABASE_URL || '';
       var targetKey = window.SUPABASE_ANON_KEY || '';
-      var key = String(spotName || '').replace(/\s*\(.*?\)/g, '').trim();
-      if (!targetUrl || !targetKey || key.length < 2) return [];
+      if (!targetUrl || !targetKey) return [];
+      var matched = findRegisteredTripSpot(spotName);
+      var main = String((matched && (matched.spot_main || matched.name)) || '').replace(/\s+/g, ' ').trim();
+      var sid = matched ? String(matched.id || matched.spot_id || '').trim() : '';
+      var parts = [];
+      if (sid) parts.push('spot_id.eq.' + encodeURIComponent(sid));
+      if (main.length >= 2) parts.push('spot.ilike.*' + encodeURIComponent(main) + '*');
+      if (!parts.length) {
+        var key = String(spotName || '').replace(/\s*\(.*?\)/g, '').replace(/\[[^\]]*\]/g, ' ').trim();
+        if (key.length < 2) return [];
+        parts.push('spot.ilike.*' + encodeURIComponent(key) + '*');
+      }
+      var filter = parts.length === 1 ? parts[0] : ('or=(' + parts.join(',') + ')');
       try {
-        var query = targetUrl + '/rest/v1/feeds?spot=ilike.*' + encodeURIComponent(key) + '*&is_published=eq.true&select=photos,spot&order=created_at.desc&limit=12';
+        var query = targetUrl + '/rest/v1/feeds?' + filter + '&is_published=eq.true&select=id,photos,spot,spot_id,likes_count,created_at&order=likes_count.desc.nullslast,created_at.desc&limit=40';
         var res = await (typeof window.okbmPublicFetch === 'function'
           ? window.okbmPublicFetch(query)
           : fetch(query, {
@@ -4357,11 +4435,10 @@ var adBannersHtml = `
           }));
         if (!res.ok) return [];
         var rows = await res.json();
-        var urls = [];
-        (Array.isArray(rows) ? rows : []).forEach(function(row) {
-          urls = collectHttpsPhotoUrls(urls.concat(row && row.photos ? row.photos : []));
-        });
-        return urls.slice(0, 5);
+        var popular = photosFromPopularSpotFeed(Array.isArray(rows) ? rows : [], matched);
+        if (popular.length) return popular;
+        var media = collectSpotMediaImageUrls(matched);
+        return media.slice(0, 5);
       } catch (e) {
         return [];
       }
@@ -4371,11 +4448,6 @@ var adBannersHtml = `
       var matched = findRegisteredTripSpot(spotName);
       var urls = collectHttpsPhotoUrls((matched && (matched.photos || matched.images)) || []);
       urls = collectHttpsPhotoUrls(urls.concat(collectSpotMediaImageUrls(matched)));
-      var compactKey = String((matched && (matched.name || matched.spot_main)) || spotName || '')
-        .replace(/\s*\(.*?\)/g, '')
-        .replace(/[\s\(\[\]\)]/g, '')
-        .toLowerCase();
-      if (!compactKey) return urls.slice(0, 5);
 
       var feedPool = [];
       if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
@@ -4386,41 +4458,25 @@ var adBannersHtml = `
         feedPool = safeGetJSON('okbm_cached_community_feeds', []) || [];
       }
 
-      for (var i = 0; i < feedPool.length; i++) {
-        var f = feedPool[i];
-        if (!f) continue;
-        var fSpot = String(f.spot || f.spotName || '').replace(/\s*\(.*?\)/g, '').replace(/[\s\(\[\]\)]/g, '').toLowerCase();
-        if (!fSpot) continue;
-        if (fSpot !== compactKey && fSpot.indexOf(compactKey) === -1 && compactKey.indexOf(fSpot) === -1) continue;
-        try {
-          if (window.okbmIsPublicFeedItem && !window.okbmIsPublicFeedItem(f)) continue;
-        } catch (ePub) {
-          if (f.isPublished === false || f.is_published === false) continue;
-        }
-        var list = (window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(f)) || getArchivePhotosList(f) || [];
-        urls = collectHttpsPhotoUrls(urls.concat(list));
-        if (urls.length >= 5) break;
-      }
-
-      return urls.slice(0, 5);
+      var popular = photosFromPopularSpotFeed(feedPool, matched);
+      return collectHttpsPhotoUrls(urls.concat(popular)).slice(0, 5);
     }
 
     async function resolveTripJoinPhotos(userPhotos, spotName) {
       if (window.__tripCreateUserPhotos) {
         return collectHttpsPhotoUrls(userPhotos || []);
       }
+      var remote = await fetchSpotFeedPhotos(spotName);
+      if (remote.length > 0) return remote;
       var local = getRegisteredSpotPhotos(spotName);
       if (local.length > 0) return local;
-      var own = collectHttpsPhotoUrls(userPhotos || []);
-      if (own.length > 0 && !window.__tripCreatePhotosFromSpot) return own;
-      var remote = await fetchSpotFeedPhotos(spotName);
-      return remote.length ? remote : own;
+      return collectHttpsPhotoUrls(userPhotos || []);
     }
 
     async function fillTripCreatePhotosFromSpot(spotName) {
       if (window.__tripCreateUserPhotos) return;
-      var photos = getRegisteredSpotPhotos(spotName);
-      if (!photos.length) photos = await fetchSpotFeedPhotos(spotName);
+      var photos = await fetchSpotFeedPhotos(spotName);
+      if (!photos.length) photos = getRegisteredSpotPhotos(spotName);
       if (window.__tripCreateUserPhotos) return;
       window.__tripCreatePhotosFromSpot = photos.length > 0;
       window.__tempTripCreatePhotos = photos.slice(0, 5);
