@@ -2846,10 +2846,7 @@
       window.applyAdminPermissions = applyAdminPermissions;
 
       function toggleAdminMode() {
-        if (!checkAdminAuthorization()) {
-          showToast('관리자 권한이 확인되지 않았습니다.');
-          return;
-        }
+        if (!checkAdminAuthorization()) return;
         applyAdminPermissions(!isAdminMode);
         if (isKakaoMapReady()) renderSpots(true);
         else window.__pendingRenderSpots = 'force';
@@ -2871,7 +2868,7 @@
         } else {
           isAdmin = checkAdminAuthorization();
         }
-        applyAdminPermissions(!!isAdmin);
+        applyAdminPermissions(false);
         applyAdminMarkerDragState();
         var params = new URLSearchParams(window.location.search);
         if (isAdmin && params.get('open') === 'admin_inbox' && typeof window.openAdminSpotInbox === 'function') {
@@ -8513,8 +8510,9 @@ var overlay = document.getElementById('customModalOverlay');
     </script>
     <script>
       window.addEventListener('okbm_admin_flag', function(e) {
-        if (typeof window.applyAdminPermissions === 'function') {
-          window.applyAdminPermissions(!!(e && e.detail && e.detail.isAdmin));
+        var isAdmin = !!(e && e.detail && e.detail.isAdmin);
+        if (!isAdmin && typeof window.applyAdminPermissions === 'function') {
+          window.applyAdminPermissions(false);
         }
       });
       window.addEventListener('load', function() {

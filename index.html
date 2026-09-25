@@ -5264,7 +5264,7 @@ var adBannersHtml = `
 
         stackHtml += `
           <div class="trip-photo-stack-card" data-card-idx="${i}" style="position:absolute; inset:0; width:100% !important; height:100% !important; border-radius:12px; overflow:hidden; border:1.5px solid rgba(255,255,255,0.2); box-shadow:0 8px 24px rgba(0,0,0,0.85); background:#070a12; transform:scale(${scale}) translateY(${translateY}px); z-index:${zIndex}; opacity:${opacity}; transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1); cursor:pointer; box-sizing:border-box;">
-            <img src="${escapeHtml(okbmSafeImageUrl(photos[i]))}" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />
+            <img src="${escapeHtml(tripCreatePhotoSrc(photos[i]))}" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />
             <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 40%, rgba(0,0,0,0.6) 100%); pointer-events:none;"></div>
             
             ${offset === 0 ? `
@@ -5336,12 +5336,32 @@ var adBannersHtml = `
       renderTripPhotoStack();
     }
 
+    function tripCreatePhotoSrc(url) {
+      var raw = String(url || '').trim();
+      if (raw.indexOf('blob:') === 0) return raw;
+      return (typeof okbmSafeImageUrl === 'function') ? okbmSafeImageUrl(raw) : '';
+    }
+
+    function revokeTripPreviewUrl(url) {
+      if (String(url || '').indexOf('blob:') !== 0) return;
+      try { URL.revokeObjectURL(url); } catch (e) {}
+      if (window.__tripPhotoUploadJobs) delete window.__tripPhotoUploadJobs[url];
+    }
+
+    async function flushTripPhotoUploads() {
+      var jobs = window.__tripPhotoUploadJobs || {};
+      var pending = Object.keys(jobs).map(function(key) { return jobs[key]; }).filter(Boolean);
+      if (pending.length) await Promise.all(pending);
+    }
+
     function removeTripCreatePhoto(idx, e) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
       if (window.__tripCreatePhotosFromSpot) {
         window.__tripCreatePhotosFromSpot = false;
         window.__tripCreateUserPhotos = true;
       }
+      var removed = (window.__tempTripCreatePhotos || [])[idx];
+      revokeTripPreviewUrl(removed);
       window.__tempTripCreatePhotos.splice(idx, 1);
       if (window.__currentTripCreatePhotoIdx >= window.__tempTripCreatePhotos.length) {
         window.__currentTripCreatePhotoIdx = Math.max(0, window.__tempTripCreatePhotos.length - 1);
@@ -5373,49 +5393,70 @@ var adBannersHtml = `
       });
       if (rejectedCount) showToast('지원하는 파일형식이 아닙니다.', 'warn', 2200);
       if (!toProcess.length) return;
-      showToast('사진 ' + toProcess.length + '장을 등록하는 중입니다...', 2500);
-      if (typeof window.showPhotoLoadingModal === 'function') {
-        window.showPhotoLoadingModal(1, toProcess.length);
-      }
 
-      var results = await Promise.all(toProcess.map(async function(file, idx) {
-        try {
-          if (typeof window.showPhotoLoadingModal === 'function') {
-            window.showPhotoLoadingModal(idx + 1, toProcess.length);
-          }
-          var photoBlob = typeof window.processSinglePhotoSmart === 'function'
-            ? await window.processSinglePhotoSmart(file, { maxDim: 1200, quality: 0.82 })
-            : null;
-          if (!photoBlob) return '';
+      var basePhotos = window.__tripCreatePhotosFromSpot ? [] : (window.__tempTripCreatePhotos || []).slice();
+      window.__tripCreatePhotosFromSpot = false;
+      window.__tripCreateUserPhotos = true;
+      window.__tripPhotoUploadJobs = window.__tripPhotoUploadJobs || {};
 
-          if (typeof window.uploadCompressedPhotoToR2 === 'function') {
-            return await window.uploadCompressedPhotoToR2(photoBlob, 'trip');
-          }
-          return '';
-        } catch (upErr) {
-          console.error('[PHOTO UPLOAD EXCEPTION]', upErr);
-          return '';
-        }
-      }));
-
-      var valids = results.filter(Boolean);
-
-      if (typeof window.hidePhotoLoadingModal === 'function') {
-        window.hidePhotoLoadingModal();
-      }
-
-      if (valids.length === 0) {
+      var previews = [];
+      toProcess.forEach(function(file) {
+        var preview = '';
+        try { preview = URL.createObjectURL(file); } catch (eUrl) { preview = ''; }
+        if (!preview) return;
+        previews.push({ file: file, preview: preview });
+        basePhotos.push(preview);
+      });
+      if (!previews.length) {
         showToast('사진 업로드에 실패했습니다. 네트워크 상태를 확인해주세요.', 'warn');
         return;
       }
 
-      var basePhotos = window.__tripCreatePhotosFromSpot ? [] : (window.__tempTripCreatePhotos || []);
-      window.__tripCreatePhotosFromSpot = false;
-      window.__tripCreateUserPhotos = true;
-      window.__tempTripCreatePhotos = basePhotos.concat(valids).slice(0, MAX_PHOTOS);
-      window.__currentTripCreatePhotoIdx = 0;
+      window.__tempTripCreatePhotos = basePhotos.slice(0, MAX_PHOTOS);
+      window.__currentTripCreatePhotoIdx = Math.max(0, window.__tempTripCreatePhotos.length - previews.length);
       renderTripPhotoStack();
-      showToast('사진 ' + valids.length + '장이 등록되었습니다!', 'success');
+      showToast('사진이 적용되었습니다.', 'success', 1600);
+
+      previews.forEach(function(item) {
+        if ((window.__tempTripCreatePhotos || []).indexOf(item.preview) === -1) {
+          revokeTripPreviewUrl(item.preview);
+          return;
+        }
+        var job = (async function() {
+          try {
+            var photoBlob = typeof window.processSinglePhotoSmart === 'function'
+              ? await window.processSinglePhotoSmart(item.file, { maxDim: 1200, quality: 0.82 })
+              : null;
+            var httpsUrl = '';
+            if (photoBlob && typeof window.uploadCompressedPhotoToR2 === 'function') {
+              httpsUrl = await window.uploadCompressedPhotoToR2(photoBlob, 'trip');
+            }
+            var list = window.__tempTripCreatePhotos || [];
+            var at = list.indexOf(item.preview);
+            if (at === -1) return '';
+            if (httpsUrl && String(httpsUrl).indexOf('https://') === 0) {
+              list[at] = httpsUrl;
+              try { URL.revokeObjectURL(item.preview); } catch (eRev) {}
+              renderTripPhotoStack();
+              return httpsUrl;
+            }
+            list.splice(at, 1);
+            try { URL.revokeObjectURL(item.preview); } catch (eRevFail) {}
+            if (window.__currentTripCreatePhotoIdx >= list.length) {
+              window.__currentTripCreatePhotoIdx = Math.max(0, list.length - 1);
+            }
+            renderTripPhotoStack();
+            showToast('사진 업로드에 실패했습니다. 네트워크 상태를 확인해주세요.', 'warn');
+            return '';
+          } catch (upErr) {
+            console.error('[PHOTO UPLOAD EXCEPTION]', upErr);
+            return '';
+          } finally {
+            if (window.__tripPhotoUploadJobs) delete window.__tripPhotoUploadJobs[item.preview];
+          }
+        })();
+        window.__tripPhotoUploadJobs[item.preview] = job;
+      });
     }
 
     window.__tripPickerYear = 0;
@@ -5492,6 +5533,7 @@ var adBannersHtml = `
         regBtn.innerText = '수정 처리 중...';
       }
 
+      await flushTripPhotoUploads();
       var photoList = await resolveTripJoinPhotos(window.__tempTripCreatePhotos, spot);
       var safeDate = date.replace(/\./g, '-');
 
@@ -5949,6 +5991,7 @@ var adBannersHtml = `
         ? window.okbmCanonicalUserId(rawUid)
         : ((/^(kakao_|naver_|apple_|google_|guest_|user_)/.test(rawUid)) ? rawUid : ('kakao_' + rawUid));
       
+      await flushTripPhotoUploads();
       var photoList = await resolveTripJoinPhotos(window.__tempTripCreatePhotos, spot);
 
       var pad = function(n) { return String(n).padStart(2, '0'); };
