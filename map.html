@@ -3700,22 +3700,25 @@ function updateSmartResetButtons() {
           return false;
         };
 
+        const isNativeApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+
         const fallbackShare = function() {
           const labeledShareText = `[낭만루트] ${titleName}\n${descText}\n\n${shareUrl}`;
           const nativeShare = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
           if (nativeShare && typeof nativeShare.share === 'function') {
             nativeShare.share({
               title: `[낭만루트] ${titleName}`,
-              text: descText,
+              text: labeledShareText,
               url: shareUrl,
               dialogTitle: '공유'
             }).catch(function(e) {
               console.warn('[map.html:shareSpotCard:capacitor]', e);
-              copyTextToClipboard(labeledShareText, '공유 링크가 복사되었습니다.');
+              copyTextToClipboard(labeledShareText, '공유 링크가 복사되었습니다. 카카오톡에 붙여넣기 하세요.');
             });
             return;
           }
-          if (navigator.share) {
+          // 앱 WebView의 navigator.share는 시트를 안 열고 끝나므로 쓰지 않는다.
+          if (!isNativeApp && navigator.share) {
             const isApple = /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
             const shareData = isApple
               ? { title: `[낭만루트] ${titleName}`, url: shareUrl }
@@ -3727,9 +3730,16 @@ function updateSmartResetButtons() {
             });
             return;
           }
-          copyTextToClipboard(labeledShareText, '공유 링크가 복사되었습니다.');
+          copyTextToClipboard(labeledShareText, isNativeApp
+            ? '공유 링크가 복사되었습니다. 카카오톡에 붙여넣기 하세요.'
+            : '공유 링크가 복사되었습니다.');
         };
 
+        // 앱 WebView는 카카오 SDK의 intent: 주소를 열지 못해 버튼이 죽은 것처럼 보인다.
+        if (isNativeApp) {
+          fallbackShare();
+          return;
+        }
         if (!sendKakao()) fallbackShare();
         if (typeof window.okbmEnsureKakaoSdk === 'function') {
           window.okbmEnsureKakaoSdk().catch(function() {});
