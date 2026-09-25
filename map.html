@@ -3702,6 +3702,46 @@ function updateSmartResetButtons() {
 
         const isNativeApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
 
+        const openKakaoTalkApp = function() {
+          const appKey = window.KAKAO_APP_KEY || '557f5de0f6391a2419bc5592e6a9c9c1';
+          const templateObject = {
+            object_type: 'feed',
+            content: {
+              title: `[낭만루트] ${titleName}`.slice(0, 40),
+              description: kakaoDesc,
+              image_url: shareLogoImg,
+              image_width: 800,
+              image_height: 800,
+              link: { web_url: shareUrl, mobile_web_url: shareUrl }
+            },
+            buttons: [{
+              title: '앱에서 보기',
+              link: { web_url: shareUrl, mobile_web_url: shareUrl }
+            }]
+          };
+          const apiQuery = new URLSearchParams();
+          apiQuery.set('link_ver', '4.0');
+          apiQuery.set('template_object', JSON.stringify(templateObject));
+          const ka = 'sdk/2.7.2 os/javascript sdk_type/javascript lang/ko-KR device/Android origin/' + encodeURIComponent('https://romanticroute.kr');
+          return fetch('https://kapi.kakao.com/v2/api/kakaolink/talk/template/default?' + apiQuery.toString(), {
+            method: 'GET',
+            headers: { Authorization: 'KakaoAK ' + appKey, KA: ka }
+          }).then(function(res) {
+            if (!res.ok) throw new Error('kakao link ' + res.status);
+            return res.json();
+          }).then(function(validated) {
+            const linkQuery = new URLSearchParams();
+            linkQuery.set('appkey', appKey);
+            linkQuery.set('appver', '1.0');
+            linkQuery.set('linkver', '4.0');
+            linkQuery.set('extras', JSON.stringify({ KA: ka }));
+            linkQuery.set('template_json', JSON.stringify(validated.template_msg || {}));
+            if (validated.template_args) linkQuery.set('template_args', JSON.stringify(validated.template_args));
+            if (validated.template_id != null) linkQuery.set('template_id', String(validated.template_id));
+            window.location.href = 'kakaolink://send?' + linkQuery.toString();
+          });
+        };
+
         const fallbackShare = function() {
           const labeledShareText = `[낭만루트] ${titleName}\n${descText}\n\n${shareUrl}`;
           const nativeShare = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
@@ -3735,9 +3775,12 @@ function updateSmartResetButtons() {
             : '공유 링크가 복사되었습니다.');
         };
 
-        // 앱 WebView는 카카오 SDK의 intent: 주소를 열지 못해 버튼이 죽은 것처럼 보인다.
+        // 앱 WebView는 카카오 SDK의 intent: 주소를 열지 못한다. kakaolink 스킴은 카카오톡을 직접 연다.
         if (isNativeApp) {
-          fallbackShare();
+          openKakaoTalkApp().catch(function(e) {
+            console.warn('[map.html:shareSpotCard:kakaolink]', e);
+            fallbackShare();
+          });
           return;
         }
         if (!sendKakao()) fallbackShare();
