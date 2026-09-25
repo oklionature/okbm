@@ -7,7 +7,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
 
 const NCP_API_KEY_ID = "b3pgdton9r";
 
-type Item = { url: string; blogId: string; title: string };
+type Item = { url: string; blogId: string; title: string; postdate: string };
 
 function isAllowedOrigin(origin: string): boolean {
   const normalized = String(origin || "").trim().replace(/\/+$/, "");
@@ -90,26 +90,47 @@ function decodeText(raw: string): string {
     .trim();
 }
 
-function addItem(map: Map<string, Item>, blogId: string, logNo: string, title: string) {
+const INTENT_TOKENS = new Set(["백패킹", "야영", "캠핑", "장소", "등산", "비박", "후기", "산행"]);
+
+function placeTokens(query: string): string[] {
+  const out: string[] = [];
+  for (const raw of query.split(/\s+/)) {
+    const token = raw.trim();
+    if (token.length < 2 || INTENT_TOKENS.has(token) || out.indexOf(token) !== -1) continue;
+    out.push(token);
+  }
+  return out;
+}
+
+function titleHasTokens(title: string, tokens: string[]): boolean {
+  if (!tokens.length) return true;
+  const compact = title.replace(/\s+/g, "");
+  return tokens.every((token) => compact.indexOf(token) !== -1);
+}
+
+function addItem(map: Map<string, Item>, blogId: string, logNo: string, title: string, postdate: string) {
   if (!blogId || !/^\d{8,}$/.test(logNo)) return;
   if (/^(PostView|PostList|prologue|scratchpad)$/i.test(blogId)) return;
   const key = blogId + "/" + logNo;
   const clean = decodeText(title);
+  const date = /^\d{8}$/.test(postdate) ? postdate : "";
   const prev = map.get(key);
   if (!prev) {
     map.set(key, {
       url: "https://blog.naver.com/" + blogId + "/" + logNo,
       blogId,
       title: clean.length >= 6 ? clean : "",
+      postdate: date,
     });
     return;
   }
   if (clean.length > prev.title.length) prev.title = clean;
+  if (date && date > prev.postdate) prev.postdate = date;
 }
 
-function addFromUrl(map: Map<string, Item>, url: string, title: string) {
+function addFromUrl(map: Map<string, Item>, url: string, title: string, postdate: string) {
   const m = String(url || "").match(/blog\.naver\.com\/([A-Za-z0-9._-]+)\/(\d{8,})/);
-  if (m) addItem(map, m[1], m[2], title);
+  if (m) addItem(map, m[1], m[2], title, postdate);
 }
 
 async function searchOpenApi(query: string, map: Map<string, Item>): Promise<boolean> {
@@ -117,7 +138,7 @@ async function searchOpenApi(query: string, map: Map<string, Item>): Promise<boo
   const keyId = String(Deno.env.get("NCP_APIGW_API_KEY_ID") || NCP_API_KEY_ID).trim();
   if (!secret || !keyId) return false;
   const res = await fetch(
-    "https://naverapihub.apigw.ntruss.com/search/v1/blog?display=30&start=1&sort=sim&format=json&query=" + encodeURIComponent(query),
+    "https://naverapihub.apigw.ntruss.com/search/v1/blog?display=30&start=1&sort=date&format=json&query=" + encodeURIComponent(query),
     {
       headers: {
         "X-NCP-APIGW-API-KEY-ID": keyId,
@@ -128,7 +149,12 @@ async function searchOpenApi(query: string, map: Map<string, Item>): Promise<boo
   if (!res.ok) return false;
   const data = await res.json();
   const items = Array.isArray(data && data.items) ? data.items : [];
-  for (const item of items) addFromUrl(map, item && item.link, item && item.title);
+  const tokens = placeTokens(query);
+  for (const item of items) {
+    const title = decodeText(item && item.title);
+    if (!titleHasTokens(title, tokens)) continue;
+    addFromUrl(map, item && item.link, title, String((item && item.postdate) || ""));
+  }
   return map.size > 0;
 }
 
@@ -159,7 +185,7 @@ Deno.serve(async (req: Request) => {
   await searchOpenApi(queries[0], found);
 
   const items = Array.from(found.values())
-    .sort((a, b) => (b.title.length >= 6 ? 1 : 0) - (a.title.length >= 6 ? 1 : 0) || b.title.length - a.title.length)
+    .sort((a, b) => (b.postdate || "").localeCompare(a.postdate || "") || b.title.length - a.title.length)
     .slice(0, 30);
   return json(req, { ok: true, items });
 });

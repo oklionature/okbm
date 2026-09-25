@@ -4765,15 +4765,14 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         var area = window.normalizeSearchAreaName(areaName) || String(areaName || '').trim();
         var variants = window.buildSpotBlogQueryVariants(spotName, areaName);
         if (!variants.length) variants = [window.buildSpotMediaQuery(spotName, areaName)];
-        var sharedMountain = window.countSpotsWithMountainName(mountain) > 1 && !!area;
-        var cacheKey = 'mt:v10:' + (mountain || variants[0]) + (sharedMountain ? ('|' + area) : '');
+        var cacheKey = 'mt:v11:' + (mountain || variants[0]) + (area ? ('|' + area) : '');
 
         if (window.__spotAutoBlogsCache.has(cacheKey)) {
           return window.__spotAutoBlogsCache.get(cacheKey);
         }
 
         try {
-          var sessionCached = sessionStorage.getItem('okbm_blog_cache_v10_' + cacheKey);
+          var sessionCached = sessionStorage.getItem('okbm_blog_cache_v11_' + cacheKey);
           if (sessionCached) {
             var parsed = JSON.parse(sessionCached);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -4796,11 +4795,13 @@ window.__ytMetaCache = window.__ytMetaCache || {};
                 url: parsed.url,
                 blogId: parsed.blogId,
                 title: item.title || '',
+                postdate: /^\d{8}$/.test(String(item.postdate || '')) ? String(item.postdate) : '',
                 score: item.title ? 10 : 0
               };
               return;
             }
             if ((item.title || '').length > (merged[key].title || '').length) merged[key].title = item.title;
+            if (/^\d{8}$/.test(String(item.postdate || '')) && String(item.postdate) > (merged[key].postdate || '')) merged[key].postdate = String(item.postdate);
             merged[key].score += item.title ? 8 : 1;
           });
         }
@@ -4808,6 +4809,9 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         function allRanked() {
           var list = Object.keys(merged).map(function(k) { return merged[k]; });
           list.sort(function(a, b) {
+            var ad = String(a.postdate || '');
+            var bd = String(b.postdate || '');
+            if (ad !== bd) return ad < bd ? 1 : -1;
             var at = (a.title || '').length >= 6 ? 1 : 0;
             var bt = (b.title || '').length >= 6 ? 1 : 0;
             return (bt - at) || (b.score - a.score);
@@ -4827,17 +4831,16 @@ window.__ytMetaCache = window.__ytMetaCache || {};
             });
           }
           var titleOf = function(item) { return String(item.title || ''); };
-          if (sharedMountain && area) {
+          if (area && mountain) {
             pushFrom(function(item) {
               var t = titleOf(item);
-              return t.indexOf(area) !== -1 && mountain && t.indexOf(mountain) !== -1;
+              return t.indexOf(area) !== -1 && t.indexOf(mountain) !== -1;
             });
-            pushFrom(function(item) { return titleOf(item).indexOf(area) !== -1; });
           }
-          if (mountain) {
+          if (mountain && !picked.length) {
             pushFrom(function(item) { return titleOf(item).indexOf(mountain) !== -1; });
           }
-          pushFrom(function() { return true; });
+          if (!picked.length) pushFrom(function() { return true; });
           return picked;
         }
 
@@ -4865,7 +4868,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
 
         if (extracted.length > 0) {
           limitedMapSet(window.__spotAutoBlogsCache, cacheKey, extracted, 80);
-          try { sessionStorage.setItem('okbm_blog_cache_v10_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
+          try { sessionStorage.setItem('okbm_blog_cache_v11_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
         }
         return extracted;
       };
