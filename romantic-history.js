@@ -1285,6 +1285,9 @@
       return '';
     };
 
+    var vaultReplacedIds = [];
+    var vaultReplacesSameDate = existIdx === -1;
+
     if (existIdx !== -1) {
       normalized.id = list[existIdx].id;
       if ((!normalized.photoMemos || normalized.photoMemos.length === 0) && list[existIdx].photoMemos) {
@@ -1320,6 +1323,7 @@
         [].concat(window.interactiveHistory || [], window.__allLoadedFeeds || [], window.heroTopRecords || []).forEach(collectSameDateId);
 
         var sameDateIds = Object.keys(sameDateIdSet);
+        vaultReplacedIds = sameDateIds.slice();
         if (sameDateIds.length > 0) {
           if (typeof showToast === 'function') {
             showToast('기존 피드는 삭제 됩니다.', 'info', 2800);
@@ -1512,6 +1516,10 @@
           showToast('저장에 실패했습니다. 네트워크 상태를 확인하고 다시 시도해주세요.', 'error', 2600);
         }
         window.__tempStudioReadyShot = null;
+        if (window.__okbmVaultJustSaved && window.__okbmVaultJustSaved.record &&
+            String(window.__okbmVaultJustSaved.record.id || '').trim() === String(normalized.id || '').trim()) {
+          window.__okbmVaultJustSaved = null;
+        }
         return normalized;
       }
     }
@@ -1551,6 +1559,12 @@
     if (typeof window.refreshMyReportFullStats === 'function') {
       window.refreshMyReportFullStats();
     }
+
+    window.__okbmVaultJustSaved = {
+      record: normalized,
+      replacedIds: vaultReplacedIds,
+      replacesSameDate: vaultReplacesSameDate
+    };
 
     return normalized;
   };
@@ -9160,12 +9174,62 @@ window.renderHistoryStage = function(isLoading, opts) {
       window.okbmBindOverlayViewportFit(modal, { reserveDock: true });
     }
 
+    var vaultFeedDateKey = function(rec) {
+      if (typeof window.okbmGetRecordPlanDateKey === 'function') {
+        return window.okbmGetRecordPlanDateKey(rec) || '';
+      }
+      if (!rec) return '';
+      var raw = rec.date || rec.tripDate || rec.trip_date || '';
+      if (raw) return String(raw).replace(/[-/]/g, '.').split('T')[0].split(' ')[0];
+      return '';
+    };
+
+    var vaultFeedIsMine = function(row) {
+      if (!row) return false;
+      var myId = '';
+      try {
+        myId = (typeof window.okbmGetCurrentUserId === 'function')
+          ? String(window.okbmGetCurrentUserId() || '').trim()
+          : '';
+      } catch (eMine) { myId = ''; }
+      if (!myId) return false;
+      var rowUserId = String(row.user_id || row.userId || '').trim();
+      if (!rowUserId) return false;
+      if (typeof window.okbmSameAccountId === 'function') {
+        return window.okbmSameAccountId(myId, rowUserId);
+      }
+      return myId === rowUserId;
+    };
+
+    var overlayVaultJustSaved = function(list) {
+      var stamp = window.__okbmVaultJustSaved;
+      var base = Array.isArray(list) ? list.slice() : [];
+      if (!stamp || !stamp.record || !stamp.record.id) return base;
+      var savedId = String(stamp.record.id).trim();
+      if (!savedId) return base;
+      var drop = {};
+      (Array.isArray(stamp.replacedIds) ? stamp.replacedIds : []).forEach(function(id) {
+        var sid = String(id || '').trim();
+        if (sid) drop[sid] = true;
+      });
+      var dateKey = stamp.replacesSameDate ? vaultFeedDateKey(stamp.record) : '';
+      var next = base.filter(function(row) {
+        if (!row) return false;
+        var rid = String(row.id || '').trim();
+        if (rid && (rid === savedId || drop[rid])) return false;
+        if (dateKey && rid !== savedId && vaultFeedDateKey(row) === dateKey && vaultFeedIsMine(row)) return false;
+        return true;
+      });
+      next.unshift(stamp.record);
+      return next;
+    };
+
     var paintVaultFromList = function(list, fromServer) {
       var liveModal = document.getElementById('romanticHistoryModal');
       var liveContent = liveModal ? liveModal.querySelector('.romantic-history-content') : null;
       if (!window.__okbmHistoryModalOpen) return;
       if (fromServer) {
-        window.__allLoadedFeeds = Array.isArray(list) ? list : [];
+        window.__allLoadedFeeds = overlayVaultJustSaved(Array.isArray(list) ? list : []);
         window.__feedPaginationOffset = window.__allLoadedFeeds.length;
         window.__feedHasMore = window.__allLoadedFeeds.length >= 10;
       } else {
@@ -9174,11 +9238,12 @@ window.renderHistoryStage = function(isLoading, opts) {
           cachedFeeds = (typeof safeGetJSON === 'function') ? (safeGetJSON('okbm_cached_community_feeds', []) || []) : [];
         } catch (eCache) { cachedFeeds = []; }
         if (!Array.isArray(cachedFeeds)) cachedFeeds = [];
-        window.__allLoadedFeeds = cachedFeeds;
+        window.__allLoadedFeeds = overlayVaultJustSaved(cachedFeeds);
       }
       if (typeof window.renderHistoryStage === 'function') {
         window.renderHistoryStage(false, { serverOnly: true });
       }
+      window.__okbmVaultJustSaved = null;
       var reel = document.getElementById('reelsVerticalContainer');
       if (reel) reel.scrollTop = 0;
       if (liveContent) liveContent.style.visibility = '';

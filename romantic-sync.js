@@ -3527,6 +3527,31 @@ window._getRomanticRouteOutdoorLogs = function() {
   });
 };
 
+window.okbmFeedOwnerIdVariants = function(userId) {
+  var id = String(userId || '').trim();
+  var variants = [];
+  var push = function(v) {
+    v = String(v || '').trim();
+    if (!v || v === 'guest' || variants.indexOf(v) !== -1) return;
+    variants.push(v);
+  };
+  push(id);
+  var pure = id.replace(/^(kakao_|naver_|apple_|google_|user_)/, '');
+  push(pure);
+  if (pure && /^\d+$/.test(pure)) push('kakao_' + pure);
+  if (typeof window.okbmCanonicalUserId === 'function') push(window.okbmCanonicalUserId(id));
+  return variants;
+};
+
+window.okbmFeedOwnerFilter = function(userId) {
+  var variants = window.okbmFeedOwnerIdVariants(userId);
+  if (!variants.length) return '';
+  if (variants.length === 1) return 'user_id=eq.' + encodeURIComponent(variants[0]);
+  return 'or=(' + variants.map(function(v) {
+    return 'user_id.eq.' + encodeURIComponent(v);
+  }).join(',') + ')';
+};
+
 // [마이리포트 오픈 시 가벼운 핵심 카운터 즉시 갱신 엔진 (상세 아코디언은 온디맨드 계산 유지)]
 window.refreshMyReportFullStats = function() {
   window.__reportRenderCache = {};
@@ -3581,7 +3606,10 @@ window.refreshMyReportFullStats = function() {
       'Prefer': 'count=exact',
       'Range-Unit': 'items'
     };
-    var countBase = targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(curUserId) + '&select=id';
+    var ownerFilter = (typeof window.okbmFeedOwnerFilter === 'function')
+      ? window.okbmFeedOwnerFilter(curUserId)
+      : ('user_id=eq.' + encodeURIComponent(curUserId));
+    var countBase = targetUrl + '/rest/v1/feeds?' + ownerFilter + '&select=id';
     var readHeadCount = function(res) {
       if (!res || !res.ok) return null;
       var contentRange = res.headers.get('content-range');
@@ -4278,19 +4306,120 @@ window.__okbmPaintActivityList = function(listEl, logs, color, clickable) {
   window.__okbmAppendActivityRows(listEl);
 };
 
+window.__okbmReportTotalPageSize = 10;
+
+window.__okbmBindReportTotalPager = function() {
+  var scroller = document.getElementById('userProfileScrollBody');
+  if (!scroller || scroller.getAttribute('data-total-activity-pager') === '1') return;
+  scroller.setAttribute('data-total-activity-pager', '1');
+  scroller.addEventListener('scroll', function() {
+    var box = document.getElementById('reportTotalActivityContainer');
+    var list = document.getElementById('reportTotalActivityList');
+    if (!box || box.style.display === 'none' || !list) return;
+    if (list.__activityLoading || list.__activityHasMore === false) return;
+    var sRect = scroller.getBoundingClientRect();
+    var lRect = list.getBoundingClientRect();
+    if (lRect.bottom - sRect.bottom < 140) {
+      window.__okbmFetchReportTotalPage(list);
+    }
+  }, { passive: true });
+};
+
+window.__okbmFetchReportTotalPage = function(listEl) {
+  if (!listEl || listEl.__activityLoading || listEl.__activityHasMore === false) return;
+  var gen = listEl.__activityGen;
+  var offset = listEl.__activityOffset || 0;
+  var limit = window.__okbmReportTotalPageSize || 10;
+  var curUserId = (typeof okbmGetCurrentUserId === 'function') ? String(okbmGetCurrentUserId() || '').trim() : '';
+  var targetUrl = window.SUPABASE_URL || (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '');
+  var targetKey = window.SUPABASE_ANON_KEY || (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '');
+
+  var paintRows = function(rows, hasMore) {
+    if (!listEl || listEl.__activityGen !== gen) return;
+    var batch = Array.isArray(rows) ? rows : [];
+    var seen = listEl.__activitySeen || {};
+    var fresh = [];
+    batch.forEach(function(row) {
+      if (!row) return;
+      var rid = String(row.id || '').trim();
+      if (rid && seen[rid]) return;
+      if (rid) seen[rid] = true;
+      fresh.push(row);
+    });
+    listEl.__activitySeen = seen;
+    listEl.__activityOffset = offset + batch.length;
+    listEl.__activityHasMore = hasMore && batch.length >= limit;
+    listEl.__activityLoading = false;
+    if (!fresh.length && (listEl.__activityShown || 0) === 0) {
+      listEl.innerHTML = '<div style="font-size:0.66rem; color:#64748b; text-align:center; padding:10px 0;">기록이 없습니다.</div>';
+      return;
+    }
+    var shown = listEl.__activityShown || 0;
+    var color = listEl.__activityColor || '#fde68a';
+    listEl.insertAdjacentHTML('beforeend', fresh.map(function(r, i) {
+      return window.__okbmActivityRowHtml(r, shown + i, color, true);
+    }).join(''));
+    listEl.__activityShown = shown + fresh.length;
+  };
+
+  if (!curUserId || !targetUrl || !targetKey) {
+    var localLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+      ? window._getRomanticRouteOutdoorLogs().slice().sort(function(a, b) {
+        var ta = new Date(String(a.date || '').replace(/\./g, '-')).getTime() || 0;
+        var tb = new Date(String(b.date || '').replace(/\./g, '-')).getTime() || 0;
+        return tb - ta;
+      })
+      : [];
+    paintRows(localLogs.slice(offset, offset + limit), localLogs.length > offset + limit);
+    return;
+  }
+
+  listEl.__activityLoading = true;
+  var ownerFilter = (typeof window.okbmFeedOwnerFilter === 'function')
+    ? window.okbmFeedOwnerFilter(curUserId)
+    : ('user_id=eq.' + encodeURIComponent(curUserId));
+  var query = targetUrl + '/rest/v1/feeds?' + ownerFilter
+    + '&select=id,spot,date&order=date.desc&offset=' + offset + '&limit=' + limit;
+  var headers = {
+    'apikey': targetKey,
+    'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+    'Content-Type': 'application/json'
+  };
+  fetch(query, { headers: headers }).then(function(res) {
+    if (!res || !res.ok) return [];
+    return res.json();
+  }).then(function(rows) {
+    var batch = Array.isArray(rows) ? rows : [];
+    paintRows(batch, batch.length >= limit);
+  }).catch(function() {
+    if (!listEl || listEl.__activityGen !== gen) return;
+    listEl.__activityLoading = false;
+    listEl.__activityHasMore = false;
+    if ((listEl.__activityShown || 0) === 0) {
+      listEl.innerHTML = '<div style="font-size:0.66rem; color:#64748b; text-align:center; padding:10px 0;">기록을 불러오지 못했습니다.</div>';
+    }
+  });
+};
+
 window.renderReportTotalActivityList = function() {
   var listEl = document.getElementById('reportTotalActivityList');
   var titleEl = document.getElementById('reportTotalActivityTitle');
   if (!listEl) return;
 
-  var validLogs = window._getRomanticRouteOutdoorLogs().slice().sort(function(a, b) {
-    var ta = new Date(String(a.date || '').replace(/\./g, '-')).getTime() || 0;
-    var tb = new Date(String(b.date || '').replace(/\./g, '-')).getTime() || 0;
-    return tb - ta;
-  });
+  var totalEl = document.getElementById('reportTotalCountNumber');
+  var totalNum = totalEl ? String(totalEl.innerText || '').trim() : '';
+  if (titleEl) titleEl.innerText = '누적 활동 기록' + (totalNum ? ' (' + totalNum + ')' : '');
 
-  if (titleEl) titleEl.innerText = '누적 활동 기록 (' + validLogs.length + ')';
-  window.__okbmPaintActivityList(listEl, validLogs, '#fde68a', true);
+  listEl.__activityGen = (listEl.__activityGen || 0) + 1;
+  listEl.__activityOffset = 0;
+  listEl.__activityShown = 0;
+  listEl.__activitySeen = {};
+  listEl.__activityHasMore = true;
+  listEl.__activityLoading = false;
+  listEl.__activityColor = '#fde68a';
+  listEl.innerHTML = '';
+  window.__okbmBindReportTotalPager();
+  window.__okbmFetchReportTotalPage(listEl);
 };
 
 window.renderReportYearActivityList = function() {
@@ -4562,7 +4691,7 @@ function ensureMyReportAndAuthModalsInDOM() {
             <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.06);">
               <span id="reportTotalActivityTitle" style="font-size:0.70rem; color:#fde68a; font-weight:800;">누적 활동 기록</span>
             </div>
-            <div id="reportTotalActivityList" style="display:flex; flex-direction:column; gap:2px; max-height:280px; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-right:2px;"></div>
+            <div id="reportTotalActivityList" style="display:flex; flex-direction:column; gap:2px; padding-right:2px;"></div>
           </div>
 
           <!-- 1. 장비 & 세팅 무게 -->
