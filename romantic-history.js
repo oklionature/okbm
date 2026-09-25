@@ -1180,6 +1180,68 @@
     }
   };
 
+  window.okbmStrictCalendarDateKey = function(value) {
+    var raw = String(value == null ? '' : value).trim();
+    if (!raw || raw === 'Invalid Date') return '';
+    var dateOnly = raw.split('T')[0].split(' ')[0];
+    var parts = dateOnly.match(/\d+/g);
+    if (!parts || parts.length < 3) return '';
+    var y;
+    var m;
+    var d;
+    if (String(parts[0]).length === 4) {
+      y = parseInt(parts[0], 10);
+      m = parseInt(parts[1], 10);
+      d = parseInt(parts[2], 10);
+    } else if (String(parts[2]).length === 4) {
+      y = parseInt(parts[2], 10);
+      m = parseInt(parts[0], 10);
+      d = parseInt(parts[1], 10);
+    } else {
+      return '';
+    }
+    if (!y || y < 1900 || y > 2100) return '';
+    if (!(m >= 1 && m <= 12 && d >= 1 && d <= 31)) return '';
+    return y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0');
+  };
+
+  window.okbmRecordCalendarDateKey = function(rec) {
+    if (!rec) return '';
+    var fromDate = window.okbmStrictCalendarDateKey(rec.date || rec.tripDate || rec.trip_date || '');
+    if (fromDate) return fromDate;
+    var y = parseInt(rec.year, 10);
+    var m = parseInt(rec.month, 10);
+    var d = parseInt(rec.day, 10);
+    if (!y || y < 1900 || y > 2100) return '';
+    if (!(m >= 1 && m <= 12 && d >= 1 && d <= 31)) return '';
+    return y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0');
+  };
+
+  window.okbmRecordIsMine = function(rec) {
+    if (!rec) return false;
+    var myId = '';
+    try {
+      myId = (typeof window.okbmGetCurrentUserId === 'function')
+        ? String(window.okbmGetCurrentUserId() || '').trim()
+        : '';
+    } catch (eMine) { myId = ''; }
+    var rowId = String(rec.user_id || rec.userId || '').trim();
+    if (!rowId) return false;
+    if (!myId) return false;
+    if (typeof window.okbmSameAccountId === 'function') return window.okbmSameAccountId(myId, rowId);
+    return myId === rowId;
+  };
+
+  window.okbmConfirmReplaceSameDayRecords = async function(dateKey) {
+    var norm = window.okbmStrictCalendarDateKey(dateKey) || window.okbmRecordCalendarDateKey({ date: dateKey });
+    if (!norm) return true;
+    if (typeof showToast === 'function') {
+      showToast('같은 날 기록이 있습니다. 삭제하겠습니까?', 'info', 2800);
+    }
+    await new Promise(function(resolve) { setTimeout(resolve, 400); });
+    return confirm('[' + norm + '] 기존 기록을 삭제하고 새로 작성할까요?\n\n다른 날 기록은 그대로 둡니다.');
+  };
+
   window.__savePackingHistoryRecordBody = async function(record) {
     if (!record) return null;
 
@@ -1267,26 +1329,13 @@
       });
     }
 
-    // 같은 id 수정은 그대로. 새 id로 저장할 때만 같은 날짜 기존 피드를 지우고 1건으로 교체.
+    // 같은 id 수정은 그대로. 새 id일 때만 같은 날·내 기록만 확인하고 교체한다.
     var resolveRecDateKey = function(rec) {
-      if (typeof window.okbmGetRecordPlanDateKey === 'function') {
-        return window.okbmGetRecordPlanDateKey(rec) || '';
-      }
-      if (!rec) return '';
-      if (rec.date || rec.tripDate || rec.trip_date) {
-        return String(rec.date || rec.tripDate || rec.trip_date).replace(/[-/]/g, '.');
-      }
-      var y = Number(rec.year);
-      var m = Number(rec.month);
-      var d = Number(rec.day);
-      if (y && m && d) {
-        return y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0');
-      }
-      return '';
+      return window.okbmRecordCalendarDateKey(rec);
     };
 
     var vaultReplacedIds = [];
-    var vaultReplacesSameDate = existIdx === -1;
+    var vaultReplacesSameDate = false;
 
     if (existIdx !== -1) {
       normalized.id = list[existIdx].id;
@@ -1313,21 +1362,26 @@
       var saveDateKey = resolveRecDateKey(normalized);
       if (saveDateKey) {
         var sameDateIdSet = {};
-        var collectSameDateId = function(it) {
+        var collectSameDateId = function(it, requireOwner) {
           if (!it || resolveRecDateKey(it) !== saveDateKey) return;
+          if (requireOwner && !window.okbmRecordIsMine(it)) return;
           var sid = String(it.id || '').trim();
           if (!sid || sid === String(normalized.id).trim()) return;
           sameDateIdSet[sid] = true;
         };
-        list.forEach(collectSameDateId);
-        [].concat(window.interactiveHistory || [], window.__allLoadedFeeds || [], window.heroTopRecords || []).forEach(collectSameDateId);
+        list.forEach(function(it) { collectSameDateId(it, false); });
+        [].concat(window.__allLoadedFeeds || [], window.heroTopRecords || []).forEach(function(it) {
+          collectSameDateId(it, true);
+        });
 
         var sameDateIds = Object.keys(sameDateIdSet);
+        if (sameDateIds.length > 0 && !record.__okbmSameDayConfirmed) {
+          var allowReplace = await window.okbmConfirmReplaceSameDayRecords(saveDateKey);
+          if (!allowReplace) return null;
+        }
         vaultReplacedIds = sameDateIds.slice();
+        vaultReplacesSameDate = sameDateIds.length > 0;
         if (sameDateIds.length > 0) {
-          if (typeof showToast === 'function') {
-            showToast('기존 피드는 삭제 됩니다.', 'info', 2800);
-          }
 
           var replaceTargetUrl = window.SUPABASE_URL || '';
           var replaceTargetKey = window.SUPABASE_ANON_KEY || '';
@@ -6900,9 +6954,9 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     var isNew = Boolean(record.isNewPost);
 
-    if (isNew && record.date && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(record)) {
+    if (record.date && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(record)) {
       if (typeof showToast === 'function') {
-        showToast('출발일 당일 이후에 현장 사진과 일지를 등록할 수 있습니다.', 'info', 2400, { html: HISTORY_TOAST_VEC.clock });
+        showToast('디데이 이후 작성할수있습니다', 'info', 2400, { html: HISTORY_TOAST_VEC.clock });
       }
       return;
     }
@@ -7088,7 +7142,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (target.date && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(target)) {
       triggerHaptic(20);
       if (typeof showToast === 'function') {
-        showToast('출발일 당일 이후에 현장 사진과 일지를 등록할 수 있습니다.', 'info', 2400, { html: HISTORY_TOAST_VEC.clock });
+        showToast('디데이 이후 작성할수있습니다', 'info', 2400, { html: HISTORY_TOAST_VEC.clock });
       }
       window.__isSubmittingRichTrip = false;
       return;
@@ -9175,12 +9229,10 @@ window.renderHistoryStage = function(isLoading, opts) {
     }
 
     var vaultFeedDateKey = function(rec) {
-      if (typeof window.okbmGetRecordPlanDateKey === 'function') {
-        return window.okbmGetRecordPlanDateKey(rec) || '';
+      if (typeof window.okbmRecordCalendarDateKey === 'function') {
+        return window.okbmRecordCalendarDateKey(rec) || '';
       }
       if (!rec) return '';
-      var raw = rec.date || rec.tripDate || rec.trip_date || '';
-      if (raw) return String(raw).replace(/[-/]/g, '.').split('T')[0].split(' ')[0];
       return '';
     };
 

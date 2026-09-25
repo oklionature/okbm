@@ -2452,7 +2452,36 @@ window.saveCurrentPackingRecord = function() {
       newRecord.isPublished = false;
     }
 
-    function commitPlanPackingToTemplate() {
+    function hasSameDayPackingRecord(dateKey) {
+      var norm = (typeof window.okbmStrictCalendarDateKey === 'function')
+        ? window.okbmStrictCalendarDateKey(dateKey)
+        : '';
+      if (!norm) return false;
+      var historyList = (typeof window.safeGetStorage === 'function')
+        ? (window.safeGetStorage('okbm_packing_history', []) || [])
+        : (safeGetJSON('okbm_packing_history', []) || []);
+      if (!Array.isArray(historyList)) historyList = [];
+      var dateOf = (typeof window.okbmRecordCalendarDateKey === 'function')
+        ? window.okbmRecordCalendarDateKey
+        : function(rec) {
+          return (typeof window.okbmGetRecordPlanDateKey === 'function') ? window.okbmGetRecordPlanDateKey(rec) : '';
+        };
+      for (var i = 0; i < historyList.length; i++) {
+        var rec = historyList[i];
+        if (!rec || String(rec.id || '') === recordId) continue;
+        if (dateOf(rec) === norm) return true;
+      }
+      return false;
+    }
+
+    async function commitPlanPackingToTemplate() {
+      if (hasSameDayPackingRecord(cleanDateStr)) {
+        var allow = (typeof window.okbmConfirmReplaceSameDayRecords === 'function')
+          ? await window.okbmConfirmReplaceSameDayRecords(cleanDateStr)
+          : confirm('[' + cleanDateStr + '] 기존 기록을 삭제하고 새로 작성할까요?');
+        if (!allow) return;
+        newRecord.__okbmSameDayConfirmed = true;
+      }
       triggerHaptic(15);
       window.currentShareRecord = newRecord;
       window.currentShareItems = packedItems;
@@ -5505,14 +5534,22 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.okbmNormalizePlanDateKey = function(dateKey) {
+    if (typeof window.okbmStrictCalendarDateKey === 'function') {
+      return window.okbmStrictCalendarDateKey(dateKey);
+    }
     var raw = String(dateKey || '').trim();
     if (!raw) return '';
-    var parts = raw.match(/\d+/g);
-    if (!parts || parts.length < 3) return raw.replace(/[-/]/g, '.');
-    var y = parts[0].length === 4 ? parts[0] : parts[2];
+    var dateOnly = raw.split('T')[0].split(' ')[0];
+    var parts = dateOnly.match(/\d+/g);
+    if (!parts || parts.length < 3) return '';
+    var y = parts[0].length === 4 ? parts[0] : (String(parts[2]).length === 4 ? parts[2] : '');
     var m = parts[0].length === 4 ? parts[1] : parts[0];
     var d = parts[0].length === 4 ? parts[2] : parts[1];
-    return String(y) + '.' + String(parseInt(m, 10)).padStart(2, '0') + '.' + String(parseInt(d, 10)).padStart(2, '0');
+    var yi = parseInt(y, 10);
+    var mi = parseInt(m, 10);
+    var di = parseInt(d, 10);
+    if (!yi || yi < 1900 || yi > 2100 || mi < 1 || mi > 12 || di < 1 || di > 31) return '';
+    return String(yi) + '.' + String(mi).padStart(2, '0') + '.' + String(di).padStart(2, '0');
   };
 
   window.okbmPlanDateKeyVariants = function(dateKey) {
@@ -5538,13 +5575,16 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.okbmGetRecordPlanDateKey = function(rec) {
+    if (typeof window.okbmRecordCalendarDateKey === 'function') {
+      return window.okbmRecordCalendarDateKey(rec);
+    }
     if (!rec) return '';
     var fromDate = window.okbmNormalizePlanDateKey(rec.date || rec.tripDate || rec.trip_date || '');
     if (fromDate) return fromDate;
     var y = Number(rec.year);
     var m = Number(rec.month);
     var d = Number(rec.day);
-    if (y && m && d) {
+    if (y >= 1900 && y <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
       return y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0');
     }
     return '';
@@ -6527,9 +6567,23 @@ window.commitPlanDestination = async function(dateKey) {
     var camera = okbmPlanKbCameraEl();
     window.__planMemoKbActive = false;
     window.__planMemoKbShift = 0;
-    if (!camera) return;
-    camera.style.removeProperty('transform');
-    camera.style.removeProperty('-webkit-transform');
+    if (camera) {
+      camera.style.removeProperty('transform');
+      camera.style.removeProperty('-webkit-transform');
+    }
+    var cube = document.getElementById('planCubeGrid');
+    if (cube) cube.style.setProperty('display', 'grid', 'important');
+    var cal = document.getElementById('planCalendarCardWrap');
+    if (cal) {
+      cal.style.removeProperty('height');
+      cal.style.removeProperty('min-height');
+      cal.style.removeProperty('flex');
+    }
+    var memoWrap = document.getElementById('planMemoCardWrap');
+    if (memoWrap) {
+      memoWrap.style.removeProperty('flex');
+      memoWrap.style.removeProperty('min-height');
+    }
   }
 
   window.applyPlanMemoKeyboardLayout = function(isOpen) {
@@ -6544,48 +6598,25 @@ window.commitPlanDestination = async function(dateKey) {
     if (!camera || !memo) return;
     window.__planMemoKbActive = true;
 
+    camera.style.removeProperty('transform');
+    camera.style.removeProperty('-webkit-transform');
+
+    var cube = document.getElementById('planCubeGrid');
+    if (cube) cube.style.setProperty('display', 'none', 'important');
+
     var vv = window.visualViewport;
-    var vvTop = vv ? Math.round(vv.offsetTop || 0) : 0;
-    var vvH = vv ? Math.round(vv.height || window.innerHeight) : window.innerHeight;
-    var vvBottom = vvTop + vvH;
-    var layoutH = window.innerHeight;
-    var shrunk = Math.max(0, layoutH - vvBottom);
-    var isTouch = false;
-    try {
-      isTouch = window.matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window);
-    } catch (e) {
-      isTouch = ('ontouchstart' in window);
+    var visible = vv ? Math.round(vv.height || window.innerHeight) : window.innerHeight;
+    var calH = Math.min(236, Math.max(168, Math.round(visible * 0.46)));
+    var cal = document.getElementById('planCalendarCardWrap');
+    if (cal) {
+      cal.style.setProperty('height', calH + 'px', 'important');
+      cal.style.setProperty('min-height', '0', 'important');
+      cal.style.setProperty('flex', '0 0 auto', 'important');
     }
-
-    var cameraTop = vvTop;
-    var cameraBottom = vvBottom;
-    if (shrunk < 80 && isTouch) {
-      cameraTop = 0;
-      cameraBottom = Math.max(240, layoutH - 340);
-    }
-
-    var currentShift = window.__planMemoKbShift || 0;
-    var rect = memo.getBoundingClientRect();
-    var top = rect.top + currentShift;
-    var bottom = rect.bottom + currentShift;
-    var pad = 10;
-    var needUp = 0;
-    if (bottom + pad > cameraBottom) {
-      needUp = bottom + pad - cameraBottom;
-    }
-    if (top - needUp < cameraTop + pad) {
-      needUp = Math.max(needUp, top - (cameraTop + pad));
-    }
-    needUp = Math.max(0, Math.round(needUp));
-    window.__planMemoKbShift = needUp;
-
-    if (needUp > 0) {
-      var t = 'translate3d(0, ' + (-needUp) + 'px, 0)';
-      camera.style.setProperty('transform', t, 'important');
-      camera.style.setProperty('-webkit-transform', t, 'important');
-    } else {
-      camera.style.removeProperty('transform');
-      camera.style.removeProperty('-webkit-transform');
+    var memoWrap = document.getElementById('planMemoCardWrap');
+    if (memoWrap) {
+      memoWrap.style.setProperty('flex', '1 1 auto', 'important');
+      memoWrap.style.setProperty('min-height', '96px', 'important');
     }
   };
 
