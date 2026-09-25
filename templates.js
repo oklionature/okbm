@@ -1116,11 +1116,27 @@ function positionReadyShotSharePanel(sheet) {
   panel.style.visibility = 'visible';
 }
 
+function isOkbmNativeApp() {
+  try {
+    return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+  } catch (e) {
+    return false;
+  }
+}
+
+function openExternalAppUrl(url) {
+  try { window.location.href = url; } catch (e) {}
+}
+
 function openInstagramApp() {
   var ua = navigator.userAgent || '';
-  var isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+  var isMobile = /Android|iPhone|iPad|iPod/i.test(ua) || isOkbmNativeApp();
   if (!isMobile) {
     try { window.open('https://www.instagram.com/', '_blank', 'noopener'); } catch (e) {}
+    return;
+  }
+  if (isOkbmNativeApp()) {
+    openExternalAppUrl('instagram://app');
     return;
   }
   var opened = false;
@@ -1143,6 +1159,47 @@ function openInstagramApp() {
       } catch (e3) {}
     }, 450);
   }
+}
+
+function openReadyShotKakaoLink(imageUrl, title, desc) {
+  var appKey = window.KAKAO_APP_KEY || '557f5de0f6391a2419bc5592e6a9c9c1';
+  var shareUrl = 'https://romanticroute.kr/';
+  var templateObject = {
+    object_type: 'feed',
+    content: {
+      title: String(title || '낭만루트 READY SHOT').slice(0, 40),
+      description: String(desc || '').slice(0, 80),
+      image_url: imageUrl,
+      image_width: 1080,
+      image_height: 1440,
+      link: { web_url: shareUrl, mobile_web_url: shareUrl }
+    },
+    buttons: [{
+      title: '앱에서 보기',
+      link: { web_url: shareUrl, mobile_web_url: shareUrl }
+    }]
+  };
+  var apiQuery = new URLSearchParams();
+  apiQuery.set('link_ver', '4.0');
+  apiQuery.set('template_object', JSON.stringify(templateObject));
+  var ka = 'sdk/2.7.2 os/javascript sdk_type/javascript lang/ko-KR device/Android origin/' + encodeURIComponent('https://romanticroute.kr');
+  return fetch('https://kapi.kakao.com/v2/api/kakaolink/talk/template/default?' + apiQuery.toString(), {
+    method: 'GET',
+    headers: { Authorization: 'KakaoAK ' + appKey, KA: ka }
+  }).then(function(res) {
+    if (!res.ok) throw new Error('kakao link ' + res.status);
+    return res.json();
+  }).then(function(validated) {
+    var linkQuery = new URLSearchParams();
+    linkQuery.set('appkey', appKey);
+    linkQuery.set('appver', '1.0');
+    linkQuery.set('linkver', '4.0');
+    linkQuery.set('extras', JSON.stringify({ KA: ka }));
+    linkQuery.set('template_json', JSON.stringify(validated.template_msg || {}));
+    if (validated.template_args) linkQuery.set('template_args', JSON.stringify(validated.template_args));
+    if (validated.template_id != null) linkQuery.set('template_id', String(validated.template_id));
+    openExternalAppUrl('kakaolink://send?' + linkQuery.toString());
+  });
 }
 
 function ensureReadyShotShareSheetDOM() {
@@ -1231,8 +1288,13 @@ window.handleReadyShotShareAction = async function(act) {
     }
 
     if (act === 'instagram') {
-      openInstagramApp();
-      downloadReadyShotBlob(blob, fileName);
+      if (isOkbmNativeApp()) {
+        downloadReadyShotBlob(blob, fileName);
+        setTimeout(openInstagramApp, 700);
+      } else {
+        openInstagramApp();
+        downloadReadyShotBlob(blob, fileName);
+      }
       if (typeof showToast === 'function') showToast('이미지를 저장했습니다. 인스타를 엽니다.', 'success', 2200);
       return;
     }
@@ -1243,6 +1305,17 @@ window.handleReadyShotShareAction = async function(act) {
       var rec = window.currentShareRecord || {};
       var title = '낭만루트 READY SHOT';
       var desc = String(rec.spot || rec.oneLineMemo || '패킹 카드').slice(0, 80);
+      if (isOkbmNativeApp()) {
+        try {
+          await openReadyShotKakaoLink(imageUrl, title, desc);
+          return;
+        } catch (eNativeKakao) {
+          console.warn('[templates.js:handleReadyShotShareAction:kakaolink]', eNativeKakao);
+          downloadReadyShotBlob(blob, fileName);
+          if (typeof showToast === 'function') showToast('카카오 공유를 열 수 없어 이미지를 저장했습니다.', 'warn', 2200);
+          return;
+        }
+      }
       var sendKakao = function() {
         if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
           var shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
