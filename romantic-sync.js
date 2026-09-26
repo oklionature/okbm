@@ -8358,7 +8358,7 @@ window.openPastTripRegisterModal = function(ev) {
     '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; background:#07090e; box-sizing:border-box;">' +
       '<div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">' +
         '<button type="button" onclick="window.closePastTripRegisterModal();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer;">◀</button>' +
-        '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">과거 추억 등록</span>' +
+        '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">추억등록</span>' +
         '<div style="width:30px;"></div>' +
       '</div>' +
       '<div style="flex:1 1 0%; min-height:0; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box;">' +
@@ -8772,10 +8772,10 @@ window.okbmEnsurePastTripRegisterCta = function() {
   for (var i = 0; i < buttons.length; i++) {
     var b = buttons[i];
     var t = String(b.innerText || '').replace(/\s+/g, ' ').trim();
-    if (t.indexOf('결산 카드') !== -1 || t.indexOf('과거 추억 등록') !== -1) {
+    if (t.indexOf('결산 카드') !== -1 || t.indexOf('과거 추억 등록') !== -1 || t.indexOf('추억등록') !== -1) {
       b.setAttribute('onclick', 'window.openPastTripRegisterModal(event);');
       var span = b.querySelector('span');
-      if (span) span.textContent = '과거 추억 등록';
+      if (span) span.textContent = '추억등록';
       return;
     }
   }

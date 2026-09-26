@@ -3802,9 +3802,9 @@ window.saveCurrentPackingRecord = function() {
             <div style="position:absolute; left:calc(67.5% + 1.05px - 12px); top:calc(67.5% + 1.05px); width:12px; height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-bottom:1px solid rgba(255,255,255,0.12);"></div>
             <div style="position:absolute; left:calc(67.5% + 1.05px); top:calc(67.5% + 1.05px); width:calc(32.5% - 1.05px); height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-right:1px solid rgba(255,255,255,0.12); border-bottom:1px solid rgba(255,255,255,0.12); border-radius:0 0 12px 0;"></div>
           </div>
-          <button type="button" onclick="window.openPastTripRegisterFromPlan(event)" aria-label="과거 추억 등록" style="position:absolute; left:calc(32.5% - 1.05px); top:calc(32.5% - 1.05px); width:calc(35% + 2.1px); height:calc(35% + 2.1px); z-index:2; margin:0; padding:4px; border-radius:12px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.035); color:#ffffff; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; box-sizing:border-box; appearance:none; -webkit-appearance:none;">
+          <button type="button" onclick="window.openPastTripRegisterFromPlan(event)" aria-label="추억등록" style="position:absolute; left:calc(32.5% - 1.05px); top:calc(32.5% - 1.05px); width:calc(35% + 2.1px); height:calc(35% + 2.1px); z-index:2; margin:0; padding:4px; border-radius:12px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.035); color:#ffffff; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; box-sizing:border-box; appearance:none; -webkit-appearance:none;">
             <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:#cbd5e1; fill:none; stroke-width:2;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
-            <span style="font-size:0.66rem; font-weight:900; line-height:1.25; text-align:center;">과거 추억<br>등록</span>
+            <span style="font-size:0.66rem; font-weight:900; line-height:1.25; text-align:center;">추억등록</span>
           </button>
         </div>
 
@@ -5459,9 +5459,8 @@ window.saveCurrentPackingRecord = function() {
       String(now.getDate()).padStart(2, '0')
     );
     if (window.isPastPlanDate(dateStr)) {
-      if (typeof showToast === 'function') {
-        showToast('과거 일정은 마이리포트에서 입력할 수 있습니다.', 'info', 2600);
-      }
+      window.activeSelectedDateKey = dateStr;
+      if (typeof window.openPastTripRegisterFromPlan === 'function') window.openPastTripRegisterFromPlan();
       return;
     }
     if (!(await window.okbmConfirmReplacePlanOnCalendar(dateStr))) return;
@@ -5517,9 +5516,8 @@ window.saveCurrentPackingRecord = function() {
   //  달력/메모장의 박지명을 배낭 계산기로 직통 주입하여 기록 시작
   window.startPackingForDate = async function(dateStr, spotName, elev) {
     if (window.isPastPlanDate(dateStr)) {
-      if (typeof showToast === 'function') {
-        showToast('과거 일정은 마이리포트에서 입력할 수 있습니다.', 'info', 2600);
-      }
+      window.activeSelectedDateKey = dateStr;
+      if (typeof window.openPastTripRegisterFromPlan === 'function') window.openPastTripRegisterFromPlan();
       return;
     }
     if (!(await window.okbmConfirmReplacePlanOnCalendar(dateStr))) return;
@@ -6065,6 +6063,16 @@ window.saveCurrentPackingRecord = function() {
 
     var dateKey = year + '.' + String(month).padStart(2, '0') + '.' + String(day).padStart(2, '0');
     window.activeSelectedDateKey = dateKey;
+
+    if (window.isPastPlanDate(dateKey)) {
+      window.__pendingPlanDestination = null;
+      var pastHud = document.getElementById('datePickGuideHud');
+      if (pastHud) pastHud.remove();
+      window.activePlanSubMode = 'calendar';
+      window.renderPlanStage();
+      if (typeof window.openPastTripRegisterFromPlan === 'function') window.openPastTripRegisterFromPlan();
+      return;
+    }
 
     // 📍 찜목록에서 장소 일정등록 선택 후 날짜를 터치한 경우 -> 즉시 메모 및 장소 등록
     if (window.__pendingPlanDestination) {
