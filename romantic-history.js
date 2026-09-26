@@ -292,6 +292,26 @@
         text-align: center !important;
         box-sizing: border-box !important;
       }
+      .reel-page-snap[data-vault-intro="1"] .vault-intro-close {
+        position: absolute !important;
+        top: calc(var(--okbm-status-top, 0px) + 10px) !important;
+        right: 14px !important;
+        z-index: 30 !important;
+        width: 36px !important;
+        height: 36px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        border: 1px solid rgba(255,255,255,0.22) !important;
+        background: rgba(255,255,255,0.08) !important;
+        color: #ffffff !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+        -webkit-tap-highlight-color: transparent !important;
+      }
 
       .romantic-history-content {
         width: 100% !important;
@@ -8624,8 +8644,26 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     '</div>';
   };
 
+  function okbmVaultIntroDismissed() {
+    try { return localStorage.getItem('okbm_vault_intro_dismissed') === '1'; } catch (e) { return false; }
+  }
+
+  function okbmVaultEmptySnapHtml() {
+    return '<div class="reel-page-snap" data-vault-empty="1" style="width:100% !important; height:100% !important; display:flex !important; flex-direction:column !important; align-items:center !important; justify-content:center !important; gap:14px; padding:30px; text-align:center; box-sizing:border-box; background:#000000;">' +
+      '<div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8;">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:24px; height:24px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+      '</div>' +
+      '<div style="font-size:0.95rem; font-weight:800; color:#ffffff;">등록된 낭만루트 기록이 없습니다.</div>' +
+      '<div style="font-size:0.75rem; color:#94a3b8; line-height:1.5;">플랜에서 패킹 완료 후 보관함에 저장된 루트 기록이 표시됩니다.</div>' +
+    '</div>';
+  }
+
   function okbmVaultIntroSnapHtml() {
+    if (okbmVaultIntroDismissed()) return '';
     return '<div id="vaultIntroSnap" class="reel-page-snap" data-vault-intro="1">' +
+      '<button type="button" class="vault-intro-close" aria-label="안내 닫기" onclick="window.okbmDismissVaultIntro(event)">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:16px; height:16px; pointer-events:none;"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>' +
+      '</button>' +
       '<p style="margin:0; max-width:280px; font-size:0.96rem; font-weight:800; color:#ffffff; line-height:1.65; word-break:keep-all; letter-spacing:-0.2px;">등록된 장소에 추억을 피드로 남기시면<br>지도 후기피드에 노출이됩니다.</p>' +
       '<img src="logo.png" alt="낭만루트 로고" style="width:128px; height:128px; object-fit:contain; display:block; flex-shrink:0;" />' +
       '<p style="margin:0; max-width:260px; font-size:0.96rem; font-weight:800; color:#ffffff; line-height:1.65; word-break:keep-all; letter-spacing:-0.2px;">다음 낭만루터 분들에게<br>생생한 후기를 알려주세요</p>' +
@@ -8634,6 +8672,11 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
   function okbmPlaceVaultIntroFirst(reel) {
     if (!reel) return;
+    if (okbmVaultIntroDismissed()) {
+      var staleIntro = reel.querySelector('[data-vault-intro="1"]');
+      if (staleIntro && staleIntro.parentNode) staleIntro.parentNode.removeChild(staleIntro);
+      return;
+    }
     var intro = reel.querySelector('[data-vault-intro="1"]');
     if (!intro) {
       var holder = document.createElement('template');
@@ -8643,6 +8686,19 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     if (!intro) return;
     if (reel.firstElementChild !== intro) reel.insertBefore(intro, reel.firstElementChild);
   }
+
+  window.okbmDismissVaultIntro = function(ev) {
+    if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+    try { localStorage.setItem('okbm_vault_intro_dismissed', '1'); } catch (e) {}
+    var reel = document.getElementById('reelsVerticalContainer');
+    if (!reel) return;
+    var intro = reel.querySelector('[data-vault-intro="1"]');
+    if (intro && intro.parentNode) intro.parentNode.removeChild(intro);
+    if (!reel.querySelector('.reel-page-snap')) {
+      reel.insertAdjacentHTML('beforeend', okbmVaultEmptySnapHtml());
+    }
+    reel.scrollTop = 0;
+  };
 
   function okbmSyncHistoryReelInPlace(currentList, ctx) {
     var reel = document.getElementById('reelsVerticalContainer');
@@ -8914,7 +8970,7 @@ window.renderHistoryStage = function(isLoading, opts) {
         '<div style="font-size:0.86rem; font-weight:800; color:#e2e8f0;">최신 피드 동기화 중...</div>' +
       '</div>';
     } else if (currentList.length === 0) {
-      reelSlidesHtml = okbmVaultIntroSnapHtml();
+      reelSlidesHtml = okbmVaultIntroSnapHtml() || okbmVaultEmptySnapHtml();
     } else {
       var feedRenderCtx = {
         myUserId: myUserId,
