@@ -9637,7 +9637,9 @@ window.okbmOpenAccountDeletionConfirm = function() {
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');
   overlay.setAttribute('aria-labelledby', 'okbmAccountDeletionTitle');
-  overlay.style.cssText = 'position:fixed; inset:0; z-index:2147483000; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;';
+  // 설정 모달(2147483642)과 다른 최상단 레이어(2147483647)보다 위에 떠야 한다.
+  // z-index는 최댓값으로 두고, body 맨 끝에 붙여 같은 값끼리도 가장 위에 오게 한다.
+  overlay.style.cssText = 'position:fixed; inset:0; z-index:2147483647 !important; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;';
   overlay.innerHTML =
     '<div style="width:100%; max-width:340px; background:#0f1720; border:1px solid rgba(244,63,94,0.35); border-radius:14px; padding:20px 18px 16px; box-sizing:border-box; color:#e2e8f0; font-family:\'Pretendard Variable\', Pretendard, -apple-system, BlinkMacSystemFont, \'Apple SD Gothic Neo\', sans-serif; letter-spacing:-0.01em;">' +
       '<div id="okbmAccountDeletionTitle" style="font-size:0.95rem; font-weight:900; color:#fda4af; margin-bottom:10px;">정말 탈퇴하시겠어요?</div>' +
