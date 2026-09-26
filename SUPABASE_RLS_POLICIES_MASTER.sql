@@ -1681,6 +1681,8 @@ REVOKE TRUNCATE ON TABLE public.stats, public.direct_threads, public.visit_seen 
 -- -------------------------------------------------------------------------
 
 -- 6-1. 정책·조회에 쓰이는 컬럼 인덱스 (C2, P8)
+-- direct_threads(user_a/user_b, last_at), proposals/spot_corrections/trips/user_blocks/
+-- feed_reports/user_notifications의 사용자 컬럼 인덱스는 운영 DB에 이미 있어서 만들지 않는다.
 CREATE INDEX IF NOT EXISTS feeds_user_date_idx
   ON public.feeds (user_id, date DESC, created_at DESC);
 CREATE INDEX IF NOT EXISTS feeds_published_likes_idx
@@ -1688,18 +1690,22 @@ CREATE INDEX IF NOT EXISTS feeds_published_likes_idx
 CREATE INDEX IF NOT EXISTS feed_likes_user_id_idx ON public.feed_likes (user_id);
 CREATE INDEX IF NOT EXISTS comments_user_id_idx ON public.comments (user_id);
 CREATE INDEX IF NOT EXISTS talks_user_id_idx ON public.talks (user_id);
-CREATE INDEX IF NOT EXISTS direct_threads_user_a_idx ON public.direct_threads (user_a, last_at DESC);
-CREATE INDEX IF NOT EXISTS direct_threads_user_b_idx ON public.direct_threads (user_b, last_at DESC);
-CREATE INDEX IF NOT EXISTS user_notifications_user_created_idx
-  ON public.user_notifications (user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS proposals_user_id_idx ON public.proposals (user_id);
 CREATE INDEX IF NOT EXISTS proposals_created_idx ON public.proposals (created_at DESC);
-CREATE INDEX IF NOT EXISTS spot_corrections_user_id_idx ON public.spot_corrections (user_id);
 CREATE INDEX IF NOT EXISTS spot_corrections_created_idx ON public.spot_corrections (created_at DESC);
-CREATE INDEX IF NOT EXISTS trips_host_id_idx ON public.trips (host_id);
-CREATE INDEX IF NOT EXISTS user_blocks_blocker_idx ON public.user_blocks (blocker_id);
-CREATE INDEX IF NOT EXISTS user_blocks_blocked_idx ON public.user_blocks (blocked_id);
-CREATE INDEX IF NOT EXISTS feed_reports_reporter_idx ON public.feed_reports (reporter_id);
+-- 2026-09-27 첫 적용 때 기존 인덱스와 중복으로 만들었던 것 정리 (Advisors duplicate_index)
+DROP INDEX IF EXISTS public.direct_threads_user_a_idx;
+DROP INDEX IF EXISTS public.direct_threads_user_b_idx;
+DROP INDEX IF EXISTS public.user_notifications_user_created_idx;
+DROP INDEX IF EXISTS public.proposals_user_id_idx;
+DROP INDEX IF EXISTS public.spot_corrections_user_id_idx;
+DROP INDEX IF EXISTS public.trips_host_id_idx;
+DROP INDEX IF EXISTS public.user_blocks_blocker_idx;
+DROP INDEX IF EXISTS public.user_blocks_blocked_idx;
+DROP INDEX IF EXISTS public.feed_reports_reporter_idx;
+
+-- view_brief 함수 search_path 고정 (Advisors function_search_path_mutable)
+ALTER FUNCTION public.okbm_spot_view_brief(text) SET search_path = public;
+ALTER FUNCTION public.okbm_spots_fill_view_brief() SET search_path = public;
 
 -- 6-2. 부분 일치 검색(ilike '*X*') 인덱스 (P1)
 CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
