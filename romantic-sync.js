@@ -4939,9 +4939,13 @@ function ensureMyReportAndAuthModalsInDOM() {
           <button type="button" class="modal-btn" style="background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; font-weight:800; height:42px; border-radius:10px; margin-top:6px; font-size:0.82rem; cursor:pointer;" onclick="document.getElementById('userAccountSettingsModal').style.display='none'; closeUserProfileModal(); logoutUser();">
             로그아웃
           </button>
-          <button type="button" id="settingsModalDeleteAccountBtn" class="modal-btn" style="background:transparent; border:1px solid rgba(251,113,133,0.42); color:#fb7185; font-weight:800; height:42px; border-radius:10px; margin-top:2px; font-size:0.82rem; cursor:pointer;" onclick="if(typeof window.confirmUserAccountDeletion==='function'){ window.confirmUserAccountDeletion(); }">
-            회원 탈퇴
-          </button>
+          <!-- 회원 탈퇴는 로그아웃과 헷갈려 누르지 않도록 간격을 크게 벌리고 작은 글자 링크로 둔다.
+               누르면 "탈퇴" 입력 확인 창이 한 번 더 뜬다. -->
+          <div id="settingsModalDeleteAccountWrap" style="margin-top:28px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06); text-align:center;">
+            <button type="button" id="settingsModalDeleteAccountBtn" style="background:none; border:none; color:#64748b; font-weight:600; font-size:0.68rem; text-decoration:underline; text-underline-offset:3px; padding:8px 12px; cursor:pointer;" onclick="if(typeof window.confirmUserAccountDeletion==='function'){ window.confirmUserAccountDeletion(); }">
+              회원 탈퇴
+            </button>
+          </div>
         </div>
         <div></div>
       </div>
@@ -9314,7 +9318,13 @@ window.openAccountSettingsModal = function() {
   var deleteAccountBtn = document.getElementById('settingsModalDeleteAccountBtn');
   var socialLinkCard = document.getElementById('settingsSocialLinkCard');
   if (deleteAccountBtn) {
-    deleteAccountBtn.style.display = isLogged ? '' : 'none';
+    // 구분선이 있는 감싸는 영역까지 함께 숨긴다
+    var deleteAccountWrap = deleteAccountBtn.parentElement;
+    if (deleteAccountWrap && deleteAccountWrap.id === 'settingsModalDeleteAccountWrap') {
+      deleteAccountWrap.style.display = isLogged ? '' : 'none';
+    } else {
+      deleteAccountBtn.style.display = isLogged ? '' : 'none';
+    }
   }
   if (socialLinkCard) {
     socialLinkCard.style.display = isLogged ? '' : 'none';
@@ -9617,9 +9627,62 @@ function logoutUser() {
 }
 window.logoutUser = logoutUser;
 
-window.confirmUserAccountDeletion = async function() {
+// 회원 탈퇴 확인 창: "탈퇴"를 직접 입력해야 버튼이 켜진다 (로그아웃과 헷갈린 오터치 방지).
+// 기본 강조는 "취소" 쪽에 둔다.
+window.okbmOpenAccountDeletionConfirm = function() {
+  var prev = document.getElementById('okbmAccountDeletionConfirm');
+  if (prev) prev.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'okbmAccountDeletionConfirm';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', 'okbmAccountDeletionTitle');
+  overlay.style.cssText = 'position:fixed; inset:0; z-index:2147483000; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;';
+  overlay.innerHTML =
+    '<div style="width:100%; max-width:340px; background:#0f1720; border:1px solid rgba(244,63,94,0.35); border-radius:14px; padding:20px 18px 16px; box-sizing:border-box; color:#e2e8f0; font-family:\'Pretendard Variable\', Pretendard, -apple-system, BlinkMacSystemFont, \'Apple SD Gothic Neo\', sans-serif; letter-spacing:-0.01em;">' +
+      '<div id="okbmAccountDeletionTitle" style="font-size:0.95rem; font-weight:900; color:#fda4af; margin-bottom:10px;">정말 탈퇴하시겠어요?</div>' +
+      '<p style="font-size:0.74rem; line-height:1.55; color:#cbd5e1; margin:0 0 12px;">작성한 피드, 쪽지, 활동 기록, 개인 설정이 모두 <b style="color:#fda4af;">영구 삭제</b>되며 복구할 수 없습니다.<br>로그아웃만 하려던 거라면 취소를 눌러 주세요.</p>' +
+      '<label for="okbmAccountDeletionInput" style="display:block; font-size:0.7rem; color:#94a3b8; margin-bottom:6px;">계속하려면 아래 칸에 <b style="color:#ffffff;">탈퇴</b>라고 입력하세요.</label>' +
+      '<input id="okbmAccountDeletionInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="탈퇴" style="width:100%; height:40px; box-sizing:border-box; background:#1e293b; border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#ffffff; font-size:0.9rem; padding:0 12px; outline:none;">' +
+      '<div style="display:flex; gap:8px; margin-top:14px;">' +
+        '<button type="button" id="okbmAccountDeletionCancel" style="flex:1; height:42px; border-radius:10px; border:none; background:#e2e8f0; color:#0f172a; font-size:0.82rem; font-weight:900; cursor:pointer;">취소</button>' +
+        '<button type="button" id="okbmAccountDeletionOk" disabled style="flex:1; height:42px; border-radius:10px; border:1px solid rgba(244,63,94,0.5); background:transparent; color:#fb7185; font-size:0.8rem; font-weight:800; cursor:not-allowed; opacity:0.4;">탈퇴하기</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
 
-  if (!confirm('정말 탈퇴하시겠습니까? 작성한 모든 피드와 활동 기록, 개인 세팅이 영구 삭제되며 복구할 수 없습니다.')) {
+  var input = overlay.querySelector('#okbmAccountDeletionInput');
+  var okBtn = overlay.querySelector('#okbmAccountDeletionOk');
+  var cancelBtn = overlay.querySelector('#okbmAccountDeletionCancel');
+  var close = function() {
+    document.removeEventListener('keydown', onKey, true);
+    overlay.remove();
+  };
+  var onKey = function(e) { if (e.key === 'Escape') close(); };
+  var sync = function() {
+    var ready = String(input.value || '').replace(/\s+/g, '') === '탈퇴';
+    okBtn.disabled = !ready;
+    okBtn.style.opacity = ready ? '1' : '0.4';
+    okBtn.style.cursor = ready ? 'pointer' : 'not-allowed';
+    okBtn.style.background = ready ? 'rgba(244,63,94,0.18)' : 'transparent';
+  };
+  input.addEventListener('input', sync);
+  cancelBtn.addEventListener('click', close);
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', onKey, true);
+  okBtn.addEventListener('click', function() {
+    if (okBtn.disabled) return;
+    close();
+    window.confirmUserAccountDeletion({ confirmed: true });
+  });
+  setTimeout(function() { try { cancelBtn.focus(); } catch (e) {} }, 0);
+};
+
+window.confirmUserAccountDeletion = async function(opts) {
+
+  // 확인 창에서 "탈퇴" 입력 후 누른 경우에만 실제 삭제로 진행한다.
+  if (!(opts && opts.confirmed === true)) {
+    window.okbmOpenAccountDeletionConfirm();
     return;
   }
 
