@@ -1,0 +1,14 @@
+# GitHub Pages(Jekyll) 배포 설정
+# 사이트 동작에 필요 없는 서버·개발용 파일은 romanticroute.kr에서 내려받을 수 없게 제외한다.
+# (GitHub 저장소 자체는 공개이므로 github.com에서는 계속 보인다)
+exclude:
+  - supabase
+  - workers
+  - scripts
+  - SUPABASE_RLS_POLICIES_MASTER.sql
+  - SUPABASE_OPS_CRON.sql
+  - SUPABASE_RPC_DUMP_B7.sql
+  - "*.sql"
+  - "*.py"
+  - "*.sh"
+  - "*.md"
