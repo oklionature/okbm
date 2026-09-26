@@ -134,7 +134,7 @@ function addFromUrl(map: Map<string, Item>, url: string, title: string, postdate
 }
 
 async function searchOpenApi(query: string, map: Map<string, Item>): Promise<boolean> {
-  const secret = String(Deno.env.get("NCP_APIGW_API_KEY") || "p9nOad8x3AIciffhTq48PsUhgeWLBMkBt11w8F7V").trim();
+  const secret = String(Deno.env.get("NCP_APIGW_API_KEY") || "").trim();
   const keyId = String(Deno.env.get("NCP_APIGW_API_KEY_ID") || NCP_API_KEY_ID).trim();
   if (!secret || !keyId) return false;
   const res = await fetch(
