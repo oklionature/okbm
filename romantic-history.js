@@ -281,6 +281,18 @@
         background: #000000 !important;
       }
 
+      .reel-page-snap[data-vault-intro="1"] {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 36px !important;
+        padding: 32px 28px !important;
+        background: #000000 !important;
+        text-align: center !important;
+        box-sizing: border-box !important;
+      }
+
       .romantic-history-content {
         width: 100% !important;
         max-width: 100% !important;
@@ -7803,7 +7815,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     window.__isFetchingMoreFeeds = true;
 
     var reelContainer = document.getElementById('reelsVerticalContainer');
-    var currentRenderedCount = reelContainer ? reelContainer.querySelectorAll('.reel-page-snap').length : 0;
+    var currentRenderedCount = reelContainer ? reelContainer.querySelectorAll('.reel-page-snap:not([data-vault-intro])').length : 0;
     var offset = Math.max(currentRenderedCount, window.__feedPaginationOffset || 0);
 
     try {
@@ -8612,6 +8624,26 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     '</div>';
   };
 
+  function okbmVaultIntroSnapHtml() {
+    return '<div id="vaultIntroSnap" class="reel-page-snap" data-vault-intro="1">' +
+      '<p style="margin:0; max-width:280px; font-size:0.96rem; font-weight:800; color:#ffffff; line-height:1.65; word-break:keep-all; letter-spacing:-0.2px;">등록된 장소에 추억을 피드로 남기시면<br>지도 후기피드에 노출이됩니다.</p>' +
+      '<img src="logo.png" alt="낭만루트 로고" style="width:128px; height:128px; object-fit:contain; display:block; flex-shrink:0;" />' +
+      '<p style="margin:0; max-width:260px; font-size:0.96rem; font-weight:800; color:#ffffff; line-height:1.65; word-break:keep-all; letter-spacing:-0.2px;">다음 낭만루터 분들에게<br>생생한 후기를 알려주세요</p>' +
+    '</div>';
+  }
+
+  function okbmPlaceVaultIntroFirst(reel) {
+    if (!reel) return;
+    var intro = reel.querySelector('[data-vault-intro="1"]');
+    if (!intro) {
+      var holder = document.createElement('template');
+      holder.innerHTML = okbmVaultIntroSnapHtml();
+      intro = holder.content.firstElementChild;
+    }
+    if (!intro) return;
+    if (reel.firstElementChild !== intro) reel.insertBefore(intro, reel.firstElementChild);
+  }
+
   function okbmSyncHistoryReelInPlace(currentList, ctx) {
     var reel = document.getElementById('reelsVerticalContainer');
     if (!reel || !currentList || !currentList.length) return false;
@@ -8675,13 +8707,14 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var stale = [];
     for (var s = 0; s < reel.children.length; s++) {
       var child = reel.children[s];
-      if (child.classList && child.classList.contains('reel-page-snap')) stale.push(child);
+      if (child.classList && child.classList.contains('reel-page-snap') && child.getAttribute('data-vault-intro') !== '1') stale.push(child);
     }
     stale.forEach(function(child) {
       if (child.parentNode) child.parentNode.removeChild(child);
     });
 
     reel.appendChild(frag);
+    okbmPlaceVaultIntroFirst(reel);
 
     var ordered = [];
     for (var o = 0; o < reel.children.length; o++) {
@@ -8834,6 +8867,7 @@ window.renderHistoryStage = function(isLoading, opts) {
             }
           }
           if (idsMatch) {
+            okbmPlaceVaultIntroFirst(existingReel);
             okbmPatchHistoryFeedRows(currentList, starsMap, starCounts, savedFeedsList, myUserId, savedNick);
             if (typeof window.ensureMasterBottomDock === 'function') {
               window.ensureMasterBottomDock('history');
@@ -8880,16 +8914,7 @@ window.renderHistoryStage = function(isLoading, opts) {
         '<div style="font-size:0.86rem; font-weight:800; color:#e2e8f0;">최신 피드 동기화 중...</div>' +
       '</div>';
     } else if (currentList.length === 0) {
-      var emptyMsg = '등록된 낭만루트 기록이 없습니다.';
-      var emptySubMsg = '플랜에서 패킹 완료 후 보관함에 저장된 루트 기록이 표시됩니다.';
-
-      reelSlidesHtml = '<div class="reel-page-snap" style="width:100% !important; height:100% !important; display:flex !important; flex-direction:column !important; align-items:center !important; justify-content:center !important; gap:14px; padding:30px; text-align:center; box-sizing:border-box;">' +
-        '<div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8;">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:24px; height:24px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
-        '</div>' +
-        '<div style="font-size:0.95rem; font-weight:800; color:#ffffff;">' + emptyMsg + '</div>' +
-        '<div style="font-size:0.75rem; color:#94a3b8; line-height:1.5;">' + emptySubMsg + '</div>' +
-      '</div>';
+      reelSlidesHtml = okbmVaultIntroSnapHtml();
     } else {
       var feedRenderCtx = {
         myUserId: myUserId,
@@ -8900,7 +8925,7 @@ window.renderHistoryStage = function(isLoading, opts) {
         isLogged: isLogged
       };
 
-      reelSlidesHtml = currentList.map(function(item, idx) {
+      reelSlidesHtml = okbmVaultIntroSnapHtml() + currentList.map(function(item, idx) {
         return window.buildReelSingleSnapCardHtml(item, idx, feedRenderCtx);
       }).join('');
     }
@@ -8939,7 +8964,7 @@ window.renderHistoryStage = function(isLoading, opts) {
       newItems = window.okbmApplyUgcSafetyFilter(newItems);
       if (!newItems.length) return;
 
-      var existingCards = reelContainer.querySelectorAll('.reel-page-snap');
+      var existingCards = reelContainer.querySelectorAll('.reel-page-snap:not([data-vault-intro])');
       var startIdx = existingCards.length;
 
       var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
