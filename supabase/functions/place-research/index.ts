@@ -59,6 +59,27 @@ function bearerToken(req: Request): string {
   return m ? String(m[1] || "").trim() : "";
 }
 
+function publishableKey(): string {
+  const raw = String(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") || "").trim();
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      const named = typeof parsed === "string"
+        ? parsed
+        : String(parsed.default || Object.values(parsed)[0] || "");
+      if (named) return named.trim();
+    } catch {
+      return raw;
+    }
+  }
+  return String(
+    Deno.env.get("SB_PUBLISHABLE_KEY") ||
+    Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ||
+    Deno.env.get("SUPABASE_ANON_KEY") ||
+    ""
+  ).trim();
+}
+
 const rateBuckets = new Map<string, { window: number; count: number }>();
 
 let rateBucketsMinute = 0;
@@ -83,7 +104,7 @@ function rateLimitOk(actor: string, maxPerMinute: number): boolean {
 async function requireAuthUser(req: Request): Promise<{ id: string } | null> {
   const jwt = bearerToken(req);
   if (!jwt) return null;
-  const anon = String(Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SB_PUBLISHABLE_KEY") || "").trim();
+  const anon = publishableKey();
   const url = String(Deno.env.get("SUPABASE_URL") || "").trim();
   if (!anon || !url) return null;
   try {

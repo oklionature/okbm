@@ -47,8 +47,7 @@ function envOrThrow(name: string): string {
   return value;
 }
 
-function parseSecretKeys(): string {
-  const raw = Deno.env.get("SUPABASE_SECRET_KEYS") || "";
+function firstNamedKey(raw: string): string {
   if (!raw) return "";
   try {
     const parsed = JSON.parse(raw);
@@ -59,16 +58,32 @@ function parseSecretKeys(): string {
   }
 }
 
+function parseSecretKeys(): string {
+  return firstNamedKey(Deno.env.get("SUPABASE_SECRET_KEYS") || "");
+}
+
+function parsePublishableKeys(): string {
+  return firstNamedKey(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") || "");
+}
+
 export function getServiceRoleKey(): string {
   return (
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+    parseSecretKeys() ||
     Deno.env.get("SB_SECRET_KEY") ||
-    parseSecretKeys()
+    Deno.env.get("SUPABASE_SECRET_KEY") ||
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+    ""
   );
 }
 
 export function getAnonKey(): string {
-  return Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SB_PUBLISHABLE_KEY") || "";
+  return (
+    parsePublishableKeys() ||
+    Deno.env.get("SB_PUBLISHABLE_KEY") ||
+    Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ||
+    Deno.env.get("SUPABASE_ANON_KEY") ||
+    ""
+  );
 }
 
 export function getSupabaseUrl(): string {
