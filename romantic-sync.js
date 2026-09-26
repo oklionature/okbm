@@ -4797,12 +4797,6 @@ function ensureMyReportAndAuthModalsInDOM() {
             <div id="accBody_myprops" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px; min-width:0; box-sizing:border-box;"></div>
           </div>
 
-          <!-- 과거 추억 등록 -->
-          <button type="button" onclick="window.openPastTripRegisterModal(event);" style="width:100%; height:44px; background:#080b11; border:1.5px solid rgba(186,230,253,0.3); border-radius:10px; color:#f1f5f9; font-size:0.92rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; margin-bottom:12px; flex-shrink:0; box-shadow:0 4px 15px rgba(0,0,0,0.8);">
-            <svg viewBox="0 0 24 24" style="width:15px; height:15px; stroke:#bae6fd; fill:none; stroke-width:2;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
-            <span>과거 추억 등록</span>
-          </button>
-
         </div>
 
        </div>
@@ -6557,12 +6551,13 @@ window.closePastTripRegisterModal = function(opts) {
   var choice = document.getElementById('pastTripSpotChoiceOverlay');
   if (choice) choice.remove();
   var el = document.getElementById('pastTripRegisterModal');
+  var fromPlan = !!(el && el.dataset.fromPlan === '1');
   if (el) el.remove();
   var search = document.getElementById('pastTripSpotSearchModal');
   if (search) search.remove();
   var picker = document.getElementById('pastTripDatePickerModal');
   if (picker) picker.remove();
-  if (silent) return;
+  if (silent || fromPlan) return;
   if (typeof window.goBackModal === 'function') {
     try { window.goBackModal(); } catch (e) {}
   } else if (typeof window.openUserProfileModal === 'function') {
@@ -8309,17 +8304,31 @@ window.selectPastTripSpot = function(spot, isUnregistered) {
   }
 };
 
+window.openPastTripRegisterFromPlan = function(ev) {
+  window.__pastTripOpenedFromPlan = true;
+  window.__pastTripPrefillDate = '';
+  var parts = String(window.activeSelectedDateKey || '').match(/\d+/g);
+  if (parts && parts.length >= 3) {
+    window.__pastTripPrefillDate = parts[0] + '-' + String(parts[1]).padStart(2, '0') + '-' + String(parts[2]).padStart(2, '0');
+  }
+  window.openPastTripRegisterModal(ev);
+};
+
 window.openPastTripRegisterModal = function(ev) {
   if (ev) {
     if (typeof ev.preventDefault === 'function') ev.preventDefault();
     if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
   }
   if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
+    window.__pastTripOpenedFromPlan = false;
+    window.__pastTripPrefillDate = '';
     if (typeof showToast === 'function') showToast('로그인 후 과거 일정을 등록할 수 있습니다.', 'info', 2200);
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
     return;
   }
-  if (typeof window.recordModalHistoryStep === 'function') {
+  var fromPlan = !!window.__pastTripOpenedFromPlan;
+  window.__pastTripOpenedFromPlan = false;
+  if (!fromPlan && typeof window.recordModalHistoryStep === 'function') {
     window.recordModalHistoryStep('userProfileModalOverlay', function() {
       if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
     });
@@ -8333,8 +8342,12 @@ window.openPastTripRegisterModal = function(ev) {
     spotId: '', spotName: '', spotPath: '', memoMode: 'single', singleMemo: '', photoIndex: 0
   };
   var maxDate = window._pastTripYesterdayIso();
+  var prefill = String(window.__pastTripPrefillDate || '').trim();
+  window.__pastTripPrefillDate = '';
+  if (prefill && prefill <= maxDate) maxDate = prefill;
   var modal = document.createElement('div');
   modal.id = 'pastTripRegisterModal';
+  if (fromPlan) modal.dataset.fromPlan = '1';
   modal.className = 'custom-modal-overlay';
   modal.style.cssText = 'display:flex; position:fixed; inset:0; background:#000000; z-index:2147483642; justify-content:center; align-items:stretch; padding:0;';
   modal.onclick = function(e) { if (e.target === modal) window.closePastTripRegisterModal(); };
@@ -8653,8 +8666,10 @@ window.submitPastTripRegister = async function() {
     }
 
     var el = document.getElementById('pastTripRegisterModal');
+    var fromPlan = !!(el && el.dataset.fromPlan === '1');
     if (el) el.remove();
     if (typeof window.refreshMyReportFullStats === 'function') window.refreshMyReportFullStats();
+    if (fromPlan) return;
 
     if (typeof window.openPastTripsListModal === 'function') {
       if (typeof window.recordModalHistoryStep === 'function') {

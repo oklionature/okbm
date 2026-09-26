@@ -3762,36 +3762,50 @@ window.saveCurrentPackingRecord = function() {
           </div>
         </div>
 
-     <!-- 4. 하단 2x2 모던 큐브 그리드 (모노크롬 & 정중앙 정렬) -->
-        <div id="planCubeGrid" style="flex:26 1 0% !important; min-height:0 !important; display:grid; grid-template-columns:1fr 1fr; gap:6px; box-sizing:border-box;">
-          
-          <div onclick="window.openPlanPackingCalculator();" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 10px; display:flex; justify-content:center; align-items:center; cursor:pointer; box-sizing:border-box;">
-            <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
-              ${VECTOR_ICONS.calculator}
-              <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">패킹 계획하기</span>
-            </div>
+     <!-- 4. 하단 2x2. 안쪽 선은 가운데 과거 추억 등록 테두리에 붙인다 -->
+        <div id="planCubeGrid" style="position:relative; flex:26 1 0% !important; min-height:0 !important; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:6px; box-sizing:border-box;">
+          <div onclick="window.openPlanPackingCalculator();" style="position:relative; z-index:1; min-height:0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; padding:0 8px;">
+            ${VECTOR_ICONS.calculator}
+            <span style="font-size:0.78rem; font-weight:900; color:#ffffff; white-space:nowrap;">패킹 계획하기</span>
           </div>
-
-          <div onclick="window.activePlanSubMode='checklist'; window.renderPlanStage();" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 10px; display:flex; justify-content:center; align-items:center; cursor:pointer; box-sizing:border-box;">
-            <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
-              ${VECTOR_ICONS.checklist}
-              <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">체크리스트</span>
-            </div>
+          <div onclick="window.activePlanSubMode='checklist'; window.renderPlanStage();" style="position:relative; z-index:1; min-height:0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; padding:0 8px;">
+            ${VECTOR_ICONS.checklist}
+            <span style="font-size:0.78rem; font-weight:900; color:#ffffff; white-space:nowrap;">체크리스트</span>
           </div>
-
-          <div onclick="window.activePlanSubMode='bookmarks'; window.renderPlanStage();" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 10px; display:flex; justify-content:center; align-items:center; cursor:pointer; box-sizing:border-box;">
-            <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
-              ${VECTOR_ICONS.bookmarks}
-              <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">찜 목록</span>
-            </div>
+          <div onclick="window.activePlanSubMode='bookmarks'; window.renderPlanStage();" style="position:relative; z-index:1; min-height:0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; padding:0 8px;">
+            ${VECTOR_ICONS.bookmarks}
+            <span style="font-size:0.78rem; font-weight:900; color:#ffffff; white-space:nowrap;">찜 목록</span>
           </div>
-
-          <div onclick="window.activePlanSubMode='gears'; window.renderPlanStage();" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 10px; display:flex; justify-content:center; align-items:center; cursor:pointer; box-sizing:border-box;">
-            <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
-              ${VECTOR_ICONS.gears}
-              <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">장비관리</span>
-            </div>
+          <div onclick="window.activePlanSubMode='gears'; window.renderPlanStage();" style="position:relative; z-index:1; min-height:0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; padding:0 8px;">
+            ${VECTOR_ICONS.gears}
+            <span style="font-size:0.78rem; font-weight:900; color:#ffffff; white-space:nowrap;">장비관리</span>
           </div>
+          <div aria-hidden="true" style="position:absolute; inset:0; z-index:0; pointer-events:none;">
+            <div style="position:absolute; left:0; top:0; width:calc(32.5% - 1.05px); height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-top:1px solid rgba(255,255,255,0.12); border-left:1px solid rgba(255,255,255,0.12); border-radius:12px 0 0 0;"></div>
+            <div style="position:absolute; left:calc(32.5% - 1.05px); top:0; width:12px; height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-top:1px solid rgba(255,255,255,0.12);"></div>
+            <div style="position:absolute; left:calc(32.5% - 1.05px + 12px); top:0; width:calc(17.5% - 1.95px - 12px); height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-top:1px solid rgba(255,255,255,0.12); border-right:1px solid rgba(255,255,255,0.12); border-bottom:1px solid rgba(255,255,255,0.12); border-radius:0 12px 0 0;"></div>
+            <div style="position:absolute; left:0; top:calc(32.5% - 1.05px); width:calc(32.5% - 1.05px); height:12px; box-sizing:border-box; background:rgba(255,255,255,0.035); border-left:1px solid rgba(255,255,255,0.12);"></div>
+            <div style="position:absolute; left:0; top:calc(32.5% - 1.05px + 12px); width:calc(32.5% - 1.05px); height:calc(17.5% - 1.95px - 12px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-left:1px solid rgba(255,255,255,0.12); border-right:1px solid rgba(255,255,255,0.12); border-bottom:1px solid rgba(255,255,255,0.12); border-radius:0 0 0 12px;"></div>
+            <div style="position:absolute; left:calc(50% + 3px); top:0; width:calc(17.5% - 1.95px - 12px); height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-top:1px solid rgba(255,255,255,0.12); border-left:1px solid rgba(255,255,255,0.12); border-bottom:1px solid rgba(255,255,255,0.12); border-radius:12px 0 0 0;"></div>
+            <div style="position:absolute; left:calc(67.5% + 1.05px - 12px); top:0; width:12px; height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-top:1px solid rgba(255,255,255,0.12);"></div>
+            <div style="position:absolute; left:calc(67.5% + 1.05px); top:0; width:calc(32.5% - 1.05px); height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-top:1px solid rgba(255,255,255,0.12); border-right:1px solid rgba(255,255,255,0.12); border-radius:0 12px 0 0;"></div>
+            <div style="position:absolute; left:calc(67.5% + 1.05px); top:calc(32.5% - 1.05px); width:calc(32.5% - 1.05px); height:12px; box-sizing:border-box; background:rgba(255,255,255,0.035); border-right:1px solid rgba(255,255,255,0.12);"></div>
+            <div style="position:absolute; left:calc(67.5% + 1.05px); top:calc(32.5% - 1.05px + 12px); width:calc(32.5% - 1.05px); height:calc(17.5% - 1.95px - 12px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-left:1px solid rgba(255,255,255,0.12); border-right:1px solid rgba(255,255,255,0.12); border-bottom:1px solid rgba(255,255,255,0.12); border-radius:0 0 12px 0;"></div>
+            <div style="position:absolute; left:0; top:calc(50% + 3px); width:calc(32.5% - 1.05px); height:calc(17.5% - 1.95px - 12px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-top:1px solid rgba(255,255,255,0.12); border-left:1px solid rgba(255,255,255,0.12); border-right:1px solid rgba(255,255,255,0.12); border-radius:12px 0 0 0;"></div>
+            <div style="position:absolute; left:0; top:calc(67.5% + 1.05px - 12px); width:calc(32.5% - 1.05px); height:12px; box-sizing:border-box; background:rgba(255,255,255,0.035); border-left:1px solid rgba(255,255,255,0.12);"></div>
+            <div style="position:absolute; left:0; top:calc(67.5% + 1.05px); width:calc(32.5% - 1.05px); height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-left:1px solid rgba(255,255,255,0.12); border-bottom:1px solid rgba(255,255,255,0.12); border-radius:0 0 0 12px;"></div>
+            <div style="position:absolute; left:calc(32.5% - 1.05px); top:calc(67.5% + 1.05px); width:12px; height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-bottom:1px solid rgba(255,255,255,0.12);"></div>
+            <div style="position:absolute; left:calc(32.5% - 1.05px + 12px); top:calc(67.5% + 1.05px); width:calc(17.5% - 1.95px - 12px); height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-top:1px solid rgba(255,255,255,0.12); border-right:1px solid rgba(255,255,255,0.12); border-bottom:1px solid rgba(255,255,255,0.12); border-radius:0 0 12px 0;"></div>
+            <div style="position:absolute; left:calc(67.5% + 1.05px); top:calc(50% + 3px); width:calc(32.5% - 1.05px); height:calc(17.5% - 1.95px - 12px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-top:1px solid rgba(255,255,255,0.12); border-left:1px solid rgba(255,255,255,0.12); border-right:1px solid rgba(255,255,255,0.12); border-radius:0 12px 0 0;"></div>
+            <div style="position:absolute; left:calc(67.5% + 1.05px); top:calc(67.5% + 1.05px - 12px); width:calc(32.5% - 1.05px); height:12px; box-sizing:border-box; background:rgba(255,255,255,0.035); border-right:1px solid rgba(255,255,255,0.12);"></div>
+            <div style="position:absolute; left:calc(50% + 3px); top:calc(67.5% + 1.05px); width:calc(17.5% - 1.95px - 12px); height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-top:1px solid rgba(255,255,255,0.12); border-left:1px solid rgba(255,255,255,0.12); border-bottom:1px solid rgba(255,255,255,0.12); border-radius:0 0 0 12px;"></div>
+            <div style="position:absolute; left:calc(67.5% + 1.05px - 12px); top:calc(67.5% + 1.05px); width:12px; height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-bottom:1px solid rgba(255,255,255,0.12);"></div>
+            <div style="position:absolute; left:calc(67.5% + 1.05px); top:calc(67.5% + 1.05px); width:calc(32.5% - 1.05px); height:calc(32.5% - 1.05px); box-sizing:border-box; background:rgba(255,255,255,0.035); border-right:1px solid rgba(255,255,255,0.12); border-bottom:1px solid rgba(255,255,255,0.12); border-radius:0 0 12px 0;"></div>
+          </div>
+          <button type="button" onclick="window.openPastTripRegisterFromPlan(event)" aria-label="과거 추억 등록" style="position:absolute; left:calc(32.5% - 1.05px); top:calc(32.5% - 1.05px); width:calc(35% + 2.1px); height:calc(35% + 2.1px); z-index:2; margin:0; padding:4px; border-radius:12px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.035); color:#ffffff; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; box-sizing:border-box; appearance:none; -webkit-appearance:none;">
+            <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:#cbd5e1; fill:none; stroke-width:2;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+            <span style="font-size:0.66rem; font-weight:900; line-height:1.25; text-align:center;">과거 추억<br>등록</span>
+          </button>
         </div>
 
  <div id="planBookmarkBackdrop" onclick="window.closeBookmarksBottomSheet();" style="display:none !important; pointer-events:none !important;"></div>
