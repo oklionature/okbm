@@ -12,8 +12,14 @@ SKIP_PARTS = {".git", "node_modules", "supabase/functions", "scripts"}
 
 SRC_RE = re.compile(r"""src\s*=\s*(?:"\s*\+|'\s*\+|["']\$\{)""", re.IGNORECASE)
 HREF_RE = re.compile(r"""href\s*=\s*(?:"\s*\+|'\s*\+|["']\$\{)""", re.IGNORECASE)
+# 검토를 마친 래퍼만 허용한다. 새 래퍼를 추가할 때는 내부에서 okbmSafeImageUrl을
+# 반드시 거치는지 확인하고 이유를 적을 것.
+#   tripCreatePhotoSrc (index.html): 로컬 미리보기 blob: 외에는 okbmSafeImageUrl 결과만 반환
+SAFE_IMAGE_WRAPPERS = ("okbmSafeImageUrl", "tripCreatePhotoSrc")
 SRC_OK_RE = re.compile(
-    r"""src\s*=\s*(?:"\s*\+|'\s*\+|["']\$\{)\s*escapeHtml\s*\(\s*okbmSafeImageUrl\s*\(""",
+    r"""src\s*=\s*(?:"\s*\+|'\s*\+|["']\$\{)\s*escapeHtml\s*\(\s*(?:"""
+    + "|".join(SAFE_IMAGE_WRAPPERS)
+    + r""")\s*\(""",
     re.IGNORECASE,
 )
 HREF_OK_RE = re.compile(

@@ -67,6 +67,55 @@ function rateLimitOk(actor: string, maxPerMinute: number): boolean {
   return true;
 }
 
+function firstNamedKey(raw: string): string {
+  if (!raw) return "";
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "string") return parsed;
+    return String(parsed.default || Object.values(parsed)[0] || "");
+  } catch {
+    return raw;
+  }
+}
+
+function serviceKey(): string {
+  return (
+    firstNamedKey(String(Deno.env.get("SUPABASE_SECRET_KEYS") || "").trim()) ||
+    Deno.env.get("SB_SECRET_KEY") ||
+    Deno.env.get("SUPABASE_SECRET_KEY") ||
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+    ""
+  ).trim();
+}
+
+// DB 기반 분당 제한 (isolate마다 따로인 in-memory Map은 전역 제한이 안 됨).
+// okbm_actor_rate_limit이 아직 없거나 DB 호출이 실패하면 in-memory 제한으로 대신한다.
+async function actorRateLimitOk(actor: string, name: string, maxPerMinute: number): Promise<boolean> {
+  const url = String(Deno.env.get("SUPABASE_URL") || "").trim();
+  const key = serviceKey();
+  if (!url || !key) return rateLimitOk(actor, maxPerMinute);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 3000);
+  try {
+    const res = await fetch(url + "/rest/v1/rpc/okbm_actor_rate_limit", {
+      method: "POST",
+      signal: ctrl.signal,
+      headers: {
+        apikey: key,
+        Authorization: "Bearer " + key,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ p_actor: actor, p_name: name, p_max: maxPerMinute }),
+    });
+    if (!res.ok) return rateLimitOk(actor, maxPerMinute);
+    return (await res.json()) === true;
+  } catch {
+    return rateLimitOk(actor, maxPerMinute);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function clientIp(req: Request): string {
   return String(req.headers.get("cf-connecting-ip") || "").trim() ||
     String(req.headers.get("x-forwarded-for") || "").split(",")[0].trim() ||
@@ -137,17 +186,28 @@ async function searchOpenApi(query: string, map: Map<string, Item>): Promise<boo
   const secret = String(Deno.env.get("NCP_APIGW_API_KEY") || "").trim();
   const keyId = String(Deno.env.get("NCP_APIGW_API_KEY_ID") || NCP_API_KEY_ID).trim();
   if (!secret || !keyId) return false;
-  const res = await fetch(
-    "https://naverapihub.apigw.ntruss.com/search/v1/blog?display=30&start=1&sort=date&format=json&query=" + encodeURIComponent(query),
-    {
-      headers: {
-        "X-NCP-APIGW-API-KEY-ID": keyId,
-        "X-NCP-APIGW-API-KEY": secret,
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 6000);
+  // deno-lint-ignore no-explicit-any
+  let data: any = null;
+  try {
+    const res = await fetch(
+      "https://naverapihub.apigw.ntruss.com/search/v1/blog?display=30&start=1&sort=date&format=json&query=" + encodeURIComponent(query),
+      {
+        signal: ctrl.signal,
+        headers: {
+          "X-NCP-APIGW-API-KEY-ID": keyId,
+          "X-NCP-APIGW-API-KEY": secret,
+        },
       },
-    },
-  );
-  if (!res.ok) return false;
-  const data = await res.json();
+    );
+    if (!res.ok) return false;
+    data = await res.json();
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
   const items = Array.isArray(data && data.items) ? data.items : [];
   const tokens = placeTokens(query);
   for (const item of items) {
@@ -164,7 +224,10 @@ Deno.serve(async (req: Request) => {
 
   const origin = String(req.headers.get("Origin") || "").trim();
   if (origin && !isAllowedOrigin(origin)) return json(req, { error: "origin_not_allowed" }, 403);
-  if (!rateLimitOk(clientIp(req), 40)) return json(req, { error: "rate_limited" }, 429);
+  // 지도 화면이 비로그인 상태에서도 호출하므로 IP 기준 제한을 유지한다.
+  if (!(await actorRateLimitOk("ip:" + clientIp(req), "blog-search", 40))) {
+    return json(req, { error: "rate_limited" }, 429);
+  }
 
   let body: { query?: string; queries?: string[] } = {};
   try {
@@ -173,16 +236,21 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: "invalid_json" }, 400);
   }
 
-  const queries: string[] = [];
-  for (const raw of (Array.isArray(body.queries) ? body.queries : [body.query || ""])) {
-    const q = cleanQuery(raw);
-    if (q.length >= 2 && queries.indexOf(q) === -1) queries.push(q);
-    if (queries.length >= 4) break;
+  // 검색 API는 1회만 호출한다. 클라이언트 호환을 위해 queries 배열도 받되
+  // 첫 번째 유효한 값만 쓴다 (예전에도 queries[0]만 검색했음).
+  const candidates = Array.isArray(body.queries) ? body.queries : [body.query || ""];
+  let query = "";
+  for (const raw of candidates.slice(0, 4)) {
+    const q = cleanQuery(String(raw || ""));
+    if (q.length >= 2) {
+      query = q;
+      break;
+    }
   }
-  if (!queries.length) return json(req, { error: "query_required" }, 400);
+  if (!query) return json(req, { error: "query_required" }, 400);
 
   const found = new Map<string, Item>();
-  await searchOpenApi(queries[0], found);
+  await searchOpenApi(query, found);
 
   const items = Array.from(found.values())
     .sort((a, b) => (b.postdate || "").localeCompare(a.postdate || "") || b.title.length - a.title.length)

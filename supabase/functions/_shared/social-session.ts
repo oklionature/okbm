@@ -250,13 +250,23 @@ async function findAuthUserIdByProvider(
   return String(data || "").trim();
 }
 
-async function resolvePublicOkbmUserId(
+type PublicUserRow = {
+  id: string;
+  email: string | null;
+  nickname: string | null;
+  photo_url: string | null;
+  hero_cover_url: string | null;
+};
+
+// 후보 id를 한 번의 IN 쿼리로 조회한다 (예전: 후보마다 순차 조회 + 이후 같은 행 재조회).
+// 우선순위는 candidates 순서. 찾은 행을 그대로 돌려줘 호출부가 다시 읽지 않게 한다.
+async function resolvePublicOkbmUser(
   admin: ReturnType<typeof createClient>,
   provider: string,
   providerId: string,
   scoped: string,
   existingOkbm: string,
-): Promise<string> {
+): Promise<{ id: string; row: PublicUserRow | null }> {
   const plain = String(providerId || "").startsWith(`${provider}_`)
     ? String(providerId).slice(provider.length + 1)
     : String(providerId || "").trim();
@@ -264,11 +274,16 @@ async function resolvePublicOkbmUserId(
   if (plain && plain !== scoped) candidates.push(plain);
   if (existingOkbm && candidates.indexOf(existingOkbm) === -1) candidates.push(existingOkbm);
 
+  const { data } = await admin
+    .from("users")
+    .select("id,email,nickname,photo_url,hero_cover_url")
+    .in("id", candidates);
+  const rows = (Array.isArray(data) ? data : []) as PublicUserRow[];
   for (const id of candidates) {
-    const { data } = await admin.from("users").select("id").eq("id", id).maybeSingle();
-    if (data?.id) return String(data.id);
+    const row = rows.find((r) => String(r?.id || "") === id);
+    if (row) return { id: String(row.id), row };
   }
-  return existingOkbm || scoped;
+  return { id: existingOkbm || scoped, row: null };
 }
 
 async function issueSessionForEmail(
@@ -375,6 +390,9 @@ export async function issueSocialSession(
 
   let authUserId = await findAuthUserIdByProvider(admin, profile.provider, providerId);
   if (!authUserId) authUserId = await findAuthUserIdByEmail(admin, loginEmail);
+
+  // 이미 읽은 auth 사용자는 다시 getUserById 하지 않는다.
+  let existingAuth: User | null = null;
   if (!authUserId && realEmail) {
     const byReal = await findAuthUserIdByEmail(admin, realEmail);
     if (byReal) {
@@ -382,24 +400,26 @@ export async function issueSocialSession(
       const planted = String(asMeta(found?.user?.app_metadata)[`${profile.provider}_id`] || "").trim();
       if (planted === providerId || planted === scoped) {
         authUserId = byReal;
+        existingAuth = found?.user || null;
       }
     }
   }
 
-  let existingAuth: User | null = null;
-  if (authUserId) {
+  if (authUserId && !existingAuth) {
     const { data: found } = await admin.auth.admin.getUserById(authUserId);
     existingAuth = found?.user || null;
   }
 
   const existingMeta = asMeta(existingAuth?.app_metadata);
-  const okbmUserId = await resolvePublicOkbmUserId(
+  const resolved = await resolvePublicOkbmUser(
     admin,
     profile.provider,
     providerId,
     scoped,
     String(existingMeta.okbm_user_id || "").trim(),
   );
+  const okbmUserId = resolved.id;
+  const existingRow = resolved.row;
 
   const appMetadata = {
     ...existingMeta,
@@ -417,6 +437,8 @@ export async function issueSocialSession(
     okbm_user_id: okbmUserId,
   };
 
+  // 세션 발급에 쓸 이메일은 create/update 응답에서 바로 얻는다 (마지막 getUserById 제거).
+  let sessionEmail = "";
   if (!authUserId) {
     const { data: created, error: createError } = await admin.auth.admin.createUser({
       email: loginEmail,
@@ -428,29 +450,26 @@ export async function issueSocialSession(
       const foundId = await findAuthUserIdByEmail(admin, loginEmail);
       if (!foundId) throw new Error(createError?.message || "auth user create failed");
       authUserId = foundId;
-      const { error: updateError } = await admin.auth.admin.updateUserById(authUserId, {
+      const { data: updated, error: updateError } = await admin.auth.admin.updateUserById(authUserId, {
         email_confirm: true,
         app_metadata: appMetadata,
         user_metadata: userMetadata,
       });
       if (updateError) throw new Error(updateError.message);
+      sessionEmail = String(updated?.user?.email || "");
     } else {
       authUserId = created.user.id;
+      sessionEmail = String(created.user.email || "");
     }
   } else {
-    const { error: updateError } = await admin.auth.admin.updateUserById(authUserId, {
+    const { data: updated, error: updateError } = await admin.auth.admin.updateUserById(authUserId, {
       email_confirm: true,
       app_metadata: appMetadata,
       user_metadata: userMetadata,
     });
     if (updateError) throw new Error(updateError.message);
+    sessionEmail = String(updated?.user?.email || existingAuth?.email || "");
   }
-
-  const { data: existingRow } = await admin
-    .from("users")
-    .select("id,email,nickname,photo_url,hero_cover_url")
-    .eq("id", okbmUserId)
-    .maybeSingle();
 
   const { error: upsertError } = await admin.from("users").upsert({
     id: okbmUserId,
@@ -462,9 +481,7 @@ export async function issueSocialSession(
   }, { onConflict: "id" });
   if (upsertError) throw new Error(upsertError.message);
 
-  const { data: authAfter } = await admin.auth.admin.getUserById(authUserId);
-  const sessionEmail = String(authAfter?.user?.email || loginEmail);
-  const session = await issueSessionForEmail(admin, anon, sessionEmail);
+  const session = await issueSessionForEmail(admin, anon, sessionEmail || loginEmail);
 
   return {
     ...session,

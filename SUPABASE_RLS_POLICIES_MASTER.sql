@@ -11,7 +11,15 @@
 -- 3) users 이메일은 본인만, 공개 프로필은 get_public_profile(p_id) 단건 RPC만
 -- 4) okbm_stamp_okbm_user_id는 authenticated에서 회수. 네이버/카카오는
 --    issueSocialSession이 app_metadata.okbm_user_id를 심으므로 클라이언트 스탬프 불필요.
+-- 5) 정책 안의 okbm_uid()/okbm_is_admin()/auth.uid()는 (SELECT ...)로 감싸
+--    쿼리당 1회만 평가(initPlan)되게 한다. 행마다 재실행하지 않음.
+--
+-- 전체를 한 트랜잭션으로 실행한다. 중간에 오류가 나면 전부 롤백되어
+-- "정책이 모두 DROP된 상태"로 남지 않는다.
+-- pg_cron 작업은 SUPABASE_OPS_CRON.sql에서 따로 실행한다.
 -- =========================================================================
+
+BEGIN;
 
 -- -------------------------------------------------------------------------
 -- 0. 헬퍼 함수
@@ -22,12 +30,14 @@ LANGUAGE sql
 SECURITY DEFINER
 SET search_path = auth, public
 AS $$
-  SELECT id
-  FROM auth.users
+  -- 1순위: email 원본 비교 (auth.users 이메일 인덱스 사용. GoTrue는 소문자로 저장하며
+  -- 2026-09-27 기준 대소문자 섞인 이메일 0건). 못 찾을 때만 lower() 전체 비교로 보완.
+  SELECT COALESCE(
+    (SELECT u.id FROM auth.users u WHERE u.email = lower(btrim(p_email)) LIMIT 1),
+    (SELECT u.id FROM auth.users u WHERE lower(u.email) = lower(btrim(p_email)) LIMIT 1)
+  )
   WHERE p_email IS NOT NULL
-    AND btrim(p_email) <> ''
-    AND lower(email) = lower(btrim(p_email))
-  LIMIT 1;
+    AND btrim(p_email) <> '';
 $$;
 
 REVOKE ALL ON FUNCTION public.okbm_find_auth_user_id(text) FROM PUBLIC, anon, authenticated;
@@ -224,6 +234,78 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.okbm_rpc_rate_limit(text, integer) FROM PUBLIC, anon, authenticated;
+
+-- 요청 IP (익명 rate limit 키). 클라이언트 직접 호출 불가, DEFINER 함수 안에서만 사용.
+-- x-forwarded-for 첫 값은 게이트웨이가 정리하지 않으면 위조 가능하므로
+-- Cloudflare가 덮어쓰는 cf-connecting-ip를 우선한다. "마지막 값"은 공용 프록시 IP일 수 있어
+-- 모든 익명 사용자가 한 버킷을 공유할 위험이 있어 쓰지 않는다.
+-- C5-1 확인(2026-09-27): 운영 요청에 cf-connecting-ip가 실제 클라이언트 IP로 들어오고,
+-- 클라이언트가 CF-Connecting-IP를 직접 넣으면 Cloudflare가 403(1000)으로 거부한다.
+CREATE OR REPLACE FUNCTION public.okbm_request_ip()
+RETURNS text
+LANGUAGE plpgsql
+STABLE
+SET search_path = public
+AS $$
+DECLARE
+  v_headers text := current_setting('request.headers', true);
+  v_ip text := '';
+BEGIN
+  IF v_headers IS NOT NULL AND btrim(v_headers) <> '' THEN
+    BEGIN
+      v_ip := btrim(COALESCE(
+        NULLIF(btrim((v_headers::json)->>'cf-connecting-ip'), ''),
+        NULLIF(btrim(split_part(COALESCE((v_headers::json)->>'x-forwarded-for', ''), ',', 1)), ''),
+        NULLIF(btrim((v_headers::json)->>'x-real-ip'), ''),
+        ''
+      ));
+    EXCEPTION WHEN others THEN
+      v_ip := '';
+    END;
+  END IF;
+  RETURN left(COALESCE(NULLIF(v_ip, ''), 'anon'), 80);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_request_ip() FROM PUBLIC, anon, authenticated;
+
+-- 행위자 키를 직접 받는 분당 제한. 익명(IP)·Edge Function(사용자 id)용.
+-- true = 허용, false = 초과. 클라이언트 직접 호출 불가(service_role 전용).
+CREATE OR REPLACE FUNCTION public.okbm_actor_rate_limit(p_actor text, p_name text, p_max integer)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_actor text := left(btrim(COALESCE(p_actor, '')), 120);
+  v_name text := left(btrim(COALESCE(p_name, '')), 80);
+  v_window timestamptz := date_trunc('minute', now());
+  v_count integer;
+BEGIN
+  IF v_actor = '' OR v_name = '' THEN
+    RETURN false;
+  END IF;
+  INSERT INTO public.okbm_rpc_rate_limits AS r (actor_id, rpc_name, window_start, call_count)
+  VALUES (v_actor, v_name, v_window, 1)
+  ON CONFLICT (actor_id, rpc_name)
+  DO UPDATE SET
+    call_count = CASE
+      WHEN r.window_start IS NOT DISTINCT FROM EXCLUDED.window_start THEN r.call_count + 1
+      ELSE 1
+    END,
+    window_start = EXCLUDED.window_start
+  RETURNING r.call_count INTO v_count;
+  RETURN v_count <= GREATEST(COALESCE(p_max, 60), 1);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_actor_rate_limit(text, text, integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.okbm_actor_rate_limit(text, text, integer) TO service_role;
+
+-- 오래된 제한 행 정리 (SUPABASE_OPS_CRON.sql의 pg_cron 작업이 호출)
+CREATE INDEX IF NOT EXISTS okbm_rpc_rate_limits_window_idx
+  ON public.okbm_rpc_rate_limits (window_start);
 
 CREATE OR REPLACE FUNCTION public.okbm_stamp_okbm_user_id(p_okbm_user_id text)
 RETURNS text
@@ -557,6 +639,9 @@ DECLARE
   v_user_b text;
   v_msg jsonb;
   v_row public.direct_threads%ROWTYPE;
+  -- 닉네임은 클라이언트 값(p_sender_nick/p_receiver_nick)을 쓰지 않고 users에서 읽는다.
+  v_sender_nick text;
+  v_receiver_nick text;
 BEGIN
   IF auth.uid() IS NULL OR v_actor IS NULL OR btrim(v_actor) = '' THEN
     RAISE EXCEPTION 'not authenticated';
@@ -579,6 +664,27 @@ BEGIN
   IF v_body = '' THEN
     RAISE EXCEPTION 'empty_direct_message' USING ERRCODE = 'P0001';
   END IF;
+  -- 본문 상한(클라이언트 sendDirectMessage와 같은 500자): 대화 1행에 최대 200개가
+  -- 쌓이므로 행 크기 폭증을 막는다.
+  IF char_length(v_body) > 500 THEN
+    RAISE EXCEPTION 'direct_message_too_long' USING ERRCODE = 'P0001';
+  END IF;
+
+  SELECT COALESCE(NULLIF(btrim(u.nickname), ''), '낭만백패커')
+    INTO v_receiver_nick
+  FROM public.users u
+  WHERE u.id = v_receiver
+  LIMIT 1;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'receiver_not_found' USING ERRCODE = 'P0001';
+  END IF;
+
+  SELECT COALESCE(NULLIF(btrim(u.nickname), ''), '낭만백패커')
+    INTO v_sender_nick
+  FROM public.users u
+  WHERE u.id = v_sender
+  LIMIT 1;
+  v_sender_nick := COALESCE(v_sender_nick, '낭만백패커');
   IF EXISTS (
     SELECT 1 FROM public.user_blocks
     WHERE (blocker_id = v_sender AND blocked_id = v_receiver)
@@ -606,8 +712,8 @@ BEGIN
     id, user_a, user_b, nick_a, nick_b, messages, last_body, last_at, last_sender_id, unread_a, unread_b, updated_at
   ) VALUES (
     v_thread_id, v_user_a, v_user_b,
-    CASE WHEN v_user_a = v_sender THEN COALESCE(p_sender_nick, '') ELSE COALESCE(p_receiver_nick, '') END,
-    CASE WHEN v_user_b = v_sender THEN COALESCE(p_sender_nick, '') ELSE COALESCE(p_receiver_nick, '') END,
+    CASE WHEN v_user_a = v_sender THEN v_sender_nick ELSE v_receiver_nick END,
+    CASE WHEN v_user_b = v_sender THEN v_sender_nick ELSE v_receiver_nick END,
     jsonb_build_array(v_msg), v_body, now(), v_sender,
     CASE WHEN v_user_a = v_receiver THEN 1 ELSE 0 END,
     CASE WHEN v_user_b = v_receiver THEN 1 ELSE 0 END,
@@ -627,8 +733,8 @@ BEGIN
         ELSE COALESCE(direct_threads.messages, '[]'::jsonb) || jsonb_build_array(v_msg)
       END
     ),
-    nick_a = CASE WHEN direct_threads.user_a = v_sender THEN COALESCE(p_sender_nick, direct_threads.nick_a) WHEN direct_threads.user_a = v_receiver THEN COALESCE(p_receiver_nick, direct_threads.nick_a) ELSE direct_threads.nick_a END,
-    nick_b = CASE WHEN direct_threads.user_b = v_sender THEN COALESCE(p_sender_nick, direct_threads.nick_b) WHEN direct_threads.user_b = v_receiver THEN COALESCE(p_receiver_nick, direct_threads.nick_b) ELSE direct_threads.nick_b END,
+    nick_a = CASE WHEN direct_threads.user_a = v_sender THEN v_sender_nick WHEN direct_threads.user_a = v_receiver THEN v_receiver_nick ELSE direct_threads.nick_a END,
+    nick_b = CASE WHEN direct_threads.user_b = v_sender THEN v_sender_nick WHEN direct_threads.user_b = v_receiver THEN v_receiver_nick ELSE direct_threads.nick_b END,
     last_body = v_body,
     last_at = now(),
     last_sender_id = v_sender,
@@ -993,11 +1099,11 @@ CREATE POLICY okbm_rpc_rate_limits_no_client ON public.okbm_rpc_rate_limits
 CREATE POLICY spots_select_public ON public.spots
   FOR SELECT USING (true);
 CREATE POLICY spots_admin_insert ON public.spots
-  FOR INSERT WITH CHECK (public.okbm_is_admin());
+  FOR INSERT WITH CHECK ((SELECT public.okbm_is_admin()));
 CREATE POLICY spots_admin_update ON public.spots
-  FOR UPDATE USING (public.okbm_is_admin()) WITH CHECK (public.okbm_is_admin());
+  FOR UPDATE USING ((SELECT public.okbm_is_admin())) WITH CHECK ((SELECT public.okbm_is_admin()));
 CREATE POLICY spots_admin_delete ON public.spots
-  FOR DELETE USING (public.okbm_is_admin());
+  FOR DELETE USING ((SELECT public.okbm_is_admin()));
 
 -- 목록용 특징 한 줄. 본문(desc_summary)·링크(mediaUrls)·들머리 주소는 목록에서 제외.
 ALTER TABLE public.spots ADD COLUMN IF NOT EXISTS view_brief text;
@@ -1108,41 +1214,10 @@ AS $$
 DECLARE
   result jsonb;
   v_actor text;
-  v_ip text := '';
-  v_headers text;
-  v_window timestamptz := date_trunc('minute', now());
-  v_count integer;
 BEGIN
   IF auth.role() IS DISTINCT FROM 'service_role' THEN
-    v_actor := NULLIF(auth.uid()::text, '');
-    IF v_actor IS NULL THEN
-      v_headers := current_setting('request.headers', true);
-      IF v_headers IS NOT NULL AND btrim(v_headers) <> '' THEN
-        BEGIN
-          v_ip := btrim(split_part(COALESCE(
-            (v_headers::json)->>'x-forwarded-for',
-            (v_headers::json)->>'x-real-ip',
-            ''
-          ), ',', 1));
-        EXCEPTION WHEN others THEN
-          v_ip := '';
-        END;
-      END IF;
-      v_actor := 'ip:' || left(COALESCE(NULLIF(v_ip, ''), 'anon'), 80);
-    END IF;
-
-    INSERT INTO public.okbm_rpc_rate_limits AS r (actor_id, rpc_name, window_start, call_count)
-    VALUES (v_actor, 'get_spot_detail', v_window, 1)
-    ON CONFLICT (actor_id, rpc_name)
-    DO UPDATE SET
-      call_count = CASE
-        WHEN r.window_start IS NOT DISTINCT FROM EXCLUDED.window_start THEN r.call_count + 1
-        ELSE 1
-      END,
-      window_start = EXCLUDED.window_start
-    RETURNING r.call_count INTO v_count;
-
-    IF v_count > 60 THEN
+    v_actor := COALESCE(NULLIF(auth.uid()::text, ''), 'ip:' || public.okbm_request_ip());
+    IF NOT public.okbm_actor_rate_limit(v_actor, 'get_spot_detail', 60) THEN
       RAISE EXCEPTION 'rate limit exceeded';
     END IF;
   END IF;
@@ -1169,7 +1244,24 @@ $$;
 REVOKE ALL ON FUNCTION public.get_spot_detail(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_spot_detail(text) TO anon, authenticated, service_role;
 
+-- mediaUrls에 누가 어떤 링크를 붙였는지 기록. 사용자별 장소당 추가 개수 제한과
+-- 관리자 정리(스팸 링크 제거)에 쓴다. 클라이언트 직접 접근 불가.
+CREATE TABLE IF NOT EXISTS public.spot_media_contributions (
+  spot_id text NOT NULL,
+  url text NOT NULL,
+  actor_id text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (spot_id, url)
+);
+CREATE INDEX IF NOT EXISTS spot_media_contributions_actor_idx
+  ON public.spot_media_contributions (spot_id, actor_id);
+ALTER TABLE public.spot_media_contributions ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.spot_media_contributions FROM PUBLIC, anon, authenticated;
+CREATE POLICY spot_media_contributions_no_client ON public.spot_media_contributions
+  FOR ALL USING (false) WITH CHECK (false);
+
 -- 인증된 사용자만 mediaUrls에 youtube/네이버 블로그 http(s) URL을 append하는 RPC.
+-- 일반 사용자는 장소당 최대 6개(누적)까지만 추가 가능. 관리자는 기존 한도(호출당 20) 유지.
 CREATE OR REPLACE FUNCTION public.merge_spot_media_urls(p_spot_id text, p_urls text[])
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -1181,10 +1273,13 @@ DECLARE
   v_existing text;
   v_parts text[];
   v_seen text[] := ARRAY[]::text[];
+  v_added text[] := ARRAY[]::text[];
   v_url text;
   v_norm text;
   v_host text;
   v_appended integer := 0;
+  v_quota integer := 20;
+  v_prior integer := 0;
   v_next text;
 BEGIN
   IF auth.uid() IS NULL OR v_actor IS NULL OR btrim(v_actor) = '' THEN
@@ -1202,6 +1297,13 @@ BEGIN
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'spot not found';
+  END IF;
+
+  IF NOT public.okbm_is_admin() THEN
+    SELECT count(*) INTO v_prior
+    FROM public.spot_media_contributions c
+    WHERE c.spot_id = btrim(p_spot_id) AND c.actor_id = v_actor;
+    v_quota := GREATEST(6 - v_prior, 0);
   END IF;
 
   IF v_existing IS NOT NULL AND btrim(v_existing) <> '' THEN
@@ -1251,19 +1353,26 @@ BEGIN
       IF coalesce(array_length(v_seen, 1), 0) >= 40 THEN
         EXIT;
       END IF;
-      IF v_appended >= 20 THEN
+      IF v_appended >= v_quota THEN
         EXIT;
       END IF;
       v_seen := array_append(v_seen, v_norm);
+      v_added := array_append(v_added, v_norm);
       v_appended := v_appended + 1;
     END LOOP;
   END IF;
 
   v_next := array_to_string(v_seen, E'\n');
 
-  UPDATE public.spots
-  SET "mediaUrls" = v_next
-  WHERE id = btrim(p_spot_id);
+  IF v_appended > 0 THEN
+    UPDATE public.spots
+    SET "mediaUrls" = v_next
+    WHERE id = btrim(p_spot_id);
+
+    INSERT INTO public.spot_media_contributions (spot_id, url, actor_id)
+    SELECT btrim(p_spot_id), u, v_actor FROM unnest(v_added) AS u
+    ON CONFLICT (spot_id, url) DO NOTHING;
+  END IF;
 
   RETURN jsonb_build_object(
     'ok', true,
@@ -1281,11 +1390,11 @@ CREATE POLICY gears_select_public ON public.gears
   FOR SELECT USING (true);
 GRANT SELECT ON TABLE public.gears TO anon, authenticated;
 CREATE POLICY gears_admin_insert ON public.gears
-  FOR INSERT WITH CHECK (public.okbm_is_admin());
+  FOR INSERT WITH CHECK ((SELECT public.okbm_is_admin()));
 CREATE POLICY gears_admin_update ON public.gears
-  FOR UPDATE USING (public.okbm_is_admin()) WITH CHECK (public.okbm_is_admin());
+  FOR UPDATE USING ((SELECT public.okbm_is_admin())) WITH CHECK ((SELECT public.okbm_is_admin()));
 CREATE POLICY gears_admin_delete ON public.gears
-  FOR DELETE USING (public.okbm_is_admin());
+  FOR DELETE USING ((SELECT public.okbm_is_admin()));
 
 -- -------------------------------------------------------------------------
 -- 3. feeds / likes / notifications
@@ -1294,17 +1403,17 @@ CREATE POLICY gears_admin_delete ON public.gears
 CREATE POLICY feeds_select_public ON public.feeds
   FOR SELECT USING (
     COALESCE(is_published, false) = true
-    OR user_id = public.okbm_uid()
-    OR public.okbm_is_admin()
+    OR user_id = (SELECT public.okbm_uid())
+    OR (SELECT public.okbm_is_admin())
   );
 GRANT SELECT ON TABLE public.feeds TO anon, authenticated;
 CREATE POLICY feeds_insert_own ON public.feeds
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND user_id = public.okbm_uid());
+  FOR INSERT WITH CHECK ((SELECT auth.uid()) IS NOT NULL AND user_id = (SELECT public.okbm_uid()));
 CREATE POLICY feeds_update_own ON public.feeds
-  FOR UPDATE USING (user_id = public.okbm_uid() OR public.okbm_is_admin())
-  WITH CHECK (user_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR UPDATE USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()))
+  WITH CHECK (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 CREATE POLICY feeds_delete_own ON public.feeds
-  FOR DELETE USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR DELETE USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 
 -- 동명 산 오부착 방지: 등록 박지 id (nullable, 레거시는 이름+지역 fallback)
 ALTER TABLE public.feeds
@@ -1316,72 +1425,72 @@ CREATE INDEX IF NOT EXISTS feeds_spot_id_idx
 CREATE POLICY feed_likes_select_public ON public.feed_likes
   FOR SELECT USING (true);
 CREATE POLICY feed_likes_insert_own ON public.feed_likes
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND user_id = public.okbm_uid());
+  FOR INSERT WITH CHECK ((SELECT auth.uid()) IS NOT NULL AND user_id = (SELECT public.okbm_uid()));
 CREATE POLICY feed_likes_delete_own ON public.feed_likes
-  FOR DELETE USING (user_id = public.okbm_uid());
+  FOR DELETE USING (user_id = (SELECT public.okbm_uid()));
 
 CREATE POLICY user_notifications_select_own ON public.user_notifications
-  FOR SELECT USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR SELECT USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 CREATE POLICY user_notifications_insert_admin ON public.user_notifications
-  FOR INSERT WITH CHECK (public.okbm_is_admin());
+  FOR INSERT WITH CHECK ((SELECT public.okbm_is_admin()));
 CREATE POLICY user_notifications_update_own ON public.user_notifications
-  FOR UPDATE USING (user_id = public.okbm_uid() OR public.okbm_is_admin())
-  WITH CHECK (user_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR UPDATE USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()))
+  WITH CHECK (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 CREATE POLICY user_notifications_delete_own ON public.user_notifications
-  FOR DELETE USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR DELETE USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 
 -- -------------------------------------------------------------------------
 -- 4. users : 본인만 전체 행, 공개 프로필은 get_public_profile RPC
 -- -------------------------------------------------------------------------
 CREATE POLICY users_select_own ON public.users
-  FOR SELECT USING (id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR SELECT USING (id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 CREATE POLICY users_insert_own ON public.users
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND id = public.okbm_uid());
+  FOR INSERT WITH CHECK ((SELECT auth.uid()) IS NOT NULL AND id = (SELECT public.okbm_uid()));
 CREATE POLICY users_update_own ON public.users
-  FOR UPDATE USING (id = public.okbm_uid())
-  WITH CHECK (id = public.okbm_uid());
+  FOR UPDATE USING (id = (SELECT public.okbm_uid()))
+  WITH CHECK (id = (SELECT public.okbm_uid()));
 CREATE POLICY users_delete_own ON public.users
-  FOR DELETE USING (id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR DELETE USING (id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 
 -- -------------------------------------------------------------------------
 -- 5. 나머지 테이블
 -- -------------------------------------------------------------------------
 CREATE POLICY user_blocks_select_own ON public.user_blocks
-  FOR SELECT USING (blocker_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR SELECT USING (blocker_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 CREATE POLICY user_blocks_insert_own ON public.user_blocks
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND blocker_id = public.okbm_uid());
+  FOR INSERT WITH CHECK ((SELECT auth.uid()) IS NOT NULL AND blocker_id = (SELECT public.okbm_uid()));
 CREATE POLICY user_blocks_delete_own ON public.user_blocks
-  FOR DELETE USING (blocker_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR DELETE USING (blocker_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 
 CREATE POLICY feed_reports_insert_auth ON public.feed_reports
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND reporter_id = public.okbm_uid());
+  FOR INSERT WITH CHECK ((SELECT auth.uid()) IS NOT NULL AND reporter_id = (SELECT public.okbm_uid()));
 CREATE POLICY feed_reports_select_admin ON public.feed_reports
-  FOR SELECT USING (reporter_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR SELECT USING (reporter_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 CREATE POLICY feed_reports_update_admin ON public.feed_reports
-  FOR UPDATE USING (public.okbm_is_admin()) WITH CHECK (public.okbm_is_admin());
+  FOR UPDATE USING ((SELECT public.okbm_is_admin())) WITH CHECK ((SELECT public.okbm_is_admin()));
 CREATE POLICY feed_reports_delete_admin ON public.feed_reports
-  FOR DELETE USING (public.okbm_is_admin());
+  FOR DELETE USING ((SELECT public.okbm_is_admin()));
 
 CREATE POLICY proposals_select_own ON public.proposals
-  FOR SELECT USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR SELECT USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 CREATE POLICY proposals_insert_own ON public.proposals
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND user_id = public.okbm_uid());
+  FOR INSERT WITH CHECK ((SELECT auth.uid()) IS NOT NULL AND user_id = (SELECT public.okbm_uid()));
 -- 작성자는 본문만 수정 가능. status/approved_spot_id는 트리거가 비관리자 변경을 되돌림.
 CREATE POLICY proposals_update_admin ON public.proposals
-  FOR UPDATE USING (public.okbm_is_admin() OR user_id = public.okbm_uid())
-  WITH CHECK (public.okbm_is_admin() OR user_id = public.okbm_uid());
+  FOR UPDATE USING ((SELECT public.okbm_is_admin()) OR user_id = (SELECT public.okbm_uid()))
+  WITH CHECK ((SELECT public.okbm_is_admin()) OR user_id = (SELECT public.okbm_uid()));
 CREATE POLICY proposals_delete_own ON public.proposals
-  FOR DELETE USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR DELETE USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 
 CREATE POLICY spot_corrections_select_own ON public.spot_corrections
-  FOR SELECT USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR SELECT USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 CREATE POLICY spot_corrections_insert_own ON public.spot_corrections
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND user_id = public.okbm_uid());
+  FOR INSERT WITH CHECK ((SELECT auth.uid()) IS NOT NULL AND user_id = (SELECT public.okbm_uid()));
 CREATE POLICY spot_corrections_update_admin ON public.spot_corrections
-  FOR UPDATE USING (public.okbm_is_admin() OR user_id = public.okbm_uid())
-  WITH CHECK (public.okbm_is_admin() OR user_id = public.okbm_uid());
+  FOR UPDATE USING ((SELECT public.okbm_is_admin()) OR user_id = (SELECT public.okbm_uid()))
+  WITH CHECK ((SELECT public.okbm_is_admin()) OR user_id = (SELECT public.okbm_uid()));
 CREATE POLICY spot_corrections_delete_own ON public.spot_corrections
-  FOR DELETE USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR DELETE USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 
 -- 제보/수정건의: 비관리자는 status·approved_spot_id를 바꿀 수 없음.
 CREATE OR REPLACE FUNCTION public.okbm_guard_proposal_decision_cols()
@@ -1433,7 +1542,7 @@ CREATE POLICY ranking_stats_select_public ON public.ranking_stats
   FOR SELECT USING (true);
 GRANT SELECT ON TABLE public.ranking_stats TO anon, authenticated;
 CREATE POLICY ranking_stats_admin_write ON public.ranking_stats
-  FOR ALL USING (public.okbm_is_admin()) WITH CHECK (public.okbm_is_admin());
+  FOR ALL USING ((SELECT public.okbm_is_admin())) WITH CHECK ((SELECT public.okbm_is_admin()));
 
 -- 맵 박지 인기(포커스) 집계: 클라이언트 직접 INSERT/UPDATE 금지, RPC만 허용.
 CREATE UNIQUE INDEX IF NOT EXISTS ranking_stats_spot_id_uidx
@@ -1450,35 +1559,30 @@ SET search_path TO 'public'
 AS $function$
 DECLARE
   v_id text := btrim(COALESCE(p_spot_id, ''));
-  v_name text := btrim(COALESCE(p_spot_name, ''));
-  v_exists boolean := false;
+  -- p_spot_name은 시그니처 호환용으로만 받고 쓰지 않는다. 표시 이름은 spots에서만 읽는다.
+  v_name text := '';
+  v_actor text;
 BEGIN
   IF v_id = '' THEN
     RETURN;
   END IF;
 
-  IF auth.uid() IS NOT NULL AND auth.role() IS DISTINCT FROM 'service_role' THEN
-    BEGIN
-      PERFORM public.okbm_rpc_rate_limit('increment_spot_ranking', 30);
-    EXCEPTION WHEN OTHERS THEN
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    -- 익명도 IP 기준으로 분당 30회 제한 (초과 시 조용히 무시)
+    v_actor := COALESCE(NULLIF(auth.uid()::text, ''), 'ip:' || public.okbm_request_ip());
+    IF NOT public.okbm_actor_rate_limit(v_actor, 'increment_spot_ranking', 30) THEN
       RETURN;
-    END;
+    END IF;
   END IF;
 
-  SELECT EXISTS (
-    SELECT 1 FROM public.spots s WHERE s.id = v_id LIMIT 1
-  ) INTO v_exists;
+  SELECT COALESCE(NULLIF(btrim(s."fullName"), ''), NULLIF(btrim(s.spot_main), ''), v_id)
+    INTO v_name
+  FROM public.spots s
+  WHERE s.id = v_id
+  LIMIT 1;
 
-  IF NOT v_exists THEN
+  IF NOT FOUND THEN
     RETURN;
-  END IF;
-
-  IF v_name = '' THEN
-    SELECT COALESCE(NULLIF(btrim(s."fullName"), ''), NULLIF(btrim(s.spot_main), ''), v_id)
-      INTO v_name
-    FROM public.spots s
-    WHERE s.id = v_id
-    LIMIT 1;
   END IF;
 
   INSERT INTO public.ranking_stats (spot_id, spot_name, usage_count, created_at, updated_at)
@@ -1502,20 +1606,20 @@ CREATE POLICY featured_videos_select_public ON public.featured_videos
   FOR SELECT USING (true);
 GRANT SELECT ON TABLE public.featured_videos TO anon, authenticated;
 CREATE POLICY featured_videos_admin_write ON public.featured_videos
-  FOR ALL USING (public.okbm_is_admin()) WITH CHECK (public.okbm_is_admin());
+  FOR ALL USING ((SELECT public.okbm_is_admin())) WITH CHECK ((SELECT public.okbm_is_admin()));
 
 CREATE POLICY trips_select_public ON public.trips
   FOR SELECT USING (true);
 CREATE POLICY trips_insert_own ON public.trips
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND host_id = public.okbm_uid());
+  FOR INSERT WITH CHECK ((SELECT auth.uid()) IS NOT NULL AND host_id = (SELECT public.okbm_uid()));
 CREATE POLICY trips_update_own ON public.trips
-  FOR UPDATE USING (host_id = public.okbm_uid() OR public.okbm_is_admin())
-  WITH CHECK (host_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR UPDATE USING (host_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()))
+  WITH CHECK (host_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 CREATE POLICY trips_delete_own ON public.trips
-  FOR DELETE USING (host_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR DELETE USING (host_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 
 CREATE POLICY direct_threads_select_own ON public.direct_threads
-  FOR SELECT USING (user_a = public.okbm_uid() OR user_b = public.okbm_uid() OR public.okbm_is_admin());
+  FOR SELECT USING (user_a = (SELECT public.okbm_uid()) OR user_b = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 -- INSERT/UPDATE는 okbm_append_direct_message / hide / mark_read (SECURITY DEFINER)만.
 -- 클라이언트 REST PATCH로 말풍선·참여자를 고치지 못함.
 CREATE POLICY direct_threads_insert_deny ON public.direct_threads
@@ -1523,27 +1627,27 @@ CREATE POLICY direct_threads_insert_deny ON public.direct_threads
 CREATE POLICY direct_threads_update_deny ON public.direct_threads
   FOR UPDATE USING (false) WITH CHECK (false);
 CREATE POLICY direct_threads_delete_own ON public.direct_threads
-  FOR DELETE USING (user_a = public.okbm_uid() OR user_b = public.okbm_uid() OR public.okbm_is_admin());
+  FOR DELETE USING (user_a = (SELECT public.okbm_uid()) OR user_b = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 
 CREATE POLICY comments_select_public ON public.comments
   FOR SELECT USING (true);
 CREATE POLICY comments_insert_own ON public.comments
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND user_id = public.okbm_uid());
+  FOR INSERT WITH CHECK ((SELECT auth.uid()) IS NOT NULL AND user_id = (SELECT public.okbm_uid()));
 CREATE POLICY comments_update_own ON public.comments
-  FOR UPDATE USING (user_id = public.okbm_uid() OR public.okbm_is_admin())
-  WITH CHECK (user_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR UPDATE USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()))
+  WITH CHECK (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 CREATE POLICY comments_delete_own ON public.comments
-  FOR DELETE USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR DELETE USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 
 CREATE POLICY talks_select_public ON public.talks
   FOR SELECT USING (true);
 CREATE POLICY talks_insert_own ON public.talks
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND user_id = public.okbm_uid());
+  FOR INSERT WITH CHECK ((SELECT auth.uid()) IS NOT NULL AND user_id = (SELECT public.okbm_uid()));
 CREATE POLICY talks_delete_own ON public.talks
-  FOR DELETE USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
+  FOR DELETE USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 
 CREATE POLICY stats_select_admin ON public.stats
-  FOR SELECT USING (public.okbm_is_admin());
+  FOR SELECT USING ((SELECT public.okbm_is_admin()));
 REVOKE SELECT ON TABLE public.stats FROM anon, authenticated;
 GRANT SELECT ON TABLE public.stats TO authenticated;
 
@@ -1571,6 +1675,154 @@ REVOKE ALL ON FUNCTION public.handle_feed_like_sync() FROM PUBLIC, anon, authent
 
 -- RLS를 우회하는 TRUNCATE는 클라이언트 역할에 필요 없음.
 REVOKE TRUNCATE ON TABLE public.stats, public.direct_threads, public.visit_seen FROM anon, authenticated;
+
+-- -------------------------------------------------------------------------
+-- 6. 2026-09 보안·성능 점검 반영
+-- -------------------------------------------------------------------------
+
+-- 6-1. 정책·조회에 쓰이는 컬럼 인덱스 (C2, P8)
+CREATE INDEX IF NOT EXISTS feeds_user_date_idx
+  ON public.feeds (user_id, date DESC, created_at DESC);
+CREATE INDEX IF NOT EXISTS feeds_published_likes_idx
+  ON public.feeds (likes_count DESC, created_at DESC) WHERE is_published = true;
+CREATE INDEX IF NOT EXISTS feed_likes_user_id_idx ON public.feed_likes (user_id);
+CREATE INDEX IF NOT EXISTS comments_user_id_idx ON public.comments (user_id);
+CREATE INDEX IF NOT EXISTS talks_user_id_idx ON public.talks (user_id);
+CREATE INDEX IF NOT EXISTS direct_threads_user_a_idx ON public.direct_threads (user_a, last_at DESC);
+CREATE INDEX IF NOT EXISTS direct_threads_user_b_idx ON public.direct_threads (user_b, last_at DESC);
+CREATE INDEX IF NOT EXISTS user_notifications_user_created_idx
+  ON public.user_notifications (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS proposals_user_id_idx ON public.proposals (user_id);
+CREATE INDEX IF NOT EXISTS proposals_created_idx ON public.proposals (created_at DESC);
+CREATE INDEX IF NOT EXISTS spot_corrections_user_id_idx ON public.spot_corrections (user_id);
+CREATE INDEX IF NOT EXISTS spot_corrections_created_idx ON public.spot_corrections (created_at DESC);
+CREATE INDEX IF NOT EXISTS trips_host_id_idx ON public.trips (host_id);
+CREATE INDEX IF NOT EXISTS user_blocks_blocker_idx ON public.user_blocks (blocker_id);
+CREATE INDEX IF NOT EXISTS user_blocks_blocked_idx ON public.user_blocks (blocked_id);
+CREATE INDEX IF NOT EXISTS feed_reports_reporter_idx ON public.feed_reports (reporter_id);
+
+-- 6-2. 부분 일치 검색(ilike '*X*') 인덱스 (P1)
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
+CREATE INDEX IF NOT EXISTS feeds_spot_trgm_idx
+  ON public.feeds USING gin (spot gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS spots_spot_main_trgm_idx
+  ON public.spots USING gin (spot_main gin_trgm_ops);
+
+-- 6-3. 닉네임 중복 검사 인덱스 (P9). okbm_is_nickname_taken의 식과 동일해야 탄다.
+CREATE INDEX IF NOT EXISTS users_nickname_lower_idx
+  ON public.users (lower(btrim(COALESCE(nickname, ''))));
+
+-- 6-4. 오픈채팅 링크는 카카오 오픈채팅만 (S4).
+-- CHECK 제약 대신 트리거를 쓴다. CHECK(NOT VALID)는 링크가 그대로인 기존 행도
+-- 상태 변경 등 모든 UPDATE에서 다시 검사해 실패시킨다. 트리거는 링크가
+-- 새로 들어오거나 바뀔 때만 검사하므로 기존 원정대를 미리 정리할 필요가 없다.
+ALTER TABLE public.trips DROP CONSTRAINT IF EXISTS trips_open_chat_url_chk;
+
+CREATE OR REPLACE FUNCTION public.okbm_guard_trips_open_chat_url()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.open_chat_url IS NULL OR btrim(NEW.open_chat_url) = '' THEN
+    RETURN NEW;
+  END IF;
+  IF TG_OP = 'UPDATE' AND NEW.open_chat_url IS NOT DISTINCT FROM OLD.open_chat_url THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.open_chat_url !~ '^https://open\.kakao\.com/' THEN
+    RAISE EXCEPTION 'invalid_open_chat_url' USING ERRCODE = 'P0001';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_guard_trips_open_chat_url() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS trg_okbm_guard_trips_open_chat_url ON public.trips;
+CREATE TRIGGER trg_okbm_guard_trips_open_chat_url
+  BEFORE INSERT OR UPDATE ON public.trips
+  FOR EACH ROW
+  EXECUTE FUNCTION public.okbm_guard_trips_open_chat_url();
+
+-- 6-5. spots.id 서버 발급 (P3). id 없이 INSERT하면 숫자 id 최댓값+1을 붙인다.
+-- advisory lock으로 동시 등록 시 같은 id가 나오지 않게 한다. 명시한 id는 그대로 둔다.
+CREATE OR REPLACE FUNCTION public.okbm_spots_assign_id()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.id IS NULL OR btrim(NEW.id) = '' THEN
+    PERFORM pg_advisory_xact_lock(hashtext('okbm_spots_assign_id'));
+    SELECT (COALESCE(max(s.id::bigint), 0) + 1)::text
+      INTO NEW.id
+    FROM public.spots s
+    WHERE s.id ~ '^[0-9]{1,18}$';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_spots_assign_id() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS trg_okbm_spots_assign_id ON public.spots;
+CREATE TRIGGER trg_okbm_spots_assign_id
+  BEFORE INSERT ON public.spots
+  FOR EACH ROW
+  EXECUTE FUNCTION public.okbm_spots_assign_id();
+
+-- 6-6. 회원 탈퇴 데이터 삭제를 한 트랜잭션으로 (P4). delete-account Edge Function 전용.
+CREATE OR REPLACE FUNCTION public.okbm_delete_account_data(p_ids text[])
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_ids text[];
+BEGIN
+  SELECT ARRAY(
+    SELECT DISTINCT btrim(x) FROM unnest(COALESCE(p_ids, ARRAY[]::text[])) AS x
+    WHERE btrim(COALESCE(x, '')) <> ''
+  ) INTO v_ids;
+  IF COALESCE(array_length(v_ids, 1), 0) = 0 THEN
+    RETURN;
+  END IF;
+
+  DELETE FROM public.feed_likes WHERE user_id = ANY (v_ids);
+  DELETE FROM public.feeds WHERE user_id = ANY (v_ids);
+  DELETE FROM public.proposals WHERE user_id = ANY (v_ids);
+  DELETE FROM public.spot_corrections WHERE user_id = ANY (v_ids);
+  DELETE FROM public.trips WHERE host_id = ANY (v_ids);
+  DELETE FROM public.user_notifications WHERE user_id = ANY (v_ids);
+  DELETE FROM public.user_blocks WHERE blocker_id = ANY (v_ids) OR blocked_id = ANY (v_ids);
+  DELETE FROM public.feed_reports WHERE reporter_id = ANY (v_ids);
+  DELETE FROM public.comments WHERE user_id = ANY (v_ids);
+  DELETE FROM public.talks WHERE user_id = ANY (v_ids);
+  DELETE FROM public.direct_threads WHERE user_a = ANY (v_ids) OR user_b = ANY (v_ids);
+  DELETE FROM public.spot_media_contributions WHERE actor_id = ANY (v_ids);
+  DELETE FROM public.users WHERE id = ANY (v_ids);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_delete_account_data(text[]) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.okbm_delete_account_data(text[]) TO service_role;
+
+-- 6-7. place-research 결과 캐시 (P6). Edge Function(service_role)만 읽고 쓴다.
+CREATE TABLE IF NOT EXISTS public.place_research_cache (
+  query text PRIMARY KEY,
+  result jsonb NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS place_research_cache_created_idx
+  ON public.place_research_cache (created_at);
+ALTER TABLE public.place_research_cache ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.place_research_cache FROM PUBLIC, anon, authenticated;
+CREATE POLICY place_research_cache_no_client ON public.place_research_cache
+  FOR ALL USING (false) WITH CHECK (false);
+
+COMMIT;
 
 -- =========================================================================
 -- 검증

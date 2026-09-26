@@ -101,6 +101,99 @@ function rateLimitOk(actor: string, maxPerMinute: number): boolean {
   return true;
 }
 
+function serviceKey(): string {
+  const raw = String(Deno.env.get("SUPABASE_SECRET_KEYS") || "").trim();
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      const named = typeof parsed === "string"
+        ? parsed
+        : String(parsed.default || Object.values(parsed)[0] || "");
+      if (named) return named.trim();
+    } catch {
+      return raw;
+    }
+  }
+  return String(
+    Deno.env.get("SB_SECRET_KEY") ||
+    Deno.env.get("SUPABASE_SECRET_KEY") ||
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+    ""
+  ).trim();
+}
+
+// service_role로 PostgREST 호출. URL/키가 없으면 null.
+async function serviceFetch(path: string, init: RequestInit, ms = 3000): Promise<Response | null> {
+  const url = String(Deno.env.get("SUPABASE_URL") || "").trim();
+  const key = serviceKey();
+  if (!url || !key) return null;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url + path, {
+      ...init,
+      signal: ctrl.signal,
+      headers: {
+        apikey: key,
+        Authorization: "Bearer " + key,
+        "Content-Type": "application/json",
+        ...(init.headers || {}),
+      },
+    });
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// DB 기반 분당 제한 (in-memory Map은 isolate마다 따로라 전역 제한이 안 됨).
+// okbm_actor_rate_limit이 아직 없거나 실패하면 in-memory 제한으로 대신한다.
+async function actorRateLimitOk(actor: string, name: string, maxPerMinute: number): Promise<boolean> {
+  const res = await serviceFetch("/rest/v1/rpc/okbm_actor_rate_limit", {
+    method: "POST",
+    body: JSON.stringify({ p_actor: actor, p_name: name, p_max: maxPerMinute }),
+  });
+  if (!res || !res.ok) return rateLimitOk(actor, maxPerMinute);
+  try {
+    return (await res.json()) === true;
+  } catch {
+    return rateLimitOk(actor, maxPerMinute);
+  }
+}
+
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+function cacheKey(core: string): string {
+  return core.replace(/\s+/g, " ").trim().toLowerCase().slice(0, 120);
+}
+
+// deno-lint-ignore no-explicit-any
+async function readCache(key: string): Promise<any | null> {
+  const since = new Date(Date.now() - CACHE_TTL_MS).toISOString();
+  const res = await serviceFetch(
+    "/rest/v1/place_research_cache?select=result&query=eq." + encodeURIComponent(key) +
+      "&created_at=gte." + encodeURIComponent(since) + "&limit=1",
+    { method: "GET" },
+  );
+  if (!res || !res.ok) return null;
+  try {
+    const rows = await res.json();
+    return Array.isArray(rows) && rows[0] ? rows[0].result : null;
+  } catch {
+    return null;
+  }
+}
+
+async function writeCache(key: string, result: unknown): Promise<void> {
+  const res = await serviceFetch("/rest/v1/place_research_cache?on_conflict=query", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({ query: key, result, created_at: new Date().toISOString() }),
+  });
+  try { await res?.body?.cancel(); } catch { /* ignore */ }
+}
+
 async function requireAuthUser(req: Request): Promise<{ id: string } | null> {
   const jwt = bearerToken(req);
   if (!jwt) return null;
@@ -145,23 +238,98 @@ function decode(s: string): string {
   return stripHtml(s).trim();
 }
 
-async function fetchText(url: string, ms = 8000): Promise<string> {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), ms);
+// 서버가 가져오는 외부 URL은 허용 호스트로 한정한다 (SSRF·임의 사이트 요청 방지).
+const SEARCH_HOSTS = new Set(["m.search.naver.com"]);
+
+function isAllowedSourceUrl(raw: string): boolean {
   try {
-    const res = await fetch(url, {
-      signal: ctrl.signal,
-      redirect: "follow",
-      headers: {
-        "User-Agent": UA,
-        Accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8",
-        "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.4",
-        "Accept-Encoding": "gzip, deflate, identity",
-        Referer: "https://m.search.naver.com/",
-      },
-    });
-    if (!res.ok) return "";
-    return await res.text();
+    const u = new URL(raw);
+    if (u.protocol !== "https:" && u.protocol !== "http:") return false;
+    if (u.username || u.password || u.port) return false;
+    const host = u.hostname.toLowerCase();
+    return host === "blog.naver.com" || host === "m.blog.naver.com" ||
+      /^[a-z0-9-]+\.tistory\.com$/.test(host);
+  } catch {
+    return false;
+  }
+}
+
+function isAllowedSearchUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    return u.protocol === "https:" && SEARCH_HOSTS.has(u.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
+const MAX_BODY_BYTES = 2_000_000;
+
+async function readCapped(res: Response, maxBytes: number): Promise<string> {
+  const lenHeader = Number(res.headers.get("content-length") || "0");
+  if (lenHeader > maxBytes) {
+    try { await res.body?.cancel(); } catch { /* ignore */ }
+    return "";
+  }
+  const reader = res.body?.getReader();
+  if (!reader) return "";
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done || !value) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      try { await reader.cancel(); } catch { /* ignore */ }
+      break;
+    }
+    chunks.push(value);
+  }
+  const size = chunks.reduce((n, c) => n + c.byteLength, 0);
+  const buf = new Uint8Array(size);
+  let off = 0;
+  for (const c of chunks) {
+    buf.set(c, off);
+    off += c.byteLength;
+  }
+  return new TextDecoder().decode(buf);
+}
+
+// redirect는 직접 따라가며 매 hop마다 허용 호스트인지 다시 확인한다 (최대 2회).
+async function fetchText(url: string, ms = 8000, allow: (u: string) => boolean = isAllowedSourceUrl): Promise<string> {
+  if (!allow(url)) return "";
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), Math.max(500, ms));
+  try {
+    let current = url;
+    for (let hop = 0; hop < 3; hop++) {
+      const res = await fetch(current, {
+        signal: ctrl.signal,
+        redirect: "manual",
+        headers: {
+          "User-Agent": UA,
+          Accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8",
+          "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.4",
+          "Accept-Encoding": "gzip, deflate, identity",
+          Referer: "https://m.search.naver.com/",
+        },
+      });
+      if (res.status >= 300 && res.status < 400) {
+        const location = res.headers.get("location") || "";
+        try { await res.body?.cancel(); } catch { /* ignore */ }
+        if (!location) return "";
+        const next = new URL(location, current).href;
+        if (!allow(next)) return "";
+        current = next;
+        continue;
+      }
+      if (!res.ok) {
+        try { await res.body?.cancel(); } catch { /* ignore */ }
+        return "";
+      }
+      return await readCapped(res, MAX_BODY_BYTES);
+    }
+    return "";
   } catch {
     return "";
   } finally {
@@ -239,7 +407,7 @@ function parseDuckDuckGo(html: string): Source[] {
 async function searchDuckDuckGo(q: string): Promise<Source[]> {
   const form = new URLSearchParams({ q, kl: "kr-kr" });
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 9000);
+  const timer = setTimeout(() => ctrl.abort(), 6000);
   try {
     const res = await fetch("https://html.duckduckgo.com/html/", {
       method: "POST",
@@ -570,7 +738,7 @@ async function searchNaverBlogs(q: string): Promise<Source[]> {
   const url =
     "https://m.search.naver.com/search.naver?ssc=tab.m_blog.all&query=" +
     encodeURIComponent(q);
-  const html = await fetchText(url, 9000);
+  const html = await fetchText(url, 6000, isAllowedSearchUrl);
   if (!html) return [];
   return parseNaverBlogSearch(html);
 }
@@ -587,9 +755,10 @@ function sourceScore(s: Source): number {
   return n;
 }
 
-async function fillBodies(items: Source[]): Promise<Source[]> {
-  const http = items.filter((s) => /^https?:\/\//.test(s.url)).slice(0, 8);
-  const bodies = await Promise.all(http.map((s) => fetchText(s.url, 9000)));
+// 최종으로 3개만 쓰므로 본문은 상위 5개만 가져온다. ms는 남은 요청 예산.
+async function fillBodies(items: Source[], ms: number): Promise<Source[]> {
+  const http = items.filter((s) => isAllowedSourceUrl(s.url)).slice(0, 5);
+  const bodies = await Promise.all(http.map((s) => fetchText(s.url, ms)));
   const filled = http.map((s, i) => {
     const html = bodies[i] || "";
     return {
@@ -613,9 +782,10 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: "origin_not_allowed" }, 403);
   }
 
+  const startedAt = Date.now();
   const user = await requireAuthUser(req);
   if (!user) return json(req, { error: "login_required" }, 401);
-  if (!rateLimitOk(user.id, 12)) {
+  if (!(await actorRateLimitOk(user.id, "place-research", 12))) {
     return json(req, { error: "rate_limited" }, 429);
   }
 
@@ -630,6 +800,14 @@ Deno.serve(async (req: Request) => {
 
   const core = query.replace(/\s*백패킹\s*/g, " ").replace(/\s+/g, " ").trim() || query;
   const q = `${core} 백패킹`;
+
+  // 같은 장소는 7일간 캐시된 결과를 돌려준다 (외부 요청 최대 7건 절약).
+  const key = cacheKey(core);
+  const cached = await readCache(key);
+  if (cached && typeof cached === "object") {
+    return json(req, { ...cached, cached: true });
+  }
+
   const [naver, extra] = await Promise.all([
     searchNaverBlogs(q),
     searchDuckDuckGo(q),
@@ -644,15 +822,20 @@ Deno.serve(async (req: Request) => {
   }
 
   const ranked = rankSources(merged, queryTokens(core));
-  const withBody = await fillBodies(ranked.length ? ranked : merged);
+  // 전체 요청 예산 12초: 검색 단계에서 쓰고 남은 시간만 본문 단계에 준다.
+  const remainingMs = Math.max(2000, 12000 - (Date.now() - startedAt));
+  const withBody = await fillBodies(ranked.length ? ranked : merged, remainingMs);
   const fields = synthesize(core, withBody);
 
-  return json(req, {
+  const result = {
     ok: true,
     query: q,
     sourceCount: withBody.length,
     fetched: withBody.length,
     sources: withBody.map((s) => ({ title: s.title, url: s.url })),
     ...fields,
-  });
+  };
+  if (withBody.length > 0) await writeCache(key, result);
+
+  return json(req, result);
 });

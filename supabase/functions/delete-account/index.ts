@@ -76,6 +76,42 @@ async function deleteDirectThreadsForUser(admin: AdminClient, userId: string) {
   }
 }
 
+// okbm_delete_account_data RPC가 아직 없을 때만 쓰는 예전 삭제 경로 (트랜잭션 아님).
+async function legacyDeleteAccountRows(admin: AdminClient, authUser: User, accountIds: string[]) {
+  const deleteByColumn = async (table: string, column: string) => {
+    for (const id of accountIds) {
+      const { error } = await admin.from(table).delete().eq(column, id);
+      if (error && error.code !== "PGRST116" && error.code !== "42P01") {
+        console.error(`[delete-account] ${table}.${column}`, error);
+      }
+    }
+  };
+
+  await deleteByColumn("feed_likes", "user_id");
+  await deleteByColumn("feeds", "user_id");
+  await deleteByColumn("proposals", "user_id");
+  await deleteByColumn("spot_corrections", "user_id");
+  await deleteByColumn("trips", "host_id");
+  await deleteByColumn("user_notifications", "user_id");
+  await deleteByColumn("user_blocks", "blocker_id");
+  await deleteByColumn("user_blocks", "blocked_id");
+  await deleteByColumn("feed_reports", "reporter_id");
+  await deleteByColumn("comments", "user_id");
+  await deleteByColumn("talks", "user_id");
+
+  for (const id of accountIds) {
+    await deleteDirectThreadsForUser(admin, id);
+  }
+
+  for (const id of accountIds) {
+    if (!(await canDeletePublicUserRow(admin, authUser, id))) continue;
+    const { error } = await admin.from("users").delete().eq("id", id);
+    if (error && error.code !== "PGRST116" && error.code !== "42P01") {
+      console.error("[delete-account] users.id", error);
+    }
+  }
+}
+
 Deno.serve(async (req: Request) => {
   const preflight = handleOptions(req);
   if (preflight) return preflight;
@@ -106,51 +142,31 @@ Deno.serve(async (req: Request) => {
     const okbmUserId = plantedOkbmUserId(authUser);
     const accountIds = collectAccountIds(okbmUserId, authUser.id);
 
-    const deleteByColumn = async (table: string, column: string) => {
-      for (const id of accountIds) {
-        const { error } = await admin.from(table).delete().eq(column, id);
-        if (error && error.code !== "PGRST116" && error.code !== "42P01") {
-          console.error(`[delete-account] ${table}.${column}`, error);
-        }
-      }
-    };
-
-    await deleteByColumn("feed_likes", "user_id");
-    await deleteByColumn("feeds", "user_id");
-    await deleteByColumn("proposals", "user_id");
-    await deleteByColumn("spot_corrections", "user_id");
-    await deleteByColumn("trips", "host_id");
-    await deleteByColumn("user_notifications", "user_id");
-    await deleteByColumn("user_blocks", "blocker_id");
-    await deleteByColumn("user_blocks", "blocked_id");
-    await deleteByColumn("feed_reports", "reporter_id");
-    await deleteByColumn("comments", "user_id");
-    await deleteByColumn("talks", "user_id");
-
-    for (const id of accountIds) {
-      await deleteDirectThreadsForUser(admin, id);
-    }
-
-    for (const id of accountIds) {
-      if (!(await canDeletePublicUserRow(admin, authUser, id))) continue;
-      const { error } = await admin.from("users").delete().eq("id", id);
-      if (error && error.code !== "PGRST116" && error.code !== "42P01") {
-        console.error("[delete-account] users.id", error);
+    // accountIds는 검증된 JWT의 auth id와 서버가 app_metadata에 심은 okbm_user_id뿐이다
+    // (클라이언트 입력 없음). 1순위: 한 트랜잭션으로 전부 삭제 (마스터 SQL 6-6).
+    const { error: rpcError } = await admin.rpc("okbm_delete_account_data", { p_ids: accountIds });
+    if (rpcError) {
+      if (rpcError.code === "PGRST202") {
+        // 함수가 아직 DB에 없을 때(마스터 SQL 적용 전)만 예전 방식으로 삭제
+        console.warn("[delete-account] okbm_delete_account_data missing, legacy path");
+        await legacyDeleteAccountRows(admin, authUser, accountIds);
+      } else {
+        // 데이터가 남은 채 auth 계정만 지워지지 않도록 여기서 멈춘다. 재시도 가능.
+        console.error("[delete-account] okbm_delete_account_data", rpcError);
+        return jsonResponse(req, { error: "delete_failed" }, 500);
       }
     }
 
     const { error: authDeleteError } = await admin.auth.admin.deleteUser(authUser.id);
     if (authDeleteError) {
       console.error("[delete-account] auth.users", authDeleteError);
-      return jsonResponse(req, { error: "auth_user_delete_failed", message: authDeleteError.message }, 500);
+      return jsonResponse(req, { error: "auth_user_delete_failed" }, 500);
     }
 
     return jsonResponse(req, { ok: true, deleted_user_id: okbmUserId || authUser.id }, 200);
   } catch (err) {
+    // 내부 오류 문구는 로그에만 남긴다.
     console.error("[delete-account]", err);
-    return jsonResponse(req, {
-      error: "delete_failed",
-      message: err instanceof Error ? err.message : String(err),
-    }, 500);
+    return jsonResponse(req, { error: "delete_failed" }, 500);
   }
 });

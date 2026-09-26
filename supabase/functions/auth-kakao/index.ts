@@ -150,10 +150,8 @@ Deno.serve(async (req: Request) => {
     if (err instanceof SocialAuthError) {
       return jsonResponse(req, { error: err.code, message: err.message }, err.status);
     }
+    // 내부 오류 문구는 로그에만 남기고 클라이언트에는 코드만 보낸다.
     console.error("[auth-kakao]", err);
-    return jsonResponse(req, {
-      error: "auth_bridge_failed",
-      message: err instanceof Error ? err.message : String(err),
-    }, 500);
+    return jsonResponse(req, { error: "auth_bridge_failed" }, 500);
   }
 });

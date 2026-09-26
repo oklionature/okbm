@@ -13,6 +13,8 @@ Thumbs.db
 # 로그 및 임시 산출물
 *.log
 brag-output/
+# 보안 점검 보고서 (GitHub Pages로 공개되지 않도록)
+audit/
 node_modules/
 
 # Supabase CLI가 이 컴퓨터에만 만드는 임시 파일

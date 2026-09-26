@@ -509,6 +509,75 @@ window.okbmNormalizeUserBio = okbmNormalizeUserBio;
 window.okbmSafeImageUrl = okbmSafeImageUrl;
 window.okbmSafeExternalUrl = okbmSafeExternalUrl;
 
+// =========================================================================
+// 사진 업로드 단일 통로 (Cloudflare R2 Worker)
+// 예전에는 index.html / romantic-history.js / romantic-sync.js 곳곳에서 Worker를 직접 호출했다.
+//
+// OKBM_UPLOAD_SEND_AUTH 전환 순서 (C1):
+//   1) 새 Worker 배포: CORS에 Authorization 허용 + 토큰 있으면 검증, 없으면 통과(REQUIRE_AUTH=false)
+//   2) 이 값을 true로 바꿔 클라이언트 배포 (모든 업로드에 Supabase access token 첨부)
+//   3) 캐시 갱신 후 Worker REQUIRE_AUTH=true
+// 현재 Worker는 Access-Control-Allow-Headers: Content-Type 만 허용하므로(2026-09-26 확인)
+// 1) 전에 true로 바꾸면 브라우저 preflight에서 모든 업로드가 막힌다.
+// =========================================================================
+window.OKBM_CF_UPLOAD_URL = window.OKBM_CF_UPLOAD_URL || 'https://romantic-upload-worker.ggumfree.workers.dev';
+if (typeof window.OKBM_UPLOAD_SEND_AUTH !== 'boolean') window.OKBM_UPLOAD_SEND_AUTH = false;
+
+window.okbmUploadAccessToken = async function() {
+  try {
+    var client = window.supabaseClient
+      || (typeof window.okbmEnsureSupabaseClient === 'function' ? window.okbmEnsureSupabaseClient() : null);
+    if (client && client.auth && typeof client.auth.getSession === 'function') {
+      var res = await client.auth.getSession();
+      var token = res && res.data && res.data.session && res.data.session.access_token;
+      if (token) return String(token);
+    }
+  } catch (e) {
+    console.warn('[romantic-sync.js:okbmUploadAccessToken]', e);
+  }
+  return '';
+};
+
+// data:image/...;base64,... → image/jpeg Blob
+window.okbmDataUrlToJpegBlob = function(dataUrl) {
+  var raw = String(dataUrl || '');
+  var base64Part = raw.indexOf(',') !== -1 ? raw.split(',')[1] : raw;
+  var byteCharacters = atob(base64Part);
+  var byteArray = new Uint8Array(byteCharacters.length);
+  for (var b = 0; b < byteCharacters.length; b++) {
+    byteArray[b] = byteCharacters.charCodeAt(b);
+  }
+  return new Blob([byteArray], { type: 'image/jpeg' });
+};
+
+// 성공 시 https URL, 실패 시 ''.
+window.okbmUploadImageBlob = async function(blob, prefix, fileName) {
+  if (!blob) return '';
+  var safePrefix = String(prefix || 'okbm').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 24) || 'okbm';
+  var name = fileName || (safePrefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.jpg');
+  var headers = { 'Content-Type': 'image/jpeg' };
+  if (window.OKBM_UPLOAD_SEND_AUTH) {
+    var token = await window.okbmUploadAccessToken();
+    if (!token) return '';
+    headers.Authorization = 'Bearer ' + token;
+  }
+  try {
+    var res = await fetch(window.OKBM_CF_UPLOAD_URL + '?file=' + encodeURIComponent(name), {
+      method: 'POST',
+      headers: headers,
+      body: blob
+    });
+    if (!res.ok) return '';
+    var data = await res.json();
+    if (data && data.status === 'SUCCESS' && String(data.url || '').indexOf('https://') === 0) {
+      return String(data.url).trim();
+    }
+  } catch (e) {
+    console.warn('[romantic-sync.js:okbmUploadImageBlob]', e);
+  }
+  return '';
+};
+
 window.applySmartPhotoFit = window.applySmartPhotoFit || function(img) {
   if (!img) return;
   if (img.naturalWidth > 0 && img.naturalHeight > 0) {
@@ -7277,7 +7346,8 @@ window._pastTripEnsurePhotoMemos = function() {
 };
 
 window._pastTripEsc = function(t) {
-  return (typeof window.escapeHtml === 'function') ? window.escapeHtml(t) : String(t == null ? '' : t);
+  if (typeof window.escapeHtml === 'function') return window.escapeHtml(t);
+  return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 };
 
 window._pastTripRenderPhotoStage = function() {
@@ -9178,30 +9248,8 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
     var compressedBase64 = finalCanvas.toDataURL('image/jpeg', 0.85);
 
     try {
-      var uploadedUrl = '';
-      var safeFileName = 'master_cover_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) + '.jpg';
-      var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
-
-      var base64Data = compressedBase64.includes(',') ? compressedBase64.split(',')[1] : compressedBase64;
-      var byteCharacters = atob(base64Data);
-      var byteNumbers = new Array(byteCharacters.length);
-      for (var b = 0; b < byteCharacters.length; b++) {
-        byteNumbers[b] = byteCharacters.charCodeAt(b);
-      }
-      var byteArray = new Uint8Array(byteNumbers);
-      var blob = new Blob([byteArray], { type: 'image/jpeg' });
-
-      var cfRes = await fetch(CF_WORKER_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
-        method: 'POST',
-        headers: { 'Content-Type': 'image/jpeg' },
-        body: blob
-      });
-      if (cfRes.ok) {
-        var cfData = await cfRes.json();
-        if (cfData && cfData.status === 'SUCCESS' && cfData.url) {
-          uploadedUrl = cfData.url;
-        }
-      }
+      var blob = window.okbmDataUrlToJpegBlob(compressedBase64);
+      var uploadedUrl = await window.okbmUploadImageBlob(blob, 'master_cover');
 
       if (!uploadedUrl || !uploadedUrl.startsWith('http')) {
         showToast('사진 업로드에 실패했습니다.', 'error');
@@ -10739,7 +10787,6 @@ window.shareFeedToCommunity = async function(feedRecord) {
     return [];
   }
 
-  var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
   var finalCdnPhotos = [];
 
   var compressImageBase64 = function(base64Str, maxWidth, quality) {
@@ -10787,27 +10834,9 @@ window.shareFeedToCommunity = async function(feedRecord) {
         var compressedBase64 = await compressImageBase64(pItem, 1200, 0.82);
         if (!compressedBase64) continue;
 
-        var base64Data = compressedBase64.includes(',') ? compressedBase64.split(',')[1] : compressedBase64;
-        var byteCharacters = atob(base64Data);
-        var byteNumbers = new Array(byteCharacters.length);
-        for (var b = 0; b < byteCharacters.length; b++) {
-          byteNumbers[b] = byteCharacters.charCodeAt(b);
-        }
-        var byteArray = new Uint8Array(byteNumbers);
-        var blob = new Blob([byteArray], { type: 'image/jpeg' });
-
-        var cfRes = await fetch(CF_WORKER_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
-          method: 'POST',
-          headers: { 'Content-Type': 'image/jpeg' },
-          body: blob
-        });
-
-        if (cfRes.ok) {
-          var cfData = await cfRes.json();
-          if (cfData && cfData.status === 'SUCCESS' && cfData.url && cfData.url.startsWith('https://')) {
-            finalCdnPhotos.push(cfData.url);
-          }
-        }
+        var blob = window.okbmDataUrlToJpegBlob(compressedBase64);
+        var uploadedPhotoUrl = await window.okbmUploadImageBlob(blob, 'photo', safeFileName);
+        if (uploadedPhotoUrl) finalCdnPhotos.push(uploadedPhotoUrl);
       } catch (cfErr) {
         console.warn('[RomanticSync] 사진 업로드 실패:', cfErr);
       }
@@ -10936,8 +10965,9 @@ window.fetchAdminSpotInbox = async function() {
   };
   try {
     var results = await Promise.all([
-      fetch(targetUrl + '/rest/v1/proposals?select=*&order=created_at.desc', { headers: headers }),
-      fetch(targetUrl + '/rest/v1/spot_corrections?select=*&order=created_at.desc', { headers: headers })
+      // 관리자 목록 상한: 최신 300건 (전체 무제한 조회 방지)
+      fetch(targetUrl + '/rest/v1/proposals?select=*&order=created_at.desc&limit=300', { headers: headers }),
+      fetch(targetUrl + '/rest/v1/spot_corrections?select=*&order=created_at.desc&limit=300', { headers: headers })
     ]);
     var propsRes = results[0];
     var corrRes = results[1];
@@ -11730,25 +11760,13 @@ window.okbmRefreshBlockedByIds = async function(force) {
     window.__okbmBlockedByIds = [];
     return [];
   }
-  var now = Date.now();
-  if (!force && window.__okbmBlockedByFetchedAt && (now - window.__okbmBlockedByFetchedAt) < 120000 && Array.isArray(window.__okbmBlockedByIds)) {
-    return window.__okbmBlockedByIds;
-  }
-  try {
-    var res = await fetch(targetUrl + '/rest/v1/user_blocks?blocked_id=eq.' + encodeURIComponent(myId) + '&select=blocker_id', {
-      headers: okbmUgcRestHeaders()
-    });
-    if (!res.ok) return window.__okbmBlockedByIds || [];
-    var rows = await res.json();
-    var ids = (Array.isArray(rows) ? rows : []).map(function(r) {
-      return String((r && r.blocker_id) || '').trim();
-    }).filter(Boolean);
-    window.__okbmBlockedByIds = ids;
-    window.__okbmBlockedByFetchedAt = now;
-    return ids;
-  } catch (e) {
-    return window.__okbmBlockedByIds || [];
-  }
+  // "누가 나를 차단했는지"는 클라이언트에 알려주지 않는다 (차단 사실 노출 방지).
+  // RLS(user_blocks_select_own)도 blocker 본인만 조회를 허용해서 예전 조회
+  // (blocked_id=eq.나)는 항상 빈 결과였다. 요청만 낭비되므로 보내지 않는다.
+  // 상대가 나를 차단한 경우 전송은 서버 RPC가 blocked_direct_message로 막는다.
+  window.__okbmBlockedByIds = [];
+  window.__okbmBlockedByFetchedAt = Date.now();
+  return [];
 };
 
 window.okbmIsNotePairBlocked = async function(theirId, force) {
@@ -12072,6 +12090,10 @@ window.sendDirectMessage = async function() {
       var errText = String((rpc.json && (rpc.json.message || rpc.json.details)) || rpc.text || '');
       if (errText.indexOf('blocked_direct_message') !== -1) {
         okbmNoteBlockedToast('them');
+      } else if (errText.indexOf('direct_message_too_long') !== -1) {
+        if (typeof showToast === 'function') showToast('쪽지는 500자까지 보낼 수 있습니다.', 'warn', 2000);
+      } else if (errText.indexOf('receiver_not_found') !== -1) {
+        if (typeof showToast === 'function') showToast('탈퇴했거나 찾을 수 없는 사용자입니다.', 'warn', 2200);
       } else if (typeof showToast === 'function') {
         showToast('쪽지를 보내지 못했습니다. 잠시 후 다시 시도해주세요.', 'error', 2200);
       }

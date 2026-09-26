@@ -3,6 +3,7 @@
 <html lang="ko" class="notranslate" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'">
   <script>
     (function okbmEntryGate() {
       var ua = navigator.userAgent || '';
@@ -753,7 +754,7 @@
       } catch (e) {}
     })();
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script>
   <script>
     (function initSupabaseClient() {
       window.SUPABASE_URL = 'https://qnumfecythtqtrxeasys.supabase.co';
@@ -770,11 +771,11 @@
       }
     })();
   </script>
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" integrity="sha384-OTofQ0MEeiSgh62havBcemCIK0gqj809wX6UA0uPISNMRnR6NZyCdGzX3SbLrgwL" crossorigin="anonymous" defer></script>
   <script>
     window.__okbmTemplatesSrc = 'templates.js?v=2.9.26';
-    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.42';
+    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.43';
     (function okbmBootLoader() {
       var loaded = window.__okbmScriptPromises || {};
       window.__okbmScriptPromises = loaded;
@@ -882,8 +883,8 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.9.14" defer></script>
-    <script src="romantic-history.js?v=2.7.88" defer></script>
+    <script src="romantic-sync.js?v=2.9.15" defer></script>
+    <script src="romantic-history.js?v=2.7.89" defer></script>
 
   <style>
   @font-face {
@@ -2451,7 +2452,9 @@
     window.safeGetJSON = window.safeGetJSON || safeGetJSON;
 
     var escapeHtml = function(text) {
-      return (typeof window.escapeHtml === 'function') ? window.escapeHtml(text) : String(text == null ? '' : text);
+      // 전역 escapeHtml(romantic-sync.js)이 아직 없어도 이스케이프는 반드시 한다.
+      if (typeof window.escapeHtml === 'function') return window.escapeHtml(text);
+      return String(text == null ? '' : text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     };
     var okbmSafeImageUrl = function(url) {
       return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
@@ -4413,15 +4416,24 @@ var adBannersHtml = `
       var matched = findRegisteredTripSpot(spotName);
       var main = String((matched && (matched.spot_main || matched.name)) || '').replace(/\s+/g, ' ').trim();
       var sid = matched ? String(matched.id || matched.spot_id || '').trim() : '';
+      // or=(...) 안의 값에 , ( ) " \ * : 가 섞이면 PostgREST 필터 구문이 깨지거나 뜻이 바뀐다.
+      // 예약 문자는 공백으로 바꿔 값으로만 해석되게 한다.
+      var filterValue = function(v) {
+        return String(v || '').replace(/[,()"\\*:]/g, ' ').replace(/\s+/g, ' ').trim();
+      };
       var parts = [];
-      if (sid) parts.push('spot_id.eq.' + encodeURIComponent(sid));
-      if (main.length >= 2) parts.push('spot.ilike.*' + encodeURIComponent(main) + '*');
+      var safeSid = filterValue(sid);
+      if (safeSid) parts.push('spot_id.eq.' + encodeURIComponent(safeSid));
+      var safeMain = filterValue(main);
+      if (safeMain.length >= 2) parts.push('spot.ilike.*' + encodeURIComponent(safeMain) + '*');
       if (!parts.length) {
-        var key = String(spotName || '').replace(/\s*\(.*?\)/g, '').replace(/\[[^\]]*\]/g, ' ').trim();
+        var key = filterValue(String(spotName || '').replace(/\s*\(.*?\)/g, '').replace(/\[[^\]]*\]/g, ' '));
         if (key.length < 2) return [];
         parts.push('spot.ilike.*' + encodeURIComponent(key) + '*');
       }
-      var filter = parts.length === 1 ? parts[0] : ('or=(' + parts.join(',') + ')');
+      // 조건이 1개여도 or=(...)로 보낸다. 예전에는 1개일 때 'spot.ilike.*X*'가 "키=값" 형식이 아닌
+      // 그대로 붙어 PostgREST가 필터로 해석하지 못했다.
+      var filter = 'or=(' + parts.join(',') + ')';
       try {
         var query = targetUrl + '/rest/v1/feeds?' + filter + '&is_published=eq.true&select=id,photos,spot,spot_id,likes_count,created_at&order=likes_count.desc.nullslast,created_at.desc&limit=40';
         var res = await (typeof window.okbmPublicFetch === 'function'
@@ -5134,6 +5146,22 @@ var adBannersHtml = `
       }
     };
 
+    // 원정대 오픈채팅 링크는 https://open.kakao.com/ 만 허용한다. 아니면 ''.
+    // (예전 includes('open.kakao.com') 검사는 https://evil.example/?open.kakao.com 도 통과했음)
+    window.okbmSafeOpenChatUrl = function(url) {
+      var raw = String(url || '').trim();
+      if (!raw) return '';
+      if (!/^https?:\/\//i.test(raw)) raw = 'https://' + raw;
+      var safe = (typeof okbmSafeExternalUrl === 'function') ? okbmSafeExternalUrl(raw) : '#';
+      if (!safe || safe === '#') return '';
+      try {
+        var u = new URL(safe);
+        if (u.protocol === 'http:') u.protocol = 'https:';
+        if (u.protocol === 'https:' && u.hostname.toLowerCase() === 'open.kakao.com' && !u.port) return u.href;
+      } catch (e) {}
+      return '';
+    };
+
     window.handleTripChatJoinClick = function(chatUrl) {
       if (!(typeof isUserLoggedIn === 'function' && isUserLoggedIn())) {
         showToast('원정대 동행 문의는 로그인 후 이용하실 수 있습니다.', 2200);
@@ -5143,13 +5171,14 @@ var adBannersHtml = `
         return;
       }
 
-      chatUrl = (typeof okbmSafeExternalUrl === 'function') ? okbmSafeExternalUrl(chatUrl) : '';
-      if (!chatUrl || chatUrl === '#') {
+      chatUrl = window.okbmSafeOpenChatUrl(chatUrl);
+      if (!chatUrl) {
         showToast('올바른 오픈채팅 링크가 등록되지 않았습니다.', 'warn');
         return;
       }
 
-      window.open(chatUrl, '_blank');
+      // 새 창이 window.opener로 이 페이지를 조작하지 못하게 한다 (tabnabbing 방지).
+      window.open(chatUrl, '_blank', 'noopener,noreferrer');
     };
 
     function closeTripCreateModal() {
@@ -5580,7 +5609,12 @@ var adBannersHtml = `
       if (!spot) { showToast('목적지 박지명을 입력해주세요.', 'warn'); if (spotInput) spotInput.focus(); return; }
       if (!date) { showToast('출발 날짜를 달력에서 선택해주세요.', 'warn'); if (typeof window.openTripDatePickerModal === 'function') window.openTripDatePickerModal(); return; }
       if (!chatUrl) { alert('카카오톡 오픈채팅 링크를 입력해주세요.'); if (chatInput) chatInput.focus(); return; }
-      if (!/^https?:\/\//i.test(chatUrl)) chatUrl = 'https://' + chatUrl;
+      chatUrl = window.okbmSafeOpenChatUrl(chatUrl);
+      if (!chatUrl) {
+        alert('올바른 카카오톡 오픈채팅방 주소(open.kakao.com)를 입력해주세요.');
+        if (chatInput) chatInput.focus();
+        return;
+      }
 
       var regBtn = document.getElementById('btnSubmitTripCreate');
       if (regBtn) {
@@ -6013,12 +6047,13 @@ var adBannersHtml = `
         return;
       }
 
-      if (!/^https?:\/\//i.test(chatUrl)) {
-        chatUrl = 'https://' + chatUrl;
+      var safeChatUrl = window.okbmSafeOpenChatUrl(chatUrl);
+      if (safeChatUrl) {
+        chatUrl = safeChatUrl;
         if (chatInput) chatInput.value = chatUrl;
       }
 
-      if (!chatUrl.includes('open.kakao.com')) {
+      if (!safeChatUrl) {
         alert('올바른 카카오톡 오픈채팅방 주소(open.kakao.com)를 입력해주세요.');
         if (chatInput) {
           chatInput.style.borderColor = '#f43f5e';
@@ -6232,26 +6267,14 @@ var adBannersHtml = `
     };
 
     // ⚡ 미디어 파이프라인: Canvas 1200px 압축 → R2 HTTPS만 영구 저장 (blob/data 영구 저장 금지)
-    window.OKBM_CF_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
-
+    // 업로드는 romantic-sync.js의 단일 통로(okbmUploadImageBlob)로만 보낸다 (C1: 인증 토큰 첨부 전환 지점).
     window.uploadCompressedPhotoToR2 = async function(blob, prefix) {
       if (!blob) return '';
-      try {
-        var safeFileName = String(prefix || 'okbm') + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.jpg';
-        var cfRes = await fetch(window.OKBM_CF_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
-          method: 'POST',
-          headers: { 'Content-Type': 'image/jpeg' },
-          body: blob
-        });
-        if (!cfRes.ok) return '';
-        var cfData = await cfRes.json();
-        if (cfData && cfData.status === 'SUCCESS' && cfData.url && String(cfData.url).indexOf('https://') === 0) {
-          return String(cfData.url).trim();
-        }
-      } catch (err) {
-        console.warn('[uploadCompressedPhotoToR2]', err);
+      if (typeof window.okbmUploadImageBlob !== 'function') {
+        console.warn('[uploadCompressedPhotoToR2] 업로드 헬퍼가 아직 로드되지 않았습니다.');
+        return '';
       }
-      return '';
+      return window.okbmUploadImageBlob(blob, prefix);
     };
 
     window.okbmIsSupportedPhotoFile = function(file) {

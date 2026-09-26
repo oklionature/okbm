@@ -14,3 +14,9 @@ jobs:
           python-version: "3.12"
       - name: Ban unsanitized src/href interpolation
         run: python3 scripts/check-unsafe-url-interpolation.py
+      - name: Edge Function social-session copies match _shared
+        run: |
+          for d in auth-kakao auth-naver delete-account; do
+            diff -q supabase/functions/_shared/social-session.ts "supabase/functions/$d/social-session.ts" \
+              || { echo "::error::$d/social-session.ts differs from _shared. Run scripts/sync-shared-session.sh"; exit 1; }
+          done

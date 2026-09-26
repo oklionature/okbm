@@ -163,7 +163,9 @@
   };
 
   var escapeHtml = function(text) {
-    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(text) : String(text == null ? '' : text);
+    // 전역 escapeHtml(romantic-sync.js)이 아직 없어도 이스케이프는 반드시 한다.
+    if (typeof window.escapeHtml === 'function') return window.escapeHtml(text);
+    return String(text == null ? '' : text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   };
   var okbmSafeImageUrl = function(url) {
     return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
@@ -4063,7 +4065,7 @@ window.saveCurrentPackingRecord = function() {
       var existing = document.getElementById('planSpotRegisterChoiceOverlay');
       if (existing) existing.remove();
       var name = String(spotName || '').trim();
-      var esc = (typeof escapeHtml === 'function') ? escapeHtml : function(s) { return String(s || ''); };
+      var esc = escapeHtml;
       var ov = document.createElement('div');
       ov.id = 'planSpotRegisterChoiceOverlay';
       ov.style.cssText = 'position:fixed; inset:0; z-index:2147483647; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';

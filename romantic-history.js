@@ -591,7 +591,9 @@
   };
 
   var escapeHtml = function(text) {
-    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(text) : String(text == null ? '' : text);
+    // 전역 escapeHtml(romantic-sync.js)이 아직 없어도 이스케이프는 반드시 한다.
+    if (typeof window.escapeHtml === 'function') return window.escapeHtml(text);
+    return String(text == null ? '' : text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   };
   var okbmSafeImageUrl = function(url) {
     return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
@@ -7495,30 +7497,16 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     }
 
     var safeFileName = fileName || ('photo_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) + '.jpg');
-    var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
 
+    // 업로드는 romantic-sync.js의 단일 통로(okbmUploadImageBlob)로만 보낸다 (C1).
+    if (typeof window.okbmUploadImageBlob !== 'function' || typeof window.okbmDataUrlToJpegBlob !== 'function') {
+      console.warn('[RomanticHistory] 업로드 헬퍼가 아직 로드되지 않았습니다.');
+      return '';
+    }
     try {
-      var base64Part = base64Data.includes(',') ? base64Data.split(',')[1] : base64Data;
-      var byteCharacters = atob(base64Part);
-      var byteNumbers = new Array(byteCharacters.length);
-      for (var b = 0; b < byteCharacters.length; b++) {
-        byteNumbers[b] = byteCharacters.charCodeAt(b);
-      }
-      var byteArray = new Uint8Array(byteNumbers);
-      var blob = new Blob([byteArray], { type: 'image/jpeg' });
-
-      var cfRes = await fetch(CF_WORKER_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
-        method: 'POST',
-        headers: { 'Content-Type': 'image/jpeg' },
-        body: blob
-      });
-
-      if (cfRes.ok) {
-        var cfData = await cfRes.json();
-        if (cfData && cfData.status === 'SUCCESS' && cfData.url) {
-          return cfData.url;
-        }
-      }
+      var blob = window.okbmDataUrlToJpegBlob(base64Data);
+      var uploaded = await window.okbmUploadImageBlob(blob, 'photo', safeFileName);
+      if (uploaded) return uploaded;
     } catch (cfErr) {
       console.warn('[RomanticHistory] Cloudflare R2 직통 업로드 예외:', cfErr);
     }
