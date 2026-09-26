@@ -999,9 +999,82 @@ CREATE POLICY spots_admin_update ON public.spots
 CREATE POLICY spots_admin_delete ON public.spots
   FOR DELETE USING (public.okbm_is_admin());
 
--- 홈/지도 핀용 공개 SELECT: 이름·좌표·기본 소개·미디어.
--- 들머리 상세 주소(trailhead_addr)·author_sns_url은 컬럼 SELECT 불허.
--- 해당 민감 필드는 get_spot_detail(p_id) RPC로 로그인 유저만 1건씩 조회.
+-- 목록용 특징 한 줄. 본문(desc_summary)·링크(mediaUrls)·들머리 주소는 목록에서 제외.
+ALTER TABLE public.spots ADD COLUMN IF NOT EXISTS view_brief text;
+
+CREATE OR REPLACE FUNCTION public.okbm_spot_view_brief(p_desc text)
+RETURNS text
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+DECLARE
+  src text := replace(COALESCE(p_desc, ''), E'\\n', E'\n');
+  start_pos int;
+  tag_len int;
+  rest text;
+  tags text[] := ARRAY[
+    '[접근/코스]', '[접근]', '[코스]',
+    '[장소/피칭]', '[박지/피칭]', '[박지]', '[장소]', '[피칭]',
+    '[주의/팁]', '[주의]', '[팁]',
+    '[현장 메모]', '[현장메모]'
+  ];
+  i int;
+  found int;
+  next_pos int := 0;
+BEGIN
+  start_pos := position('[뷰/특징]' IN src);
+  tag_len := char_length('[뷰/특징]');
+  IF start_pos = 0 THEN
+    start_pos := position('[특징]' IN src);
+    tag_len := char_length('[특징]');
+  END IF;
+  IF start_pos = 0 THEN
+    start_pos := position('[뷰]' IN src);
+    tag_len := char_length('[뷰]');
+  END IF;
+  IF start_pos = 0 THEN
+    RETURN '';
+  END IF;
+  rest := substr(src, start_pos + tag_len);
+  FOR i IN 1..array_length(tags, 1) LOOP
+    found := position(tags[i] IN rest);
+    IF found > 0 AND (next_pos = 0 OR found < next_pos) THEN
+      next_pos := found;
+    END IF;
+  END LOOP;
+  IF next_pos > 0 THEN
+    rest := substr(rest, 1, next_pos - 1);
+  END IF;
+  RETURN btrim(rest);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_spot_view_brief(text) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.okbm_spots_fill_view_brief()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.view_brief := public.okbm_spot_view_brief(NEW.desc_summary);
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_spots_fill_view_brief() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS spots_fill_view_brief ON public.spots;
+CREATE TRIGGER spots_fill_view_brief
+  BEFORE INSERT OR UPDATE OF desc_summary ON public.spots
+  FOR EACH ROW
+  EXECUTE FUNCTION public.okbm_spots_fill_view_brief();
+
+UPDATE public.spots
+SET view_brief = public.okbm_spot_view_brief(desc_summary)
+WHERE view_brief IS DISTINCT FROM public.okbm_spot_view_brief(desc_summary);
+
+-- 홈/지도 목록: 이름·좌표·들머리 이름·특징 한 줄.
+-- 본문·미디어 링크·들머리 상세 주소·작성자 SNS는 get_spot_detail로 1건씩.
 REVOKE SELECT ON TABLE public.spots FROM anon, authenticated;
 GRANT SELECT (
   id,
@@ -1022,8 +1095,7 @@ GRANT SELECT (
   author,
   user_id,
   created_at,
-  desc_summary,
-  "mediaUrls"
+  view_brief
 ) ON TABLE public.spots TO anon, authenticated;
 GRANT INSERT, UPDATE, DELETE ON TABLE public.spots TO authenticated;
 
@@ -1035,11 +1107,46 @@ SET search_path = public
 AS $$
 DECLARE
   result jsonb;
+  v_actor text;
+  v_ip text := '';
+  v_headers text;
+  v_window timestamptz := date_trunc('minute', now());
+  v_count integer;
 BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'not authenticated';
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    v_actor := NULLIF(auth.uid()::text, '');
+    IF v_actor IS NULL THEN
+      v_headers := current_setting('request.headers', true);
+      IF v_headers IS NOT NULL AND btrim(v_headers) <> '' THEN
+        BEGIN
+          v_ip := btrim(split_part(COALESCE(
+            (v_headers::json)->>'x-forwarded-for',
+            (v_headers::json)->>'x-real-ip',
+            ''
+          ), ',', 1));
+        EXCEPTION WHEN others THEN
+          v_ip := '';
+        END;
+      END IF;
+      v_actor := 'ip:' || left(COALESCE(NULLIF(v_ip, ''), 'anon'), 80);
+    END IF;
+
+    INSERT INTO public.okbm_rpc_rate_limits AS r (actor_id, rpc_name, window_start, call_count)
+    VALUES (v_actor, 'get_spot_detail', v_window, 1)
+    ON CONFLICT (actor_id, rpc_name)
+    DO UPDATE SET
+      call_count = CASE
+        WHEN r.window_start IS NOT DISTINCT FROM EXCLUDED.window_start THEN r.call_count + 1
+        ELSE 1
+      END,
+      window_start = EXCLUDED.window_start
+    RETURNING r.call_count INTO v_count;
+
+    IF v_count > 60 THEN
+      RAISE EXCEPTION 'rate limit exceeded';
+    END IF;
   END IF;
-  PERFORM public.okbm_rpc_rate_limit('get_spot_detail', 60);
+
   IF p_id IS NULL OR btrim(p_id) = '' THEN
     RETURN NULL;
   END IF;
@@ -1059,8 +1166,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_spot_detail(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_spot_detail(text) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.get_spot_detail(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_spot_detail(text) TO anon, authenticated, service_role;
 
 -- 인증된 사용자만 mediaUrls에 youtube/네이버 블로그 http(s) URL을 append하는 RPC.
 CREATE OR REPLACE FUNCTION public.merge_spot_media_urls(p_spot_id text, p_urls text[])

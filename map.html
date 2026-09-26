@@ -1690,7 +1690,7 @@
         try {
           var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
           var targetKey = window.SUPABASE_ANON_KEY || '';
-          var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,desc_summary,mediaUrls';
+          var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief';
           var spotsUrl = targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc';
           var res = await (typeof window.okbmPublicFetch === 'function'
             ? window.okbmPublicFetch(spotsUrl)
@@ -1757,6 +1757,9 @@
                 nickname: String(row.author || row.nickname || '').trim(),
                 user_id: String(row.user_id || row.userId || '').trim(),
                 userId: String(row.user_id || row.userId || '').trim(),
+                desc: String(row.view_brief || '').trim(),
+                desc_summary: String(row.view_brief || '').trim(),
+                view_brief: String(row.view_brief || '').trim(),
                 searchCount: 0,
                 sheetIndex: idx,
                 created_at: row.created_at || null

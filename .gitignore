@@ -14,3 +14,6 @@ Thumbs.db
 *.log
 brag-output/
 node_modules/
+
+# Supabase CLI가 이 컴퓨터에만 만드는 임시 파일
+supabase/.temp/

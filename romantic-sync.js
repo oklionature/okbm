@@ -2967,7 +2967,7 @@ function syncUserDataToCloud(isPackHistoryUpdated, immediate) {
 window.syncUserDataToCloud = syncUserDataToCloud;
 
 // 홈/지도 핀용 공개 컬럼. 들머리 주소(trailhead_addr)·author_sns_url은 제외.
-window.SPOTS_MAP_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,desc_summary,mediaUrls';
+window.SPOTS_MAP_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief';
 window.FEEDS_HOME_SELECT = 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,likes_count,is_published,feed_type,created_at,items,template_id';
 
 window.stripSpotDetailFields = function(spot) {
@@ -2977,7 +2977,25 @@ window.stripSpotDetailFields = function(spot) {
   delete out.entryPoint;
   delete out.author_sns_url;
   delete out.authorSnsUrl;
+  var brief = String(out.view_brief || '').trim();
+  if (brief) {
+    out.desc_summary = brief;
+    out.desc = brief;
+  }
+  out.mediaUrls = '';
+  out.youtubeUrls = [];
+  out.blogUrls = [];
+  out.__detailLoaded = false;
   return out;
+};
+
+window.spotCacheHasFullEssay = function(list) {
+  return (list || []).some(function(s) {
+    if (!s) return false;
+    if (s.mediaUrls) return true;
+    var d = String(s.desc_summary || s.desc || '');
+    return d.indexOf('[접근') !== -1 || d.indexOf('[코스]') !== -1 || d.indexOf('[박지') !== -1 || d.indexOf('[장소') !== -1 || d.indexOf('[피칭]') !== -1 || d.indexOf('[주의') !== -1 || d.indexOf('[팁]') !== -1 || d.indexOf('[현장') !== -1;
+  });
 };
 
 window.normalizeSpotMapRow = function(row) {
@@ -3030,8 +3048,9 @@ window.normalizeSpotMapRow = function(row) {
     user_id: String(row.user_id || row.userId || '').trim(),
     userId: String(row.user_id || row.userId || '').trim(),
     created_at: row.created_at || null,
-    desc_summary: String(row.desc_summary || row.desc || '').trim(),
-    desc: String(row.desc_summary || row.desc || '').trim(),
+    desc_summary: String(row.desc_summary || row.desc || row.view_brief || '').trim(),
+    desc: String(row.desc_summary || row.desc || row.view_brief || '').trim(),
+    view_brief: String(row.view_brief || '').trim(),
     mediaUrls: row.mediaUrls || row.mediaurls || ''
   };
   var media = window.parseSpotMediaUrls(out.mediaUrls);
@@ -3130,7 +3149,6 @@ window.__spotDetailInflight = window.__spotDetailInflight || {};
 window.fetchSpotDetailById = async function(spotId) {
   var id = String(spotId || '').trim();
   if (!id) return null;
-  if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) return null;
   if (window.__spotDetailCache[id]) return window.__spotDetailCache[id];
   if (window.__spotDetailInflight[id]) return window.__spotDetailInflight[id];
 
@@ -3183,7 +3201,7 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
   if (!(Array.isArray(cached) && cached.length > 0) && window.__okbmSpotsIdbReady) {
     try { cached = await window.__okbmSpotsIdbReady; } catch (e) { cached = cached || []; }
   }
-  if (!isForce && Array.isArray(cached) && cached.length > 0) {
+  if (!isForce && Array.isArray(cached) && cached.length > 0 && !window.spotCacheHasFullEssay(cached)) {
     var lightCached = cached.map(function(s) { return window.stripSpotDetailFields(s); });
     window.__memoryStore = window.__memoryStore || {};
     window.__memoryStore['okbm_master_spots'] = lightCached;
