@@ -743,7 +743,7 @@
 
     // C1 전환 스위치. romantic-sync.js의 OKBM_UPLOAD_SEND_AUTH와 같은 시점에 true로 바꾼다.
     // (현재 Worker CORS가 Authorization을 허용하지 않아 먼저 켜면 업로드가 막힘)
-    var UPLOAD_SEND_AUTH = false;
+    var UPLOAD_SEND_AUTH = true;
 
     async function uploadToR2(blob, prefix) {
       var name = String(prefix || 'feed') + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.jpg';
@@ -751,8 +751,7 @@
       if (UPLOAD_SEND_AUTH) {
         var sessionRes = await sb.auth.getSession();
         var uploadToken = sessionRes && sessionRes.data && sessionRes.data.session && sessionRes.data.session.access_token;
-        if (!uploadToken) throw new Error('로그인이 필요합니다.');
-        uploadHeaders.Authorization = 'Bearer ' + uploadToken;
+        if (uploadToken) uploadHeaders.Authorization = 'Bearer ' + uploadToken;
       }
       var res = await fetch(CF_UPLOAD_URL + '?file=' + encodeURIComponent(name), {
         method: 'POST',

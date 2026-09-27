@@ -1,20 +1,20 @@
 // =========================================================================
-// romantic-upload-worker (참고 구현, C1)
-//
-// 운영 중인 Worker 소스가 저장소에 없어 응답 형식만 맞춰 새로 작성한 버전이다.
-// 배포 전에 Cloudflare 대시보드의 현재 소스와 비교해서 R2 바인딩 이름·공개 도메인을 확인할 것.
+// romantic-upload-worker (C1)
 //
 // 응답 계약 (클라이언트 okbmUploadImageBlob / feed-register uploadToR2와 동일):
-//   성공: 200 { "status": "SUCCESS", "url": "https://<공개도메인>/<key>" }
-//   실패: 4xx/5xx { "status": "ERROR", "error": "<code>" }
+//   업로드 성공: 200 { "status": "SUCCESS", "url": "https://<공개도메인>/<key>" }
+//   실패:        4xx/5xx { "status": "ERROR", "error": "<code>" }
 //
-// 필요한 바인딩/변수 (wrangler.toml 참고):
-//   BUCKET                   R2 버킷 바인딩
-//   PUBLIC_BASE_URL          예: https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev
-//   SUPABASE_URL             예: https://qnumfecythtqtrxeasys.supabase.co
-//   SUPABASE_PUBLISHABLE_KEY Supabase publishable(anon) 키 (공개 값)
+// 바인딩/변수:
+//   MY_BUCKET                R2 버킷 바인딩 (운영 이름. 예전 참고 구현의 BUCKET도 허용)
+//   PUBLIC_BASE_URL          https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev
+//   SUPABASE_URL             https://qnumfecythtqtrxeasys.supabase.co
+//   SUPABASE_PUBLISHABLE_KEY Supabase publishable 키 (공개 값)
 //   REQUIRE_AUTH             "false"(전환기: 토큰 있으면 검증, 없으면 통과) / "true"(토큰 필수)
-//   UPLOAD_LIMITER           (선택) Workers Rate Limiting 바인딩
+//   DELETE_SECRET            (secret) delete-account Edge Function이 사진 삭제를 요청할 때 쓰는 비밀값
+//
+// 사진 삭제: POST /delete  Authorization: Bearer <DELETE_SECRET>  { "urls": ["https://pub-.../key", ...] }
+//   공개 도메인 아래의 키만 지운다. 최대 200개.
 // =========================================================================
 
 const ALLOWED_ORIGINS = new Set([
@@ -24,18 +24,29 @@ const ALLOWED_ORIGINS = new Set([
   "https://www.okbm.kr",
   "capacitor://localhost",
   "ionic://localhost",
+  "https://localhost",
+  // 2026-09-27 Worker 로그 기준 실제 업로드가 들어오던 예전 Pages 주소
+  "https://oklionature.github.io",
 ]);
+
+// 로컬 개발 서버(휴대폰에서 같은 와이파이로 접속하는 사설 IP 포함)
+function isLocalDevHost(hostname) {
+  return hostname === "localhost" || hostname === "127.0.0.1" ||
+    /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+    /^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+    /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(hostname);
+}
 
 const ALLOWED_PREFIXES = new Set(["okbm", "feed", "photo", "trip", "cover", "master_cover", "readyshot"]);
 const MAX_BYTES = 5 * 1024 * 1024;
+const DEFAULT_PUBLIC_BASE = "https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev";
 
 function isAllowedOrigin(origin) {
   if (!origin) return false;
   if (ALLOWED_ORIGINS.has(origin)) return true;
   try {
     const u = new URL(origin);
-    return (u.protocol === "http:" || u.protocol === "https:") &&
-      (u.hostname === "localhost" || u.hostname === "127.0.0.1");
+    return (u.protocol === "http:" || u.protocol === "https:") && isLocalDevHost(u.hostname);
   } catch {
     return false;
   }
@@ -64,10 +75,22 @@ function fail(req, code, status) {
   return reply(req, { status: "ERROR", error: code }, status);
 }
 
+function bucketOf(env) {
+  return env.MY_BUCKET || env.BUCKET;
+}
+
+function publicBase(env) {
+  return String(env.PUBLIC_BASE_URL || DEFAULT_PUBLIC_BASE).replace(/\/+$/, "");
+}
+
+function bearer(req) {
+  return (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+}
+
 async function verifyUser(req, env) {
-  const auth = req.headers.get("Authorization") || "";
-  const jwt = auth.replace(/^Bearer\s+/i, "").trim();
+  const jwt = bearer(req);
   if (!jwt) return { present: false, user: null };
+  if (!env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY) return { present: true, user: null };
   try {
     const res = await fetch(env.SUPABASE_URL + "/auth/v1/user", {
       headers: { Authorization: "Bearer " + jwt, apikey: env.SUPABASE_PUBLISHABLE_KEY },
@@ -97,15 +120,45 @@ const EXT = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 // 클라이언트가 보낸 file 이름은 앞부분(prefix)만 참고하고 키는 서버가 만든다.
 function prefixFrom(url) {
   const raw = String(url.searchParams.get("prefix") || url.searchParams.get("file") || "");
-  const head = raw.split(/[_./\\]/)[0].replace(/[^A-Za-z0-9-]/g, "").toLowerCase();
   if (raw.toLowerCase().startsWith("master_cover")) return "master_cover";
+  const head = raw.split(/[_./\\]/)[0].replace(/[^A-Za-z0-9-]/g, "").toLowerCase();
   return ALLOWED_PREFIXES.has(head) ? head : "okbm";
+}
+
+function timingSafeEqual(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length || !a) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+async function handleDelete(req, env) {
+  if (!env.DELETE_SECRET || !timingSafeEqual(bearer(req), String(env.DELETE_SECRET))) {
+    return fail(req, "forbidden", 403);
+  }
+  let body = {};
+  try { body = await req.json(); } catch { return fail(req, "invalid_json", 400); }
+  const base = publicBase(env) + "/";
+  const keys = [];
+  for (const u of (Array.isArray(body.urls) ? body.urls : []).slice(0, 200)) {
+    const s = String(u || "").trim();
+    if (!s.startsWith(base)) continue;
+    const key = decodeURIComponent(s.slice(base.length).split(/[?#]/)[0]);
+    if (!key || key.includes("..") || key.startsWith("/")) continue;
+    keys.push(key);
+  }
+  const unique = [...new Set(keys)];
+  if (unique.length) await bucketOf(env).delete(unique);
+  return reply(req, { status: "SUCCESS", deleted: unique.length });
 }
 
 export default {
   async fetch(req, env) {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
     if (req.method !== "POST") return fail(req, "method_not_allowed", 405);
+
+    const url = new URL(req.url);
+    if (url.pathname === "/delete") return handleDelete(req, env);
 
     const origin = req.headers.get("Origin") || "";
     if (origin && !isAllowedOrigin(origin)) return fail(req, "origin_not_allowed", 403);
@@ -114,13 +167,6 @@ export default {
     const { present, user } = await verifyUser(req, env);
     if (present && !user) return fail(req, "invalid_session", 401);
     if (requireAuth && !user) return fail(req, "login_required", 401);
-
-    // 사용자(없으면 IP) 기준 rate limit. 바인딩이 없으면 대시보드 WAF Rate Limiting 규칙으로 대신.
-    if (env.UPLOAD_LIMITER && typeof env.UPLOAD_LIMITER.limit === "function") {
-      const key = user ? "u:" + user.id : "ip:" + (req.headers.get("cf-connecting-ip") || "unknown");
-      const { success } = await env.UPLOAD_LIMITER.limit({ key });
-      if (!success) return fail(req, "rate_limited", 429);
-    }
 
     const declared = Number(req.headers.get("Content-Length") || "0");
     if (declared > MAX_BYTES) return fail(req, "too_large", 413);
@@ -132,20 +178,18 @@ export default {
     const type = sniffImageType(buf);
     if (!type) return fail(req, "unsupported_type", 415);
 
-    const url = new URL(req.url);
     const owner = user ? String(user.id).replace(/[^A-Za-z0-9-]/g, "") : "anon";
     const key = `${prefixFrom(url)}/${owner}/${crypto.randomUUID()}.${EXT[type]}`;
+    const bucket = bucketOf(env);
 
     // UUID라 충돌 가능성은 사실상 없지만, 기존 객체는 절대 덮어쓰지 않는다.
-    const existing = await env.BUCKET.head(key);
-    if (existing) return fail(req, "conflict", 409);
+    if (await bucket.head(key)) return fail(req, "conflict", 409);
 
-    await env.BUCKET.put(key, buf, {
+    await bucket.put(key, buf, {
       httpMetadata: { contentType: type, cacheControl: "public, max-age=31536000, immutable" },
       customMetadata: { owner, uploadedAt: new Date().toISOString() },
     });
 
-    const base = String(env.PUBLIC_BASE_URL || "").replace(/\/+$/, "");
-    return reply(req, { status: "SUCCESS", url: `${base}/${key}` });
+    return reply(req, { status: "SUCCESS", url: `${publicBase(env)}/${key}` });
   },
 };

@@ -521,7 +521,8 @@ window.okbmSafeExternalUrl = okbmSafeExternalUrl;
 // 1) 전에 true로 바꾸면 브라우저 preflight에서 모든 업로드가 막힌다.
 // =========================================================================
 window.OKBM_CF_UPLOAD_URL = window.OKBM_CF_UPLOAD_URL || 'https://romantic-upload-worker.ggumfree.workers.dev';
-if (typeof window.OKBM_UPLOAD_SEND_AUTH !== 'boolean') window.OKBM_UPLOAD_SEND_AUTH = false;
+// 2026-09-27: 새 Worker(Authorization 허용, 인증 선택 모드) 배포 완료 → 토큰 첨부 켬.
+if (typeof window.OKBM_UPLOAD_SEND_AUTH !== 'boolean') window.OKBM_UPLOAD_SEND_AUTH = true;
 
 window.okbmUploadAccessToken = async function() {
   try {
@@ -557,9 +558,10 @@ window.okbmUploadImageBlob = async function(blob, prefix, fileName) {
   var name = fileName || (safePrefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.jpg');
   var headers = { 'Content-Type': 'image/jpeg' };
   if (window.OKBM_UPLOAD_SEND_AUTH) {
+    // 로그인 상태면 토큰을 붙인다. 토큰이 없으면 그대로 보낸다
+    // (Worker가 필수 모드로 바뀌면 그때 서버가 401로 거부).
     var token = await window.okbmUploadAccessToken();
-    if (!token) return '';
-    headers.Authorization = 'Bearer ' + token;
+    if (token) headers.Authorization = 'Bearer ' + token;
   }
   try {
     var res = await fetch(window.OKBM_CF_UPLOAD_URL + '?file=' + encodeURIComponent(name), {

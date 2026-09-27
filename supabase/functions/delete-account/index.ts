@@ -76,6 +76,70 @@ async function deleteDirectThreadsForUser(admin: AdminClient, userId: string) {
   }
 }
 
+const R2_PUBLIC_BASE = "https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/";
+
+function pushPhoto(out: Set<string>, value: unknown) {
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (s.startsWith(R2_PUBLIC_BASE)) out.add(s);
+  } else if (Array.isArray(value)) {
+    for (const v of value) pushPhoto(out, v);
+  }
+}
+
+// 본인 피드·원정대·프로필에 저장된 R2 사진 URL만 모은다 (최대 200개, Worker 한도).
+async function collectUserPhotoUrls(admin: AdminClient, ids: string[]): Promise<string[]> {
+  const out = new Set<string>();
+  if (!ids.length) return [];
+  try {
+    const [feeds, trips, users] = await Promise.all([
+      admin.from("feeds").select("photos,photo,ready_shot_photo").in("user_id", ids),
+      admin.from("trips").select("photos").in("host_id", ids),
+      admin.from("users").select("photo_url,hero_cover_url").in("id", ids),
+    ]);
+    for (const r of (feeds.data || []) as Record<string, unknown>[]) {
+      pushPhoto(out, r.photos);
+      pushPhoto(out, r.photo);
+      pushPhoto(out, r.ready_shot_photo);
+    }
+    for (const r of (trips.data || []) as Record<string, unknown>[]) pushPhoto(out, r.photos);
+    for (const r of (users.data || []) as Record<string, unknown>[]) {
+      pushPhoto(out, r.photo_url);
+      pushPhoto(out, r.hero_cover_url);
+    }
+  } catch (e) {
+    console.error("[delete-account] collect photos", e);
+  }
+  return Array.from(out).slice(0, 200);
+}
+
+async function deleteR2Photos(urls: string[]): Promise<number> {
+  const secret = String(Deno.env.get("UPLOAD_DELETE_SECRET") || "").trim();
+  const workerUrl = String(Deno.env.get("UPLOAD_WORKER_URL") || "https://romantic-upload-worker.ggumfree.workers.dev").replace(/\/+$/, "");
+  if (!urls.length || !secret) return 0;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(workerUrl + "/delete", {
+      method: "POST",
+      signal: ctrl.signal,
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + secret },
+      body: JSON.stringify({ urls }),
+    });
+    if (!res.ok) {
+      console.error("[delete-account] r2 delete", res.status);
+      return 0;
+    }
+    const data = await res.json();
+    return Number(data?.deleted || 0);
+  } catch (e) {
+    console.error("[delete-account] r2 delete", e);
+    return 0;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // okbm_delete_account_data RPC가 아직 없을 때만 쓰는 예전 삭제 경로 (트랜잭션 아님).
 async function legacyDeleteAccountRows(admin: AdminClient, authUser: User, accountIds: string[]) {
   const deleteByColumn = async (table: string, column: string) => {
@@ -142,6 +206,9 @@ Deno.serve(async (req: Request) => {
     const okbmUserId = plantedOkbmUserId(authUser);
     const accountIds = collectAccountIds(okbmUserId, authUser.id);
 
+    // 데이터를 지우기 전에 이 사용자가 올린 사진 URL을 모아 둔다 (지운 뒤엔 찾을 수 없음)
+    const photoUrls = await collectUserPhotoUrls(admin, accountIds);
+
     // accountIds는 검증된 JWT의 auth id와 서버가 app_metadata에 심은 okbm_user_id뿐이다
     // (클라이언트 입력 없음). 1순위: 한 트랜잭션으로 전부 삭제 (마스터 SQL 6-6).
     const { error: rpcError } = await admin.rpc("okbm_delete_account_data", { p_ids: accountIds });
@@ -163,7 +230,10 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(req, { error: "auth_user_delete_failed" }, 500);
     }
 
-    return jsonResponse(req, { ok: true, deleted_user_id: okbmUserId || authUser.id }, 200);
+    // 사진 삭제는 계정 삭제가 끝난 뒤 최선 노력으로 한다 (실패해도 탈퇴는 완료).
+    const photosDeleted = await deleteR2Photos(photoUrls);
+
+    return jsonResponse(req, { ok: true, deleted_user_id: okbmUserId || authUser.id, photos_deleted: photosDeleted }, 200);
   } catch (err) {
     // 내부 오류 문구는 로그에만 남긴다.
     console.error("[delete-account]", err);
