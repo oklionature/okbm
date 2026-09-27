@@ -9947,6 +9947,38 @@ async function okbmFindUserById(userId) {
   return okbmFetchUserRow('id=eq.' + encodeURIComponent(id));
 }
 
+window.okbmFetchPublicAvatar = async function(userId) {
+  var id = String(userId || '').trim();
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!id || !targetUrl || !targetKey) return null;
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/rpc/get_public_avatar', {
+      method: 'POST',
+      headers: (typeof okbmPublicRestHeaders === 'function') ? okbmPublicRestHeaders() : {
+        'apikey': targetKey,
+        'Authorization': 'Bearer ' + targetKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ p_id: id })
+    });
+    if (!res.ok) return null;
+    var row = await res.json();
+    if (Array.isArray(row)) row = row[0];
+    if (typeof row === 'string') {
+      try { row = JSON.parse(row); } catch (eRow) { row = null; }
+    }
+    if (!row || typeof row !== 'object' || !row.id) return null;
+    return {
+      id: String(row.id),
+      photo_url: String(row.photo_url || ''),
+      hero_cover_url: String(row.hero_cover_url || '')
+    };
+  } catch (e) {
+    return null;
+  }
+};
+
 window.okbmFetchPublicProfile = async function(userId) {
   var id = String(userId || '').trim();
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;

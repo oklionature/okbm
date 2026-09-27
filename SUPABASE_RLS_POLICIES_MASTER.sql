@@ -445,6 +445,53 @@ $$;
 REVOKE ALL ON FUNCTION public.get_public_profile(text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_public_profile(text) TO authenticated, service_role;
 
+-- 비로그인 피드 아바타용. 사진 주소만 돌려준다. 소개·SNS·활동 숨김은 get_public_profile(로그인)에 남긴다.
+CREATE OR REPLACE FUNCTION public.get_public_avatar(p_id text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb;
+  v_actor text;
+  v_photo text;
+  v_cover text;
+BEGIN
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    v_actor := COALESCE(NULLIF(auth.uid()::text, ''), 'ip:' || public.okbm_request_ip());
+    IF NOT public.okbm_actor_rate_limit(v_actor, 'get_public_avatar', 120) THEN
+      RAISE EXCEPTION 'rate limit exceeded';
+    END IF;
+  END IF;
+
+  IF p_id IS NULL OR btrim(p_id) = '' THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT NULLIF(btrim(COALESCE(u.photo_url, '')), ''),
+         NULLIF(btrim(COALESCE(u.hero_cover_url, '')), '')
+  INTO v_photo, v_cover
+  FROM public.users u
+  WHERE u.id = btrim(p_id)
+  LIMIT 1;
+
+  IF v_photo IS NULL AND v_cover IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  result := jsonb_build_object(
+    'id', btrim(p_id),
+    'photo_url', COALESCE(v_photo, ''),
+    'hero_cover_url', COALESCE(v_cover, '')
+  );
+  RETURN result;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_public_avatar(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_public_avatar(text) TO anon, authenticated, service_role;
+
 CREATE OR REPLACE FUNCTION public.get_public_profiles(p_ids text[])
 RETURNS jsonb
 LANGUAGE plpgsql

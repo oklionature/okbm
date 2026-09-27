@@ -2447,19 +2447,26 @@ window.normalizeHistoryRecord = function(r, idx) {
       var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
       var targetKey = window.SUPABASE_ANON_KEY || '';
       if (targetUrl && targetKey) {
-        var profileReq = (typeof window.okbmFetchPublicProfile === 'function')
-          ? window.okbmFetchPublicProfile(uId)
-          : fetch(targetUrl + '/rest/v1/rpc/get_public_profile', {
-              method: 'POST',
-              headers: {
-                'apikey': targetKey,
-                'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ p_id: uId })
-            }).then(function(res) { return res.ok ? res.json() : null; });
+        var canReadFullProfile = typeof isUserLoggedIn === 'function' && isUserLoggedIn();
+        var avatarHeaders = {
+          'apikey': targetKey,
+          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
+          'Content-Type': 'application/json'
+        };
+        var profileReq;
+        if (canReadFullProfile && typeof window.okbmFetchPublicProfile === 'function') {
+          profileReq = window.okbmFetchPublicProfile(uId);
+        } else if (typeof window.okbmFetchPublicAvatar === 'function') {
+          profileReq = window.okbmFetchPublicAvatar(uId);
+        } else {
+          profileReq = fetch(targetUrl + '/rest/v1/rpc/' + (canReadFullProfile ? 'get_public_profile' : 'get_public_avatar'), {
+            method: 'POST',
+            headers: avatarHeaders,
+            body: JSON.stringify({ p_id: uId })
+          }).then(function(res) { return res.ok ? res.json() : null; });
+        }
         var job = Promise.resolve(profileReq).then(function(uData) {
-          if (uData && uData.id && typeof window.okbmApplyRouterPublicProfile === 'function') {
+          if (canReadFullProfile && uData && uData.id && typeof window.okbmApplyRouterPublicProfile === 'function') {
             window.okbmApplyRouterPublicProfile(uData);
           }
           var remoteUrl = (uData && uData.id) ? okbmAvatarDisplayUrl(uData.hero_cover_url || uData.photo_url || '') : '';
@@ -5419,6 +5426,10 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
   window.openUserFeedCollectionModal = function(authorName, userId, initialTab, isRestored) {
     if (!authorName && !userId) return;
+    if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
+      if (typeof showToast === 'function') showToast('프로필은 로그인 후 볼 수 있습니다.', 'info', 1800);
+      return;
+    }
 
     var followedModal = document.getElementById('followedRoutersModal');
     if (!isRestored && followedModal) {

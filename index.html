@@ -883,8 +883,8 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.9.18" defer></script>
-    <script src="romantic-history.js?v=2.7.89" defer></script>
+    <script src="romantic-sync.js?v=2.9.19" defer></script>
+    <script src="romantic-history.js?v=2.7.90" defer></script>
 
   <style>
   @font-face {
@@ -6730,6 +6730,12 @@ var adBannersHtml = `
     }
 
     function refreshMainBannerWeight() {
+      var bannerKg = document.getElementById('mainBannerKgText');
+      if (!bannerKg) return;
+      if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
+        bannerKg.innerText = '0.00 kg';
+        return;
+      }
       var savedGears = safeGetJSON('okbm_selected_gears_multi', {});
       var totalGrams = 0, totalCount = 0;
       Object.keys(savedGears).forEach(function(catId) {
@@ -6739,8 +6745,7 @@ var adBannersHtml = `
         });
       });
       var totalKg = (totalGrams / 1000).toFixed(2);
-      var bannerKg = document.getElementById('mainBannerKgText');
-      if (bannerKg) bannerKg.innerText = totalKg + ' kg';
+      bannerKg.innerText = totalKg + ' kg';
     }
 
     window.__okbmHealthCheck = function() {
