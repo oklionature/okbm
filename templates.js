@@ -882,6 +882,8 @@ async function captureStudioCardCanvas(card) {
       });
     }));
     await new Promise(function(res) { requestAnimationFrame(function() { requestAnimationFrame(res); }); });
+    // Pretendard·Google Fonts는 글자 조각(unicode-range) 단위로 받는다. 복제본 레이아웃 뒤 새로 필요해진 조각까지 받은 다음 캡처한다.
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
     var scale = exportScale;
     if (scale > 4) scale = 4;
     if (scale < 2) scale = 2;
