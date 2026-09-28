@@ -2929,11 +2929,15 @@ window.RomanticVault = window.RomanticVault || {
           var ytVal = String(cloudData.youtube || serverSns.youtube || '').trim();
           var blogVal = String(cloudData.blog || serverSns.blog || '').trim();
 
+          // 서버 값이 기준이다(빈 값이면 지운다). 비어 있을 때 그냥 두면 이전 계정의 링크가 남는다.
           if (instaVal) localStorage.setItem('okbm_user_instagram', instaVal);
+          else localStorage.removeItem('okbm_user_instagram');
 
           if (ytVal) localStorage.setItem('okbm_user_youtube', ytVal);
+          else localStorage.removeItem('okbm_user_youtube');
 
           if (blogVal) localStorage.setItem('okbm_user_blog', blogVal);
+          else localStorage.removeItem('okbm_user_blog');
 
           var curSnsProf = safeGetJSON('user_profile_' + userId, null) || safeGetJSON('user_profile', null);
           if (curSnsProf) {
@@ -2984,13 +2988,18 @@ window.RomanticVault = window.RomanticVault || {
           }
         }
 
-        var userBio = dirtyNow.__profile_bio ? '' : (cloudData.bio || cloudData.description || '');
-        if (userBio) {
-          localStorage.setItem('okbm_user_bio', userBio);
+        // 소개글은 서버 값이 기준이다(빈 값 포함). 예전에는 서버가 비어 있으면 이 기기에 남은
+        // 다른 계정의 소개글을 그대로 둬서, 카카오 계정 소개글이 네이버 계정에 보였다.
+        // 이 기기에서 바꾸고 아직 못 올린 소개글(__profile_bio)은 덮지 않는다.
+        if (!dirtyNow.__profile_bio) {
+          var userBio = String(cloudData.bio || cloudData.description || '');
+          if (userBio) localStorage.setItem('okbm_user_bio', userBio);
+          else localStorage.removeItem('okbm_user_bio');
           var profBio = safeGetJSON('user_profile', null);
-          if (profBio) {
+          if (profBio && (!profBio.id || String(profBio.id).trim() === String(userId).trim()) && String(profBio.bio || '') !== userBio) {
             profBio.bio = userBio;
             localStorage.setItem('user_profile', JSON.stringify(profBio));
+            if (profBio.id) localStorage.setItem('user_profile_' + profBio.id, JSON.stringify(profBio));
           }
         }
 
@@ -9752,6 +9761,8 @@ function logoutUser() {
   userPersonalKeys.forEach(function(k) {
     try { localStorage.removeItem(k); } catch(e) { console.warn('[romantic-sync.js:logoutUser removeItem]', e); }
   });
+  // 소개글·SNS·활동 공개 설정도 계정 값이다. 남기면 다음에 로그인한 다른 계정에 보이고 저장된다.
+  okbmClearLocalProfileFields();
   localStorage.setItem('okbm_client_epoch', '20260912_CLEAN_RESET_V2');
   // 다음 네이버 로그인은 계정 선택(ID/PW 입력)부터 다시 하게 한다.
   try { localStorage.setItem('okbm_naver_force_login', '1'); } catch (e) {}
@@ -10069,8 +10080,32 @@ function okbmMarkSocialButtonsBusy(busy, message, activeClass) {
   });
 }
 
+// 계정마다 다른 프로필 값인데 localStorage에 계정 구분 없이 저장되는 키(소개글·SNS·활동 공개 설정).
+// 예전에는 로그아웃·계정 전환 때 이 키들(인스타그램 제외)을 지우지 않았다. 그래서 카카오 계정의 소개글이
+// 네이버 계정 화면에 그대로 보였고, 네이버로 처음 가입하면 새 계정의 users 행에 그 값이 저장됐다.
+var OKBM_PROFILE_LOCAL_KEYS = [
+  'okbm_user_bio', 'okbm_user_instagram', 'okbm_user_youtube', 'okbm_user_blog',
+  'okbm_hide_year_activity', 'okbm_hide_total_activity'
+];
+function okbmClearLocalProfileFields() {
+  OKBM_PROFILE_LOCAL_KEYS.forEach(function(k) {
+    try { localStorage.removeItem(k); } catch (e) {}
+  });
+  // 이 값들에 대한 '서버에 올릴 변경' 표시도 지운다. 남아 있으면 이전 계정 값이 새 계정 행으로 올라간다.
+  try {
+    var dirty = okbmReadDirtyUserData();
+    var changed = false;
+    ['__profile_bio', '__profile_sns', '__profile_privacy'].forEach(function(k) {
+      if (dirty[k]) { delete dirty[k]; changed = true; }
+    });
+    if (changed) okbmWriteDirtyUserData(dirty);
+  } catch (e) {}
+}
+window.okbmClearLocalProfileFields = okbmClearLocalProfileFields;
+
 function okbmPurgeLocalSessionData() {
   try { localStorage.removeItem('user_profile'); } catch (e) {}
+  okbmClearLocalProfileFields();
   var purgeKeys = [
     'okbm_bookmarks', 'okbm_visited', 'okbm_memos',
     'okbm_plan_memos', 'okbm_plan_spots', 'okbm_packing_history',
@@ -10654,6 +10689,11 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
 
   if (prevUserId && prevUserId !== resolvedId && prevUserId !== 'guest') {
     okbmPurgeLocalSessionData();
+  } else if (prevUserId !== resolvedId) {
+    // 로그아웃 상태에서 로그인(이전 계정 ID가 이미 지워진 경우)에도, 이 기기에 남은 소개글·SNS는 누구 것인지 알 수 없다.
+    // 새 계정이면 비워 두고, 기존 계정이면 아래 hydrateFromServer가 서버 값으로 다시 채운다.
+    // (게스트 때 담은 찜·일정은 새 계정으로 옮겨지는 기존 동작을 유지하려고 전체 정리는 하지 않는다)
+    okbmClearLocalProfileFields();
   }
 
   var existingProfile = safeGetJSON('user_profile_' + resolvedId, null);
