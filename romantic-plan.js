@@ -6123,7 +6123,7 @@ window.saveCurrentPackingRecord = function() {
     window.__pendingPlanDestination = null;
   };
 
-  window.removeIndividualPlanSpot = function(dateKey, spotName, e, explicitTripId) {
+  window.removeIndividualPlanSpot = async function(dateKey, spotName, e, explicitTripId) {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
 
     var dTarget = String(dateKey).replace(/[-/]/g, '.');
@@ -6148,27 +6148,22 @@ window.saveCurrentPackingRecord = function() {
     if (!confirm(confirmMsg)) return;
 
     if (isExpedition && targetTripId) {
+      // [헌법 4] 서버 삭제가 확인된 뒤에만 로컬 목록에서 뺀다.
+      var tripDel = (typeof window.okbmDeleteRowsConfirmed === 'function')
+        ? await window.okbmDeleteRowsConfirmed('trips', targetTripId)
+        : { ok: false, error: 'no_helper' };
+      if (!tripDel.ok) {
+        if (tripDel.error !== 'login_required' && typeof showToast === 'function') {
+          showToast('모집 공고 삭제에 실패했습니다. 다시 시도해주세요.', 'error', 2600);
+        }
+        return;
+      }
       if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
         window.TRIP_JOINS_DATABASE = window.TRIP_JOINS_DATABASE.filter(function(t) {
           return String(t.tripId).trim() !== targetTripId;
         });
         if (typeof window.renderHomeTripJoinSlider === 'function') {
           window.renderHomeTripJoinSlider();
-        }
-      }
-
-      if (window.supabaseClient) {
-        window.supabaseClient.from('trips').delete().eq('id', targetTripId).then(function() {});
-      } else {
-        var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-        var targetKey = window.SUPABASE_ANON_KEY || '';
-        if (targetUrl && targetKey) {
-          var tripHeaders = (typeof window.okbmWriteHeaders === 'function') ? window.okbmWriteHeaders() : null;
-          if (!tripHeaders) return;
-          fetch(targetUrl + '/rest/v1/trips?id=eq.' + encodeURIComponent(targetTripId), {
-            method: 'DELETE',
-            headers: tripHeaders
-          }).catch(function() {});
         }
       }
     }
@@ -6300,6 +6295,16 @@ window.saveCurrentPackingRecord = function() {
         });
 
         if (tripIdsToDelete.length > 0) {
+          // [헌법 4] 기존 공고를 서버에서 먼저 지우고, 확인되면 로컬에서 뺀다. 실패하면 교체를 멈춘다.
+          var tripDelRes = (typeof window.okbmDeleteRowsConfirmed === 'function')
+            ? await window.okbmDeleteRowsConfirmed('trips', tripIdsToDelete)
+            : { ok: false, error: 'no_helper' };
+          if (!tripDelRes.ok) {
+            if (tripDelRes.error !== 'login_required' && typeof showToast === 'function') {
+              showToast('기존 모집 공고를 삭제하지 못해 일정을 바꾸지 않았습니다.', 'error', 2800);
+            }
+            return false;
+          }
           var tripIdSet = {};
           tripIdsToDelete.forEach(function(id) { tripIdSet[id] = true; });
           window.TRIP_JOINS_DATABASE = window.TRIP_JOINS_DATABASE.filter(function(t) {
@@ -6307,20 +6312,6 @@ window.saveCurrentPackingRecord = function() {
           });
           if (typeof window.renderHomeTripJoinSlider === 'function') {
             window.renderHomeTripJoinSlider();
-          }
-
-          var targetUrl = window.SUPABASE_URL || '';
-          var targetKey = window.SUPABASE_ANON_KEY || '';
-          if (targetUrl && targetKey) {
-            var tripHeaders = (typeof window.okbmWriteHeaders === 'function') ? window.okbmWriteHeaders() : null;
-            if (tripHeaders) {
-              tripIdsToDelete.forEach(function(tripId) {
-                fetch(targetUrl + '/rest/v1/trips?id=eq.' + encodeURIComponent(tripId), {
-                  method: 'DELETE',
-                  headers: tripHeaders
-                }).catch(function() {});
-              });
-            }
           }
         }
       }

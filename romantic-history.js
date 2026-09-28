@@ -1037,6 +1037,11 @@
     }
     delete safePayload.likes_count;
     delete safePayload.likes;
+    // [헌법 2] 최종 관문: 레디샷은 https만 DB로 보낸다.
+    if (safePayload.ready_shot_photo !== undefined && safePayload.ready_shot_photo !== null &&
+        String(safePayload.ready_shot_photo).trim().indexOf('https://') !== 0) {
+      safePayload.ready_shot_photo = '';
+    }
     if (Array.isArray(safePayload.photos)) {
       safePayload.photos = safePayload.photos.filter(function(url) {
         return typeof url === 'string' && url.indexOf('data:image/') !== 0;
@@ -1338,11 +1343,28 @@
     normalized.author = resolvedNick || normalized.author || '';
     normalized.userId = resolvedUserId || normalized.userId || '';
 
-    var rawTmpl = normalized.readyShotPhoto || '';
-    if (rawTmpl && rawTmpl.startsWith('data:image/') && typeof window.uploadSinglePhotoSmart === 'function') {
-      var uploadedR2Url = await window.uploadSinglePhotoSmart(rawTmpl, 'readyshot_' + normalized.id + '.jpg');
-      if (uploadedR2Url && uploadedR2Url.startsWith('https://')) {
-        normalized.readyShotPhoto = uploadedR2Url;
+    // [헌법 2] 레디샷은 https URL만 저장한다.
+    // - data: → R2 업로드. 실패하면 base64가 DB에 들어가지 않도록 저장을 중단한다.
+    // - blob: 등 그 밖의 값 → 세션이 끝나면 못 쓰는 주소라 버린다(같은 기록의 기존 https 레디샷이 있으면 아래 병합에서 유지).
+    var rawTmpl = String(normalized.readyShotPhoto || '').trim();
+    if (rawTmpl && rawTmpl.indexOf('https://') !== 0) {
+      if (rawTmpl.indexOf('data:image/') === 0) {
+        var uploadedR2Url = (typeof window.uploadSinglePhotoSmart === 'function')
+          ? await window.uploadSinglePhotoSmart(rawTmpl, 'readyshot_' + normalized.id + '.jpg')
+          : '';
+        if (uploadedR2Url && String(uploadedR2Url).indexOf('https://') === 0) {
+          normalized.readyShotPhoto = uploadedR2Url;
+        } else {
+          normalized.__serverSaveFailed = true;
+          normalized.__serverSaveError = 'READY_SHOT_UPLOAD_FAILED';
+          window.__tempStudioReadyShot = null;
+          if (typeof showToast === 'function') {
+            showToast('사진 업로드에 실패해 저장하지 못했습니다. 다시 시도해주세요.', 'error', 2600);
+          }
+          return normalized;
+        }
+      } else {
+        normalized.readyShotPhoto = '';
       }
     }
 
@@ -1382,7 +1404,7 @@
       if ((!normalized.photos || normalized.photos.length === 0) && Array.isArray(list[existIdx].photos) && list[existIdx].photos.length > 0) {
         normalized.photos = list[existIdx].photos;
       }
-      if (!normalized.readyShotPhoto && list[existIdx].readyShotPhoto) {
+      if (!normalized.readyShotPhoto && String(list[existIdx].readyShotPhoto || '').indexOf('https://') === 0) {
         normalized.readyShotPhoto = list[existIdx].readyShotPhoto;
       }
       list[existIdx] = Object.assign({}, list[existIdx], normalized);
@@ -1420,20 +1442,21 @@
           var replaceTargetUrl = window.SUPABASE_URL || '';
           var replaceTargetKey = window.SUPABASE_ANON_KEY || '';
           // pack_/local_ id도 서버에 올라간 경우가 있어 전부 서버 DELETE 시도
+          // [헌법 4] 같은 날 기존 기록의 서버 삭제가 확인돼야 교체 저장을 진행한다.
+          // 실패한 채 진행하면 서버에 같은 날짜 피드가 중복으로 남는다. 서버에 없던 로컬 전용 id는 helper가 "이미 없음"으로 통과시킨다.
           if (sameDateIds.length > 0 && replaceTargetUrl && replaceTargetKey) {
-            try {
-              var replaceHeaders = (typeof window.okbmWriteHeaders === 'function')
-                ? window.okbmWriteHeaders({ Prefer: 'return=representation' })
-                : null;
-              if (replaceHeaders) {
-                var inClause = 'in.(' + sameDateIds.map(encodeURIComponent).join(',') + ')';
-                await fetch(replaceTargetUrl + '/rest/v1/feeds?id=' + inClause, {
-                  method: 'DELETE',
-                  headers: replaceHeaders
-                });
+            var replaceDel = (typeof window.okbmDeleteRowsConfirmed === 'function')
+              ? await window.okbmDeleteRowsConfirmed('feeds', sameDateIds)
+              : { ok: false, error: 'no_helper' };
+            if (!replaceDel.ok) {
+              console.warn('[romantic-history.js:savePackingHistoryRecord sameDateReplace]', replaceDel);
+              normalized.__serverSaveFailed = true;
+              normalized.__serverSaveError = 'SAME_DATE_REPLACE_FAILED';
+              window.__tempStudioReadyShot = null;
+              if (replaceDel.error !== 'login_required' && typeof showToast === 'function') {
+                showToast('같은 날짜의 기존 기록을 지우지 못해 저장하지 않았습니다. 다시 시도해주세요.', 'error', 2800);
               }
-            } catch (replaceDelErr) {
-              console.warn('[romantic-history.js:savePackingHistoryRecord sameDateReplace]', replaceDelErr);
+              return normalized;
             }
           }
 
@@ -1506,7 +1529,9 @@
     var targetUrl = window.SUPABASE_URL || '';
     var targetKey = window.SUPABASE_ANON_KEY || '';
     if (targetUrl && targetKey) {
-      var tmplPhoto = normalized.readyShotPhoto || normalized.customTemplatePhoto || '';
+      var tmplPhoto = String(normalized.readyShotPhoto || normalized.customTemplatePhoto || '').trim();
+      // [헌법 2] DB에는 https 레디샷만 보낸다(data:/blob: 차단).
+      if (tmplPhoto.indexOf('https://') !== 0) tmplPhoto = '';
 
       var canPublish = (typeof window.okbmCanPublishFeed === 'function')
         ? window.okbmCanPublishFeed(normalized, { skipDate: true })
@@ -3299,16 +3324,13 @@ window.okbmGetNormalizedUserId = function(rawId) {
   return 'kakao_' + uId;
 };
 
+// [헌법 7] 로그인 판정은 isUserLoggedIn(Supabase 세션 기준) 하나로만 한다.
+// localStorage ID나 평문 토큰만으로 로그인으로 보지 않는다.
 window.okbmCheckUserLoginStatus = function() {
-  if (typeof isUserLoggedIn === 'function') {
-    try {
-      if (isUserLoggedIn()) return true;
-    } catch (e) {}
-  }
-  var id = window.okbmGetNormalizedUserId();
-  if (id && id !== 'guest') return true;
-  var token = localStorage.getItem('user_auth_token') || localStorage.getItem('kakao_access_token') || localStorage.getItem('access_token');
-  return Boolean(token && token.trim().length > 0);
+  var fn = (typeof window.isUserLoggedIn === 'function') ? window.isUserLoggedIn
+    : ((typeof isUserLoggedIn === 'function') ? isUserLoggedIn : null);
+  if (!fn) return false;
+  try { return !!fn(); } catch (e) { return false; }
 };
 
 window.okbmGetUserStarsKey = function(userId) {
@@ -4848,19 +4870,10 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     var followingList = safeGetJSON('okbm_following_users', []);
 
-    var allFeeds = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+    // 팔로우 대상은 다른 사용자라 내 로컬 기록을 합칠 이유가 없다. 서버 목록은 복사본만 읽는다.
+    var allFeeds = ((Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
       ? window.__allLoadedFeeds
-      : (window.safeGetStorage('okbm_cached_community_feeds', []) || []);
-
-    if (Array.isArray(window.interactiveHistory)) {
-      window.interactiveHistory.forEach(function(myRec) {
-        if (myRec && window.okbmIsPublicFeedItem && window.okbmIsPublicFeedItem(myRec)) {
-          if (!allFeeds.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
-            allFeeds.push(myRec);
-          }
-        }
-      });
-    }
+      : (window.safeGetStorage('okbm_cached_community_feeds', []) || [])).slice();
 
     var routerItems = followingList.map(function(authorKey) {
       var cleanKey = String(authorKey).trim();
@@ -4953,6 +4966,77 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
   };
 
+  // 관심피드 중 로드된 목록에 없는 ID를 서버에서 직접 조회한다.
+  // - 받은 행: 캐시에 담아 목록에 표시
+  // - 응답이 정상인데 행이 없는 ID: 삭제됐거나 볼 수 없는 피드라 저장 목록에서 제거
+  // - 요청 실패: 아무것도 지우지 않는다
+  window.__okbmSavedFeedRowCache = window.__okbmSavedFeedRowCache || {};
+  window.okbmResolveMissingSavedFeeds = async function(ids) {
+    var targetUrl = window.SUPABASE_URL || '';
+    if (!targetUrl || typeof window.okbmPublicFetch !== 'function' || typeof window.okbmFormatPostgrestInList !== 'function') return;
+    var uniq = [];
+    (Array.isArray(ids) ? ids : []).forEach(function(id) {
+      var s = String(id || '').trim();
+      if (s && uniq.indexOf(s) === -1 && !window.__okbmSavedFeedRowCache[s]) uniq.push(s);
+    });
+    if (!uniq.length) return;
+    if (window.__okbmSavedFeedResolveInflight) return;
+    window.__okbmSavedFeedResolveInflight = true;
+
+    var projection = 'id,user_id,author,author_photo,spot,elevation,weight_kg,date,memo,photos,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+    var foundIds = {};
+    var allOk = true;
+    try {
+      for (var i = 0; i < uniq.length; i += 50) {
+        var chunk = uniq.slice(i, i + 50);
+        var url = targetUrl + '/rest/v1/feeds?select=' + projection + '&id=in.(' + window.okbmFormatPostgrestInList(chunk) + ')';
+        var res = await window.okbmPublicFetch(url);
+        if (!res || !res.ok) { allOk = false; break; }
+        var rows = await res.json();
+        if (!Array.isArray(rows)) { allOk = false; break; }
+        rows.forEach(function(row, idx) {
+          if (!row || !row.id) return;
+          var rid = String(row.id).trim();
+          foundIds[rid] = true;
+          window.__okbmSavedFeedRowCache[rid] = (typeof window.normalizeHistoryRecord === 'function')
+            ? window.normalizeHistoryRecord(row, idx)
+            : row;
+        });
+      }
+    } catch (e) {
+      allOk = false;
+      console.warn('[romantic-history.js:okbmResolveMissingSavedFeeds]', e);
+    } finally {
+      window.__okbmSavedFeedResolveInflight = false;
+    }
+
+    var changed = Object.keys(foundIds).length > 0;
+    if (allOk) {
+      var goneIds = uniq.filter(function(id) { return !foundIds[id]; });
+      if (goneIds.length) {
+        // 조회 사이에 사용자가 저장/해제했을 수 있어 최신 목록을 다시 읽어서 뺀다.
+        var latest = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+          ? window.RomanticVault.read('okbm_saved_feeds', [])
+          : safeGetJSON('okbm_saved_feeds', []);
+        var goneSet = {};
+        goneIds.forEach(function(id) { goneSet[id] = true; });
+        var cleaned = (Array.isArray(latest) ? latest : []).filter(function(id) { return !goneSet[String(id).trim()]; });
+        if (cleaned.length !== (Array.isArray(latest) ? latest.length : 0)) {
+          if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+            window.RomanticVault.write('okbm_saved_feeds', cleaned, true);
+          } else {
+            localStorage.setItem('okbm_saved_feeds', JSON.stringify(cleaned));
+          }
+          changed = true;
+        }
+      }
+    }
+
+    if (changed && document.getElementById('savedFeedsListModal')) {
+      window.openSavedFeedsModal(true);
+    }
+  };
+
   window.openSavedFeedsModal = function(isRestored) {
 
     var activeReport = document.getElementById('userProfileModalOverlay');
@@ -4978,44 +5062,42 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       ? window.RomanticVault.read('okbm_saved_feeds', [])
       : safeGetJSON('okbm_saved_feeds', []);
 
-    var allFeeds = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+    // 서버 피드 배열은 복사본만 쓴다. 원본(__allLoadedFeeds)에 push하면 전역 서버 목록이 오염된다.
+    // 서버에서 ID로 직접 받은 관심피드 행(__okbmSavedFeedRowCache)도 조회 풀에 포함한다.
+    var allFeeds = ((Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
       ? window.__allLoadedFeeds
-      : (window.safeGetStorage('okbm_cached_community_feeds', []) || []);
-
-    if (Array.isArray(window.interactiveHistory)) {
-      window.interactiveHistory.forEach(function(myRec) {
-        if (myRec && window.okbmIsPublicFeedItem && window.okbmIsPublicFeedItem(myRec)) {
-          if (!allFeeds.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
-            allFeeds.push(myRec);
-          }
-        }
-      });
-    }
+      : (window.safeGetStorage('okbm_cached_community_feeds', []) || [])).slice();
+    var savedRowCache = window.__okbmSavedFeedRowCache || {};
+    Object.keys(savedRowCache).forEach(function(cid) {
+      var row = savedRowCache[cid];
+      if (row && !allFeeds.some(function(f) { return f && String(f.id).trim() === cid; })) {
+        allFeeds.push(row);
+      }
+    });
 
     var matchedSavedFeeds = [];
-    var validIdSet = new Set();
+    var missingSavedIds = [];
 
     savedFeedsList.forEach(function(sId) {
+      var cleanSid = String(sId).trim();
       var found = allFeeds.find(function(f) {
-        return f && String(f.id).trim() === String(sId).trim();
+        return f && String(f.id).trim() === cleanSid;
       });
-      if (found && (!window.okbmIsPublicFeedItem || window.okbmIsPublicFeedItem(found))) {
+      if (!found) {
+        missingSavedIds.push(cleanSid);
+        return;
+      }
+      if (!window.okbmIsPublicFeedItem || window.okbmIsPublicFeedItem(found)) {
         matchedSavedFeeds.push(found);
-        validIdSet.add(String(sId).trim());
       }
     });
 
     matchedSavedFeeds = window.okbmApplyUgcSafetyFilter(matchedSavedFeeds);
 
-    if (allFeeds.length > 0 && validIdSet.size !== savedFeedsList.length) {
-      var cleanedIds = savedFeedsList.filter(function(id) {
-        return validIdSet.has(String(id).trim());
-      });
-      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-        window.RomanticVault.write('okbm_saved_feeds', cleanedIds, true);
-      } else {
-        localStorage.setItem('okbm_saved_feeds', JSON.stringify(cleanedIds));
-      }
+    // 로드된 피드는 페이지 단위 일부라서, 여기 없다고 저장 ID를 지우면 안 된다.
+    // 없는 ID만 서버에 직접 조회해 목록에 채우고, 서버가 "없음"으로 확인한 ID만 저장 목록에서 뺀다.
+    if (missingSavedIds.length > 0 && typeof window.okbmResolveMissingSavedFeeds === 'function') {
+      window.okbmResolveMissingSavedFeeds(missingSavedIds);
     }
 
     window.__currentScopedSavedFeeds = matchedSavedFeeds.slice();
@@ -7672,29 +7754,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           }
 
           if (offset === 0) {
-            var prevFeeds = Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : [];
-            var prevMap = new Map();
-            prevFeeds.forEach(function(f) {
-              if (f && f.id) prevMap.set(String(f.id).trim(), f);
-            });
-            supaFeeds = supaFeeds.map(function(row) {
-              if (!row || !row.id) return row;
-              var prev = prevMap.get(String(row.id).trim());
-              if (!prev) return row;
-              var prevPhotos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(prev) : (Array.isArray(prev.photos) ? prev.photos : []);
-              var nextPhotos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(row) : (Array.isArray(row.photos) ? row.photos : []);
-              var merged = Object.assign({}, prev, row);
-              if (prevPhotos.length > nextPhotos.length) {
-                merged.photos = prevPhotos;
-              }
-              if ((!row.memo || !String(row.memo).trim()) && prev.memo) {
-                merged.memo = prev.memo;
-              }
-              if ((!Array.isArray(row.photo_memos_json) || !row.photo_memos_json.length) && Array.isArray(prev.photoMemos) && prev.photoMemos.length) {
-                merged.photoMemos = prev.photoMemos;
-              }
-              return merged;
-            });
+            // [헌법 1] 서버 응답을 그대로 쓴다. 이전 메모리 값과 병합하면
+            // 서버에서 지운 사진·메모가 되살아나고, 오래된 camelCase 필드(readyShotPhoto 등)가 서버 값을 덮는다.
             window.__allLoadedFeeds = supaFeeds;
             window.__feedPaginationOffset = supaFeeds.length;
             okbmWriteCachedCommunityFeeds(supaFeeds);

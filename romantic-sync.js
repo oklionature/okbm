@@ -1150,6 +1150,54 @@ function okbmWriteRestHeaders(extra) {
 }
 window.okbmWriteHeaders = okbmWriteRestHeaders;
 
+// [헌법 4] 서버 DELETE를 실행하고 결과를 확인한다. 성공일 때만 호출부가 로컬을 지운다.
+// - 삭제된 행이 있으면 ok
+// - 0건이면 존재 여부를 다시 조회해, 이미 없는 행이면 ok(alreadyGone), 남아 있으면 권한 문제로 실패
+// ids: 문자열 또는 배열, column 기본값 'id'
+window.okbmDeleteRowsConfirmed = async function(table, ids, column) {
+  var list = (Array.isArray(ids) ? ids : [ids]).map(function(v) { return String(v || '').trim(); }).filter(Boolean);
+  var col = column || 'id';
+  if (!table || !list.length) return { ok: false, error: 'bad_args', deletedIds: [] };
+  var base = window.SUPABASE_URL || SUPABASE_URL || '';
+  if (!base) return { ok: false, error: 'no_server', deletedIds: [] };
+  var headers = okbmWriteRestHeaders({ Prefer: 'return=representation' });
+  if (!headers) return { ok: false, error: 'login_required', deletedIds: [] };
+
+  var filter = list.length === 1
+    ? ('eq.' + encodeURIComponent(list[0]))
+    : ('in.(' + list.map(function(v) { return encodeURIComponent('"' + v.replace(/"/g, '') + '"'); }).join(',') + ')');
+  var url = base + '/rest/v1/' + table + '?' + col + '=' + filter;
+  try {
+    var res = await fetch(url, { method: 'DELETE', headers: headers });
+    if (!res.ok) return { ok: false, status: res.status, deletedIds: [] };
+    var rows = [];
+    try { rows = await res.json(); } catch (eParse) { rows = []; }
+    var deletedIds = (Array.isArray(rows) ? rows : []).map(function(r) {
+      return r && r[col] != null ? String(r[col]).trim() : '';
+    }).filter(Boolean);
+    var notDeleted = list.filter(function(v) { return deletedIds.indexOf(v) === -1; });
+    if (notDeleted.length === 0) return { ok: true, deletedIds: deletedIds };
+
+    // 일부/전부 0건: 이미 없는 행인지, 권한 때문에 못 지운 행인지 구분한다.
+    var checkFilter = notDeleted.length === 1
+      ? ('eq.' + encodeURIComponent(notDeleted[0]))
+      : ('in.(' + notDeleted.map(function(v) { return encodeURIComponent('"' + v.replace(/"/g, '') + '"'); }).join(',') + ')');
+    var checkRes = await fetch(base + '/rest/v1/' + table + '?select=' + col + '&' + col + '=' + checkFilter, {
+      headers: okbmPublicRestHeaders()
+    });
+    if (!checkRes.ok) return { ok: false, status: checkRes.status, error: 'verify_failed', deletedIds: deletedIds };
+    var remain = [];
+    try { remain = await checkRes.json(); } catch (eParse2) { remain = []; }
+    if (Array.isArray(remain) && remain.length === 0) {
+      return { ok: true, alreadyGone: true, deletedIds: list.slice() };
+    }
+    return { ok: false, error: 'zero_rows_deleted', deletedIds: deletedIds };
+  } catch (err) {
+    console.warn('[romantic-sync.js:okbmDeleteRowsConfirmed]', table, err);
+    return { ok: false, error: String(err && err.message || err), deletedIds: [] };
+  }
+};
+
 window.okbmInvokeFunction = async function(name, body) {
   var fnName = String(name || '').trim();
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
@@ -9912,6 +9960,36 @@ function okbmPurgeLocalSessionData() {
   window.__okbmIsAdmin = false;
 }
 
+function okbmClearLocalIdentityAfterSignOut() {
+  var hadIdentity = false;
+  try {
+    hadIdentity = !!(localStorage.getItem('okbm_user_id') || localStorage.getItem('user_profile'));
+  } catch (e) {}
+  try { localStorage.removeItem('user_auth_token'); } catch (e) {}
+  if (hadIdentity) {
+    okbmPurgeLocalSessionData();
+    ['okbm_user_id', 'okbm_user_nick', 'okbm_hero_cover_url'].forEach(function(k) {
+      try { localStorage.removeItem(k); } catch (e) {}
+    });
+    try {
+      Object.keys(localStorage).forEach(function(k) {
+        if (k.indexOf('user_profile_') === 0 || k.indexOf('okbm_custom_nickname_') === 0 || k.indexOf('okbm_feed_stars_map') === 0) {
+          localStorage.removeItem(k);
+        }
+      });
+    } catch (e) {}
+    // 다른 계정으로 바꿀 수 있게 다음 네이버 로그인은 ID/PW 입력부터 시작한다.
+    try { localStorage.setItem('okbm_naver_force_login', '1'); } catch (e) {}
+  }
+  if (typeof authState !== 'undefined') {
+    authState.isLoggedIn = false;
+    authState.userProfile = null;
+  }
+  if (hadIdentity && typeof updateHeaderAuthUI === 'function') {
+    try { updateHeaderAuthUI(); } catch (e) {}
+  }
+}
+
 function okbmSocialUserSelect() {
   return 'id,nickname,email,photo_url,hero_cover_url,bookmarks,my_gears,last_nickname_changed_at,is_admin';
 }
@@ -10402,12 +10480,10 @@ function okbmInitSupabaseOAuthBridge() {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
         okbmConsumeSupabaseOAuthSession(session);
       } else if (event === 'SIGNED_OUT') {
-        localStorage.removeItem('user_auth_token');
-        localStorage.removeItem('user_profile');
-        if (typeof authState !== 'undefined') {
-          authState.isLoggedIn = false;
-          authState.userProfile = null;
-        }
+        // [헌법 7] Supabase 세션이 끝나면(다른 탭 로그아웃, refresh 토큰 만료 등) 로컬 신원도 함께 끝낸다.
+        // ID만 지우면 다음 로그인에서 계정 전환 감지(prevUserId)가 빠져 이전 사용자 데이터가 새 계정에 섞이므로
+        // 개인 데이터 캐시도 같이 정리한다.
+        okbmClearLocalIdentityAfterSignOut();
       }
     });
   }
@@ -10601,6 +10677,9 @@ function loginWithKakao(options) {
           if (!issued || !issued.access_token || !issued.refresh_token) {
             throw new Error('supabase session missing');
           }
+          // [헌법 7] setSession이 발생시키는 SIGNED_IN을 OAuth 브리지가 다시 처리하지 않도록 먼저 잠근다.
+          // (브리지는 이 플래그가 켜져 있으면 handleSocialLoginSuccess를 호출하지 않는다)
+          window.__okbmOAuthBootstrapping = true;
           return window.okbmSetSupabaseSession(issued.access_token, issued.refresh_token).then(function() {
             if (isLink) {
               okbmMarkSocialButtonsBusy(false);
@@ -10626,6 +10705,9 @@ function loginWithKakao(options) {
           okbmMarkSocialButtonsBusy(false);
           var msg = (err && err.body && err.body.message) || (isLink ? '카카오 계정 연결에 실패했습니다.' : '카카오 로그인 세션을 만들지 못했습니다.');
           if (typeof showToast === 'function') showToast(msg, 'warn');
+        }).then(function() {
+          // 성공(곧 reload)·연결·실패 모두 끝나면 잠금을 푼다.
+          window.__okbmOAuthBootstrapping = false;
         });
       },
       fail: function(err) {
@@ -10803,6 +10885,8 @@ async function okbmConsumeNaverOAuthCallback() {
     if (!issued || !issued.access_token || !issued.refresh_token) {
       throw new Error('supabase session missing');
     }
+    // [헌법 7] Kakao와 같은 이유로 브리지 재처리를 막는다(finally에서 해제).
+    window.__okbmOAuthBootstrapping = true;
     await window.okbmSetSupabaseSession(issued.access_token, issued.refresh_token);
     if (isLink) {
       okbmMarkSocialButtonsBusy(false);
@@ -10830,6 +10914,8 @@ async function okbmConsumeNaverOAuthCallback() {
     var msg = (err && err.body && err.body.message) || '네이버 로그인 세션을 만들지 못했습니다.';
     if (typeof showToast === 'function') showToast(msg, 'warn');
     return true;
+  } finally {
+    window.__okbmOAuthBootstrapping = false;
   }
 }
 
