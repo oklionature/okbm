@@ -372,7 +372,8 @@ window.purgeIfStale = purgeIfStale;
     'okbm_gear_presets',
     'okbm_gear_meta',
     'okbm_hero_cover_url',
-    'okbm_my_proposals'
+    'okbm_my_proposals',
+    'okbm_naver_force_login'
   ];
   purgeIfStale('okbm_client_epoch', CLEAN_EPOCH, [
     'okbm_deleted_record_ids',
@@ -662,7 +663,8 @@ window.autoPurgeLegacyClientCache = window.autoPurgeLegacyClientCache || functio
     'okbm_gear_version', 'user_auth_token', 'user_profile', 'okbm_user_id', 'okbm_user_nick',
     'okbm_bookmarks', 'okbm_visited', 'okbm_memos', 'okbm_plan_memos', 'okbm_plan_spots',
     'okbm_packing_history', 'okbm_selected_gears_multi', 'okbm_favorite_gears', 'okbm_custom_gears',
-    'okbm_gear_presets', 'okbm_gear_meta', 'okbm_hero_cover_url', 'okbm_my_proposals'
+    'okbm_gear_presets', 'okbm_gear_meta', 'okbm_hero_cover_url', 'okbm_my_proposals',
+    'okbm_naver_force_login'
   ];
   try {
     if (typeof window.purgeIfStale === 'function') {
@@ -9796,7 +9798,8 @@ window.confirmUserAccountDeletion = async function(opts) {
     okbm_spots_cache: true,
     okbm_master_spots: true,
     okbm_gear_version: true,
-    okbm_client_epoch: true
+    okbm_client_epoch: true,
+    okbm_naver_force_login: true
   };
   try {
     Object.keys(localStorage).forEach(function(k) {
