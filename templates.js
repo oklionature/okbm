@@ -768,8 +768,21 @@ function flattenCaptureInsets(root) {
   });
 }
 
+// html2canvas는 페이지 로딩에서 빠지고 okbmEnsureHtml2canvas로 필요할 때 받는다.
+// 아직 받는 중이면 끝날 때까지 기다렸다가 함수를 돌려준다(실패하면 null).
+function okbmCurrentHtml2canvas() {
+  if (typeof html2canvas === 'function') return html2canvas;
+  return (typeof window !== 'undefined' && typeof window.html2canvas === 'function') ? window.html2canvas : null;
+}
+function okbmResolveHtml2canvas() {
+  var ready = okbmCurrentHtml2canvas();
+  if (ready) return Promise.resolve(ready);
+  if (typeof window === 'undefined' || typeof window.okbmEnsureHtml2canvas !== 'function') return Promise.resolve(null);
+  return window.okbmEnsureHtml2canvas().then(okbmCurrentHtml2canvas, function() { return null; });
+}
+
 async function captureStudioCardCanvas(card) {
-  var h2c = (typeof html2canvas === 'function') ? html2canvas : (typeof window !== 'undefined' ? window.html2canvas : null);
+  var h2c = await okbmResolveHtml2canvas();
   if (typeof h2c !== 'function') {
     if (typeof showToast === 'function') showToast('이미지 처리 엔진을 불러오는 중입니다. 잠시 후 다시 시도해주세요.', 'warn');
     throw new Error('html2canvas not loaded');
@@ -976,8 +989,11 @@ function runReadyShotPrecapture() {
     scheduleReadyShotPrecapture();
     return;
   }
-  var h2c = (typeof html2canvas === 'function') ? html2canvas : window.html2canvas;
-  if (typeof h2c !== 'function') return;
+  if (!okbmCurrentHtml2canvas()) {
+    // 캡처 엔진을 받는 중이면 끝난 뒤 다시 예약한다(실패 시에는 재시도하지 않음).
+    okbmResolveHtml2canvas().then(function(fn) { if (fn) scheduleReadyShotPrecapture(); });
+    return;
+  }
   var container = document.getElementById('packShareCaptureArea');
   var loading = Array.prototype.filter.call(container.querySelectorAll('img'), function(img) {
     return !img.complete;
@@ -1347,7 +1363,7 @@ window.handleReadyShotShareAction = async function(act) {
 
 window.saveStudioCardToPhone = async function() {
   var card = document.getElementById('photoStudioCardTarget');
-  var h2c = (typeof html2canvas === 'function') ? html2canvas : (typeof window !== 'undefined' ? window.html2canvas : null);
+  var h2c = card ? await okbmResolveHtml2canvas() : null;
   if (!card || typeof h2c !== 'function') {
     if (typeof showToast === 'function') showToast('이미지 처리 엔진을 불러오는 중입니다. 잠시 후 다시 시도해주세요.', 'warn');
     return;

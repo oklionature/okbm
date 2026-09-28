@@ -9154,6 +9154,10 @@ window.renderHistoryStage = function(isLoading, opts) {
     window.okbmReleaseReelFeedObserver();
 
     var allReelCards = Array.from(reelContainer.querySelectorAll('.reel-page-snap'));
+    // 스냅마다 카드 전체를 두 번 다시 찾고 모든 카드의 style을 새로 쓰던 것을 줄인다.
+    // 같은 카드·같은 개수면 건너뛰고, 보임 상태가 바뀌는 카드만 style을 쓴다(결과는 이전과 같음: 현재 ±3장만 보임).
+    var lastWindowIdx = null;
+    var lastWindowCount = -1;
     window.__reelWindowObserver = new IntersectionObserver(function(entries) {
       if (!window.__okbmHistoryModalOpen) return;
       entries.forEach(function(entry) {
@@ -9166,23 +9170,31 @@ window.renderHistoryStage = function(isLoading, opts) {
           }
           var curIdx = parseInt(entry.target.dataset.reelIdx, 10);
           if (!isNaN(curIdx)) {
-            var totalCards = reelContainer.querySelectorAll('.reel-page-snap').length;
+            var cardList = reelContainer.querySelectorAll('.reel-page-snap');
+            var totalCards = cardList.length;
             if (curIdx >= totalCards - 2 && window.__feedHasMore && !window.__isFetchingMoreFeeds) {
               window.fetchMoreCommunityFeeds();
             }
+            if (curIdx === lastWindowIdx && totalCards === lastWindowCount) return;
+            lastWindowIdx = curIdx;
+            lastWindowCount = totalCards;
 
-            allReelCards = Array.from(reelContainer.querySelectorAll('.reel-page-snap'));
-            allReelCards.forEach(function(cardEl) {
+            for (var ci = 0; ci < totalCards; ci++) {
+              var cardEl = cardList[ci];
               var cIdx = parseInt(cardEl.dataset.reelIdx, 10);
-              var mediaStage = cardEl.querySelector('.postcard-3d-wrapper');
-              if (mediaStage) {
-                if (Math.abs(cIdx - curIdx) <= 3) {
-                  mediaStage.style.visibility = 'visible';
-                } else {
-                  mediaStage.style.visibility = 'hidden';
-                }
+              var mediaStage = cardEl.__okbmReelMediaStage;
+              if (!mediaStage || !cardEl.contains(mediaStage)) {
+                mediaStage = cardEl.querySelector('.postcard-3d-wrapper');
+                cardEl.__okbmReelMediaStage = mediaStage || null;
+                cardEl.__okbmReelMediaVis = '';
               }
-            });
+              if (!mediaStage) continue;
+              var nextVis = (Math.abs(cIdx - curIdx) <= 3) ? 'visible' : 'hidden';
+              if (cardEl.__okbmReelMediaVis !== nextVis) {
+                mediaStage.style.visibility = nextVis;
+                cardEl.__okbmReelMediaVis = nextVis;
+              }
+            }
           }
         }
       });

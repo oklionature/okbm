@@ -13478,7 +13478,18 @@ if (typeof window !== 'undefined') {
 
   // ☀️ [스마트폰 상태바 텍스트/아이콘 순백색(White) 강제 고정 엔진]
   // Capacitor: DARK = 어두운 배경용 흰 아이콘 / LIGHT = 밝은 배경용 검정 아이콘
+  // 일반 웹 브라우저인지. index/map이 <head>에서 Capacitor.isNativePlatform()으로 판정해 'okbm-web'을 붙인다.
+  // 판정 뒤에 Capacitor가 생긴 경우(늦은 주입)는 네이티브로 보고 기존 동작을 유지한다.
+  function isPlainWebPage() {
+    try {
+      return document.documentElement.classList.contains('okbm-web') && !window.Capacitor;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function configureCapacitorStatusBar() {
+    if (isPlainWebPage()) return; // 웹에는 상태바 플러그인이 없다(4번 재시도·리스너 등록 생략)
     function applyStatusBarStyles() {
       var plugins = (window.Capacitor && window.Capacitor.Plugins) || {};
       var StatusBar = plugins.StatusBar || window.StatusBar;
@@ -13517,6 +13528,7 @@ if (typeof window !== 'undefined') {
 
   function bootBackHandler() {
     if (registerCapacitorBackHandler()) return;
+    if (isPlainWebPage()) return; // 웹에서는 뒤로가기 플러그인이 생기지 않으므로 250ms×40회 폴링을 하지 않는다
     var attempts = 0;
     var timer = setInterval(function() {
       attempts += 1;

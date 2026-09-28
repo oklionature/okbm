@@ -739,11 +739,22 @@
   };
 
   // 🔍 [실시간 검색 필터링 핸들러]
+  // 입력마다 전체 선반을 다시 그리지 않도록 120ms 묶어서 한 번만 그린다. 비우기는 즉시 반영.
+  var __calcShelfSearchTimer = 0;
   window.handleCalcShelfSearch = function(query) {
     window.__calcShelfSearchQuery = (query || '').trim().toLowerCase();
     var clearBtn = document.getElementById('btnCalcSearchClear');
     if (clearBtn) clearBtn.style.display = window.__calcShelfSearchQuery ? 'flex' : 'none';
-    window.renderPlanCategorySlots();
+    if (__calcShelfSearchTimer) clearTimeout(__calcShelfSearchTimer);
+    __calcShelfSearchTimer = 0;
+    if (!window.__calcShelfSearchQuery) {
+      window.renderPlanCategorySlots();
+      return;
+    }
+    __calcShelfSearchTimer = setTimeout(function() {
+      __calcShelfSearchTimer = 0;
+      window.renderPlanCategorySlots();
+    }, 120);
   };
 
   window.clearCalcShelfSearch = function() {
@@ -1182,6 +1193,19 @@
     return found;
   };
 
+  // localeCompare(…, 'ko')와 같은 순서. 비교할 때마다 ICU를 새로 준비하지 않도록 하나만 만들어 쓴다.
+  var __okbmPlanKoCollator = null;
+  function okbmPlanKoCollator() {
+    if (__okbmPlanKoCollator === null) {
+      try {
+        __okbmPlanKoCollator = (typeof Intl !== 'undefined' && typeof Intl.Collator === 'function') ? new Intl.Collator('ko') : false;
+      } catch (e) {
+        __okbmPlanKoCollator = false;
+      }
+    }
+    return __okbmPlanKoCollator || null;
+  }
+
   window.renderPlanCategorySlots = function() {
     var shelfContainer = document.getElementById('calcGearShelfList');
     var tabsContainer = document.getElementById('calcCategoryTabsBar');
@@ -1239,9 +1263,13 @@
         return Object.assign({}, cg, { category_id: resolvedCat, categoryId: resolvedCat, isCustom: true });
       });
 
+      // 이름 중복 제거: 예전에는 항목마다 allSource 전체를 훑어(약 2,500² 비교) 입력마다 멈칫했다. 같은 규칙(먼저 들어온 것 유지)을 Set으로 처리한다.
+      var seenGearNames = new Set();
+      allSource.forEach(function(item) { seenGearNames.add(item.name); });
       Object.keys(masterMap).forEach(function(k) {
         (masterMap[k] || []).forEach(function(g) {
-          if (!allSource.some(function(item) { return item.name === g.name; })) {
+          if (!seenGearNames.has(g.name)) {
+            seenGearNames.add(g.name);
             allSource.push(Object.assign({}, g, { category_id: k, isCustom: false }));
           }
         });
@@ -1260,6 +1288,22 @@
         return s.includes(cleanQ);
       });
 
+      // 담긴 개수는 카테고리별로 한 번만 센다(정렬 비교마다 배열을 다시 훑지 않도록).
+      var packedCountByCat = {};
+      function packedCount(catId, name) {
+        var byName = packedCountByCat[catId];
+        if (!byName) {
+          byName = new Map();
+          (gearMap[catId] || []).forEach(function(it) {
+            if (!it) return;
+            byName.set(it.name, (byName.get(it.name) || 0) + 1);
+          });
+          packedCountByCat[catId] = byName;
+        }
+        return byName.get(name) || 0;
+      }
+      var koCollator = okbmPlanKoCollator();
+
       filtered.sort(function(a, b) {
         var aFav = (window.favoriteGearSet && window.favoriteGearSet.has(a.name)) ? 1 : 0;
         var bFav = (window.favoriteGearSet && window.favoriteGearSet.has(b.name)) ? 1 : 0;
@@ -1267,8 +1311,8 @@
 
         var aCat = a.category_id || 'other';
         var bCat = b.category_id || 'other';
-        var aCount = (gearMap[aCat] || []).filter(function(it) { return it.name === a.name; }).length;
-        var bCount = (gearMap[bCat] || []).filter(function(it) { return it.name === b.name; }).length;
+        var aCount = packedCount(aCat, a.name);
+        var bCount = packedCount(bCat, b.name);
         if (aCount !== bCount) return bCount - aCount;
 
         var aCustom = a.isCustom ? 1 : 0;
@@ -1279,13 +1323,21 @@
         var bTime = b.id && String(b.id).startsWith('custom_') ? parseInt(String(b.id).split('_')[1], 10) : 0;
         if (aTime !== bTime) return bTime - aTime;
 
-        return a.name.localeCompare(b.name, 'ko');
+        return koCollator ? koCollator.compare(a.name, b.name) : a.name.localeCompare(b.name, 'ko');
       });
 
       if (filtered.length === 0) {
+        shelfContainer.onscroll = null; // 이전 목록의 추가 로딩 핸들러가 빈 결과 화면에 행을 붙이지 않도록
+        shelfContainer.__okbmShelfKey = '';
         shelfContainer.innerHTML = `<div style="text-align:center; padding:60px 0; color:#64748b; font-size:0.75rem;">일치하는 장비가 없습니다.<br>상단 검색어를 변경하거나 직접 등록해보세요.</div>`;
       } else {
-        var initialLimit = cleanQ ? filtered.length : 40;
+        // 처음엔 40개만 그리고 스크롤 끝에서 80개씩 더 붙인다(검색 결과도 동일).
+        // 같은 탭·검색어로 다시 그릴 때(카테고리 로딩, 장비 등록 등)는 보던 개수와 스크롤 위치를 유지한다.
+        var shelfKey = String(curTab) + '\u0000' + cleanQ;
+        var sameShelf = shelfContainer.__okbmShelfKey === shelfKey;
+        var keepShown = sameShelf ? (shelfContainer.__okbmShelfShown || 0) : 0;
+        var keepScrollTop = sameShelf ? shelfContainer.scrollTop : 0;
+        var initialLimit = Math.min(filtered.length, Math.max(40, keepShown));
         var renderItems = filtered.slice(0, initialLimit);
 
         var guideHtml = `
@@ -1296,8 +1348,7 @@
 
         function renderRowHtml(g) {
           var targetCatId = g.category_id || 'other';
-          var currentCatItems = gearMap[targetCatId] || [];
-          var count = currentCatItems.filter(function(it) { return it.name === g.name; }).length;
+          var count = packedCount(targetCatId, g.name);
           var isAdded = count > 0;
           var isFav = window.favoriteGearSet && window.favoriteGearSet.has(g.name);
           var pal = CATEGORY_PALETTE[targetCatId] || { color: '#94a3b8', border: 'rgba(255,255,255,0.12)' };
@@ -1332,20 +1383,27 @@
         }
 
         shelfContainer.innerHTML = guideHtml + renderItems.map(renderRowHtml).join('');
+        shelfContainer.__okbmShelfKey = shelfKey;
+        shelfContainer.__okbmShelfShown = initialLimit;
+        if (keepScrollTop) shelfContainer.scrollTop = keepScrollTop;
 
         if (shelfContainer.__okbmShelfScrollRaf) {
           cancelAnimationFrame(shelfContainer.__okbmShelfScrollRaf);
           shelfContainer.__okbmShelfScrollRaf = 0;
         }
         if (filtered.length > initialLimit) {
+          var shelfShown = initialLimit;
           shelfContainer.onscroll = function() {
             if (shelfContainer.__okbmShelfScrollRaf) return;
             shelfContainer.__okbmShelfScrollRaf = requestAnimationFrame(function() {
               shelfContainer.__okbmShelfScrollRaf = 0;
               if (shelfContainer.scrollTop + shelfContainer.clientHeight >= shelfContainer.scrollHeight - 100) {
-                shelfContainer.onscroll = null;
-                var moreItems = filtered.slice(initialLimit);
+                var moreItems = filtered.slice(shelfShown, shelfShown + 80);
+                shelfShown += moreItems.length;
+                shelfContainer.__okbmShelfShown = shelfShown;
+                packedCountByCat = {}; // 그사이 담기·빼기가 있었을 수 있으니 새로 센다
                 shelfContainer.insertAdjacentHTML('beforeend', moreItems.map(renderRowHtml).join(''));
+                if (shelfShown >= filtered.length) shelfContainer.onscroll = null;
               }
             });
           };
@@ -1805,17 +1863,30 @@
   })();
 
   // 🔍 [장비 검색창 입력 및 지우기 전담 함수]
+  // 입력마다 목록 전체를 다시 그리지 않도록 120ms 묶는다. 실행 시점의 입력값을 읽어 지우기와 엇갈리지 않게 한다.
+  var __gearSearchTimer = 0;
   window.handleGearSearchInput = function(val) {
     var clearBtn = document.getElementById('btnGearSearchClear');
     if (clearBtn) clearBtn.style.display = (val && val.trim().length > 0) ? 'flex' : 'none';
-    if (typeof window.renderPresetGearList === 'function') {
-      window.renderPresetGearList(val);
+    if (typeof window.renderPresetGearList !== 'function') return;
+    if (__gearSearchTimer) clearTimeout(__gearSearchTimer);
+    __gearSearchTimer = 0;
+    if (!val || !String(val).trim()) {
+      window.renderPresetGearList('');
+      return;
     }
+    __gearSearchTimer = setTimeout(function() {
+      __gearSearchTimer = 0;
+      var input = document.getElementById('gearSearchFixedInput');
+      window.renderPresetGearList(input ? input.value : val);
+    }, 120);
   };
 
   window.clearGearSearchInput = function() {
     var input = document.getElementById('gearSearchFixedInput');
     var clearBtn = document.getElementById('btnGearSearchClear');
+    if (__gearSearchTimer) clearTimeout(__gearSearchTimer);
+    __gearSearchTimer = 0;
     if (input) {
       input.value = '';
       input.focus();
@@ -1883,9 +1954,11 @@
     });
 
     var combinedDb = [];
-    myCustoms.forEach(function(mc) { combinedDb.push(mc); });
+    var combinedNames = new Set();
+    myCustoms.forEach(function(mc) { combinedDb.push(mc); combinedNames.add(mc.name); });
     masterList.forEach(function(mg) {
-      if (!combinedDb.some(function(d) { return d.name === mg.name; })) {
+      if (!combinedNames.has(mg.name)) {
+        combinedNames.add(mg.name);
         combinedDb.push(mg);
       }
     });
@@ -1897,13 +1970,24 @@
              (g.specs && String(g.specs).toLowerCase().includes(cleanQ));
     });
 
+    // 담긴 개수는 한 번만 센다(정렬 비교·행 생성마다 배열을 다시 훑지 않도록).
+    function countPackedByName(items) {
+      var m = new Map();
+      (items || []).forEach(function(it) {
+        if (!it) return;
+        m.set(it.name, (m.get(it.name) || 0) + 1);
+      });
+      return m;
+    }
+    var packedByName = countPackedByName(currentSelectedItems);
+
     filteredDb.sort(function(a, b) {
       var aFav = window.favoriteGearSet && window.favoriteGearSet.has(a.name) ? 1 : 0;
       var bFav = window.favoriteGearSet && window.favoriteGearSet.has(b.name) ? 1 : 0;
       if (aFav !== bFav) return bFav - aFav;
 
-      var aInPack = currentSelectedItems.some(function(it) { return it.name === a.name; }) ? 1 : 0;
-      var bInPack = currentSelectedItems.some(function(it) { return it.name === b.name; }) ? 1 : 0;
+      var aInPack = packedByName.has(a.name) ? 1 : 0;
+      var bInPack = packedByName.has(b.name) ? 1 : 0;
       if (aInPack !== bInPack) return bInPack - aInPack;
 
       return 0;
@@ -1912,12 +1996,56 @@
     window.__currentFilteredGears = filteredDb;
 
     if (filteredDb.length === 0) {
+      listEl.onscroll = null;
+      listEl.__okbmPresetKey = '';
       listEl.innerHTML = '<div style="font-size:0.76rem; color:#64748b; text-align:center; padding:35px 0;">일치하는 장비가 없습니다.<br>상단에서 직접 내 장비를 등록해보세요!</div>';
       return;
     }
 
-    listEl.innerHTML = filteredDb.map(function(g, idx) {
-      var countInPack = currentSelectedItems.filter(function(it) { return it.name === g.name; }).length;
+    // 처음엔 60개만 그리고 스크롤 끝에서 80개씩 더 붙인다(텐트 카테고리는 1,000개가 넘는다).
+    // data-okbm-idx는 전체 목록(__currentFilteredGears) 기준 번호를 그대로 쓴다.
+    // 같은 카테고리·검색어로 다시 그릴 때(장비 등록, 카테고리 로딩)는 보던 개수와 스크롤 위치를 유지한다.
+    var presetKey = category.id + '\u0000' + cleanQ;
+    var samePreset = listEl.__okbmPresetKey === presetKey;
+    var presetFirst = Math.min(filteredDb.length, Math.max(60, samePreset ? (listEl.__okbmPresetShown || 0) : 0));
+    var presetKeepScroll = samePreset ? listEl.scrollTop : 0;
+
+    function buildPresetRowsHtml(from, to) {
+      return filteredDb.slice(from, to).map(function(g, i) {
+        return buildPresetRowHtml(g, from + i);
+      }).join('');
+    }
+
+    listEl.innerHTML = buildPresetRowsHtml(0, presetFirst);
+    listEl.__okbmPresetKey = presetKey;
+    listEl.__okbmPresetShown = presetFirst;
+    if (presetKeepScroll) listEl.scrollTop = presetKeepScroll;
+
+    if (listEl.__okbmPresetScrollRaf) {
+      cancelAnimationFrame(listEl.__okbmPresetScrollRaf);
+      listEl.__okbmPresetScrollRaf = 0;
+    }
+    if (filteredDb.length > presetFirst) {
+      listEl.onscroll = function() {
+        if (listEl.__okbmPresetScrollRaf) return;
+        listEl.__okbmPresetScrollRaf = requestAnimationFrame(function() {
+          listEl.__okbmPresetScrollRaf = 0;
+          if (listEl.scrollTop + listEl.clientHeight < listEl.scrollHeight - 120) return;
+          var shown = listEl.__okbmPresetShown || 0;
+          var next = Math.min(filteredDb.length, shown + 80);
+          // 그사이 담기·빼기가 있었을 수 있으니 붙이는 행은 현재 상태로 센다.
+          packedByName = countPackedByName((window.selectedGearMap && window.selectedGearMap[category.id]) || []);
+          listEl.insertAdjacentHTML('beforeend', buildPresetRowsHtml(shown, next));
+          listEl.__okbmPresetShown = next;
+          if (next >= filteredDb.length) listEl.onscroll = null;
+        });
+      };
+    } else {
+      listEl.onscroll = null;
+    }
+
+    function buildPresetRowHtml(g, idx) {
+      var countInPack = packedByName.get(g.name) || 0;
       var isAdded = countInPack > 0;
       var isFav = window.favoriteGearSet && window.favoriteGearSet.has(g.name);
 
@@ -1964,7 +2092,7 @@
           </div>
         </div>
       `;
-    }).join('');
+    }
   };
 
   window.addGearByIndex = function(idx, e) {
@@ -2548,7 +2676,8 @@ window.saveCurrentPackingRecord = function() {
     }
   };
 
-  var CURRENT_GEAR_VERSION = '20260923_GEAR_AUDIT';
+  // 20260928: gears/*.json에서 앱이 쓰지 않는 필드(gear_id 중복, created_at, updated_at, category)와 공백을 뺐다. 데이터 값은 동일.
+  var CURRENT_GEAR_VERSION = '20260928_GEAR_SLIM';
   var GEAR_SPLIT_CATS = ['shelter', 'sleep', 'pack', 'food', 'kitchen', 'wear', 'electronics', 'camp', 'other'];
   window.__okbmGearCatLoaded = window.__okbmGearCatLoaded || {};
   window.__okbmGearCatPromises = window.__okbmGearCatPromises || {};
