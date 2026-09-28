@@ -374,7 +374,8 @@ window.purgeIfStale = purgeIfStale;
     'okbm_hero_cover_url',
     'okbm_my_proposals',
     'okbm_naver_force_login',
-    'okbm_vault_intro_dismissed'
+    'okbm_vault_intro_dismissed',
+    'okbm_dirty_user_keys'
   ];
   purgeIfStale('okbm_client_epoch', CLEAN_EPOCH, [
     'okbm_deleted_record_ids',
@@ -665,7 +666,7 @@ window.autoPurgeLegacyClientCache = window.autoPurgeLegacyClientCache || functio
     'okbm_bookmarks', 'okbm_visited', 'okbm_memos', 'okbm_plan_memos', 'okbm_plan_spots',
     'okbm_packing_history', 'okbm_selected_gears_multi', 'okbm_favorite_gears', 'okbm_custom_gears',
     'okbm_gear_presets', 'okbm_gear_meta', 'okbm_hero_cover_url', 'okbm_my_proposals',
-    'okbm_naver_force_login', 'okbm_vault_intro_dismissed'
+    'okbm_naver_force_login', 'okbm_vault_intro_dismissed', 'okbm_dirty_user_keys'
   ];
   try {
     if (typeof window.purgeIfStale === 'function') {
@@ -2602,6 +2603,71 @@ window.okbmSanitizePlanSpotsMap = function(raw) {
   return { spots: out, changed: changed };
 };
 
+// [D3] users 행에 저장되는 로컬 키 → 서버 위치(칸 또는 my_gears 하위 키)
+var OKBM_USER_DATA_KEYS = {
+  okbm_bookmarks: { col: 'bookmarks' },
+  okbm_visited: { col: 'visited' },
+  okbm_memos: { col: 'memos' },
+  okbm_saved_feeds: { col: 'saved_feeds' },
+  okbm_following_users: { col: 'following' },
+  okbm_selected_gears_multi: { gear: 'selectedGears' },
+  okbm_favorite_gears: { gear: 'favoriteGears' },
+  okbm_custom_gears: { gear: 'customGears' },
+  okbm_gear_presets: { gear: 'gearPresets' },
+  okbm_gear_meta: { gear: 'gearMeta' },
+  okbm_plan_memos: { gear: 'planMemos' },
+  okbm_plan_spots: { gear: 'planSpots' },
+  // 프로필 값은 localStorage에 흩어져 있어 부분별로 나눈다(한 부분 편집이 다른 부분을 덮지 않도록).
+  __profile_bio: { profile: 'bio' },
+  __profile_cover: { profile: 'cover' },
+  __profile_sns: { profile: 'sns' },
+  __profile_privacy: { profile: 'privacy' }
+};
+window.OKBM_USER_DATA_KEYS = OKBM_USER_DATA_KEYS;
+
+// [D3] 서버에 아직 안 올린 항목 표시. { 키: 변경 번호 }. 새로고침·오프라인에도 남도록 localStorage에 둔다.
+// 변경 번호는 저장 요청 중에 같은 항목이 또 바뀐 경우를 구분하려고 쓴다(요청 성공 시 번호가 같을 때만 지움).
+function okbmReadDirtyUserData() {
+  try {
+    var raw = JSON.parse(localStorage.getItem('okbm_dirty_user_keys') || '{}');
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+    var out = {};
+    Object.keys(raw).forEach(function(k) { if (OKBM_USER_DATA_KEYS[k]) out[k] = Number(raw[k]) || 1; });
+    return out;
+  } catch (e) {
+    return {};
+  }
+}
+function okbmWriteDirtyUserData(map) {
+  try {
+    if (map && Object.keys(map).length) localStorage.setItem('okbm_dirty_user_keys', JSON.stringify(map));
+    else localStorage.removeItem('okbm_dirty_user_keys');
+  } catch (e) {}
+}
+function okbmMarkUserDataDirty(keys) {
+  var map = okbmReadDirtyUserData();
+  (Array.isArray(keys) ? keys : [keys]).forEach(function(k) {
+    if (!OKBM_USER_DATA_KEYS[k]) return;
+    window.__okbmDirtySeq = (window.__okbmDirtySeq || Date.now()) + 1;
+    map[k] = window.__okbmDirtySeq;
+  });
+  okbmWriteDirtyUserData(map);
+  return map;
+}
+// sent: 보낼 때 찍어 둔 { 키: 번호 }. 그 사이 다시 바뀐 항목(번호가 달라진 항목)은 남긴다.
+function okbmClearUserDataDirty(sent) {
+  var map = okbmReadDirtyUserData();
+  Object.keys(sent || {}).forEach(function(k) {
+    if (map[k] === sent[k]) delete map[k];
+  });
+  okbmWriteDirtyUserData(map);
+}
+function okbmIsUserDataDirty(key) {
+  return !!okbmReadDirtyUserData()[key];
+}
+window.okbmMarkUserDataDirty = okbmMarkUserDataDirty;
+window.okbmIsUserDataDirty = okbmIsUserDataDirty;
+
 window.RomanticVault = window.RomanticVault || {
   isHydrated: false,
   isHydrating: false,
@@ -2621,14 +2687,12 @@ window.RomanticVault = window.RomanticVault || {
     window.__memoryStore = window.__memoryStore || {};
     window.__memoryStore[key] = val;
 
-    if (this.isHydrating && !this._applyingServerHydration && (
-      key === 'okbm_selected_gears_multi' ||
-      key === 'okbm_custom_gears' ||
-      key === 'okbm_favorite_gears' ||
-      key === 'okbm_gear_presets' ||
-      key === 'okbm_gear_meta'
-    )) {
-      this._localGearsModifiedDuringHydration = true;
+    // [D3] 사용자 데이터가 바뀌면 "서버에 올릴 항목"으로 표시한다. 서버 값을 받아 반영하는 쓰기(_applyingServer)만 제외.
+    // shouldSyncCloud=false로 쓰는 곳도 표시해야 한다: 예전에는 다음 전체 저장 때 함께 올라갔으므로
+    // 표시를 빼면 그 변경이 서버에 영영 안 올라간다. 실제 전송은 다음 동기화(저장·탭 복귀·재연결) 때 한다.
+    // 비로그인(게스트) 상태의 변경은 표시하지 않는다: 로그인 직후 서버 값으로 덮이는 기존 동작을 유지한다.
+    if (OKBM_USER_DATA_KEYS[key] && !this._applyingServer && isUserLoggedIn()) {
+      okbmMarkUserDataDirty(key);
     }
 
     if (typeof window.okbmSafeSetItem === 'function') {
@@ -2722,12 +2786,15 @@ window.RomanticVault = window.RomanticVault || {
     return null;
   },
 
-  hydrateFromServer: async function(userId) {
+  // opts.quiet: 탭 복귀·재연결 때 새로 받는 경우. 바뀐 값이 없으면 화면을 다시 그리지 않는다.
+  hydrateFromServer: async function(userId, opts) {
+    opts = opts || {};
     if (window.__okbmAccountPurging) return null;
     if (!userId || this.isHydrating) return null;
     this.isHydrating = true;
     this.lastHydrateStatus = 'pending';
-    this._localGearsModifiedDuringHydration = false;
+    var self = this;
+    var changedAny = false;
     var hydrationStartTime = Date.now();
     try {
       var currentSessionId = String(userId).trim();
@@ -2754,31 +2821,43 @@ window.RomanticVault = window.RomanticVault || {
       }
 
       var cloudData = fetched.data;
+        // [D3] 서버 값으로 로컬을 덮되, 아직 서버에 못 올린 항목(사용자가 방금 바꾼 것)은 건드리지 않는다.
+        // 그런 항목은 아래 finally에서 서버로 올린다.
+        var dirtyNow = okbmReadDirtyUserData();
+        var applyServer = function(key, val) {
+          if (dirtyNow[key]) return false;
+          var before = '';
+          var after = '_';
+          try { before = JSON.stringify(self.read(key, null)); } catch (eB) {}
+          try { after = JSON.stringify(val); } catch (eA) {}
+          if (before !== after) changedAny = true;
+          self._applyingServer = true;
+          try { self.write(key, val, false); } finally { self._applyingServer = false; }
+          return true;
+        };
+
         var serverBookmarks = (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) ? cloudData.bookmarks : [];
         var cleanBookmarks = serverBookmarks.map(function(s) { return String(s).trim(); }).filter(Boolean);
-        this.write('okbm_bookmarks', cleanBookmarks, false);
-        window.userBookmarks = new Set(cleanBookmarks);
+        if (applyServer('okbm_bookmarks', cleanBookmarks)) window.userBookmarks = new Set(cleanBookmarks);
 
         var serverVisited = (cloudData.visited && Array.isArray(cloudData.visited)) ? cloudData.visited : [];
         var cleanVisited = serverVisited.map(function(s) { return String(s).trim(); }).filter(Boolean);
-        this.write('okbm_visited', cleanVisited, false);
-        window.userVisited = new Set(cleanVisited);
+        if (applyServer('okbm_visited', cleanVisited)) window.userVisited = new Set(cleanVisited);
 
         var serverMemos = (cloudData.memos && typeof cloudData.memos === 'object') ? cloudData.memos : {};
-        this.write('okbm_memos', serverMemos, false);
-        window.userMemos = serverMemos;
+        if (applyServer('okbm_memos', serverMemos)) window.userMemos = serverMemos;
 
         // [제1조 SSOT] 서버 데이터가 단방향으로 로컬을 덮어씁니다.
         // 로컬 배열과 비교 후 로컬→서버 역전송(Merge)하던 양방향 루프를 완전 제거합니다.
         if (cloudData.saved_feeds !== undefined && Array.isArray(cloudData.saved_feeds)) {
           var cleanSavedFeeds = cloudData.saved_feeds.map(function(s) { return String(s).trim(); }).filter(Boolean);
-          this.write('okbm_saved_feeds', cleanSavedFeeds, false);
+          applyServer('okbm_saved_feeds', cleanSavedFeeds);
         }
 
         var rawFollowing = cloudData.following || cloudData.following_users;
         if (rawFollowing !== undefined && Array.isArray(rawFollowing)) {
           var cleanFollowing = rawFollowing.map(function(s) { return String(s).trim(); }).filter(Boolean);
-          this.write('okbm_following_users', cleanFollowing, false);
+          applyServer('okbm_following_users', cleanFollowing);
         }
 
         // [헌법 제1조: SSOT 원칙] 글/피드의 절대 진실 공급원은 feeds 테이블 하나뿐입니다.
@@ -2791,61 +2870,48 @@ window.RomanticVault = window.RomanticVault || {
         var rawMyGears = cloudData.my_gears || cloudData.myGears;
         if (rawMyGears && typeof rawMyGears === 'object') {
           var mg = rawMyGears;
-          var skipServerGears = !!this._localGearsModifiedDuringHydration;
-          if (!skipServerGears) {
-            this._applyingServerHydration = true;
-            try {
-              if (mg.selectedGears || mg.selected_gears) {
-                var serverSelected = mg.selectedGears || mg.selected_gears;
-                this.write('okbm_selected_gears_multi', serverSelected, false);
-                window.selectedGearMap = serverSelected && typeof serverSelected === 'object' ? serverSelected : {};
-              }
-              var serverFav = mg.favoriteGears || mg.favorite_gears;
-              if (Array.isArray(serverFav)) {
-                this.write('okbm_favorite_gears', serverFav, false);
-                window.favoriteGearSet = new Set(serverFav);
-              }
-              var serverCustom = mg.customGears || mg.custom_gears;
-              if (Array.isArray(serverCustom)) {
-                this.write('okbm_custom_gears', serverCustom, false);
-              }
-              var serverPresets = mg.gearPresets || mg.gear_presets;
-              if (Array.isArray(serverPresets)) {
-                this.write('okbm_gear_presets', serverPresets, false);
-              }
-              var serverGearMeta = mg.gearMeta || mg.gear_meta;
-              if (serverGearMeta && typeof serverGearMeta === 'object') {
-                this.write('okbm_gear_meta', serverGearMeta, false);
-              }
-            } finally {
-              this._applyingServerHydration = false;
+          if (mg.selectedGears || mg.selected_gears) {
+            var serverSelected = mg.selectedGears || mg.selected_gears;
+            if (applyServer('okbm_selected_gears_multi', serverSelected)) {
+              window.selectedGearMap = serverSelected && typeof serverSelected === 'object' ? serverSelected : {};
             }
           }
+          var serverFav = mg.favoriteGears || mg.favorite_gears;
+          if (Array.isArray(serverFav) && applyServer('okbm_favorite_gears', serverFav)) {
+            window.favoriteGearSet = new Set(serverFav);
+          }
+          var serverCustom = mg.customGears || mg.custom_gears;
+          if (Array.isArray(serverCustom)) applyServer('okbm_custom_gears', serverCustom);
+          var serverPresets = mg.gearPresets || mg.gear_presets;
+          if (Array.isArray(serverPresets)) applyServer('okbm_gear_presets', serverPresets);
+          var serverGearMeta = mg.gearMeta || mg.gear_meta;
+          if (serverGearMeta && typeof serverGearMeta === 'object') applyServer('okbm_gear_meta', serverGearMeta);
 
           var serverPlanMemos = mg.planMemos || mg.plan_memos;
           if (serverPlanMemos && typeof serverPlanMemos === 'object') {
-            this.write('okbm_plan_memos', serverPlanMemos, false);
+            applyServer('okbm_plan_memos', serverPlanMemos);
           }
 
           var serverPlanSpots = mg.planSpots || mg.plan_spots;
-          if (serverPlanSpots && typeof serverPlanSpots === 'object') {
+          if (serverPlanSpots && typeof serverPlanSpots === 'object' && !dirtyNow.okbm_plan_spots) {
             var sanitizedSpots = (typeof window.okbmSanitizePlanSpotsMap === 'function')
               ? window.okbmSanitizePlanSpotsMap(serverPlanSpots)
               : { spots: serverPlanSpots, changed: false };
-            this.write('okbm_plan_spots', sanitizedSpots.spots, sanitizedSpots.changed);
+            try {
+              if (JSON.stringify(self.read('okbm_plan_spots', null)) !== JSON.stringify(sanitizedSpots.spots)) changedAny = true;
+            } catch (ePs) {}
+            // 정리(sanitize)로 값이 바뀌었으면 서버에도 다시 올린다(변경 표시). 그대로면 서버 값 반영으로만 쓴다.
+            if (sanitizedSpots.changed) {
+              this.write('okbm_plan_spots', sanitizedSpots.spots, true);
+            } else {
+              this._applyingServer = true;
+              try { this.write('okbm_plan_spots', sanitizedSpots.spots, false); } finally { this._applyingServer = false; }
+            }
           }
+        }
 
-          var serverSns = mg.sns || {};
-          var instaVal = String(cloudData.instagram || serverSns.instagram || '').trim();
-          var ytVal = String(cloudData.youtube || serverSns.youtube || '').trim();
-          var blogVal = String(cloudData.blog || serverSns.blog || '').trim();
-
-          if (instaVal) localStorage.setItem('okbm_user_instagram', instaVal);
-
-          if (ytVal) localStorage.setItem('okbm_user_youtube', ytVal);
-
-          if (blogVal) localStorage.setItem('okbm_user_blog', blogVal);
-
+        // 프로필 값은 이 기기에서 바꾸고 아직 못 올린 부분이면 서버 값으로 덮지 않는다.
+        if (!dirtyNow.__profile_privacy && rawMyGears && typeof rawMyGears === 'object') {
           if (mg.hide_year_activity === true || mg.hide_year_activity === '1' || mg.hideYearActivity === true) {
             localStorage.setItem('okbm_hide_year_activity', '1');
           } else {
@@ -2856,6 +2922,18 @@ window.RomanticVault = window.RomanticVault || {
           } else {
             localStorage.removeItem('okbm_hide_total_activity');
           }
+        }
+        if (!dirtyNow.__profile_sns && rawMyGears && typeof rawMyGears === 'object') {
+          var serverSns = mg.sns || {};
+          var instaVal = String(cloudData.instagram || serverSns.instagram || '').trim();
+          var ytVal = String(cloudData.youtube || serverSns.youtube || '').trim();
+          var blogVal = String(cloudData.blog || serverSns.blog || '').trim();
+
+          if (instaVal) localStorage.setItem('okbm_user_instagram', instaVal);
+
+          if (ytVal) localStorage.setItem('okbm_user_youtube', ytVal);
+
+          if (blogVal) localStorage.setItem('okbm_user_blog', blogVal);
 
           var curSnsProf = safeGetJSON('user_profile_' + userId, null) || safeGetJSON('user_profile', null);
           if (curSnsProf) {
@@ -2891,8 +2969,9 @@ window.RomanticVault = window.RomanticVault || {
           if (curP.id) localStorage.setItem('user_profile_' + curP.id, JSON.stringify(curP));
         }
 
-        var mainPhotoUrl = cloudData.hero_cover_url || cloudData.photo_url || cloudData.heroCoverUrl || cloudData.photoUrl;
-        if (mainPhotoUrl && mainPhotoUrl.startsWith('https://')) {
+        var mainPhotoUrl = dirtyNow.__profile_cover ? '' : (cloudData.hero_cover_url || cloudData.photo_url || cloudData.heroCoverUrl || cloudData.photoUrl);
+        var coverUnchanged = opts.quiet && mainPhotoUrl && localStorage.getItem('okbm_hero_cover_url') === mainPhotoUrl;
+        if (mainPhotoUrl && mainPhotoUrl.startsWith('https://') && !coverUnchanged) {
           localStorage.setItem('okbm_hero_cover_url', mainPhotoUrl);
           var curProf = safeGetJSON('user_profile', null);
           if (curProf) {
@@ -2905,7 +2984,7 @@ window.RomanticVault = window.RomanticVault || {
           }
         }
 
-        var userBio = cloudData.bio || cloudData.description || '';
+        var userBio = dirtyNow.__profile_bio ? '' : (cloudData.bio || cloudData.description || '');
         if (userBio) {
           localStorage.setItem('okbm_user_bio', userBio);
           var profBio = safeGetJSON('user_profile', null);
@@ -2922,19 +3001,25 @@ window.RomanticVault = window.RomanticVault || {
         }
 
         this.isHydrated = true;
+        this.lastHydrateAt = Date.now();
 
-        if (typeof window.fetchUserFeedLikesFromServer === 'function') {
+        if (!opts.quiet && typeof window.fetchUserFeedLikesFromServer === 'function') {
           window.fetchUserFeedLikesFromServer().catch(function() {});
         }
 
-        try {
-          if (typeof window.renderPlanStage === 'function') window.renderPlanStage();
-          if (typeof window.renderPlanBookmarks === 'function') window.renderPlanBookmarks();
-          if (typeof window.renderSpots === 'function') window.renderSpots();
-          if (typeof window.refreshCurrentSpotPopup === 'function') window.refreshCurrentSpotPopup();
-          window.dispatchEvent(new CustomEvent('okbm_bookmark_changed', { detail: { bookmarks: cleanBookmarks } }));
-          window.dispatchEvent(new CustomEvent('okbm_visited_changed', { detail: { visited: cleanVisited } }));
-        } catch(renderErr) { console.warn('[romantic-sync.js:RomanticVault.hydrate render]', renderErr); }
+        // 조용한 새로고침(탭 복귀 등)에서 바뀐 게 없으면 화면을 다시 그리지 않는다.
+        if (!opts.quiet || changedAny) {
+          try {
+            if (typeof window.renderPlanStage === 'function') window.renderPlanStage();
+            if (typeof window.renderPlanBookmarks === 'function') window.renderPlanBookmarks();
+            if (typeof window.renderSpots === 'function') window.renderSpots();
+            if (typeof window.refreshCurrentSpotPopup === 'function') window.refreshCurrentSpotPopup();
+            // 이벤트에는 서버 값이 아니라 현재 로컬 값(아직 못 올린 변경 포함)을 싣는다.
+            window.dispatchEvent(new CustomEvent('okbm_bookmark_changed', { detail: { bookmarks: this.read('okbm_bookmarks', []) } }));
+            window.dispatchEvent(new CustomEvent('okbm_visited_changed', { detail: { visited: this.read('okbm_visited', []) } }));
+            window.dispatchEvent(new CustomEvent('okbm_user_data_refreshed', { detail: { quiet: !!opts.quiet } }));
+          } catch(renderErr) { console.warn('[romantic-sync.js:RomanticVault.hydrate render]', renderErr); }
+        }
       this.lastHydrateStatus = 'ok';
       return cloudData;
     } catch(e) {
@@ -2944,11 +3029,40 @@ window.RomanticVault = window.RomanticVault || {
       return null;
     } finally {
       this.isHydrating = false;
-      if (this._pendingCloudSync) {
-        // 서버 스냅샷을 받은 직후 폰 메모를 다시 올리면 서버가 되돌아간다. 대기분 폐기.
-        this._pendingCloudSync = false;
+      this._pendingCloudSync = false;
+      // [D3] 받아오는 동안 바뀌었거나 예전에 못 올린 항목만 서버로 올린다(바뀐 칸만 저장하므로 서버 최신 값을 되돌리지 않는다).
+      if (Object.keys(okbmReadDirtyUserData()).length > 0 && typeof syncUserDataToCloud === 'function') {
+        setTimeout(function() { syncUserDataToCloud(false); }, 0);
       }
     }
+  }
+};
+
+// [D3] 탭 복귀·재연결 때: 못 올린 변경을 먼저 올리고, 그다음 서버 최신 값을 받아온다(1분에 한 번 이하).
+window.okbmRefreshUserDataFromServer = async function(opts) {
+  opts = opts || {};
+  var vault = window.RomanticVault;
+  if (!vault || vault.isHydrating || window.__okbmAccountPurging) return false;
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return false;
+  if (!(typeof isUserLoggedIn === 'function' && isUserLoggedIn())) return false;
+  var uid = okbmGetCurrentUserId();
+  if (!uid) return false;
+  if (!opts.force && vault.lastHydrateAt && (Date.now() - vault.lastHydrateAt) < 60000) return false;
+  if (window.__okbmUserRefreshInflight) return false;
+  window.__okbmUserRefreshInflight = true;
+  try {
+    if (Object.keys(okbmReadDirtyUserData()).length > 0 && typeof window.saveUserToSupabase === 'function') {
+      clearTimeout(vault._syncTimer);
+      var pushed = await window.saveUserToSupabase(safeGetJSON('user_profile', null));
+      if (pushed) localStorage.removeItem('okbm_pending_cloud_sync');
+    }
+    await vault.hydrateFromServer(uid, { quiet: true });
+    return true;
+  } catch (e) {
+    console.warn('[romantic-sync.js:okbmRefreshUserDataFromServer]', e);
+    return false;
+  } finally {
+    window.__okbmUserRefreshInflight = false;
   }
 };
 
@@ -2995,6 +3109,10 @@ if (typeof window !== 'undefined' && !window.__okbmWatcherPageBind) {
       window.okbmCleanupModalWatchers();
     } else if (document.visibilityState === 'visible') {
       window.okbmStartNotifPoll();
+      // [D3] 다른 기기에서 바뀐 찜·장비·일정을 받아온다(오래 열어 둔 탭이 최신 값을 덮어쓰지 않도록)
+      if (typeof window.okbmRefreshUserDataFromServer === 'function') {
+        window.okbmRefreshUserDataFromServer().catch(function() {});
+      }
       if (window.__okbmHistoryModalOpen && typeof window.okbmBindReelFeedObserver === 'function') {
         window.okbmBindReelFeedObserver();
       }
@@ -3055,6 +3173,10 @@ function syncUserDataToCloud(isPackHistoryUpdated, immediate) {
   var userId = okbmGetCurrentUserId();
   if (!userId) return;
 
+  // [D3] 올릴 변경이 없으면 요청하지 않는다(피드 저장 뒤 호출 등 users 데이터와 무관한 호출).
+  if (Object.keys(okbmReadDirtyUserData()).length === 0) return;
+
+  // 받아오는 중이면 끝난 뒤 hydrateFromServer의 finally에서 변경 항목만 올린다.
   if (window.RomanticVault && window.RomanticVault.isHydrating === true) {
     window.RomanticVault._pendingCloudSync = true;
     return;
@@ -3541,8 +3663,9 @@ if (typeof window !== 'undefined') {
     window.fetchRankingsFromSupabase(false);
     // 오늘 이미 기록됐으면 sessionStorage 가드로 요청하지 않는다(오프라인 부팅 때만 재시도).
     if (typeof trackDailyVisit === 'function') trackDailyVisit();
-    if (localStorage.getItem('okbm_pending_cloud_sync') === 'true' && isUserLoggedIn()) {
-      syncUserDataToCloud(true);
+    // [D3] 재연결: 오프라인 동안 바꾼 항목만 올리고 서버 최신 값을 받아온다(전체 덮어쓰기 없음)
+    if (isUserLoggedIn() && typeof window.okbmRefreshUserDataFromServer === 'function') {
+      window.okbmRefreshUserDataFromServer({ force: true }).catch(function() {});
     }
     if (typeof isUserLoggedIn === 'function' && isUserLoggedIn() && typeof window.okbmSyncUgcSafetyFromServer === 'function') {
       window.okbmSyncUgcSafetyFromServer().then(function(changed) {
@@ -4225,6 +4348,7 @@ window.saveSnsFromEditorModal = function() {
     localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
   }
 
+  okbmMarkUserDataDirty('__profile_sns');
   if (typeof window.saveUserToSupabase === 'function') {
     window.saveUserToSupabase(profile).catch(function(e) {
       console.warn('[romantic-sync.js:saveSnsFromEditorModal]', e);
@@ -4624,6 +4748,7 @@ window.toggleReportActivityPublic = function(kind, e) {
   else localStorage.removeItem(key);
   window.okbmApplyActivityPrivacyButtons();
   var profile = (typeof safeGetJSON === 'function' ? safeGetJSON('user_profile', null) : null) || {};
+  okbmMarkUserDataDirty('__profile_privacy');
   if (typeof window.saveUserToSupabase === 'function') {
     window.saveUserToSupabase(profile).catch(function(err) {
       console.warn('[romantic-sync.js:toggleReportActivityPublic]', err);
@@ -6638,6 +6763,7 @@ window.editReportUserBio = function() {
       span.style.color = clean ? '#cbd5e1' : '#64748b';
     });
 
+    okbmMarkUserDataDirty('__profile_bio');
     if (typeof window.saveUserToSupabase === 'function') {
       window.saveUserToSupabase(profile).catch(function(e) {
         console.warn('[romantic-sync.js:editReportUserBio]', e);
@@ -9119,6 +9245,7 @@ window.resetMasterUserCoverPhoto = function() {
     if (profile.id) localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
   }
   window.applyMasterCoverPhotoToAllUI('');
+  okbmMarkUserDataDirty('__profile_cover');
   if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
   showToast('기본 프로필로 복원되었습니다.', 'info');
 };    
@@ -9325,6 +9452,7 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
 
       window.applyMasterCoverPhotoToAllUI(uploadedUrl);
 
+      okbmMarkUserDataDirty('__profile_cover');
       if (typeof window.saveUserToSupabase === 'function' && profile) {
         window.saveUserToSupabase(profile);
       }
@@ -9619,7 +9747,7 @@ function logoutUser() {
     'okbm_trip_consumables', 'okbm_packed_checks', 'okbm_phone_photos_map',
     'okbm_trip_photos_map', 'okbm_user_instagram', 'okbm_cached_community_feeds',
     'okbm_hero_cover_url', 'okbm_my_proposals',
-    'okbm_feed_stars_map', 'okbm_feed_stars_counts', 'okbm_saved_feeds'
+    'okbm_feed_stars_map', 'okbm_feed_stars_counts', 'okbm_saved_feeds', 'okbm_dirty_user_keys'
   ];
   userPersonalKeys.forEach(function(k) {
     try { localStorage.removeItem(k); } catch(e) { console.warn('[romantic-sync.js:logoutUser removeItem]', e); }
@@ -9951,7 +10079,8 @@ function okbmPurgeLocalSessionData() {
     'okbm_trip_consumables', 'okbm_packed_checks', 'okbm_phone_photos_map',
     'okbm_trip_photos_map', 'okbm_user_instagram', 'okbm_cached_community_feeds',
     'okbm_hero_cover_url', 'okbm_my_proposals', 'okbm_saved_feeds', 'okbm_following_users',
-    'okbm_blocked_users', 'okbm_blocked_users_meta', 'okbm_user_blocks_bootstrapped', 'okbm_reported_feeds'
+    'okbm_blocked_users', 'okbm_blocked_users_meta', 'okbm_user_blocks_bootstrapped', 'okbm_reported_feeds',
+    'okbm_dirty_user_keys'
   ];
   purgeKeys.forEach(function(k) {
     try { localStorage.removeItem(k); } catch (e) {}
@@ -10593,7 +10722,8 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
         await okbmPatchUserEmail(resolvedId, normalizedEmail);
       }
     } else if (typeof window.saveUserToSupabase === 'function') {
-      await window.saveUserToSupabase(profile);
+      // 신규 가입: 행 전체를 새로 만든다
+      await window.saveUserToSupabase(profile, { full: true });
     }
   } catch (e) {
     console.warn('[handleSocialLoginSuccess save]', e);
@@ -12743,7 +12873,65 @@ window.openUserNotificationInbox = async function(initialTab, ev) {
   window.okbmSwitchInboxTab(tab);
 };
 
-window.saveUserToSupabase = async function(profileData) {
+// [D3] 바뀐 항목만 okbm_patch_user_data RPC로 저장한다.
+// 반환: 'ok'(저장 완료 또는 올릴 게 없음) | 'failed' | 'no_row'(행 없음 → 전체 저장 필요) | 'no_rpc'(DB 함수 미적용 → 전체 저장)
+var OKBM_OBJECT_USER_KEYS = { okbm_memos: true, okbm_selected_gears_multi: true, okbm_gear_meta: true, okbm_plan_memos: true, okbm_plan_spots: true };
+async function okbmSaveDirtyUserData(snapshot, ctx) {
+  var keys = Object.keys(snapshot || {});
+  if (!keys.length) return 'ok';
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  if (!targetUrl) return 'failed';
+  var cols = {};
+  var gears = {};
+  keys.forEach(function(k) {
+    var spec = OKBM_USER_DATA_KEYS[k];
+    if (!spec) return;
+    if (spec.profile === 'bio') {
+      cols.bio = ctx.bio;
+    } else if (spec.profile === 'cover') {
+      cols.hero_cover_url = ctx.coverUrl;
+      cols.photo_url = ctx.coverUrl;
+    } else if (spec.profile === 'sns') {
+      gears.sns = ctx.sns;
+    } else if (spec.profile === 'privacy') {
+      gears.hide_year_activity = localStorage.getItem('okbm_hide_year_activity') === '1';
+      gears.hide_total_activity = localStorage.getItem('okbm_hide_total_activity') === '1';
+    } else {
+      var fallback = OKBM_OBJECT_USER_KEYS[k] ? {} : [];
+      var val = ctx.read(k, fallback);
+      if (val === null || val === undefined || typeof val !== 'object') val = fallback;
+      if (Array.isArray(fallback) && !Array.isArray(val)) val = fallback;
+      if (spec.col) cols[spec.col] = val;
+      else if (spec.gear) gears[spec.gear] = val;
+    }
+  });
+  var headers = okbmWriteRestHeaders();
+  if (!headers) return 'failed';
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/rpc/okbm_patch_user_data', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ p_columns: cols, p_my_gears: gears })
+    });
+    if (res.status === 404) return 'no_rpc';
+    if (!res.ok) return 'failed';
+    var data = null;
+    try { data = await res.json(); } catch (eParse) {}
+    if (data && data.ok === true) {
+      okbmClearUserDataDirty(snapshot);
+      return 'ok';
+    }
+    if (data && data.reason === 'no_row') return 'no_row';
+    return 'failed';
+  } catch (e) {
+    console.warn('[romantic-sync.js:okbmSaveDirtyUserData]', e);
+    return 'failed';
+  }
+}
+
+// opts.full: 행 전체를 저장한다(신규 가입 때 행 만들기). 기본은 바뀐 항목만 저장.
+window.saveUserToSupabase = async function(profileData, opts) {
+  opts = opts || {};
   if (window.__okbmAccountPurging) return false;
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
@@ -12803,6 +12991,23 @@ window.saveUserToSupabase = async function(profileData) {
   var userInsta = (prof && prof.instagram) || localStorage.getItem('okbm_user_instagram') || '';
   var userYt = (prof && prof.youtube) || localStorage.getItem('okbm_user_youtube') || '';
   var userBlog = (prof && prof.blog) || localStorage.getItem('okbm_user_blog') || '';
+
+  // [D3] 기본 경로: 바뀐 항목만 저장. 행이 없거나(신규) DB 함수가 아직 없을 때만 아래 전체 저장으로 넘어간다.
+  var dirtySnapshot = okbmReadDirtyUserData();
+  if (!opts.full) {
+    var partialResult = await okbmSaveDirtyUserData(dirtySnapshot, {
+      read: function(k, d) { return (vault && typeof vault.read === 'function') ? vault.read(k, d) : safeGetJSON(k, d); },
+      bio: String(localStorage.getItem('okbm_user_bio') || ''),
+      coverUrl: coverUrl,
+      sns: {
+        instagram: String(localStorage.getItem('okbm_user_instagram') || '').trim(),
+        youtube: String(localStorage.getItem('okbm_user_youtube') || '').trim(),
+        blog: String(localStorage.getItem('okbm_user_blog') || '').trim()
+      }
+    });
+    if (partialResult === 'ok') return true;
+    if (partialResult === 'failed') return false;
+  }
 
   var existingRow = null;
   try {
@@ -12870,7 +13075,10 @@ window.saveUserToSupabase = async function(profileData) {
       headers: upsertHeaders,
       body: JSON.stringify(payload)
     });
-    if (res.ok) return true;
+    if (res.ok) {
+      okbmClearUserDataDirty(dirtySnapshot);
+      return true;
+    }
     if (res.status === 400 && payload.email) {
       delete payload.email;
       var retry = await fetch(upsertUrl, {
@@ -12878,6 +13086,7 @@ window.saveUserToSupabase = async function(profileData) {
         headers: upsertHeaders,
         body: JSON.stringify(payload)
       });
+      if (retry.ok) okbmClearUserDataDirty(dirtySnapshot);
       return retry.ok;
     }
     return false;
