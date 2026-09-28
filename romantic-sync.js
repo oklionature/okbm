@@ -9578,6 +9578,8 @@ function logoutUser() {
     try { localStorage.removeItem(k); } catch(e) { console.warn('[romantic-sync.js:logoutUser removeItem]', e); }
   });
   localStorage.setItem('okbm_client_epoch', '20260912_CLEAN_RESET_V2');
+  // 다음 네이버 로그인은 계정 선택(ID/PW 입력)부터 다시 하게 한다.
+  try { localStorage.setItem('okbm_naver_force_login', '1'); } catch (e) {}
 
   if (typeof window.userBookmarks !== 'undefined') window.userBookmarks = new Set();
   if (typeof window.userVisited !== 'undefined') window.userVisited = new Set();
@@ -9733,6 +9735,7 @@ window.confirmUserAccountDeletion = async function(opts) {
       failDeletion('계정 삭제에 실패했습니다. 다시 로그인 후 시도해주세요.');
       return;
     }
+    try { localStorage.setItem('okbm_naver_force_login', '1'); } catch (e) {}
     if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.signOut === 'function') {
       try { await window.supabaseClient.auth.signOut(); } catch (e) {}
     }
@@ -10802,6 +10805,7 @@ async function okbmConsumeNaverOAuthCallback() {
       if (typeof showToast === 'function') showToast('네이버 계정을 연결했습니다.', 'success', 1800);
       return true;
     }
+    try { localStorage.removeItem('okbm_naver_force_login'); } catch (e) {}
     var profile = issued.profile || {};
     var issuedId = String(profile.id || '').trim();
     var providerId = (typeof window.okbmHasSocialUserId === 'function' && window.okbmHasSocialUserId(issuedId))
@@ -10842,10 +10846,16 @@ function loginWithNaver(options) {
   try { sessionStorage.removeItem('okbm_naver_oauth_token'); } catch (e) {}
   try { sessionStorage.setItem('okbm_social_link_mode', isLink ? '1' : ''); } catch (e) {}
 
+  // 로그아웃/탈퇴 뒤 첫 로그인은 네이버 ID/PW 입력을 강제한다.
+  // 우리 로그아웃은 nid.naver.com 세션 쿠키를 지울 수 없어서, 그냥 두면 이전 계정으로 바로 통과된다.
+  var forceNaverLogin = false;
+  try { forceNaverLogin = !isLink && localStorage.getItem('okbm_naver_force_login') === '1'; } catch (e) {}
+
   var naverAuthUrl = 'https://nid.naver.com/oauth2.0/authorize?response_type=code'
     + '&client_id=' + encodeURIComponent(clientId)
     + '&redirect_uri=' + encodeURIComponent(cleanRedirect)
-    + '&state=' + encodeURIComponent(state);
+    + '&state=' + encodeURIComponent(state)
+    + (forceNaverLogin ? '&auth_type=reauthenticate' : '');
   okbmMarkSocialButtonsBusy(true, isLink ? '네이버 계정 연결 중...' : '네이버 로그인 중...', 'btn-social-naver');
   console.log('[Naver Login URL]', naverAuthUrl);
   window.location.href = naverAuthUrl;

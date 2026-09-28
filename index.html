@@ -884,7 +884,7 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.9.19" defer></script>
+    <script src="romantic-sync.js?v=2.9.20" defer></script>
     <script src="romantic-history.js?v=2.7.90" defer></script>
 
   <style>
@@ -2163,6 +2163,16 @@
 </section>
 
 <script>
+// 홈 공개 노출(히어로·테마스팟·인기사진)용 엄격 공개 판정.
+// okbmIsPublicFeedItem은 작성자 본인 글을 무조건 통과시키므로(보관함용) 여기선 쓰지 않는다.
+window.okbmIsHomePublicFeed = function(f) {
+  if (!f) return false;
+  if (f.isPublished === false || f.is_published === false) return false;
+  try {
+    if (typeof window.okbmIsExplicitlyPrivate === 'function' && window.okbmIsExplicitlyPrivate(f)) return false;
+  } catch (e) {}
+  return true;
+};
 (function purgeLegacyHeroCache() {
   var helper = window.purgeIfStale || (typeof purgeIfStale === 'function' ? purgeIfStale : null);
   if (helper) {
@@ -2855,11 +2865,7 @@
 
       // 📈 모달 전체보기에도 시간 감쇠 트렌딩 알고리즘 적용
       var sortedByTrend = feedPool.filter(function(f) {
-        try {
-          return window.okbmIsPublicFeedItem ? window.okbmIsPublicFeedItem(f) : (f && f.isPublished !== false);
-        } catch (e) {
-          return f && f.isPublished !== false;
-        }
+        return window.okbmIsHomePublicFeed(f);
       }).sort(function(a, b) {
         return calculateFeedTrendScore(b, starCounts) - calculateFeedTrendScore(a, starCounts);
       });
@@ -2963,11 +2969,7 @@
       var seenSpots = new Set();
 
       var sortedByTrend = feedPool.filter(function(f) {
-        try {
-          return window.okbmIsPublicFeedItem ? window.okbmIsPublicFeedItem(f) : (f && f.isPublished !== false);
-        } catch (e) {
-          return f && f.isPublished !== false;
-        }
+        return window.okbmIsHomePublicFeed(f);
       }).sort(function(a, b) {
         return calculateFeedTrendScore(b, starCounts) - calculateFeedTrendScore(a, starCounts);
       });
@@ -3646,7 +3648,9 @@
     };
 
     function renderCurrentHeroCard() {
-      var records = (window.heroTopRecords || []).filter(feedHasGalleryPhotos);
+      var records = (window.heroTopRecords || []).filter(function(f) {
+        return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f);
+      });
       if (records.length !== (window.heroTopRecords || []).length) {
         window.heroTopRecords = records;
       }
@@ -3924,9 +3928,9 @@
 
         var photoFeedsOnly = allCleanFeeds.filter(function(f) {
           try {
-            return feedHasGalleryPhotos(f) && (!window.okbmIsPublicFeedItem || window.okbmIsPublicFeedItem(f));
+            return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f);
           } catch (e2) {
-            return feedHasGalleryPhotos(f);
+            return false;
           }
         });
 
@@ -4033,6 +4037,8 @@
                 likes: r.likes_count != null ? Number(r.likes_count) : 0,
                 createdAt: r.created_at || '',
                 isPublished: r.is_published !== false,
+                // RLS와 동일 기준(null = 비공개). 홈 공개 노출 판정에 사용.
+                is_published: r.is_published === true,
                 photos: pArr,
                 items: itemsArr,
                 author: r.author || '낭만백패커',
@@ -4381,11 +4387,7 @@ var adBannersHtml = `
       var pool = tripSpotPool();
       var ranked = (feeds || []).filter(function(f) {
         if (!f) return false;
-        try {
-          if (window.okbmIsPublicFeedItem && !window.okbmIsPublicFeedItem(f)) return false;
-        } catch (ePub) {
-          if (f.isPublished === false || f.is_published === false) return false;
-        }
+        if (!window.okbmIsHomePublicFeed(f)) return false;
         return !spot || feedMatchesRegisteredSpot(f, spot, pool);
       }).sort(function(a, b) {
         var diff = feedPopularity(b) - feedPopularity(a);
