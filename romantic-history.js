@@ -6481,7 +6481,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
             <img src="${escapeHtml(okbmSafeImageUrl(url))}"${bindingAttr} style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.32); transform:scale(1.15); pointer-events:none;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
             <img src="${escapeHtml(okbmSafeImageUrl(url))}"${bindingAttr} style="position:relative; z-index:2; width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; display:block; pointer-events:none;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
             
-            <button type="button" onclick="event.stopPropagation(); window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:#0c1017; color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+            <button type="button" data-okbm-idx="${Number(pIdx)}" onclick="event.stopPropagation(); window.__removeRichSinglePhoto(Number(this.dataset.okbmIdx));" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:#0c1017; color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
           </div>
         `;
       }).join('');
@@ -6496,14 +6496,14 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         return `
           <div data-thumb-idx="${tIdx}"
                draggable="true"
-               ondragstart="window.__handleThumbDragStart(event, ${tIdx});"
+               ondragstart="window.__handleThumbDragStart(event, Number(this.dataset.thumbIdx));"
                ondragover="window.__handleThumbDragOver(event);"
-               ondrop="window.__handleThumbDrop(event, ${tIdx});"
+               ondrop="window.__handleThumbDrop(event, Number(this.dataset.thumbIdx));"
                ondragend="window.__handleThumbDragEnd(event);"
-               ontouchstart="window.__handleTouchThumbStart(event, ${tIdx});"
+               ontouchstart="window.__handleTouchThumbStart(event, Number(this.dataset.thumbIdx));"
                ontouchmove="window.__handleTouchThumbMove(event);"
                ontouchend="window.__handleTouchThumbEnd(event);"
-               onclick="window.__commitCurrentMemoInput(); window.__currentSwipePhotoIndex = ${tIdx}; window.__renderRichPhotoStage();" 
+               onclick="window.__commitCurrentMemoInput(); window.__currentSwipePhotoIndex = Number(this.dataset.thumbIdx); window.__renderRichPhotoStage();" 
                class="rich-photo-thumb"
                style="width:54px; height:54px; border-radius:9px; overflow:hidden; position:relative; flex:0 0 54px; cursor:grab; background:#000; box-sizing:border-box; transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); user-select:none; -webkit-user-select:none; touch-action:pan-x; ${activeBorderStyle}">
             <img src="${escapeHtml(okbmSafeImageUrl(tUrl))}" data-okbm-photo-record-id="${escapeHtml(String(window.__richCurrentRecord && window.__richCurrentRecord.id || ''))}" data-okbm-photo-index="${tIdx}" data-okbm-photo-kind="phone" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
@@ -8101,7 +8101,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       dotsHtml = '<div id="dotsWrap_' + safeCardId + '" style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); z-index:5; display:flex; justify-content:center; align-items:center; gap:4px; height:14px; padding:0 8px; background:#0c1017; border-radius:10px; border:1px solid rgba(255,255,255,0.15); pointer-events:none;">' + dotsItemsHtml + '</div>';
     }
 
-    return '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \`' + safeCardId + '\`);">' + horizontalSlidesHtml + '</div>' + dotsHtml;
+    return '<div class="reel-horizontal-track" data-okbm-card-id="' + escapeHtml(safeCardId) + '" onscroll="window.updateCarouselFeedState(this, this.dataset.okbmCardId);">' + horizontalSlidesHtml + '</div>' + dotsHtml;
   }
 
   window.okbmSyncFeedCardMedia = function(record) {
@@ -8599,7 +8599,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\');" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
             '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
               (totalPhotosCount > 0 ? (
-                '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \`' + cardId + '\`);">' + horizontalSlidesHtml + '</div>' + dotsHtml
+                '<div class="reel-horizontal-track" data-okbm-card-id="' + escapeHtml(cardId) + '" onscroll="window.updateCarouselFeedState(this, this.dataset.okbmCardId);">' + horizontalSlidesHtml + '</div>' + dotsHtml
               ) : showTemplateFront ? (
                 studioCardMarkup
               ) : (

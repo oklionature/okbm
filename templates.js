@@ -3494,7 +3494,7 @@ function renderTemplateChips() {
     html = STUDIO_MODE_ORDER.map(function(mode) {
       var isActive = (mode === activeMode);
       var name = STUDIO_MODE_NAMES[mode] || mode;
-      return '<button type="button" class="tmpl-chip-btn' + (isActive ? ' active' : '') + '" onclick="window.switchStudioModeFromReadyShot(\'' + mode + '\')" data-studio-mode="' + mode + '">' +
+      return '<button type="button" class="tmpl-chip-btn' + (isActive ? ' active' : '') + '" onclick="window.switchStudioModeFromReadyShot(this.dataset.studioMode)" data-studio-mode="' + mode + '">' +
         escapeHtml(name) +
       '</button>';
     }).join('');
@@ -3502,7 +3502,7 @@ function renderTemplateChips() {
     html = TEMPLATE_ORDER.map(function(tId) {
       var isActive = (Number(tId) === Number(selectedTemplateId));
       var name = TEMPLATE_NAMES[tId] || ('테마 ' + tId);
-      return '<button type="button" class="tmpl-chip-btn' + (isActive ? ' active' : '') + '" onclick="switchShareCardTemplate(' + tId + ')" data-tmpl="' + tId + '">' +
+      return '<button type="button" class="tmpl-chip-btn' + (isActive ? ' active' : '') + '" onclick="switchShareCardTemplate(Number(this.dataset.tmpl))" data-tmpl="' + tId + '">' +
         escapeHtml(name) +
       '</button>';
     }).join('');

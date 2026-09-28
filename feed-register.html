@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'sha256-QSHY0lUYOAhEs/IjMuNOaBoMOoXTKBStsa6AhtwbPPs=' 'sha256-yVqCrLGdmH0wsOfCYyB6rhJIIGebDl2Pl92b50aZwPo=' https://cdn.jsdelivr.net https://dapi.kakao.com https://t1.daumcdn.net https://t1.kakaocdn.net https://developers.kakao.com https://openapi.naver.com https://static.nid.naver.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'">
+  <script src="csp-report.js?v=1"></script>
   <script>
     (function okbmLeaveKakaoInApp() {
       try {
@@ -34,7 +35,7 @@
   <title>피드 등록</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" integrity="sha384-OTofQ0MEeiSgh62havBcemCIK0gqj809wX6UA0uPISNMRnR6NZyCdGzX3SbLrgwL" crossorigin="anonymous"></script>
+  <script src="heic-bridge.js?v=1"></script>
   <style>
     :root {
       --bg: #0c0c0c;
@@ -608,29 +609,14 @@
       return buf ? sniffHeic(buf) : false;
     }
 
+    // HEIC 변환은 격리 iframe(heic-convert.html)에서 한다. 이 페이지 CSP는 eval을 막기 때문.
     async function convertHeicBlob(blob) {
-      await waitHeic();
-      var typed = blob instanceof Blob ? blob : new Blob([blob], { type: 'image/heic' });
-      var buf = await typed.arrayBuffer();
-      typed = new Blob([buf], { type: 'image/heic' });
-
+      if (typeof window.okbmHeicToJpeg !== 'function') return null;
       try {
-        var mod = await import('https://cdn.jsdelivr.net/npm/heic-to@1.1.14/dist/heic-to.js');
-        var fnTo = mod.heicTo || (mod.default && mod.default.heicTo);
-        if (typeof fnTo === 'function') {
-          var out = await fnTo({ blob: typed, type: 'image/jpeg', quality: 0.82 });
-          if (out) return Array.isArray(out) ? out[0] : out;
-        }
-      } catch (e) {}
-
-      var fn = (typeof heic2any === 'function') ? heic2any : window.heic2any;
-      if (typeof fn === 'function') {
-        try {
-          var converted = await fn({ blob: typed, toType: 'image/jpeg', quality: 0.82 });
-          if (converted) return Array.isArray(converted) ? converted[0] : converted;
-        } catch (e) {}
+        return (await window.okbmHeicToJpeg(blob, 0.82)) || null;
+      } catch (e) {
+        return null;
       }
-      return null;
     }
 
     function encodeCanvas(src, w, h, quality) {

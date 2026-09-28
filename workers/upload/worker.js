@@ -152,6 +152,26 @@ async function handleDelete(req, env) {
   return reply(req, { status: "SUCCESS", deleted: unique.length });
 }
 
+// 사이트의 CSP 위반 신고(csp-report.js)를 Worker 로그에 남긴다. 저장·응답 내용 없음.
+async function handleCspReport(req) {
+  const origin = req.headers.get("Origin") || "";
+  if (origin && !isAllowedOrigin(origin)) return new Response(null, { status: 204 });
+  let text = "";
+  try { text = (await req.text()).slice(0, 1000); } catch { /* ignore */ }
+  let report = null;
+  try { report = JSON.parse(text); } catch { /* ignore */ }
+  if (report && typeof report === "object") {
+    console.log("csp-violation", JSON.stringify({
+      page: String(report.page || "").slice(0, 80),
+      directive: String(report.directive || "").slice(0, 60),
+      blocked: String(report.blocked || "").slice(0, 200),
+      sample: String(report.sample || "").slice(0, 120),
+      source: String(report.source || "").slice(0, 100),
+    }));
+  }
+  return new Response(null, { status: 204, headers: corsHeaders(req) });
+}
+
 export default {
   async fetch(req, env) {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
@@ -159,6 +179,7 @@ export default {
 
     const url = new URL(req.url);
     if (url.pathname === "/delete") return handleDelete(req, env);
+    if (url.pathname === "/csp-report") return handleCspReport(req);
 
     const origin = req.headers.get("Origin") || "";
     if (origin && !isAllowedOrigin(origin)) return fail(req, "origin_not_allowed", 403);

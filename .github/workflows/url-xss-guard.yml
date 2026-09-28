@@ -14,6 +14,13 @@ jobs:
           python-version: "3.12"
       - name: Ban unsanitized src/href interpolation
         run: python3 scripts/check-unsafe-url-interpolation.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: CSP hashes are up to date (inline handlers/scripts)
+        run: |
+          npm install --no-save --no-package-lock acorn@8.18.0
+          node scripts/csp-extract.mjs --check
       - name: Edge Function social-session copies match _shared
         run: |
           for d in auth-kakao auth-naver delete-account; do

@@ -679,17 +679,17 @@
         listContainer.innerHTML = presets.map(function(p) {
           return `
             <div id="presetRow_${p.id}"
-                 data-preset-id="${p.id}"
+                 data-preset-id="${escapeHtml(p.id)}"
                  data-delete-mode="false"
-                 onclick="if(window.__presetSwiped) return; if(this.dataset.deleteMode === 'true'){ window.setPresetDeleteMode('${p.id}', false); return; } window.openPresetActionModal('${p.id}');"
-                 ontouchstart="window.handlePresetTouchStart(event, '${p.id}')"
-                 ontouchmove="window.handlePresetTouchMove(event, '${p.id}')"
-                 ontouchend="window.handlePresetTouchEnd(event, '${p.id}')"
-                 ontouchcancel="window.handlePresetTouchEnd(event, '${p.id}')"
-                 onmousedown="window.startPresetLongPress(event, '${p.id}')"
+                 onclick="if(window.__presetSwiped) return; if(this.dataset.deleteMode === 'true'){ window.setPresetDeleteMode(this.dataset.presetId, false); return; } window.openPresetActionModal(this.dataset.presetId);"
+                 ontouchstart="window.handlePresetTouchStart(event, this.dataset.presetId)"
+                 ontouchmove="window.handlePresetTouchMove(event, this.dataset.presetId)"
+                 ontouchend="window.handlePresetTouchEnd(event, this.dataset.presetId)"
+                 ontouchcancel="window.handlePresetTouchEnd(event, this.dataset.presetId)"
+                 onmousedown="window.startPresetLongPress(event, this.dataset.presetId)"
                  onmouseup="window.cancelPresetLongPress(event)"
                  onmouseleave="window.cancelPresetLongPress(event)"
-                 oncontextmenu="event.preventDefault(); window.openPresetActionModal('${p.id}'); return false;"
+                 oncontextmenu="event.preventDefault(); window.openPresetActionModal(this.dataset.presetId); return false;"
                  style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:pan-y; transition:border-color 0.15s ease;">
               <div style="min-width:0; flex:1; padding-right:10px;">
                 <div style="font-size:0.82rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -702,13 +702,13 @@
               <div style="display:flex; align-items:center; flex-shrink:0; min-width:52px; justify-content:flex-end;">
                 <button type="button"
                         id="presetLoadBtn_${p.id}"
-                        onclick="event.stopPropagation(); window.loadGearPreset('${p.id}'); window.closeQuickPresetPicker();"
+                        data-preset-id="${escapeHtml(p.id)}" onclick="event.stopPropagation(); window.loadGearPreset(this.dataset.presetId); window.closeQuickPresetPicker();"
                         style="font-size:0.68rem; font-weight:800; color:#000000; background:#e2e8f0; border:none; padding:5px 12px; border-radius:5px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
                   장착
                 </button>
                 <button type="button"
                         id="presetDelBtn_${p.id}"
-                        onclick="event.stopPropagation(); window.deleteGearPreset('${p.id}');"
+                        data-preset-id="${escapeHtml(p.id)}" onclick="event.stopPropagation(); window.deleteGearPreset(this.dataset.presetId);"
                         style="display:none; font-size:0.68rem; font-weight:800; color:#fda4af; background:rgba(244,63,94,0.18); border:1px solid rgba(244,63,94,0.35); padding:5px 12px; border-radius:5px; cursor:pointer; align-items:center; justify-content:center;">
                   삭제
                 </button>
@@ -1159,12 +1159,12 @@
       if (packSlot && idx >= 0) {
         if (isAdded) {
           packSlot.innerHTML = '<div style="display:flex; align-items:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:1px 3px; gap:2px; height:24px;" onclick="event.stopPropagation();">' +
-            '<button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" onclick="window.decrementGearByIndex(' + idx + ', event)">−</button>' +
+            '<button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" data-okbm-idx="' + Number(idx) + '" onclick="window.decrementGearByIndex(Number(this.dataset.okbmIdx), event)">−</button>' +
             '<span class="gear-db-count" style="font-size:0.72rem; font-weight:900; color:#ffffff; min-width:14px; text-align:center; font-family:\'JetBrains Mono\', monospace;">' + count + '</span>' +
-            '<button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" onclick="window.addGearByIndex(' + idx + ', event)">+</button>' +
+            '<button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" data-okbm-idx="' + Number(idx) + '" onclick="window.addGearByIndex(Number(this.dataset.okbmIdx), event)">+</button>' +
           '</div>';
         } else {
-          packSlot.innerHTML = '<button type="button" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#cbd5e1; font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:10px; cursor:pointer;" onclick="event.stopPropagation(); window.addGearByIndex(' + idx + ');">+ 담기</button>';
+          packSlot.innerHTML = '<button type="button" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#cbd5e1; font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:10px; cursor:pointer;" data-okbm-idx="' + Number(idx) + '" onclick="event.stopPropagation(); window.addGearByIndex(Number(this.dataset.okbmIdx));">+ 담기</button>';
         }
       } else if (packSlot) {
         var countEl = packSlot.querySelector('.gear-db-count');
@@ -1209,7 +1209,7 @@
         var btnColor = tTheme.color;
 
         return `
-          <button type="button" onclick="window.setCalcCategoryTab('${c.id}')" style="flex:0 0 76px !important; width:76px !important; min-width:76px !important; max-width:76px !important; height:30px !important; background:${btnBg}; border:1px solid ${btnBorder}; color:${btnColor}; font-size:0.67rem; font-weight:${isActive ? '900' : '700'}; padding:0 2px; border-radius:6px; white-space:nowrap; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; box-sizing:border-box; letter-spacing:-0.02em; transition:all 0.15s ease;">
+          <button type="button" data-okbm-arg="${escapeHtml(c.id)}" onclick="window.setCalcCategoryTab(this.dataset.okbmArg)" style="flex:0 0 76px !important; width:76px !important; min-width:76px !important; max-width:76px !important; height:30px !important; background:${btnBg}; border:1px solid ${btnBorder}; color:${btnColor}; font-size:0.67rem; font-weight:${isActive ? '900' : '700'}; padding:0 2px; border-radius:6px; white-space:nowrap; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; box-sizing:border-box; letter-spacing:-0.02em; transition:all 0.15s ease;">
             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.title}</span>
           </button>
         `;
@@ -1926,7 +1926,7 @@
         <div class="gear-db-item" data-gear-name="${escapeHtml(g.name)}" data-gear-cat="${escapeHtml(category.id)}" style="${isAdded ? 'background:rgba(255,255,255,0.055); border:1px solid rgba(255,255,255,0.22);' : (isFav ? 'background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12);' : 'background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.06);')}; border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; cursor:pointer; user-select:none; transition:all 0.15s ease;">
           <div style="flex:1; min-width:0; padding-right:8px; display:flex; flex-direction:column; gap:2px;" onclick="event.stopPropagation(); if (!window.__longPressTriggered) window.openGearDetailFromEl(this);">
             <div style="display:flex; align-items:center; gap:5px;">
-              <button type="button" class="gear-db-star-btn" onclick="event.stopPropagation(); window.toggleFavoriteGearByIndex(${idx}, event);" style="background:none; border:none; font-size:1.0rem; cursor:pointer; padding:0 2px;">
+              <button type="button" class="gear-db-star-btn" data-okbm-idx="${Number(idx)}" onclick="event.stopPropagation(); window.toggleFavoriteGearByIndex(Number(this.dataset.okbmIdx), event);" style="background:none; border:none; font-size:1.0rem; cursor:pointer; padding:0 2px;">
                 ${isFav ? '⭐' : '<span style="color:#475569; opacity:0.4;">☆</span>'}
               </button>
               <div class="gear-db-name" style="font-size:0.78rem; font-weight:800; color:${isAdded ? '#ffffff' : '#e2e8f0'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
@@ -1947,12 +1947,12 @@
             <div class="gear-db-pack-slot">
             ${isAdded ? `
               <div style="display:flex; align-items:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:1px 3px; gap:2px; height:24px;" onclick="event.stopPropagation();">
-                <button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" onclick="window.decrementGearByIndex(${idx}, event)">−</button>
+                <button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" data-okbm-idx="${Number(idx)}" onclick="window.decrementGearByIndex(Number(this.dataset.okbmIdx), event)">−</button>
                 <span class="gear-db-count" style="font-size:0.72rem; font-weight:900; color:#ffffff; min-width:14px; text-align:center; font-family:'JetBrains Mono', monospace;">${countInPack}</span>
-                <button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" onclick="window.addGearByIndex(${idx}, event)">+</button>
+                <button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" data-okbm-idx="${Number(idx)}" onclick="window.addGearByIndex(Number(this.dataset.okbmIdx), event)">+</button>
               </div>
             ` : `
-              <button type="button" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#cbd5e1; font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:10px; cursor:pointer;" onclick="event.stopPropagation(); window.addGearByIndex(${idx});">
+              <button type="button" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#cbd5e1; font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:10px; cursor:pointer;" data-okbm-idx="${Number(idx)}" onclick="event.stopPropagation(); window.addGearByIndex(Number(this.dataset.okbmIdx));">
                 + 담기
               </button>
             `}
@@ -3681,11 +3681,12 @@ window.saveCurrentPackingRecord = function() {
       }
 
       calendarDaysHtml += '<div style="height:100% !important; width:100% !important; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;" ' +
-        'onclick="window.handlePlanCalendarClick(' + d + ', ' + viewMonth + ', ' + viewYear + ')" ' +
-        'onmousedown="window.startDateLongPress(event, ' + d + ', ' + viewMonth + ', ' + viewYear + ')" ' +
+        'data-okbm-d="' + Number(d) + '" data-okbm-m="' + Number(viewMonth) + '" data-okbm-y="' + Number(viewYear) + '" ' +
+        'onclick="window.handlePlanCalendarClick(Number(this.dataset.okbmD), Number(this.dataset.okbmM), Number(this.dataset.okbmY))" ' +
+        'onmousedown="window.startDateLongPress(event, Number(this.dataset.okbmD), Number(this.dataset.okbmM), Number(this.dataset.okbmY))" ' +
         'onmouseup="window.cancelDateLongPress(event)" ' +
         'onmouseleave="window.cancelDateLongPress(event)" ' +
-        'ontouchstart="window.startDateLongPress(event, ' + d + ', ' + viewMonth + ', ' + viewYear + ')" ' +
+        'ontouchstart="window.startDateLongPress(event, Number(this.dataset.okbmD), Number(this.dataset.okbmM), Number(this.dataset.okbmY))" ' +
         'ontouchmove="window.checkTouchMoveDateLongPress(event)" ' +
         'ontouchend="window.cancelDateLongPress(event)" ' +
         'ontouchcancel="window.cancelDateLongPress(event)" ' +
@@ -3760,7 +3761,7 @@ window.saveCurrentPackingRecord = function() {
             </div>
           </div>
         <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 8px; display:flex; flex-direction:column; gap:5px; box-sizing:border-box;">
-            <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." oninput="window.autoSavePlanMemo('${activeDateStr}', this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:none; border:none; color:#ffffff; font-size:0.90rem; line-height:1.45; outline:none; resize:none; font-family:\'Pretendard Variable\', -apple-system, sans-serif; padding:0; margin:0; box-sizing:border-box;">${escapeHtml(currentDayMemo)}</textarea>
+            <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." data-okbm-date="${escapeHtml(activeDateStr)}" oninput="window.autoSavePlanMemo(this.dataset.okbmDate, this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:none; border:none; color:#ffffff; font-size:0.90rem; line-height:1.45; outline:none; resize:none; font-family:\'Pretendard Variable\', -apple-system, sans-serif; padding:0; margin:0; box-sizing:border-box;">${escapeHtml(currentDayMemo)}</textarea>
           </div>
         </div>
 
@@ -3936,7 +3937,7 @@ window.saveCurrentPackingRecord = function() {
             var chkBoxBg = isChecked ? 'linear-gradient(135deg, #fde047 0%, #f59e0b 100%)' : 'rgba(0,0,0,0.35)';
 
             return `
-              <div onclick="window.togglePackCheckByIndex(${idx})" class="checklist-item-row${isChecked ? ' checked' : ''}" data-check-idx="${idx}" data-theme-border="${theme.border}" data-theme-color="${theme.color}" data-theme-bg="${theme.bg}" style="background:${rowBg}; border:1px solid ${rowBorder}; border-left:${rowBorderLeft};">
+              <div onclick="window.togglePackCheckByIndex(Number(this.dataset.checkIdx))" class="checklist-item-row${isChecked ? ' checked' : ''}" data-check-idx="${idx}" data-theme-border="${theme.border}" data-theme-color="${theme.color}" data-theme-bg="${theme.bg}" style="background:${rowBg}; border:1px solid ${rowBorder}; border-left:${rowBorderLeft};">
                 <div style="display:flex; align-items:center; gap:10px; min-width:0;">
                   <div class="checklist-checkbox-box check-icon" style="border:1.2px solid ${chkBoxBorder}; background:${chkBoxBg};">
                     ${isChecked ? '✓' : ''}
@@ -3953,7 +3954,7 @@ window.saveCurrentPackingRecord = function() {
                     ${gWeightKg > 0 ? (gWeightKg + 'kg') : '0.00kg'}
                   </span>
                   ${isFood ? `
-                    <button type="button" onclick="event.stopPropagation(); window.removeChecklistConsumableItem('${it.id}', event)" style="background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.25); color:#fda4af; font-size:0.58rem; padding:1.5px 4.5px; border-radius:3px; cursor:pointer;">✕</button>
+                    <button type="button" data-okbm-arg="${escapeHtml(it.id)}" onclick="event.stopPropagation(); window.removeChecklistConsumableItem(this.dataset.okbmArg, event)" style="background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.25); color:#fda4af; font-size:0.58rem; padding:1.5px 4.5px; border-radius:3px; cursor:pointer;">✕</button>
                   ` : ''}
                 </div>
               </div>
@@ -4441,7 +4442,7 @@ window.saveCurrentPackingRecord = function() {
       var btnBorder = isActive ? pal.border : 'rgba(255,255,255,0.08)';
       var btnColor = isActive ? pal.color : '#94a3b8';
 
-      return '<button type="button" onclick="window.setGearCategoryFilter(\'' + c.id + '\')" style="background:' + btnBg + '; color:' + btnColor + '; border:1px solid ' + btnBorder + '; font-size:0.67rem; font-weight:' + (isActive ? '900' : '700') + '; padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer; transition:all 0.15s ease;">' + c.label + '</button>';
+      return '<button type="button" data-okbm-arg="' + escapeHtml(c.id) + '" onclick="window.setGearCategoryFilter(this.dataset.okbmArg)" style="background:' + btnBg + '; color:' + btnColor + '; border:1px solid ' + btnBorder + '; font-size:0.67rem; font-weight:' + (isActive ? '900' : '700') + '; padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer; transition:all 0.15s ease;">' + c.label + '</button>';
     }).join('');
 
     var gearsViewHtml = `
@@ -4823,7 +4824,7 @@ window.saveCurrentPackingRecord = function() {
         var ms = String(m).padStart(2, '0');
         var ys = String(y).slice(-2);
         var fullVal = ys + '.' + ms + '.' + ds;
-        daysHtml += '<div onclick="var t=document.getElementById(\'' + targetInputId + '\'); if(t){ t.value=\'' + fullVal + '\'; t.style.color=\'#cbd5e1\'; } document.getElementById(\'romanticDatePickerModal\').remove();" style="height:34px; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-family:\'Space Grotesk\', sans-serif; font-weight:800; color:#e2e8f0; border-radius:6px; cursor:pointer; background:rgba(255,255,255,0.02); transition:background 0.15s ease;" onmouseover="this.style.background=\'rgba(56,189,248,0.2)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.02)\'">' + d + '</div>';
+        daysHtml += '<div data-okbm-target="' + escapeHtml(targetInputId) + '" data-okbm-value="' + escapeHtml(fullVal) + '" onclick="var t=document.getElementById(this.dataset.okbmTarget); if(t){ t.value=this.dataset.okbmValue; t.style.color=\'#cbd5e1\'; } document.getElementById(\'romanticDatePickerModal\').remove();" style="height:34px; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-family:\'Space Grotesk\', sans-serif; font-weight:800; color:#e2e8f0; border-radius:6px; cursor:pointer; background:rgba(255,255,255,0.02); transition:background 0.15s ease;" onmouseover="this.style.background=\'rgba(56,189,248,0.2)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.02)\'">' + d + '</div>';
       }
 
       var maxYear = now.getFullYear() + 2;
@@ -5181,14 +5182,14 @@ window.saveCurrentPackingRecord = function() {
         </div>
 
         <div style="display:flex; flex-direction:column; gap:6px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08); flex-shrink:0;">
-          <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.loadGearPreset('${target.id}'); window.closeQuickPresetPicker();" style="width:100%; height:44px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.25); border-radius:8px; color:#ffffff; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+          <button type="button" data-preset-id="${escapeHtml(target.id)}" onclick="var pid=this.dataset.presetId; document.getElementById('presetActionModal').remove(); window.loadGearPreset(pid); window.closeQuickPresetPicker();" style="width:100%; height:44px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.25); border-radius:8px; color:#ffffff; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">
             이 세트 바로 장착하기
           </button>
           <div style="display:flex; gap:6px;">
-            <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.renameGearPreset('${target.id}');" style="flex:1; height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#cbd5e1; font-size:0.76rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; white-space:nowrap;">
+            <button type="button" data-preset-id="${escapeHtml(target.id)}" onclick="var pid=this.dataset.presetId; document.getElementById('presetActionModal').remove(); window.renameGearPreset(pid);" style="flex:1; height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#cbd5e1; font-size:0.76rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; white-space:nowrap;">
               세트 이름 수정
             </button>
-            <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.deleteGearPreset('${target.id}');" style="flex:1; height:38px; background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); border-radius:8px; color:#fda4af; font-size:0.76rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; white-space:nowrap;">
+            <button type="button" data-preset-id="${escapeHtml(target.id)}" onclick="var pid=this.dataset.presetId; document.getElementById('presetActionModal').remove(); window.deleteGearPreset(pid);" style="flex:1; height:38px; background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); border-radius:8px; color:#fda4af; font-size:0.76rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; white-space:nowrap;">
               세트 삭제
             </button>
           </div>
@@ -5386,7 +5387,7 @@ window.saveCurrentPackingRecord = function() {
     for (var y = startY; y <= endY; y++) {
       var isSelected = (y === curYear);
       var isCurrent = (y === baseYear);
-      yearsHtml += '<button type="button" onclick="window.changePlanYear(' + y + ')" style="height:38px; border-radius:8px; font-size:0.80rem; font-weight:' + (isSelected ? '900' : '700') + '; background:' + (isSelected ? '#38bdf8' : 'rgba(255,255,255,0.06)') + '; color:' + (isSelected ? '#000000' : (isCurrent ? '#fde047' : '#ffffff')) + '; border:1px solid ' + (isSelected ? '#38bdf8' : (isCurrent ? 'rgba(253,224,71,0.5)' : 'rgba(255,255,255,0.12)')) + '; cursor:pointer; font-family:\'Space Grotesk\', sans-serif;">' + y + '년' + (isCurrent ? ' (올해)' : '') + '</button>';
+      yearsHtml += '<button type="button" data-okbm-arg="' + Number(y) + '" onclick="window.changePlanYear(Number(this.dataset.okbmArg))" style="height:38px; border-radius:8px; font-size:0.80rem; font-weight:' + (isSelected ? '900' : '700') + '; background:' + (isSelected ? '#38bdf8' : 'rgba(255,255,255,0.06)') + '; color:' + (isSelected ? '#000000' : (isCurrent ? '#fde047' : '#ffffff')) + '; border:1px solid ' + (isSelected ? '#38bdf8' : (isCurrent ? 'rgba(253,224,71,0.5)' : 'rgba(255,255,255,0.12)')) + '; cursor:pointer; font-family:\'Space Grotesk\', sans-serif;">' + y + '년' + (isCurrent ? ' (올해)' : '') + '</button>';
     }
 
     picker.innerHTML = `

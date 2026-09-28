@@ -4049,7 +4049,7 @@ window.toggleVisitorYearDropdown = function(e) {
   var years = Object.keys(yearSet).sort().reverse();
   menu.innerHTML = years.map(function(y) {
     var on = y === selected;
-    return '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.selectVisitorYear(\'' + y + '\', event);" style="width:100%; text-align:left; background:' + (on ? 'rgba(186,230,253,0.12)' : 'transparent') + '; color:' + (on ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 8px; font-size:0.74rem; font-weight:800; font-family:var(--font-en); border-radius:4px; cursor:pointer;">' + y + '년</button>';
+    return '<button type="button" data-okbm-arg="' + escapeHtml(y) + '" onclick="event.preventDefault(); event.stopPropagation(); window.selectVisitorYear(this.dataset.okbmArg, event);" style="width:100%; text-align:left; background:' + (on ? 'rgba(186,230,253,0.12)' : 'transparent') + '; color:' + (on ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 8px; font-size:0.74rem; font-weight:800; font-family:var(--font-en); border-radius:4px; cursor:pointer;">' + y + '년</button>';
   }).join('');
   menu.style.display = 'flex';
 };
@@ -4267,7 +4267,7 @@ window.toggleReportYearDropdown = function(e) {
 
   menu.innerHTML = sortedYears.map(function(y) {
     var isSel = (window._selectedReportYear === y);
-    return '<button type="button" onclick="window.selectReportYear(\'' + y + '\', event)" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(186,230,253,0.12)' : 'transparent') + '; color:' + (isSel ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 8px; font-size:0.74rem; font-weight:800; font-family:var(--font-en); border-radius:4px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">' +
+    return '<button type="button" data-okbm-arg="' + escapeHtml(y) + '" onclick="window.selectReportYear(this.dataset.okbmArg, event)" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(186,230,253,0.12)' : 'transparent') + '; color:' + (isSel ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 8px; font-size:0.74rem; font-weight:800; font-family:var(--font-en); border-radius:4px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">' +
       '<span>' + y + '년</span>' +
       (isSel ? '<span style="color:#bae6fd; font-size:0.67rem;">✓</span>' : '') +
     '</button>';
@@ -5412,7 +5412,7 @@ window._renderGearModule = function(validLogs, el) {
       var safeSlotKey = _escapeReportPropHtml(s.key);
       var safeTop1 = _escapeReportPropHtml(top1Name);
 
-      return '<div onclick="window._toggleGearSlotTop5(\'' + s.key + '\')" style="cursor:pointer; width:100%; min-width:0; overflow:hidden; background:' + (isActive ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)') + '; border:1px solid ' + (isActive ? s.color : 'rgba(255,255,255,0.06)') + '; border-radius:8px; padding:8px 10px; box-sizing:border-box;">' +
+      return '<div data-okbm-arg="' + escapeHtml(s.key) + '" onclick="window._toggleGearSlotTop5(this.dataset.okbmArg)" style="cursor:pointer; width:100%; min-width:0; overflow:hidden; background:' + (isActive ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)') + '; border:1px solid ' + (isActive ? s.color : 'rgba(255,255,255,0.06)') + '; border-radius:8px; padding:8px 10px; box-sizing:border-box;">' +
         '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; min-width:0;">' +
           '<span style="font-size:0.64rem; color:#94a3b8; font-weight:800; flex-shrink:0;">' + safeSlotKey + '</span>' +
           '<span style="font-size:0.60rem; color:' + s.color + '; font-weight:700; flex-shrink:0;">' + (isActive ? '닫기 ▲' : 'Top 5 ▼') + '</span>' +
@@ -5764,7 +5764,7 @@ window._renderTerrainModule = function(validLogs, el) {
     var item = themeData[tKey];
     var top1 = item.list[0] || { name: '-', count: 0 };
     var isExp = (state.expandedTheme === tKey);
-    return '<div onclick="window._toggleTerrainThemeTop5(\'' + tKey + '\')" style="cursor:pointer; min-width:0; overflow:hidden; background:' + (isExp ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.04)') + '; border-radius:6px; padding:6px 8px; box-sizing:border-box;">' +
+    return '<div data-okbm-arg="' + escapeHtml(tKey) + '" onclick="window._toggleTerrainThemeTop5(this.dataset.okbmArg)" style="cursor:pointer; min-width:0; overflow:hidden; background:' + (isExp ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.04)') + '; border-radius:6px; padding:6px 8px; box-sizing:border-box;">' +
       '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-width:0;">' +
         '<span style="font-size:0.62rem; color:#64748b; font-weight:700; flex-shrink:0;">' + item.label + '</span>' +
         '<span style="font-size:0.58rem; color:' + item.color + '; flex-shrink:0;">' + (isExp ? '닫기 ▲' : 'Top 5 ▼') + '</span>' +
@@ -5801,7 +5801,7 @@ window._renderTerrainModule = function(validLogs, el) {
   var customDropdownItemsHtml = '<button type="button" onclick="window._setTerrainYearSelect(\'all\'); document.getElementById(\'customDropdownMenu_terrain\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (state.selectedYear === 'all' ? 'rgba(186,230,253,0.1)' : 'transparent') + '; color:' + (state.selectedYear === 'all' ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">전체 활동 기간</button>' +
     sortedYears.map(function(yk) {
       var isSel = (state.selectedYear === yk);
-      return '<button type="button" onclick="window._setTerrainYearSelect(\'' + yk + '\'); document.getElementById(\'customDropdownMenu_terrain\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(186,230,253,0.1)' : 'transparent') + '; color:' + (isSel ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 활동 기준</button>';
+      return '<button type="button" data-okbm-arg="' + escapeHtml(yk) + '" onclick="window._setTerrainYearSelect(this.dataset.okbmArg); document.getElementById(\'customDropdownMenu_terrain\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(186,230,253,0.1)' : 'transparent') + '; color:' + (isSel ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 활동 기준</button>';
     }).join('');
 
   el.innerHTML = `
@@ -6010,14 +6010,14 @@ window._renderSeasonModule = function(validLogs, el) {
   var customDropdownItemsHtml = '<button type="button" onclick="window._setSeasonYearSelect(\'all\'); document.getElementById(\'customDropdownMenu_season\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (state.selectedYear === 'all' ? 'rgba(253,230,138,0.1)' : 'transparent') + '; color:' + (state.selectedYear === 'all' ? '#fde68a' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">전체 활동 기간</button>' +
     sortedYears.map(function(yk) {
       var isSel = (state.selectedYear === yk);
-      return '<button type="button" onclick="window._setSeasonYearSelect(\'' + yk + '\'); document.getElementById(\'customDropdownMenu_season\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(253,230,138,0.1)' : 'transparent') + '; color:' + (isSel ? '#fde68a' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 시즌 기준</button>';
+      return '<button type="button" data-okbm-arg="' + escapeHtml(yk) + '" onclick="window._setSeasonYearSelect(this.dataset.okbmArg); document.getElementById(\'customDropdownMenu_season\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(253,230,138,0.1)' : 'transparent') + '; color:' + (isSel ? '#fde68a' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 시즌 기준</button>';
     }).join('');
 
   var seasonCardsHtml = ['spring', 'summer', 'autumn', 'winter'].map(function(k) {
     var item = s[k];
     var p = pct(item.count);
     var isExp = (state.expandedSeason === k);
-    return '<div onclick="window._toggleSeasonDetail(\'' + k + '\')" style="cursor:pointer; min-width:0; overflow:hidden; background:' + (isExp ? 'rgba(255,255,255,0.06)' : '#000000') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.06)') + '; border-radius:6px; padding:8px 2px; text-align:center; box-sizing:border-box;">' +
+    return '<div data-okbm-arg="' + escapeHtml(k) + '" onclick="window._toggleSeasonDetail(this.dataset.okbmArg)" style="cursor:pointer; min-width:0; overflow:hidden; background:' + (isExp ? 'rgba(255,255,255,0.06)' : '#000000') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.06)') + '; border-radius:6px; padding:8px 2px; text-align:center; box-sizing:border-box;">' +
       '<div style="font-size:0.62rem; color:#64748b;">' + item.label.split(' ')[0] + '</div>' +
       '<div style="font-size:0.87rem; font-weight:800; color:' + item.color + '; font-family:var(--font-en); margin-top:1px;">' + p + '%</div>' +
       '<div style="font-size:0.58rem; color:#64748b; margin-top:1px;">' + item.count + '회 ' + (isExp ? '▲' : '▼') + '</div>' +
@@ -6157,13 +6157,13 @@ window._renderRegionModule = function(validLogs, el) {
   var customDropdownItemsHtml = '<button type="button" onclick="window._setRegionYearSelect(\'all\'); document.getElementById(\'customDropdownMenu_region\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (state.selectedYear === 'all' ? 'rgba(233,213,255,0.1)' : 'transparent') + '; color:' + (state.selectedYear === 'all' ? '#e9d5ff' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">전체 활동 기간</button>' +
     sortedYears.map(function(yk) {
       var isSel = (state.selectedYear === yk);
-      return '<button type="button" onclick="window._setRegionYearSelect(\'' + yk + '\'); document.getElementById(\'customDropdownMenu_region\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(233,213,255,0.1)' : 'transparent') + '; color:' + (isSel ? '#e9d5ff' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 지역 기준</button>';
+      return '<button type="button" data-okbm-arg="' + escapeHtml(yk) + '" onclick="window._setRegionYearSelect(this.dataset.okbmArg); document.getElementById(\'customDropdownMenu_region\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(233,213,255,0.1)' : 'transparent') + '; color:' + (isSel ? '#e9d5ff' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 지역 기준</button>';
     }).join('');
 
   var regionCardsHtml = Object.keys(regMap).map(function(k) {
     var item = regMap[k];
     var isExp = (state.expandedRegion === k);
-    return '<div onclick="window._toggleRegionDetail(\'' + k + '\')" style="cursor:pointer; min-width:0; overflow:hidden; background:' + (isExp ? 'rgba(255,255,255,0.06)' : '#000000') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.06)') + '; border-radius:6px; min-height:48px; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:5px 2px; box-sizing:border-box;">' +
+    return '<div data-okbm-arg="' + escapeHtml(k) + '" onclick="window._toggleRegionDetail(this.dataset.okbmArg)" style="cursor:pointer; min-width:0; overflow:hidden; background:' + (isExp ? 'rgba(255,255,255,0.06)' : '#000000') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.06)') + '; border-radius:6px; min-height:48px; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:5px 2px; box-sizing:border-box;">' +
       '<div style="font-size:0.64rem; color:#64748b; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; padding:0 2px;">' + k + '</div>' +
       '<div style="font-size:0.87rem; font-weight:800; color:' + item.color + '; font-family:var(--font-en); margin-top:2px; line-height:1;">' + item.count + '<span style="font-size:0.58rem; color:#64748b; margin-left:1px;">회</span></div>' +
     '</div>';
@@ -6314,7 +6314,8 @@ window.ensureMasterBottomDock = function(activeTabId) {
       var btn = buttons[i];
       var isAct = (tabs[i].id === activeTab);
       btn.setAttribute('title', tabs[i].name);
-      btn.setAttribute('onclick', tabs[i].action);
+      btn.setAttribute('data-dock-tab', tabs[i].id);
+      btn.setAttribute('onclick', 'window.navigateToDockTab(this.dataset.dockTab)');
       btn.classList.toggle('active', isAct);
       btn.style.setProperty('color', isAct ? '#ffffff' : '#94a3b8', 'important');
       btn.style.fontWeight = isAct ? '900' : '700';
@@ -6325,7 +6326,7 @@ window.ensureMasterBottomDock = function(activeTabId) {
       var isAct = (t.id === activeTab);
       var col = isAct ? '#ffffff' : '#94a3b8';
       var fw = isAct ? '900' : '700';
-      return '<button type="button" class="dock-item ' + (isAct ? 'active' : '') + '" title="' + t.name + '" onclick="' + t.action + '" style="background:none; border:none; padding:0; margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:' + col + ' !important; font-size:0.67rem; font-weight:' + fw + '; gap:3px; flex:1; height:56px; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent;">' +
+      return '<button type="button" class="dock-item ' + (isAct ? 'active' : '') + '" title="' + t.name + '" data-dock-tab="' + t.id + '" onclick="window.navigateToDockTab(this.dataset.dockTab)" style="background:none; border:none; padding:0; margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:' + col + ' !important; font-size:0.67rem; font-weight:' + fw + '; gap:3px; flex:1; height:56px; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent;">' +
         t.svg +
         '<span>' + t.name + '</span>' +
       '</button>';
@@ -6776,7 +6777,7 @@ window.renderPastTripDatePicker = function() {
     body.innerHTML = '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:5px; max-height:220px; overflow-y:auto;">' +
       years.map(function(yy) {
         var on = yy === y;
-        return '<button type="button" onclick="window.selectPastTripPickerYear(' + yy + ');" style="height:32px; border-radius:8px; font-size:0.72rem; font-weight:800; cursor:pointer; ' + (on ? onCss : offCss) + '">' + yy + '</button>';
+        return '<button type="button" data-okbm-arg="' + Number(yy) + '" onclick="window.selectPastTripPickerYear(Number(this.dataset.okbmArg));" style="height:32px; border-radius:8px; font-size:0.72rem; font-weight:800; cursor:pointer; ' + (on ? onCss : offCss) + '">' + yy + '</button>';
       }).join('') + '</div>';
     return;
   }
@@ -6786,7 +6787,7 @@ window.renderPastTripDatePicker = function() {
       [1,2,3,4,5,6,7,8,9,10,11,12].map(function(mm) {
         var disabled = (y > curYear) || (y === curYear && mm > curMonth);
         var on = mm === m;
-        return '<button type="button" ' + (disabled ? 'disabled' : 'onclick="window.selectPastTripPickerMonth(' + mm + ');"') +
+        return '<button type="button" ' + (disabled ? 'disabled' : 'data-okbm-arg="' + Number(mm) + '" onclick="window.selectPastTripPickerMonth(Number(this.dataset.okbmArg));"') +
           ' style="height:32px; border-radius:8px; font-size:0.72rem; font-weight:800; cursor:' + (disabled ? 'default' : 'pointer') + '; ' +
           (disabled ? disCss : (on ? onCss : offCss)) + '">' + mm + '월</button>';
       }).join('') + '</div>';
@@ -6805,7 +6806,7 @@ window.renderPastTripDatePicker = function() {
     var disabled = cell.getTime() >= now.getTime();
     var iso = y + '-' + String(m).padStart(2, '0') + '-' + String(day).padStart(2, '0');
     var on = iso === selectedIso;
-    html += '<button type="button" ' + (disabled ? 'disabled' : 'onclick="window.selectPastTripPickerDay(' + day + ');"') +
+    html += '<button type="button" ' + (disabled ? 'disabled' : 'data-okbm-arg="' + Number(day) + '" onclick="window.selectPastTripPickerDay(Number(this.dataset.okbmArg));"') +
       ' style="height:32px; border-radius:8px; font-size:0.74rem; font-weight:800; cursor:' + (disabled ? 'default' : 'pointer') + '; ' +
       (disabled ? disCss : (on ? onCss : 'border:1px solid transparent; background:transparent; color:#e2e8f0;')) + '">' + day + '</button>';
   }
@@ -7383,7 +7384,7 @@ window._pastTripRenderPhotoStage = function() {
         return '<div style="flex:0 0 100%; width:100%; height:100%; scroll-snap-align:start; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">' +
           '<img src="' + escapeHtml(okbmSafeImageUrl(url)) + '" alt="" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.32); transform:scale(1.15); pointer-events:none;" />' +
           '<img src="' + escapeHtml(okbmSafeImageUrl(url)) + '" alt="" style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" />' +
-          '<button type="button" onclick="event.stopPropagation(); window.removePastTripPhoto(' + pIdx + ');" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:#0c1017; color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer;">✕</button>' +
+          '<button type="button" data-okbm-idx="' + Number(pIdx) + '" onclick="event.stopPropagation(); window.removePastTripPhoto(Number(this.dataset.okbmIdx));" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:#0c1017; color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer;">✕</button>' +
         '</div>';
       }).join('');
       var thumbsHtml = photos.map(function(tUrl, tIdx) {
@@ -7392,14 +7393,14 @@ window._pastTripRenderPhotoStage = function() {
           ? 'border:2.5px solid #94a3b8; box-shadow:0 0 10px rgba(148,163,184,0.45); transform:scale(1.06); z-index:3; opacity:1;'
           : 'border:1px solid rgba(255,255,255,0.16); opacity:0.65;';
         return '<div data-past-thumb-idx="' + tIdx + '" draggable="true"' +
-          ' ondragstart="window._pastTripThumbDragStart(event,' + tIdx + ');"' +
+          ' ondragstart="window._pastTripThumbDragStart(event, Number(this.dataset.pastThumbIdx));"' +
           ' ondragover="window._pastTripThumbDragOver(event);"' +
-          ' ondrop="window._pastTripThumbDrop(event,' + tIdx + ');"' +
+          ' ondrop="window._pastTripThumbDrop(event, Number(this.dataset.pastThumbIdx));"' +
           ' ondragend="window._pastTripThumbDragEnd();"' +
-          ' ontouchstart="window._pastTripThumbTouchStart(event,' + tIdx + ');"' +
+          ' ontouchstart="window._pastTripThumbTouchStart(event, Number(this.dataset.pastThumbIdx));"' +
           ' ontouchmove="window._pastTripThumbTouchMove(event);"' +
           ' ontouchend="window._pastTripThumbTouchEnd(event);"' +
-          ' onclick="window.focusPastTripPhoto(' + tIdx + ');"' +
+          ' onclick="window.focusPastTripPhoto(Number(this.dataset.pastThumbIdx));"' +
           ' style="width:54px; height:54px; border-radius:9px; overflow:hidden; position:relative; flex-shrink:0; cursor:grab; background:#000; box-sizing:border-box; user-select:none; -webkit-user-select:none; touch-action:none; ' + border + '">' +
           '<img src="' + escapeHtml(okbmSafeImageUrl(tUrl)) + '" alt="" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" />' +
         '</div>';
@@ -7660,7 +7661,7 @@ window._pastTripRenderGearList = function() {
         '<div style="font-size:0.78rem; font-weight:800; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(it.name) + '</div>' +
         '<div style="font-size:0.62rem; color:#64748b; margin-top:1px;">' + Number(it.weight || 0) + 'g</div>' +
       '</div>' +
-      '<button type="button" onclick="window.removePastTripGearItem(' + i + ');" style="width:26px; height:26px; border-radius:6px; border:1px solid rgba(244,63,94,0.3); background:rgba(244,63,94,0.12); color:#fda4af; font-size:0.78rem; font-weight:900; cursor:pointer;">−</button>' +
+      '<button type="button" data-okbm-idx="' + Number(i) + '" onclick="window.removePastTripGearItem(Number(this.dataset.okbmIdx));" style="width:26px; height:26px; border-radius:6px; border:1px solid rgba(244,63,94,0.3); background:rgba(244,63,94,0.12); color:#fda4af; font-size:0.78rem; font-weight:900; cursor:pointer;">−</button>' +
     '</div>';
   }).join('');
   if (hint) hint.textContent = items.length + '개 · ' + (grams / 1000).toFixed(2) + 'kg (이 기록에만 반영)';
