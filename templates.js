@@ -1056,21 +1056,14 @@ function downloadReadyShotBlob(blob, fileName) {
   setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
 }
 
+// [헌법 2] 업로드는 공통 통로(okbmUploadImageBlob)로만 한다. 로그인 토큰이 붙고 https URL만 돌려받는다.
+// Worker가 실제 바이트로 형식을 판별하므로 PNG도 그대로 올라간다.
 async function uploadReadyShotBlob(blob) {
-  var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
-  var isPng = blob && blob.type === 'image/png';
-  var safeFileName = 'ready_share_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) + (isPng ? '.png' : '.jpg');
-  var cfRes = await fetch(CF_WORKER_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
-    method: 'POST',
-    headers: { 'Content-Type': isPng ? 'image/png' : 'image/jpeg' },
-    body: blob
-  });
-  if (!cfRes.ok) throw new Error('upload failed');
-  var cfData = await cfRes.json();
-  if (!(cfData && cfData.status === 'SUCCESS' && cfData.url && String(cfData.url).indexOf('https://') === 0)) {
-    throw new Error('upload invalid');
-  }
-  return cfData.url;
+  if (!blob) throw new Error('upload failed');
+  if (typeof window.okbmUploadImageBlob !== 'function') throw new Error('upload helper missing');
+  var url = await window.okbmUploadImageBlob(blob, 'ready_share');
+  if (!url || String(url).indexOf('https://') !== 0) throw new Error('upload failed');
+  return url;
 }
 
 function closeReadyShotShareSheet() {

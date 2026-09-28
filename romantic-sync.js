@@ -3624,12 +3624,8 @@ window._getRomanticRouteOutdoorLogs = function() {
 
   var dedupMap = new Map();
   sourcePool.forEach(function(r) {
-    if (!r || r._memDeleted === true) return;
-    if (r.isDeleted === true) {
-      r._memDeleted = true;
-      delete r.isDeleted;
-      return;
-    }
+    // [헌법 4] 삭제 플래그를 새로 만들지 않는다. 옛 로컬 캐시에 남은 플래그 기록만 읽기 전용으로 건너뛴다.
+    if (!r || r._memDeleted === true || r.isDeleted === true || r.is_deleted === true) return;
     var rId = String(r.id || '').trim();
     if (!rId || rId.startsWith('pack_temp_')) return;
     if (!dedupMap.has(rId)) {
@@ -11089,9 +11085,10 @@ window.shareFeedToCommunity = async function(feedRecord) {
         resolve('');
         return;
       }
+      // [헌법 2] 압축(1200px)에 실패하면 원본을 올리지 않고 그 사진을 건너뛴다('' 반환 → 아래 루프에서 continue).
       var img = new Image();
       var timeout = setTimeout(function() {
-        resolve(base64Str);
+        resolve('');
       }, 5000);
       img.onload = function() {
         clearTimeout(timeout);
@@ -11109,12 +11106,12 @@ window.shareFeedToCommunity = async function(feedRecord) {
           ctx.drawImage(img, 0, 0, w, h);
           resolve(canvas.toDataURL('image/jpeg', quality));
         } catch (e) {
-          resolve(base64Str);
+          resolve('');
         }
       };
       img.onerror = function() {
         clearTimeout(timeout);
-        resolve(base64Str);
+        resolve('');
       };
       img.src = base64Str;
     });

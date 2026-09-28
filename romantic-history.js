@@ -1042,9 +1042,10 @@
         String(safePayload.ready_shot_photo).trim().indexOf('https://') !== 0) {
       safePayload.ready_shot_photo = '';
     }
+    // [헌법 2] 사진은 http(s) URL만 DB로 보낸다. data:, blob: 등은 제외.
     if (Array.isArray(safePayload.photos)) {
       safePayload.photos = safePayload.photos.filter(function(url) {
-        return typeof url === 'string' && url.indexOf('data:image/') !== 0;
+        return typeof url === 'string' && /^https?:\/\//.test(url.trim());
       });
     }
     var feedHeaders = (typeof window.okbmWriteHeaders === 'function')
@@ -1481,7 +1482,7 @@
     list = list.filter(Boolean);
     if (Array.isArray(normalized.photos)) {
       normalized.photos = normalized.photos.filter(function(url) {
-        return typeof url === 'string' && url.indexOf('data:image/') !== 0;
+        return typeof url === 'string' && /^https?:\/\//.test(url.trim());
       });
     }
 
@@ -1610,7 +1611,7 @@
       };
 
       payload.photos = (payload.photos || []).filter(function(url) {
-        return typeof url === 'string' && url.indexOf('data:image/') !== 0;
+        return typeof url === 'string' && /^https?:\/\//.test(url.trim());
       });
 
       if (window.__tempStudioReadyShot) {
@@ -2565,13 +2566,6 @@ window.normalizeHistoryRecord = function(r, idx) {
     var hasValidPhoto = Boolean(rawPhoto && typeof rawPhoto === 'string' && rawPhoto.trim().length > 10);
 
     var customTmplImg = cur.readyShotPhoto || cur.customTemplatePhoto;
-    if (!customTmplImg && window.__memoryStore && window.__memoryStore['okbm_ready_shots_map']) {
-      var rEntry = window.__memoryStore['okbm_ready_shots_map'][String(cur.id)] || window.__memoryStore['okbm_ready_shots_map'][String(cur.date)];
-      if (rEntry && rEntry.photo) customTmplImg = rEntry.photo;
-    }
-    if (!customTmplImg && window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) {
-      customTmplImg = window.__memoryStore['okbm_custom_templates_map'][String(cur.id)] || window.__memoryStore['okbm_custom_templates_map'][String(cur.date)];
-    }
 
     var usesPhotoTmpl = (typeof window.recordUsesPhotoTemplate === 'function') && window.recordUsesPhotoTemplate(cur);
     var frontContentHtml = '';
@@ -3016,14 +3010,6 @@ window.normalizeHistoryRecord = function(r, idx) {
     if (!r) return '';
     var photos = getRecordPhotos(r);
     var tmplPhoto = r.customTemplatePhoto || r.readyShotPhoto || '';
-    if (!tmplPhoto && window.__memoryStore) {
-      if (window.__memoryStore['okbm_ready_shots_map'] && window.__memoryStore['okbm_ready_shots_map'][String(r.id)]) {
-        tmplPhoto = window.__memoryStore['okbm_ready_shots_map'][String(r.id)].photo || '';
-      }
-      if (!tmplPhoto && window.__memoryStore['okbm_custom_templates_map']) {
-        tmplPhoto = window.__memoryStore['okbm_custom_templates_map'][String(r.id)] || '';
-      }
-    }
     var thumbPhoto = (photos && photos.length > 0 && photos[0]) ? photos[0] : (tmplPhoto || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80');
     var safeId = escapeHtml(String(r.id || ''));
     var spotTitle = escapeHtml(r.spot || '방문 스팟');
@@ -8385,13 +8371,6 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var record = window.normalizeHistoryRecord(item, idx);
     var cardId = escapeHtml(String(record.id || idx));
     var tmplPhoto = record.readyShotPhoto || record.customTemplatePhoto || (item && (item.readyShotPhoto || item.customTemplatePhoto)) || '';
-    if (!tmplPhoto && window.__memoryStore && window.__memoryStore['okbm_ready_shots_map']) {
-      var rShot = window.__memoryStore['okbm_ready_shots_map'][String(record.id)];
-      if (rShot && rShot.photo) tmplPhoto = rShot.photo;
-    }
-    if (!tmplPhoto && window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) {
-      tmplPhoto = window.__memoryStore['okbm_custom_templates_map'][String(record.id)] || '';
-    }
 
     var tmplPhotoClean = record.readyShotPhoto || '';
     var rawPhotosList = (typeof getRecordPhotos === 'function') ? getRecordPhotos(record) : (record.photos || []);

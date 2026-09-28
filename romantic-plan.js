@@ -3228,9 +3228,6 @@ window.saveCurrentPackingRecord = function() {
     if (photoList.length === 0) return false;
 
     var tmplPhoto = String(rec.customTemplatePhoto || '').trim();
-    if (!tmplPhoto && window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) {
-      tmplPhoto = window.__memoryStore['okbm_custom_templates_map'][String(rec.id)] || '';
-    }
 
     return photoList.some(function(u) {
       if (!u || typeof u !== 'string') return false;
