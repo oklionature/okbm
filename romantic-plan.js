@@ -220,6 +220,10 @@
         var origWrite = vault.write;
         vault.write = function(key, val, shouldSyncCloud) {
           var ret = origWrite.call(this, key, val, shouldSyncCloud);
+          // 보관함 목록이 바뀌면(저장·삭제) 달력용 서버 캐시를 비워 다음 화면에서 다시 받는다(지운 기록이 남아 보이지 않도록).
+          if (key === 'okbm_packing_history' && typeof window.okbmClearPlanServerMonthCache === 'function') {
+            window.okbmClearPlanServerMonthCache();
+          }
           flushPendingPlanSpotsUpdate();
           return ret;
         };
@@ -3256,6 +3260,56 @@ window.saveCurrentPackingRecord = function() {
       mode === 'essay' || mode === 'sage' || mode === 'editorial';
   };
 
+  // [달력] 다른 기기에서 저장한 내 기록도 달력에 보이게 한다.
+  // 달력은 이 기기의 로컬 보관함만 읽어서, 폰에서 만든 기록이 PC 달력에 안 뜨는 문제가 있었다.
+  // 보고 있는 달의 내 기록을 서버에서 받아 "화면 표시"에만 합친다(로컬 저장소는 바꾸지 않음).
+  // 같은 달은 1분에 한 번만 받고, 보관함 목록이 바뀌면(저장·삭제) 캐시를 비워 다시 받는다.
+  window.__okbmPlanServerMonth = window.__okbmPlanServerMonth || {};
+  window.okbmClearPlanServerMonthCache = function() { window.__okbmPlanServerMonth = {}; };
+  window.okbmEnsurePlanMonthFromServer = function(year, month) {
+    var mm = String(month).padStart(2, '0');
+    var key = year + '.' + mm;
+    var cache = window.__okbmPlanServerMonth;
+    var entry = cache[key];
+    if (entry && (entry.loading || (Date.now() - entry.at) < 60000)) return entry.records || null;
+    if (!(typeof isUserLoggedIn === 'function' && isUserLoggedIn())) return null;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return entry ? entry.records : null;
+    var uid = (typeof window.okbmGetCurrentUserId === 'function') ? String(window.okbmGetCurrentUserId() || '').trim() : '';
+    var base = window.SUPABASE_URL || '';
+    if (!uid || !base || typeof window.okbmPublicFetch !== 'function' || typeof window.okbmFeedOwnerFilter !== 'function') return null;
+    var ownerFilter = window.okbmFeedOwnerFilter(uid);
+    if (!ownerFilter) return null;
+
+    var prevRecords = entry ? entry.records : null;
+    cache[key] = { loading: true, at: Date.now(), records: prevRecords };
+    var projection = 'id,user_id,author,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,is_published,feed_type,created_at';
+    // date는 'YYYY.MM.DD'가 기본이고 예전 행은 'YYYY-MM-DD'일 수 있어 구분자 자리를 '_'(한 글자 아무거나)로 둔다.
+    var url = base + '/rest/v1/feeds?select=' + projection + '&' + ownerFilter +
+      '&date=like.' + encodeURIComponent(year + '_' + mm + '*') + '&order=date.asc&limit=100';
+    window.okbmPublicFetch(url).then(function(res) {
+      if (!res || !res.ok) throw new Error('http_' + (res && res.status));
+      return res.json();
+    }).then(function(rows) {
+      var list = (Array.isArray(rows) ? rows : []).filter(function(r) { return r && r.id; }).map(function(r, i) {
+        return (typeof window.normalizeHistoryRecord === 'function') ? window.normalizeHistoryRecord(r, i) : r;
+      });
+      var before = '';
+      var after = '';
+      try { before = JSON.stringify(prevRecords || []); after = JSON.stringify(list); } catch (e) {}
+      window.__okbmPlanServerMonth[key] = { at: Date.now(), records: list };
+      var planModal = document.getElementById('romanticPlanModal');
+      var stillViewing = Number(window.calViewYear || new Date().getFullYear()) === Number(year) &&
+        Number(window.calViewMonth || (new Date().getMonth() + 1)) === Number(month);
+      if (before !== after && planModal && planModal.style.display !== 'none' && stillViewing) {
+        window.renderPlanStage();
+      }
+    }).catch(function(err) {
+      console.warn('[romantic-plan.js:okbmEnsurePlanMonthFromServer]', err);
+      window.__okbmPlanServerMonth[key] = { at: Date.now(), records: prevRecords };
+    });
+    return prevRecords;
+  };
+
   window.renderPlanStage = function() {
     var modal = document.getElementById('romanticPlanModal');
     if (!modal) return;
@@ -3290,6 +3344,25 @@ window.saveCurrentPackingRecord = function() {
     }
     if (!Array.isArray(historyList)) historyList = [];
     historyList = historyList.filter(Boolean);
+
+    // 보고 있는 달의 서버 기록을 화면 표시에만 합친다(같은 id는 서버 값 우선, 없는 기록은 추가).
+    var serverMonthRecs = (typeof window.okbmEnsurePlanMonthFromServer === 'function')
+      ? window.okbmEnsurePlanMonthFromServer(viewYear, viewMonth)
+      : null;
+    if (Array.isArray(serverMonthRecs) && serverMonthRecs.length) {
+      var serverById = {};
+      serverMonthRecs.forEach(function(r) { if (r && r.id) serverById[String(r.id).trim()] = r; });
+      historyList = historyList.map(function(h) {
+        var hid = h && h.id ? String(h.id).trim() : '';
+        return (hid && serverById[hid]) ? serverById[hid] : h;
+      });
+      var shownIds = {};
+      historyList.forEach(function(h) { if (h && h.id) shownIds[String(h.id).trim()] = true; });
+      serverMonthRecs.forEach(function(r) {
+        var rid = r && r.id ? String(r.id).trim() : '';
+        if (rid && !shownIds[rid]) historyList.push(r);
+      });
+    }
 
     var monthHistory = historyList.filter(function(h) {
       if (!h) return false;

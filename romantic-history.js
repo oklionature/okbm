@@ -1640,6 +1640,8 @@
 
     persistLocalHistory();
     window.__tempStudioReadyShot = null;
+    // 달력이 들고 있는 서버 기록 캐시는 이제 오래된 값이라 비운다(다음 달력 화면에서 다시 받음).
+    if (typeof window.okbmClearPlanServerMonthCache === 'function') window.okbmClearPlanServerMonthCache();
 
     if (!Array.isArray(window.__allLoadedFeeds)) {
       window.__allLoadedFeeds = [];
