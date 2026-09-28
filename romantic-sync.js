@@ -373,7 +373,8 @@ window.purgeIfStale = purgeIfStale;
     'okbm_gear_meta',
     'okbm_hero_cover_url',
     'okbm_my_proposals',
-    'okbm_naver_force_login'
+    'okbm_naver_force_login',
+    'okbm_vault_intro_dismissed'
   ];
   purgeIfStale('okbm_client_epoch', CLEAN_EPOCH, [
     'okbm_deleted_record_ids',
@@ -664,7 +665,7 @@ window.autoPurgeLegacyClientCache = window.autoPurgeLegacyClientCache || functio
     'okbm_bookmarks', 'okbm_visited', 'okbm_memos', 'okbm_plan_memos', 'okbm_plan_spots',
     'okbm_packing_history', 'okbm_selected_gears_multi', 'okbm_favorite_gears', 'okbm_custom_gears',
     'okbm_gear_presets', 'okbm_gear_meta', 'okbm_hero_cover_url', 'okbm_my_proposals',
-    'okbm_naver_force_login'
+    'okbm_naver_force_login', 'okbm_vault_intro_dismissed'
   ];
   try {
     if (typeof window.purgeIfStale === 'function') {
