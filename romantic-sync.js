@@ -297,8 +297,12 @@ window.OKBM_SPOTS_IDB_KEY = 'okbm_master_spots';
       var list = JSON.parse(rawHist);
       var limit = window.OKBM_PACKING_HISTORY_LIMIT || 30;
       if (Array.isArray(list) && list.length > limit) {
-        window.okbmSafeSetItem('okbm_packing_history', JSON.stringify(list.slice(0, limit)));
+        list = list.slice(0, limit);
+        window.okbmSafeSetItem('okbm_packing_history', JSON.stringify(list));
+        rawHist = localStorage.getItem('okbm_packing_history');
       }
+      // 부팅 중 _sanitizeLocalRomanticStorage가 같은 문자열을 다시 파싱하지 않도록 넘겨준다(원문이 같을 때만 재사용).
+      if (Array.isArray(list)) window.__okbmBootPackingHistory = { raw: rawHist, list: list };
     } catch (e) {}
   })();
 })();
@@ -1419,6 +1423,10 @@ window.rerenderCommunityFeedsNow = function() {
   }
   if (typeof window.refreshCurrentSpotPopup === 'function') {
     try { window.refreshCurrentSpotPopup(); } catch (e) { console.warn('[romantic-sync.js:rerenderCommunityFeedsNow map]', e); }
+  }
+  if (typeof window.renderCurrentHeroCard === 'function') {
+    // 홈 히어로도 차단·신고 기준으로 다시 거른다(renderCurrentHeroCard가 isFeedHiddenByUgc로 필터)
+    try { window.renderCurrentHeroCard(); } catch (e) { console.warn('[romantic-sync.js:rerenderCommunityFeedsNow hero]', e); }
   }
   if (typeof renderSecretSpotTrailerRail === 'function') {
     try { renderSecretSpotTrailerRail(); } catch (e) { console.warn('[romantic-sync.js:rerenderCommunityFeedsNow rail]', e); }
@@ -11867,10 +11875,8 @@ window.okbmNoteRealtimeStop = function(kind) {
     window.__okbmNoteRtThreadId = '';
   }
   if (kind === 'inbox' || kind === 'all') {
-    window.okbmNoteRealtimeRemove(window.__okbmNoteRtInboxA);
-    window.okbmNoteRealtimeRemove(window.__okbmNoteRtInboxB);
-    window.__okbmNoteRtInboxA = null;
-    window.__okbmNoteRtInboxB = null;
+    window.okbmNoteRealtimeRemove(window.__okbmNoteRtInbox);
+    window.__okbmNoteRtInbox = null;
     window.__okbmNoteRtInboxUser = '';
   }
 };
@@ -11930,7 +11936,7 @@ window.okbmNoteRealtimeStartInbox = function() {
   var myId = okbmNoteMyId();
   var client = window.okbmEnsureSupabaseClient();
   if (!client || typeof client.channel !== 'function' || !myId) return;
-  if (window.__okbmNoteRtInboxUser === myId && window.__okbmNoteRtInboxA && window.__okbmNoteRtInboxB) return;
+  if (window.__okbmNoteRtInboxUser === myId && window.__okbmNoteRtInbox) return;
   window.okbmNoteRealtimeStop('inbox');
   var onEvt = function(payload) {
     if (!okbmNoteRealtimeMessagesChanged(payload)) return;
@@ -11944,15 +11950,14 @@ window.okbmNoteRealtimeStartInbox = function() {
       window.okbmPaintNoteInboxList();
     }
   };
-  window.__okbmNoteRtInboxA = client.channel('okbm-note-inbox-a-' + myId)
+  // 채널 하나에 필터 2개(user_a / user_b)를 건다. 소켓 join·heartbeat가 채널 수만큼 들므로 2개 → 1개.
+  window.__okbmNoteRtInbox = client.channel('okbm-note-inbox-' + myId)
     .on('postgres_changes', {
       event: '*',
       schema: 'public',
       table: 'direct_threads',
       filter: 'user_a=eq.' + myId
     }, onEvt)
-    .subscribe();
-  window.__okbmNoteRtInboxB = client.channel('okbm-note-inbox-b-' + myId)
     .on('postgres_changes', {
       event: '*',
       schema: 'public',
@@ -13137,7 +13142,14 @@ window.saveUserToSupabase = async function(profileData, opts) {
 
 function _sanitizeLocalRomanticStorage() {
   try {
-    var rawHist = safeGetJSON('okbm_packing_history', []);
+    // 30개 상한(purgeLegacyViewKeysAndTrimHistory) → 스냅 정제 순서는 그대로. 그 사이 저장값이 바뀌었으면 다시 읽는다.
+    var bootHist = window.__okbmBootPackingHistory;
+    window.__okbmBootPackingHistory = null;
+    var curRawHist = null;
+    try { curRawHist = localStorage.getItem('okbm_packing_history'); } catch (eRead) {}
+    var rawHist = (bootHist && curRawHist !== null && bootHist.raw === curRawHist)
+      ? bootHist.list
+      : safeGetJSON('okbm_packing_history', []);
     if (Array.isArray(rawHist) && rawHist.length > 0) {
       var contaminated = false;
       var cleanHist = [];
