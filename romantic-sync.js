@@ -9747,6 +9747,14 @@ window.confirmUserAccountDeletion = async function(opts) {
   var userId = okbmRequireCurrentUserId();
   if (!userId) return;
 
+  // 네이버가 연결된 계정은 네이버 재인증으로 연동 해제 코드를 받은 뒤 탈퇴한다.
+  // (돌아오면 okbmFinishNaverDeleteIntent가 naverVerified: true로 이 함수를 다시 부른다)
+  if (!opts.naverVerified && okbmSessionHasNaver()) {
+    showToast('네이버 계정 확인 후 탈퇴를 진행합니다.', 'info', 1800);
+    setTimeout(function() { loginWithNaver({ intent: 'delete_account' }); }, 400);
+    return;
+  }
+
   triggerHaptic(20);
 
   var deleteBtn = document.getElementById('settingsModalDeleteAccountBtn');
@@ -10855,6 +10863,70 @@ async function okbmFetchNaverProfile(accessToken) {
   throw lastErr || new Error('naver profile fetch failed');
 }
 
+// 현재 로그인 계정에 네이버가 연결돼 있는지 (auth-naver의 linkedNaverIds와 같은 기준)
+function okbmSessionHasNaver() {
+  var s = (window.__okbmSessionCache && window.__okbmSessionCache.session) || okbmReadPersistedSupabaseSession();
+  var meta = (s && s.user && s.user.app_metadata) || {};
+  if (String(meta.naver_id || '').trim()) return true;
+  return String(meta.okbm_user_id || '').trim().indexOf('naver_') === 0;
+}
+window.okbmSessionHasNaver = okbmSessionHasNaver;
+
+// 탈퇴용 네이버 재인증에서 돌아온 뒤: 네이버 연동 해제 → 회원 탈퇴.
+// 반환값 true = 탈퇴 단계로 넘어감(성공 시 페이지 새로고침), false = 탈퇴 전에 멈춤.
+async function okbmFinishNaverDeleteIntent(code, state, redirectUri) {
+  var toast = function(msg, type, dur) {
+    if (typeof showToast === 'function') showToast(msg, type || 'info', dur || 2600);
+  };
+  try {
+    if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.getSession === 'function') {
+      var sessRes = await window.supabaseClient.auth.getSession();
+      var sess = sessRes && sessRes.data ? sessRes.data.session : null;
+      if (sess) okbmWriteSessionCache(sess);
+    }
+  } catch (eSess) {}
+  if (!(typeof isUserLoggedIn === 'function' && isUserLoggedIn())) {
+    toast('로그인 세션이 만료되어 탈퇴하지 못했습니다. 다시 로그인 후 시도해주세요.', 'warn', 3000);
+    return false;
+  }
+
+  toast('네이버 연결을 해제하고 탈퇴를 진행합니다.', 'info', 2000);
+  var revoked = false;
+  var notLinked = false;
+  try {
+    var res = await window.okbmInvokeFunction('auth-naver', {
+      code: code,
+      state: state,
+      redirect_uri: redirectUri,
+      mode: 'revoke'
+    });
+    revoked = !!(res && res.revoked === true);
+  } catch (err) {
+    var errCode = err && err.body && err.body.error;
+    if (errCode === 'naver_account_mismatch') {
+      toast('탈퇴할 계정에 연결된 네이버 계정으로 확인해주세요. 탈퇴하지 않았습니다.', 'warn', 3200);
+      return false;
+    }
+    if (errCode === 'login_required') {
+      toast('로그인 세션이 만료되어 탈퇴하지 못했습니다. 다시 로그인 후 시도해주세요.', 'warn', 3000);
+      return false;
+    }
+    notLinked = errCode === 'naver_not_linked';
+    if (!notLinked) console.warn('[okbmFinishNaverDeleteIntent revoke]', err);
+  }
+
+  if (!revoked && !notLinked) {
+    // 네이버 쪽 장애로 해제만 실패한 경우: 탈퇴는 그대로 진행한다(탈퇴가 막히는 것보다 낫다).
+    toast('네이버 연결 해제는 완료하지 못했습니다. 네이버 > 연결된 서비스 관리에서 직접 해제할 수 있습니다.', 'warn', 3200);
+    await new Promise(function(resolve) { setTimeout(resolve, 1800); });
+  }
+
+  if (typeof window.confirmUserAccountDeletion === 'function') {
+    await window.confirmUserAccountDeletion({ confirmed: true, naverVerified: true });
+  }
+  return true;
+}
+
 async function okbmConsumeNaverOAuthCallback() {
   var code = '';
   var state = '';
@@ -10862,7 +10934,18 @@ async function okbmConsumeNaverOAuthCallback() {
   try { code = sessionStorage.getItem('okbm_naver_oauth_code') || ''; } catch (e) {}
   try { state = sessionStorage.getItem('okbm_naver_oauth_state') || ''; } catch (e) {}
   try { redirectUri = sessionStorage.getItem('okbm_naver_redirect_uri') || ''; } catch (e) {}
-  if (!code) return false;
+  var naverIntent = '';
+  try { naverIntent = sessionStorage.getItem('okbm_naver_intent') || ''; } catch (e) {}
+  try { sessionStorage.removeItem('okbm_naver_intent'); } catch (e) {}
+  if (!code) {
+    // 탈퇴용 네이버 확인 화면에서 취소하고 돌아온 경우: 탈퇴도 취소한다.
+    if (naverIntent === 'delete_account') {
+      setTimeout(function() {
+        if (typeof showToast === 'function') showToast('네이버 확인이 취소되어 탈퇴하지 않았습니다.', 'info', 2400);
+      }, 600);
+    }
+    return false;
+  }
   try { sessionStorage.removeItem('okbm_naver_oauth_code'); } catch (e) {}
   try { sessionStorage.removeItem('okbm_naver_oauth_token'); } catch (e) {}
   try { sessionStorage.removeItem('okbm_naver_oauth_state'); } catch (e) {}
@@ -10870,6 +10953,11 @@ async function okbmConsumeNaverOAuthCallback() {
   try { sessionStorage.removeItem('okbm_naver_profile'); } catch (e) {}
   try { sessionStorage.removeItem('okbm_naver_client_id'); } catch (e) {}
   try { sessionStorage.removeItem('okbm_naver_return'); } catch (e) {}
+
+  if (naverIntent === 'delete_account') {
+    try { sessionStorage.removeItem('okbm_social_link_mode'); } catch (e) {}
+    return okbmFinishNaverDeleteIntent(code, state, redirectUri);
+  }
 
   try {
     var isLink = false;
@@ -10935,18 +11023,24 @@ function loginWithNaver(options) {
   try { sessionStorage.removeItem('okbm_naver_oauth_code'); } catch (e) {}
   try { sessionStorage.removeItem('okbm_naver_oauth_token'); } catch (e) {}
   try { sessionStorage.setItem('okbm_social_link_mode', isLink ? '1' : ''); } catch (e) {}
+  // 회원 탈퇴 직전 네이버 재인증(연동 해제용). 콜백에서 로그인 대신 연동 해제 → 탈퇴로 이어진다.
+  var isDeleteIntent = !!(options && options.intent === 'delete_account');
+  try {
+    if (isDeleteIntent) sessionStorage.setItem('okbm_naver_intent', 'delete_account');
+    else sessionStorage.removeItem('okbm_naver_intent');
+  } catch (e) {}
 
   // 로그아웃/탈퇴 뒤 첫 로그인은 네이버 ID/PW 입력을 강제한다.
   // 우리 로그아웃은 nid.naver.com 세션 쿠키를 지울 수 없어서, 그냥 두면 이전 계정으로 바로 통과된다.
-  var forceNaverLogin = false;
-  try { forceNaverLogin = !isLink && localStorage.getItem('okbm_naver_force_login') === '1'; } catch (e) {}
+  var forceNaverLogin = isDeleteIntent;
+  try { forceNaverLogin = forceNaverLogin || (!isLink && localStorage.getItem('okbm_naver_force_login') === '1'); } catch (e) {}
 
   var naverAuthUrl = 'https://nid.naver.com/oauth2.0/authorize?response_type=code'
     + '&client_id=' + encodeURIComponent(clientId)
     + '&redirect_uri=' + encodeURIComponent(cleanRedirect)
     + '&state=' + encodeURIComponent(state)
     + (forceNaverLogin ? '&auth_type=reauthenticate' : '');
-  okbmMarkSocialButtonsBusy(true, isLink ? '네이버 계정 연결 중...' : '네이버 로그인 중...', 'btn-social-naver');
+  okbmMarkSocialButtonsBusy(true, isDeleteIntent ? '네이버 계정 확인 중...' : (isLink ? '네이버 계정 연결 중...' : '네이버 로그인 중...'), 'btn-social-naver');
   console.log('[Naver Login URL]', naverAuthUrl);
   window.location.href = naverAuthUrl;
 }
