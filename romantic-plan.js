@@ -3918,14 +3918,14 @@ window.saveCurrentPackingRecord = function() {
         circleStyle += 'color:#94a3b8;';
       }
 
-      // 행사 띠: 이어지는 날끼리는 칸 사이(2px)까지 이어 붙이고, 주의 처음·끝과 행사 처음·끝은 둥글게
+      // 행사 띠(얇은 선 1.5px): 이어지는 날끼리는 칸 사이(2px)까지 이어 붙이고, 주의 처음·끝과 행사 처음·끝은 둥글게
       var evBand = '';
       if (planEventsByDay[d]) {
         var evCol = (firstDayIndex + d - 1) % 7;
         var evJoinL = evCol !== 0 && d > 1 && !!planEventsByDay[d - 1];
         var evJoinR = evCol !== 6 && d < lastDayOfMonth && !!planEventsByDay[d + 1];
-        evBand = '<span aria-hidden="true" style="position:absolute; bottom:1px; left:' + (evJoinL ? '-1px' : '5px') + '; right:' + (evJoinR ? '-1px' : '5px') + '; height:3px; background:#a78bfa; border-radius:' +
-          (evJoinL ? '0' : '2px') + ' ' + (evJoinR ? '0' : '2px') + ' ' + (evJoinR ? '0' : '2px') + ' ' + (evJoinL ? '0' : '2px') + '; pointer-events:none;"></span>';
+        evBand = '<span aria-hidden="true" style="position:absolute; bottom:1px; left:' + (evJoinL ? '-1px' : '5px') + '; right:' + (evJoinR ? '-1px' : '5px') + '; height:1.5px; background:#a78bfa; border-radius:' +
+          (evJoinL ? '0' : '1px') + ' ' + (evJoinR ? '0' : '1px') + ' ' + (evJoinR ? '0' : '1px') + ' ' + (evJoinL ? '0' : '1px') + '; pointer-events:none;"></span>';
       }
 
       calendarDaysHtml += '<div style="position:relative; height:100% !important; width:100% !important; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;" ' +
@@ -3991,7 +3991,7 @@ window.saveCurrentPackingRecord = function() {
               <button type="button" onclick="window.jumpToPlanToday()" style="height:24px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.70rem; font-weight:800; padding:0 8px; border-radius:5px; cursor:pointer;">오늘</button>
               <span style="font-size:0.70rem; color:#f59e0b; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:rgba(245,158,11,0.25); border:1.2px solid #f59e0b; border-radius:50%; display:inline-block;"></span><span>완료</span></span>
               <span style="font-size:0.70rem; color:#34d399; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:rgba(52,211,153,0.3); border:1px solid #34d399; border-radius:50%; display:inline-block;"></span><span>계획</span></span>
-              ${monthHasPlanEvents ? '<span style="font-size:0.70rem; color:#c4b5fd; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:3px; background:#a78bfa; border-radius:2px; display:inline-block;"></span><span>행사</span></span>' : ''}
+              ${monthHasPlanEvents ? '<span style="font-size:0.70rem; color:#c4b5fd; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:1.5px; background:#a78bfa; border-radius:1px; display:inline-block;"></span><span>행사</span></span>' : ''}
             </div>
           </div>
 
@@ -4567,7 +4567,7 @@ window.saveCurrentPackingRecord = function() {
               <button type="button" onclick="window.jumpToPlanToday()" style="height:26px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#ffffff; font-size:0.72rem; font-weight:800; padding:0 8px; border-radius:6px; cursor:pointer;">오늘</button>
               <span style="font-size:0.74rem; color:rgba(217,180,99,0.9); font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.starGold}<span>완료</span></span>
               <span style="font-size:0.74rem; color:#34d399; font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.flagGreen}<span>계획</span></span>
-              ${monthHasPlanEvents ? '<span style="font-size:0.70rem; color:#c4b5fd; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:3px; background:#a78bfa; border-radius:2px; display:inline-block;"></span><span>행사</span></span>' : ''}
+              ${monthHasPlanEvents ? '<span style="font-size:0.70rem; color:#c4b5fd; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:1.5px; background:#a78bfa; border-radius:1px; display:inline-block;"></span><span>행사</span></span>' : ''}
             </div>
           </div>
 
