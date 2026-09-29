@@ -8,8 +8,16 @@
 --   응답에 tier('guest' | 'member')를 붙여 클라이언트가 로그인 후 다시 받게 한다.
 -- 적용: Supabase SQL Editor에서 이 파일 전체 실행. 여러 번 실행해도 안전(CREATE OR REPLACE).
 -- 되돌리기: SUPABASE_RLS_POLICIES_MASTER.sql의 이전 get_spot_detail 정의(git 기록) 재실행.
--- SUPABASE_RLS_POLICIES_MASTER.sql의 get_spot_detail도 같은 내용으로 맞춰 두었다.
+--
+-- !! 적용 완료·실행 차단 (2026-09-30, FILE_AUDIT F3) !!
+-- 이 파일의 get_spot_detail은 옛 버전(회원 분당 60, 하루 한도 없음)이다. 지금 원본은
+-- SUPABASE_RLS_POLICIES_MASTER.sql(= E2 적용본: 회원 분당 20·하루 100곳). 실수로 실행하면 한도가 풀린다.
+-- 그래서 맨 앞에서 트랜잭션을 열고 바로 오류를 낸다(SQL Editor는 전체 중단, psql은 뒤 문장 모두 거부 후 ROLLBACK).
+-- 기록용으로만 둔다.
 -- =========================================================================
+
+BEGIN;
+DO $$ BEGIN RAISE EXCEPTION 'SUPABASE_E1_SPOT_DETAIL_MEMBER_ONLY.sql is superseded (old get_spot_detail limits). Do not run. Use SUPABASE_RLS_POLICIES_MASTER.sql.'; END $$;
 CREATE OR REPLACE FUNCTION public.get_spot_detail(p_id text)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -73,3 +81,6 @@ $$;
 
 REVOKE ALL ON FUNCTION public.get_spot_detail(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_spot_detail(text) TO anon, authenticated, service_role;
+
+-- 실행 차단: 위 BEGIN과 짝. 여기까지 왔다면 앞 문장은 모두 거부된 상태다.
+ROLLBACK;

@@ -32,5 +32,14 @@ SELECT cron.schedule(
   $$DELETE FROM public.okbm_spot_detail_views WHERE view_day < current_date - 3$$
 );
 
+-- 4) 방문자 하루 1회 기록(track_visit용) 정리: 90일 지난 기록 삭제 (매일 04:30 UTC)
+--    visit_seen은 "오늘 이미 셌는지"만 판단한다. 날짜별 합계는 stats에 따로 남아 통계에는 영향 없음.
+--    track_visit은 visit_date에 'YYYY-MM-DD'(Asia/Seoul)를 넣는다. 칸 타입이 text든 date든 되도록 문자열로 비교한다.
+SELECT cron.schedule(
+  'okbm_visit_seen_gc',
+  '30 4 * * *',
+  $$DELETE FROM public.visit_seen WHERE visit_date::text < to_char(timezone('Asia/Seoul', now()) - interval '90 days', 'YYYY-MM-DD')$$
+);
+
 -- 확인
 SELECT jobname, schedule, command, active FROM cron.job WHERE jobname LIKE 'okbm_%' ORDER BY jobname;

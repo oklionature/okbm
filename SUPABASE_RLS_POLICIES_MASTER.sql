@@ -986,8 +986,15 @@ BEGIN
     IF v_visitor = '' OR v_visitor NOT LIKE 'guest_%' THEN
       RETURN;
     END IF;
-    -- guest_ 뒤가 너무 짧은/조작용 난수 남용 완화: 전체 14자 이상.
-    IF length(v_visitor) < 14 THEN
+    -- guest_ 뒤가 너무 짧은/조작용 난수 남용 완화: 전체 14~64자, 영숫자·_·-만.
+    -- 클라이언트 형식: 'guest_' + base36 시각 + base36 난수 8자(romantic-sync.js okbmGetVisitorId).
+    IF length(v_visitor) < 14 OR length(v_visitor) > 64 OR v_visitor !~ '^guest_[A-Za-z0-9_-]+$' THEN
+      RETURN;
+    END IF;
+    -- F2(9/30): 비회원은 IP당 분당 30회. 임의 guest_ id로 visit_seen·방문 통계를 부풀리는 것을 막는다.
+    -- 통신사 공용 IP(CGNAT) 뒤 여러 사람을 고려해 넉넉히 둔다. 초과분은 조용히 집계하지 않는다.
+    IF auth.role() IS DISTINCT FROM 'service_role'
+       AND NOT public.okbm_actor_rate_limit('ip:' || public.okbm_request_ip(), 'track_visit_guest', 30) THEN
       RETURN;
     END IF;
     v_member := false;
@@ -1601,8 +1608,12 @@ CREATE INDEX IF NOT EXISTS feeds_spot_id_idx
   ON public.feeds (spot_id)
   WHERE spot_id IS NOT NULL;
 
-CREATE POLICY feed_likes_select_public ON public.feed_likes
-  FOR SELECT USING (true);
+-- F2(9/30): 누가 어떤 피드에 좋아요를 눌렀는지는 본인·관리자만. 좋아요 수는 feeds.likes_count로 공개.
+-- 클라이언트 조회는 모두 user_id로 거른다(romantic-history.js fetchUserFeedLikesFromServer).
+-- 옛 변형 id(kakao_ 접두 유무)로 남은 행은 DELETE 정책(본인 id 일치)상 이미 지울 수 없었고 이제 보이지도 않는다.
+-- 정책 이름은 기존 이름(feed_likes_select_public)을 쓰면 뜻이 틀리므로 바꾼다. 마스터가 public 정책을 모두 지우고 다시 만들어 옛 이름은 남지 않는다.
+CREATE POLICY feed_likes_select_own ON public.feed_likes
+  FOR SELECT USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 CREATE POLICY feed_likes_insert_own ON public.feed_likes
   FOR INSERT WITH CHECK ((SELECT auth.uid()) IS NOT NULL AND user_id = (SELECT public.okbm_uid()));
 CREATE POLICY feed_likes_delete_own ON public.feed_likes
@@ -1805,8 +1816,10 @@ CREATE POLICY direct_threads_insert_deny ON public.direct_threads
   FOR INSERT WITH CHECK (false);
 CREATE POLICY direct_threads_update_deny ON public.direct_threads
   FOR UPDATE USING (false) WITH CHECK (false);
-CREATE POLICY direct_threads_delete_own ON public.direct_threads
-  FOR DELETE USING (user_a = (SELECT public.okbm_uid()) OR user_b = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
+-- F2(9/30): 한쪽이 REST DELETE로 상대 대화 기록까지 지우지 못하게 관리자만.
+-- 앱의 "대화 삭제"는 okbm_hide_direct_thread(내 쪽만 숨김), 탈퇴는 service_role(delete-account)이라 영향 없음.
+CREATE POLICY direct_threads_delete_admin ON public.direct_threads
+  FOR DELETE USING ((SELECT public.okbm_is_admin()));
 
 -- comments SELECT 정책은 7절(백패커 라운지 박지 후기)에 있다: 본인·관리자만.
 -- 남의 후기는 get_spot_reviews(회원은 글까지, 비회원은 평균·개수만).
@@ -2010,8 +2023,176 @@ REVOKE ALL ON TABLE public.place_research_cache FROM PUBLIC, anon, authenticated
 CREATE POLICY place_research_cache_no_client ON public.place_research_cache
   FOR ALL USING (false) WITH CHECK (false);
 
+-- 6-8. users 프로필 값 검사 + 닉네임 중복·사칭 방지 (F2, 9/30)
+-- users_update_own은 is_admin 말고 모든 칸을 바꿀 수 있고, okbm_patch_user_data·직접 upsert 모두
+-- 크기·형식 검사가 없었다. 닉네임은 DM·라운지·후기에 그대로 나가므로 중복·운영자 사칭을 막는다.
+-- 값이 "바뀔 때만" 검사한다 → 기존 행(옛 중복 닉네임, 긴 소개글 등)은 그대로 두고 다음 변경부터 적용.
+-- UNIQUE 인덱스 대신 트리거: 기존 중복을 먼저 정리하지 않아도 되고, 대소문자·앞뒤 공백을
+-- okbm_is_nickname_taken과 같은 식(lower(btrim()))으로 비교한다. 인덱스 users_nickname_lower_idx(6-3)를 탄다.
+--   INSERT(신규 가입): 겹치거나 예약어면 뒤에 숫자 4자리를 붙여 가입은 성공시킨다
+--     (클라이언트 okbmResolveUniqueNickname이 조회 실패 시 확인 없이 숫자를 붙이는 경로 대비).
+--   UPDATE(닉네임 변경): 겹치면 23505, 예약어면 22023으로 거부.
+--   upsert(INSERT … ON CONFLICT DO UPDATE)로 이미 있는 행을 고치는 경우 INSERT 단계는 건너뛰고 UPDATE 단계에서 본다.
+-- 사진 URL은 오류 대신 정리한다(가입 실패 방지): http:// → https://, 그 밖의 스킴·1000자 초과는 NULL.
+-- service_role(Edge Function·SQL Editor)은 검사하지 않는다.
+CREATE OR REPLACE FUNCTION public.okbm_guard_users_profile()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_nick text;
+  v_bad_nick boolean;
+  v_taken boolean;
+  v_try integer := 0;
+BEGIN
+  -- JWT 없는 호출(SQL Editor 등)·service_role은 건너뛴다. 비회원은 users RLS가 쓰기를 막는다.
+  IF auth.role() IS NOT DISTINCT FROM 'service_role' OR auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- upsert가 기존 행을 고치는 경우: BEFORE INSERT도 먼저 발화하므로 여기서는 넘기고 UPDATE 트리거에 맡긴다.
+  IF TG_OP = 'INSERT' AND EXISTS (SELECT 1 FROM public.users u WHERE u.id = NEW.id) THEN
+    RETURN NEW;
+  END IF;
+
+  -- 소개글: 클라이언트 상한 100자(OKBM_USER_BIO_MAX). 서버는 여유를 두고 300자.
+  IF NEW.bio IS NOT NULL AND (TG_OP = 'INSERT' OR NEW.bio IS DISTINCT FROM OLD.bio)
+     AND char_length(NEW.bio) > 300 THEN
+    RAISE EXCEPTION 'bio_too_long' USING ERRCODE = '22001';
+  END IF;
+
+  -- 사진 URL (get_public_avatar로 남에게 나간다)
+  IF TG_OP = 'INSERT' OR NEW.photo_url IS DISTINCT FROM OLD.photo_url THEN
+    NEW.photo_url := NULLIF(btrim(COALESCE(NEW.photo_url, '')), '');
+    IF NEW.photo_url IS NOT NULL THEN
+      IF NEW.photo_url ~* '^http://' THEN
+        NEW.photo_url := 'https://' || substr(NEW.photo_url, 8);
+      END IF;
+      IF NEW.photo_url !~* '^https://[^\s"''<>]+$' OR char_length(NEW.photo_url) > 1000 THEN
+        NEW.photo_url := NULL;
+      END IF;
+    END IF;
+  END IF;
+  IF TG_OP = 'INSERT' OR NEW.hero_cover_url IS DISTINCT FROM OLD.hero_cover_url THEN
+    NEW.hero_cover_url := NULLIF(btrim(COALESCE(NEW.hero_cover_url, '')), '');
+    IF NEW.hero_cover_url IS NOT NULL THEN
+      IF NEW.hero_cover_url ~* '^http://' THEN
+        NEW.hero_cover_url := 'https://' || substr(NEW.hero_cover_url, 8);
+      END IF;
+      IF NEW.hero_cover_url !~* '^https://[^\s"''<>]+$' OR char_length(NEW.hero_cover_url) > 1000 THEN
+        NEW.hero_cover_url := NULL;
+      END IF;
+    END IF;
+  END IF;
+
+  -- 크기 상한 (값이 바뀔 때만). 적용 전 audit/f2_precheck.sql로 현재 최댓값이 상한보다 충분히 작은지 확인할 것.
+  IF NEW.my_gears IS NOT NULL AND (TG_OP = 'INSERT' OR NEW.my_gears IS DISTINCT FROM OLD.my_gears)
+     AND octet_length(NEW.my_gears::text) > 2097152 THEN
+    RAISE EXCEPTION 'my_gears_too_large' USING ERRCODE = '54000';
+  END IF;
+  IF NEW.memos IS NOT NULL AND (TG_OP = 'INSERT' OR NEW.memos IS DISTINCT FROM OLD.memos)
+     AND octet_length(NEW.memos::text) > 524288 THEN
+    RAISE EXCEPTION 'memos_too_large' USING ERRCODE = '54000';
+  END IF;
+  IF (TG_OP = 'INSERT' OR NEW.bookmarks IS DISTINCT FROM OLD.bookmarks)
+     AND jsonb_typeof(NEW.bookmarks) = 'array' AND jsonb_array_length(NEW.bookmarks) > 3000 THEN
+    RAISE EXCEPTION 'bookmarks_too_many' USING ERRCODE = '54000';
+  END IF;
+  IF (TG_OP = 'INSERT' OR NEW.visited IS DISTINCT FROM OLD.visited)
+     AND jsonb_typeof(NEW.visited) = 'array' AND jsonb_array_length(NEW.visited) > 3000 THEN
+    RAISE EXCEPTION 'visited_too_many' USING ERRCODE = '54000';
+  END IF;
+  IF (TG_OP = 'INSERT' OR NEW.saved_feeds IS DISTINCT FROM OLD.saved_feeds)
+     AND jsonb_typeof(NEW.saved_feeds) = 'array' AND jsonb_array_length(NEW.saved_feeds) > 3000 THEN
+    RAISE EXCEPTION 'saved_feeds_too_many' USING ERRCODE = '54000';
+  END IF;
+  IF (TG_OP = 'INSERT' OR NEW.following IS DISTINCT FROM OLD.following)
+     AND jsonb_typeof(NEW.following) = 'array' AND jsonb_array_length(NEW.following) > 3000 THEN
+    RAISE EXCEPTION 'following_too_many' USING ERRCODE = '54000';
+  END IF;
+
+  -- 닉네임
+  IF TG_OP = 'UPDATE' AND NEW.nickname IS NOT DISTINCT FROM OLD.nickname THEN
+    RETURN NEW;
+  END IF;
+  v_nick := regexp_replace(btrim(COALESCE(NEW.nickname, '')), '\s+', ' ', 'g');
+  IF v_nick = '' THEN
+    RETURN NEW;
+  END IF;
+  IF char_length(v_nick) > 40 THEN
+    IF TG_OP = 'UPDATE' THEN
+      RAISE EXCEPTION 'nickname_too_long' USING ERRCODE = '22001';
+    END IF;
+    v_nick := left(v_nick, 30);
+  END IF;
+  -- 운영자 사칭: 관리자 계정만 쓸 수 있다
+  v_bad_nick := NOT COALESCE(public.okbm_is_admin(), false) AND (
+    v_nick ~ '(관리자|운영자|운영팀)'
+    OR lower(replace(v_nick, ' ', '')) IN ('낭만루트', 'romanticroute', 'admin', 'administrator')
+  );
+  IF v_bad_nick THEN
+    IF TG_OP = 'UPDATE' THEN
+      RAISE EXCEPTION 'nickname_reserved' USING ERRCODE = '22023';
+    END IF;
+    v_nick := '낭만백패커';
+  END IF;
+
+  LOOP
+    SELECT EXISTS (
+      SELECT 1 FROM public.users u
+      WHERE lower(btrim(COALESCE(u.nickname, ''))) = lower(v_nick)
+        AND u.id <> NEW.id
+    ) INTO v_taken;
+    EXIT WHEN NOT v_taken;
+    IF TG_OP = 'UPDATE' THEN
+      RAISE EXCEPTION 'nickname_taken' USING ERRCODE = '23505';
+    END IF;
+    v_try := v_try + 1;
+    IF v_try > 20 THEN
+      RAISE EXCEPTION 'nickname_taken' USING ERRCODE = '23505';
+    END IF;
+    v_nick := left(regexp_replace(v_nick, '[0-9]{4}$', ''), 36) || (1000 + floor(random() * 9000))::int::text;
+  END LOOP;
+
+  NEW.nickname := v_nick;
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_guard_users_profile() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS trg_okbm_guard_users_profile ON public.users;
+CREATE TRIGGER trg_okbm_guard_users_profile
+  BEFORE INSERT OR UPDATE ON public.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.okbm_guard_users_profile();
+
+-- 기존 http:// 사진 주소(9/30 점검 6명)를 트리거와 같은 규칙으로 https://로 맞춘다.
+-- 화면(okbmSafeImageUrl)은 이미 https로 바꿔 보여 주므로 보이는 것은 달라지지 않는다. 다시 실행해도 안전.
+-- SQL Editor(JWT 없음)에서는 위 트리거가 건너뛰므로 이 UPDATE가 닉네임 등 다른 칸을 건드리지 않는다.
+UPDATE public.users
+SET photo_url = CASE WHEN photo_url ~* '^http://' THEN 'https://' || substr(photo_url, 8) ELSE photo_url END,
+    hero_cover_url = CASE WHEN hero_cover_url ~* '^http://' THEN 'https://' || substr(hero_cover_url, 8) ELSE hero_cover_url END
+WHERE photo_url ~* '^http://' OR hero_cover_url ~* '^http://';
+
 -- -------------------------------------------------------------------------
--- 7. 백패커 라운지 (원본: SUPABASE_F1_LOUNGE.sql. 두 파일을 같이 고칠 것)
+-- 6-9. 클라이언트 역할 테이블 권한 정리 (F2, 9/30)
+-- TRUNCATE·REFERENCES·TRIGGER는 RLS를 거치지 않거나 앱에 필요 없다. PostgREST로 노출되지 않지만 권한 자체를 뺀다.
+-- 앞으로 만드는 테이블도 같게(postgres가 만드는 테이블 기본 권한). supabase_admin 기본값은 이 역할로 못 바꾼다.
+-- anon 쓰기: 9/30 점검(audit/f2_precheck.sql)에서 anon이 거의 모든 테이블에 INSERT/UPDATE/DELETE를 갖고 있었다(Supabase 기본값).
+-- 이 파일의 쓰기 정책은 전부 로그인(auth.uid()/okbm_uid()) 또는 관리자를 요구하고, 비회원이 쓰는 경로
+-- (track_visit, get_spot_detail, increment_spot_ranking)는 모두 SECURITY DEFINER라 테이블 권한이 필요 없다.
+-- → anon의 쓰기 권한을 전부 회수한다(RLS 한 겹 → 두 겹). 로그인 회원(authenticated)은 그대로.
+-- -------------------------------------------------------------------------
+REVOKE TRUNCATE, REFERENCES, TRIGGER ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE TRUNCATE, REFERENCES, TRIGGER ON TABLES FROM anon, authenticated;
+REVOKE INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public FROM anon;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE INSERT, UPDATE, DELETE ON TABLES FROM anon;
+
+-- -------------------------------------------------------------------------
+-- 7. 백패커 라운지 (원본은 이 마스터. SUPABASE_F1_LOUNGE.sql은 9/29 적용 기록으로만 보관)
 --    탈퇴 삭제(F1 9절)는 위 6-6 okbm_delete_account_data에 합쳐 두었다.
 -- -------------------------------------------------------------------------
 

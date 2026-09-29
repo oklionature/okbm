@@ -101,7 +101,6 @@ window.OKBM_SPOTS_IDB_KEY = 'okbm_master_spots';
     } catch (e) {}
     return removed;
   }
-  window.okbmEvictLowPriorityCaches = evictLowPriorityCaches;
 
   function openSpotsIdb() {
     if (spotsIdb) return Promise.resolve(spotsIdb);
@@ -588,26 +587,7 @@ window.okbmUploadImageBlob = async function(blob, prefix, fileName) {
   return '';
 };
 
-window.applySmartPhotoFit = window.applySmartPhotoFit || function(img) {
-  if (!img) return;
-  if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-    var ratio = img.naturalWidth / img.naturalHeight;
-    if (ratio < 0.98) {
-      img.classList.remove('is-landscape', 'is-square', 'is-keep-ratio');
-      img.classList.add('is-portrait', 'is-portrait-crop');
-      img.style.setProperty('width', '100%', 'important');
-      img.style.setProperty('height', '100%', 'important');
-      img.style.setProperty('max-width', '100%', 'important');
-      img.style.setProperty('max-height', '100%', 'important');
-      img.style.setProperty('object-fit', 'cover', 'important');
-      img.style.removeProperty('aspect-ratio');
-    } else {
-      img.classList.remove('is-portrait', 'is-portrait-crop');
-      img.classList.add('is-keep-ratio');
-      img.style.setProperty('object-fit', 'contain', 'important');
-    }
-  }
-};
+// applySmartPhotoFit: 아래(원본 한 벌)와 romantic-history.js가 정의한다. 예전 첫 사본은 바로 덮여 지웠다.
 
 function okbmStripClientTombstoneFields(obj) {
   if (!obj || typeof obj !== 'object') return obj;
@@ -1077,7 +1057,6 @@ window.okbmRequireAccessToken = okbmRequireAccessToken;
 function okbmUgcRestHeaders(extra) {
   return okbmPublicRestHeaders(extra);
 }
-window.okbmAuthHeaders = okbmUgcRestHeaders;
 
 function okbmSessionExpired(session) {
   var exp = Number(session && session.expires_at);
@@ -1287,25 +1266,51 @@ window.getBlockedUsersMeta = function() {
   return (meta && typeof meta === 'object' && !Array.isArray(meta)) ? meta : {};
 };
 
-window.isUserBlocked = function(userId) {
-  var target = String(userId || '').trim();
-  if (!target) return false;
-  var cleanTarget = okbmNormalizeUgcUserId(target);
-  var list = window.getBlockedUserIds();
+// 피드 목록을 거를 때 한 건마다 불리므로 Set으로 들고 있는다.
+// 차단: __okbmBlockedUsersCache 배열이 바뀔 때(쓰기마다 새 배열) 다시 만든다.
+// 신고: localStorage 원문이 같으면 다시 파싱하지 않는다(로그아웃 퍼지 등 다른 경로의 삭제도 원문 비교로 따라간다).
+var __okbmBlockedSetSrc = null;
+var __okbmBlockedSet = null;
+function okbmBlockedUserSet() {
+  var src = Array.isArray(window.__okbmBlockedUsersCache) ? window.__okbmBlockedUsersCache : null;
+  if (src && __okbmBlockedSet && __okbmBlockedSetSrc === src) return __okbmBlockedSet;
+  var list = src || okbmGetIdList('okbm_blocked_users');
+  var set = new Set();
   for (var i = 0; i < list.length; i++) {
     var item = String(list[i] || '').trim();
     if (!item) continue;
-    if (item === target) return true;
+    set.add(item);
     var cleanItem = okbmNormalizeUgcUserId(item);
-    if (cleanItem && cleanTarget && cleanItem === cleanTarget) return true;
+    if (cleanItem) set.add(cleanItem);
   }
-  return false;
+  __okbmBlockedSetSrc = src;
+  __okbmBlockedSet = set;
+  return set;
+}
+var __okbmReportedSetRaw = null;
+var __okbmReportedSet = null;
+function okbmReportedFeedSet() {
+  var raw = null;
+  try { raw = localStorage.getItem('okbm_reported_feeds'); } catch (e) { raw = null; }
+  if (__okbmReportedSet && raw === __okbmReportedSetRaw) return __okbmReportedSet;
+  __okbmReportedSet = new Set(okbmGetIdList('okbm_reported_feeds'));
+  __okbmReportedSetRaw = raw;
+  return __okbmReportedSet;
+}
+
+window.isUserBlocked = function(userId) {
+  var target = String(userId || '').trim();
+  if (!target) return false;
+  var set = okbmBlockedUserSet();
+  if (set.has(target)) return true;
+  var cleanTarget = okbmNormalizeUgcUserId(target);
+  return Boolean(cleanTarget && set.has(cleanTarget));
 };
 
 window.isFeedReported = function(feedId) {
   var target = String(feedId || '').trim();
   if (!target) return false;
-  return window.getReportedFeedIds().indexOf(target) !== -1;
+  return okbmReportedFeedSet().has(target);
 };
 
 function okbmIsInspectingBlockedUser(userId) {
@@ -1559,7 +1564,6 @@ window.rerenderCommunityFeedsNow = function() {
 
   window.okbmSpotReviewChipHtml = function(spotId) { return chipInner(String(spotId || '').trim()); };
   window.okbmSpotReviewBoxHtml = function(spotId) { return boxInner(String(spotId || '').trim()); };
-  window.okbmClearSpotReviewCache = function() { store = {}; };
   // 캐시를 비우고 지금 화면에 있는 후기 칸은 바로 다시 받는다(관리자가 후기를 지운 뒤 등)
   window.okbmRefreshSpotReviewBoxes = function() {
     store = {};
@@ -1569,7 +1573,6 @@ window.rerenderCommunityFeedsNow = function() {
       if (id && !seen[id]) { seen[id] = true; window.okbmLoadSpotReviewBox(id, true); }
     });
   };
-  window.okbmSpotReviewCached = function(spotId) { var h = store[String(spotId || '').trim()]; return h ? h.data : null; };
 
   // spot: 박지 객체 또는 id. force: 캐시 무시(후기를 쓴 뒤)
   window.okbmLoadSpotReviewBox = function(spot, force) {
@@ -2395,28 +2398,6 @@ window.okbmAdminInspectDismissReport = async function(reportId) {
   if (typeof window.rerenderCommunityFeedsNow === 'function') window.rerenderCommunityFeedsNow();
 };
 
-window.buildUgcSafetyButtonsHtml = function(feedId, userId, nickname, layout) {
-  var sFeedId = String(feedId || '').trim();
-  var sUserId = String(userId || '').trim();
-  var sNick = String(nickname || '').trim();
-  if (sUserId && window.isCurrentUserId(sUserId)) return '';
-  if (!sFeedId && !sUserId) return '';
-
-  var compact = layout === 'compact';
-  var btnBase = compact
-    ? 'background:#0c1017; border:1px solid rgba(255,255,255,0.2); color:#ffffff; height:28px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0 9px;'
-    : 'background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; height:32px; padding:0 9px; font-size:0.64rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px;';
-
-  var reportBtn = sFeedId
-    ? '<button type="button" data-feed-id="' + okbmEscapeUgcAttr(sFeedId) + '" data-user-id="' + okbmEscapeUgcAttr(sUserId) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openFeedReportModal(this.dataset.feedId, this.dataset.userId);" style="' + btnBase + ' color:#fda4af;" title="신고">신고</button>'
-    : '';
-  var blockBtn = sUserId
-    ? '<button type="button" data-user-id="' + okbmEscapeUgcAttr(sUserId) + '" data-author="' + okbmEscapeUgcAttr(sNick) + '" onclick="event.preventDefault(); event.stopPropagation(); window.blockCommunityUser(this.dataset.userId, this.dataset.author);" style="' + btnBase + ' color:#cbd5e1;" title="유저 차단">차단</button>'
-    : '';
-
-  if (!reportBtn && !blockBtn) return '';
-  return '<div class="ugc-safety-actions" style="display:inline-flex; align-items:center; gap:6px; flex-shrink:0;">' + reportBtn + blockBtn + '</div>';
-};
 
 // targetType: feed(기본) | lounge_post | lounge_comment | spot_review (백패커 라운지·지도 박지 후기)
 window.openUgcSafetyMenu = function(feedId, userId, nickname, e, targetType) {
@@ -2585,88 +2566,6 @@ window.openBlockedUsersModal = function() {
   }
 };
 
-// UtilitiesFormattedNow removed
-
-window.executeCleanSlateMasterReset = async function() {
-  if (!confirm('주의: 모든 활동 기록이 영구 삭제됩니다.\n정말 초기화하시겠습니까?')) {
-    return;
-  }
-
-  var userId = okbmRequireCurrentUserId();
-  if (!userId) return;
-
-  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
-  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
-  if (!targetUrl || !targetKey) {
-    if (typeof showToast === 'function') {
-      showToast('서버에 연결할 수 없어 초기화하지 못했습니다.', 'error', 2600);
-    }
-    return;
-  }
-
-  var deletedOk = false;
-  try {
-    var writeHeaders = (typeof window.okbmWriteHeaders === 'function')
-      ? window.okbmWriteHeaders({ Prefer: 'return=representation' })
-      : null;
-    if (!writeHeaders) {
-      if (typeof showToast === 'function') {
-        showToast('다시 로그인한 뒤 초기화해 주세요.', 'error', 2600);
-      }
-      return;
-    }
-    var resetRes = await fetch(targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(userId), {
-      method: 'DELETE',
-      headers: writeHeaders
-    });
-    if (!resetRes.ok) {
-      console.error('[executeCleanSlateMasterReset] 서버 일괄 삭제 실패 status=' + resetRes.status);
-      if (typeof showToast === 'function') {
-        showToast('서버 삭제에 실패했습니다. 기록을 유지합니다.', 'error', 2800);
-      }
-      return;
-    }
-    var deletedRows = [];
-    try { deletedRows = await resetRes.json(); } catch (e) { deletedRows = []; }
-    // 0건이어도 사용자 피드가 원래 없었으면 성공으로 본다.
-    deletedOk = true;
-    void deletedRows;
-  } catch (resetErr) {
-    console.error('[executeCleanSlateMasterReset] 서버 일괄 삭제 네트워크 예외:', resetErr);
-    if (typeof showToast === 'function') {
-      showToast('네트워크 오류로 초기화하지 못했습니다.', 'error', 2600);
-    }
-    return;
-  }
-
-  if (!deletedOk) return;
-
-  window.__memoryStore = window.__memoryStore || {};
-  window.__memoryStore['okbm_packing_history'] = [];
-  window.packingHistoryList = [];
-  window.interactiveHistory = [];
-  window.heroTopRecords = [];
-  window.__allLoadedFeeds = [];
-
-  localStorage.removeItem('okbm_packing_history');
-  localStorage.removeItem('okbm_cached_community_feeds');
-  localStorage.removeItem('okbm_hero_cover_url');
-  localStorage.removeItem('okbm_card_likes_count');
-
-  if (isUserLoggedIn()) {
-    syncUserDataToCloud(true, true);
-  }
-
-  triggerHaptic(20);
-  showToast('모든 기록이 초기화되었습니다.', 1500);
-
-  setTimeout(function() {
-    var url = new URL(window.location.href);
-    url.searchParams.delete('clean_slate');
-    window.location.href = url.pathname + (url.search ? url.search : '');
-  }, 300);
-};
-
 async function loadUserDataFromCloud(userId) {
   if (!userId) return { status: 'error', data: null, reason: 'no_user' };
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -2817,18 +2716,6 @@ function trackDailyVisit(force) {
 }
 window.trackDailyVisit = trackDailyVisit;
 
-window.okbmNormalizeDateKey = function(dateStr) {
-  if (!dateStr) return '';
-  var s = String(dateStr).trim();
-  var match = s.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
-  if (match) {
-    var y = match[1];
-    var m = String(match[2]).padStart(2, '0');
-    var d = String(match[3]).padStart(2, '0');
-    return y + '.' + m + '.' + d;
-  }
-  return s;
-};
 
 window.okbmUnescapePlanText = function(text) {
   var s = String(text == null ? '' : text);
@@ -3013,11 +2900,7 @@ function okbmClearUserDataDirty(sent) {
   });
   okbmWriteDirtyUserData(map);
 }
-function okbmIsUserDataDirty(key) {
-  return !!okbmReadDirtyUserData()[key];
-}
 window.okbmMarkUserDataDirty = okbmMarkUserDataDirty;
-window.okbmIsUserDataDirty = okbmIsUserDataDirty;
 
 window.RomanticVault = window.RomanticVault || {
   isHydrated: false,
@@ -3133,9 +3016,6 @@ window.RomanticVault = window.RomanticVault || {
     if (window.userMemos) window.userMemos = memos;
   },
 
-  hydrateProtectedStoreCollections: async function(userId) {
-    return null;
-  },
 
   // opts.quiet: 탭 복귀·재연결 때 새로 받는 경우. 바뀐 값이 없으면 화면을 다시 그리지 않는다.
   hydrateFromServer: async function(userId, opts) {
@@ -3881,159 +3761,16 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
   }
 };
 
-window.fetchMasterGearsFromSupabase = async function(isForce) {
-  if (typeof window.ensureAllGearCategoriesLoaded === 'function') {
-    return window.ensureAllGearCategoriesLoaded(isForce);
-  }
-  if (typeof window.loadGearDbFromGoogleSheet === 'function') {
-    return window.loadGearDbFromGoogleSheet(isForce);
-  }
-
-  var CURRENT_GEAR_VERSION = '20260922_GEAR_FULL2540';
-  try {
-    localStorage.removeItem('okbm_master_gears');
-    localStorage.removeItem('okbm_master_gears_cache');
-  } catch (e) {}
-
-  var cachedGears = (window.__memoryStore && window.__memoryStore['okbm_master_gears']) || window.GEARS_MASTER || null;
-  if (!isForce && Array.isArray(cachedGears) && cachedGears.length > 0) {
-    window.__memoryStore = window.__memoryStore || {};
-    window.__memoryStore['okbm_master_gears'] = cachedGears;
-    window.GEARS_MASTER = cachedGears;
-    return cachedGears;
-  }
-
-  // 1차 시도: 정적 JSON 파일 로드 (Supabase API 호출 0건)
-  try {
-    var sRes = await fetch('gears_master.json?v=' + CURRENT_GEAR_VERSION, { cache: 'force-cache' });
-    if (sRes.ok) {
-      var sData = await sRes.json();
-      if (Array.isArray(sData) && sData.length > 0) {
-        // 🛡️ [헌법 제1조 & 5MB 초과 방지] localStorage에 장비 마스터를 절대 저장하지 않고 메모리에만 수화(Hydrate)
-        window.__memoryStore = window.__memoryStore || {};
-        window.__memoryStore['okbm_master_gears'] = sData;
-        window.GEARS_MASTER = sData;
-        if (typeof window.renderPlanCategorySlots === 'function') {
-          window.renderPlanCategorySlots();
-        }
-        return sData;
-      }
-    }
-  } catch(e) {}
-
-  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
-  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
-  if (!targetUrl || !targetKey) return cachedGears;
-
-  try {
-    var allGears = [];
-    var page = 0;
-    var pageSize = 1000;
-    while (true) {
-      var controller = new AbortController();
-      var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
-      var res = await fetch(targetUrl + '/rest/v1/gears?select=id,name,item_name,weight_g,weight,brand,category_id,specs_detail,specs,verified,weight_type,evidence&order=id.asc&offset=' + (page * pageSize) + '&limit=' + pageSize, {
-        method: 'GET',
-        headers: (typeof window.okbmPublicRestHeaders === 'function')
-          ? window.okbmPublicRestHeaders()
-          : {
-          'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
-          'Content-Type': 'application/json'
-        },
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) break;
-      var chunk = await res.json();
-      if (!Array.isArray(chunk) || chunk.length === 0) break;
-      allGears = allGears.concat(chunk);
-      if (chunk.length < pageSize) break;
-      page++;
-    }
-
-    if (allGears.length > 0) {
-      // 🛡️ [헌법 제1조 & 5MB 초과 방지] localStorage에 장비 마스터를 절대 저장하지 않고 메모리에만 수화(Hydrate)
-      window.__memoryStore = window.__memoryStore || {};
-      window.__memoryStore['okbm_master_gears'] = allGears;
-      window.GEARS_MASTER = allGears;
-      if (typeof window.renderPlanCategorySlots === 'function') {
-        window.renderPlanCategorySlots();
-      }
-      return allGears;
-    }
-  } catch (e) { console.warn('[romantic-sync.js:fetchMasterGearsFromSupabase]', e); }
-
-  return cachedGears;
-};
-
-window.fetchRankingsFromSupabase = async function(isForce) {
-  var TTL_MS = 5 * 60 * 1000;
-  if (!isForce && window.__cachedRankings && window.__okbmRankingsFetchedAt &&
-      (Date.now() - window.__okbmRankingsFetchedAt) < TTL_MS) {
-    return window.__cachedRankings;
-  }
-  if (!isForce && window.__okbmRankingsInflight) {
-    try { return await window.__okbmRankingsInflight; } catch (e) {}
-  }
-  var run = okbmFetchRankingsNow();
-  window.__okbmRankingsInflight = run;
-  try {
-    return await run;
-  } finally {
-    if (window.__okbmRankingsInflight === run) window.__okbmRankingsInflight = null;
-  }
-};
-
-async function okbmFetchRankingsNow() {
-  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
-  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
-  if (!targetUrl || !targetKey) return null;
-
-  var result = {
-    topSpots: [],
-    topUsers: []
-  };
-
-  try {
-    var controller = new AbortController();
-    var timeoutId = setTimeout(function() { controller.abort(); }, 5000);
-
-    var usersRes = await fetch(targetUrl + '/rest/v1/ranking_stats?select=spot_id,spot_name,usage_count&order=usage_count.desc&limit=10', {
-      headers: (typeof window.okbmPublicRestHeaders === 'function')
-        ? window.okbmPublicRestHeaders()
-        : {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
-        'Content-Type': 'application/json'
-      },
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-
-    if (usersRes.ok) {
-      result.topUsers = await usersRes.json();
-      window.__okbmRankingsFetchedAt = Date.now();
-    }
-
-    window.__cachedRankings = result;
-    window.dispatchEvent(new CustomEvent('okbm_rankings_updated', { detail: result }));
-  } catch (e) { console.warn('[romantic-sync.js:fetchRankingsFromSupabase]', e); }
-
-  return result;
-}
 
 if (typeof window !== 'undefined') {
   setTimeout(function() {
     window.fetchMasterSpotsFromSupabase();
-    window.fetchRankingsFromSupabase();
     if (typeof trackDailyVisit === 'function') trackDailyVisit();
   }, 350);
 
   window.addEventListener('online', function() {
     updateHeaderAuthUI();
     window.fetchMasterSpotsFromSupabase(false);
-    window.fetchRankingsFromSupabase(false);
     // 오늘 이미 기록됐으면 sessionStorage 가드로 요청하지 않는다(오프라인 부팅 때만 재시도).
     if (typeof trackDailyVisit === 'function') trackDailyVisit();
     // [D3] 재연결: 오프라인 동안 바꾼 항목만 올리고 서버 최신 값을 받아온다(전체 덮어쓰기 없음)
@@ -4097,47 +3834,62 @@ function updateHeaderAuthUI() {
 // 마이데이터 연도 전역 상태
 window._selectedReportYear = String(new Date().getFullYear());
 
-window._getRomanticRouteOutdoorLogs = function() {
-  var curUserId = okbmGetCurrentUserId();
-  var curPureId = curUserId.replace(/\D/g, '');
+// 기록의 작성자가 지금 계정인지. 숫자만 비교하면 한쪽에 숫자가 없을 때 필터가 빠져
+// 남의 피드가 내 통계에 섞였다 → okbmSameAccountId(접두사 규칙 포함) / isCurrentUserId로 판단.
+function okbmIsOwnRecordUserId(curUserId, rUid) {
+  if (!curUserId || !rUid) return false;
+  if (typeof window.okbmSameAccountId === 'function' && window.okbmSameAccountId(curUserId, rUid)) return true;
+  if (typeof window.isCurrentUserId === 'function') {
+    try { return !!window.isCurrentUserId(rUid); } catch (e) {}
+  }
+  return curUserId === rUid;
+}
 
-  var sourcePool = [];
+window._getRomanticRouteOutdoorLogs = function() {
+  var curUserId = String(okbmGetCurrentUserId() || '').trim();
+
+  // ownPool: 이 기기의 내 기록(작성자 칸이 비었거나 guest면 내 것으로 본다)
+  // sharedPool: 커뮤니티 피드 풀(남의 글 포함) → 작성자가 지금 계정일 때만
+  var ownPool = [];
   if (Array.isArray(window.packingHistoryList) && window.packingHistoryList.length > 0) {
-    sourcePool = sourcePool.concat(window.packingHistoryList);
+    ownPool = ownPool.concat(window.packingHistoryList);
   }
   if (Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0) {
-    sourcePool = sourcePool.concat(window.interactiveHistory);
-  }
-  if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
-    sourcePool = sourcePool.concat(window.__allLoadedFeeds);
+    ownPool = ownPool.concat(window.interactiveHistory);
   }
   if (typeof window.safeGetStorage === 'function') {
     var localHistory = window.safeGetStorage('okbm_packing_history', []);
     if (Array.isArray(localHistory) && localHistory.length > 0) {
-      sourcePool = sourcePool.concat(localHistory);
+      ownPool = ownPool.concat(localHistory);
     }
   }
+  var sharedPool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+    ? window.__allLoadedFeeds
+    : [];
 
   var dedupMap = new Map();
-  sourcePool.forEach(function(r) {
+  var addRecord = function(r, fromShared) {
     // [헌법 4] 삭제 플래그를 새로 만들지 않는다. 옛 로컬 캐시에 남은 플래그 기록만 읽기 전용으로 건너뛴다.
     if (!r || r._memDeleted === true || r.isDeleted === true || r.is_deleted === true) return;
     var rId = String(r.id || '').trim();
     if (!rId || rId.startsWith('pack_temp_')) return;
-    if (!dedupMap.has(rId)) {
-      dedupMap.set(rId, r);
+    if (dedupMap.has(rId)) return;
+    var rUid = String(r.userId || r.user_id || '').trim();
+    var own;
+    if (rUid && rUid !== 'guest') {
+      own = okbmIsOwnRecordUserId(curUserId, rUid);
+    } else {
+      own = !fromShared;
     }
-  });
+    if (!own) return;
+    dedupMap.set(rId, r);
+  };
+  ownPool.forEach(function(r) { addRecord(r, false); });
+  sharedPool.forEach(function(r) { addRecord(r, true); });
 
   var logs = Array.from(dedupMap.values());
 
   return logs.filter(function(r) {
-    var rUid = String(r.userId || r.user_id || '').trim();
-    var rPureId = rUid.replace(/\D/g, '');
-
-    if (curPureId && rPureId && curPureId !== rPureId) {
-      return false;
-    }
 
     var photosList = [];
     if (Array.isArray(r.photos)) {
@@ -4284,29 +4036,6 @@ window.refreshMyReportFullStats = function() {
     var rawYt = localStorage.getItem('okbm_user_youtube') || (profile && profile.youtube) || '';
     var rawBlog = localStorage.getItem('okbm_user_blog') || (profile && profile.blog) || '';
     var rawSns = localStorage.getItem('okbm_user_sns_channel') || (profile && (profile.snsChannel || profile.sns_channel)) || '';
-
-    var instaTarget = '';
-    var pureInsta = rawInsta.replace(/[@\s]/g, '').trim();
-    if (pureInsta) {
-      instaTarget = 'https://instagram.com/' + pureInsta;
-    } else if (rawSns.includes('instagram.com')) {
-      instaTarget = rawSns.startsWith('http') ? rawSns : ('https://' + rawSns);
-    }
-
-    var ytTarget = '';
-    var checkYt = rawYt || (rawSns.includes('youtube.com') || rawSns.includes('youtu.be') ? rawSns : '');
-    if (checkYt) {
-      var cleanYt = checkYt.replace(/^@+/, '').split('?')[0].trim();
-      var mYt = cleanYt.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
-      ytTarget = (mYt && mYt[1]) ? ('https://www.youtube.com/@' + mYt[1].replace(/^@/, '')) : (cleanYt.startsWith('http') ? cleanYt : ('https://' + cleanYt));
-    }
-
-    var blogTarget = '';
-    var checkBlog = rawBlog || (rawSns.includes('blog.naver.com') ? rawSns : '');
-    if (checkBlog) {
-      var cleanBlog = checkBlog.trim();
-      blogTarget = cleanBlog.startsWith('http') ? cleanBlog : ('https://' + cleanBlog);
-    }
 
     snsWrap.innerHTML = window.renderUserSnsBadgesHtml(rawInsta, rawYt, rawBlog, true, rawSns);
   }
@@ -6760,7 +6489,6 @@ function handleAuthBtnClick() {
   }
 }
 window.handleAuthBtnClick = handleAuthBtnClick;
-window.openMyReportModal = handleAuthBtnClick;
 
 function openLoginModal() {
   try {
@@ -7455,13 +7183,10 @@ window._pastTripHasValidFieldPhotos = function(r) {
 
 window._pastTripIsOwnHistoryRecord = function(r) {
   if (!r) return false;
-  var curUserId = okbmGetCurrentUserId();
+  var curUserId = String(okbmGetCurrentUserId() || '').trim();
   var rUid = String(r.userId || r.user_id || '').trim();
   if (curUserId && rUid) {
-    if (curUserId === rUid) return true;
-    var curPure = curUserId.replace(/\D/g, '');
-    var rPure = rUid.replace(/\D/g, '');
-    return Boolean(curPure && rPure && curPure === rPure);
+    return okbmIsOwnRecordUserId(curUserId, rUid);
   }
   return Boolean(r._isLocalOwner);
 };
@@ -7671,7 +7396,6 @@ window._pastTripCleanYoutubeUrl = function(url) {
     var only = s.match(/\b([a-zA-Z0-9_-]{11})\b/);
     if (only && /youtu/i.test(s)) id = only[1];
   }
-  if (!id && /^[a-zA-Z0-9_-]{11}$/.test(s)) id = '';
   return id ? ('https://www.youtube.com/watch?v=' + id) : '';
 };
 
@@ -10874,7 +10598,6 @@ function okbmOAuthRedirectTo() {
   var path = String(window.location.pathname || '/').split('?')[0].split('#')[0] || '/';
   var redirect = protocol + '//' + host + path;
   try { sessionStorage.setItem('okbm_oauth_redirect', redirect); } catch (e) {}
-  console.log('[OAuth redirectTo]', redirect);
   return redirect;
 }
 
@@ -10906,7 +10629,6 @@ async function okbmStartSupabaseOAuth(provider, activeClass, busyMessage) {
       parsed.searchParams.set('redirect_to', redirectTo);
       url = parsed.toString();
     } catch (e) {}
-    console.log('[OAuth authorize]', url);
     await okbmOpenOAuthUrl(url);
   } catch (err) {
     console.warn('[Supabase OAuth ' + provider + ']', err);
@@ -11584,7 +11306,6 @@ function loginWithNaver(options) {
     + '&state=' + encodeURIComponent(state)
     + (forceNaverLogin ? '&auth_type=reauthenticate' : '');
   okbmMarkSocialButtonsBusy(true, isDeleteIntent ? '네이버 계정 확인 중...' : (isLink ? '네이버 계정 연결 중...' : '네이버 로그인 중...'), 'btn-social-naver');
-  console.log('[Naver Login URL]', naverAuthUrl);
   window.location.href = naverAuthUrl;
 }
 window.loginWithNaver = loginWithNaver;
@@ -12190,10 +11911,7 @@ function okbmIsNoteHiddenUser(userId) {
   var target = String(userId || '').trim();
   if (!target) return true;
   if (typeof window.isUserBlocked === 'function' && window.isUserBlocked(target)) return true;
-  var blockedBy = window.__okbmBlockedByIds || [];
-  for (var i = 0; i < blockedBy.length; i++) {
-    if (okbmNoteIdsMatch(blockedBy[i], target)) return true;
-  }
+  // "나를 차단한 사람"은 클라이언트가 알 수 없다(차단 사실 비공개). 전송은 서버 RPC가 막는다.
   return false;
 }
 
@@ -12203,13 +11921,6 @@ function okbmNoteBlockedToast(reason) {
   else if (reason === 'them') msg = '상대가 차단한 사용자와는 쪽지를 주고받을 수 없습니다.';
   else if (reason === 'self') msg = '나에게는 쪽지를 보낼 수 없습니다.';
   if (typeof showToast === 'function') showToast(msg, 'warn', 2200);
-}
-
-function okbmStopNoteThreadPoll() {
-  if (window.__okbmNotePollTimer) {
-    clearInterval(window.__okbmNotePollTimer);
-    window.__okbmNotePollTimer = null;
-  }
 }
 
 window.okbmEnsureSupabaseClient = function() {
@@ -12587,23 +12298,6 @@ window.okbmNoteRpc = async function(name, payload) {
   return { ok: res.ok, status: res.status, json: json, text: text };
 };
 
-window.okbmRefreshBlockedByIds = async function(force) {
-  var myId = okbmNoteMyId();
-  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
-  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
-  if (!myId || !targetUrl || !targetKey) {
-    window.__okbmBlockedByIds = [];
-    return [];
-  }
-  // "누가 나를 차단했는지"는 클라이언트에 알려주지 않는다 (차단 사실 노출 방지).
-  // RLS(user_blocks_select_own)도 blocker 본인만 조회를 허용해서 예전 조회
-  // (blocked_id=eq.나)는 항상 빈 결과였다. 요청만 낭비되므로 보내지 않는다.
-  // 상대가 나를 차단한 경우 전송은 서버 RPC가 blocked_direct_message로 막는다.
-  window.__okbmBlockedByIds = [];
-  window.__okbmBlockedByFetchedAt = Date.now();
-  return [];
-};
-
 window.okbmIsNotePairBlocked = async function(theirId, force) {
   var target = String(theirId || '').trim();
   var myId = okbmNoteMyId();
@@ -12614,7 +12308,6 @@ window.okbmIsNotePairBlocked = async function(theirId, force) {
   if (typeof window.isUserBlocked === 'function' && window.isUserBlocked(target)) {
     return { blocked: true, reason: 'you' };
   }
-  await window.okbmRefreshBlockedByIds(!!force);
   if (okbmIsNoteHiddenUser(target)) return { blocked: true, reason: 'them' };
   return { blocked: false, reason: '' };
 };
@@ -12645,7 +12338,6 @@ window.closeDirectMessageModals = function(options) {
   var thread = document.getElementById('directMessageThreadModal');
   if (thread) {
     if (!options.blockedUserId || okbmNoteIdsMatch(thread.dataset.userId, options.blockedUserId)) {
-      okbmStopNoteThreadPoll();
       if (typeof window.okbmNoteRealtimeStop === 'function') window.okbmNoteRealtimeStop('thread');
       thread.remove();
       okbmReleaseLayersForNoteThread();
@@ -12687,7 +12379,6 @@ window.okbmFetchMyNoteThreads = async function() {
   var myId = okbmNoteMyId();
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   if (!myId || !targetUrl) return [];
-  await window.okbmRefreshBlockedByIds();
   try {
     var res = await fetch(targetUrl + '/rest/v1/direct_threads?or=(user_a.eq.' + encodeURIComponent(myId) + ',user_b.eq.' + encodeURIComponent(myId) + ')&select=id,user_a,user_b,nick_a,nick_b,last_body,last_at,last_sender_id,unread_a,unread_b,hidden_a_at,hidden_b_at&order=last_at.desc&limit=80', {
       headers: okbmUgcRestHeaders()
@@ -12962,7 +12653,6 @@ window.openDirectMessageThread = async function(userId, nickname) {
     okbmNoteBlockedToast('self');
     return;
   }
-  okbmStopNoteThreadPoll();
   if (typeof window.okbmBindNoteLiveRefresh === 'function') window.okbmBindNoteLiveRefresh();
   if (typeof window.okbmPrefetchUserPhotos === 'function') {
     window.okbmPrefetchUserPhotos([theirId]).catch(function() {});

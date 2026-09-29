@@ -19,6 +19,8 @@ let acorn;
 try { acorn = require("acorn"); } catch { acorn = require(path.join(ROOT, "promo/node_modules/acorn")); }
 
 const JS_FILES = ["romantic-sync.js", "romantic-history.js", "romantic-plan.js", "templates.js"];
+// 페이지 전용 본문 스크립트(예전 인라인, F7에서 파일로 옮김): 그 페이지 CSP에만 핸들러 해시를 넣는다
+const PAGE_JS_FILES = { "index.html": ["index-main.js"], "map.html": ["map-main.js"] };
 const HTML_FILES = ["index.html", "map.html", "feed-register.html", "naver-callback.html"];
 const HANDLER_OPEN = /\bon[a-z]+\s*=\s*(["'])/gi;
 const ENT = { "&quot;": '"', "&#39;": "'", "&#x27;": "'", "&apos;": "'", "&amp;": "&", "&lt;": "<", "&gt;": ">" };
@@ -85,7 +87,7 @@ function scanJs(code, label, lineOffset = 0) {
 }
 
 const inlineScripts = {}; // html → [hash]
-for (const f of JS_FILES) { currentSource = f; scanJs(fs.readFileSync(path.join(ROOT, f), "utf8"), f); }
+for (const f of [...JS_FILES, ...Object.values(PAGE_JS_FILES).flat()]) { currentSource = f; scanJs(fs.readFileSync(path.join(ROOT, f), "utf8"), f); }
 for (const f of HTML_FILES) {
   currentSource = f;
   const html = fs.readFileSync(path.join(ROOT, f), "utf8");
@@ -124,8 +126,12 @@ if (dynamic.length) {
 }
 
 // --- 생성물 ---
+// jsdelivr는 임의 npm/gh 패키지를 서빙하므로 호스트 전체가 아니라 쓰는 패키지 경로만 허용한다
+// (HTML 주입이 생겨도 <script src="https://cdn.jsdelivr.net/npm/아무거나">로 CSP를 우회하지 못하게).
+// 끝의 /는 접두 일치. 버전을 올리면 여기도 같이 바꾼다. heic-to·heic2any는 heic-convert.html(자체 CSP)에서만 쓴다.
 const SCRIPT_HOSTS = [
-  "https://cdn.jsdelivr.net",
+  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/",
+  "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/",
   "https://dapi.kakao.com",
   "https://t1.daumcdn.net",
   "https://t1.kakaocdn.net",
@@ -135,11 +141,36 @@ const SCRIPT_HOSTS = [
 ];
 // 페이지가 불러오는 JS 파일의 핸들러만 그 페이지 CSP에 넣는다.
 const PAGE_SOURCES = {
-  "index.html": ["index.html", ...JS_FILES],
-  "map.html": ["map.html", ...JS_FILES],
+  "index.html": ["index.html", ...PAGE_JS_FILES["index.html"], ...JS_FILES],
+  "map.html": ["map.html", ...PAGE_JS_FILES["map.html"], ...JS_FILES],
   "feed-register.html": ["feed-register.html"],
   "naver-callback.html": ["naver-callback.html"],
 };
+// 앱 페이지(index·map) 추가 지시어 (FILE_AUDIT F6, 9/30). 요청 대상은 코드에서 fetch·SDK가 부르는 곳만 모았다.
+// 새 외부 API를 부르면 여기 먼저 넣고 --write. 막히면 csp-report.js가 Worker 로그로 보낸다.
+const SUPABASE_HOST = "qnumfecythtqtrxeasys.supabase.co";
+const CONNECT_COMMON = [
+  "'self'",
+  `https://${SUPABASE_HOST}`, `wss://${SUPABASE_HOST}`, // REST·RPC·Edge Functions·Realtime
+  "https://romantic-upload-worker.ggumfree.workers.dev", // 사진 업로드·CSP 신고
+  "https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev", // 우리 사진(R2)
+  "https://*.kakao.com", "https://*.daumcdn.net",        // Kakao SDK(API·로그인·공유), 지도 SDK
+  "https://openapi.naver.com",                           // 네이버 프로필(fetch 폴백)
+  "data:", "blob:",                                      // 사진 압축·캡처 중간 결과
+];
+const CONNECT_BY_PAGE = {
+  "index.html": [],
+  "map.html": [
+    "https://api.open-meteo.com",                          // 날씨·고도
+    "https://noembed.com", "https://api.microlink.io",     // 링크 미리보기
+    "https://api.piped.private.coffee", "https://r.jina.ai", // 영상·블로그 검색 폴백
+    "https://drive.google.com", "https://lh3.googleusercontent.com", // 관리자 GPX(구글 드라이브)
+  ],
+};
+// img-src는 https: 전체: 라운지 행사 포스터·블로그 썸네일이 임의의 외부 https 주소다. http:·기타 스킴만 막는다.
+const IMG_SRC = ["'self'", "data:", "blob:", "https:"];
+// frame-src: 영상 모달(youtube-nocookie), HEIC 변환 iframe(self), Kakao SDK 내부 iframe
+const FRAME_SRC = ["'self'", "https://www.youtube-nocookie.com", "https://www.youtube.com", "https://*.kakao.com"];
 function cspFor(file) {
   const vals = new Set();
   for (const src of PAGE_SOURCES[file]) for (const v of handlersBySource[src] || []) vals.add(v);
@@ -147,7 +178,12 @@ function cspFor(file) {
   const scriptSrc = ["'self'", ...(pageHandlerHashes.length ? ["'unsafe-hashes'"] : []),
     ...inlineScripts[file].map((h) => `'${h}'`), ...pageHandlerHashes.map((h) => `'${h}'`), ...SCRIPT_HOSTS];
   // worker-src: supabase-js 등이 blob: 워커를 만든다 (없으면 script-src로 대체되어 막힘)
-  return `script-src ${scriptSrc.join(" ")}; worker-src 'self' blob:; object-src 'none'; base-uri 'self'`;
+  let csp = `script-src ${scriptSrc.join(" ")}; worker-src 'self' blob:; object-src 'none'; base-uri 'self'`;
+  if (CONNECT_BY_PAGE[file]) {
+    csp += `; connect-src ${[...CONNECT_COMMON, ...CONNECT_BY_PAGE[file]].join(" ")}` +
+      `; img-src ${IMG_SRC.join(" ")}; frame-src ${FRAME_SRC.join(" ")}; form-action 'self'`;
+  }
+  return csp;
 }
 
 const outputs = {};

@@ -47,7 +47,6 @@
     check: '<path d="M20 6L9 17l-5-5"/>',
     x: '<path d="M6 6l12 12M18 6L6 18"/>',
     pin: '<path d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="10" r="2.5"/>',
-    link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
     cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
     pack: '<path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/>'
   };
@@ -209,7 +208,6 @@
       '@keyframes lmhIn{from{opacity:0;transform:translateX(var(--dx,0))}}',
       '@keyframes lmhOut{to{opacity:0;transform:translateX(var(--dx,0))}}',
       '@keyframes lmShine{from{background-position:100% 50%}to{background-position:0 50%}}',
-      '#okbmLoungeHome .lmh-title{display:flex;justify-content:space-between;align-items:center;padding-right:14px}',
       '#okbmLoungeHome .lmh-open{font:inherit;color:inherit;display:inline-flex;align-items:center;gap:6px;border-radius:6px}',
       '#okbmLoungeHome .lmh-all{display:inline-flex;align-items:center;gap:1px;font-size:11px;font-weight:800;color:#38bdf8;border-radius:6px}',
       '#okbmLoungeHome .lmh-all:active,#okbmLoungeHome .lmh-open:active{opacity:.6}',
@@ -320,7 +318,7 @@
       '.lm-btn:active{transform:scale(.97)}',
       '.lm-btn.sm{height:40px;border-radius:12px;font-size:13px}',
       '.lm-btn.main{flex:1.6;background:var(--blue);color:#fff}',
-      '.lm-btn.dis,.lm-btn:disabled{opacity:.35;pointer-events:none}',
+      '.lm-btn:disabled{opacity:.35;pointer-events:none}',
       '.lm-hint{margin:8px 0 0;font-size:11.5px;line-height:1.5;color:var(--sub)}',
       '.lm-win{position:absolute;top:0;bottom:0;left:0;right:0;z-index:1;max-width:480px;margin:0 auto;display:flex;flex-direction:column;background:var(--bg);box-shadow:-14px 0 34px rgba(0,0,0,.5);pointer-events:auto;transform:translateX(105%);transition:transform .42s var(--ease)}',
       '.lm-win.on{transform:none}',
@@ -388,8 +386,6 @@
       // P4: 회원 쓰기
       '.lm-act:active{background:rgba(255,255,255,.06)}',
       '.lm-act[disabled]{opacity:.5}',
-      '.lm-more{margin-left:auto;height:32px;padding:0 8px;border-radius:16px;font-size:12px;font-weight:600;color:var(--faint)}',
-      '.lm-more:active{background:rgba(255,255,255,.06)}',
       '.lmx-cm .lm-cm-acts{display:flex;gap:14px;margin-top:4px;font-size:11px;color:var(--faint)}',
       '.lmx-cm .lm-cm-acts button{font-weight:600}',
       '.lmx-cm .lm-cm-acts .red{color:#ff6b6b}',
@@ -957,9 +953,7 @@
     }
     // 받침이 있으면 "이에요", 없으면 "예요" (한글이 아니면 "이에요")
     const bestName = top.length ? spotName(spotById(top[0].spot_id)) : '';
-    const lastCh = bestName.charCodeAt(bestName.length - 1);
-    const josa = (lastCh >= 0xAC00 && lastCh <= 0xD7A3 && (lastCh - 0xAC00) % 28 === 0) ? '예요' : '이에요';
-    let h = top.length ? `<div class="lm-head">평점이 가장 높은 박지는<br><em>${esc(bestName)}</em>${josa}</div>` : '<div class="lm-head">박지 후기</div>';
+    let h = top.length ? `<div class="lm-head">평점이 가장 높은 박지는<br><em>${esc(bestName)}</em>${josa(bestName, '이에요', '예요')}</div>` : '<div class="lm-head">박지 후기</div>';
     h += '<div class="lmh-cap">평점 높은 박지</div>' + (top.length ? top.map(bestRowFull).join('') : '<div class="lm-empty">후기가 3개 이상 쌓인 박지가 아직 없어요</div>');
     h += '<div class="lmh-cap">최근 후기</div>';
     if (D.recent === null) {
@@ -1206,6 +1200,12 @@
     for (let i = 0; i < wpanes.length; i++) rerenderPane(i);
   }
   function renderAll() { renderHome(); rerenderWindow(); }
+  // 자유게시판만 바뀐 경우(댓글·글 쓰기/삭제): 홈은 게시판 탭일 때만, 창은 게시판 칸만 다시 그린다
+  const BOARD_TAB = 2;
+  function renderBoard() {
+    if (S.tab === BOARD_TAB) renderHome();
+    rerenderPane(BOARD_TAB);
+  }
   function renderBoardList() {
     if (!win || !wpanes[2]) return;
     const l = wpanes[2].querySelector('.lmh-list');
@@ -1826,7 +1826,7 @@
       closeSheet();
       toast(st.id ? '글을 고쳤어요' : (row.category === 'suggestion' ? '건의를 보냈어요. 답변이 달리면 알려 드릴게요' : '글을 올렸어요'));
       if (!st.id && S.cat !== 'all' && S.cat !== row.category) S.cat = 'all';
-      renderAll();
+      renderBoard();
       if (win && !st.id) {
         winTo(2);
         if (wpanes[2]) wpanes[2].scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
@@ -1857,7 +1857,7 @@
       forEachPost(pid, function (p) { p.comments_count = (Number(p.comments_count) || 0) + 1; });
       input.value = '';
       tick();
-      renderAll();
+      renderBoard();
       // 다시 그린 뒤 새 입력칸에 포커스를 돌려준다(이어서 쓰기)
       const nf = win && findLmx(wpanes[2], pid);
       const ni = nf && nf.querySelector('form[data-form="comment"] input');
@@ -1873,7 +1873,7 @@
     if (!ok) return;
     if (D.comments[pid]) D.comments[pid] = D.comments[pid].filter(function (x) { return String(x.id) !== String(cid); });
     forEachPost(pid, function (p) { p.comments_count = Math.max(0, (Number(p.comments_count) || 0) - 1); });
-    renderAll();
+    renderBoard();
   }
 
   // ----- 좋아요 (먼저 바꿔 보이고, 실패하면 되돌린다) -----
@@ -2177,7 +2177,7 @@
         deleteRow('lounge_posts', v, '이 글을 삭제할까요?').then(function (ok) {
           if (!ok) return;
           dropPost(p.id);
-          renderAll();
+          renderBoard();
         });
         break;
       }
@@ -2426,16 +2426,18 @@
         if (D.comments[pid].length !== before) { found = true; forEachPost(pid, function (p) { p.comments_count = Math.max(0, (Number(p.comments_count) || 0) - 1); }); }
       });
       // 댓글을 안 펼쳐 본 글이면 어느 글인지 몰라서 목록을 새로 받아 개수를 맞춘다
-      if (!found && postsBy.all) loadPosts('all').catch(function () {}).then(function () { if (D.status === 'ready') renderAll(); });
+      if (!found && postsBy.all) loadPosts('all').catch(function () {}).then(function () { if (D.status === 'ready') renderBoard(); });
     } else if (d.type === 'spot_review') {
       const keep = function (r) { return String(r.id) !== id; };
       if (D.recent) D.recent = D.recent.filter(keep);
       if (D.spotRev && D.spotRev.reviews) D.spotRev.reviews = D.spotRev.reviews.filter(keep);
       const jobs = [loadTop().catch(function () {})];
       if (S.revSpot) jobs.push(loadSpotReviews(S.revSpot, false).catch(function () {})); // 평균·개수도 새로
+      // 후기는 다시 받은 뒤 한 번만 그린다(예전에는 바로 한 번 + 받은 뒤 한 번)
       Promise.all(jobs).then(function () { if (D.status === 'ready') renderAll(); });
+      return;
     }
-    if (D.status === 'ready') renderAll();
+    if (D.status === 'ready') renderBoard();
   });
   window.okbmLoungeRerender = function () { if (D.status === 'ready') renderAll(); };
   // 차단·신고로 숨길 글이 바뀌면 라운지도 다시 거른다

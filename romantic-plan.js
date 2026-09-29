@@ -1432,20 +1432,6 @@
     }
   };
 
-  window.removeGearFromPlanSlot = function(categoryId, itemIndex) {
-    if (window.selectedGearMap && window.selectedGearMap[categoryId]) {
-      var removed = window.selectedGearMap[categoryId][itemIndex];
-      var removedName = (removed && (removed.name || removed.itemName)) || '';
-      window.selectedGearMap[categoryId].splice(itemIndex, 1);
-      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-        window.RomanticVault.write('okbm_selected_gears_multi', window.selectedGearMap, true);
-      } else {
-        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
-      }
-      window.refreshPlanPackedChrome();
-      if (removedName) window.patchGearInteractionRows(removedName);
-    }
-  };
 
  function ensureGearPresetModalDOM() {
     var modal = document.getElementById('gearPresetModal');
@@ -2717,10 +2703,6 @@ window.saveCurrentPackingRecord = function() {
     } catch (e) {}
   })();
 
-  function okbmGearAssetBase() {
-    return '';
-  }
-
   function okbmYieldToMain() {
     return new Promise(function(resolve) {
       if (typeof scheduler !== 'undefined' && typeof scheduler.yield === 'function') {
@@ -2733,10 +2715,7 @@ window.saveCurrentPackingRecord = function() {
 
   async function okbmFetchGearJson(relPath) {
     var opts = { cache: 'force-cache' };
-    var res = await fetch(okbmGearAssetBase() + relPath + '?v=' + CURRENT_GEAR_VERSION, opts);
-    if ((!res || !res.ok) && okbmGearAssetBase()) {
-      res = await fetch(relPath + '?v=' + CURRENT_GEAR_VERSION, opts);
-    }
+    var res = await fetch(relPath + '?v=' + CURRENT_GEAR_VERSION, opts);
     if (!res || !res.ok) return null;
     var data = await res.json();
     return (Array.isArray(data) && data.length) ? data : null;
@@ -2857,11 +2836,14 @@ window.saveCurrentPackingRecord = function() {
       }
       var okCount = 0;
       var applyQueue = Promise.resolve();
+      // 카테고리마다 병합만 하고, 무게 보정(autoHeal)·선반 다시 그리기는 다 합친 뒤 한 번만 한다
+      var appliedRows = [];
       await Promise.all(pending.map(function(id) {
         return okbmFetchGearJson('gears/' + id + '.json').then(function(data) {
           if (!Array.isArray(data) || !data.length) return;
           applyQueue = applyQueue.then(function() {
-            applyFetchedGears(data, { merge: true, categoryId: id });
+            var added = applyFetchedGears(data, { merge: true, categoryId: id, deferFinalize: true });
+            if (added && added.length) appliedRows = appliedRows.concat(added);
             window.__okbmGearCatLoaded[id] = true;
             okCount += 1;
             return okbmYieldToMain();
@@ -2870,6 +2852,7 @@ window.saveCurrentPackingRecord = function() {
         }).catch(function() {});
       }));
       await applyQueue;
+      if (okCount > 0) okbmFinalizeFetchedGears(appliedRows);
       if (okCount === 0) {
         window.__okbmGearSplitUnavailable = true;
         return okbmLoadGearMonolithFallback();
@@ -2898,8 +2881,8 @@ window.saveCurrentPackingRecord = function() {
     return window.ensureAllGearCategoriesLoaded(!!isForce);
   };
 
-  window.loadGearDbMaster = window.loadGearDbFromGoogleSheet;
 
+  var okbmLegacyGearKeysPurged = false;
   function applyFetchedGears(rows, opts) {
     var sheetGearsByCategory = {};
     var compactMasterRows = [];
@@ -2956,10 +2939,14 @@ window.saveCurrentPackingRecord = function() {
       }
     });
 
-    try {
-      localStorage.removeItem('okbm_master_gears');
-      localStorage.removeItem('okbm_master_gears_cache');
-    } catch (e) {}
+    // 폐기 키 정리는 페이지당 한 번이면 된다(예전에는 카테고리 적용마다 2번씩)
+    if (!okbmLegacyGearKeysPurged) {
+      okbmLegacyGearKeysPurged = true;
+      try {
+        localStorage.removeItem('okbm_master_gears');
+        localStorage.removeItem('okbm_master_gears_cache');
+      } catch (e) {}
+    }
 
     opts = opts || {};
     var merge = opts.merge === true;
@@ -2996,8 +2983,13 @@ window.saveCurrentPackingRecord = function() {
       });
     }
 
-    autoHealSelectedGears(compactMasterRows);
+    if (opts.deferFinalize) return compactMasterRows;
+    okbmFinalizeFetchedGears(compactMasterRows);
+    return compactMasterRows;
+  }
 
+  function okbmFinalizeFetchedGears(rows) {
+    autoHealSelectedGears(rows);
     if (typeof window.renderPlanCategorySlots === 'function') {
       window.renderPlanCategorySlots();
     }
@@ -3042,8 +3034,9 @@ window.saveCurrentPackingRecord = function() {
     if (changed) {
       if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
         window.RomanticVault.write('okbm_selected_gears_multi', window.selectedGearMap, true);
+      } else {
+        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
       }
-      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
       if (typeof window.updatePlanTotalWeightUI === 'function') {
         window.updatePlanTotalWeightUI();
       }
@@ -4102,48 +4095,6 @@ window.saveCurrentPackingRecord = function() {
       </div>
     `;
 
-  window.openBookmarksBottomSheet = function() {
-    var sheet = document.getElementById('planBookmarkSlideSheet');
-    var listContainer = document.getElementById('planBookmarkSheetList');
-    var titleEl = document.getElementById('planBookmarkSheetTitle');
-    if (!sheet || !listContainer) return;
-
-    var bookmarks = safeGetJSON('okbm_bookmarks', []);
-    var spotList = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots)) ? registeredSpots : safeGetJSON('okbm_spots_cache', []);
-    var bookmarkedSpots = bookmarks.map(function(sId) {
-      var found = spotList.find(function(s) { return String(s.id).trim() === String(sId).trim(); });
-      return {
-        id: sId,
-        name: found ? (found.fullName || found.name) : ('장소 #' + sId),
-        elevation: found && found.elevation ? (found.elevation + 'm') : (found ? found.region : '전국')
-      };
-    });
-
-    if (titleEl) titleEl.innerText = '가보고 싶은 곳 (' + bookmarkedSpots.length + '곳)';
-
-    if (bookmarkedSpots.length === 0) {
-      listContainer.innerHTML = '<div style="text-align:center; padding:35px 0; color:#64748b; font-size:0.75rem; line-height:1.6;">찜해둔 장소가 없습니다.<br>전국지도에서 가보고 싶은 곳을 찜해보세요!</div>';
-    } else {
-      listContainer.innerHTML = bookmarkedSpots.map(function(s) {
-        var safeName = escapeHtml(s.name);
-        var safeElev = escapeHtml(s.elevation);
-        return `
-          <div class="js-open-spot-map" data-spot="${safeName}" data-save-target="1" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:9px 11px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">
-            <div style="flex:1; min-width:0; padding-right:8px;">
-              <div style="font-size:0.80rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeName}</div>
-              <div style="font-size:0.60rem; color:#64748b; margin-top:2px;">위치: ${safeElev} · <span style="color:#94a3b8; text-decoration:underline;">지도 보기</span></div>
-            </div>
-            <button type="button" class="js-select-plan-dest" data-spot="${safeName}" data-elevation="${safeElev}" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#f1f5f9; font-size:0.68rem; font-weight:800; padding:5px 10px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap;">
-              일정 등록
-            </button>
-          </div>
-        `;
-      }).join('');
-    }
-
-    sheet.style.display = 'flex';
-    setTimeout(function() { sheet.classList.add('active'); }, 10);
-  };
 
   window.closeBookmarksBottomSheet = function() {
     var sheet = document.getElementById('planBookmarkSlideSheet');
@@ -5009,15 +4960,6 @@ window.saveCurrentPackingRecord = function() {
     window.renderPlanStage();
   };
 
-  window.handleGearPriceInput = function(gearName, inputEl) {
-    var rawDigits = (inputEl.value || '').replace(/[^0-9]/g, '');
-    var num = parseInt(rawDigits, 10);
-    var formatted = !isNaN(num) && num > 0 ? num.toLocaleString() : '';
-    inputEl.value = formatted;
-
-    window.updateGearMeta(gearName, 'price', num || 0);
-    window.recalculateTotalGearInvest();
-  };
 
   window.recalculateTotalGearInvest = function() {
     var gearMetaObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
@@ -5613,9 +5555,6 @@ window.saveCurrentPackingRecord = function() {
     window.openQuickPresetPicker();
   };
 
- window.addDirectGearToManager = function() {
-    window.openQuickGearRegisterModal({ addToPack: false });
-  };
 
   window.autoSavePlanMemo = function(dateStr, val) {
     var normKey = (typeof window.okbmNormalizePlanDateKey === 'function')
@@ -6016,10 +5955,17 @@ window.saveCurrentPackingRecord = function() {
     return { ok: true, deletedIds: confirmed };
   }
 
-  async function okbmDeleteRowsByIds(tableName, ids, targetUrl, targetKey) {
+  // ownerUserId: 주면 `&user_id=eq.<id>`를 붙여 본인 행만 지운다(관리자 RLS 우회 방지)
+  async function okbmDeleteRowsByIds(tableName, ids, targetUrl, targetKey, ownerUserId) {
     var list = (ids || []).map(function(id) { return String(id || '').trim(); }).filter(Boolean);
     if (!list.length) return { ok: true, deletedIds: [] };
     if (!targetUrl || !targetKey) return { ok: false, deletedIds: [], error: 'no_server' };
+    var ownerFilter = '';
+    if (ownerUserId !== undefined) {
+      var owner = String(ownerUserId || '').trim();
+      if (!owner) return { ok: false, deletedIds: [], error: 'no_owner' };
+      ownerFilter = '&user_id=eq.' + encodeURIComponent(owner);
+    }
 
     var confirmed = [];
     var chunkSize = 30;
@@ -6031,7 +5977,7 @@ window.saveCurrentPackingRecord = function() {
       var chunk = list.slice(i, i + chunkSize);
       var filter = 'in.(' + chunk.map(function(id) { return encodeURIComponent(id); }).join(',') + ')';
       try {
-        var res = await fetch(targetUrl + '/rest/v1/' + tableName + '?id=' + filter, {
+        var res = await fetch(targetUrl + '/rest/v1/' + tableName + '?id=' + filter + ownerFilter, {
           method: 'DELETE',
           headers: delHeaders
         });
@@ -6095,8 +6041,20 @@ window.saveCurrentPackingRecord = function() {
       var historyList = okbmReadPlanStore('okbm_packing_history', []);
       if (!Array.isArray(historyList)) historyList = [];
       var feedCandidates = [];
+      // 날짜만 맞는 남의 피드(공개 피드 풀)가 섞이지 않게 소유자를 확인한다.
+      // pack_/local_ 임시 기록은 서버에 없는 이 기기 전용이라 소유자 칸이 없어도 받는다.
+      var isOwnFeedRecord = function(h) {
+        var id = String((h && h.id) || '');
+        if (id.indexOf('pack_') === 0 || id.indexOf('local_') === 0) return true;
+        var owner = String((h && (h.user_id || h.userId)) || '').trim();
+        if (!rawActiveUid || !owner) return false;
+        return (typeof window.okbmSameAccountId === 'function')
+          ? window.okbmSameAccountId(rawActiveUid, owner)
+          : owner === rawActiveUid;
+      };
       var collectFeedId = function(h) {
         if (!okbmRecordMatchesPlanDate(h, variantSet, normDate)) return;
+        if (!isOwnFeedRecord(h)) return;
         if (h && h.id) {
           var id = String(h.id).trim();
           if (id && feedCandidates.indexOf(id) === -1) feedCandidates.push(id);
@@ -6144,7 +6102,7 @@ window.saveCurrentPackingRecord = function() {
 
       var feedResult = { ok: true, deletedIds: localOnlyFeedIds.slice() };
       if (serverFeedIds.length > 0 && targetUrl && targetKey) {
-        feedResult = await okbmDeleteRowsByIds('feeds', serverFeedIds, targetUrl, targetKey);
+        feedResult = await okbmDeleteRowsByIds('feeds', serverFeedIds, targetUrl, targetKey, rawActiveUid);
         feedResult.deletedIds = (feedResult.deletedIds || []).concat(localOnlyFeedIds);
       } else if (!targetUrl || !targetKey) {
         feedResult.deletedIds = feedCandidates.slice();
@@ -6181,6 +6139,14 @@ window.saveCurrentPackingRecord = function() {
         if (okbmRecordMatchesPlanDate(r, variantSet, normDate)) return false;
         return true;
       };
+      // 공개 피드 풀(남의 피드 포함)에서는 지운 id와 내 기록만 뺀다
+      var purgeSharedFeedFn = function(r) {
+        if (!r) return false;
+        var rid = String(r.id || '').trim();
+        if (rid && deletedFeedIdSet[rid]) return false;
+        if (okbmRecordMatchesPlanDate(r, variantSet, normDate) && isOwnFeedRecord(r)) return false;
+        return true;
+      };
 
       var filteredHist = historyList.filter(purgeFeedFn);
       window.interactiveHistory = filteredHist;
@@ -6189,7 +6155,7 @@ window.saveCurrentPackingRecord = function() {
       try { localStorage.setItem('okbm_packing_history', JSON.stringify(filteredHist)); } catch (e) {}
 
       if (Array.isArray(window.__allLoadedFeeds)) {
-        window.__allLoadedFeeds = window.__allLoadedFeeds.filter(purgeFeedFn);
+        window.__allLoadedFeeds = window.__allLoadedFeeds.filter(purgeSharedFeedFn);
         try {
           if (typeof window.okbmWriteCachedCommunityFeeds === 'function') {
             window.okbmWriteCachedCommunityFeeds(window.__allLoadedFeeds);
@@ -6199,7 +6165,7 @@ window.saveCurrentPackingRecord = function() {
         } catch (e) {}
       }
       if (Array.isArray(window.heroTopRecords)) {
-        window.heroTopRecords = window.heroTopRecords.filter(purgeFeedFn);
+        window.heroTopRecords = window.heroTopRecords.filter(purgeSharedFeedFn);
         window.currentHeroCardIndex = 0;
         if (typeof window.renderCurrentHeroCard === 'function') {
           window.renderCurrentHeroCard();
@@ -6462,75 +6428,6 @@ window.saveCurrentPackingRecord = function() {
     window.__pendingPlanDestination = null;
   };
 
-  window.removeIndividualPlanSpot = async function(dateKey, spotName, e, explicitTripId) {
-    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
-
-    var dTarget = String(dateKey).replace(/[-/]/g, '.');
-    var targetTripId = explicitTripId ? String(explicitTripId).trim() : '';
-
-    if (!targetTripId && Array.isArray(window.TRIP_JOINS_DATABASE)) {
-      var foundTrip = window.TRIP_JOINS_DATABASE.find(function(t) {
-        if (!t || !t.date || !t.spotName) return false;
-        var tD = String(t.date).replace(/[-/]/g, '.');
-        return tD === dTarget && (t.spotName.includes(spotName) || spotName.includes(t.spotName));
-      });
-      if (foundTrip && foundTrip.tripId) {
-        targetTripId = String(foundTrip.tripId).trim();
-      }
-    }
-
-    var isExpedition = Boolean(targetTripId);
-    var confirmMsg = isExpedition
-      ? '[' + spotName + '] 모집 공고를 취소하고 완전히 삭제하시겠습니까?'
-      : '[' + spotName + '] 일정을 삭제하시겠습니까?';
-
-    if (!confirm(confirmMsg)) return;
-
-    if (isExpedition && targetTripId) {
-      // [헌법 4] 서버 삭제가 확인된 뒤에만 로컬 목록에서 뺀다.
-      var tripDel = (typeof window.okbmDeleteRowsConfirmed === 'function')
-        ? await window.okbmDeleteRowsConfirmed('trips', targetTripId)
-        : { ok: false, error: 'no_helper' };
-      if (!tripDel.ok) {
-        if (tripDel.error !== 'login_required' && typeof showToast === 'function') {
-          showToast('모집 공고 삭제에 실패했습니다. 다시 시도해주세요.', 'error', 2600);
-        }
-        return;
-      }
-      if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
-        window.TRIP_JOINS_DATABASE = window.TRIP_JOINS_DATABASE.filter(function(t) {
-          return String(t.tripId).trim() !== targetTripId;
-        });
-        if (typeof window.renderHomeTripJoinSlider === 'function') {
-          window.renderHomeTripJoinSlider();
-        }
-      }
-    }
-
-    var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-      ? window.RomanticVault.read('okbm_plan_spots', {})
-      : safeGetJSON('okbm_plan_spots', {});
-
-    var list = planSpots[dateKey];
-    if (Array.isArray(list)) {
-      planSpots[dateKey] = list.filter(function(s) {
-        if (!s) return false;
-        if (targetTripId && s.tripId && String(s.tripId).trim() === targetTripId) return false;
-        return s.name !== spotName;
-      });
-      if (planSpots[dateKey].length === 0) delete planSpots[dateKey];
-    } else if (list && (list.name === spotName || (targetTripId && list.tripId && String(list.tripId).trim() === targetTripId))) {
-      delete planSpots[dateKey];
-    }
-
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_plan_spots', planSpots, false);
-    } else {
-      localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
-    }
-
-    window.renderPlanStage();
-  };
 
   window.selectPlanDestination = function(spotName, elevation) {
     window.__pendingPlanDestination = { name: spotName, elevation: elevation };
@@ -6737,41 +6634,6 @@ window.commitPlanDestination = async function(dateKey) {
     main.style.zIndex = isTools ? '100' : '105';
   };
 
-  window.bindPlanDualDockGestures = function() {
-    var dock = document.getElementById('planDualDockContainer');
-    if (!dock || dock._swipeBound) return;
-    dock._swipeBound = true;
-
-    var startX = 0, startY = 0;
-    dock.addEventListener('touchstart', function(e) {
-      if (!e.touches || e.touches.length !== 1) return;
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-    }, { passive: true });
-
-    dock.addEventListener('touchend', function(e) {
-      if (!e.changedTouches || e.changedTouches.length !== 1) return;
-      var diffX = e.changedTouches[0].clientX - startX;
-      var diffY = e.changedTouches[0].clientY - startY;
-
-      // 아래로 쓸기 ➔ 기본 5대 독
-      if (diffY > 18 && Math.abs(diffY) > Math.abs(diffX)) {
-        if (window.__planDockDeckMode === 'tools') {
-          window.togglePlanDockDeckMode('main');
-        }
-      }
-      // 위로 쓸기 ➔ 계획 5대 도구
-      else if (diffY < -18 && Math.abs(diffY) > Math.abs(diffX)) {
-        if (window.__planDockDeckMode === 'main') {
-          window.togglePlanDockDeckMode('tools');
-        }
-      }
-      // 좌우 쓸기 ➔ 양방향 토글
-      else if (Math.abs(diffX) > 28) {
-        window.togglePlanDockDeckMode();
-      }
-    }, { passive: true });
-  };
 
  // 🚀 [낭만플랜 모달 오픈 / 클로즈 - 마스터 독바와 1:1 결합 & 최상위 레이어 보장]
   window.openPlanModal = function(subMode) {

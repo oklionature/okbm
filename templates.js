@@ -1060,9 +1060,6 @@ function canvasToShareBlob(canvas) {
     canvas.toBlob(function(b) { b ? resolve(b) : reject(new Error('toBlob failed')); }, 'image/jpeg', 0.92);
   });
 }
-function canvasToPngBlob(canvas) {
-  return canvasToShareBlob(canvas);
-}
 
 function downloadReadyShotBlob(blob, fileName) {
   var url = URL.createObjectURL(blob);
@@ -2338,19 +2335,6 @@ function packItemDisplayName(name, count) {
 window.collapseDuplicatePackItems = collapseDuplicatePackItems;
 window.packItemDisplayName = packItemDisplayName;
 
-function overlayGroupItems(items) {
-  var groups = [];
-  var index = {};
-  (items || []).forEach(function(it) {
-    var key = it.icon || 'other';
-    if (index[key] === undefined) {
-      index[key] = groups.length;
-      groups.push({ icon: key, items: [] });
-    }
-    groups[index[key]].items.push(it);
-  });
-  return groups;
-}
 
 function overlayPickShowcaseItems(items, limit) {
   limit = limit || 8;
@@ -2517,9 +2501,6 @@ function renderIssueStyleBrandMark(extraClass) {
   return '<img class="' + cls + '" src="fulllogo.png" alt="낭만루트" />';
 }
 
-function renderOutlinedBrandMark() {
-  return renderIssueStyleBrandMark();
-}
 
 function renderPhotoOverlayMarkup(opts) {
   opts = opts || {};
@@ -2668,11 +2649,6 @@ function readyShotOneLineMemo(memo) {
   return String(memo || '').trim().replace(/\s+/g, ' ');
 }
 
-function readyShotMemoBlock(memo, styleCss) {
-  var text = readyShotOneLineMemo(memo);
-  if (!text) return '';
-  return '<div class="rs-one-line-memo" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; ' + (styleCss || '') + '">' + escapeHtml(text) + '</div>';
-}
 
 function renderMagazineCoverMarkup(opts) {
   opts = opts || {};
@@ -2896,16 +2872,6 @@ function renderBalanceMarkup(opts) {
 
 window.renderBalanceMarkup = renderBalanceMarkup;
 
-async function exportPhotoOverlayPng(card) {
-  var canvas = await captureStudioCardCanvas(card);
-  var blob = await canvasToShareBlob(canvas);
-  var url = URL.createObjectURL(blob);
-  var link = document.createElement('a');
-  link.download = '낭만루트_저널_' + Date.now() + '.jpg';
-  link.href = url;
-  link.click();
-  setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
-}
 
 function renderNrcCertShotMarkup(opts) {
   opts = opts || {};
@@ -3844,14 +3810,6 @@ window.switchStudioModeFromReadyShot = function(mode) {
   updateShareCardLive();
 };
 
-window.openReadyShotCropEditor = function() {
-  var photo = window.currentSharePhotoRaw || window.currentSharePhoto;
-  if (!photo || String(photo).indexOf('https://') !== 0) {
-    if (typeof showToast === 'function') showToast('먼저 사진을 넣어주세요.', 'warn');
-    return;
-  }
-  window.openPhotoStudio();
-};
 
 // 🔍 [박지 실시간 검색 & 자동완성 전담 엔진 (신규 삽입)]
 window.handleSpotSearchInput = function(val) {
@@ -3940,29 +3898,7 @@ window.handleSpotSearchInput = function(val) {
   dropdown.style.display = 'block';
 };
 
-window.toggleSpotDropdownList = function() {
-  var dropdown = document.getElementById('spotSearchDropdown');
-  var input = document.getElementById('shareCardSpotInput');
-  if (!dropdown) return;
-  if (dropdown.style.display === 'block') {
-    dropdown.style.display = 'none';
-  } else {
-    window.handleSpotSearchInput(input ? input.value : '');
-  }
-};
 
-window.clearSpotSearchInput = function() {
-  var input = document.getElementById('shareCardSpotInput');
-  var clearBtn = document.getElementById('btnSpotInputClear');
-  var dropdown = document.getElementById('spotSearchDropdown');
-  if (input) {
-    input.value = '';
-    input.focus();
-  }
-  if (clearBtn) clearBtn.style.display = 'none';
-  if (dropdown) dropdown.style.display = 'none';
-  if (typeof updateShareCardLive === 'function') updateShareCardLive();
-};
 
 window.sharePackCardDirect = async function() {
   var btn = document.getElementById('btnShareCardShareTop');
@@ -4642,7 +4578,6 @@ window.openPackShareModal = function(record, items, forceStudio) {
   }, 60);
 };
 
-var openPackShareModal = window.openPackShareModal;
 // 🏷️ 3. 템플릿 전환 & 상단 칩/이름 실시간 동기화
 function switchShareCardTemplate(tmplId, isSwipe) {
   var targetId = Number(tmplId);
@@ -5046,7 +4981,6 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
   // 🛡️ [박지 비공개 & 여백 레이아웃 보존 헬퍼]
   var spotText = targetSpot ? escapeHtml(targetSpot) : '&nbsp;';
   var spotPinText = targetSpot ? (SVG_ICONS.pin + escapeHtml(targetSpot)) : '&nbsp;';
-  var memoQuotes = targetMemo ? ('“' + escapeHtml(targetMemo) + '”') : '';
 
   var logoWhite = SVG_ICONS.brandLogo('#ffffff', '#ffffff');
   var logoPink = SVG_ICONS.brandLogo('#f43f5e', '#fde047');

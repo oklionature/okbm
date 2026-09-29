@@ -1,6 +1,13 @@
 -- =========================================================================
 -- B-7 감사 스냅샷 (적용 금지)
 --
+-- !! 실행 차단 (2026-09-30, FILE_AUDIT F3) !!
+-- 아래 함수들은 사칭 가능한 옛 DM 4종·제한 없는 track_visit이다. 실수로 실행하면 운영이 옛 버전으로 돌아간다.
+-- 그래서 맨 앞에서 트랜잭션을 열고 바로 오류를 낸다.
+--   SQL Editor: 첫 오류에서 전체 중단.
+--   psql -f(ON_ERROR_STOP 없이): 트랜잭션이 aborted 상태라 뒤 문장이 모두 거부되고 맨 끝 ROLLBACK으로 끝난다.
+-- 읽기용으로만 둔다. 차단 줄을 지우고 실행하지 말 것.
+--
 -- 출처: 운영 DB qnumfecythtqtrxeasys, pg_get_functiondef, 2026-09-21
 -- 현재 운영/형상관리 본문은 SUPABASE_RLS_POLICIES_MASTER.sql.
 --
@@ -15,6 +22,9 @@
 -- 쪽지 4종은 클라이언트 p_user_id/p_sender_id를 본문으로 신뢰.
 -- RLS는 대화 참여자만 검사하므로 상대방 사칭·열람 조작이 가능했음.
 -- =========================================================================
+
+BEGIN;
+DO $$ BEGIN RAISE EXCEPTION 'SUPABASE_RPC_DUMP_B7.sql is a read-only snapshot. Do not run. Use SUPABASE_RLS_POLICIES_MASTER.sql.'; END $$;
 
 CREATE OR REPLACE FUNCTION public.okbm_append_direct_message(p_sender_id text, p_sender_nick text, p_receiver_id text, p_receiver_nick text, p_body text)
  RETURNS jsonb
@@ -214,3 +224,6 @@ begin
     updated_at = now();
 end;
 $function$;
+
+-- 실행 차단: 위 BEGIN과 짝. 여기까지 왔다면 앞 문장은 모두 거부된 상태다.
+ROLLBACK;
