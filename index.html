@@ -955,7 +955,7 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.9.37" defer></script>
+    <script src="romantic-sync.js?v=2.9.38" defer></script>
     <script src="romantic-history.js?v=2.7.97" defer></script>
 
   <style>
@@ -976,6 +976,25 @@
       --font-en: 'Space Grotesk', -apple-system, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
       --font-body: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+
+      /* 홈 글자 크기 6단계 (라운지 lounge.js 체계와 같은 px) */
+      --fs-caption: 10px;   /* 배지·고도·닉네임·도크 */
+      --fs-meta: 11.5px;    /* 날짜·보조 문구·전체보기 링크 */
+      --fs-body: 13px;      /* 본문·버튼·칩·카드 제목 */
+      --fs-title: 14px;     /* 목록 항목 제목 */
+      --fs-section: 16px;   /* 섹션 제목·대표 스팟 이름 */
+      --fs-display: 20px;   /* 로고·큰 숫자 */
+      /* 홈 글자색: 중립 회색 4단계 + 강조 1색 + 상태 1색 (라운지와 같은 값) */
+      --tx-1: #f2f2f3;
+      --tx-2: #d1d1d6;
+      --tx-3: #8b8b93;
+      --tx-4: #55555d;
+      --accent: #3182f6;
+      --ok: #34d399;
+      /* 누를 때 반응: 홈 카드·버튼·칩 공통 (라운지 lounge.js와 같은 0.97) */
+      --press-scale: 0.97;
+      --press-dur: 0.15s;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
       --z-header: 500;
       --z-dock: 2147483647;
@@ -1027,6 +1046,9 @@
   }
 
   body {
+      /* 기본 글꼴: 없으면 클래스 없는 글자가 브라우저 기본 명조(Times)로 떨어진다 */
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
       padding-top: calc(47px + env(safe-area-inset-top, 0px)) !important;
       padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important;
       touch-action: pan-x pan-y !important;
@@ -1157,7 +1179,7 @@
     /* 💎 플래티넘/티타늄 매트 메탈릭 타이포그래피 */
     .brand-title {
       font-family: var(--font-display) !important;
-      font-size: 1.2rem !important;
+      font-size: var(--fs-display) !important;
       font-weight: 900 !important;
       letter-spacing: -0.035em !important;
       line-height: 1 !important;
@@ -1386,10 +1408,10 @@
     }
    .insta-memo-spot-title {
       font-family: var(--font-display) !important;
-      font-size: 0.95rem !important;
+      font-size: var(--fs-section) !important;
       font-weight: 900 !important;
       letter-spacing: -0.03em !important;
-      color: #ffffff !important;
+      color: var(--tx-1) !important;
       line-height: 1.25 !important;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1398,16 +1420,16 @@
       margin: 0;
     }
     .insta-memo-author {
-      font-size: 0.65rem;
-      color: #94a3b8;
+      font-size: var(--fs-meta);
+      color: var(--tx-3);
       font-weight: 700;
       flex-shrink: 0;
     }
     .insta-memo-quote {
       font-family: var(--font-body) !important;
-      font-size: 0.76rem !important;
+      font-size: var(--fs-body) !important;
       font-weight: 500 !important;
-      color: #94a3b8 !important;
+      color: var(--tx-3) !important;
       line-height: 1.45 !important;
       height: 4.35em !important;
       min-height: 4.35em !important;
@@ -1421,6 +1443,8 @@
       text-overflow: ellipsis;
       box-sizing: border-box;
       letter-spacing: -0.015em !important;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
       margin: 2px 0 !important;
     }
     .insta-memo-facts-row {
@@ -1430,7 +1454,7 @@
       flex-wrap: wrap;
     }
     .insta-fact-badge {
-      font-size: 0.60rem;
+      font-size: var(--fs-caption);
       font-weight: 800;
       padding: 2px 6px;
       border-radius: 4px;
@@ -1439,14 +1463,14 @@
       gap: 2px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.14);
-      color: #e2e8f0;
+      color: var(--tx-2);
     }
     .insta-fact-badge.badge-weight {
-      color: #34d399;
+      color: var(--ok);
       border-color: rgba(52, 211, 153, 0.35);
       background: rgba(52, 211, 153, 0.1);
       font-family: var(--font-en);
-      font-size: 0.68rem;
+      font-size: var(--fs-caption);
     }
 
     .insta-memo-actions-row {
@@ -1460,18 +1484,18 @@
       flex: 1;
       height: 31px;
       border-radius: 8px;
-      font-size: 0.73rem;
+      font-size: var(--fs-body);
       font-weight: 800;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 4px;
-      transition: all 0.15s ease;
+      transition: transform var(--press-dur) var(--ease-out), background-color 0.2s ease, opacity 0.2s ease;
       border: none;
     }
     .btn-insta-action:active {
-      transform: scale(0.96);
+      transform: scale(var(--press-scale));
     }
     .btn-action-map {
       background: #ffffff;
@@ -1481,7 +1505,7 @@
     .btn-action-template {
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.18);
-      color: #f1f5f9;
+      color: var(--tx-1);
     }
 
     .netflix-category-bar {
@@ -1496,21 +1520,21 @@
     .n-cat-chip {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.12);
-      color: #94a3b8;
-      font-size: 0.74rem;
+      color: var(--tx-3);
+      font-size: var(--fs-body);
       font-weight: 700;
       padding: 5px 12px;
       border-radius: 18px;
       white-space: nowrap;
       cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform var(--press-dur) var(--ease-out), background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       height: 30px;
     }
     .n-cat-chip:active {
-      transform: scale(0.95);
+      transform: scale(var(--press-scale));
     }
     .n-cat-chip.active {
       background: #ffffff;
@@ -1530,9 +1554,9 @@
       -webkit-transform: translateZ(0);
     }
     .n-rail-title {
-      font-size: 0.96rem;
+      font-size: var(--fs-section);
       font-weight: 900;
-      color: #ffffff;
+      color: var(--tx-1);
       letter-spacing: -0.02em;
     }
     .n-rail-slider {
@@ -1555,12 +1579,12 @@
       display: flex;
       flex-direction: column;
       cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform var(--press-dur) var(--ease-out), border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
       box-sizing: border-box;
       user-select: none;
     }
     .n-trailer-card:active {
-      transform: scale(0.95);
+      transform: scale(var(--press-scale));
     }
     .n-trailer-card.active {
       border: 1px solid rgba(255, 255, 255, 0.85);
@@ -1584,14 +1608,15 @@
       position: absolute;
       bottom: 4px;
       right: 4px;
-      background: rgba(0, 0, 0, 0.75);
-      color: #34d399;
-      font-size: 0.54rem;
-      font-weight: 900;
+      background: rgba(0, 0, 0, 0.72);
+      color: var(--tx-1);
+      font-size: var(--fs-caption);
+      font-weight: 800;
       font-family: var(--font-en);
-      padding: 1px 4px;
+      font-variant-numeric: tabular-nums;
+      padding: 1px 5px;
       border-radius: 4px;
-      border: 1px solid rgba(52, 211, 153, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.18);
     }
     .n-trailer-info {
       padding: 6px 6px 7px 6px;
@@ -1601,16 +1626,16 @@
       box-sizing: border-box;
     }
     .n-trailer-spot-name {
-      font-size: 0.68rem;
+      font-size: var(--fs-body);
       font-weight: 800;
-      color: #ffffff;
+      color: var(--tx-1);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
     .n-trailer-author-date {
-      font-size: 0.56rem;
-      color: #94a3b8;
+      font-size: var(--fs-caption);
+      color: var(--tx-3);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -1664,9 +1689,9 @@
       overflow: hidden;
       cursor: pointer;
       position: relative;
-      transition: transform 0.15s ease;
+      transition: transform var(--press-dur) var(--ease-out);
     }
-    .n-video-single-card:active { transform: scale(0.98); }
+    .n-video-single-card:active { transform: scale(var(--press-scale)); }
     .n-video-thumb-box {
       width: 100%;
       aspect-ratio: 16 / 9;
@@ -1741,13 +1766,43 @@
     }
     .dock-item {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      color: var(--text-secondary); text-decoration: none; font-size: 0.67rem; font-weight: 700;
+      color: var(--text-secondary); text-decoration: none; font-size: var(--fs-caption); font-weight: 700;
       gap: 3px; background: none; border: none; cursor: pointer; flex: 1; min-height: 48px;
       padding: 0 2px; transition: color 0.15s ease, transform 0.15s ease;
     }
     .dock-item:active { transform: scale(0.93); }
     .dock-item.active { color: #ffffff !important; font-weight: 900; }
     .dock-item svg { width: 19px; height: 19px; fill: currentColor; flex-shrink: 0; }
+
+    /* 누를 때 반응이 없던 홈 요소(원정대 카드, 동행 모집, ReadyShot 배너, 작성자 칩)에 붙이는 공통 클래스 */
+    .okbm-press {
+      transition: transform var(--press-dur) var(--ease-out), opacity 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .okbm-press:active { transform: scale(var(--press-scale)); }
+    /* 글자만 있는 작은 링크(전체보기): 보이는 크기는 그대로, 누르는 영역만 44px 높이로 넓힌다 */
+    .okbm-link {
+      background: none;
+      border: 0;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 15px 0 15px 16px;
+      margin: -15px 0 -15px -16px;
+      line-height: 14px;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity var(--press-dur) ease;
+    }
+    .okbm-link:active { opacity: 0.55; }
+    /* 키보드로 이동할 때만 보이는 포커스 테두리 (라운지는 lounge.js가 따로 그린다) */
+    main :focus-visible,
+    #romanticMasterBottomDock :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .okbm-press, .okbm-link, .n-cat-chip, .n-trailer-card, .n-video-single-card, .btn-insta-action, .dock-item { transition: none !important; }
+      .okbm-press:active, .n-cat-chip:active, .n-trailer-card:active, .n-video-single-card:active, .btn-insta-action:active, .dock-item:active { transform: none !important; }
+    }
 
     .custom-modal-overlay {
       display: none;
@@ -2182,8 +2237,8 @@
     <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:#fde047; stroke:#fde047; filter:drop-shadow(0 0 5px rgba(253,224,71,0.8)); flex-shrink:0;">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
     </svg>
-    <span style="font-size:0.82rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">이주의 인기 스팟</span>
-    <span id="heroCardIndexIndicator" style="font-family:var(--font-mono), var(--font-en); font-size:0.72rem; font-weight:800; color:#94a3b8; margin-left:2px;">(1/10)</span>
+    <span style="font-size:var(--fs-body); font-weight:900; color:var(--tx-1); letter-spacing:-0.02em;">이주의 인기 스팟</span>
+    <span id="heroCardIndexIndicator" style="font-family:var(--font-mono), var(--font-en); font-size:var(--fs-meta); font-weight:800; color:var(--tx-3); margin-left:2px; font-variant-numeric:tabular-nums;">(1/10)</span>
   </div>
 
   <div class="insta-card" id="instaMainCard" 
@@ -2205,9 +2260,9 @@
    <div class="insta-memo-title-line" style="display:flex; justify-content:space-between; align-items:center;">
       <h1 class="insta-memo-spot-title" id="heroMainTitle">장소 로딩 중...</h1>
 
-      <button type="button" id="btnHeroAuthorFeed" onclick="window.openHeroAuthorCollection(event)" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:3px 8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
+      <button type="button" id="btnHeroAuthorFeed" class="okbm-press" onclick="window.openHeroAuthorCollection(event)" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:3px 8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
         <svg viewBox="0 0 24 24" style="width:10px; height:10px; fill:#fde047; color:#fde047; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <span id="heroAuthorText" style="font-size:0.68rem; font-weight:800; color:#e2e8f0; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">낭만백패커</span>
+        <span id="heroAuthorText" style="font-size:var(--fs-meta); font-weight:800; color:var(--tx-2); max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">낭만백패커</span>
       </button>
     </div>
 
@@ -2246,15 +2301,15 @@ window.okbmIsHomePublicFeed = function(f) {
 })();
 </script>
 
-   <section class="n-rail-section" id="heroTrailerSectionWrap" style="margin-top: 4px; overscroll-behavior: none;">
+   <section class="n-rail-section" id="heroTrailerSectionWrap" style="overscroll-behavior: none;">
       <div style="display:flex; justify-content:space-between; align-items:center; padding-right:14px;">
-        <h2 class="n-rail-title" style="font-size:0.92rem; color:#e2e8f0; display:flex; align-items:center; gap:5px;">
-          <span class="icon-svg" style="width:16px; height:16px; color:#38bdf8; display:flex; align-items:center;">
+        <h2 class="n-rail-title" style="display:flex; align-items:center; gap:5px;">
+          <span class="icon-svg" style="width:16px; height:16px; color:var(--accent); display:flex; align-items:center;">
             <svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10v.01M14 10v.01M12 18v-8M4.93 19h14.14M12 2l8 10h-5v8H9v-8H4l8-10z"/></svg>
           </span>
           <span>테마 스팟</span>
         </h2>
-        <span style="font-size:0.65rem; color:#38bdf8; font-weight:800; cursor:pointer;" onclick="openThemeSpotAllModal();">전체 보기</span>
+        <button type="button" class="okbm-link" style="font-size:var(--fs-meta); color:var(--accent); font-weight:800;" onclick="openThemeSpotAllModal();">전체 보기</button>
       </div>
 
       <!-- 순수 SVG 벡터 기반 테마 필터 바 (이모지 0%) -->
@@ -2370,7 +2425,7 @@ window.okbmIsHomePublicFeed = function(f) {
           <span class="icon-svg"><svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
           <span>이번 주말 낭만 원정대</span>
         </h2>
-        <button type="button" onclick="openTripJoinListModal()" style="background:none; border:none; color:#38bdf8; font-size:0.68rem; font-weight:800; cursor:pointer;">
+        <button type="button" class="okbm-link" onclick="openTripJoinListModal()" style="color:var(--accent); font-size:var(--fs-meta); font-weight:800;">
           전체보기 <span id="tripJoinTotalCountText">(0)</span> 
         </button>
       </div>
@@ -2380,20 +2435,20 @@ window.okbmIsHomePublicFeed = function(f) {
     <section class="n-rail-section" id="okbmLoungeHome" aria-labelledby="okbmLoungeHomeTitle">
       <div class="lmh-title" style="display:flex; justify-content:space-between; align-items:center; padding-right:14px;">
         <h2 class="n-rail-title" id="okbmLoungeHomeTitle"><button type="button" class="lmh-open" data-a="lounge" style="background:none; border:0; padding:0; font:inherit; color:inherit; letter-spacing:inherit; cursor:pointer;">백패커 라운지</button></h2>
-        <button type="button" class="lmh-all" data-a="lounge" aria-label="백패커 라운지 전체 보기" style="background:none; border:0; padding:0; font-family:inherit; font-size:0.68rem; font-weight:800; color:#38bdf8; cursor:pointer; display:inline-flex; align-items:center;">전체보기</button>
+        <button type="button" class="lmh-all okbm-link" data-a="lounge" aria-label="백패커 라운지 전체 보기" style="font-size:var(--fs-meta); font-weight:800; color:var(--accent); cursor:pointer; display:inline-flex; align-items:center;">전체보기</button>
       </div>
       <div class="lmh" id="okbmLoungeHomeBody" style="min-height:283px;"></div>
     </section>
 
     <section style="padding:0 14px;">
-      <div onclick="if(typeof openPlanModal==='function') openPlanModal('calculator');" style="background:#0c1018; border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+      <div class="okbm-press" onclick="if(typeof openPlanModal==='function') openPlanModal('calculator');" style="background:#0c1018; border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
         <div>
-          <div style="font-size:0.68rem; color:#94a3b8; font-weight:900;">출발 전 배낭무게 체크하고</div>
-          <div style="font-size:0.95rem; font-weight:900; color:#fff; margin-top:2px;">ReadyShot찍기!</div>
+          <div style="font-size:var(--fs-meta); color:var(--tx-3); font-weight:800;">출발 전 배낭무게 체크하고</div>
+          <div style="font-size:var(--fs-section); font-weight:900; color:var(--tx-1); margin-top:2px;">ReadyShot찍기!</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:1.25rem; font-weight:900; color:#ffffff; font-family:var(--font-en);" id="mainBannerKgText">0.00 kg</div>
-          <span style="font-size:0.65rem; color:#94a3b8; font-weight:800; display:inline-flex; align-items:center;">
+          <div style="font-size:var(--fs-display); font-weight:900; color:var(--tx-1); font-family:var(--font-en); font-variant-numeric:tabular-nums;" id="mainBannerKgText">0.00 kg</div>
+          <span style="font-size:var(--fs-meta); color:var(--tx-3); font-weight:800; display:inline-flex; align-items:center;">
             <span>점검하기</span>
           </span>
         </div>
@@ -2484,7 +2539,7 @@ window.okbmIsHomePublicFeed = function(f) {
 
  <!-- 🎨 [엽서 스튜디오 / 공유 액션시트 / 포토 카드 스튜디오는 templates.js에서 동적 생성 통제] -->
 
-  <script src="index-main.js?v=1.0.1"></script>
+  <script src="index-main.js?v=1.0.3"></script>
 
   <script>
 

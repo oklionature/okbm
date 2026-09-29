@@ -308,7 +308,7 @@
         bindLazy('openSpotReviewSheet', window.okbmEnsureLounge);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.9.37" defer></script>
+    <script src="romantic-sync.js?v=2.9.38" defer></script>
     <script src="romantic-history.js?v=2.7.97" defer></script>
 
     <style>
@@ -396,6 +396,9 @@
         background-color: #010204 !important; 
         color: var(--text-primary); 
         line-height: 1.45; 
+        /* 기본 글꼴: 없으면 클래스 없는 글자가 브라우저 기본 명조(Times)로 떨어진다 */
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
       }
 
       /* 1. [CSS 최적화] index.html, map.html 공통 추가 */

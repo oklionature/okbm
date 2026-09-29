@@ -623,11 +623,11 @@
           <div class="n-trailer-card" data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId)" style="width:118px !important; flex-shrink:0; cursor:pointer;">
             <div class="n-trailer-thumb">
               <img src="${escapeHtml(okbmSafeImageUrl(item.photoUrl))}" alt="${escapeHtml(sName)}" loading="lazy" decoding="async" />
-              <div class="n-trailer-weight-chip" style="color:#fde047; border-color:rgba(253,224,71,0.4);">${escapeHtml(badgeText)}</div>
+              <div class="n-trailer-weight-chip">${escapeHtml(badgeText)}</div>
             </div>
             <div class="n-trailer-info">
-              <span class="n-trailer-spot-name" style="font-size:0.72rem;">${escapeHtml(sName)}</span>
-              <span class="n-trailer-author-date" style="color:#38bdf8; font-weight:700; display:flex; align-items:center; gap:2px;">
+              <span class="n-trailer-spot-name">${escapeHtml(sName)}</span>
+              <span class="n-trailer-author-date" style="font-weight:700; display:flex; align-items:center; gap:3px;">
                 <svg viewBox="0 0 24 24" style="width:10px; height:10px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span>${escapeHtml(author)}</span>
               </span>
@@ -2175,11 +2175,11 @@ var adBannersHtml = `
       if (countEl) countEl.innerText = "(" + activeTrips.length + ")";
 
       var html = `
-        <div onclick="openTripCreateModal()" style="width:115px; min-height:140px; flex-shrink:0; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.22); border-radius:12px; padding:12px 10px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:6px; cursor:pointer; box-sizing:border-box;">
+        <div class="okbm-press" onclick="openTripCreateModal()" style="width:115px; min-height:140px; flex-shrink:0; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.22); border-radius:12px; padding:12px 10px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:6px; cursor:pointer; box-sizing:border-box;">
           <div style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:700;">+</div>
           <div>
-            <div style="font-size:0.75rem; font-weight:800; color:#ffffff;">동행 모집하기</div>
-            <div style="font-size:0.56rem; color:#94a3b8; line-height:1.3; margin-top:2px;">카카오 오픈채팅<br>공고 올리기</div>
+            <div style="font-size:var(--fs-body); font-weight:800; color:var(--tx-1);">동행 모집하기</div>
+            <div style="font-size:var(--fs-caption); color:var(--tx-3); line-height:1.4; margin-top:3px;">카카오 오픈채팅<br>공고 올리기</div>
           </div>
         </div>
       `;
@@ -2190,21 +2190,21 @@ var adBannersHtml = `
         var isClosed = Boolean(t.isClosed);
 
         return `
-          <div data-trip-id="${escapeHtml(t.tripId)}" onclick="openTripDetailModal(this.dataset.tripId)" style="width:164px; min-height:140px; flex-shrink:0; background:${isClosed ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.035)'}; border:1px solid ${isClosed ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.11)'}; border-radius:12px; padding:10px 11px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; cursor:pointer; box-sizing:border-box; opacity:${isClosed ? '0.6' : '1'};">
+          <div class="okbm-press" data-trip-id="${escapeHtml(t.tripId)}" onclick="openTripDetailModal(this.dataset.tripId)" style="width:164px; min-height:140px; flex-shrink:0; background:${isClosed ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.035)'}; border:1px solid ${isClosed ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.11)'}; border-radius:12px; padding:10px 11px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; cursor:pointer; box-sizing:border-box; opacity:${isClosed ? '0.6' : '1'};">
             <div style="display:flex; flex-direction:column; gap:3px;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:0.58rem; padding:1px 5px; border-radius:3px; font-weight:800; ${dBadge.cls}">${dBadge.text}</span>
-                <span style="font-size:0.58rem; padding:1px 5px; border-radius:3px; font-weight:900; ${isClosed ? 'color:#64748b; background:rgba(255,255,255,0.04);' : 'color:#34d399; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3);'}">
+                <span style="font-size:var(--fs-caption); padding:1px 5px; border-radius:3px; font-weight:800; font-variant-numeric:tabular-nums; ${dBadge.cls}">${dBadge.text}</span>
+                <span style="font-size:var(--fs-caption); padding:1px 5px; border-radius:3px; font-weight:900; ${isClosed ? 'color:var(--tx-4); background:rgba(255,255,255,0.04);' : 'color:var(--ok); background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3);'}">
                   ${isClosed ? '마감' : '모집중'}
                 </span>
               </div>
-              <div style="font-size:0.86rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">${escapeHtml(t.spotName)}</div>
-              <div style="font-size:0.62rem; color:#94a3b8; font-family:var(--font-en);">${escapeHtml(t.date)}</div>
-              <div style="font-size:0.62rem; color:#38bdf8; font-weight:800;">희망 ${maxCap}명</div>
+              <div style="font-size:var(--fs-title); font-weight:900; color:var(--tx-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">${escapeHtml(t.spotName)}</div>
+              <div style="font-size:var(--fs-meta); color:var(--tx-3); font-family:var(--font-en); font-variant-numeric:tabular-nums;">${escapeHtml(t.date)}</div>
+              <div style="font-size:var(--fs-meta); color:var(--tx-2); font-weight:800;">희망 ${maxCap}명</div>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed rgba(255,255,255,0.08); padding-top:5px; margin-top:2px;">
-              <span style="font-size:0.58rem; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:10px; height:10px; fill:none; stroke:#38bdf8; stroke-width:2.2; flex-shrink:0;"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>${escapeHtml(t.authorName || '방장')}</span>
-              <span style="font-size:0.58rem; color:${isClosed ? '#64748b' : '#38bdf8'}; font-weight:800;">${isClosed ? '마감됨' : '공고보기'}</span>
+              <span style="font-size:var(--fs-caption); color:var(--tx-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" style="width:10px; height:10px; fill:none; stroke:currentColor; stroke-width:2.2; flex-shrink:0;"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>${escapeHtml(t.authorName || '방장')}</span>
+              <span style="font-size:var(--fs-meta); color:${isClosed ? 'var(--tx-4)' : 'var(--accent)'}; font-weight:800; flex-shrink:0;">${isClosed ? '마감됨' : '공고보기'}</span>
             </div>
           </div>
         `;
@@ -2212,7 +2212,7 @@ var adBannersHtml = `
 
       if (activeTrips.length > 3) {
         html += `
-          <div onclick="openTripJoinListModal()" style="width:110px; min-height:140px; flex-shrink:0; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 10px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:6px; cursor:pointer; box-sizing:border-box;">
+          <div class="okbm-press" onclick="openTripJoinListModal()" style="width:110px; min-height:140px; flex-shrink:0; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 10px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:6px; cursor:pointer; box-sizing:border-box;">
             <div style="width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center;">
               <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#cbd5e1; stroke-width:2.2;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </div>

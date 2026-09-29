@@ -6602,7 +6602,7 @@ window.ensureMasterBottomDock = function(activeTabId) {
       var isAct = (t.id === activeTab);
       var col = isAct ? '#ffffff' : '#94a3b8';
       var fw = isAct ? '900' : '700';
-      return '<button type="button" class="dock-item ' + (isAct ? 'active' : '') + '" title="' + t.name + '" data-dock-tab="' + t.id + '" onclick="window.navigateToDockTab(this.dataset.dockTab)" style="background:none; border:none; padding:0; margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:' + col + ' !important; font-size:0.67rem; font-weight:' + fw + '; gap:3px; flex:1; height:56px; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent;">' +
+      return '<button type="button" class="dock-item ' + (isAct ? 'active' : '') + '" title="' + t.name + '" data-dock-tab="' + t.id + '" onclick="window.navigateToDockTab(this.dataset.dockTab)" style="background:none; border:none; padding:0; margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:' + col + ' !important; font-size:var(--fs-caption, 10px); font-weight:' + fw + '; gap:3px; flex:1; height:56px; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent;">' +
         t.svg +
         '<span>' + t.name + '</span>' +
       '</button>';
