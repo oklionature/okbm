@@ -6,6 +6,7 @@
        메인 페이지 CSP로는 동작하지 않는다. 이 페이지만 unsafe-eval을 허용하고,
        sandbox iframe(allow-scripts만)으로 띄워 메인 페이지의 쿠키·저장소·DOM에 접근하지 못하게 한다. -->
   <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net blob:; worker-src blob: 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="robots" content="noindex, nofollow">
   <title>heic</title>
 </head>
 <body>

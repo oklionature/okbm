@@ -98,6 +98,8 @@ for (const f of HTML_FILES) {
     markup += html.slice(last, m.index);
     last = m.index + m[0].length;
     if (/\bsrc\s*=/.test(m[1])) continue;
+    // JSON-LD 같은 데이터 블록은 실행되지 않으므로 CSP 해시 대상이 아니다
+    if (/\btype\s*=\s*["']?application\/(ld\+)?json/i.test(m[1])) continue;
     const line = html.slice(0, m.index).split("\n").length;
     scanJs(m[2], f, line - 1);
     inlineScripts[f].push(sha(m[2]));
