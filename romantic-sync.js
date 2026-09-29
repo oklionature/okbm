@@ -3348,6 +3348,8 @@ window.mergeSpotDetailInto = function(spot, detail) {
   spot.authorSnsUrl = spot.author_sns_url;
   // 'guest'면 비회원용 요약만 받은 상태. 로그인 후 다시 받는다. (E1 이전 서버는 tier 없음 = 전체)
   spot.__detailTier = detail.tier === 'guest' ? 'guest' : 'member';
+  // E2: 회원 한도 초과면 'daily' | 'minute'. 이때 값은 비회원용 요약과 같다.
+  spot.__detailLimited = (detail.limited === 'daily' || detail.limited === 'minute') ? detail.limited : '';
   spot.__detailLoaded = true;
   return spot;
 };
@@ -3436,7 +3438,8 @@ window.fetchSpotDetailById = async function(spotId) {
       if (!res.ok) return null;
       var detail = await res.json();
       if (!detail || typeof detail !== 'object') return null;
-      window.__spotDetailCache[cacheKey] = detail;
+      // 한도 초과 응답(E2)은 캐시하지 않는다. 잠시 뒤·다음 날 다시 받을 수 있어야 한다.
+      if (!detail.limited) window.__spotDetailCache[cacheKey] = detail;
       return detail;
     } catch (e) {
       console.warn('[romantic-sync.js:fetchSpotDetailById]', e);

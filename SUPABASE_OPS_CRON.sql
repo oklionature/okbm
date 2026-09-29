@@ -25,5 +25,12 @@ SELECT cron.schedule(
   $$DELETE FROM public.place_research_cache WHERE created_at < now() - interval '7 days'$$
 );
 
+-- 3) 박지 상세 조회 기록(E2 하루 한도용) 정리: 3일 지난 기록 삭제 (매일 04:20 UTC)
+SELECT cron.schedule(
+  'okbm_spot_detail_views_gc',
+  '20 4 * * *',
+  $$DELETE FROM public.okbm_spot_detail_views WHERE view_day < current_date - 3$$
+);
+
 -- 확인
 SELECT jobname, schedule, command, active FROM cron.job WHERE jobname LIKE 'okbm_%' ORDER BY jobname;

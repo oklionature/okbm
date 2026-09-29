@@ -1300,6 +1300,23 @@ GRANT SELECT (
 ) ON TABLE public.spots TO anon, authenticated;
 GRANT INSERT, UPDATE, DELETE ON TABLE public.spots TO authenticated;
 
+-- E1/E2: 상세(들머리·코스/피칭/팁·작성자 SNS)는 로그인 회원에게만.
+-- 회원은 분당 20회·하루 서로 다른 박지 100곳, 비회원은 IP당 분당 60회로 [뷰/특징]만.
+CREATE TABLE IF NOT EXISTS public.okbm_spot_detail_views (
+  actor_id text NOT NULL,
+  view_day date NOT NULL,
+  spot_id text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (actor_id, view_day, spot_id)
+);
+CREATE INDEX IF NOT EXISTS okbm_spot_detail_views_day_idx
+  ON public.okbm_spot_detail_views (view_day);
+ALTER TABLE public.okbm_spot_detail_views ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.okbm_spot_detail_views FROM PUBLIC, anon, authenticated;
+DROP POLICY IF EXISTS okbm_spot_detail_views_no_client ON public.okbm_spot_detail_views;
+CREATE POLICY okbm_spot_detail_views_no_client ON public.okbm_spot_detail_views
+  FOR ALL USING (false) WITH CHECK (false);
+
 CREATE OR REPLACE FUNCTION public.get_spot_detail(p_id text)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -1307,22 +1324,40 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  result jsonb;
-  v_actor text;
+  c_member_per_minute constant integer := 20;
+  c_guest_per_minute constant integer := 60;
+  c_member_per_day constant integer := 100;
+  v_is_service boolean := auth.role() = 'service_role';
   v_member boolean;
+  v_admin boolean := false;
+  v_actor text;
+  v_uid text;
+  v_day date;
+  v_seen integer;
+  v_limited text := '';
+  s record;
 BEGIN
-  -- E1: 들머리 주소·코스/피칭/팁·작성자 SNS는 로그인 회원(익명 로그인 제외)에게만.
-  -- 비회원은 화면에 원래 보이던 [뷰/특징]과 미디어 링크만 받는다.
-  v_member := auth.role() = 'service_role'
+  v_member := v_is_service
     OR (
       auth.uid() IS NOT NULL
       AND COALESCE((auth.jwt() ->> 'is_anonymous')::boolean, false) = false
     );
+  IF v_member AND NOT v_is_service THEN
+    v_admin := COALESCE(public.okbm_is_admin(), false);
+  END IF;
 
-  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+  -- 분당 제한
+  IF NOT v_is_service AND NOT v_admin THEN
     v_actor := COALESCE(NULLIF(auth.uid()::text, ''), 'ip:' || public.okbm_request_ip());
-    IF NOT public.okbm_actor_rate_limit(v_actor, 'get_spot_detail', 60) THEN
-      RAISE EXCEPTION 'rate limit exceeded';
+    IF NOT public.okbm_actor_rate_limit(
+      v_actor, 'get_spot_detail',
+      CASE WHEN v_member THEN c_member_per_minute ELSE c_guest_per_minute END
+    ) THEN
+      IF v_member THEN
+        v_limited := 'minute';
+      ELSE
+        RAISE EXCEPTION 'rate limit exceeded';
+      END IF;
     END IF;
   END IF;
 
@@ -1330,36 +1365,58 @@ BEGIN
     RETURN NULL;
   END IF;
 
-  IF v_member THEN
-    SELECT jsonb_build_object(
+  SELECT sp.id, sp.trailhead_addr, sp.desc_summary, sp."mediaUrls" AS media_urls,
+         sp.author_sns_url, sp.view_brief
+    INTO s
+  FROM public.spots sp
+  WHERE sp.id = btrim(p_id)
+  LIMIT 1;
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  -- 하루 제한: 서로 다른 박지 수. 이미 오늘 연 박지는 세지 않고 계속 열어 준다.
+  IF v_member AND NOT v_is_service AND NOT v_admin AND v_limited = '' THEN
+    v_uid := auth.uid()::text;
+    v_day := (now() AT TIME ZONE 'Asia/Seoul')::date;
+    PERFORM pg_advisory_xact_lock(hashtext('okbm_spot_detail_views:' || v_uid));
+    IF NOT EXISTS (
+      SELECT 1 FROM public.okbm_spot_detail_views
+      WHERE actor_id = v_uid AND view_day = v_day AND spot_id = s.id
+    ) THEN
+      SELECT count(*) INTO v_seen
+      FROM public.okbm_spot_detail_views
+      WHERE actor_id = v_uid AND view_day = v_day;
+      IF v_seen >= c_member_per_day THEN
+        v_limited := 'daily';
+      ELSE
+        INSERT INTO public.okbm_spot_detail_views (actor_id, view_day, spot_id)
+        VALUES (v_uid, v_day, s.id)
+        ON CONFLICT DO NOTHING;
+      END IF;
+    END IF;
+  END IF;
+
+  IF v_member AND v_limited = '' THEN
+    RETURN jsonb_build_object(
       'tier', 'member',
       'trailhead_addr', s.trailhead_addr,
       'desc_summary', s.desc_summary,
-      'mediaUrls', s."mediaUrls",
+      'mediaUrls', s.media_urls,
       'author_sns_url', s.author_sns_url
-    )
-    INTO result
-    FROM public.spots s
-    WHERE s.id = btrim(p_id)
-    LIMIT 1;
-  ELSE
-    SELECT jsonb_build_object(
-      'tier', 'guest',
-      'trailhead_addr', '',
-      'desc_summary', CASE
-        WHEN COALESCE(btrim(s.view_brief), '') = '' THEN ''
-        ELSE '[뷰/특징] ' || btrim(s.view_brief)
-      END,
-      'mediaUrls', s."mediaUrls",
-      'author_sns_url', ''
-    )
-    INTO result
-    FROM public.spots s
-    WHERE s.id = btrim(p_id)
-    LIMIT 1;
+    );
   END IF;
 
-  RETURN result;
+  RETURN jsonb_build_object(
+    'tier', 'guest',
+    'trailhead_addr', '',
+    'desc_summary', CASE
+      WHEN COALESCE(btrim(s.view_brief), '') = '' THEN ''
+      ELSE '[뷰/특징] ' || btrim(s.view_brief)
+    END,
+    'mediaUrls', s.media_urls,
+    'author_sns_url', ''
+  ) || CASE WHEN v_limited <> '' THEN jsonb_build_object('limited', v_limited) ELSE '{}'::jsonb END;
 END;
 $$;
 
