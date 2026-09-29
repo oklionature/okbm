@@ -369,6 +369,7 @@ window.purgeIfStale = purgeIfStale;
     'okbm_memos',
     'okbm_plan_memos',
     'okbm_plan_spots',
+    'okbm_plan_events',
     'okbm_packing_history',
     'okbm_selected_gears_multi',
     'okbm_favorite_gears',
@@ -667,7 +668,7 @@ window.autoPurgeLegacyClientCache = window.autoPurgeLegacyClientCache || functio
   var CLEAN_EPOCH = '20260921_SPOTS_LIGHTWEIGHT';
   var keepKeys = [
     'okbm_gear_version', 'user_auth_token', 'user_profile', 'okbm_user_id', 'okbm_user_nick',
-    'okbm_bookmarks', 'okbm_visited', 'okbm_memos', 'okbm_plan_memos', 'okbm_plan_spots',
+    'okbm_bookmarks', 'okbm_visited', 'okbm_memos', 'okbm_plan_memos', 'okbm_plan_spots', 'okbm_plan_events',
     'okbm_packing_history', 'okbm_selected_gears_multi', 'okbm_favorite_gears', 'okbm_custom_gears',
     'okbm_gear_presets', 'okbm_gear_meta', 'okbm_hero_cover_url', 'okbm_my_proposals',
     'okbm_naver_force_login', 'okbm_vault_intro_dismissed', 'okbm_dirty_user_keys'
@@ -2889,6 +2890,68 @@ window.okbmSanitizePlanSpotsMap = function(raw) {
   return { spots: out, changed: changed };
 };
 
+// 백패커 라운지 행사 → 낭만플랜 달력 "행사로 표시"(A1). okbm_plan_events = { 행사id: {id,title,start,end,place,spotId} }
+// 두 페이지 모두 이 파일을 받으므로 lounge.js가 romantic-plan.js 없이도 쓸 수 있다(달력 그리기는 romantic-plan.js).
+var OKBM_PLAN_EVENTS_MAX = 200;
+function okbmPlanEventDate(v) {
+  var m = String(v || '').match(/^(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/);
+  if (!m) return '';
+  var y = parseInt(m[1], 10), mo = parseInt(m[2], 10), d = parseInt(m[3], 10);
+  if (y < 1900 || y > 2100 || mo < 1 || mo > 12 || d < 1 || d > 31) return '';
+  return y + '-' + String(mo).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+}
+window.okbmReadPlanEvents = function() {
+  var v = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_plan_events', {})
+    : safeGetJSON('okbm_plan_events', {});
+  return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+};
+window.okbmHasPlanEvent = function(eventId) {
+  var id = String(eventId || '').trim();
+  return !!(id && window.okbmReadPlanEvents()[id]);
+};
+// on === false면 뺀다. 저장은 한 번(로그인 상태면 서버에도 올라감)
+window.okbmSetPlanEvent = function(ev, on) {
+  var id = String((ev && ev.id) || '').trim();
+  if (!id) return false;
+  var map = Object.assign({}, window.okbmReadPlanEvents());
+  if (on === false) {
+    if (!map[id]) return true;
+    delete map[id];
+  } else {
+    var start = okbmPlanEventDate(ev.start);
+    if (!start) return false;
+    var end = okbmPlanEventDate(ev.end);
+    if (end && end < start) end = '';
+    map[id] = {
+      id: id,
+      title: String(ev.title || '').trim().slice(0, 80) || '행사',
+      start: start,
+      end: end && end !== start ? end : '',
+      place: String(ev.place || '').trim().slice(0, 80),
+      spotId: String(ev.spotId || '').trim().slice(0, 80)
+    };
+    // 너무 많이 쌓이면 끝난 지 오래된 것부터 뺀다
+    var ids = Object.keys(map);
+    if (ids.length > OKBM_PLAN_EVENTS_MAX) {
+      ids.sort(function(a, b) {
+        var ea = map[a].end || map[a].start, eb = map[b].end || map[b].start;
+        return String(ea).localeCompare(String(eb));
+      }).slice(0, ids.length - OKBM_PLAN_EVENTS_MAX).forEach(function(k) { if (k !== id) delete map[k]; });
+    }
+  }
+  if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+    window.RomanticVault.write('okbm_plan_events', map, true);
+  } else {
+    try { localStorage.setItem('okbm_plan_events', JSON.stringify(map)); } catch (e) {}
+  }
+  if (typeof window.renderPlanStage === 'function' && document.getElementById('romanticPlanModal')) {
+    try { window.renderPlanStage(); } catch (e) { console.warn('[romantic-sync.js:okbmSetPlanEvent render]', e); }
+  }
+  try { window.dispatchEvent(new CustomEvent('okbm_plan_events_changed', { detail: { id: id, on: on !== false } })); } catch (e) {}
+  return true;
+};
+
 // [D3] users 행에 저장되는 로컬 키 → 서버 위치(칸 또는 my_gears 하위 키)
 var OKBM_USER_DATA_KEYS = {
   okbm_bookmarks: { col: 'bookmarks' },
@@ -2903,6 +2966,8 @@ var OKBM_USER_DATA_KEYS = {
   okbm_gear_meta: { gear: 'gearMeta' },
   okbm_plan_memos: { gear: 'planMemos' },
   okbm_plan_spots: { gear: 'planSpots' },
+  // 백패커 라운지 행사를 달력에 "행사로 표시" { 행사id: {id,title,start,end,place,spotId} }
+  okbm_plan_events: { gear: 'planEvents' },
   // 프로필 값은 localStorage에 흩어져 있어 부분별로 나눈다(한 부분 편집이 다른 부분을 덮지 않도록).
   __profile_bio: { profile: 'bio' },
   __profile_cover: { profile: 'cover' },
@@ -3176,6 +3241,11 @@ window.RomanticVault = window.RomanticVault || {
           var serverPlanMemos = mg.planMemos || mg.plan_memos;
           if (serverPlanMemos && typeof serverPlanMemos === 'object') {
             applyServer('okbm_plan_memos', serverPlanMemos);
+          }
+
+          var serverPlanEvents = mg.planEvents || mg.plan_events;
+          if (serverPlanEvents && typeof serverPlanEvents === 'object' && !Array.isArray(serverPlanEvents)) {
+            applyServer('okbm_plan_events', serverPlanEvents);
           }
 
           var serverPlanSpots = mg.planSpots || mg.plan_spots;
@@ -10051,7 +10121,7 @@ function logoutUser() {
 
   var userPersonalKeys = [
     'okbm_bookmarks', 'okbm_visited', 'okbm_memos',
-    'okbm_plan_memos', 'okbm_plan_spots', 'okbm_packing_history',
+    'okbm_plan_memos', 'okbm_plan_spots', 'okbm_plan_events', 'okbm_packing_history',
     'okbm_selected_gears_multi', 'okbm_favorite_gears',
     'okbm_custom_gears', 'okbm_gear_presets', 'okbm_gear_meta',
     'okbm_trip_consumables', 'okbm_packed_checks', 'okbm_phone_photos_map',
@@ -10409,7 +10479,7 @@ function okbmPurgeLocalSessionData() {
   okbmClearLocalProfileFields();
   var purgeKeys = [
     'okbm_bookmarks', 'okbm_visited', 'okbm_memos',
-    'okbm_plan_memos', 'okbm_plan_spots', 'okbm_packing_history',
+    'okbm_plan_memos', 'okbm_plan_spots', 'okbm_plan_events', 'okbm_packing_history',
     'okbm_selected_gears_multi', 'okbm_favorite_gears',
     'okbm_custom_gears', 'okbm_gear_presets', 'okbm_gear_meta',
     'okbm_trip_consumables', 'okbm_packed_checks', 'okbm_phone_photos_map',
@@ -13251,7 +13321,7 @@ window.openUserNotificationInbox = async function(initialTab, ev) {
 
 // [D3] 바뀐 항목만 okbm_patch_user_data RPC로 저장한다.
 // 반환: 'ok'(저장 완료 또는 올릴 게 없음) | 'failed' | 'no_row'(행 없음 → 전체 저장 필요) | 'no_rpc'(DB 함수 미적용 → 전체 저장)
-var OKBM_OBJECT_USER_KEYS = { okbm_memos: true, okbm_selected_gears_multi: true, okbm_gear_meta: true, okbm_plan_memos: true, okbm_plan_spots: true };
+var OKBM_OBJECT_USER_KEYS = { okbm_memos: true, okbm_selected_gears_multi: true, okbm_gear_meta: true, okbm_plan_memos: true, okbm_plan_spots: true, okbm_plan_events: true };
 async function okbmSaveDirtyUserData(snapshot, ctx) {
   var keys = Object.keys(snapshot || {});
   if (!keys.length) return 'ok';
@@ -13358,6 +13428,9 @@ window.saveUserToSupabase = async function(profileData, opts) {
   var rawPlanSpots = (vault && typeof vault.read === 'function') ? vault.read('okbm_plan_spots', {}) : safeGetJSON('okbm_plan_spots', {});
   var planSpots = rawPlanSpots || {};
 
+  var rawPlanEvents = (vault && typeof vault.read === 'function') ? vault.read('okbm_plan_events', {}) : safeGetJSON('okbm_plan_events', {});
+  var planEvents = (rawPlanEvents && typeof rawPlanEvents === 'object' && !Array.isArray(rawPlanEvents)) ? rawPlanEvents : {};
+
   // [헌법 제1조: SSOT 원칙] 글/피드 데이터는 feeds 테이블에서만 관리합니다.
   // users 테이블에 pack_history를 통째로 중복 저장하면, feeds 테이블에서 지운
   // 글이 이 백업 컬럼에 영구 보존되어 두 저장소 간 데이터 불일치가 발생합니다.
@@ -13425,6 +13498,7 @@ window.saveUserToSupabase = async function(profileData, opts) {
       gearMeta: gearMeta || {},
       planMemos: planMemos || {},
       planSpots: planSpots || {},
+      planEvents: planEvents,
       hide_year_activity: localStorage.getItem('okbm_hide_year_activity') === '1',
       hide_total_activity: localStorage.getItem('okbm_hide_total_activity') === '1',
       sns: {

@@ -966,7 +966,7 @@
     var storeKeys = Object.keys(window.__memoryStore);
     if (storeKeys.length > 50) {
       // 가장 먼저 추가된 키부터 삭제 (단, 핵심 키는 보존)
-      var protectedKeys = ['okbm_packing_history', 'okbm_master_gears', 'okbm_plan_spots', 'okbm_plan_memos'];
+      var protectedKeys = ['okbm_packing_history', 'okbm_master_gears', 'okbm_plan_spots', 'okbm_plan_memos', 'okbm_plan_events'];
       for (var i = 0; i < storeKeys.length && Object.keys(window.__memoryStore).length > 50; i++) {
         if (protectedKeys.indexOf(storeKeys[i]) === -1) {
           delete window.__memoryStore[storeKeys[i]];

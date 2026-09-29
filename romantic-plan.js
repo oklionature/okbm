@@ -274,6 +274,24 @@
         }
         return;
       }
+      // 달력의 라운지 행사: 빼기 / 누르면 라운지 창에서 그 행사
+      var evRemove = e.target.closest('.js-plan-event-remove');
+      if (evRemove) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.okbmSetPlanEvent === 'function' && window.okbmSetPlanEvent({ id: evRemove.dataset.eventId || '' }, false)) {
+          triggerHaptic(12);
+          if (typeof showToast === 'function') showToast('[' + (evRemove.dataset.title || '행사') + '] 달력에서 뺐어요.', 'info', 1800);
+        }
+        return;
+      }
+      var evOpen = e.target.closest('.js-plan-event-open');
+      if (evOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.openLoungeWindow === 'function') window.openLoungeWindow(0, evOpen.dataset.eventId || '');
+        return;
+      }
       var clearDay = e.target.closest('.js-clear-day-schedule');
       if (clearDay) {
         if (typeof window.clearEntireDaySchedule === 'function') {
@@ -3568,6 +3586,34 @@ window.saveCurrentPackingRecord = function() {
       : safeGetJSON('okbm_plan_spots', {}) || {};
     var planSpotsObj = persistSanitizedPlanSpots(rawPlanSpotsObj || {});
 
+    // 백패커 라운지 행사(okbm_plan_events, romantic-sync.js okbmSetPlanEvent): 이 달 날짜별 목록 → 칸 아래 보라 띠 + 선택한 날 목록
+    var planEventsMap = (typeof window.okbmReadPlanEvents === 'function') ? window.okbmReadPlanEvents() : {};
+    var planEventsByDay = {};
+    var activeDayEvents = [];
+    var evNumOf = function(v) {
+      var p = String(v || '').match(/\d+/g);
+      return (p && p.length >= 3) ? (parseInt(p[0], 10) * 10000 + parseInt(p[1], 10) * 100 + parseInt(p[2], 10)) : 0;
+    };
+    var evMonthStart = viewYear * 10000 + viewMonth * 100 + 1;
+    var evMonthEnd = viewYear * 10000 + viewMonth * 100 + lastDayOfMonth;
+    var evActiveNum = evNumOf(activeDateStr);
+    Object.keys(planEventsMap || {}).forEach(function(evKey) {
+      var ev = planEventsMap[evKey];
+      if (!ev || !ev.id) return;
+      var evStart = evNumOf(ev.start);
+      if (!evStart) return;
+      var evEnd = evNumOf(ev.end) || evStart;
+      if (evEnd < evStart) evEnd = evStart;
+      if (evActiveNum && evActiveNum >= evStart && evActiveNum <= evEnd) activeDayEvents.push(ev);
+      if (evEnd < evMonthStart || evStart > evMonthEnd) return;
+      for (var evDay = 1; evDay <= lastDayOfMonth; evDay++) {
+        var evCellNum = viewYear * 10000 + viewMonth * 100 + evDay;
+        if (evCellNum >= evStart && evCellNum <= evEnd) (planEventsByDay[evDay] || (planEventsByDay[evDay] = [])).push(ev);
+      }
+    });
+    activeDayEvents.sort(function(a, b) { return String(a.start).localeCompare(String(b.start)); });
+    var monthHasPlanEvents = Object.keys(planEventsByDay).length > 0;
+
     function resolveSpotAndMemo(targetDateStr) {
       var sName = '';
       var sElev = '';
@@ -3879,7 +3925,17 @@ window.saveCurrentPackingRecord = function() {
         circleStyle += 'color:#94a3b8;';
       }
 
-      calendarDaysHtml += '<div style="height:100% !important; width:100% !important; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;" ' +
+      // 행사 띠: 이어지는 날끼리는 칸 사이(2px)까지 이어 붙이고, 주의 처음·끝과 행사 처음·끝은 둥글게
+      var evBand = '';
+      if (planEventsByDay[d]) {
+        var evCol = (firstDayIndex + d - 1) % 7;
+        var evJoinL = evCol !== 0 && d > 1 && !!planEventsByDay[d - 1];
+        var evJoinR = evCol !== 6 && d < lastDayOfMonth && !!planEventsByDay[d + 1];
+        evBand = '<span aria-hidden="true" style="position:absolute; bottom:1px; left:' + (evJoinL ? '-1px' : '5px') + '; right:' + (evJoinR ? '-1px' : '5px') + '; height:3px; background:#a78bfa; border-radius:' +
+          (evJoinL ? '0' : '2px') + ' ' + (evJoinR ? '0' : '2px') + ' ' + (evJoinR ? '0' : '2px') + ' ' + (evJoinL ? '0' : '2px') + '; pointer-events:none;"></span>';
+      }
+
+      calendarDaysHtml += '<div style="position:relative; height:100% !important; width:100% !important; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;" ' +
         'data-okbm-d="' + Number(d) + '" data-okbm-m="' + Number(viewMonth) + '" data-okbm-y="' + Number(viewYear) + '" ' +
         'onclick="window.handlePlanCalendarClick(Number(this.dataset.okbmD), Number(this.dataset.okbmM), Number(this.dataset.okbmY))" ' +
         'onmousedown="window.startDateLongPress(event, Number(this.dataset.okbmD), Number(this.dataset.okbmM), Number(this.dataset.okbmY))" ' +
@@ -3890,7 +3946,7 @@ window.saveCurrentPackingRecord = function() {
         'ontouchend="window.cancelDateLongPress(event)" ' +
         'ontouchcancel="window.cancelDateLongPress(event)" ' +
         'oncontextmenu="return false;">' +
-        '<div style="' + circleStyle + '">' + d + indicatorDot + '</div></div>';
+        '<div style="' + circleStyle + '">' + d + indicatorDot + '</div>' + evBand + '</div>';
     }
 
     for (var te = 0; te < (42 - (firstDayIndex + lastDayOfMonth)); te++) {
@@ -3903,6 +3959,25 @@ window.saveCurrentPackingRecord = function() {
       bookmarks: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:#fbbf24; stroke:#fbbf24; stroke-width:1;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
       gears: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; stroke:#e2e8f0; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'
     };
+
+    var activeEventsHtml = '';
+    if (activeDayEvents.length) {
+      var evFmt = function(v) { var p = String(v || '').match(/\d+/g); return (p && p.length >= 3) ? (parseInt(p[1], 10) + '.' + parseInt(p[2], 10)) : ''; };
+      activeEventsHtml = '<div style="flex-shrink:0; display:flex; flex-direction:column; gap:4px;">' +
+        activeDayEvents.slice(0, 2).map(function(ev) {
+          var evRange = evFmt(ev.start) + (ev.end ? ' – ' + evFmt(ev.end) : '');
+          return '<div style="display:flex; align-items:center; gap:8px; background:rgba(167,139,250,0.08); border:1px solid rgba(167,139,250,0.35); border-radius:10px; padding:5px 8px 5px 10px; box-sizing:border-box; min-width:0;">' +
+            '<span style="width:3px; height:22px; border-radius:2px; background:#a78bfa; flex-shrink:0;"></span>' +
+            '<div class="js-plan-event-open" role="button" tabindex="0" data-event-id="' + escapeHtml(ev.id) + '" style="min-width:0; flex:1; cursor:pointer;">' +
+              '<div style="font-size:0.76rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><span style="color:#c4b5fd; font-weight:900;">행사</span> ' + escapeHtml(ev.title) + '</div>' +
+              '<div style="font-size:0.64rem; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px;">' + escapeHtml([evRange, ev.place].filter(Boolean).join(' · ')) + '</div>' +
+            '</div>' +
+            '<button type="button" class="js-plan-event-remove" data-event-id="' + escapeHtml(ev.id) + '" data-title="' + escapeHtml(ev.title) + '" aria-label="' + escapeHtml(ev.title + ' 달력에서 빼기') + '" style="flex-shrink:0; height:24px; padding:0 8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; font-size:0.64rem; font-weight:800; border-radius:6px; cursor:pointer;">빼기</button>' +
+          '</div>';
+        }).join('') +
+        (activeDayEvents.length > 2 ? '<div style="font-size:0.62rem; color:#94a3b8; padding-left:4px;">행사 ' + (activeDayEvents.length - 2) + '개 더</div>' : '') +
+      '</div>';
+    }
 
     var calendarMemoViewHtml = `
       <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:6px; padding:2px 0 4px 0; overflow:hidden; box-sizing:border-box;">
@@ -3923,6 +3998,7 @@ window.saveCurrentPackingRecord = function() {
               <button type="button" onclick="window.jumpToPlanToday()" style="height:24px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.70rem; font-weight:800; padding:0 8px; border-radius:5px; cursor:pointer;">오늘</button>
               <span style="font-size:0.70rem; color:#f59e0b; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:rgba(245,158,11,0.25); border:1.2px solid #f59e0b; border-radius:50%; display:inline-block;"></span><span>완료</span></span>
               <span style="font-size:0.70rem; color:#34d399; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:rgba(52,211,153,0.3); border:1px solid #34d399; border-radius:50%; display:inline-block;"></span><span>계획</span></span>
+              ${monthHasPlanEvents ? '<span style="font-size:0.70rem; color:#c4b5fd; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:3px; background:#a78bfa; border-radius:2px; display:inline-block;"></span><span>행사</span></span>' : ''}
             </div>
           </div>
 
@@ -3937,6 +4013,9 @@ window.saveCurrentPackingRecord = function() {
 
         <!-- 2. 최단 일정 D-Day 스마트 배너 -->
         ${dDayBadgeHtml}
+
+        <!-- 2.5 선택한 날의 라운지 행사 (행사로 표시한 것) -->
+        ${activeEventsHtml}
 
        <!-- 3. 메모장 카드 (22%) -->
         <div id="planMemoCardWrap" style="flex:22 1 0% !important; min-height:0 !important; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:6px 12px; display:flex; flex-direction:column; gap:4px; box-sizing:border-box;">
@@ -4537,6 +4616,7 @@ window.saveCurrentPackingRecord = function() {
               <button type="button" onclick="window.jumpToPlanToday()" style="height:26px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#ffffff; font-size:0.72rem; font-weight:800; padding:0 8px; border-radius:6px; cursor:pointer;">오늘</button>
               <span style="font-size:0.74rem; color:rgba(217,180,99,0.9); font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.starGold}<span>완료</span></span>
               <span style="font-size:0.74rem; color:#34d399; font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.flagGreen}<span>계획</span></span>
+              ${monthHasPlanEvents ? '<span style="font-size:0.70rem; color:#c4b5fd; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:3px; background:#a78bfa; border-radius:2px; display:inline-block;"></span><span>행사</span></span>' : ''}
             </div>
           </div>
 
@@ -5448,6 +5528,66 @@ window.saveCurrentPackingRecord = function() {
     setTimeout(function() {
       if (typeof window.renderPlanCategorySlots === 'function') window.renderPlanCategorySlots();
     }, 50);
+  };
+
+  // 백패커 라운지 "장비 세트 → 패킹 리스트에 담기"(B). 지금 배낭(selectedGearMap)에 합친다(바꾸지 않음).
+  // items: [{gear_id, category_id, name, weight_g, link_url}] — 같은 장비(이름 또는 gear_id)는 건너뛰고 저장은 한 번.
+  // 반환 { added, skipped }
+  window.okbmAddGearsToPack = function(items) {
+    var list = Array.isArray(items) ? items : [];
+    if (!list.length) return { added: 0, skipped: 0 };
+    if (!window.selectedGearMap || typeof window.selectedGearMap !== 'object' || Array.isArray(window.selectedGearMap)) window.selectedGearMap = {};
+    var map = window.selectedGearMap;
+    var master = (window.__memoryStore && window.__memoryStore['okbm_master_gears']) || window.GEARS_MASTER || [];
+    var haveNames = {};
+    var haveIds = {};
+    Object.keys(map).forEach(function(k) {
+      (Array.isArray(map[k]) ? map[k] : []).forEach(function(it) {
+        if (!it) return;
+        var nk = normalizeGearNameKey(it.name || it.itemName);
+        if (nk) haveNames[nk] = true;
+        if (it.gear_id) haveIds[String(it.gear_id)] = true;
+      });
+    });
+    var added = 0;
+    var skipped = 0;
+    list.forEach(function(raw) {
+      if (!raw) return;
+      var gid = String(raw.gear_id || '').trim();
+      var mrow = (gid && Array.isArray(master)) ? master.find(function(r) { return r && String(r.id) === gid; }) : null;
+      var name = String(raw.name || (mrow && mrow.item_name) || '').trim().slice(0, 120);
+      var nk = normalizeGearNameKey(name);
+      if (!nk) return;
+      if ((gid && haveIds[gid]) || haveNames[nk]) { skipped++; return; }
+      // 관리자가 고른 분류가 먼저, 없으면 이름으로 판정
+      var catId = normalizePlanGearCategoryId(raw.category_id) ||
+        resolvePlanGearCategoryId(name, { name: name, category_id: (mrow && mrow.category_id) || '', brand: (mrow && mrow.brand) || '' });
+      if (PLAN_GEAR_CAT_IDS.indexOf(catId) === -1) catId = 'other';
+      if (!Array.isArray(map[catId])) map[catId] = [];
+      var entry = {
+        id: 'item_' + Date.now() + '_' + Math.random(),
+        name: name,
+        weight: Math.max(0, Math.round(Number(raw.weight_g || (mrow && mrow.weight_g) || 0) || 0))
+      };
+      if (gid) entry.gear_id = gid; // 화면은 안 쓰지만 다음 담기 때 같은 장비를 알아본다
+      map[catId].push(entry);
+      haveNames[nk] = true;
+      if (gid) haveIds[gid] = true;
+      added++;
+    });
+    if (added) {
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_selected_gears_multi', map, true);
+      } else {
+        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(map));
+      }
+      if (document.getElementById('romanticPlanModal')) {
+        if (window.activePlanSubMode === 'calculator' && typeof window.renderPlanCategorySlots === 'function') window.renderPlanCategorySlots();
+        else if (typeof window.renderPlanStage === 'function') window.renderPlanStage();
+        okbmRefreshPresetGearListIfOpen();
+      }
+    }
+    return { added: added, skipped: skipped };
   };
 
   window.deleteGearPreset = function(presetId) {
@@ -6520,7 +6660,9 @@ window.saveCurrentPackingRecord = function() {
     planSpots[normDate] = [{
       name: name,
       elevation: (spotInfo && spotInfo.elevation) || '',
-      unregistered: !!(spotInfo && spotInfo.unregistered)
+      unregistered: !!(spotInfo && spotInfo.unregistered),
+      // 백패커 라운지 행사에서 "이날 내 일정으로 등록"한 경우(없으면 JSON에서 빠짐)
+      eventId: (spotInfo && spotInfo.eventId) ? String(spotInfo.eventId).slice(0, 80) : undefined
     }];
 
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {

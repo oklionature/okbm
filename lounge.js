@@ -47,7 +47,9 @@
     check: '<path d="M20 6L9 17l-5-5"/>',
     x: '<path d="M6 6l12 12M18 6L6 18"/>',
     pin: '<path d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="10" r="2.5"/>',
-    link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>'
+    link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+    cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+    pack: '<path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/>'
   };
 
   const TABS = ['이번 달 행사', '초보 가이드', '자유게시판', '박지 후기'];
@@ -65,7 +67,8 @@
     recent: null, recentTier: '', recentDone: false, comments: {}, admin: false,
     fail: [false, false, false, false],
     liked: new Set(), likeChecked: new Set(), // 내가 좋아요 누른 글(본인 것만 보임)
-    spotRev: null // 박지 하나의 후기 {spot_id, tier, summary, reviews, mine, done}
+    spotRev: null, // 박지 하나의 후기 {spot_id, tier, summary, reviews, mine, done}
+    packedKits: new Set() // 이번에 패킹 리스트에 담은 장비 세트
   };
   // 화면 상태. tab = 홈 탭, wtab = 라운지 창 탭 (서로 따로 기억), revSpot = 후기 탭을 한 박지로 좁힘
   const S = { tab: 0, wtab: 0, cat: 'all', revSpot: null };
@@ -411,6 +414,24 @@
       '.lm-revhead .lm-stars{font-size:15px}',
       '.lm-back-all{display:inline-flex;align-items:center;gap:2px;margin-top:14px;font-size:14px;font-weight:600;color:var(--sub)}',
       '.lm-mine{display:inline-block;margin-left:6px;padding:0 6px;border-radius:5px;font-size:11px;font-weight:700;color:var(--blue);border:1px solid rgba(49,130,246,.45)}',
+      // P5: 달력·패킹 연동 (행사 펼침 안에서 두 가지 고르기)
+      '.lm-cal-row{margin-top:8px}',
+      '.lm-cal-row>.lm-btn,.lm-kit-row>.lm-btn{width:100%}',
+      '.lm-kit-row{margin-top:14px;display:flex;gap:8px}',
+      '.lm-btn.ok{background:#1f3a63;color:#cfe0ff}',
+      '.lmx-sub{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s var(--ease)}',
+      '.lmx-sub>div{overflow:hidden;min-height:0}',
+      '.lmx.cal .lmx-sub{grid-template-rows:1fr}',
+      '.lm-pick{width:100%;display:flex;align-items:center;gap:14px;padding:14px 0;text-align:left}',
+      '.lm-pick+.lm-pick{border-top:1px solid var(--div)}',
+      '.lmx-sub .lm-pick:first-child{margin-top:6px}',
+      '.lm-radio{flex:none;width:24px;height:24px;border-radius:50%;border:2px solid #3a3a40;display:grid;place-items:center;color:#fff;transition:background .2s,border-color .2s}',
+      '.lm-pick.on .lm-radio{background:var(--blue);border-color:var(--blue)}',
+      '.lm-radio svg{opacity:0;transform:scale(.4);transition:.25s var(--ease)}',
+      '.lm-pick.on .lm-radio svg{opacity:1;transform:none}',
+      '.lm-pick b{display:block;font-size:16px;font-weight:600}',
+      '.lm-pick small{display:block;margin-top:3px;font-size:13px;line-height:1.45;color:var(--sub)}',
+      '.lm-pick[disabled]{opacity:.5}',
       '@media (prefers-reduced-motion:reduce){#okbmLoungeLayer *,#okbmLoungeHome *{animation:none !important;transition:none !important}}',
       // 지도 페이지 하단 독은 safe-area 대체값이 0px(홈은 8px)
       IS_MAP ? '#okbmLoungeLayer{bottom:calc(56px + env(safe-area-inset-bottom,0px))}' : ''
@@ -655,6 +676,55 @@
     if (D.admin && !e.is_active) t += '<span class="lm-tag">숨김</span>';
     return t;
   }
+  // ---------- 달력·패킹 연동 (P5, romantic-sync.js okbmSetPlanEvent / romantic-plan.js okbmSetSinglePlanSpotForDate·okbmAddGearsToPack) ----------
+  // A1 = 행사로 표시(okbm_plan_events), A2 = 이날 내 일정(okbm_plan_spots에 eventId)
+  function calState(e) {
+    const marked = typeof window.okbmHasPlanEvent === 'function' && window.okbmHasPlanEvent(e.id);
+    let planned = false;
+    try {
+      const spots = (window.RomanticVault && typeof window.RomanticVault.read === 'function') ? window.RomanticVault.read('okbm_plan_spots', {}) : {};
+      Object.keys(spots || {}).forEach(function (k) {
+        (Array.isArray(spots[k]) ? spots[k] : []).forEach(function (sp) { if (sp && sp.eventId === e.id) planned = true; });
+      });
+    } catch (err) {}
+    return { marked: !!marked, planned: planned };
+  }
+  // 이미 시작한 행사는 오늘로, 끝났으면 ''(등록 안 함)
+  function planDateOf(e) {
+    const v = evView(e);
+    if (v.past) return '';
+    const t = todayKey();
+    return String(e.start_date) < t ? t : String(e.start_date).slice(0, 10);
+  }
+  function calSlotInner(e) {
+    const st = calState(e);
+    const on = st.marked || st.planned;
+    const pd = planDateOf(e);
+    const pdText = pd ? (parseInt(pd.slice(5, 7), 10) + '.' + parseInt(pd.slice(8, 10), 10)) : '';
+    return `<button type="button" class="lm-btn sm ${on ? 'ok' : ''}" data-a="cal-open" aria-expanded="false">${ico(on ? P.check : P.cal, 16)}${on ? '내 달력에 있어요' : '내 달력에 추가'}</button>
+      <div class="lmx-sub"><div>
+        <button type="button" class="lm-pick ${st.marked ? 'on' : ''}" data-a="cal-mark" data-v="${esc(e.id)}" aria-pressed="${st.marked}"><span class="lm-radio">${ico(P.check, 14)}</span><span><b>${st.marked ? '행사로 표시했어요' : '행사로 표시'}</b><small>${st.marked ? '다시 누르면 달력에서 빼요.' : '기간 전체에 띠로 보여요. 내 일정과 따로 보여요.'}</small></span></button>
+        <button type="button" class="lm-pick ${st.planned ? 'on' : ''}" data-a="cal-plan" data-v="${esc(e.id)}" aria-pressed="${st.planned}" ${pd ? '' : 'disabled'}><span class="lm-radio">${ico(P.check, 14)}</span><span><b>${st.planned ? '내 일정으로 등록했어요' : '이날 내 일정으로 등록'}</b><small>${pd ? pdText + '에 넣고 패킹 리스트와 이어져요. 그날 일정이 있으면 바꿀지 먼저 물어봐요.' : '끝난 행사라 등록할 수 없어요.'}</small></span></button>
+        <button type="button" class="lmx-login" data-a="open-cal" data-v="${esc(pd || String(e.start_date).slice(0, 10))}">내 달력 열기${ico(P.chevR, 14)}</button>
+      </div></div>`;
+  }
+  function kitSlotInner(k) {
+    const done = D.packedKits.has(k.id);
+    return done
+      ? `<button type="button" class="lm-btn sm ok" data-a="open-pack">${ico(P.check, 16)}패킹 리스트 열기</button>`
+      : `<button type="button" class="lm-btn sm main" data-a="kit-pack" data-v="${esc(k.id)}">${ico(P.pack, 16)}패킹 리스트에 담기</button>`;
+  }
+  // 홈·창 양쪽의 같은 항목 칸을 다시 그린다(펼침·고르기 상태는 그대로)
+  function repaintSlot(sel, id, html) {
+    [home, layer].forEach(function (root) {
+      if (!root) return;
+      root.querySelectorAll('.lmx').forEach(function (n) {
+        if (n.dataset.id !== String(id)) return;
+        const slot = n.querySelector(sel);
+        if (slot) slot.innerHTML = html;
+      });
+    });
+  }
   function evItem(e) {
     const v = evView(e);
     const spot = e.spot_id ? spotById(e.spot_id) : null;
@@ -672,6 +742,7 @@
         ${e.spot_id ? `<button type="button" class="lm-btn sm" data-a="spot" data-v="${esc(e.spot_id)}">${ico(P.pin, 16)}지도에서 보기</button>` : ''}
         ${e.apply_url ? `<a class="lm-btn sm main" href="${escapeHtml(okbmSafeExternalUrl(e.apply_url))}" target="_blank" rel="noopener noreferrer">신청하기</a>` : ''}
       </div>` : ''}
+      ${v.past ? '' : `<div class="lm-cal-row" data-cal-slot>${calSlotInner(e)}</div>`}
       ${adminLinks([['edit-event', '수정', 'adm', e.id], ['pin-event', e.is_pinned ? '고정 풀기' : '홈 상단 고정', 'adm', e.id], ['hide-event', e.is_active ? '숨기기' : '다시 보이기', 'adm', e.id], ['del-event', '삭제', 'red', e.id]])}
     </div>`;
     return fold(e.id, head, body);
@@ -713,7 +784,8 @@
         return `<div class="lm-item"><span>${esc(GEAR_CAT[it.category_id] || '장비')}</span><b>${esc(it.name)}</b><em>${((Number(it.weight_g) || 0) / 1000).toFixed(2)}kg</em>${url !== '#' ? `<a href="${escapeHtml(okbmSafeExternalUrl(it.link_url))}" target="_blank" rel="noopener noreferrer">보기${ico(P.chevR, 13)}</a>` : ''}</div>`;
       }).join('')}
       ${k.body ? `<p class="lm-desc">${esc(k.body)}</p>` : ''}
-      <p class="lm-hint">무게는 장비 목록 기준이에요.</p>
+      <p class="lm-hint">무게는 장비 목록 기준이에요. 담으면 지금 패킹 리스트에 더해져요(이미 있는 장비는 건너뛰어요).</p>
+      ${items.length ? `<div class="lm-kit-row" data-kit-slot>${kitSlotInner(k)}</div>` : ''}
       ${adminLinks([['edit-guide', '수정', 'adm', k.id], ['hide-guide', k.is_active ? '숨기기' : '다시 보이기', 'adm', k.id], ['del-guide', '삭제', 'red', k.id]])}
     </div>`;
     return fold(k.id, head, body);
@@ -1004,6 +1076,7 @@
   }
   function setOpen(item, open) {
     item.classList.toggle('open', open);
+    if (!open) item.classList.remove('cal');
     const h = item.querySelector('[data-a="x"]');
     if (h) h.setAttribute('aria-expanded', String(open));
   }
@@ -1929,6 +2002,97 @@
     else toast(d.ok ? '신고했어요. 24시간 안에 확인할게요' : '신고하지 못했어요. 잠시 뒤 다시 해 주세요', !d.ok);
   }
 
+  // ----- 달력·패킹 (P5) -----
+  // 고른 뒤 잠깐 결과를 보여 주고 접는다
+  function afterCalChange(id) {
+    const e = findEvent(id);
+    if (!e) return;
+    repaintSlot('[data-cal-slot]', id, calSlotInner(e));
+    setTimeout(function () {
+      [home, layer].forEach(function (root) {
+        if (!root) return;
+        root.querySelectorAll('.lmx.cal').forEach(function (n) { if (n.dataset.id === String(id)) n.classList.remove('cal'); });
+      });
+    }, 700);
+  }
+  function calMark(id) {
+    const e = findEvent(id);
+    if (!e) return;
+    if (typeof window.okbmSetPlanEvent !== 'function') { toast('달력 기능을 불러오지 못했어요', true); return; }
+    const st = calState(e);
+    const spot = e.spot_id ? spotById(e.spot_id) : null;
+    const ok = st.marked
+      ? window.okbmSetPlanEvent({ id: e.id }, false)
+      : window.okbmSetPlanEvent({ id: e.id, title: e.title, start: e.start_date, end: e.end_date, place: String(e.place || '').trim() || spotName(spot), spotId: e.spot_id || '' });
+    if (!ok) { toast('달력에 넣지 못했어요', true); return; }
+    tick();
+    toast(st.marked ? '달력에서 뺐어요' : evView(e).dateText + ' 행사로 표시했어요');
+    afterCalChange(e.id);
+  }
+  // 이날 내 일정: 낭만플랜의 날짜별 목적지와 같은 곳에 넣는다(그날 원정대 공고가 있으면 romantic-plan.js가 확인 후 교체)
+  async function calPlan(id, btn) {
+    const e = findEvent(id);
+    if (!e) return;
+    if (calState(e).planned) { toast('이미 내 일정에 있어요. 바꾸려면 달력에서 해요'); return; }
+    const date = planDateOf(e);
+    if (!date) { toast('끝난 행사라 등록할 수 없어요', true); return; }
+    if (btn) btn.disabled = true;
+    try {
+      if (typeof window.okbmEnsurePlan === 'function') await window.okbmEnsurePlan();
+      if (typeof window.okbmSetSinglePlanSpotForDate !== 'function') throw new Error('no_plan');
+      const spot = e.spot_id ? spotById(e.spot_id) : null;
+      const name = (spot ? spotName(spot) : String(e.title || '').trim()).slice(0, 80);
+      const ok = await window.okbmSetSinglePlanSpotForDate(date, { name: name, elevation: (spot && spot.elevation) || '', unregistered: !spot, eventId: e.id });
+      if (!ok) { toast('일정을 바꾸지 않았어요'); return; }
+      tick();
+      toast(parseInt(date.slice(5, 7), 10) + '.' + parseInt(date.slice(8, 10), 10) + ' 내 일정으로 등록했어요');
+      if (typeof window.renderPlanStage === 'function' && document.getElementById('romanticPlanModal')) window.renderPlanStage();
+      afterCalChange(e.id);
+    } catch (err) {
+      console.warn('[lounge.js:calPlan]', err);
+      toast('일정을 등록하지 못했어요', true);
+    } finally {
+      if (btn && btn.isConnected) btn.disabled = false;
+    }
+  }
+  // 낭만플랜 달력을 그 날짜로 연다
+  function openCal(date) {
+    const m = String(date || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) {
+      window.calViewYear = parseInt(m[1], 10);
+      window.calViewMonth = parseInt(m[2], 10);
+      window.activeSelectedDateKey = m[1] + '.' + m[2] + '.' + m[3];
+    }
+    closeSheet(true);
+    closeLoungeWindow(true);
+    if (typeof window.openPlanModal === 'function') window.openPlanModal('calendar');
+  }
+  async function kitPack(id, btn) {
+    const k = findGuide(id);
+    if (!k) return;
+    const items = kitItems(k);
+    if (!items.length) return;
+    if (btn) btn.disabled = true;
+    try {
+      if (typeof window.okbmEnsurePlan === 'function') await window.okbmEnsurePlan();
+      if (typeof window.okbmAddGearsToPack !== 'function') throw new Error('no_plan');
+      const r = window.okbmAddGearsToPack(items);
+      D.packedKits.add(k.id);
+      tick();
+      toast(r.added ? (r.added + '가지 담았어요' + (r.skipped ? ' · ' + r.skipped + '가지는 이미 있어요' : '')) : '이미 다 담겨 있어요');
+      repaintSlot('[data-kit-slot]', k.id, kitSlotInner(k));
+    } catch (err) {
+      console.warn('[lounge.js:kitPack]', err);
+      toast('패킹 리스트에 담지 못했어요', true);
+      if (btn && btn.isConnected) btn.disabled = false;
+    }
+  }
+  function openPack() {
+    closeSheet(true);
+    closeLoungeWindow(true);
+    if (typeof window.openPlanModal === 'function') window.openPlanModal('calculator');
+  }
+
   // =====================================================================
   // 누르기·입력 (인라인 onclick 없이 위임만 사용)
   // =====================================================================
@@ -2020,6 +2184,21 @@
       case 'star': setStar(Number(v)); break;
       case 'review-del': if (SH.kind === 'review' && SH.mine) deleteReview(SH.mine.id, SH.spot_id, '내 후기를 지울까요?'); break;
       case 'del-review': deleteReview(v, t.dataset.spot, '이 후기를 삭제할까요? (운영팀)'); break;
+      // 달력·패킹 (P5)
+      case 'cal-open': {
+        if (!item) break;
+        const on = !item.classList.contains('cal');
+        item.classList.toggle('cal', on);
+        t.setAttribute('aria-expanded', String(on));
+        tick();
+        if (on) setTimeout(function () { if (item.isConnected) item.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); }, 320);
+        break;
+      }
+      case 'cal-mark': calMark(v); break;
+      case 'cal-plan': calPlan(v, t); break;
+      case 'open-cal': openCal(v); break;
+      case 'kit-pack': kitPack(v, t); break;
+      case 'open-pack': openPack(); break;
       // 관리자
       case 'new-event': openEventForm(null); break;
       case 'edit-event': openEventForm(findEvent(v)); break;
@@ -2197,6 +2376,12 @@
   // 지도 정보창 후기 블록(romantic-sync.js)에서 부른다. 두 페이지 부트로더에 bindLazy로 걸려 있다
   window.openLoungeSpotReviews = function (spotId) { ensureLayer(); if (D.status === 'idle') loadAll(); showSpotReviews(spotId); };
   window.openSpotReviewSheet = function (spotId) { return openReviewSheet(spotId); };
+  // 달력에서 행사를 빼면(romantic-plan.js) 라운지 버튼도 맞춘다
+  window.addEventListener('okbm_plan_events_changed', function (e) {
+    const id = String((e && e.detail && e.detail.id) || '');
+    const ev = id && findEvent(id);
+    if (ev) repaintSlot('[data-cal-slot]', id, calSlotInner(ev));
+  });
   window.addEventListener('okbm_ugc_report_result', onUgcResult);
   window.addEventListener('okbm_ugc_blocked', onUgcResult);
   // 신고 검수함(romantic-sync.js)에서 지운 라운지 글·댓글·후기를 캐시에서도 뺀다
