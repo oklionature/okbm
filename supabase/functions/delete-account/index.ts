@@ -87,15 +87,16 @@ function pushPhoto(out: Set<string>, value: unknown) {
   }
 }
 
-// 본인 피드·원정대·프로필에 저장된 R2 사진 URL만 모은다 (최대 200개, Worker 한도).
+// 본인 피드·원정대·프로필·라운지 글에 저장된 R2 사진 URL만 모은다 (최대 200개, Worker 한도).
 async function collectUserPhotoUrls(admin: AdminClient, ids: string[]): Promise<string[]> {
   const out = new Set<string>();
   if (!ids.length) return [];
   try {
-    const [feeds, trips, users] = await Promise.all([
+    const [feeds, trips, users, loungePosts] = await Promise.all([
       admin.from("feeds").select("photos,photo,ready_shot_photo").in("user_id", ids),
       admin.from("trips").select("photos").in("host_id", ids),
       admin.from("users").select("photo_url,hero_cover_url").in("id", ids),
+      admin.from("lounge_posts").select("photos").in("user_id", ids),
     ]);
     for (const r of (feeds.data || []) as Record<string, unknown>[]) {
       pushPhoto(out, r.photos);
@@ -107,6 +108,7 @@ async function collectUserPhotoUrls(admin: AdminClient, ids: string[]): Promise<
       pushPhoto(out, r.photo_url);
       pushPhoto(out, r.hero_cover_url);
     }
+    for (const r of (loungePosts.data || []) as Record<string, unknown>[]) pushPhoto(out, r.photos);
   } catch (e) {
     console.error("[delete-account] collect photos", e);
   }
@@ -162,6 +164,9 @@ async function legacyDeleteAccountRows(admin: AdminClient, authUser: User, accou
   await deleteByColumn("feed_reports", "reporter_id");
   await deleteByColumn("comments", "user_id");
   await deleteByColumn("talks", "user_id");
+  await deleteByColumn("lounge_post_likes", "user_id");
+  await deleteByColumn("lounge_post_comments", "user_id");
+  await deleteByColumn("lounge_posts", "user_id");
 
   for (const id of accountIds) {
     await deleteDirectThreadsForUser(admin, id);
