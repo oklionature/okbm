@@ -1439,6 +1439,190 @@ window.rerenderCommunityFeedsNow = function() {
   }
 };
 
+// =========================================================================
+// 박지 후기 — 지도 정보창 A(메타 줄 맨 앞 칩) + B(회원 상세 뒤 후기 블록). 2026-09-29 P4
+// map.html generateDetailContentHtml은 빈 칸 [data-okbm-review-chip|box="박지id"]만 두고
+// 캐시가 있으면 okbmSpotReviewChipHtml/BoxHtml로 바로 채운다(다시 그려도 깜빡이지 않게).
+// 정보창을 연 뒤 okbmLoadSpotReviewBox(spot)가 get_spot_reviews를 1번 불러 칸을 채운다.
+// 비회원은 평균·개수만(RPC가 글을 안 줌). 쓰기·전체 보기는 lounge.js(누를 때 받음).
+// 버튼은 전부 onclick="window.okbmSpotReviewAction(this, event);" 하나(CSP 해시 1개).
+// =========================================================================
+(function() {
+  var store = {};    // 박지 id → { at, data, error }
+  var inflight = {}; // 박지 id → Promise
+  var TTL = 60000;
+  var ACT = ' onclick="window.okbmSpotReviewAction(this, event);"';
+  var esc = function(t) { return window.escapeHtml(t == null ? '' : String(t)); };
+  var starStr = function(n) {
+    n = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
+    return '★★★★★'.slice(0, n) + '<span style="color:#334155;">' + '★★★★★'.slice(0, 5 - n) + '</span>';
+  };
+  var agoStr = function(iso) {
+    var t = new Date(iso).getTime();
+    if (!t) return '';
+    var m = Math.floor((Date.now() - t) / 60000);
+    if (m < 1) return '방금';
+    if (m < 60) return m + '분 전';
+    var h = Math.floor(m / 60);
+    if (h < 24) return h + '시간 전';
+    var d = Math.floor(h / 24);
+    if (d < 7) return d + '일 전';
+    var dt = new Date(t);
+    return (dt.getMonth() + 1) + '.' + dt.getDate();
+  };
+  var summaryOf = function(data) {
+    var s = data && data.summary;
+    var n = s ? Number(s.review_count) || 0 : 0;
+    return { count: n, avg: n ? Number(s.avg_rating) || 0 : 0 };
+  };
+  var btnSm = 'background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; height:28px; padding:0 10px; color:#e2e8f0; font-size:0.68rem; font-weight:800; cursor:pointer; font-family:inherit; flex-shrink:0;';
+  var btnMain = 'background:#3182f6; border:1px solid #3182f6; border-radius:8px; height:28px; padding:0 10px; color:#ffffff; font-size:0.68rem; font-weight:800; cursor:pointer; font-family:inherit; flex-shrink:0;';
+
+  function chipInner(sId) {
+    var hit = store[sId];
+    var s = summaryOf(hit && hit.data);
+    if (!s.count) return '';
+    return '<button type="button" class="meta-tag" data-act="scroll" data-spot="' + esc(sId) + '"' + ACT +
+      ' aria-label="후기 ' + s.count + '개, 평균 ' + s.avg.toFixed(1) + '점. 후기로 이동"' +
+      ' style="color:#fcd34d; background:rgba(252,211,77,0.08); border:1px solid rgba(252,211,77,0.38); cursor:pointer; font-family:inherit;">★ ' +
+      s.avg.toFixed(1) + ' · 후기 ' + s.count + '</button>';
+  }
+
+  function reviewRow(r, sId) {
+    var uid = String(r.user_id || '');
+    var own = uid && typeof window.isCurrentUserId === 'function' && window.isCurrentUserId(uid);
+    var report = own ? '<span style="margin-left:auto; font-size:0.60rem; color:#3182f6; font-weight:800;">내 후기</span>'
+      : '<button type="button" data-act="ugc" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '" data-uid="' + esc(uid) + '" data-nick="' + esc(r.nickname) + '"' + ACT +
+        ' aria-label="이 후기 신고·차단" style="margin-left:auto; background:none; border:none; color:#64748b; font-size:0.62rem; font-weight:800; cursor:pointer; padding:2px 0 2px 8px; font-family:inherit;">신고</button>';
+    return '<div style="padding:7px 0 1px; border-top:1px solid rgba(255,255,255,0.06); margin-top:6px;">' +
+      '<div style="display:flex; align-items:center; gap:6px; font-size:0.68rem; min-width:0;">' +
+        '<b style="color:#e2e8f0; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:40%;">' + esc(r.nickname || '백패커') + '</b>' +
+        '<span style="color:#fcd34d; letter-spacing:1px; flex-shrink:0;">' + starStr(r.rating) + '</span>' +
+        '<span style="color:#64748b; flex-shrink:0;">' + esc(agoStr(r.created_at)) + '</span>' + report +
+      '</div>' +
+      (r.text ? '<div style="font-size:0.74rem; color:#cbd5e1; line-height:1.45; margin-top:3px; white-space:pre-wrap; word-break:keep-all; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">' + esc(r.text) + '</div>' : '') +
+    '</div>';
+  }
+
+  function boxInner(sId) {
+    var hit = store[sId];
+    var wrapOpen = '<div style="background:var(--bg-card, #0e121a); border:1px solid var(--border-hairline, rgba(255,255,255,0.08)); border-radius:7px; padding:8px 9px; margin:6px 0 2px; font-size:0.74rem; color:#e2e8f0;">';
+    if (!hit) {
+      return wrapOpen + '<div style="font-size:0.70rem; color:#64748b;">★ 박지 후기 불러오는 중…</div></div>';
+    }
+    if (!hit.data) {
+      return wrapOpen + '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><span style="font-size:0.70rem; color:#94a3b8;">후기를 불러오지 못했어요</span>' +
+        '<button type="button" data-act="retry" data-spot="' + esc(sId) + '"' + ACT + ' style="' + btnSm + '">다시</button></div></div>';
+    }
+    var data = hit.data;
+    var s = summaryOf(data);
+    var member = data.tier === 'member';
+    var mine = data.mine;
+    var head = '<div style="display:flex; align-items:center; gap:6px;">' +
+      '<div style="flex:1; min-width:0; display:flex; align-items:baseline; gap:5px; font-weight:800;">' +
+        '<span style="color:#fcd34d;">★</span><span style="font-size:0.76rem;">박지 후기</span>' +
+        (s.count ? '<span style="font-size:0.86rem; color:#ffffff; font-family:var(--font-en, inherit);">' + s.avg.toFixed(1) + '</span><span style="font-size:0.66rem; color:#64748b;">· ' + s.count + '개</span>' : '') +
+      '</div>' +
+      (member
+        ? '<button type="button" data-act="write" data-spot="' + esc(sId) + '"' + ACT + ' style="' + (mine ? btnSm : btnMain) + '">' + (mine ? '내 후기 고치기' : '후기 쓰기') + '</button>'
+        : '') +
+    '</div>';
+    var body = '';
+    if (!member) {
+      body = '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px;">' +
+        '<span style="font-size:0.70rem; color:#94a3b8; line-height:1.4;">' + (s.count ? '후기 글은 로그인하면 볼 수 있어요' : '아직 후기가 없어요. 로그인하고 첫 후기를 남겨 주세요') + '</span>' +
+        '<button type="button" data-act="login" data-spot="' + esc(sId) + '"' + ACT + ' style="' + btnSm + '">로그인</button></div>';
+    } else {
+      // 차단·신고한 후기는 빼고 최근 2개 (5개 받아 둠)
+      var list = (Array.isArray(data.reviews) ? data.reviews : []).filter(function(r) {
+        return r && !(typeof window.isFeedHiddenByUgc === 'function' && window.isFeedHiddenByUgc({ id: String(r.id), user_id: r.user_id }));
+      }).slice(0, 2);
+      body = list.length
+        ? list.map(function(r) { return reviewRow(r, sId); }).join('')
+        : '<div style="font-size:0.70rem; color:#94a3b8; margin-top:6px;">' + (s.count ? '보여 줄 후기가 없어요' : '아직 후기가 없어요. 다녀왔다면 첫 후기를 남겨 주세요') + '</div>';
+      if (s.count) {
+        body += '<button type="button" data-act="all" data-spot="' + esc(sId) + '"' + ACT +
+          ' style="width:100%; margin-top:6px; background:none; border:none; border-top:1px solid rgba(255,255,255,0.06); padding:8px 0 0; color:#94a3b8; font-size:0.70rem; font-weight:800; cursor:pointer; font-family:inherit;">후기 ' + s.count + '개 모두 보기 ›</button>';
+      }
+    }
+    return wrapOpen + head + body + '</div>';
+  }
+
+  function paint(sId) {
+    var sel = function(attr) {
+      return Array.prototype.filter.call(document.querySelectorAll('[' + attr + ']'), function(el) { return el.getAttribute(attr) === sId; });
+    };
+    sel('data-okbm-review-chip').forEach(function(el) { el.innerHTML = chipInner(sId); });
+    sel('data-okbm-review-box').forEach(function(el) { el.innerHTML = boxInner(sId); });
+  }
+
+  window.okbmSpotReviewChipHtml = function(spotId) { return chipInner(String(spotId || '').trim()); };
+  window.okbmSpotReviewBoxHtml = function(spotId) { return boxInner(String(spotId || '').trim()); };
+  window.okbmClearSpotReviewCache = function() { store = {}; };
+  // 캐시를 비우고 지금 화면에 있는 후기 칸은 바로 다시 받는다(관리자가 후기를 지운 뒤 등)
+  window.okbmRefreshSpotReviewBoxes = function() {
+    store = {};
+    var seen = {};
+    document.querySelectorAll('[data-okbm-review-box]').forEach(function(el) {
+      var id = el.getAttribute('data-okbm-review-box');
+      if (id && !seen[id]) { seen[id] = true; window.okbmLoadSpotReviewBox(id, true); }
+    });
+  };
+  window.okbmSpotReviewCached = function(spotId) { var h = store[String(spotId || '').trim()]; return h ? h.data : null; };
+
+  // spot: 박지 객체 또는 id. force: 캐시 무시(후기를 쓴 뒤)
+  window.okbmLoadSpotReviewBox = function(spot, force) {
+    var sId = String((spot && typeof spot === 'object') ? spot.id : (spot || '')).trim();
+    if (!sId) return Promise.resolve(null);
+    var hit = store[sId];
+    if (!force && hit && hit.data && (Date.now() - hit.at) < TTL) {
+      paint(sId);
+      return Promise.resolve(hit.data);
+    }
+    if (inflight[sId]) return inflight[sId];
+    var client = window.supabaseClient;
+    if (!client || typeof client.rpc !== 'function') {
+      store[sId] = { at: Date.now(), data: hit ? hit.data : null, error: true };
+      paint(sId);
+      return Promise.resolve(null);
+    }
+    inflight[sId] = Promise.resolve(client.rpc('get_spot_reviews', { p_spot_id: sId, p_limit: 5 })).then(function(res) {
+      if (res && res.error) throw res.error;
+      store[sId] = { at: Date.now(), data: (res && res.data) || null };
+    }).catch(function(e) {
+      console.warn('[romantic-sync.js:okbmLoadSpotReviewBox]', e);
+      store[sId] = { at: Date.now(), data: hit ? hit.data : null, error: true };
+    }).then(function() {
+      delete inflight[sId];
+      paint(sId);
+      return store[sId].data;
+    });
+    return inflight[sId];
+  };
+
+  window.okbmSpotReviewAction = function(el, e) {
+    if (e) { if (typeof e.preventDefault === 'function') e.preventDefault(); if (typeof e.stopPropagation === 'function') e.stopPropagation(); }
+    if (!el || !el.dataset) return;
+    var act = el.dataset.act;
+    var sId = String(el.dataset.spot || '').trim();
+    if (act === 'scroll') {
+      var root = el.closest('#mobileSheetContent, #pcSlidingDrawer') || document;
+      var box = Array.prototype.filter.call(root.querySelectorAll('[data-okbm-review-box]'), function(b) { return b.getAttribute('data-okbm-review-box') === sId; })[0];
+      if (box) box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    } else if (act === 'all') {
+      if (typeof window.openLoungeSpotReviews === 'function') window.openLoungeSpotReviews(sId);
+    } else if (act === 'write') {
+      if (typeof window.openSpotReviewSheet === 'function') window.openSpotReviewSheet(sId);
+    } else if (act === 'login') {
+      if (typeof window.openLoginModal === 'function') window.openLoginModal();
+    } else if (act === 'ugc') {
+      if (typeof window.openUgcSafetyMenu === 'function') window.openUgcSafetyMenu(el.dataset.id, el.dataset.uid, el.dataset.nick, null, 'spot_review');
+    } else if (act === 'retry') {
+      window.okbmLoadSpotReviewBox(sId, true);
+    }
+  };
+})();
+
 window.syncMyUserBlocksFromServer = async function() {
   var blockerId = okbmGetCurrentUserId();
   if (!blockerId) return false;
@@ -1527,7 +1711,10 @@ window.blockCommunityUser = async function(userId, nickname) {
   var serverOk = false;
   try {
     var blockHeaders = okbmWriteRestHeaders({ Prefer: 'return=representation' });
-    if (!blockHeaders) return false;
+    if (!blockHeaders) {
+      okbmEmitUgcEvent('okbm_ugc_blocked', { ok: false, reason: 'login', userId: targetId });
+      return false;
+    }
     var postRes = await fetch(targetUrl + '/rest/v1/user_blocks', {
       method: 'POST',
       headers: blockHeaders,
@@ -1550,6 +1737,7 @@ window.blockCommunityUser = async function(userId, nickname) {
 
   if (!serverOk) {
     if (typeof showToast === 'function') showToast('차단에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해주세요.', 'error', 2600);
+    okbmEmitUgcEvent('okbm_ugc_blocked', { ok: false, userId: targetId });
     return false;
   }
 
@@ -1558,6 +1746,7 @@ window.blockCommunityUser = async function(userId, nickname) {
   window.closeOpenUgcFeedModals({ blockedUserId: targetId });
   window.rerenderCommunityFeedsNow();
   if (typeof showToast === 'function') showToast('사용자가 차단되었습니다.', 'success', 2200);
+  okbmEmitUgcEvent('okbm_ugc_blocked', { ok: true, userId: targetId });
   return true;
 };
 
@@ -1618,11 +1807,28 @@ window.unblockCommunityUser = async function(userId) {
   return true;
 };
 
-window.openFeedReportModal = function(feedId, userId) {
+// 신고 대상 종류 (feed_reports.target_type). 피드 외에는 백패커 라운지(lounge.js)·지도 박지 후기.
+var OKBM_REPORT_TYPES = {
+  feed: { table: 'feeds', label: '피드', title: '피드 신고' },
+  lounge_post: { table: 'lounge_posts', label: '라운지 글', title: '글 신고' },
+  lounge_comment: { table: 'lounge_post_comments', label: '라운지 댓글', title: '댓글 신고' },
+  spot_review: { table: 'comments', label: '박지 후기', title: '후기 신고' }
+};
+function okbmReportType(t) {
+  var s = String(t || 'feed').trim();
+  return OKBM_REPORT_TYPES[s] ? s : 'feed';
+}
+window.okbmReportType = okbmReportType;
+function okbmEmitUgcEvent(name, detail) {
+  try { window.dispatchEvent(new CustomEvent(name, { detail: detail || {} })); } catch (e) {}
+}
+
+window.openFeedReportModal = function(feedId, userId, targetType) {
   var sFeedId = String(feedId || '').trim();
   if (!sFeedId) return;
+  var tType = okbmReportType(targetType);
   if (window.isFeedReported(sFeedId)) {
-    if (typeof showToast === 'function') showToast('이미 신고한 피드입니다.', 'info', 1800);
+    if (typeof showToast === 'function') showToast(tType === 'feed' ? '이미 신고한 피드입니다.' : '이미 신고했습니다.', 'info', 1800);
     return;
   }
   var old = document.getElementById('feedReportReasonModal');
@@ -1641,12 +1847,12 @@ window.openFeedReportModal = function(feedId, userId) {
   modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
 
   var reasonBtns = reasons.map(function(r) {
-    return '<button type="button" data-reason="' + okbmEscapeUgcAttr(r.id) + '" data-label="' + okbmEscapeUgcAttr(r.label) + '" data-feed-id="' + okbmEscapeUgcAttr(sFeedId) + '" data-user-id="' + okbmEscapeUgcAttr(userId) + '" onclick="window.submitFeedReport(this.dataset.feedId, this.dataset.reason, this.dataset.label, this.dataset.userId);" style="width:100%; height:42px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#e2e8f0; font-size:0.82rem; font-weight:800; cursor:pointer; text-align:left; padding:0 14px;">' + okbmEscapeUgcAttr(r.label) + '</button>';
+    return '<button type="button" data-reason="' + okbmEscapeUgcAttr(r.id) + '" data-label="' + okbmEscapeUgcAttr(r.label) + '" data-feed-id="' + okbmEscapeUgcAttr(sFeedId) + '" data-user-id="' + okbmEscapeUgcAttr(userId) + '" data-target-type="' + okbmEscapeUgcAttr(tType) + '" onclick="window.submitFeedReport(this.dataset.feedId, this.dataset.reason, this.dataset.label, this.dataset.userId, this.dataset.targetType);" style="width:100%; height:42px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#e2e8f0; font-size:0.82rem; font-weight:800; cursor:pointer; text-align:left; padding:0 14px;">' + okbmEscapeUgcAttr(r.label) + '</button>';
   }).join('');
 
   modal.innerHTML = '<div style="width:100%; max-width:340px; background:#080b11; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:16px; box-sizing:border-box; display:flex; flex-direction:column; gap:10px;" onclick="event.stopPropagation();">' +
     '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-      '<span style="font-size:0.90rem; font-weight:900; color:#ffffff;">피드 신고</span>' +
+      '<span style="font-size:0.90rem; font-weight:900; color:#ffffff;">' + okbmEscapeUgcAttr(OKBM_REPORT_TYPES[tType].title) + '</span>' +
       '<button type="button" onclick="document.getElementById(\'feedReportReasonModal\').remove();" style="background:none; border:none; color:#94a3b8; font-size:1rem; cursor:pointer;">✕</button>' +
     '</div>' +
     '<p style="font-size:0.72rem; color:#94a3b8; line-height:1.45; margin:0;">신고 사유를 선택해주세요. 접수된 내용은 24시간 이내에 검토됩니다.</p>' +
@@ -1692,9 +1898,10 @@ window.syncMyFeedReportsFromServer = async function() {
   }
 };
 
-window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId) {
+window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId, targetType) {
   var sFeedId = String(feedId || '').trim();
   if (!sFeedId) return;
+  var tType = okbmReportType(targetType);
 
   var reasonModal = document.getElementById('feedReportReasonModal');
   if (reasonModal) reasonModal.remove();
@@ -1702,11 +1909,17 @@ window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
   var reporterId = okbmRequireCurrentUserId();
-  if (!reporterId) return;
+  if (!reporterId) {
+    okbmEmitUgcEvent('okbm_ugc_report_result', { ok: false, reason: 'login', id: sFeedId, targetType: tType });
+    return false;
+  }
   var originUrl = window.location.origin;
   var pathName = window.location.pathname;
   var basePath = pathName.substring(0, pathName.lastIndexOf('/') + 1);
-  var directFeedUrl = originUrl + basePath + 'index.html?feed=' + encodeURIComponent(sFeedId);
+  // 라운지 글·댓글·후기는 피드 주소가 없다. 검수함은 target_type으로 찾아간다
+  var directFeedUrl = tType === 'feed'
+    ? originUrl + basePath + 'index.html?feed=' + encodeURIComponent(sFeedId)
+    : originUrl + basePath + 'index.html';
   var payload = {
     feed_id: sFeedId,
     reporter_id: reporterId || null,
@@ -1716,12 +1929,18 @@ window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId
     feed_url: directFeedUrl,
     status: 'pending'
   };
+  // 피드 신고는 열 기본값('feed')에 맡긴다 → 피드 신고는 target_type 열이 없던 DB에서도 그대로 동작
+  if (tType !== 'feed') payload.target_type = tType;
+  var typeFilter = tType !== 'feed' ? ('target_type=eq.' + encodeURIComponent(tType) + '&') : '';
 
   var serverOk = false;
   if (targetUrl && targetKey) {
     try {
       var reportHeaders = okbmWriteRestHeaders({ Prefer: 'return=representation' });
-      if (!reportHeaders) return false;
+      if (!reportHeaders) {
+        okbmEmitUgcEvent('okbm_ugc_report_result', { ok: false, reason: 'login', id: sFeedId, targetType: tType });
+        return false;
+      }
       var postRes = await fetch(targetUrl + '/rest/v1/feed_reports', {
         method: 'POST',
         headers: reportHeaders,
@@ -1731,7 +1950,7 @@ window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId
         serverOk = true;
       } else if (postRes.status === 409 && reporterId) {
         var patchRes = await fetch(
-          targetUrl + '/rest/v1/feed_reports?feed_id=eq.' + encodeURIComponent(sFeedId) + '&reporter_id=eq.' + encodeURIComponent(reporterId),
+          targetUrl + '/rest/v1/feed_reports?' + typeFilter + 'feed_id=eq.' + encodeURIComponent(sFeedId) + '&reporter_id=eq.' + encodeURIComponent(reporterId),
           {
             method: 'PATCH',
             headers: reportHeaders,
@@ -1763,9 +1982,11 @@ window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId
     if (typeof showToast === 'function') {
       showToast('신고 접수에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해주세요.', 'error', 2600);
     }
-    return;
+    okbmEmitUgcEvent('okbm_ugc_report_result', { ok: false, id: sFeedId, targetType: tType });
+    return false;
   }
 
+  // 신고한 id는 종류와 상관없이 같은 목록에 둔다(라운지 id는 uuid·숫자라 피드 id와 겹치지 않음)
   var list = window.getReportedFeedIds();
   if (list.indexOf(sFeedId) === -1) {
     list.push(sFeedId);
@@ -1778,6 +1999,9 @@ window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId
   if (typeof showToast === 'function') {
     showToast('신고가 접수되었습니다. 24시간 이내에 검토 및 조치됩니다.', 'success', 2800);
   }
+  // 백패커 라운지 창은 전역 토스트보다 위라서 라운지가 자기 토스트로 다시 알린다
+  okbmEmitUgcEvent('okbm_ugc_report_result', { ok: true, id: sFeedId, targetType: tType });
+  return true;
 };
 
 window.okbmIsCurrentUserAdmin = function() {
@@ -1928,7 +2152,7 @@ window.okbmRenderAdminReportInspectorList = async function() {
   }
 
   try {
-    var res = await fetch(targetUrl + '/rest/v1/feed_reports?status=eq.pending&select=id,feed_id,reason,reason_label,created_at,feed_url&order=created_at.desc', {
+    var res = await fetch(targetUrl + '/rest/v1/feed_reports?status=eq.pending&select=id,feed_id,target_type,reason,reason_label,created_at,feed_url&order=created_at.desc', {
       headers: okbmUgcRestHeaders()
     });
     if (!res.ok) {
@@ -1941,41 +2165,63 @@ window.okbmRenderAdminReportInspectorList = async function() {
       return;
     }
 
-    var feedIds = [];
+    // 종류별 id 모으기 → 제목·내용 미리보기(관리자는 RLS상 건의 글·후기도 읽을 수 있음)
+    var idsByType = { feed: [], lounge_post: [], lounge_comment: [], spot_review: [] };
     rows.forEach(function(r) {
       var id = String((r && r.feed_id) || '').trim();
-      if (id && feedIds.indexOf(id) === -1) feedIds.push(id);
+      var t = okbmReportType(r && r.target_type);
+      if (id && idsByType[t].indexOf(id) === -1) idsByType[t].push(id);
     });
-    var spotMap = {};
-    if (feedIds.length) {
-      var inList = feedIds.map(function(id) { return '"' + String(id).replace(/"/g, '') + '"'; }).join(',');
-      var feedRes = await fetch(targetUrl + '/rest/v1/feeds?id=in.(' + inList + ')&select=id,spot', {
-        headers: okbmUgcRestHeaders()
-      });
-      if (feedRes.ok) {
-        var feedRows = await feedRes.json();
-        (Array.isArray(feedRows) ? feedRows : []).forEach(function(f) {
-          if (f && f.id) spotMap[String(f.id)] = String(f.spot || '').trim();
+    var inListOf = function(ids) { return ids.map(function(id) { return '"' + String(id).replace(/"/g, '') + '"'; }).join(','); };
+    var preview = { feed: {}, lounge_post: {}, lounge_comment: {}, spot_review: {} };
+    var previewSpecs = [
+      ['feed', 'feeds', 'id,spot', function(f) { return { title: String(f.spot || '').trim() }; }],
+      ['lounge_post', 'lounge_posts', 'id,title,body,nickname', function(f) { return { title: String(f.title || '').trim(), body: String(f.body || '').trim(), who: f.nickname }; }],
+      ['lounge_comment', 'lounge_post_comments', 'id,post_id,body,nickname', function(f) { return { title: String(f.body || '').trim(), postId: String(f.post_id || ''), who: f.nickname }; }],
+      ['spot_review', 'comments', 'id,spot_id,rating,text,nickname', function(f) { return { title: '★' + (f.rating || '') + ' ' + String(f.text || '').trim(), spotId: String(f.spot_id || ''), who: f.nickname }; }]
+    ];
+    await Promise.all(previewSpecs.map(async function(spec) {
+      var ids = idsByType[spec[0]];
+      if (!ids.length) return;
+      try {
+        var pRes = await fetch(targetUrl + '/rest/v1/' + spec[1] + '?id=in.(' + inListOf(ids) + ')&select=' + spec[2], {
+          headers: okbmUgcRestHeaders()
         });
+        if (!pRes.ok) return;
+        var pRows = await pRes.json();
+        (Array.isArray(pRows) ? pRows : []).forEach(function(f) {
+          if (f && f.id != null) preview[spec[0]][String(f.id)] = spec[3](f);
+        });
+      } catch (ePrev) {
+        console.warn('[romantic-sync.js:okbmRenderAdminReportInspectorList preview]', spec[0], ePrev);
       }
-    }
+    }));
 
     var btn = 'height:32px; padding:0 8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#e2e8f0; font-size:0.62rem; font-weight:800; cursor:pointer;';
     listEl.innerHTML = rows.map(function(r) {
       var rid = String((r && r.id) || '').trim();
       var fid = String((r && r.feed_id) || '').trim();
+      var tType = okbmReportType(r && r.target_type);
+      var info = preview[tType][fid] || null;
       var reason = String((r && (r.reason_label || r.reason)) || '').trim();
-      var spot = spotMap[fid] || '';
-      var title = spot || fid;
+      var title = (info && info.title) || (tType === 'feed' ? fid : '(이미 지워진 ' + OKBM_REPORT_TYPES[tType].label + ')');
       var when = okbmFormatReportTime(r && r.created_at);
+      // 열람: 피드는 피드 창, 라운지 글·댓글은 라운지 창의 그 글, 박지 후기는 지도에서 그 박지
+      var openId = tType === 'lounge_comment' ? ((info && info.postId) || '') : (tType === 'spot_review' ? ((info && info.spotId) || '') : fid);
+      var openLabel = tType === 'feed' ? '피드 열람' : (tType === 'spot_review' ? '박지 열기' : '글 열람');
       return '<div style="padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06);">' +
-        '<div style="font-size:0.80rem; font-weight:800; color:#e2e8f0;">' + okbmEscapeUgcAttr(reason) + '</div>' +
+        '<div style="display:flex; align-items:center; gap:6px;">' +
+          (tType !== 'feed' ? '<span style="flex-shrink:0; font-size:0.58rem; font-weight:900; color:#fcd34d; border:1px solid rgba(252,211,77,0.4); border-radius:4px; padding:1px 5px;">' + okbmEscapeUgcAttr(OKBM_REPORT_TYPES[tType].label) + '</span>' : '') +
+          '<span style="font-size:0.80rem; font-weight:800; color:#e2e8f0;">' + okbmEscapeUgcAttr(reason) + '</span>' +
+        '</div>' +
         '<div style="font-size:0.68rem; color:#94a3b8; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + okbmEscapeUgcAttr(title) + '</div>' +
-        (spot && fid ? '<div style="font-size:0.58rem; color:#64748b; margin-top:2px; font-family:var(--font-mono);">' + okbmEscapeUgcAttr(fid) + '</div>' : '') +
+        (info && info.body ? '<div style="font-size:0.64rem; color:#64748b; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + okbmEscapeUgcAttr(info.body) + '</div>' : '') +
+        (info && info.who ? '<div style="font-size:0.60rem; color:#64748b; margin-top:2px;">작성: ' + okbmEscapeUgcAttr(info.who) + '</div>' : '') +
+        (fid && (info || tType === 'feed') && title !== fid ? '<div style="font-size:0.58rem; color:#64748b; margin-top:2px; font-family:var(--font-mono);">' + okbmEscapeUgcAttr(fid) + '</div>' : '') +
         (when ? '<div style="font-size:0.62rem; color:#64748b; margin-top:4px;">' + when + '</div>' : '') +
         '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:10px;">' +
-          '<button type="button" data-feed-id="' + okbmEscapeUgcAttr(fid) + '" onclick="window.okbmAdminInspectOpenFeed(this.dataset.feedId);" style="' + btn + '">피드 열람</button>' +
-          '<button type="button" data-feed-id="' + okbmEscapeUgcAttr(fid) + '" onclick="window.okbmAdminInspectDeleteFeed(this.dataset.feedId);" style="' + btn + '">게시글 즉시 삭제</button>' +
+          '<button type="button" data-feed-id="' + okbmEscapeUgcAttr(openId) + '" data-target-type="' + okbmEscapeUgcAttr(tType) + '" onclick="window.okbmAdminInspectOpenFeed(this.dataset.feedId, this.dataset.targetType);" style="' + btn + '"' + (openId ? '' : ' disabled') + '>' + openLabel + '</button>' +
+          '<button type="button" data-feed-id="' + okbmEscapeUgcAttr(fid) + '" data-target-type="' + okbmEscapeUgcAttr(tType) + '" onclick="window.okbmAdminInspectDeleteFeed(this.dataset.feedId, this.dataset.targetType);" style="' + btn + '">게시글 즉시 삭제</button>' +
           '<button type="button" data-report-id="' + okbmEscapeUgcAttr(rid) + '" onclick="window.okbmAdminInspectDismissReport(this.dataset.reportId);" style="' + btn + '">신고 기각</button>' +
         '</div>' +
       '</div>';
@@ -1986,10 +2232,26 @@ window.okbmRenderAdminReportInspectorList = async function() {
   }
 };
 
-window.okbmAdminInspectOpenFeed = async function(feedId) {
+window.okbmAdminInspectOpenFeed = async function(feedId, targetType) {
   if (!window.okbmIsCurrentUserAdmin()) return;
   var sId = String(feedId || '').trim();
   if (!sId) return;
+  var tType = okbmReportType(targetType);
+  if (tType === 'spot_review') {
+    // 박지 후기: 지도에서 그 박지를 연다(정보창 후기 블록)
+    try { sessionStorage.setItem('okbm_entered_via_index', '1'); } catch (eSs) {}
+    var mapUrl = 'map.html?id=' + encodeURIComponent(sId);
+    if (typeof window.smoothNavigate === 'function') window.smoothNavigate(mapUrl);
+    else window.location.assign(mapUrl);
+    return;
+  }
+  if (tType === 'lounge_post' || tType === 'lounge_comment') {
+    // 라운지 창(검수함보다 아래 층)을 열고 검수함을 닫는다. sId = 글 id(댓글이면 그 글)
+    var inspectorEl = document.getElementById('adminReportInspectorModal');
+    if (inspectorEl) inspectorEl.remove();
+    if (typeof window.openLoungeWindow === 'function') window.openLoungeWindow(2, sId);
+    return;
+  }
 
   var inspector = document.getElementById('adminReportInspectorModal');
   if (inspector) inspector.style.display = 'none';
@@ -2013,14 +2275,22 @@ window.okbmAdminInspectOpenFeed = async function(feedId) {
   }
 };
 
-window.okbmAdminInspectDeleteFeed = async function(feedId) {
+window.okbmAdminInspectDeleteFeed = async function(feedId, targetType) {
   if (!(await window.okbmRefreshAdminFlagFromServer())) return;
   var sId = String(feedId || '').trim();
   if (!sId) return;
-  if (!confirm('이 피드를 삭제할까요?')) return;
+  var tType = okbmReportType(targetType);
+  if (!confirm('이 ' + OKBM_REPORT_TYPES[tType].label + '을(를) 삭제할까요?')) return;
 
   var del = { ok: false };
-  if (typeof window.deleteFeedFromCommunity === 'function') {
+  if (tType !== 'feed') {
+    // 라운지 글(댓글·좋아요는 CASCADE)·댓글·박지 후기. 관리자 DELETE는 RLS가 허용.
+    // 0건이면 이미 지워진 것인지 확인한다(권한 문제면 실패로 둔다).
+    var r0 = typeof window.okbmDeleteRowsConfirmed === 'function'
+      ? await window.okbmDeleteRowsConfirmed(OKBM_REPORT_TYPES[tType].table, sId)
+      : { ok: false, error: 'no_delete_helper' };
+    del = r0 && r0.ok ? { ok: true } : { ok: false, error: (r0 && r0.error) || 'delete_failed' };
+  } else if (typeof window.deleteFeedFromCommunity === 'function') {
     del = await window.deleteFeedFromCommunity(sId);
   } else {
     var fallbackUrl = window.SUPABASE_URL || SUPABASE_URL;
@@ -2063,7 +2333,8 @@ window.okbmAdminInspectDeleteFeed = async function(feedId) {
     try {
       var resolveHeaders = okbmWriteRestHeaders({ Prefer: 'return=minimal' });
       if (!resolveHeaders) return;
-      await fetch(targetUrl + '/rest/v1/feed_reports?feed_id=eq.' + encodeURIComponent(sId) + '&status=eq.pending', {
+      // 같은 id라도 종류가 다른 신고는 건드리지 않는다
+      await fetch(targetUrl + '/rest/v1/feed_reports?target_type=eq.' + encodeURIComponent(tType) + '&feed_id=eq.' + encodeURIComponent(sId) + '&status=eq.pending', {
         method: 'PATCH',
         headers: resolveHeaders,
         body: JSON.stringify({ status: 'resolved' })
@@ -2073,10 +2344,15 @@ window.okbmAdminInspectDeleteFeed = async function(feedId) {
     }
   }
 
-  if (Array.isArray(window.__allLoadedFeeds)) {
+  if (tType === 'feed' && Array.isArray(window.__allLoadedFeeds)) {
     window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) {
       return f && String(f.id || '').trim() !== sId;
     });
+  }
+  if (tType !== 'feed') {
+    // 라운지(lounge.js)·지도 후기 캐시에서도 뺀다
+    if (tType === 'spot_review' && typeof window.okbmRefreshSpotReviewBoxes === 'function') window.okbmRefreshSpotReviewBoxes();
+    okbmEmitUgcEvent('okbm_lounge_content_deleted', { type: tType, id: sId });
   }
   window.closeOpenUgcFeedModals({});
   if (typeof window.rerenderCommunityFeedsNow === 'function') window.rerenderCommunityFeedsNow();
@@ -2141,9 +2417,11 @@ window.buildUgcSafetyButtonsHtml = function(feedId, userId, nickname, layout) {
   return '<div class="ugc-safety-actions" style="display:inline-flex; align-items:center; gap:6px; flex-shrink:0;">' + reportBtn + blockBtn + '</div>';
 };
 
-window.openUgcSafetyMenu = function(feedId, userId, nickname, e) {
+// targetType: feed(기본) | lounge_post | lounge_comment | spot_review (백패커 라운지·지도 박지 후기)
+window.openUgcSafetyMenu = function(feedId, userId, nickname, e, targetType) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
 
+  var tType = okbmReportType(targetType);
   var sFeedId = String(feedId || '').trim();
   var sUserId = String(userId || '').trim();
   var sNick = String(nickname || '').trim();
@@ -2160,7 +2438,7 @@ window.openUgcSafetyMenu = function(feedId, userId, nickname, e) {
 
   var rowBtn = 'width:100%; height:46px; background:#111111; border:none; border-radius:10px; color:#e2e8f0; font-size:0.84rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:10px; padding:0 14px;';
   var reportRow = sFeedId
-    ? '<button type="button" data-feed-id="' + okbmEscapeUgcAttr(sFeedId) + '" data-user-id="' + okbmEscapeUgcAttr(sUserId) + '" onclick="document.getElementById(\'ugcSafetyMenuSheet\') && document.getElementById(\'ugcSafetyMenuSheet\').remove(); window.openFeedReportModal(this.dataset.feedId, this.dataset.userId);" style="' + rowBtn + '">' +
+    ? '<button type="button" data-feed-id="' + okbmEscapeUgcAttr(sFeedId) + '" data-user-id="' + okbmEscapeUgcAttr(sUserId) + '" data-target-type="' + okbmEscapeUgcAttr(tType) + '" onclick="document.getElementById(\'ugcSafetyMenuSheet\') && document.getElementById(\'ugcSafetyMenuSheet\').remove(); window.openFeedReportModal(this.dataset.feedId, this.dataset.userId, this.dataset.targetType);" style="' + rowBtn + '">' +
         '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>' +
         '<span>신고하기</span>' +
       '</button>'
@@ -6555,6 +6833,13 @@ window.navigateToDockTab = function(tabId) {
   if (typeof closeThemeSpotAllModal === 'function') closeThemeSpotAllModal();
   if (typeof window.closePastTripRegisterModal === 'function') {
     try { window.closePastTripRegisterModal({ silent: true }); } catch (e) {}
+  }
+  // 백패커 라운지 창·시트 (lounge.js를 안 받았으면 함수가 없고 열린 것도 없다)
+  if (typeof window.closeLoungeWindow === 'function') {
+    try { window.closeLoungeWindow(true); } catch (e) {}
+  }
+  if (typeof window.closeLoungeSheet === 'function' && document.getElementById('loungeSheet')) {
+    try { window.closeLoungeSheet(); } catch (e) {}
   }
 
   // 2. 화면을 가로막고 있는 모든 테마스팟, 영상, 원정대, 수정창 일괄 소거
@@ -12796,15 +13081,22 @@ window.okbmPaintNotifInboxList = async function() {
     if (r && !r.is_read && r.id) unreadIds.push(String(r.id));
     var when = okbmFormatNoteTime(r.created_at);
     var unreadDot = r.is_read ? '' : '<span style="width:7px; height:7px; border-radius:50%; background:#38bdf8; flex-shrink:0; margin-top:6px;"></span>';
-    return '<div style="padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; gap:8px; align-items:flex-start;">' +
+    // 백패커 라운지 댓글·건의 답변 알림은 누르면 그 글을 연다 (related_id = 글 id)
+    var kind = String(r.kind || '').toLowerCase();
+    var loungePostId = (kind === 'lounge_comment' || kind === 'lounge_reply') ? String(r.related_id || '').trim() : '';
+    var openAttrs = loungePostId
+      ? ' class="okbm-notif-row" role="button" tabindex="0" data-lounge-post="' + _escapeReportPropHtml(loungePostId) + '"'
+      : '';
+    return '<div' + openAttrs + ' style="padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; gap:8px; align-items:flex-start;' + (loungePostId ? ' cursor:pointer;' : '') + '">' +
       unreadDot +
       '<div style="min-width:0; flex:1;">' +
         '<div style="font-size:0.80rem; font-weight:800; color:#e2e8f0;">' + _escapeReportPropHtml(r.title || '알림') + '</div>' +
         '<div style="font-size:0.68rem; color:#94a3b8; margin-top:4px; line-height:1.45;">' + _escapeReportPropHtml(r.body || '') + '</div>' +
-        (when ? '<div style="font-size:0.58rem; color:#64748b; margin-top:6px;">' + when + '</div>' : '') +
+        (when ? '<div style="font-size:0.58rem; color:#64748b; margin-top:6px;">' + when + (loungePostId ? ' · 글 보기 ›' : '') + '</div>' : '') +
       '</div>' +
     '</div>';
   }).join('');
+  okbmBindNotifRowOpen(listEl);
   if (unreadIds.length) {
     await window.markUserNotificationsRead(unreadIds);
     if (typeof window.pollUserNotifications === 'function') {
@@ -12812,6 +13104,37 @@ window.okbmPaintNotifInboxList = async function() {
     }
   }
 };
+
+// 알림 줄 누르기(위임, 인라인 핸들러 없음). 목록 칸은 알림함을 열 때마다 새로 만들어진다.
+// 라운지 창(z 2147483640)은 알림함(2147483644)보다 아래라서 알림함을 닫고 연다. 마이리포트(3000000)보다는 위.
+function okbmBindNotifRowOpen(listEl) {
+  if (!listEl || listEl.__okbmNotifOpenBound) return;
+  listEl.__okbmNotifOpenBound = true;
+  var go = function(e) {
+    var row = e.target && e.target.closest ? e.target.closest('.okbm-notif-row') : null;
+    if (!row || !listEl.contains(row)) return;
+    var postId = String(row.getAttribute('data-lounge-post') || '').trim();
+    if (!postId) return;
+    if (e.type === 'keydown') {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+    }
+    var inbox = document.getElementById('userNotificationInboxModal');
+    if (inbox) inbox.remove();
+    if (typeof window.unregisterModalClose === 'function') window.unregisterModalClose('userNotificationInboxModal');
+    if (typeof window.openLoungeWindow === 'function') {
+      window.openLoungeWindow(2, postId);
+    } else {
+      // 라운지 로더가 없는 페이지(지도 등): 홈에서 연다
+      // ?id=는 index.html이 지도 박지로 넘기므로 글은 post=로 넘긴다 (lounge.js start가 연다)
+      var url = 'index.html?lounge=2&post=' + encodeURIComponent(postId);
+      if (typeof window.smoothNavigate === 'function') window.smoothNavigate(url);
+      else window.location.assign(url);
+    }
+  };
+  listEl.addEventListener('click', go);
+  listEl.addEventListener('keydown', go);
+}
 
 window.okbmLiftReportChildModal = function(overlay) {
   if (!overlay) return;
@@ -13327,6 +13650,8 @@ if (typeof window !== 'undefined') {
       { id: 'presetActionModal', close: removeEl },
       { id: 'gearMetaEditSheet', close: removeEl },
       { id: 'ugcSafetyMenuSheet', close: removeEl },
+      // 백패커 라운지(lounge.js): 시트가 창보다 위라서 먼저. 그냥 지우면 스크롤 잠금·스택이 남는다
+      { id: 'loungeSheet', close: function(el) { if (!callWin('closeLoungeSheet')) hideOrRemove(el); } },
       { id: 'readyShotShareSheet', close: function() { callWin('closeReadyShotShareSheet') || hideOrRemove(document.getElementById('readyShotShareSheet')); } },
       { id: 'readyShotFrameOverlay', close: function() {
         if (typeof window.closeReadyShotFrameModal === 'function') window.closeReadyShotFrameModal(true);
@@ -13380,6 +13705,7 @@ if (typeof window !== 'undefined') {
       { id: 'secretSpotHeroModal', close: function() { if (!callWin('closeSecretSpotHeroModal')) hideOrRemove(document.getElementById('secretSpotHeroModal')); } },
       { id: 'themeSpotAllModal', close: function() { if (!callWin('closeThemeSpotAllModal')) hideOrRemove(document.getElementById('themeSpotAllModal')); } },
       { id: 'tripDetailSheetModal', close: function() { if (!callWin('closeTripDetailModal')) hideOrRemove(document.getElementById('tripDetailSheetModal')); } },
+      { id: 'loungeWindow', close: function(el) { if (!callWin('closeLoungeWindow')) hideOrRemove(el); } },
       { id: 'tripCreateModal', close: function() { if (!callWin('closeTripCreateModal')) hideOrRemove(document.getElementById('tripCreateModal')); } },
       { id: 'tripJoinListModal', close: function(el) { if (!callWin('closeTripJoinListModal')) hideOrRemove(el); } },
       { id: 'tripUserProfileModal', close: function() { if (!callWin('closeTripAuthorProfile')) hideOrRemove(document.getElementById('tripUserProfileModal')); } },

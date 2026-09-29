@@ -37,7 +37,8 @@ function isLocalDevHost(hostname) {
     /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(hostname);
 }
 
-const ALLOWED_PREFIXES = new Set(["okbm", "feed", "photo", "trip", "cover", "master_cover", "readyshot"]);
+// lounge: 백패커 라운지 글 사진·행사 포스터 (2026-09-29, SUPABASE_F1_LOUNGE.sql)
+const ALLOWED_PREFIXES = new Set(["okbm", "feed", "photo", "trip", "cover", "master_cover", "readyshot", "lounge"]);
 const MAX_BYTES = 5 * 1024 * 1024;
 const DEFAULT_PUBLIC_BASE = "https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev";
 
