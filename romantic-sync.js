@@ -3346,6 +3346,8 @@ window.mergeSpotDetailInto = function(spot, detail) {
   spot.blogUrls = media.blogUrls;
   spot.author_sns_url = String(detail.author_sns_url || '').trim();
   spot.authorSnsUrl = spot.author_sns_url;
+  // 'guest'면 비회원용 요약만 받은 상태. 로그인 후 다시 받는다. (E1 이전 서버는 tier 없음 = 전체)
+  spot.__detailTier = detail.tier === 'guest' ? 'guest' : 'member';
   spot.__detailLoaded = true;
   return spot;
 };
@@ -3410,8 +3412,11 @@ window.__spotDetailInflight = window.__spotDetailInflight || {};
 window.fetchSpotDetailById = async function(spotId) {
   var id = String(spotId || '').trim();
   if (!id) return null;
-  if (window.__spotDetailCache[id]) return window.__spotDetailCache[id];
-  if (window.__spotDetailInflight[id]) return window.__spotDetailInflight[id];
+  // 서버는 비회원에게 [뷰/특징]만 준다(E1). 로그인 전후 응답이 다르므로 캐시를 나눈다.
+  var accessToken = (typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || '';
+  var cacheKey = id + (accessToken ? ':m' : ':g');
+  if (window.__spotDetailCache[cacheKey]) return window.__spotDetailCache[cacheKey];
+  if (window.__spotDetailInflight[cacheKey]) return window.__spotDetailInflight[cacheKey];
 
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
@@ -3423,7 +3428,7 @@ window.fetchSpotDetailById = async function(spotId) {
         method: 'POST',
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+          'Authorization': 'Bearer ' + (accessToken || targetKey),
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ p_id: id })
@@ -3431,17 +3436,17 @@ window.fetchSpotDetailById = async function(spotId) {
       if (!res.ok) return null;
       var detail = await res.json();
       if (!detail || typeof detail !== 'object') return null;
-      window.__spotDetailCache[id] = detail;
+      window.__spotDetailCache[cacheKey] = detail;
       return detail;
     } catch (e) {
       console.warn('[romantic-sync.js:fetchSpotDetailById]', e);
       return null;
     } finally {
-      delete window.__spotDetailInflight[id];
+      delete window.__spotDetailInflight[cacheKey];
     }
   })();
 
-  window.__spotDetailInflight[id] = request;
+  window.__spotDetailInflight[cacheKey] = request;
   return request;
 };
 

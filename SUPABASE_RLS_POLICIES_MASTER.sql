@@ -1309,7 +1309,16 @@ AS $$
 DECLARE
   result jsonb;
   v_actor text;
+  v_member boolean;
 BEGIN
+  -- E1: 들머리 주소·코스/피칭/팁·작성자 SNS는 로그인 회원(익명 로그인 제외)에게만.
+  -- 비회원은 화면에 원래 보이던 [뷰/특징]과 미디어 링크만 받는다.
+  v_member := auth.role() = 'service_role'
+    OR (
+      auth.uid() IS NOT NULL
+      AND COALESCE((auth.jwt() ->> 'is_anonymous')::boolean, false) = false
+    );
+
   IF auth.role() IS DISTINCT FROM 'service_role' THEN
     v_actor := COALESCE(NULLIF(auth.uid()::text, ''), 'ip:' || public.okbm_request_ip());
     IF NOT public.okbm_actor_rate_limit(v_actor, 'get_spot_detail', 60) THEN
@@ -1321,16 +1330,34 @@ BEGIN
     RETURN NULL;
   END IF;
 
-  SELECT jsonb_build_object(
-    'trailhead_addr', s.trailhead_addr,
-    'desc_summary', s.desc_summary,
-    'mediaUrls', s."mediaUrls",
-    'author_sns_url', s.author_sns_url
-  )
-  INTO result
-  FROM public.spots s
-  WHERE s.id = btrim(p_id)
-  LIMIT 1;
+  IF v_member THEN
+    SELECT jsonb_build_object(
+      'tier', 'member',
+      'trailhead_addr', s.trailhead_addr,
+      'desc_summary', s.desc_summary,
+      'mediaUrls', s."mediaUrls",
+      'author_sns_url', s.author_sns_url
+    )
+    INTO result
+    FROM public.spots s
+    WHERE s.id = btrim(p_id)
+    LIMIT 1;
+  ELSE
+    SELECT jsonb_build_object(
+      'tier', 'guest',
+      'trailhead_addr', '',
+      'desc_summary', CASE
+        WHEN COALESCE(btrim(s.view_brief), '') = '' THEN ''
+        ELSE '[뷰/특징] ' || btrim(s.view_brief)
+      END,
+      'mediaUrls', s."mediaUrls",
+      'author_sns_url', ''
+    )
+    INTO result
+    FROM public.spots s
+    WHERE s.id = btrim(p_id)
+    LIMIT 1;
+  END IF;
 
   RETURN result;
 END;
