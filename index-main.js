@@ -151,6 +151,28 @@
       return false;
     }
 
+    // 홈(히어로·테마 스팟·아카이브)이 쓰는 공개 피드 목록. __allLoadedFeeds는 낭만보관함이 10개씩 받은
+    // 페이지(내 비공개 글 포함)로 덮어써서, 보관함을 한 번 열면 테마 스팟이 비거나 개수가 줄었다.
+    // 홈 목록은 initDynamicHeroAndFeeds가 받은 것을 따로 들고, 글 저장·삭제만 같이 반영한다.
+    window.__okbmHomeFeedPool = [];
+    window.okbmFilterHomeFeedPool = function(keep) {
+      if (Array.isArray(window.__okbmHomeFeedPool) && typeof keep === 'function') {
+        window.__okbmHomeFeedPool = window.__okbmHomeFeedPool.filter(keep);
+      }
+    };
+    window.okbmUpsertHomeFeedPool = function(rec) {
+      if (!rec || !rec.id || !Array.isArray(window.__okbmHomeFeedPool) || !window.__okbmHomeFeedPool.length) return;
+      var id = String(rec.id).trim();
+      var idx = window.__okbmHomeFeedPool.findIndex(function(f) { return f && String(f.id).trim() === id; });
+      if (idx !== -1) window.__okbmHomeFeedPool[idx] = Object.assign({}, window.__okbmHomeFeedPool[idx], rec);
+      else window.__okbmHomeFeedPool.unshift(rec);
+    };
+    function getHomeFeedPool() {
+      if (Array.isArray(window.__okbmHomeFeedPool) && window.__okbmHomeFeedPool.length > 0) return window.__okbmHomeFeedPool;
+      if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) return window.__allLoadedFeeds;
+      return safeGetJSON('okbm_cached_community_feeds', []) || [];
+    }
+
     function getThemeSpotPool() {
       if (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0) {
         return registeredSpots;
@@ -437,9 +459,7 @@
       var grid = document.getElementById('themeSpotAllGridContainer');
       if (!grid) return;
 
-      var feedPool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
-        ? window.__allLoadedFeeds
-        : (safeGetJSON('okbm_cached_community_feeds', []) || []);
+      var feedPool = getHomeFeedPool();
       if (typeof window.filterHiddenUgcFeeds === 'function') {
         feedPool = window.filterHiddenUgcFeeds(feedPool);
       }
@@ -541,9 +561,7 @@
         railContainer.__okbmRailHtml = html;
       };
 
-      var feedPool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
-        ? window.__allLoadedFeeds
-        : (safeGetJSON('okbm_cached_community_feeds', []) || []);
+      var feedPool = getHomeFeedPool();
       if (typeof window.filterHiddenUgcFeeds === 'function') {
         feedPool = window.filterHiddenUgcFeeds(feedPool);
       }
@@ -706,7 +724,8 @@
       var targetKey = String(spotOrFeedId || '').trim();
       var cleanTargetKey = targetKey.replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
 
-      var cachedFeeds = window.__allLoadedFeeds || safeGetJSON('okbm_cached_community_feeds', []) || [];
+      // 테마 스팟 카드는 홈 목록에서 나오므로 홈 목록을 먼저 찾고, 없으면 보관함 목록까지 본다
+      var cachedFeeds = getHomeFeedPool().concat(Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : []);
       var visibleFeeds = cachedFeeds;
       if (typeof window.filterHiddenUgcFeeds === 'function') {
         visibleFeeds = window.filterHiddenUgcFeeds(cachedFeeds);
@@ -1555,6 +1574,7 @@
         var prevHeroKeys = (window.heroTopRecords || []).map(heroKeyOf).join('|');
         var nextHeroKeys = nextHeroRecords.map(heroKeyOf).join('|');
         window.__allLoadedFeeds = allCleanFeeds;
+        window.__okbmHomeFeedPool = allCleanFeeds;
         window.heroTopRecords = nextHeroRecords;
         // 캐시로 먼저 그린 뒤 네트워크 결과가 와도 카드 목록이 같으면, 사용자가 넘겨 둔 카드 위치를 유지한다.
         // (예전에는 응답이 올 때마다 1번 카드로 돌아갔다)
@@ -1595,6 +1615,7 @@
             var sbRes = await window.supabaseClient
               .from('feeds')
               .select(homeSelect)
+              .eq('is_published', true)
               .order('likes_count', { ascending: false })
               .order('created_at', { ascending: false })
               .limit(30);
@@ -1604,7 +1625,7 @@
           }
 
           if (!rawRows && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-            var homeUrl = window.SUPABASE_URL + '/rest/v1/feeds?select=' + encodeURIComponent(homeSelect) + '&order=likes_count.desc,created_at.desc&limit=30';
+            var homeUrl = window.SUPABASE_URL + '/rest/v1/feeds?select=' + encodeURIComponent(homeSelect) + '&is_published=eq.true&order=likes_count.desc,created_at.desc&limit=30';
             var res = await (typeof window.okbmPublicFetch === 'function'
               ? window.okbmPublicFetch(homeUrl)
               : fetch(homeUrl, {

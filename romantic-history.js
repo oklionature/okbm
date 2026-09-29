@@ -1438,6 +1438,7 @@
           if (Array.isArray(window.__allLoadedFeeds)) {
             window.__allLoadedFeeds = window.__allLoadedFeeds.filter(keepIfNotSameDate);
           }
+          if (typeof window.okbmFilterHomeFeedPool === 'function') window.okbmFilterHomeFeedPool(keepIfNotSameDate);
           if (Array.isArray(window.heroTopRecords)) {
             window.heroTopRecords = window.heroTopRecords.filter(keepIfNotSameDate);
           }
@@ -1628,6 +1629,7 @@
     try {
       okbmWriteCachedCommunityFeeds(window.__allLoadedFeeds);
     } catch (e) { console.warn('[romantic-history.js:savePackingHistoryRecord feedCache]', e); }
+    if (typeof window.okbmUpsertHomeFeedPool === 'function') window.okbmUpsertHomeFeedPool(normalized);
 
     if (typeof window.renderHistoryStage === 'function') {
       window.renderHistoryStage();
@@ -1916,6 +1918,7 @@
         var beforeLen = window.__allLoadedFeeds.length;
         window.__allLoadedFeeds = window.__allLoadedFeeds.filter(isAlive);
         purgedLoaded += (beforeLen - window.__allLoadedFeeds.length);
+        if (typeof window.okbmFilterHomeFeedPool === 'function') window.okbmFilterHomeFeedPool(isAlive);
         try { okbmWriteCachedCommunityFeeds(window.__allLoadedFeeds); } catch (eW) {}
       }
 
@@ -2800,6 +2803,7 @@ window.normalizeHistoryRecord = function(r, idx) {
         okbmWriteCachedCommunityFeeds(window.__allLoadedFeeds);
       } catch (e) {}
     }
+    if (typeof window.okbmFilterHomeFeedPool === 'function') window.okbmFilterHomeFeedPool(purgeFn);
 
     if (Array.isArray(window.heroTopRecords)) {
       window.heroTopRecords = window.heroTopRecords.filter(purgeFn);
@@ -4155,6 +4159,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       window.__allLoadedFeeds = window.__allLoadedFeeds.filter(purgeFn);
       try { okbmWriteCachedCommunityFeeds(window.__allLoadedFeeds); } catch(e) { console.warn('[romantic-history.js:deleteTripRecord feedCache]', e); }
     }
+    if (typeof window.okbmFilterHomeFeedPool === 'function') window.okbmFilterHomeFeedPool(purgeFn);
 
     var filteredHistory = rawHistory.filter(purgeFn);
 

@@ -2353,6 +2353,9 @@ window.okbmAdminInspectDeleteFeed = async function(feedId, targetType) {
       return f && String(f.id || '').trim() !== sId;
     });
   }
+  if (tType === 'feed' && typeof window.okbmFilterHomeFeedPool === 'function') {
+    window.okbmFilterHomeFeedPool(function(f) { return f && String(f.id || '').trim() !== sId; });
+  }
   if (tType !== 'feed') {
     // 라운지(lounge.js)·지도 후기 캐시에서도 뺀다
     if (tType === 'spot_review' && typeof window.okbmRefreshSpotReviewBoxes === 'function') window.okbmRefreshSpotReviewBoxes();

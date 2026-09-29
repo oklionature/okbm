@@ -6156,6 +6156,7 @@ window.saveCurrentPackingRecord = function() {
 
       if (Array.isArray(window.__allLoadedFeeds)) {
         window.__allLoadedFeeds = window.__allLoadedFeeds.filter(purgeSharedFeedFn);
+        if (typeof window.okbmFilterHomeFeedPool === 'function') window.okbmFilterHomeFeedPool(purgeSharedFeedFn);
         try {
           if (typeof window.okbmWriteCachedCommunityFeeds === 'function') {
             window.okbmWriteCachedCommunityFeeds(window.__allLoadedFeeds);
