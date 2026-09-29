@@ -6904,6 +6904,11 @@ window.navigateToDockTab = function(tabId) {
   if (typeof window.closePastTripRegisterModal === 'function') {
     try { window.closePastTripRegisterModal({ silent: true }); } catch (e) {}
   }
+  // 라운지 창·시트에서 홈(낭만루터)을 누르면 홈 맨 위로 간다. 그냥 닫으면 창을 열던 자리(홈 아래 라운지 섹션)로
+  // 스크롤이 돌아가 라운지가 그대로 보여 "홈으로 안 간다"처럼 보였다. 복원 위치를 0으로 둔 뒤 닫는다.
+  var okbmHomeFromLounge = !isMap && (tabId === 'router' || tabId === 'route') &&
+    !!(document.getElementById('loungeWindow') || document.getElementById('loungeSheet'));
+  if (okbmHomeFromLounge) window.__homeScrollYBeforeTripModal = 0;
   // 백패커 라운지 창·시트 (lounge.js를 안 받았으면 함수가 없고 열린 것도 없다)
   if (typeof window.closeLoungeWindow === 'function') {
     try { window.closeLoungeWindow(true); } catch (e) {}
@@ -6988,7 +6993,8 @@ window.navigateToDockTab = function(tabId) {
     if (typeof closePlanModal === 'function') closePlanModal();
     if (typeof closeHistoryModal === 'function') closeHistoryModal();
     if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
-    // 🎯 홈 화면에서는 위로 튕기지 않고 내가 보던 그 자리 그대로 편안하게 유지
+    // 🎯 홈 화면에서는 위로 튕기지 않고 내가 보던 그 자리 그대로 편안하게 유지 (라운지에서 누른 경우만 맨 위로)
+    if (okbmHomeFromLounge) window.scrollTo(0, 0);
   } else if (tabId === 'map') {
     if (!isMap) {
       var mapUrl = 'map.html';

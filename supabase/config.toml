@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.blog-search]
 verify_jwt = true
+
+[functions.lounge-admin-delete]
+verify_jwt = true
