@@ -1,0 +1,4 @@
+{
+  "_comment": "검색 페이지(spot/<id>/)를 만들지 않을 박지 id. 공원 언급 박지는 스크립트가 자동으로 뺀다. 수정 후 python3 scripts/build-spot-pages.py 실행.",
+  "ids": []
+}
