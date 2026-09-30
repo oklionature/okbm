@@ -2260,10 +2260,12 @@ CREATE TRIGGER trg_lounge_events_touch
   FOR EACH ROW EXECUTE FUNCTION public.okbm_lounge_touch_updated_at();
 
 -- -------------------------------------------------------------------------
--- 7-2. lounge_guides (관리자 게시: 장비 세트 kit / 첫 박 준비 tip)
---    items: [{ "gear_id": "gear_1644", "category_id": "pack", "name": "...", "weight_g": 1600, "link_url": "https://..." }]
---    link_url(선택): 관리자가 거는 구매·상세 링크. 화면은 okbmSafeExternalUrl + noopener로만 연다.
---    가격은 여기 두지 않는다(나중에 별도 파일로, 2026-09-29 사용자 결정).
+-- 7-2. lounge_guides (관리자 게시: 입문 장비 kit / 백패킹 팁 tip)
+--    note: kit은 한 줄 설명. tip은 팁 / 주의점 / 기본상식.
+--    body: kit은 소개 글. 맨 끝 주소 하나는 유튜브 썸네일 또는 블로그 링크가 되고, 글자로는 안 보인다.
+--    items: [{ "gear_id": "gear_1644", "category_id": "pack", "name": "...", "weight_g": 1600, "price_krw": 444000, "link_url": "https://..." }]
+--    link_url(선택): 구매 링크. 화면은 장비 줄 전체가 okbmSafeExternalUrl + noopener로 연다.
+--    price_krw: 매장 가격(원). 이름에 「· 000원」이 붙어 있던 예전 글은 화면이 가격 칸으로 나눠 보여 준다.
 -- -------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.lounge_guides (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

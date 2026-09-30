@@ -550,6 +550,24 @@
       return (stars + 1.5) / Math.pow(daysElapsed + 2, 1.2);
     }
 
+    // 테마 스팟 레일: 피드를 받기 전에는 실제 카드와 같은 크기의 뼈대를 보여 준다(index.html 첫 화면 마크업과 같은 모양)
+    function themeRailSkeletonHtml() {
+      var card = '<div class="n-trailer-card okbm-sk-card" aria-hidden="true" style="width:118px !important;">' +
+        '<div class="n-trailer-thumb okbm-sk"></div>' +
+        '<div class="n-trailer-info"><i class="okbm-sk okbm-sk-line" style="width:72%;"></i><i class="okbm-sk okbm-sk-line okbm-sk-line--sm" style="width:44%;"></i></div>' +
+        '</div>';
+      return '<span class="okbm-sr" role="status">테마 스팟을 불러오는 중</span>' + card + card + card + card;
+    }
+
+    // 테마 스팟 레일이 비었을 때: 다른 테마를 고른 경우에만 '전체 테마 보기'로 되돌리는 버튼을 준다
+    function themeRailEmptyHtml(canReset) {
+      return '<div class="okbm-empty" role="status">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20l6-11 4 7 3-4 5 8z"/><circle cx="17" cy="6" r="2"/></svg>' +
+        '<p class="okbm-empty-t">' + (canReset ? '이 테마에 올라온 사진이 아직 없어요' : '아직 올라온 사진이 없어요') + '</p>' +
+        (canReset ? '<button type="button" class="okbm-empty-btn" onclick="filterSecretSpotTheme(\'all\', document.querySelector(\'#heroTrailerSectionWrap .n-cat-chip\'))">전체 테마 보기</button>' : '') +
+        '</div>';
+    }
+
     function renderSecretSpotTrailerRail() {
       var railContainer = document.getElementById('secretSpotTrailerRailContainer');
       if (!railContainer) return;
@@ -566,8 +584,10 @@
         feedPool = window.filterHiddenUgcFeeds(feedPool);
       }
 
-      if (feedPool.length === 0) {
-        setRailHtml('<div style="padding:24px 10px; font-size:0.72rem; color:#64748b;">등록된 피드를 불러오는 중입니다...</div>');
+      // 서버 피드가 오기 전에는 풀에 기본 안내 기록(hero_preset_master)만 있다. 이때는 '없음'이 아니라 로딩이다
+      var hasServerFeeds = feedPool.some(function(f) { return f && String(f.id || '') !== 'hero_preset_master'; });
+      if (!hasServerFeeds) {
+        setRailHtml(themeRailSkeletonHtml());
         return;
       }
 
@@ -608,7 +628,7 @@
 
       var filteredFeeds = validPhotoFeeds;
       if (filteredFeeds.length === 0) {
-        setRailHtml('<div style="padding:24px 10px; font-size:0.72rem; color:#64748b;">해당 테마에 등록된 사진 피드가 아직 없습니다.</div>');
+        setRailHtml(themeRailEmptyHtml(themeKey !== 'all'));
         return;
       }
 
@@ -1273,6 +1293,8 @@
           if (emptyAuthor) emptyAuthor.innerText = '낭만백패커';
           if (emptyQuote) emptyQuote.innerText = '“자연 속에서 비화식으로 즐기는 조용한 하룻밤”';
           if (emptyIndicator) emptyIndicator.innerText = '(0/0)';
+          var emptyStage = document.querySelector('.insta-stage-wrap');
+          if (emptyStage) emptyStage.classList.add('okbm-hero-loading');
           window.currentHeroRecord = null;
           window.currentHeroPhotosList = [];
         }
@@ -1285,6 +1307,8 @@
       var record = records[window.currentHeroCardIndex];
       window.currentHeroRecord = record;
       window.currentHeroPhotosList = getArchivePhotosList(record);
+      var heroStage = document.querySelector('.insta-stage-wrap');
+      if (heroStage) heroStage.classList.remove('okbm-hero-loading');
 
       var cardRoot = document.getElementById('instaMainCard');
       var titleEl = document.getElementById('heroMainTitle');

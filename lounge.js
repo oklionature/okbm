@@ -308,11 +308,13 @@
       '.lm-kv b{font-weight:600;text-align:right}',
       '.lm-desc{margin:10px 0 0;font-size:13.5px;line-height:1.65;color:#d1d1d6;white-space:pre-wrap}',
       '.lm-poster{display:block;width:100%;max-height:420px;object-fit:cover;border-radius:14px;margin:2px 0 10px;background:#17171b}',
-      '.lm-item{display:flex;gap:10px;align-items:center;padding:8px 0;font-size:13.5px}',
+      '.lm-yt{display:block;margin:12px 0 6px;border-radius:14px;overflow:hidden;background:#17171b}',
+      '.lm-yt img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}',
+      '.lm-blog{display:flex;align-items:center;justify-content:space-between;margin:12px 0 6px;padding:14px 16px;border-radius:14px;background:#17171b;color:var(--tx);text-decoration:none;font-size:14px;font-weight:700}',
+      '.lm-item{display:flex;gap:10px;align-items:center;padding:8px 0;font-size:13.5px;color:inherit;text-decoration:none}',
       '.lm-item span{flex:none;width:40px;color:var(--sub)}',
       '.lm-item b{flex:1;min-width:0;font-weight:500}',
       '.lm-item em{flex:none;font-style:normal;font-size:11.5px;text-align:right;color:var(--sub);font-variant-numeric:tabular-nums}',
-      '.lm-item a{flex:none;display:inline-flex;align-items:center;gap:2px;font-size:11.5px;font-weight:700;color:var(--blue);text-decoration:none}',
       '.lm-faq-q{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;font-size:14px;font-weight:800;line-height:1.4;text-align:left}',
       '.lm-btn{flex:1;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:700;background:#2a2a30;color:var(--tx);text-decoration:none;transition:transform .15s,opacity .2s,background .2s}',
       '.lm-btn:active{transform:scale(.97)}',
@@ -370,7 +372,8 @@
       '.lm-edit-item .lm-in{height:38px;font-size:16px;font-weight:500;border-bottom-width:1px}',
       '.lm-edit-item .top button{flex:none;width:32px;height:32px;display:grid;place-items:center;border-radius:50%;color:var(--sub)}',
       '.lm-edit-item .top button:active{background:rgba(255,255,255,.06)}',
-      '.lm-edit-item .wrow{display:flex;gap:12px}.lm-edit-item .wrow>.lm-in:first-child{flex:1}.lm-edit-item .wrow>.lm-in:last-child{flex:none;width:92px}',
+      '.lm-edit-item .wrow{display:flex;gap:12px}.lm-edit-item .wrow>.lm-in{flex:1}',
+      '.lm-edit-item .prow{display:flex;gap:12px;margin-top:8px}.lm-edit-item .prow>.lm-in{flex:1}',
       '.lm-btn.main.red{background:#e5484d}',
       '.lmw-edge{position:absolute;top:calc(52px + env(safe-area-inset-top,0px));bottom:0;left:0;z-index:3;width:20px;touch-action:pan-y}',
       '.lmw-big{display:block}',
@@ -647,7 +650,7 @@
     const ch = String(name || '낭').trim().charAt(0) || '낭';
     return '<div class="lm-av ' + (cls || '') + '" style="background:' + avColor(uid) + '">' + esc(ch) + '</div>';
   };
-  const fold = function (id, head, body) { return '<div class="lmx" data-id="' + esc(id) + '">' + head + '<div class="lmx-body"><div>' + body + '</div></div></div>'; };
+  const fold = function (id, head, body, open) { return '<div class="lmx' + (open ? ' open' : '') + '" data-id="' + esc(id) + '">' + head + '<div class="lmx-body"><div>' + body + '</div></div></div>'; };
   const moreBtn = function (tab, label) { return '<button type="button" class="lmh-more" data-a="lounge" data-v="' + tab + '">' + esc(label) + ico(P.chevR, 14) + '</button>'; };
   const skeleton = function () { return '<div class="lm-sk"><i></i><b></b></div>'.repeat(HOME_N) + '<div class="lmh-more">&nbsp;</div>'; };
   const homeEmpty = function (msg, tab, label) { return '<div class="lmh-empty">' + esc(msg) + '</div>' + moreBtn(tab, label); };
@@ -770,25 +773,87 @@
   }
 
   // 초보 가이드
-  function kitItem(k) {
+  const TIP_NOTES = ['팁', '주의점', '기본상식'];
+  function youtubeId(text) {
+    const m = String(text || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?[^#\s]*v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+    return m ? m[1] : '';
+  }
+  function guideSource(text) {
+    const urls = String(text || '').match(/https?:\/\/[^\s)]+/g);
+    return urls && urls.length ? urls[urls.length - 1] : '';
+  }
+  function stripGuideUrls(text) {
+    return String(text || '')
+      .replace(/https?:\/\/[^\s)]+/g, '')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+  function joinGuideBody(prose, source) {
+    const p = String(prose || '').trim();
+    const s = String(source || '').trim();
+    return s ? (p ? p + '\n' + s : s) : p;
+  }
+  function priceInName(name) {
+    const m = String(name || '').match(/·\s*([\d,]+)\s*원\s*$/);
+    return m ? Number(String(m[1]).replace(/,/g, '')) || 0 : 0;
+  }
+  function stripPriceName(name) {
+    return String(name || '').replace(/\s*·\s*[\d,]+\s*원\s*$/, '').trim();
+  }
+  function itemPrice(it) {
+    const n = Number(it && it.price_krw);
+    return n > 0 ? Math.round(n) : priceInName(it && it.name);
+  }
+  function itemName(it) {
+    return itemPrice(it) ? stripPriceName(it && it.name) : String((it && it.name) || '');
+  }
+  function wonLabel(n) {
+    const v = Math.round(Number(n) || 0);
+    return v > 0 ? v.toLocaleString('ko-KR') + '원' : '';
+  }
+  function ytBlock(id) {
+    const watch = 'https://www.youtube.com/watch?v=' + id;
+    const img = 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg';
+    return `<a class="lm-yt" href="${escapeHtml(okbmSafeExternalUrl(watch))}" target="_blank" rel="noopener noreferrer" aria-label="영상 보기"><img src="${escapeHtml(okbmSafeImageUrl(img))}" alt="" loading="lazy" decoding="async"></a>`;
+  }
+  function sourceBlock(text) {
+    const src = guideSource(text);
+    const yid = youtubeId(src);
+    if (yid) return ytBlock(yid);
+    const safe = okbmSafeExternalUrl(src);
+    if (!src || safe === '#') return '';
+    return `<a class="lm-blog" href="${escapeHtml(safe)}" target="_blank" rel="noopener noreferrer">글 보기${ico(P.chevR, 16)}</a>`;
+  }
+  function gearRows(items) {
+    return items.map(function (it) {
+      const url = okbmSafeExternalUrl(it.link_url);
+      const price = wonLabel(itemPrice(it));
+      const inner = `<span>${esc(GEAR_CAT[it.category_id] || '장비')}</span><b>${esc(itemName(it))}</b>${price ? `<em>${esc(price)}</em>` : ''}<em>${((Number(it.weight_g) || 0) / 1000).toFixed(2)}kg</em>`;
+      return url !== '#'
+        ? `<a class="lm-item" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${inner}</a>`
+        : `<div class="lm-item">${inner}</div>`;
+    }).join('');
+  }
+  function kitItem(k, open) {
     const items = kitItems(k);
-    const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="false"><div class="lm-score">${kitKg(k).toFixed(1)}<small>kg</small></div>
+    const shown = !!(open && guideSource(k.body));
+    const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="${shown}"><div class="lm-score">${kitKg(k).toFixed(1)}<small>kg</small></div>
       <div class="lm-rb"><div class="lm-rt">${esc(k.title)}${D.admin && !k.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc([k.note, items.length + '가지'].filter(Boolean).join(' · '))}</div></div>${chev(true)}</button>`;
+    const prose = stripGuideUrls(k.body);
+    const intro = `${prose ? `<p class="lm-desc" style="margin:0">${esc(prose)}</p>` : ''}${sourceBlock(k.body)}${gearRows(items)}`;
     const body = `<div class="lmx-in">
-      ${items.map(function (it) {
-        const url = okbmSafeExternalUrl(it.link_url);
-        return `<div class="lm-item"><span>${esc(GEAR_CAT[it.category_id] || '장비')}</span><b>${esc(it.name)}</b><em>${((Number(it.weight_g) || 0) / 1000).toFixed(2)}kg</em>${url !== '#' ? `<a href="${escapeHtml(okbmSafeExternalUrl(it.link_url))}" target="_blank" rel="noopener noreferrer">보기${ico(P.chevR, 13)}</a>` : ''}</div>`;
-      }).join('')}
-      ${k.body ? `<p class="lm-desc">${esc(k.body)}</p>` : ''}
+      ${intro}
       <p class="lm-hint">무게는 장비 목록 기준이에요. 담으면 지금 패킹 리스트에 더해져요(이미 있는 장비는 건너뛰어요).</p>
       ${items.length ? `<div class="lm-kit-row" data-kit-slot>${kitSlotInner(k)}</div>` : ''}
       ${adminLinks([['edit-guide', '수정', 'adm', k.id], ['hide-guide', k.is_active ? '숨기기' : '다시 보이기', 'adm', k.id], ['del-guide', '삭제', 'red', k.id]])}
     </div>`;
-    return fold(k.id, head, body);
+    return fold(k.id, head, body, shown);
   }
   function tipItem(t) {
+    const tag = TIP_NOTES.indexOf(t.note) >= 0 ? '<span class="lm-tag" style="margin:0 6px 0 0">' + esc(t.note) + '</span>' : '';
     return fold(t.id,
-      `<button type="button" class="lm-faq-q" data-a="x" aria-expanded="false"><span>${esc(t.title)}${D.admin && !t.is_active ? '<span class="lm-tag">숨김</span>' : ''}</span>${chev(true)}</button>`,
+      `<button type="button" class="lm-faq-q" data-a="x" aria-expanded="false"><span>${tag}${esc(t.title)}${D.admin && !t.is_active ? '<span class="lm-tag">숨김</span>' : ''}</span>${chev(true)}</button>`,
       `<div class="lmx-in"><p class="lm-desc" style="margin:0">${esc(t.body)}</p>
         ${adminLinks([['edit-guide', '수정', 'adm', t.id], ['hide-guide', t.is_active ? '숨기기' : '다시 보이기', 'adm', t.id], ['del-guide', '삭제', 'red', t.id]])}</div>`);
   }
@@ -798,11 +863,11 @@
     if (!full) {
       const list = kits().filter(function (k) { return k.is_active !== false; }).slice(0, HOME_N);
       if (!list.length) return homeEmpty('초보 가이드를 준비하고 있어요', 1, '라운지 열기');
-      return list.map(kitItem).join('') + moreBtn(1, '첫 박 준비까지 가이드 ' + D.guides.length + '개 보기');
+      return list.map(function (k) { return kitItem(k); }).join('') + moreBtn(1, '첫 백패킹 가이드 ' + D.guides.length + '개 보기');
     }
     let h = '<div class="lm-head">처음 백패킹이라면<br><em>여기서</em> 시작해요</div>';
-    h += '<div class="lmh-cap">입문 장비 추천</div>' + (kits().length ? kits().map(kitItem).join('') : '<div class="lm-empty">장비 세트를 준비하고 있어요</div>');
-    h += '<div class="lmh-cap">첫 박 준비</div>' + (tips().length ? tips().map(tipItem).join('') : '<div class="lm-empty">질문을 준비하고 있어요</div>');
+    h += '<div class="lmh-cap">성공적인 첫 백패킹을 위한 팁</div>' + (tips().length ? tips().map(tipItem).join('') : '<div class="lm-empty">팁을 준비하고 있어요</div>');
+    h += '<div class="lmh-cap">입문 장비 추천</div>' + (kits().length ? kits().map(function (k) { return kitItem(k, true); }).join('') : '<div class="lm-empty">장비 세트를 준비하고 있어요</div>');
     h += '<p class="lm-hint" style="margin-top:20px">가이드는 운영팀이 올려요. 더 궁금한 건 자유게시판에 물어봐요.</p>';
     if (D.admin) h += '<button type="button" class="lmh-cta adm" data-a="new-guide">' + ico(P.plus, 18) + '가이드 올리기</button>';
     return h;
@@ -1525,34 +1590,45 @@
     await submitRow(f, 'lounge_events', st.id, row, st.id ? '행사를 고쳤어요' : '행사를 등록했어요');
   }
 
-  // ----- 가이드 (장비 추천 kit / 첫 박 준비 tip) -----
+  // ----- 가이드 (입문 장비 kit / 백패킹 팁 tip) -----
   function itemsEditHtml() {
     const items = SH.items || [];
     if (!items.length) return '<p class="lm-hint">아직 담은 장비가 없어요. 아래에서 찾아 담아요.</p>';
     return items.map(function (it, i) {
-      return `<div class="lm-edit-item"><div class="top"><em>${esc(GEAR_CAT[it.category_id] || '장비')}</em><b>${esc(it.name)}</b><em>${((Number(it.weight_g) || 0) / 1000).toFixed(2)}kg</em>
-        ${i ? `<button type="button" data-a="item-up" data-v="${i}" aria-label="${esc(it.name)} 위로">${ico('<path d="M18 15l-6-6-6 6"/>', 16)}</button>` : ''}
-        <button type="button" data-a="item-del" data-v="${i}" aria-label="${esc(it.name)} 빼기">${ico(P.x, 16)}</button></div>
-        <div class="wrow"><input class="lm-in" type="url" inputmode="url" data-link="${i}" value="${esc(it.link_url || '')}" placeholder="링크 (선택) https://" aria-label="${esc(it.name)} 링크">
-        ${it.gear_id ? '' : `<input class="lm-in" type="number" inputmode="numeric" min="0" max="50000" data-w="${i}" value="${Number(it.weight_g) || ''}" placeholder="무게 g" aria-label="${esc(it.name)} 무게(g)">`}</div></div>`;
+      const shown = itemName(it) || it.name;
+      return `<div class="lm-edit-item"><div class="top"><em>${esc(GEAR_CAT[it.category_id] || '장비')}</em><b>${esc(shown)}</b><em>${((Number(it.weight_g) || 0) / 1000).toFixed(2)}kg</em>
+        ${i ? `<button type="button" data-a="item-up" data-v="${i}" aria-label="${esc(shown)} 위로">${ico('<path d="M18 15l-6-6-6 6"/>', 16)}</button>` : ''}
+        <button type="button" data-a="item-del" data-v="${i}" aria-label="${esc(shown)} 빼기">${ico(P.x, 16)}</button></div>
+        <div class="wrow"><input class="lm-in" type="url" inputmode="url" data-link="${i}" value="${esc(it.link_url || '')}" placeholder="구매 링크 https://" aria-label="${esc(shown)} 구매 링크"></div>
+        <div class="prow"><input class="lm-in" type="number" inputmode="numeric" min="0" max="10000000" data-price="${i}" value="${Number(it.price_krw) || ''}" placeholder="가격 원" aria-label="${esc(shown)} 가격(원)">
+        ${it.gear_id ? '' : `<input class="lm-in" type="number" inputmode="numeric" min="0" max="50000" data-w="${i}" value="${Number(it.weight_g) || ''}" placeholder="무게 g" aria-label="${esc(shown)} 무게(g)">`}</div></div>`;
     }).join('');
   }
   function guideFormHtml(g, kind) {
     const kit = kind === 'kit';
+    const parts = kit ? { prose: stripGuideUrls(g && g.body), source: guideSource(g && g.body) } : { prose: (g && g.body) || '', source: '' };
+    const tnote = TIP_NOTES.indexOf(SH.tnote) >= 0 ? SH.tnote : '팁';
     return `<h3 id="loungeSheetTitle">${g ? '가이드 수정' : '가이드 올리기'}</h3><p class="lm-ssub">관리자에게만 보이는 화면이에요.</p>
       <form data-form="guide" novalidate autocomplete="off">
-        <div class="lm-chipline" role="radiogroup" aria-label="종류">${[['kit', '장비 추천'], ['tip', '첫 박 준비']].map(function (k) {
+        <div class="lm-chipline" role="radiogroup" aria-label="종류">${[['kit', '입문 장비'], ['tip', '백패킹 팁']].map(function (k) {
           return '<button type="button" role="radio" aria-checked="' + (k[0] === kind) + '" class="' + (k[0] === kind ? 'on' : '') + '" data-a="gkind" data-v="' + k[0] + '">' + k[1] + '</button>';
         }).join('')}</div>
-        ${field('lmGdTitle', kit ? '세트 이름' : '질문', inp('lmGdTitle', 'title', g && g.title, 'maxlength="80" required data-autofocus placeholder="' + (kit ? '예: 가성비 입문 세트' : '예: 첫 박지는 어디가 좋아요?') + '"'), true)}
+        ${field('lmGdTitle', kit ? '세트 이름' : '제목', inp('lmGdTitle', 'title', g && g.title, 'maxlength="80" required data-autofocus placeholder="' + (kit ? '예: 캠퍼조이의 첫 백패킹' : '예: 겨울 핫팩은 두 장') + '"'), true)}
+        <div data-tip ${kit ? 'hidden' : ''}>
+          <span class="lm-lbl">구분</span>
+          <div class="lm-chipline" role="radiogroup" aria-label="구분">${TIP_NOTES.map(function (n) {
+            return '<button type="button" role="radio" aria-checked="' + (n === tnote) + '" class="' + (n === tnote ? 'on' : '') + '" data-a="tnote" data-v="' + n + '">' + n + '</button>';
+          }).join('')}</div>
+        </div>
         <div data-kit ${kit ? '' : 'hidden'}>
-          ${field('lmGdNote', '누구에게', inp('lmGdNote', 'note', g && g.note, 'maxlength="80" placeholder="예: 처음 사는 분께"'))}
+          ${field('lmGdNote', '누구에게', inp('lmGdNote', 'note', g && g.note, 'maxlength="80" placeholder="예: 첫 백패킹"'))}
+          ${field('lmGdSource', '유튜브·블로그 주소', inp('lmGdSource', 'source', parts.source, 'type="url" inputmode="url" maxlength="500" placeholder="https://"'))}
           <span class="lm-lbl">장비 <span data-count>${(SH.items || []).length}</span>/30</span>
           <div data-items>${itemsEditHtml()}</div>
           <input class="lm-in" data-gear-q aria-label="장비 이름으로 찾기" placeholder="+ 장비 이름으로 찾기" style="margin-top:6px">
           <div class="lm-sugg" data-gear-sugg hidden></div>
         </div>
-        ${field('lmGdBody', kit ? '설명' : '답변', '<textarea class="lm-ta" id="lmGdBody" name="body" maxlength="2000" placeholder="' + (kit ? '누구에게 맞는 구성인가요? 먼저 살 것, 아껴도 되는 것' : '초보가 바로 따라 할 수 있게 적어 주세요') + '">' + esc(g && g.body) + '</textarea>', !kit)}
+        ${field('lmGdBody', kit ? '소개' : '내용', '<textarea class="lm-ta" id="lmGdBody" name="body" maxlength="2000" placeholder="' + (kit ? '처음 살 때 뭘 고르면 되는지' : '초보가 바로 따라 할 수 있게') + '">' + esc(parts.prose) + '</textarea>', !kit)}
         ${field('lmGdSort', '순서 (작을수록 위)', inp('lmGdSort', 'sort', g ? g.sort : 0, 'type="number" inputmode="numeric" min="-999" max="999"'))}
         <div style="margin-top:10px">${sw('is_active', '모두에게 보이기', g ? g.is_active !== false : true)}</div>
         <button type="submit" class="lm-btn main">${g ? '저장' : '올리기'}</button>
@@ -1563,7 +1639,11 @@
     kind = g ? g.kind : (kind === 'tip' ? 'tip' : 'kit');
     const st = {
       kind: 'guide', id: g ? g.id : null, gkind: kind,
-      items: g ? kitItems(g).map(function (it) { return Object.assign({}, it); }) : [],
+      tnote: g && TIP_NOTES.indexOf(g.note) >= 0 ? g.note : '팁',
+      items: g ? kitItems(g).map(function (it) {
+        const price = itemPrice(it);
+        return Object.assign({}, it, { price_krw: price, name: price ? stripPriceName(it.name) : it.name });
+      }) : [],
       sw: { is_active: g ? g.is_active !== false : true }
     };
     const prev = SH;
@@ -1628,18 +1708,26 @@
     const val = function (n) { return String((f.elements[n] && f.elements[n].value) || '').trim(); };
     const kit = st.gkind === 'kit';
     const items = kit ? st.items.map(function (it) {
+      const price = Math.max(0, Math.min(10000000, Math.round(Number(it.price_krw) || 0)));
       return {
-        gear_id: String(it.gear_id || ''), category_id: String(it.category_id || 'other'), name: String(it.name || '').trim().slice(0, 120),
-        weight_g: Math.max(0, Math.min(50000, Math.round(Number(it.weight_g) || 0))), link_url: String(it.link_url || '').trim()
+        gear_id: String(it.gear_id || ''), category_id: String(it.category_id || 'other'),
+        name: String(it.name || '').trim().slice(0, 120),
+        weight_g: Math.max(0, Math.min(50000, Math.round(Number(it.weight_g) || 0))),
+        price_krw: price, link_url: String(it.link_url || '').trim()
       };
     }).filter(function (it) { return it.name; }) : [];
+    const source = kit ? val('source') : '';
+    const body = kit ? joinGuideBody(val('body'), source) : val('body');
     const row = {
-      kind: st.gkind, title: val('title'), note: kit ? val('note') : '', body: val('body'), items: items,
+      kind: st.gkind, title: val('title'), note: kit ? val('note') : (TIP_NOTES.indexOf(st.tnote) >= 0 ? st.tnote : '팁'),
+      body: body, items: items,
       sort: Math.max(-999, Math.min(999, parseInt(val('sort'), 10) || 0)), is_active: !!st.sw.is_active
     };
     const bad = function (name, msg) { toast(msg, true); if (name && f.elements[name]) f.elements[name].focus(); };
-    if (!row.title) return bad('title', kit ? '세트 이름을 적어 주세요' : '질문을 적어 주세요');
-    if (!kit && !row.body) return bad('body', '답변을 적어 주세요');
+    if (!row.title) return bad('title', kit ? '세트 이름을 적어 주세요' : '제목을 적어 주세요');
+    if (!kit && !row.body) return bad('body', '내용을 적어 주세요');
+    if (source && !HTTPS_RE.test(source)) return bad('source', '주소는 https://로 시작해야 해요');
+    if (row.body.length > 2000) return bad('body', '소개가 너무 길어요');
     const badLink = items.find(function (it) { return it.link_url && !HTTPS_RE.test(it.link_url); });
     if (badLink) return bad('', badLink.name + ' 링크는 https://로 시작해야 해요');
     await submitRow(f, 'lounge_guides', st.id, row, st.id ? '가이드를 고쳤어요' : '가이드를 올렸어요');
@@ -2272,20 +2360,31 @@
         const kit = v === 'kit';
         t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
         sheet.querySelector('[data-kit]').hidden = !kit;
+        const tipBox = sheet.querySelector('[data-tip]');
+        if (tipBox) tipBox.hidden = kit;
         const tl = sheet.querySelector('label[for="lmGdTitle"]'), bl = sheet.querySelector('label[for="lmGdBody"]');
-        if (tl) tl.firstChild.textContent = kit ? '세트 이름' : '질문';
-        if (bl) bl.innerHTML = esc(kit ? '설명' : '답변') + (kit ? '' : ' <b aria-hidden="true">*</b>');
+        if (tl) tl.firstChild.textContent = kit ? '세트 이름' : '제목';
+        if (bl) bl.innerHTML = esc(kit ? '소개' : '내용') + (kit ? '' : ' <b aria-hidden="true">*</b>');
+        const titleIn = sheet.querySelector('#lmGdTitle'), bodyIn = sheet.querySelector('#lmGdBody');
+        if (titleIn) titleIn.placeholder = kit ? '예: 캠퍼조이의 첫 백패킹' : '예: 겨울 핫팩은 두 장';
+        if (bodyIn) bodyIn.placeholder = kit ? '처음 살 때 뭘 고르면 되는지' : '초보가 바로 따라 할 수 있게';
         tick();
+        break;
+      }
+      case 'tnote': {
+        if (SH.kind !== 'guide') break;
+        SH.tnote = v;
+        t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
         break;
       }
       case 'gear-add': {
         const g = (window.GEARS_MASTER || []).find(function (x) { return x && String(x.id) === String(v); });
-        if (g) addItem({ gear_id: String(g.id), category_id: String(g.category_id || 'other'), name: String(g.item_name).slice(0, 120), weight_g: Number(g.weight_g) || 0, link_url: '' });
+        if (g) addItem({ gear_id: String(g.id), category_id: String(g.category_id || 'other'), name: String(g.item_name).slice(0, 120), weight_g: Number(g.weight_g) || 0, price_krw: 0, link_url: '' });
         break;
       }
       case 'gear-custom': {
         const qv = String((sheet.querySelector('[data-gear-q]') || {}).value || '').trim();
-        if (qv) addItem({ gear_id: '', category_id: 'other', name: qv.slice(0, 120), weight_g: 0, link_url: '' });
+        if (qv) addItem({ gear_id: '', category_id: 'other', name: qv.slice(0, 120), weight_g: 0, price_krw: 0, link_url: '' });
         break;
       }
       case 'item-del': SH.items.splice(Number(v), 1); refreshItems(); break;
@@ -2308,6 +2407,7 @@
     const t = e.target;
     if (!sheet || !sheet.contains(t)) return;
     if (t.dataset.link != null && SH.items && SH.items[Number(t.dataset.link)]) SH.items[Number(t.dataset.link)].link_url = t.value.trim();
+    else if (t.dataset.price != null && SH.items && SH.items[Number(t.dataset.price)]) SH.items[Number(t.dataset.price)].price_krw = Number(t.value) || 0;
     else if (t.dataset.w != null && SH.items && SH.items[Number(t.dataset.w)]) SH.items[Number(t.dataset.w)].weight_g = Number(t.value) || 0;
     else if (t.hasAttribute('data-gear-q')) { clearTimeout(searchTimer); searchTimer = setTimeout(function () { gearSuggest(t.value); }, 160); }
     else if (t.name === 'place' && SH.kind === 'event') spotSuggest(t.value);
