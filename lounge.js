@@ -183,7 +183,6 @@
     return String(e && e.message) === 'decode_failed' ? '이 사진은 열 수 없어요. 다른 사진을 골라 주세요' : '사진을 올리지 못했어요. 로그인 상태를 확인해 주세요';
   };
   function kitItems(k) { return Array.isArray(k.items) ? k.items.filter(function (it) { return it && it.name; }) : []; }
-  function kitKg(k) { return kitItems(k).reduce(function (s, it) { return s + (Number(it.weight_g) || 0); }, 0) / 1000; }
   function avColor(uid) {
     let h = 0; const s = String(uid || '');
     for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
@@ -308,10 +307,18 @@
       '.lm-kv b{font-weight:600;text-align:right}',
       '.lm-desc{margin:10px 0 0;font-size:13.5px;line-height:1.65;color:#d1d1d6;white-space:pre-wrap}',
       '.lm-poster{display:block;width:100%;max-height:420px;object-fit:cover;border-radius:14px;margin:2px 0 10px;background:#17171b}',
-      '.lm-yt{display:block;margin:12px 0 6px;border-radius:14px;overflow:hidden;background:#17171b}',
+      '.lm-src{flex:none;width:48px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;align-self:center}',
+      '.lm-src b{display:grid;place-items:center;width:22px;height:16px;border-radius:4px;background:#2a2a30;color:#fff;font-size:9px;font-weight:800;line-height:1}',
+      '.lm-src.yt b{background:#ff0033}',
+      '.lm-src.yt b:before{content:"";border-style:solid;border-width:3px 0 3px 5px;border-color:transparent transparent transparent #fff}',
+      '.lm-src small{font-size:9px;font-weight:800;letter-spacing:0;color:var(--sub)}',
+      '.lm-advisor{margin:2px 0 12px;padding:12px 14px;border-radius:12px;background:#17171b}',
+      '.lm-advisor b{display:block;font-size:13.5px;font-weight:800;line-height:1.4}',
+      '.lm-advisor p{margin:6px 0 0;font-size:12.5px;line-height:1.6;color:var(--sub);white-space:pre-wrap}',
+      '.lm-yt{display:block;margin:0 0 14px;border-radius:14px;overflow:hidden;background:#17171b;color:inherit;text-decoration:none}',
       '.lm-yt img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}',
-      '.lm-blog{display:flex;align-items:center;justify-content:space-between;margin:12px 0 6px;padding:14px 16px;border-radius:14px;background:#17171b;color:var(--tx);text-decoration:none;font-size:14px;font-weight:700}',
-      '.lm-chan{margin:12px 0 0;padding:12px 14px;border-radius:12px;background:#17171b;font-size:12.5px;line-height:1.6;color:var(--sub);white-space:pre-wrap}',
+      '.lm-yt span{display:block;padding:10px 14px;font-size:13px;font-weight:700}',
+      '.lm-blog{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px;padding:14px 16px;border-radius:14px;background:#17171b;color:var(--tx);text-decoration:none;font-size:14px;font-weight:700}',
       '.lm-gcap{margin:16px 0 2px;font-size:11.5px;font-weight:700;color:var(--sub)}',
       '.lm-item{display:flex;gap:10px;align-items:center;padding:9px 0;font-size:13.5px;color:inherit;text-decoration:none;border-bottom:1px solid var(--div)}',
       '.lm-item .nm{flex:1;min-width:0}',
@@ -827,7 +834,19 @@
   function ytBlock(id) {
     const watch = 'https://www.youtube.com/watch?v=' + id;
     const img = 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg';
-    return `<a class="lm-yt" href="${escapeHtml(okbmSafeExternalUrl(watch))}" target="_blank" rel="noopener noreferrer" aria-label="영상 보기"><img src="${escapeHtml(okbmSafeImageUrl(img))}" alt="" loading="lazy" decoding="async"></a>`;
+    return `<a class="lm-yt" href="${escapeHtml(okbmSafeExternalUrl(watch))}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(okbmSafeImageUrl(img))}" alt="" loading="lazy" decoding="async"><span>YouTube에서 보기</span></a>`;
+  }
+  function sourceMark(text) {
+    const src = guideSource(text);
+    if (youtubeId(src)) return '<div class="lm-src yt" aria-hidden="true"><b></b><small>YouTube</small></div>';
+    if (src && okbmSafeExternalUrl(src) !== '#') return '<div class="lm-src" aria-hidden="true"><b>글</b><small>블로그</small></div>';
+    return '';
+  }
+  function advisorBlock(k, channel) {
+    const name = String(k.note || '').trim();
+    const desc = String(channel || '').trim();
+    if (!name && !desc) return '';
+    return `<div class="lm-advisor">${name ? `<b>${esc(name)}</b>` : ''}${desc ? `<p>${esc(desc)}</p>` : ''}</div>`;
   }
   function sourceBlock(text) {
     const src = guideSource(text);
@@ -856,12 +875,11 @@
   function kitItem(k, open) {
     const items = kitItems(k);
     const shown = !!(open && guideSource(k.body));
-    const kg = kitKg(k);
-    const score = kg ? `${kg.toFixed(1)}<small>kg</small>` : `${items.length}<small>가지</small>`;
-    const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="${shown}"><div class="lm-score">${score}</div>
+    const mark = sourceMark(k.body) || `<div class="lm-score">${items.length}<small>가지</small></div>`;
+    const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="${shown}">${mark}
       <div class="lm-rb"><div class="lm-rt">${esc(k.title)}${D.admin && !k.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc([k.note, items.length + '가지'].filter(Boolean).join(' · '))}</div></div>${chev(true)}</button>`;
     const parts = guideParts(k.body);
-    const intro = `${parts.prose ? `<p class="lm-desc" style="margin:0">${esc(parts.prose)}</p>` : ''}${parts.channel ? `<p class="lm-chan">${esc(parts.channel)}</p>` : ''}${sourceBlock(k.body)}${gearRows(items)}`;
+    const intro = `${advisorBlock(k, parts.channel)}${sourceBlock(k.body)}${parts.prose ? `<p class="lm-desc" style="margin:0">${esc(parts.prose)}</p>` : ''}${gearRows(items)}`;
     const body = `<div class="lmx-in">
       ${intro}
       <p class="lm-hint">무게는 장비 목록 기준이에요. 담으면 지금 패킹 리스트에 더해져요(이미 있는 장비는 건너뛰어요).</p>
