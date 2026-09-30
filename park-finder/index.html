@@ -11,7 +11,7 @@
 <body>
   <main>
     <h1>박지 탐색기</h1>
-    <p class="lead">위치 없는 사진을 넣으면 이미지 검색으로 지역을 읽고, 그 구간 위성만 보고 좌표를 고릅니다. 검색은 Bing 시각 검색입니다. 구글 웹 화면은 이 서버에서 막힙니다. 결과는 최적 후보이지 보장이 아닙니다.</p>
+    <p class="lead">드론으로 찍은 데크 사진을 넣으면 전국 봉우리와 데크 위치를 같이 봅니다. 능선 모양, 바다가 보이는지, 골짜기에 구름이 깔렸는지, 가까운 곳이 숲인지 바위기인지를 사진에서 재서 걸러 냅니다. 사진 파일이 없는 목록만으로는 고르지 않습니다. 한 곳으로 갈리지 않으면 장소를 정하지 않습니다.</p>
     <form id="form">
       <label class="drop" for="file">사진 선택</label>
       <input id="file" name="image" type="file" accept="image/jpeg,image/png,image/webp" />
@@ -22,10 +22,7 @@
       <h2 id="title"></h2>
       <p id="note"></p>
       <div id="map"></div>
-      <img id="sat" alt="판단에 쓴 위성 사진" />
-      <h3>검색에서 읽은 말</h3>
-      <ul id="lines"></ul>
-      <h3>위성으로 비교한 곳</h3>
+      <h3>비교한 곳</h3>
       <ul id="compared"></ul>
     </section>
   </main>

@@ -2,7 +2,7 @@
   "name": "park-finder",
   "private": true,
   "type": "module",
-  "description": "위치 없는 사진으로 이미지 검색 지역을 정하고, 그 구간 위성만 보고 좌표를 고릅니다.",
+  "description": "드론·전망 사진의 능선을 공개 표고와 비교해 전망 지점을 고릅니다.",
   "scripts": {
     "start": "node server.mjs"
   },
