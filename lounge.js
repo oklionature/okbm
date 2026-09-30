@@ -320,6 +320,11 @@
       '.lm-yt span{display:block;padding:10px 14px;font-size:13px;font-weight:700}',
       '.lm-blog{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px;padding:14px 16px;border-radius:14px;background:#17171b;color:var(--tx);text-decoration:none;font-size:14px;font-weight:700}',
       '.lm-gcap{margin:16px 0 2px;font-size:11.5px;font-weight:700;color:var(--sub)}',
+      '.lm-block{margin-top:22px}',
+      '.lm-block .lm-sec{margin:0;font-size:14px;font-weight:800;line-height:1.4;color:var(--tx)}',
+      '.lm-block .lm-desc{margin:6px 0 0}',
+      '.lm-gear{margin-top:6px}',
+      '.lm-gear .lm-item:last-child{border-bottom:0}',
       '.lm-item{display:flex;gap:10px;align-items:center;padding:9px 0;font-size:13.5px;color:inherit;text-decoration:none;border-bottom:1px solid var(--div)}',
       '.lm-item .nm{flex:1;min-width:0}',
       '.lm-item b{display:block;font-weight:600}',
@@ -856,11 +861,11 @@
     if (!src || safe === '#') return '';
     return `<a class="lm-blog" href="${escapeHtml(safe)}" target="_blank" rel="noopener noreferrer">글 보기${ico(P.chevR, 16)}</a>`;
   }
-  function gearRows(items) {
+  function gearRows(items, plain) {
     let cat = null;
-    return items.map(function (it) {
+    const rows = items.map(function (it) {
       const c = GEAR_CAT[it.category_id] || '장비';
-      const cap = c !== cat ? `<div class="lm-gcap">${esc(c)}</div>` : '';
+      const cap = !plain && c !== cat ? `<div class="lm-gcap">${esc(c)}</div>` : '';
       cat = c;
       const url = okbmSafeExternalUrl(it.link_url);
       const price = wonLabel(itemPrice(it));
@@ -871,6 +876,102 @@
         ? `<a class="lm-item" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${inner}</a>`
         : `<div class="lm-item">${inner}</div>`);
     }).join('');
+    return plain && rows ? `<div class="lm-gear">${rows}</div>` : rows;
+  }
+  function normGear(s) {
+    return String(s || '').toLowerCase().replace(/[\s·,./\-_()]/g, '');
+  }
+  function itemKeys(name) {
+    const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    const keys = [];
+    function add(s) {
+      const k = normGear(s);
+      if (k.length >= 3 && keys.indexOf(k) < 0) keys.push(k);
+    }
+    add(parts.join(''));
+    if (parts.length >= 2) {
+      add(parts.slice(1).join(''));
+      add(parts.slice(-2).join(''));
+    }
+    parts.forEach(add);
+    return keys;
+  }
+  function gearMatchScore(name, blob) {
+    const b = normGear(blob);
+    const words = String(blob || '').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+    const norms = words.map(normGear);
+    for (let i = 0; i < words.length - 1; i++) norms.push(normGear(words[i] + words[i + 1]));
+    let score = 0;
+    itemKeys(name).forEach(function (k) {
+      if (k.length >= 4 && b.indexOf(k) >= 0) score += k.length * 2;
+      else if (k.length >= 3 && ['라이트', '울트라', '프로', '미니'].indexOf(k) < 0 && norms.some(function (w) {
+        if (w === k) return true;
+        if (!w.startsWith(k)) return false;
+        const rest = w.slice(k.length);
+        return /^(?:은|는|이|가|을|를|의|에|도|와|과|로|만|에서)$/.test(rest);
+      })) score += k.length;
+    });
+    return score;
+  }
+  function isGearHead(line) {
+    const s = String(line || '').trim();
+    if (!s || s.length > 16) return false;
+    if (/[.!?。]/.test(s) || /(?:요|다|죠|세요|해요|예요|에요)$/.test(s)) return false;
+    return true;
+  }
+  function proseSections(prose) {
+    const intro = [];
+    const sections = [];
+    let cur = null;
+    String(prose || '').split('\n').forEach(function (line) {
+      if (isGearHead(line)) {
+        cur = { title: line.trim(), lines: [] };
+        sections.push(cur);
+      } else if (cur) cur.lines.push(line);
+      else intro.push(line);
+    });
+    return {
+      intro: intro.join('\n').trim(),
+      sections: sections.map(function (sec) {
+        return { title: sec.title, text: sec.lines.join('\n').trim() };
+      })
+    };
+  }
+  function guideWithGear(prose, items) {
+    const parsed = proseSections(prose);
+    if (!parsed.sections.length) {
+      return `${prose ? `<p class="lm-desc" style="margin:0">${esc(prose)}</p>` : ''}${gearRows(items)}`;
+    }
+    const buckets = parsed.sections.map(function () { return []; });
+    const leftover = [];
+    items.forEach(function (it) {
+      let best = -1;
+      let bestScore = 0;
+      parsed.sections.forEach(function (sec, i) {
+        const score = gearMatchScore(itemName(it), sec.title + '\n' + sec.text);
+        if (score > bestScore) { bestScore = score; best = i; }
+      });
+      if (best >= 0) buckets[best].push(it);
+      else leftover.push(it);
+    });
+    let outro = '';
+    const last = parsed.sections.length - 1;
+    const paras = parsed.sections[last].text.split(/\n{2,}/);
+    if (paras.length >= 2) {
+      const tail = paras[paras.length - 1].trim();
+      const mentioned = buckets[last].some(function (it) { return gearMatchScore(itemName(it), tail) > 0; });
+      if (!mentioned) {
+        outro = tail;
+        parsed.sections[last].text = paras.slice(0, -1).join('\n\n').trim();
+      }
+    }
+    let html = parsed.intro ? `<p class="lm-desc" style="margin:0">${esc(parsed.intro)}</p>` : '';
+    parsed.sections.forEach(function (sec, i) {
+      html += `<div class="lm-block"><div class="lm-sec">${esc(sec.title)}</div>${sec.text ? `<p class="lm-desc">${esc(sec.text)}</p>` : ''}${gearRows(buckets[i], true)}</div>`;
+    });
+    html += gearRows(leftover);
+    if (outro) html += `<p class="lm-desc">${esc(outro)}</p>`;
+    return html;
   }
   function kitItem(k, open) {
     const items = kitItems(k);
@@ -879,7 +980,7 @@
     const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="${shown}">${mark}
       <div class="lm-rb"><div class="lm-rt">${esc(k.title)}${D.admin && !k.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc([k.note, items.length + '가지'].filter(Boolean).join(' · '))}</div></div>${chev(true)}</button>`;
     const parts = guideParts(k.body);
-    const intro = `${advisorBlock(k, parts.channel)}${sourceBlock(k.body)}${parts.prose ? `<p class="lm-desc" style="margin:0">${esc(parts.prose)}</p>` : ''}${gearRows(items)}`;
+    const intro = `${advisorBlock(k, parts.channel)}${sourceBlock(k.body)}${guideWithGear(parts.prose, items)}`;
     const body = `<div class="lmx-in">
       ${intro}
       <p class="lm-hint">무게는 장비 목록 기준이에요. 담으면 지금 패킹 리스트에 더해져요(이미 있는 장비는 건너뛰어요).</p>
