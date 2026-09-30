@@ -67,7 +67,6 @@
     fail: [false, false, false, false],
     liked: new Set(), likeChecked: new Set(), // 내가 좋아요 누른 글(본인 것만 보임)
     spotRev: null, // 박지 하나의 후기 {spot_id, tier, summary, reviews, mine, done}
-    packedKits: new Set() // 이번에 패킹 리스트에 담은 장비 세트
   };
   // 화면 상태. tab = 홈 탭, wtab = 라운지 창 탭 (서로 따로 기억), revSpot = 후기 탭을 한 박지로 좁힘
   const S = { tab: 0, wtab: 0, cat: 'all', revSpot: null };
@@ -320,10 +319,14 @@
       '.lm-yt span{display:block;padding:10px 14px;font-size:13px;font-weight:700}',
       '.lm-blog{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px;padding:14px 16px;border-radius:14px;background:#17171b;color:var(--tx);text-decoration:none;font-size:14px;font-weight:700}',
       '.lm-gcap{margin:16px 0 2px;font-size:11.5px;font-weight:700;color:var(--sub)}',
-      '.lm-block{margin-top:22px}',
-      '.lm-block .lm-sec{margin:0;font-size:14px;font-weight:800;line-height:1.4;color:var(--tx)}',
-      '.lm-block .lm-desc{margin:6px 0 0}',
-      '.lm-gear{margin-top:6px}',
+      '.lm-guide .lm-desc{margin:8px 0 0;font-size:13px;line-height:1.7;color:#8d8d96}',
+      '.lm-block{margin-top:28px}',
+      '.lm-block .lm-sec{margin:0;font-size:17px;font-weight:800;letter-spacing:-.03em;line-height:1.35;color:#f7f7f8}',
+      '.lm-block .lm-desc{margin:8px 0 0}',
+      '.lm-gear{margin-top:12px}',
+      '.lm-guide .lm-item b{font-size:14.5px;font-weight:700;color:#f2f2f3}',
+      '.lm-guide .lm-item small{color:#6f6f78}',
+      '.lm-guide .lm-item em{font-size:12px;font-weight:600;color:#9a9aa3}',
       '.lm-gear .lm-item:last-child{border-bottom:0}',
       '.lm-item{display:flex;gap:10px;align-items:center;padding:9px 0;font-size:13.5px;color:inherit;text-decoration:none;border-bottom:1px solid var(--div)}',
       '.lm-item .nm{flex:1;min-width:0}',
@@ -723,12 +726,6 @@
         <button type="button" class="lmx-login" data-a="open-cal" data-v="${esc(pd || String(e.start_date).slice(0, 10))}">내 달력 열기${ico(P.chevR, 14)}</button>
       </div></div>`;
   }
-  function kitSlotInner(k) {
-    const done = D.packedKits.has(k.id);
-    return done
-      ? `<button type="button" class="lm-btn sm ok" data-a="open-pack">${ico(P.check, 16)}패킹 리스트 열기</button>`
-      : `<button type="button" class="lm-btn sm main" data-a="kit-pack" data-v="${esc(k.id)}">${ico(P.pack, 16)}패킹 리스트에 담기</button>`;
-  }
   // 홈·창 양쪽의 같은 항목 칸을 다시 그린다(펼침·고르기 상태는 그대로)
   function repaintSlot(sel, id, html) {
     [home, layer].forEach(function (root) {
@@ -940,7 +937,7 @@
   function guideWithGear(prose, items) {
     const parsed = proseSections(prose);
     if (!parsed.sections.length) {
-      return `${prose ? `<p class="lm-desc" style="margin:0">${esc(prose)}</p>` : ''}${gearRows(items)}`;
+      return `<div class="lm-guide">${prose ? `<p class="lm-desc" style="margin:0">${esc(prose)}</p>` : ''}${gearRows(items)}</div>`;
     }
     const buckets = parsed.sections.map(function () { return []; });
     const leftover = [];
@@ -971,7 +968,7 @@
     });
     html += gearRows(leftover);
     if (outro) html += `<p class="lm-desc">${esc(outro)}</p>`;
-    return html;
+    return `<div class="lm-guide">${html}</div>`;
   }
   function kitItem(k, open) {
     const items = kitItems(k);
@@ -983,8 +980,6 @@
     const intro = `${advisorBlock(k, parts.channel)}${sourceBlock(k.body)}${guideWithGear(parts.prose, items)}`;
     const body = `<div class="lmx-in">
       ${intro}
-      <p class="lm-hint">무게는 장비 목록 기준이에요. 담으면 지금 패킹 리스트에 더해져요(이미 있는 장비는 건너뛰어요).</p>
-      ${items.length ? `<div class="lm-kit-row" data-kit-slot>${kitSlotInner(k)}</div>` : ''}
       ${adminLinks([['edit-guide', '수정', 'adm', k.id], ['hide-guide', k.is_active ? '숨기기' : '다시 보이기', 'adm', k.id], ['del-guide', '삭제', 'red', k.id]])}
     </div>`;
     return fold(k.id, head, body, shown);
@@ -2330,31 +2325,6 @@
     closeLoungeWindow(true);
     if (typeof window.openPlanModal === 'function') window.openPlanModal('calendar');
   }
-  async function kitPack(id, btn) {
-    const k = findGuide(id);
-    if (!k) return;
-    const items = kitItems(k);
-    if (!items.length) return;
-    if (btn) btn.disabled = true;
-    try {
-      if (typeof window.okbmEnsurePlan === 'function') await window.okbmEnsurePlan();
-      if (typeof window.okbmAddGearsToPack !== 'function') throw new Error('no_plan');
-      const r = window.okbmAddGearsToPack(items);
-      D.packedKits.add(k.id);
-      tick();
-      toast(r.added ? (r.added + '가지 담았어요' + (r.skipped ? ' · ' + r.skipped + '가지는 이미 있어요' : '')) : '이미 다 담겨 있어요');
-      repaintSlot('[data-kit-slot]', k.id, kitSlotInner(k));
-    } catch (err) {
-      console.warn('[lounge.js:kitPack]', err);
-      toast('패킹 리스트에 담지 못했어요', true);
-      if (btn && btn.isConnected) btn.disabled = false;
-    }
-  }
-  function openPack() {
-    closeSheet(true);
-    closeLoungeWindow(true);
-    if (typeof window.openPlanModal === 'function') window.openPlanModal('calculator');
-  }
 
   // =====================================================================
   // 누르기·입력 (인라인 onclick 없이 위임만 사용)
@@ -2460,8 +2430,6 @@
       case 'cal-mark': calMark(v); break;
       case 'cal-plan': calPlan(v, t); break;
       case 'open-cal': openCal(v); break;
-      case 'kit-pack': kitPack(v, t); break;
-      case 'open-pack': openPack(); break;
       // 관리자
       case 'new-event': openEventForm(null); break;
       case 'edit-event': openEventForm(findEvent(v)); break;
