@@ -991,17 +991,20 @@
       `<div class="lmx-in"><p class="lm-desc" style="margin:0">${esc(t.body)}</p>
         ${adminLinks([['edit-guide', '수정', 'adm', t.id], ['hide-guide', t.is_active ? '숨기기' : '다시 보이기', 'adm', t.id], ['del-guide', '삭제', 'red', t.id]])}</div>`);
   }
-  const kits = function () { return D.guides.filter(function (g) { return g.kind === 'kit'; }); };
-  const tips = function () { return D.guides.filter(function (g) { return g.kind === 'tip'; }); };
+  const kits = function () { return D.guides.filter(function (g) { return g.kind === 'kit' && (D.admin || g.is_active !== false); }); };
+  const tips = function () { return D.guides.filter(function (g) { return g.kind === 'tip' && (D.admin || g.is_active !== false); }); };
   function paneGuide(full) {
+    const list = kits();
     if (!full) {
-      const list = kits().filter(function (k) { return k.is_active !== false; }).slice(0, HOME_N);
-      if (!list.length) return homeEmpty('초보 가이드를 준비하고 있어요', 1, '라운지 열기');
-      return list.map(function (k) { return kitItem(k); }).join('') + moreBtn(1, '첫 백패킹 가이드 ' + D.guides.length + '개 보기');
+      const home = list.slice(0, HOME_N);
+      if (!home.length) return homeEmpty('초보 가이드를 준비하고 있어요', 1, '라운지 열기');
+      return home.map(function (k) { return kitItem(k); }).join('') + moreBtn(1, '첫 백패킹 가이드 ' + list.length + '개 보기');
     }
     let h = '<div class="lm-head">처음 백패킹이라면<br><em>여기서</em> 시작해요</div>';
-    h += '<div class="lmh-cap">성공적인 첫 백패킹을 위한 팁</div>' + (tips().length ? tips().map(tipItem).join('') : '<div class="lm-empty">팁을 준비하고 있어요</div>');
-    h += '<div class="lmh-cap">입문 장비 추천</div>' + (kits().length ? kits().map(function (k) { return kitItem(k, true); }).join('') : '<div class="lm-empty">장비 세트를 준비하고 있어요</div>');
+    h += '<div class="lmh-cap">입문 장비 추천</div>' + (list.length ? list.map(function (k) { return kitItem(k); }).join('') : '<div class="lm-empty">장비 세트를 준비하고 있어요</div>');
+    if (tips().length || D.admin) {
+      h += '<div class="lmh-cap">성공적인 첫 백패킹을 위한 팁</div>' + (tips().length ? tips().map(tipItem).join('') : '<div class="lm-empty">팁을 준비하고 있어요</div>');
+    }
     h += '<p class="lm-hint" style="margin-top:20px">가이드는 운영팀이 올려요. 더 궁금한 건 자유게시판에 물어봐요.</p>';
     if (D.admin) h += '<button type="button" class="lmh-cta adm" data-a="new-guide">' + ico(P.plus, 18) + '가이드 올리기</button>';
     return h;
