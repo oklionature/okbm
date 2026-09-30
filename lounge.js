@@ -1377,7 +1377,7 @@
 
   // ---------- 라운지 창 (오른쪽에서 밀려 들어옴) ----------
   function winHtml(tab) {
-    return `<div class="lm-win" id="loungeWindow" role="dialog" aria-modal="true" aria-label="백패커 라운지">
+    return `<div class="lm-win collapsed" id="loungeWindow" role="dialog" aria-modal="true" aria-label="백패커 라운지">
       <div class="lmw-top">
         <div class="lmw-bar"><button type="button" class="lmw-back" data-a="wclose" aria-label="라운지 닫기">${ico(P.back, 24)}</button><span class="lmw-mini" aria-hidden="true">백패커 라운지</span><span class="lmw-adm">${D.admin ? '관리자' : ''}</span></div>
         <h2 class="lmw-big">백패커 라운지</h2>
@@ -1521,7 +1521,7 @@
     }
     opener = null;
   }
-  // 창 안: 가로 스크롤(브라우저 기본 스냅)에 메뉴가 따라오고, 세로로 내리면 큰 제목이 접힌다
+  // 창 안: 가로 스크롤(브라우저 기본 스냅)에 메뉴가 따라온다. 제목은 탭마다 같은 작은 글씨로 둔다.
   function onLayerScroll(e) {
     if (!win) return;
     const t = e.target;
@@ -1534,10 +1534,7 @@
         setMenuOn(wmenu, i);
         revealBtn(wmenu, i);
         tick();
-        win.classList.toggle('collapsed', wpanes[i].scrollTop > 20);
       }
-    } else if (t === wpanes[S.wtab]) {
-      win.classList.toggle('collapsed', t.scrollTop > 20);
     }
   }
 
