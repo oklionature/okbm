@@ -98,20 +98,22 @@ CREATE TRIGGER trg_lounge_events_touch
 
 -- -------------------------------------------------------------------------
 -- 2. lounge_guides (관리자 게시: 입문 장비 kit / 백패킹 팁 tip)
---    note: kit은 한 줄 설명. tip은 팁 / 주의점 / 기본상식.
---    body: kit은 소개 글. 맨 끝 주소 하나는 유튜브 썸네일 또는 블로그 링크가 되고, 글자로는 안 보인다.
---    items: [{ "gear_id": "gear_1644", "category_id": "pack", "name": "...", "weight_g": 1600, "price_krw": 444000, "link_url": "https://..." }]
+--    kit은 영상·글 하나가 게시물 하나. title은 원문 제목, note는 채널 이름.
+--    tip은 note가 팁 / 주의점 / 기본상식.
+--    body: kit은 「본문 --- 채널 소개」. 맨 끝 주소 하나는 유튜브 썸네일 또는 블로그 링크가 되고, 글자로는 안 보인다.
+--    items: [{ "gear_id": "", "category_id": "pack", "name": "...", "about": "한 줄 설명", "weight_g": 0, "price_krw": 0, "link_url": "https://..." }]
 --    link_url(선택): 구매 링크. 화면은 장비 줄 전체가 okbmSafeExternalUrl + noopener로 연다.
 --    price_krw: 매장 가격(원). 이름에 「· 000원」이 붙어 있던 예전 글은 화면이 가격 칸으로 나눠 보여 준다.
+--    2026-09-30 운영 DB 제약을 items 80개, body 4000자로 올렸다.
 -- -------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.lounge_guides (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   kind text NOT NULL CHECK (kind IN ('kit', 'tip')),
   title text NOT NULL CHECK (char_length(btrim(title)) BETWEEN 1 AND 80),
   note text NOT NULL DEFAULT '' CHECK (char_length(note) <= 80),
-  body text NOT NULL DEFAULT '' CHECK (char_length(body) <= 2000),
+  body text NOT NULL DEFAULT '' CHECK (char_length(body) <= 4000),
   items jsonb NOT NULL DEFAULT '[]'::jsonb
-    CHECK (jsonb_typeof(items) = 'array' AND jsonb_array_length(items) <= 30),
+    CHECK (jsonb_typeof(items) = 'array' AND jsonb_array_length(items) <= 80),
   sort integer NOT NULL DEFAULT 0,
   is_active boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
