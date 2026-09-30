@@ -1,0 +1,13 @@
+{
+  "name": "park-finder",
+  "private": true,
+  "type": "module",
+  "description": "위치 없는 사진으로 이미지 검색 지역을 정하고, 그 구간 위성만 보고 좌표를 고릅니다.",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "jpeg-js": "^0.4.4",
+    "puppeteer-core": "^24.15.0"
+  }
+}

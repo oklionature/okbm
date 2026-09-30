@@ -1,0 +1,14 @@
+:root { color-scheme: light dark; font-family: "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+body { margin: 0; background: #101410; color: #e8eee6; }
+main { max-width: 880px; margin: 0 auto; padding: 28px 18px 64px; }
+h1 { font-size: 28px; margin: 0 0 8px; }
+.lead { color: #b7c3b4; line-height: 1.55; }
+form { display: flex; gap: 10px; align-items: center; margin: 18px 0; }
+.drop { border: 1px dashed #6d8a6a; border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+input[type="file"] { max-width: 260px; }
+button { background: #1f7a45; color: white; border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 700; cursor: pointer; }
+button:disabled { opacity: 0.6; cursor: wait; }
+#map { width: 100%; height: 420px; border-radius: 14px; margin: 12px 0; background: #1b241c; }
+#sat { width: min(100%, 360px); border-radius: 12px; }
+li { margin: 6px 0; line-height: 1.45; }
+#note { color: #d7c27a; }

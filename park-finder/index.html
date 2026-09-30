@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>박지 탐색기</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <main>
+    <h1>박지 탐색기</h1>
+    <p class="lead">위치 없는 사진을 넣으면 이미지 검색으로 지역을 읽고, 그 구간 위성만 보고 좌표를 고릅니다. 검색은 Bing 시각 검색입니다. 구글 웹 화면은 이 서버에서 막힙니다. 결과는 최적 후보이지 보장이 아닙니다.</p>
+    <form id="form">
+      <label class="drop" for="file">사진 선택</label>
+      <input id="file" name="image" type="file" accept="image/jpeg,image/png,image/webp" />
+      <button id="go" type="submit">찾기</button>
+    </form>
+    <p id="status" role="status"></p>
+    <section id="result" hidden>
+      <h2 id="title"></h2>
+      <p id="note"></p>
+      <div id="map"></div>
+      <img id="sat" alt="판단에 쓴 위성 사진" />
+      <h3>검색에서 읽은 말</h3>
+      <ul id="lines"></ul>
+      <h3>위성으로 비교한 곳</h3>
+      <ul id="compared"></ul>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
