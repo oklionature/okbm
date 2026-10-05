@@ -153,7 +153,9 @@ HEAD_COMMON = """<meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#000000">
-<link rel="icon" type="image/png" href="/logo.png">"""
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png">"""
 
 FOOTER = """<footer>
   <p>실제 정보와 다를 수 있으니 출발 전 현장 상황과 관련 규정을 꼭 확인하세요.</p>
