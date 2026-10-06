@@ -212,6 +212,8 @@
       '#okbmLoungeHome .lmh{padding:0 14px 8px 1px;color:var(--tx);font-family:var(--font-body,-apple-system,system-ui,sans-serif);letter-spacing:-.02em}',
       '#okbmLoungeHome .lmh-row{height:64px;padding:0;align-items:center}',
       '#okbmLoungeHome .lmx>.lmh-row{height:63px}',
+      '#okbmLoungeHome .lmx>.lm-faq-q{height:63px;padding:0}',
+      '#okbmLoungeHome .lmx>.lm-faq-q>span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '#okbmLoungeHome .lmh-row .lm-rt,#okbmLoungeHome .lmh-row .lm-rs{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '#okbmLoungeHome .lmh-row .lm-rs.fx{display:flex;align-items:center;gap:4px}',
       '#okbmLoungeHome .lmh-row .lm-rs.fx>span{min-width:0;overflow:hidden;text-overflow:ellipsis}',
@@ -1020,16 +1022,19 @@
   const tips = function () { return D.guides.filter(function (g) { return g.kind === 'tip' && (D.admin || g.is_active !== false); }); };
   function paneGuide(full) {
     const list = kits();
+    const tipList = tips();
     if (!full) {
-      const home = list.slice(0, HOME_N);
-      if (!home.length) return homeEmpty('초보 가이드를 준비하고 있어요', 1, '라운지 열기');
-      return home.map(function (k) { return kitItem(k); }).join('') + moreBtn(1, '첫 백패킹 가이드 ' + list.length + '개 보기');
+      const homeTips = tipList.slice(0, HOME_N);
+      const homeKits = list.slice(0, HOME_N - homeTips.length);
+      if (!homeTips.length && !homeKits.length) return homeEmpty('초보 가이드를 준비하고 있어요', 1, '라운지 열기');
+      return homeTips.map(tipItem).join('') + homeKits.map(function (k) { return kitItem(k); }).join('') +
+        moreBtn(1, '첫 백패킹 가이드 ' + (tipList.length + list.length) + '개 보기');
     }
     let h = '<div class="lm-head">처음 백패킹이라면<br><em>여기서</em> 시작해요</div>';
-    h += '<div class="lmh-cap">입문 장비 추천</div>' + (list.length ? list.map(function (k) { return kitItem(k); }).join('') : '<div class="lm-empty">장비 세트를 준비하고 있어요</div>');
-    if (tips().length || D.admin) {
-      h += '<div class="lmh-cap">성공적인 첫 백패킹을 위한 팁</div>' + (tips().length ? tips().map(tipItem).join('') : '<div class="lm-empty">팁을 준비하고 있어요</div>');
+    if (tipList.length || D.admin) {
+      h += '<div class="lmh-cap">성공적인 첫 백패킹을 위한 팁</div>' + (tipList.length ? tipList.map(tipItem).join('') : '<div class="lm-empty">팁을 준비하고 있어요</div>');
     }
+    h += '<div class="lmh-cap">입문 장비 추천</div>' + (list.length ? list.map(function (k) { return kitItem(k); }).join('') : '<div class="lm-empty">장비 세트를 준비하고 있어요</div>');
     h += '<p class="lm-hint" style="margin-top:20px">가이드는 운영팀이 올려요. 더 궁금한 건 자유게시판에 물어봐요.</p>';
     if (D.admin) h += '<button type="button" class="lmh-cta adm" data-a="new-guide">' + ico(P.plus, 18) + '가이드 올리기</button>';
     return h;
