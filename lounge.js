@@ -317,6 +317,12 @@
       '.lm-yt{display:block;margin:0 0 14px;border-radius:14px;overflow:hidden;background:#17171b;color:inherit;text-decoration:none}',
       '.lm-yt img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}',
       '.lm-yt span{display:block;padding:10px 14px;font-size:13px;font-weight:700}',
+      '.lm-tv{width:88%;aspect-ratio:16/9;margin:2px auto 14px;border-radius:14px;overflow:hidden;background:#17171b}',
+      '.lm-tv.short{width:min(70%,236px);aspect-ratio:9/16}',
+      '.lm-tv-play{position:relative;display:block;width:100%;height:100%;padding:0}',
+      '.lm-tv-play img,.lm-tv iframe{display:block;width:100%;height:100%;border:0;object-fit:cover}',
+      '.lm-tv-btn{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(0,0,0,.6);display:grid;place-items:center}',
+      '.lm-tv-btn:before{content:"";margin-left:4px;border-style:solid;border-width:10px 0 10px 16px;border-color:transparent transparent transparent #fff}',
       '.lm-blog{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px;padding:14px 16px;border-radius:14px;background:#17171b;color:var(--tx);text-decoration:none;font-size:14px;font-weight:700}',
       '.lm-gcap{margin:16px 0 2px;font-size:11.5px;font-weight:700;color:var(--sub)}',
       '.lm-guide .lm-desc{margin:8px 0 0;font-size:13px;line-height:1.7;color:#8d8d96}',
@@ -793,6 +799,15 @@
     const m = String(text || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?[^#\s]*v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
     return m ? m[1] : '';
   }
+  // 팁은 본문 맨 끝 줄이 유튜브 주소 하나뿐일 때만 영상으로 본다
+  function tipParts(text) {
+    const s = String(text || '').trim();
+    const i = s.lastIndexOf('\n');
+    const last = s.slice(i + 1).trim();
+    const yid = /^https:\/\/\S+$/.test(last) ? youtubeId(last) : '';
+    if (!yid) return { text: s, url: '', yid: '', short: false };
+    return { text: s.slice(0, Math.max(i, 0)).trim(), url: last, yid: yid, short: /\/shorts\//.test(last) };
+  }
   function guideSource(text) {
     const urls = String(text || '').match(/https?:\/\/[^\s)]+/g);
     return urls && urls.length ? urls[urls.length - 1] : '';
@@ -984,11 +999,21 @@
     </div>`;
     return fold(k.id, head, body, shown);
   }
+  function tipPoster(yid) {
+    const img = 'https://i.ytimg.com/vi/' + yid + '/hqdefault.jpg';
+    return `<button type="button" class="lm-tv-play" data-a="tip-play" aria-label="영상 재생"><img src="${escapeHtml(okbmSafeImageUrl(img))}" alt="" loading="lazy" decoding="async"><span class="lm-tv-btn" aria-hidden="true"></span></button>`;
+  }
+  function resetTipVideo(item) {
+    const box = item && item.querySelector('[data-yt]');
+    if (box && box.querySelector('iframe')) box.innerHTML = tipPoster(box.dataset.yt);
+  }
   function tipItem(t) {
     const tag = TIP_NOTES.indexOf(t.note) >= 0 ? '<span class="lm-tag" style="margin:0 6px 0 0">' + esc(t.note) + '</span>' : '';
+    const tp = tipParts(t.body);
+    const video = tp.yid ? `<div class="lm-tv${tp.short ? ' short' : ''}" data-yt="${esc(tp.yid)}">${tipPoster(tp.yid)}</div>` : '';
     return fold(t.id,
       `<button type="button" class="lm-faq-q" data-a="x" aria-expanded="false"><span>${tag}${esc(t.title)}${D.admin && !t.is_active ? '<span class="lm-tag">숨김</span>' : ''}</span>${chev(true)}</button>`,
-      `<div class="lmx-in"><p class="lm-desc" style="margin:0">${esc(t.body)}</p>
+      `<div class="lmx-in">${video}${tp.text ? `<p class="lm-desc" style="margin:0">${esc(tp.text)}</p>` : ''}
         ${adminLinks([['edit-guide', '수정', 'adm', t.id], ['hide-guide', t.is_active ? '숨기기' : '다시 보이기', 'adm', t.id], ['del-guide', '삭제', 'red', t.id]])}</div>`);
   }
   const kits = function () { return D.guides.filter(function (g) { return g.kind === 'kit' && (D.admin || g.is_active !== false); }); };
@@ -1272,7 +1297,7 @@
   }
   function setOpen(item, open) {
     item.classList.toggle('open', open);
-    if (!open) item.classList.remove('cal');
+    if (!open) { item.classList.remove('cal'); resetTipVideo(item); }
     const h = item.querySelector('[data-a="x"]');
     if (h) h.setAttribute('aria-expanded', String(open));
   }
@@ -1741,9 +1766,10 @@
   }
   function guideFormHtml(g, kind) {
     const kit = kind === 'kit';
+    const tp = g && g.kind === 'tip' ? tipParts(g.body) : null;
     const parts = g && g.kind === 'kit'
       ? Object.assign(guideParts(g.body), { source: guideSource(g.body) })
-      : { prose: (g && g.body) || '', channel: '', source: '' };
+      : { prose: tp ? tp.text : '', channel: '', source: '', shorts: tp ? tp.url : '' };
     const tnote = TIP_NOTES.indexOf(SH.tnote) >= 0 ? SH.tnote : '팁';
     return `<h3 id="loungeSheetTitle">${g ? '가이드 수정' : '가이드 올리기'}</h3><p class="lm-ssub">관리자에게만 보이는 화면이에요.</p>
       <form data-form="guide" novalidate autocomplete="off">
@@ -1756,6 +1782,7 @@
           <div class="lm-chipline" role="radiogroup" aria-label="구분">${TIP_NOTES.map(function (n) {
             return '<button type="button" role="radio" aria-checked="' + (n === tnote) + '" class="' + (n === tnote ? 'on' : '') + '" data-a="tnote" data-v="' + n + '">' + n + '</button>';
           }).join('')}</div>
+          ${field('lmGdShorts', '쇼츠 주소 (선택)', inp('lmGdShorts', 'shorts', parts.shorts, 'type="url" inputmode="url" maxlength="300" placeholder="https://youtube.com/shorts/…"'))}
         </div>
         <div data-kit ${kit ? '' : 'hidden'}>
           ${field('lmGdNote', '채널 이름', inp('lmGdNote', 'note', g && g.note, 'maxlength="80" placeholder="예: 캠핑 즐기는 남자 캠퍼조이"'))}
@@ -1858,7 +1885,8 @@
       };
     }).filter(function (it) { return it.name; }) : [];
     const source = kit ? val('source') : '';
-    const body = kit ? joinGuideBody(val('body'), source, val('channel')) : val('body');
+    const shorts = kit ? '' : val('shorts');
+    const body = kit ? joinGuideBody(val('body'), source, val('channel')) : [val('body'), shorts].filter(Boolean).join('\n');
     const row = {
       kind: st.gkind, title: val('title'), note: kit ? val('note') : (TIP_NOTES.indexOf(st.tnote) >= 0 ? st.tnote : '팁'),
       body: body, items: items,
@@ -1866,7 +1894,8 @@
     };
     const bad = function (name, msg) { toast(msg, true); if (name && f.elements[name]) f.elements[name].focus(); };
     if (!row.title) return bad('title', kit ? '영상·글 제목을 적어 주세요' : '제목을 적어 주세요');
-    if (!kit && !row.body) return bad('body', '내용을 적어 주세요');
+    if (!kit && !val('body')) return bad('body', '내용을 적어 주세요');
+    if (shorts && !(HTTPS_RE.test(shorts) && youtubeId(shorts))) return bad('shorts', '쇼츠 주소는 https://로 시작하는 유튜브 주소여야 해요');
     if (source && !HTTPS_RE.test(source)) return bad('source', '주소는 https://로 시작해야 해요');
     if (row.body.length > BODY_MAX) return bad('body', '본문이 너무 길어요');
     if (items.length > KIT_MAX) return bad('', '장비는 ' + KIT_MAX + '개까지 담을 수 있어요');
@@ -2339,6 +2368,13 @@
     if (t.tagName === 'A') return;
     switch (a) {
       case 'x': toggleItem(item); break;
+      case 'tip-play': {
+        const box = t.closest('[data-yt]');
+        const yid = box ? youtubeId('https://youtu.be/' + box.dataset.yt) : '';
+        if (!yid) break;
+        box.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + yid + '?autoplay=1&playsinline=1&rel=0" title="YouTube 영상" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+        break;
+      }
       case 'lounge': openLoungeWindow(v != null ? Number(v) : S.tab, t.dataset.id || null, t); break;
       case 'wclose': closeLoungeWindow(); break;
       case 'tab': if (inWin) winTo(Number(v)); else switchTab(Number(v)); break;
