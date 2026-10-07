@@ -2274,11 +2274,11 @@ window.openQuickGearRegisterModal = function(opts) {
 
     var modal = document.createElement('div');
     modal.id = 'quickGearDetailModal';
-    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000030; display:flex; align-items:flex-end; justify-content:center; box-sizing:border-box;';
+    modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:rgba(0,0,0,0.75); z-index:1000030; display:flex; align-items:flex-end; justify-content:center; box-sizing:border-box;';
     modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
 
     modal.innerHTML = `
-      <div style="width:100%; max-width:480px; background:#07090e; border-top:1.5px solid rgba(255,255,255,0.14); border-radius:16px 16px 0 0; padding:14px 16px calc(18px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.95); animation:slideUpSheet 0.22s ease-out;">
+      <div style="width:100%; max-width:480px; max-height:100%; overflow-y:auto; background:#07090e; border-top:1.5px solid rgba(255,255,255,0.14); border-radius:16px 16px 0 0; padding:14px 16px 18px 16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.95); animation:slideUpSheet 0.22s ease-out;">
         <div style="width:36px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:0 auto 4px auto;"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
           <span style="font-size:0.88rem; font-weight:800; color:#f8fafc; letter-spacing:-0.02em;">새 장비 등록</span>
@@ -4831,11 +4831,11 @@ window.saveCurrentPackingRecord = function() {
 
     var sheet = document.createElement('div');
     sheet.id = 'gearMetaEditSheet';
-    sheet.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000030; display:flex; align-items:flex-end; justify-content:center; box-sizing:border-box;';
+    sheet.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:rgba(0,0,0,0.75); z-index:1000030; display:flex; align-items:flex-end; justify-content:center; box-sizing:border-box;';
     sheet.onclick = function(e) { if (e.target === sheet) sheet.remove(); };
 
     sheet.innerHTML = `
-      <div style="width:100%; max-width:480px; background:#07090e; border-top:1.5px solid rgba(255,255,255,0.14); border-radius:16px 16px 0 0; padding:14px 16px calc(18px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.95); animation:slideUpSheet 0.22s ease-out;">
+      <div style="width:100%; max-width:480px; max-height:100%; overflow-y:auto; background:#07090e; border-top:1.5px solid rgba(255,255,255,0.14); border-radius:16px 16px 0 0; padding:14px 16px 18px 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.95); animation:slideUpSheet 0.22s ease-out;">
         <div style="width:36px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:0 auto 2px auto;"></div>
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
           <div style="font-size:0.90rem; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;">
@@ -5379,11 +5379,11 @@ window.saveCurrentPackingRecord = function() {
 
     var modal = document.createElement('div');
     modal.id = 'presetActionModal';
-    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000040; display:flex; align-items:flex-end; justify-content:center; padding:0; box-sizing:border-box;';
+    modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:rgba(0,0,0,0.85); z-index:1000040; display:flex; align-items:flex-end; justify-content:center; padding:0; box-sizing:border-box;';
     modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
 
     modal.innerHTML = `
-      <div style="width:100%; max-width:480px; height:88vh; height:calc(var(--vh, 1vh) * 88); background:#07090e; border-top:1.5px solid rgba(255,255,255,0.16); border-radius:18px 18px 0 0; padding:14px 16px calc(14px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; box-shadow:0 -12px 40px rgba(0,0,0,0.95); animation:slideUpSheet 0.22s ease-out;">
+      <div style="width:100%; max-width:480px; height:88vh; height:calc(var(--vh, 1vh) * 88); max-height:100%; background:#07090e; border-top:1.5px solid rgba(255,255,255,0.16); border-radius:18px 18px 0 0; padding:14px 16px 14px 16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; box-shadow:0 -12px 40px rgba(0,0,0,0.95); animation:slideUpSheet 0.22s ease-out;">
         <div style="width:36px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:0 auto 2px auto; flex-shrink:0;"></div>
         
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; flex-shrink:0;">
