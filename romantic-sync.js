@@ -5366,6 +5366,9 @@ window._renderMyPropsModule = function(el) {
           statusHtml +
         '</div>' +
         '<span style="font-size:0.66rem; color:#64748b; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + entryStr + ' · ' + dateStr + '</span>' +
+        (kind === 'rejected' && p.reject_reason
+          ? '<span style="font-size:0.68rem; color:#fda4af; margin-top:3px; line-height:1.4; white-space:pre-wrap; word-break:break-all;">반려 사유: ' + _escapeReportPropHtml(p.reject_reason) + '</span>'
+          : '') +
       '</div>' +
       '<div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">' +
         actionsHtml +
@@ -11609,6 +11612,7 @@ window.updateAdminSpotInboxStatus = async function(propId, isCorrection, status,
   var tableName = isCorrection ? 'spot_corrections' : 'proposals';
   var payload = { status: String(status || 'pending') };
   if (extra && extra.approved_spot_id) payload.approved_spot_id = String(extra.approved_spot_id);
+  if (extra && typeof extra.reject_reason === 'string') payload.reject_reason = extra.reject_reason.trim().slice(0, 300) || null;
   try {
     var statusHeaders = okbmWriteRestHeaders({ Prefer: 'return=minimal' });
     if (!statusHeaders) return false;

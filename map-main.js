@@ -6695,6 +6695,7 @@ var overlay = document.getElementById('customModalOverlay');
               escapeHtml(coord) +
               (item.author || item.nickname ? '<br>제보: ' + escapeHtml(item.author || item.nickname) : '') +
               (reason ? '<br>사유: ' + escapeHtml(reason) : '') +
+              (item.reject_reason ? '<br><span style="color:#fda4af;">반려 사유: ' + escapeHtml(item.reject_reason) + '</span>' : '') +
             '</div>' +
             '<div class="admin-inbox-actions">' + actions + '</div>' +
           '</div>';
@@ -6790,10 +6791,12 @@ var overlay = document.getElementById('customModalOverlay');
       window.rejectAdminInboxItem = async function(id, type) {
         var item = findAdminInboxItem(id, type);
         if (!item) return;
-        if (!confirm('이 건을 반려할까요?')) return;
+        var rejectReason = window.prompt('반려 사유를 입력하세요. 제보자 알림과 마이리포트에 표시됩니다. (선택, 300자 이내)', '');
+        if (rejectReason === null) return;
+        rejectReason = String(rejectReason).trim().slice(0, 300);
         var ok = true;
         if (typeof window.updateAdminSpotInboxStatus === 'function') {
-          ok = await window.updateAdminSpotInboxStatus(item.id, item.type === 'correction', '반려');
+          ok = await window.updateAdminSpotInboxStatus(item.id, item.type === 'correction', '반려', { reject_reason: rejectReason });
         }
         if (ok && typeof window.notifyProposalDecision === 'function') {
           await window.notifyProposalDecision(item, '반려');

@@ -1073,6 +1073,7 @@ DECLARE
   v_name text;
   v_row_approved text;
   v_orig_spot text;
+  v_reason text;
   v_accepted boolean := false;
   v_rejected boolean := false;
   v_kind text;
@@ -1103,8 +1104,9 @@ BEGIN
     SELECT NULLIF(btrim(COALESCE(r.user_id, '')), ''),
            COALESCE(NULLIF(btrim(COALESCE(r.spot_main, '')), ''), '제보한 장소'),
            NULLIF(btrim(COALESCE(r.approved_spot_id, '')), ''),
-           NULLIF(btrim(COALESCE(r.orig_spot_id, '')), '')
-      INTO v_user_id, v_name, v_row_approved, v_orig_spot
+           NULLIF(btrim(COALESCE(r.orig_spot_id, '')), ''),
+           NULLIF(btrim(COALESCE(r.reject_reason, '')), '')
+      INTO v_user_id, v_name, v_row_approved, v_orig_spot, v_reason
     FROM public.spot_corrections r
     WHERE r.id = v_id
     LIMIT 1;
@@ -1112,8 +1114,9 @@ BEGIN
     SELECT NULLIF(btrim(COALESCE(r.user_id, '')), ''),
            COALESCE(NULLIF(btrim(COALESCE(r.spot_main, '')), ''), '제보한 장소'),
            NULLIF(btrim(COALESCE(r.approved_spot_id, '')), ''),
-           NULL
-      INTO v_user_id, v_name, v_row_approved, v_orig_spot
+           NULL,
+           NULLIF(btrim(COALESCE(r.reject_reason, '')), '')
+      INTO v_user_id, v_name, v_row_approved, v_orig_spot, v_reason
     FROM public.proposals r
     WHERE r.id = v_id
     LIMIT 1;
@@ -1139,7 +1142,9 @@ BEGIN
       THEN '수정 건의가 반려되었습니다'
       ELSE '장소 제보가 반려되었습니다'
     END;
-    v_body := '[' || v_name || '] 제보가 반려되었습니다. 마이리포트에서 확인할 수 있습니다.';
+    v_body := '[' || v_name || '] 제보가 반려되었습니다.'
+           || CASE WHEN v_reason IS NOT NULL THEN ' 사유: ' || v_reason ELSE '' END
+           || ' 마이리포트에서 확인할 수 있습니다.';
   END IF;
 
   INSERT INTO public.user_notifications (
@@ -1682,7 +1687,14 @@ CREATE POLICY spot_corrections_update_admin ON public.spot_corrections
 CREATE POLICY spot_corrections_delete_own ON public.spot_corrections
   FOR DELETE USING (user_id = (SELECT public.okbm_uid()) OR (SELECT public.okbm_is_admin()));
 
--- 제보/수정건의: 비관리자는 status·approved_spot_id를 바꿀 수 없음.
+ALTER TABLE public.proposals ADD COLUMN IF NOT EXISTS reject_reason text;
+ALTER TABLE public.spot_corrections ADD COLUMN IF NOT EXISTS reject_reason text;
+ALTER TABLE public.proposals DROP CONSTRAINT IF EXISTS proposals_reject_reason_len;
+ALTER TABLE public.proposals ADD CONSTRAINT proposals_reject_reason_len CHECK (reject_reason IS NULL OR char_length(reject_reason) <= 300);
+ALTER TABLE public.spot_corrections DROP CONSTRAINT IF EXISTS spot_corrections_reject_reason_len;
+ALTER TABLE public.spot_corrections ADD CONSTRAINT spot_corrections_reject_reason_len CHECK (reject_reason IS NULL OR char_length(reject_reason) <= 300);
+
+-- 제보/수정건의: 비관리자는 status·approved_spot_id·reject_reason을 바꿀 수 없음.
 CREATE OR REPLACE FUNCTION public.okbm_guard_proposal_decision_cols()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -1701,6 +1713,7 @@ BEGIN
     END IF;
     NEW.status := OLD.status;
     NEW.approved_spot_id := OLD.approved_spot_id;
+    NEW.reject_reason := OLD.reject_reason;
   ELSIF TG_OP = 'INSERT' THEN
     NEW.status := COALESCE(NULLIF(btrim(COALESCE(NEW.status, '')), ''), 'pending');
     IF position('반영완료' IN NEW.status) > 0
@@ -1711,6 +1724,7 @@ BEGIN
       NEW.status := 'pending';
     END IF;
     NEW.approved_spot_id := NULL;
+    NEW.reject_reason := NULL;
   END IF;
   RETURN NEW;
 END;
