@@ -2064,7 +2064,68 @@ CREATE POLICY place_research_cache_no_client ON public.place_research_cache
 --   UPDATE(닉네임 변경): 겹치면 23505, 예약어면 22023으로 거부.
 --   upsert(INSERT … ON CONFLICT DO UPDATE)로 이미 있는 행을 고치는 경우 INSERT 단계는 건너뛰고 UPDATE 단계에서 본다.
 -- 사진 URL은 오류 대신 정리한다(가입 실패 방지): http:// → https://, 그 밖의 스킴·1000자 초과는 NULL.
--- service_role(Edge Function·SQL Editor)은 검사하지 않는다.
+-- service_role(Edge Function·SQL Editor)은 검사하지 않는다. 단 닉네임 형식(아래 10/10 규칙)은 service_role도 정리한다.
+--
+-- 닉네임 형식 규칙 (10/10): 한글 완성형·영문·숫자만 2~12자. 띄어쓰기·특수문자·이모지·자음/모음 단독 불가.
+--   기존 닉네임은 그대로 둔다(값이 바뀔 때만 검사).
+--   INSERT(신규 가입, 소셜 이름이 그대로 들어옴): 거부하지 않고 허용 문자만 남겨 12자로 자른다. 2자 미만이면 '백패커####'.
+--   UPDATE(닉네임 변경): 형식이 틀리면 거부하지 않고 기존 닉네임을 유지한다.
+--     → 옛 닉네임이 남은 기기에서 프로필 전체를 저장할 때 북마크 등 다른 칸 저장까지 실패하지 않게.
+--     앱 설정 화면은 저장 전에 같은 규칙으로 막고 안내한다(romantic-sync.js okbmIsValidNickname).
+--   service_role(카카오·네이버 로그인 Edge Function): 신규 행만 같은 방식으로 정리 + 중복이면 숫자 4자리.
+CREATE OR REPLACE FUNCTION public.okbm_nickname_is_valid(p_nick text)
+RETURNS boolean
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT COALESCE(p_nick, '') ~ '^[가-힣A-Za-z0-9]{2,12}$';
+$$;
+
+CREATE OR REPLACE FUNCTION public.okbm_nickname_sanitize(p_nick text)
+RETURNS text
+LANGUAGE plpgsql
+VOLATILE
+AS $$
+DECLARE
+  v text := left(regexp_replace(COALESCE(p_nick, ''), '[^가-힣A-Za-z0-9]', '', 'g'), 12);
+BEGIN
+  IF char_length(v) < 2 THEN
+    v := '백패커' || (1000 + floor(random() * 9000))::int::text;
+  END IF;
+  RETURN v;
+END;
+$$;
+
+-- 겹치면 앞 8자 + 숫자 4자리(최대 12자). 20번 안에 못 찾으면 23505.
+CREATE OR REPLACE FUNCTION public.okbm_nickname_unique(p_nick text, p_user_id text)
+RETURNS text
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_nick text := p_nick;
+  v_try integer := 0;
+BEGIN
+  LOOP
+    EXIT WHEN NOT EXISTS (
+      SELECT 1 FROM public.users u
+      WHERE lower(btrim(COALESCE(u.nickname, ''))) = lower(v_nick)
+        AND u.id <> p_user_id
+    );
+    v_try := v_try + 1;
+    IF v_try > 20 THEN
+      RAISE EXCEPTION 'nickname_taken' USING ERRCODE = '23505';
+    END IF;
+    v_nick := left(regexp_replace(p_nick, '[0-9]{4}$', ''), 8) || (1000 + floor(random() * 9000))::int::text;
+  END LOOP;
+  RETURN v_nick;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_nickname_unique(text, text) FROM PUBLIC, anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.okbm_guard_users_profile()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -2077,13 +2138,26 @@ DECLARE
   v_taken boolean;
   v_try integer := 0;
 BEGIN
-  -- JWT 없는 호출(SQL Editor 등)·service_role은 건너뛴다. 비회원은 users RLS가 쓰기를 막는다.
-  IF auth.role() IS NOT DISTINCT FROM 'service_role' OR auth.uid() IS NULL THEN
+  -- upsert가 기존 행을 고치는 경우: BEFORE INSERT도 먼저 발화하므로 여기서는 넘기고 UPDATE 트리거에 맡긴다.
+  -- (service_role 분기보다 먼저 둔다: 로그인마다 upsert하는 Edge Function이 기존 회원 닉네임을 바꾸지 않게)
+  IF TG_OP = 'INSERT' AND EXISTS (SELECT 1 FROM public.users u WHERE u.id = NEW.id) THEN
     RETURN NEW;
   END IF;
 
-  -- upsert가 기존 행을 고치는 경우: BEFORE INSERT도 먼저 발화하므로 여기서는 넘기고 UPDATE 트리거에 맡긴다.
-  IF TG_OP = 'INSERT' AND EXISTS (SELECT 1 FROM public.users u WHERE u.id = NEW.id) THEN
+  -- service_role(카카오·네이버 Edge Function): 신규 가입 닉네임만 형식 정리. 그 밖의 검사는 건너뛴다.
+  IF auth.role() IS NOT DISTINCT FROM 'service_role' THEN
+    IF TG_OP = 'INSERT' AND btrim(COALESCE(NEW.nickname, '')) <> '' THEN
+      v_nick := btrim(NEW.nickname);
+      IF NOT public.okbm_nickname_is_valid(v_nick) THEN
+        v_nick := public.okbm_nickname_sanitize(v_nick);
+      END IF;
+      NEW.nickname := public.okbm_nickname_unique(v_nick, NEW.id);
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  -- JWT 없는 호출(SQL Editor 등)은 건너뛴다. 비회원은 users RLS가 쓰기를 막는다.
+  IF auth.uid() IS NULL THEN
     RETURN NEW;
   END IF;
 
@@ -2151,11 +2225,14 @@ BEGIN
   IF v_nick = '' THEN
     RETURN NEW;
   END IF;
-  IF char_length(v_nick) > 40 THEN
+  -- 형식 규칙(10/10): 한글 완성형·영문·숫자 2~12자
+  IF NOT public.okbm_nickname_is_valid(v_nick) THEN
     IF TG_OP = 'UPDATE' THEN
-      RAISE EXCEPTION 'nickname_too_long' USING ERRCODE = '22001';
+      -- 거부 대신 기존 닉네임 유지(다른 칸 저장은 성공시킨다). 설정 화면은 앱에서 먼저 막는다.
+      NEW.nickname := OLD.nickname;
+      RETURN NEW;
     END IF;
-    v_nick := left(v_nick, 30);
+    v_nick := public.okbm_nickname_sanitize(v_nick);
   END IF;
   -- 운영자 사칭: 관리자 계정만 쓸 수 있다
   v_bad_nick := NOT COALESCE(public.okbm_is_admin(), false) AND (
@@ -2183,7 +2260,7 @@ BEGIN
     IF v_try > 20 THEN
       RAISE EXCEPTION 'nickname_taken' USING ERRCODE = '23505';
     END IF;
-    v_nick := left(regexp_replace(v_nick, '[0-9]{4}$', ''), 36) || (1000 + floor(random() * 9000))::int::text;
+    v_nick := left(regexp_replace(v_nick, '[0-9]{4}$', ''), 8) || (1000 + floor(random() * 9000))::int::text;
   END LOOP;
 
   NEW.nickname := v_nick;

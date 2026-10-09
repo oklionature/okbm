@@ -9719,7 +9719,28 @@ window.saveNicknameFromSettingsModal = async function() {
     showToast('새 닉네임을 입력해주세요.', 'warn');
     return;
   }
-  var clean = okbmNormalizeNickname(input.value);
+  var rawNick = String(input.value || '');
+  var clean = okbmNormalizeNickname(rawNick);
+  if (/\s/.test(rawNick)) {
+    triggerHaptic(20);
+    showToast('닉네임에 띄어쓰기는 사용할 수 없습니다.', 'warn');
+    return;
+  }
+  if (/[ㄱ-ㅎㅏ-ㅣ]/.test(clean)) {
+    triggerHaptic(20);
+    showToast('자음 또는 모음만으로는 닉네임을 만들 수 없습니다.', 'warn');
+    return;
+  }
+  if (clean.length < 2 || clean.length > 12) {
+    triggerHaptic(20);
+    showToast('닉네임은 2자 이상 12자 이하로 입력해주세요.', 'warn');
+    return;
+  }
+  if (!okbmIsValidNickname(clean)) {
+    triggerHaptic(20);
+    showToast('특수문자는 사용할 수 없습니다. (한글, 영문, 숫자만 가능)', 'warn');
+    return;
+  }
 
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : { isMember: true });
   var COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
@@ -10444,6 +10465,17 @@ function okbmNormalizeNickname(nick) {
   return String(nick || '').replace(/\s+/g, ' ').trim();
 }
 
+function okbmIsValidNickname(nick) {
+  var s = String(nick || '').trim();
+  return /^[가-힣A-Za-z0-9]{2,12}$/.test(s);
+}
+
+function okbmSanitizeNickname(nick) {
+  var s = String(nick || '').replace(/[^가-힣A-Za-z0-9]/g, '').slice(0, 12);
+  if (s.length < 2) s = '백패커' + okbmRandomNickSuffix();
+  return s;
+}
+
 function okbmRandomNickSuffix() {
   return String(1000 + Math.floor(Math.random() * 9000));
 }
@@ -10468,18 +10500,18 @@ async function okbmIsNicknameTaken(nickname, excludeUserId) {
 }
 
 async function okbmResolveUniqueNickname(desired, excludeUserId) {
-  var base = okbmNormalizeNickname(desired) || '낭만백패커';
+  var base = okbmSanitizeNickname(desired);
   try {
     if (!(await okbmIsNicknameTaken(base, excludeUserId))) return base;
     var n;
     for (n = 0; n < 10; n++) {
-      var candidate = base + okbmRandomNickSuffix();
+      var candidate = base.slice(0, 8) + okbmRandomNickSuffix();
       if (!(await okbmIsNicknameTaken(candidate, excludeUserId))) return candidate;
     }
-    return '낭만백패커' + okbmRandomNickSuffix();
+    return '백패커' + okbmRandomNickSuffix();
   } catch (e) {
     console.warn('[okbmResolveUniqueNickname]', e);
-    return base + okbmRandomNickSuffix();
+    return base.slice(0, 8) + okbmRandomNickSuffix();
   }
 }
 
