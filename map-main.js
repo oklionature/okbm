@@ -1626,25 +1626,24 @@ function updateSmartResetButtons() {
           : '';
       }
 
-      // 제보 원문을 그대로 노출하지 않고, 지정 주체만 골라 방문자용 문장으로 만든다.
-      function campBanPublicNote(source) {
-        var text = String(source || '').replace(/\s+/g, ' ');
-        var park = text.match(/([가-힣]{1,12}(?:·[가-힣]{1,12})*)\s?(국립공원|도립공원|군립공원)/);
-        if (park) return park[1] + ' ' + park[2] + ' 구역으로 지정되어 야영이 금지된 장소입니다.';
-        if (text.indexOf('국립공원') !== -1) return '국립공원 구역으로 지정되어 야영이 금지된 장소입니다.';
-        if (text.indexOf('도립공원') !== -1) return '도립공원 구역으로 지정되어 야영이 금지된 장소입니다.';
-        if (text.indexOf('군립공원') !== -1) return '군립공원 구역으로 지정되어 야영이 금지된 장소입니다.';
-        return '관계 기관에서 야영금지 구역으로 지정한 장소입니다.';
-      }
-
       function campBanBannerHtml(spot) {
         if (!isCampBanned(spot)) return '';
-        var note = String(spot.camp_status_note || '').trim();
-        var at = String(spot.camp_status_at || '').slice(0, 7).replace('-', '.');
-        return '<div style="margin:6px 0 4px; padding:9px 11px; border-radius:10px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.45); color:#fecdd3; font-size:0.78rem; line-height:1.5;">' +
-          '<div style="font-weight:900; color:#fb7185; font-size:0.86rem;">🚫 야영금지된 장소입니다</div>' +
-          (note ? '<div>' + escapeHtml(note) + '</div>' : '') +
-          '<div style="color:#fda4af; font-size:0.7rem; margin-top:2px;">텐트 피칭과 비박은 할 수 없습니다. 당일 탐방만 가능합니다.' + (at ? ' (' + escapeHtml(at) + ' 확인)' : '') + '</div>' +
+        var rules = [
+          ['1. 사전에 계획하고 준비하기', '방문 지역의 규제와 기상을 미리 확인합니다.'],
+          ['2. 지정된 구역에서 야영하기', '금지 구역에서는 텐트를 치지 않습니다.'],
+          ['3. 발생한 쓰레기는 완벽하게 회수하기', '가져온 물건과 음식물은 모두 되가져옵니다.'],
+          ['4. 남겨진 자연물 및 문화재 보존하기', '돌과 식물은 채취하지 않고 눈으로만 봅니다.'],
+          ['5. 산림 내 화기 사용 금지', '취사와 흡연 등 불을 쓰지 않습니다.'],
+          ['6. 야생동물 보호하기', '먹이를 주지 않고 음식물은 밀폐해 둡니다.'],
+          ['7. 다른 방문객을 배려하기', '큰 소음과 과도한 조명을 자제합니다.']
+        ];
+        var list = rules.map(function(r) {
+          return '<div style="margin-top:6px;"><div style="font-weight:800; color:#fecdd3;">' + r[0] + '</div><div style="color:#fda4af;">' + r[1] + '</div></div>';
+        }).join('');
+        return '<div style="margin:6px 0 4px; padding:11px 12px; border-radius:10px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.45); color:#fecdd3; font-size:0.74rem; line-height:1.45;">' +
+          '<div style="font-weight:900; color:#fb7185; font-size:0.9rem;">🚫 야영금지된 장소입니다</div>' +
+          '<div style="margin-top:3px;">소중한 박지를 보호하기 위해 LNT 원칙을 꼭 지켜주세요.</div>' +
+          list +
         '</div>';
       }
 
@@ -1687,9 +1686,8 @@ function updateSmartResetButtons() {
           if (!confirm('야영금지 표시를 해제할까요?')) return;
           ok = await window.setSpotCampBan(sId, false);
         } else {
-          var note = window.prompt('방문자에게 보일 안내 문구입니다. 제보 원문 대신 이 문장이 장소 상세에 표시됩니다.', campBanPublicNote(''));
-          if (note === null) return;
-          ok = await window.setSpotCampBan(sId, true, note);
+          if (!confirm('이 장소를 야영금지로 표시할까요?\n뷰·유튜브 등 상세 내용이 가려지고 금지 안내와 LNT 원칙만 보입니다.')) return;
+          ok = await window.setSpotCampBan(sId, true);
         }
         showToast(ok ? '야영금지 상태를 바꿨습니다.' : '변경에 실패했습니다.');
       };
@@ -2901,14 +2899,15 @@ function updateSmartResetButtons() {
               <div id="liveWeatherBox_${spot.id}" style="display:inline-flex; gap:4px;">${cachedWeatherChipsHtml(spot.id)}</div>
             </div>
 
-            ${renderSpotFieldFeedsTrackHtml(spot)}
+            ${isCampBanned(spot) ? '' : renderSpotFieldFeedsTrackHtml(spot)}
 
+            ${isCampBanned(spot) ? '' : `
             <div class="summary-block-wrap" style="margin-top:2px;">
               <div class="summary-card summary-card-view">
                 <div class="summary-card-title" style="color:#e2e8f0;">${ICONS.VIEW_CARD} [뷰/특징]</div>
                 <div class="summary-card-body">${escapeHtml(summary.view || spot.desc || '탁 트인 자연 경관을 즐길 수 있는 추천 장소.')}</div>
               </div>
-            </div>
+            </div>`}
 
             <div class="user-action-grid-3" style="display:flex; gap:5px; width:100%; margin:6px 0 4px 0;" onclick="event.stopPropagation();">
               <button type="button" class="btn-action-3 btn-action-fav ${isFav ? 'bookmarked' : ''}" data-id="${sId}" onclick="toggleUserBookmark(this.dataset.id, event)">
@@ -2922,7 +2921,7 @@ function updateSmartResetButtons() {
               </button>
             </div>
 
-            ${!isMember ? `
+            ${isCampBanned(spot) ? '' : !isMember ? `
               <div class="guest-member-lock-card">
                 <div style="font-size:0.88rem; font-weight:800; color:var(--accent-amber); display:flex; align-items:center; gap:4px;">${ICONS.LOCK} 낭만 회원 전용 정보 안내</div>
                 <div style="font-size:0.72rem; color:var(--text-secondary); line-height:1.45;">
@@ -2979,9 +2978,9 @@ function updateSmartResetButtons() {
               </div>
             `}
 
-            <div data-okbm-review-box="${escapeHtml(sId)}">${typeof window.okbmSpotReviewBoxHtml === 'function' ? window.okbmSpotReviewBoxHtml(sId) : ''}</div>
+            ${isCampBanned(spot) ? '' : `<div data-okbm-review-box="${escapeHtml(sId)}">${typeof window.okbmSpotReviewBoxHtml === 'function' ? window.okbmSpotReviewBoxHtml(sId) : ''}</div>`}
 
-    ${(function() {
+    ${isCampBanned(spot) ? '' : (function() {
               var existingYt = (typeof window.getSpotRegisteredMediaUrls === 'function')
                 ? window.getSpotRegisteredMediaUrls(spot, 'yt')
                 : (Array.isArray(spot.youtubeUrls) ? spot.youtubeUrls : []).filter(function(u) { return u && u.trim().length > 5; });
@@ -6892,14 +6891,8 @@ var overlay = document.getElementById('customModalOverlay');
           showToast('원래 장소를 찾을 수 없습니다.');
           return;
         }
-        var rawReason = String(item.correctionReason || '').trim();
-        var note = window.prompt(
-          '[' + (spot.spot_main || spot.name || origId) + '] 방문자에게 보일 안내 문구입니다. 제보 원문은 넣지 않고, 이 문장을 확인한 뒤 저장합니다.' +
-          (rawReason ? '\n\n제보 원문: ' + rawReason : ''),
-          campBanPublicNote([rawReason, item.desc_summary, item.desc].filter(Boolean).join('\n'))
-        );
-        if (note === null) return;
-        var ok = await window.setSpotCampBan(origId, true, note);
+        if (!confirm('[' + (spot.spot_main || spot.name || origId) + ']을(를) 야영금지로 표시할까요?\n뷰·유튜브 등 상세 내용이 가려지고 금지 안내와 LNT 원칙만 보입니다.')) return;
+        var ok = await window.setSpotCampBan(origId, true);
         if (ok && typeof window.updateAdminSpotInboxStatus === 'function') {
           await window.updateAdminSpotInboxStatus(item.id, true, '반영완료', { approved_spot_id: origId });
           if (typeof window.notifyProposalDecision === 'function') {
