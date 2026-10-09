@@ -1264,9 +1264,12 @@ $$;
 
 REVOKE ALL ON FUNCTION public.okbm_spot_view_brief(text) FROM PUBLIC, anon, authenticated;
 
+-- okbm_spot_view_brief는 authenticated에 EXECUTE가 없으므로 트리거는 소유자 권한으로 실행해야 저장이 막히지 않음.
 CREATE OR REPLACE FUNCTION public.okbm_spots_fill_view_brief()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   NEW.view_brief := public.okbm_spot_view_brief(NEW.desc_summary);
