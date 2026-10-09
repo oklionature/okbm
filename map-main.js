@@ -319,7 +319,7 @@
             }
             updateNewSpotFlags(spots);
             renderSubChips();
-            if (typeof renderSpots === 'function') renderSpots();
+            if (typeof renderSpots === 'function') renderSpots(true);
             if (map && typeof checkUrlParamSpotFocus === 'function') checkUrlParamSpotFocus();
           }
         } catch (e) {
@@ -5140,9 +5140,14 @@ var liveSearchTimer = null;
             ${spot.distance?.trim() ? `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(spot.distance.trim())}</span>` : ''}
           </div>
 
-          <div class="spot-desc-multi" title="${escapeHtml(descText)}">${ICONS.VIEW_CARD} ${escapeHtml(descText)}</div>`;
+          ${isCampBanned(spot)
+            ? '<div class="spot-desc-multi" style="color:#fda4af; font-weight:800;">🚫 야영금지된 장소입니다</div>'
+            : `<div class="spot-desc-multi" title="${escapeHtml(descText)}">${ICONS.VIEW_CARD} ${escapeHtml(descText)}</div>`}`;
 
-        li.addEventListener('click', () => focusSpotOnMap(spot));
+        li.addEventListener('click', () => {
+          var latest = (Array.isArray(spots) && spots.find(function(s) { return String(s.id).trim() === sId; })) || spot;
+          focusSpotOnMap(latest);
+        });
         return li;
       }
 
