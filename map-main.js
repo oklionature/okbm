@@ -2851,8 +2851,13 @@ function updateSmartResetButtons() {
         if (isCampBanned(spot)) {
           return `
           <div style="position: relative; width: 100%;">
-            <div class="sheet-title-row" style="padding-right: ${isMobileSheet ? '36px' : '0'};">
-              <div class="compact-title"><span>${escapeHtml(cleanMainName)}</span></div>
+            <div class="sheet-title-row js-center-spot" style="padding-right: ${isMobileSheet ? '36px' : '0'};" data-lat="${safeLat}" data-lng="${safeLng}" title="지도를 장소 중심으로 이동">
+              <div class="compact-title">
+                ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
+                <span class="${diffClass}">${escapeHtml(cleanMainName)}</span>
+                ${spot.elevation ? '<span style="font-size:0.76rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">(' + ICONS.MOUNTAIN + escapeHtml(spot.elevation) + ')</span>' : ''}
+                ${getSpotStatusBadges(spot)}
+              </div>
               <div class="js-spot-title-actions" style="display:flex; align-items:center; gap:6px; flex-shrink:0;" onclick="event.stopPropagation();">${closeBtn}</div>
             </div>
             ${adminTopActions}
