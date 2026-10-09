@@ -1136,7 +1136,9 @@ BEGIN
       THEN '수정 건의가 채택되었습니다'
       ELSE '장소 제보가 채택되었습니다'
     END;
-    v_body := '[' || v_name || ']이(가) 지도에 반영되었습니다. 이후 내용 변경은 수정문의로만 신청할 수 있습니다.';
+    v_body := '[' || v_name || ']이(가) 지도에 반영되었습니다. '
+           || CASE WHEN COALESCE(p_is_correction, false) THEN '수정 건의해주셔서' ELSE '제보해주셔서' END
+           || ' 감사합니다. 많은 낭만루터들에게 큰 도움이 됩니다. 이후 내용 변경은 수정문의로만 신청할 수 있습니다.';
   ELSE
     v_title := CASE WHEN COALESCE(p_is_correction, false)
       THEN '수정 건의가 반려되었습니다'
