@@ -3543,6 +3543,9 @@ window.normalizeSpotMapRow = function(row) {
     desc_summary: String(row.desc_summary || row.desc || row.view_brief || '').trim(),
     desc: String(row.desc_summary || row.desc || row.view_brief || '').trim(),
     view_brief: String(row.view_brief || '').trim(),
+    camp_status: String(row.camp_status || '').trim(),
+    camp_status_note: String(row.camp_status_note || '').trim(),
+    camp_status_at: row.camp_status_at || null,
     mediaUrls: row.mediaUrls || row.mediaurls || ''
   };
   var media = window.parseSpotMediaUrls(out.mediaUrls);

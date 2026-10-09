@@ -1217,6 +1217,17 @@ CREATE POLICY spots_admin_delete ON public.spots
 -- 목록용 특징 한 줄. 본문(desc_summary)·링크(mediaUrls)·들머리 주소는 목록에서 제외.
 ALTER TABLE public.spots ADD COLUMN IF NOT EXISTS view_brief text;
 
+-- 야영금지 표시: 삭제하지 않고 지도·상세에 금지 상태로 남긴다. 쓰기는 spots_admin_update RLS로 관리자만.
+ALTER TABLE public.spots ADD COLUMN IF NOT EXISTS camp_status text;
+ALTER TABLE public.spots ADD COLUMN IF NOT EXISTS camp_status_note text;
+ALTER TABLE public.spots ADD COLUMN IF NOT EXISTS camp_status_at date;
+ALTER TABLE public.spots DROP CONSTRAINT IF EXISTS spots_camp_status_chk;
+ALTER TABLE public.spots ADD CONSTRAINT spots_camp_status_chk CHECK (camp_status IS NULL OR camp_status IN ('banned'));
+ALTER TABLE public.spots DROP CONSTRAINT IF EXISTS spots_camp_status_note_len;
+ALTER TABLE public.spots ADD CONSTRAINT spots_camp_status_note_len CHECK (camp_status_note IS NULL OR char_length(camp_status_note) <= 200);
+GRANT SELECT (camp_status, camp_status_note, camp_status_at) ON public.spots TO anon, authenticated;
+GRANT INSERT (camp_status, camp_status_note, camp_status_at), UPDATE (camp_status, camp_status_note, camp_status_at) ON public.spots TO authenticated;
+
 CREATE OR REPLACE FUNCTION public.okbm_spot_view_brief(p_desc text)
 RETURNS text
 LANGUAGE plpgsql

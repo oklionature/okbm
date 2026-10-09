@@ -211,7 +211,7 @@
         try {
           var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
           var targetKey = window.SUPABASE_ANON_KEY || '';
-          var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief';
+          var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief,camp_status,camp_status_note,camp_status_at';
           var spotsUrl = targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc';
           var res = await (typeof window.okbmPublicFetch === 'function'
             ? window.okbmPublicFetch(spotsUrl)
@@ -281,6 +281,9 @@
                 desc: String(row.view_brief || '').trim(),
                 desc_summary: String(row.view_brief || '').trim(),
                 view_brief: String(row.view_brief || '').trim(),
+                camp_status: String(row.camp_status || '').trim(),
+                camp_status_note: String(row.camp_status_note || '').trim(),
+                camp_status_at: row.camp_status_at || null,
                 searchCount: 0,
                 sheetIndex: idx,
                 created_at: row.created_at || null
@@ -873,9 +876,9 @@
       window.closePcSlidingDrawer = closePcSlidingDrawer;
 
     var markerImageCache = new Map();
-      function createPureSvgMarkerImage(difficulty = 3) {
+      function createPureSvgMarkerImage(difficulty = 3, banned = false) {
         const d = parseInt(difficulty, 10) || 3;
-        const colorKey = d <= 2 ? 'easy' : (d >= 4 ? 'hard' : 'mid');
+        const colorKey = banned ? 'ban' : (d <= 2 ? 'easy' : (d >= 4 ? 'hard' : 'mid'));
         const isMobile = window.innerWidth <= 768;
         const cacheKey = colorKey + '_' + (isMobile ? 'm' : 'p');
 
@@ -883,14 +886,16 @@
           return markerImageCache.get(cacheKey);
         }
 
-        const color = colorKey === 'easy' ? '#10b981' : (colorKey === 'hard' ? '#f43f5e' : '#f59e0b');
+        const color = colorKey === 'ban' ? '#64748b' : (colorKey === 'easy' ? '#10b981' : (colorKey === 'hard' ? '#f43f5e' : '#f59e0b'));
         const width = isMobile ? 30 : 34, height = isMobile ? 38 : 42;
 
+        const inner = colorKey === 'ban'
+          ? '<circle cx="14" cy="13.5" r="6.5" fill="#ffffff" stroke="#e11d48" stroke-width="2.2"/><line x1="9.6" y1="9.1" x2="18.4" y2="17.9" stroke="#e11d48" stroke-width="2.2"/>'
+          : '<path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/><polygon fill="' + color + '" points="14,10.5 10.5,18 17.5,18"/>';
         const svgString = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="' + width + '" height="' + height + '">' +
           '<ellipse cx="14" cy="34" rx="7" ry="2" fill="rgba(0,0,0,0.4)"/>' +
           '<path fill="' + color + '" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>' +
-          '<path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/>' +
-          '<polygon fill="' + color + '" points="14,10.5 10.5,18 17.5,18"/>' +
+          inner +
         '</svg>';
 
         const markerImg = new kakao.maps.MarkerImage(
@@ -1610,8 +1615,76 @@ function updateSmartResetButtons() {
         return km != null && km <= 1;
       }
 
+      function isCampBanned(spot) {
+        return !!spot && String(spot.camp_status || '').trim() === 'banned';
+      }
+      window.okbmIsCampBanned = isCampBanned;
+
+      function campBanBadgeHtml(spot) {
+        return isCampBanned(spot)
+          ? '<span class="badge-status" style="background:rgba(244,63,94,0.18); color:#fda4af; border:1px solid rgba(244,63,94,0.45);">🚫 야영금지</span>'
+          : '';
+      }
+
+      function campBanBannerHtml(spot) {
+        if (!isCampBanned(spot)) return '';
+        var note = String(spot.camp_status_note || '').trim();
+        var at = String(spot.camp_status_at || '').slice(0, 7).replace('-', '.');
+        return '<div style="margin:6px 0 4px; padding:9px 11px; border-radius:10px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.45); color:#fecdd3; font-size:0.78rem; line-height:1.5;">' +
+          '<div style="font-weight:900; color:#fb7185; font-size:0.86rem;">🚫 야영금지된 장소입니다</div>' +
+          (note ? '<div>' + escapeHtml(note) + '</div>' : '') +
+          '<div style="color:#fda4af; font-size:0.7rem; margin-top:2px;">텐트 피칭·비박은 하지 말고 당일 탐방만 해 주세요.' + (at ? ' (' + escapeHtml(at) + ' 확인)' : '') + '</div>' +
+        '</div>';
+      }
+
+      window.setSpotCampBan = async function(spotId, banned, note) {
+        var sId = String(spotId || '').trim();
+        var spot = (spots || []).find(function(s) { return String(s.id).trim() === sId; });
+        if (!spot) return false;
+        var cfg = getSupabaseRestConfig();
+        var headers = (typeof window.okbmWriteHeaders === 'function') ? window.okbmWriteHeaders({ Prefer: 'return=minimal' }) : null;
+        if (!cfg.url || !headers) return false;
+        var payload = banned
+          ? { camp_status: 'banned', camp_status_note: String(note || '').trim().slice(0, 200) || null, camp_status_at: new Date().toISOString().slice(0, 10) }
+          : { camp_status: null, camp_status_note: null, camp_status_at: null };
+        try {
+          var res = await fetch(cfg.url + '/rest/v1/spots?id=eq.' + encodeURIComponent(sId), {
+            method: 'PATCH',
+            headers: headers,
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) return false;
+        } catch (e) {
+          console.warn('[map.html:setSpotCampBan]', e);
+          return false;
+        }
+        Object.assign(spot, payload);
+        persistSpotsCache();
+        renderSpots(true);
+        refreshCurrentSpotPopup();
+        return true;
+      };
+
+      window.toggleSpotCampBanById = async function(spotId, e) {
+        if (e) e.stopPropagation();
+        if (!checkAdminAuthorization()) return;
+        var sId = String(spotId || '').trim();
+        var spot = (spots || []).find(function(s) { return String(s.id).trim() === sId; });
+        if (!spot) return;
+        var ok;
+        if (isCampBanned(spot)) {
+          if (!confirm('야영금지 표시를 해제할까요?')) return;
+          ok = await window.setSpotCampBan(sId, false);
+        } else {
+          var note = window.prompt('야영금지 사유를 입력하세요. 장소 상세에 표시됩니다. (200자 이내)', '');
+          if (note === null) return;
+          ok = await window.setSpotCampBan(sId, true, note);
+        }
+        showToast(ok ? '야영금지 상태를 바꿨습니다.' : '변경에 실패했습니다.');
+      };
+
       function getSpotStatusBadges(spot) {
-        let html = '';
+        let html = campBanBadgeHtml(spot);
         if (isBeginnerCourseSpot(spot)) html += `<span class="badge-status" style="background:rgba(16,185,129,0.16); color:#6ee7b7; border:1px solid rgba(16,185,129,0.35);">${ICONS.MOUNTAIN}초보</span>`;
         else if (spot.courseType === '최단') html += `<span class="badge-status" style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.35);">${ICONS.FAST}최단</span>`;
         else if (spot.courseType === '종주') html += `<span class="badge-status" style="background:rgba(168,85,247,0.16); color:#a855f7; border:1px solid rgba(168,85,247,0.35);">${ICONS.HIKING}종주</span>`;
@@ -2088,7 +2161,8 @@ function updateSmartResetButtons() {
             const isFav = userBookmarks.has(id);
             const isDone = userVisited.has(id);
             // 이름·난이도·고도가 바뀐 spot(목록 교체·수정)도 다시 그리도록 내용 값을 키에 넣는다
-            const labelKey = `${id}_${isFullMode ? 'full' : 'mini'}_${isSelected ? 'sel' : 'nor'}_${isFav ? 'f' : 'nf'}_${isDone ? 'd' : 'nd'}_${row1Name}|${row2Sub}|${row3Elev}|${diffClass}`;
+            const isBan = isCampBanned(spot);
+            const labelKey = `${id}_${isFullMode ? 'full' : 'mini'}_${isSelected ? 'sel' : 'nor'}_${isFav ? 'f' : 'nf'}_${isDone ? 'd' : 'nd'}_${isBan ? 'ban' : 'ok'}_${row1Name}|${row2Sub}|${row3Elev}|${diffClass}`;
             if (overlay._cachedLabelKey !== labelKey) {
               const labelDiv = document.createElement('div');
               labelDiv.className = 'lod-marker-container';
@@ -2104,7 +2178,8 @@ function updateSmartResetButtons() {
                 ${userBookmarks.has(id) ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 장소">${ICONS.HEART}</div>` : ''}
                 ${userVisited.has(id) ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 장소">${ICONS.FLAG}</div>` : ''}
                 <div class="lod-marker-label" style="position: absolute; bottom: 44px; left: 50%; pointer-events: auto; ${labelTransform}">
-                  <div class="lod-label-row-1 ${diffClass}">${escapeHtml(row1Name)}</div>
+                  <div class="lod-label-row-1 ${isBan ? '' : diffClass}"${isBan ? ' style="color:#fda4af;"' : ''}>${isBan ? '🚫 ' : ''}${escapeHtml(row1Name)}</div>
+                  ${isBan ? '<div class="lod-label-row-2" style="color:#fb7185; font-weight:900;">야영금지</div>' : ''}
                   ${(isFullMode && row2Sub) ? `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>` : ''}
                   ${(isFullMode && row3Elev) ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${escapeHtml(row3Elev)}</div>` : ''}
                 </div>
@@ -2760,6 +2835,7 @@ function updateSmartResetButtons() {
             <button type="button" class="btn-edit" style="display:inline-block;" data-id="${spot.id}" onclick="editSpotById(event, this.dataset.id)">${ICONS.EDIT}수정</button>
             <button type="button" class="btn-edit" style="display:inline-block; background:#0f766e;" data-id="${spot.id}" onclick="startAdminPinMove(this.dataset.id, event)">${ICONS.PIN}핀</button>
             <button type="button" class="btn-del" style="display:inline-block;" data-id="${spot.id}" onclick="deleteSpotById(event, this.dataset.id)">${ICONS.DEL}삭제</button>
+            <button type="button" class="btn-edit" style="display:inline-block; background:${isCampBanned(spot) ? '#475569' : '#9f1239'};" data-id="${spot.id}" onclick="window.toggleSpotCampBanById(this.dataset.id, event)">${isCampBanned(spot) ? '금지해제' : '🚫금지'}</button>
           </div>
         ` : '';
 
@@ -2775,6 +2851,7 @@ function updateSmartResetButtons() {
               <div class="js-spot-title-actions" style="display:flex; align-items:center; gap:6px; flex-shrink:0;" onclick="event.stopPropagation();">${closeBtn}</div>
             </div>
             ${adminTopActions}
+            ${campBanBannerHtml(spot)}
 
           <!-- 2행: 좌측 세부 포인트 ── 우측 등록자(구형: 오라네) + SNS 미니 아이콘 -->
             <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin:4px 0 3px 0; width:100%; min-height:24px;">
@@ -4624,6 +4701,7 @@ var liveSearchTimer = null;
                     ${escapeHtml(item.spot_main || item.name)}
                   </span>
                   ${item.spot_sub ? `<span style="font-size:0.64rem; color:var(--accent-blue); font-weight:700;">(${escapeHtml(item.spot_sub)})</span>` : ''}
+                  ${isCampBanned(item) ? '<span style="font-size:0.58rem; color:#fda4af; font-weight:900; flex-shrink:0;">🚫 야영금지</span>' : ''}
                 </div>
                 <span style="font-size:0.60rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                   ${escapeHtml(item.region || '')} ${escapeHtml(item.cityName || '')} · ${escapeHtml(item.elevation || '')}
@@ -4736,7 +4814,7 @@ var liveSearchTimer = null;
           if (!spotNativeMarkerMap.has(sId) && map) {
             const marker = new kakao.maps.Marker({
               position: latlng, 
-              image: createPureSvgMarkerImage(spot.difficulty), 
+              image: createPureSvgMarkerImage(spot.difficulty, isCampBanned(spot)), 
               clickable: true,
               draggable: String(window.__adminPinMoveSpotId || '').trim() === sId,
               zIndex: 9999
@@ -4756,6 +4834,7 @@ var liveSearchTimer = null;
             marker.spotData = spot;
             marker.__okbmPosKey = lat.toFixed(6) + ',' + lng.toFixed(6);
             marker.__okbmDiff = spot.difficulty;
+            marker.__okbmBan = isCampBanned(spot);
             spotNativeMarkerMap.set(sId, marker);
           } else {
             const existingMarker = spotNativeMarkerMap.get(sId);
@@ -4773,9 +4852,11 @@ var liveSearchTimer = null;
                 const lbl = spotLabelOverlayMap.get(sId);
                 if (lbl) lbl.setPosition(freshLatLng);
               }
-              if (existingMarker.__okbmDiff !== spot.difficulty) {
+              const banned = isCampBanned(spot);
+              if (existingMarker.__okbmDiff !== spot.difficulty || existingMarker.__okbmBan !== banned) {
                 existingMarker.__okbmDiff = spot.difficulty;
-                existingMarker.setImage(createPureSvgMarkerImage(spot.difficulty));
+                existingMarker.__okbmBan = banned;
+                existingMarker.setImage(createPureSvgMarkerImage(spot.difficulty, banned));
               }
             }
           }
@@ -6682,6 +6763,9 @@ var overlay = document.getElementById('customModalOverlay');
             : '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.focusAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:rgba(255,255,255,0.08); color:#e2e8f0;">지도보기</button>' +
               '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.reviewAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#0284c7; color:#fff;">검토/수정</button>' +
               '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.approveAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#059669; color:#fff;">즉시반영</button>' +
+              (item.type === 'correction'
+                ? '<button type="button" data-id="' + escapeHtml(safeId) + '" onclick="window.banSpotFromCorrection(this.dataset.id)" style="background:#9f1239; color:#fff;">🚫야영금지</button>'
+                : '') +
               '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.rejectAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#be123c; color:#fff;">반려</button>';
           return '<div class="admin-inbox-card">' +
             '<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">' +
@@ -6788,6 +6872,28 @@ var overlay = document.getElementById('customModalOverlay');
         await window.renderAdminSpotInboxList();
       };
 
+      window.banSpotFromCorrection = async function(id) {
+        var item = findAdminInboxItem(id, 'correction');
+        if (!item) return;
+        var origId = String(resolveCorrectionOrigSpotId(item) || '').trim();
+        var spot = (spots || []).find(function(s) { return String(s.id).trim() === origId; });
+        if (!spot) {
+          showToast('원래 장소를 찾을 수 없습니다.');
+          return;
+        }
+        var note = window.prompt('[' + (spot.spot_main || spot.name || origId) + '] 야영금지 사유를 입력하세요. 장소 상세에 표시됩니다. (200자 이내)', String(item.correctionReason || '').slice(0, 200));
+        if (note === null) return;
+        var ok = await window.setSpotCampBan(origId, true, note);
+        if (ok && typeof window.updateAdminSpotInboxStatus === 'function') {
+          await window.updateAdminSpotInboxStatus(item.id, true, '반영완료', { approved_spot_id: origId });
+          if (typeof window.notifyProposalDecision === 'function') {
+            await window.notifyProposalDecision(item, '반영완료', origId);
+          }
+        }
+        showToast(ok ? '야영금지로 표시하고 건의를 채택했습니다.' : '야영금지 표시에 실패했습니다.');
+        await window.renderAdminSpotInboxList();
+      };
+
       window.rejectAdminInboxItem = async function(id, type) {
         var item = findAdminInboxItem(id, type);
         if (!item) return;
@@ -6882,7 +6988,9 @@ var overlay = document.getElementById('customModalOverlay');
             li.onmouseover = () => { li.style.background = 'var(--bg-card-hover)'; };
             li.onmouseout = () => { li.style.background = 'transparent'; };
 
-            const badgeHtml = res.isInternal 
+            const badgeHtml = res.isInternal && isCampBanned(res.spotObj)
+              ? '<span style="font-size:0.56rem; font-weight:900; background:rgba(244,63,94,0.18); color:#fda4af; border:1px solid rgba(244,63,94,0.45); padding:1px 5px; border-radius:4px; flex-shrink:0;">🚫 야영금지</span>'
+              : res.isInternal
               ? '<span style="font-size:0.56rem; font-weight:900; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">장소</span>'
               : '<span style="font-size:0.56rem; font-weight:700; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">자연</span>';
 

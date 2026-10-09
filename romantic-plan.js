@@ -6441,6 +6441,16 @@ window.saveCurrentPackingRecord = function() {
     if (!dateKey || !name) return false;
     if (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(name)) return false;
 
+    var spotPool = Array.isArray(window.spots) && window.spots.length ? window.spots : (Array.isArray(window.SPOTS_MASTER) ? window.SPOTS_MASTER : []);
+    var bannedSpot = spotPool.find(function(s) {
+      return s && String(s.camp_status || '').trim() === 'banned' &&
+        [s.fullName, s.spot_main, s.name].some(function(n) { return n && String(n).trim() === name; });
+    });
+    if (bannedSpot) {
+      var banNote = String(bannedSpot.camp_status_note || '').trim();
+      if (!confirm('🚫 [' + name + ']은(는) 야영금지된 장소입니다.' + (banNote ? '\n' + banNote : '') + '\n\n텐트 피칭·비박 없이 당일 탐방으로 일정에 넣을까요?')) return false;
+    }
+
     var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
       ? window.RomanticVault.read('okbm_plan_spots', {})
       : safeGetJSON('okbm_plan_spots', {});
