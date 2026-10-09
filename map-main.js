@@ -1626,6 +1626,17 @@ function updateSmartResetButtons() {
           : '';
       }
 
+      // 제보 원문을 그대로 노출하지 않고, 지정 주체만 골라 방문자용 문장으로 만든다.
+      function campBanPublicNote(source) {
+        var text = String(source || '').replace(/\s+/g, ' ');
+        var park = text.match(/([가-힣]{1,12}(?:·[가-힣]{1,12})*)\s?(국립공원|도립공원|군립공원)/);
+        if (park) return park[1] + ' ' + park[2] + ' 구역으로 지정되어 야영이 금지된 장소입니다.';
+        if (text.indexOf('국립공원') !== -1) return '국립공원 구역으로 지정되어 야영이 금지된 장소입니다.';
+        if (text.indexOf('도립공원') !== -1) return '도립공원 구역으로 지정되어 야영이 금지된 장소입니다.';
+        if (text.indexOf('군립공원') !== -1) return '군립공원 구역으로 지정되어 야영이 금지된 장소입니다.';
+        return '관계 기관에서 야영금지 구역으로 지정한 장소입니다.';
+      }
+
       function campBanBannerHtml(spot) {
         if (!isCampBanned(spot)) return '';
         var note = String(spot.camp_status_note || '').trim();
@@ -1633,7 +1644,7 @@ function updateSmartResetButtons() {
         return '<div style="margin:6px 0 4px; padding:9px 11px; border-radius:10px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.45); color:#fecdd3; font-size:0.78rem; line-height:1.5;">' +
           '<div style="font-weight:900; color:#fb7185; font-size:0.86rem;">🚫 야영금지된 장소입니다</div>' +
           (note ? '<div>' + escapeHtml(note) + '</div>' : '') +
-          '<div style="color:#fda4af; font-size:0.7rem; margin-top:2px;">텐트 피칭·비박은 하지 말고 당일 탐방만 해 주세요.' + (at ? ' (' + escapeHtml(at) + ' 확인)' : '') + '</div>' +
+          '<div style="color:#fda4af; font-size:0.7rem; margin-top:2px;">텐트 피칭과 비박은 할 수 없습니다. 당일 탐방만 가능합니다.' + (at ? ' (' + escapeHtml(at) + ' 확인)' : '') + '</div>' +
         '</div>';
       }
 
@@ -1676,7 +1687,7 @@ function updateSmartResetButtons() {
           if (!confirm('야영금지 표시를 해제할까요?')) return;
           ok = await window.setSpotCampBan(sId, false);
         } else {
-          var note = window.prompt('야영금지 사유를 입력하세요. 장소 상세에 표시됩니다. (200자 이내)', '');
+          var note = window.prompt('방문자에게 보일 안내 문구입니다. 제보 원문 대신 이 문장이 장소 상세에 표시됩니다.', campBanPublicNote(''));
           if (note === null) return;
           ok = await window.setSpotCampBan(sId, true, note);
         }
@@ -6881,7 +6892,12 @@ var overlay = document.getElementById('customModalOverlay');
           showToast('원래 장소를 찾을 수 없습니다.');
           return;
         }
-        var note = window.prompt('[' + (spot.spot_main || spot.name || origId) + '] 야영금지 사유를 입력하세요. 장소 상세에 표시됩니다. (200자 이내)', String(item.correctionReason || '').slice(0, 200));
+        var rawReason = String(item.correctionReason || '').trim();
+        var note = window.prompt(
+          '[' + (spot.spot_main || spot.name || origId) + '] 방문자에게 보일 안내 문구입니다. 제보 원문은 넣지 않고, 이 문장을 확인한 뒤 저장합니다.' +
+          (rawReason ? '\n\n제보 원문: ' + rawReason : ''),
+          campBanPublicNote([rawReason, item.desc_summary, item.desc].filter(Boolean).join('\n'))
+        );
         if (note === null) return;
         var ok = await window.setSpotCampBan(origId, true, note);
         if (ok && typeof window.updateAdminSpotInboxStatus === 'function') {
