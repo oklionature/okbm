@@ -2848,6 +2848,18 @@ function updateSmartResetButtons() {
           </div>
         ` : '';
 
+        if (isCampBanned(spot)) {
+          return `
+          <div style="position: relative; width: 100%;">
+            <div class="sheet-title-row" style="padding-right: ${isMobileSheet ? '36px' : '0'};">
+              <div class="compact-title"><span>${escapeHtml(cleanMainName)}</span></div>
+              <div class="js-spot-title-actions" style="display:flex; align-items:center; gap:6px; flex-shrink:0;" onclick="event.stopPropagation();">${closeBtn}</div>
+            </div>
+            ${adminTopActions}
+            ${campBanBannerHtml(spot)}
+          </div>`;
+        }
+
         return `
           <div style="position: relative; width: 100%;">
             <div class="sheet-title-row js-center-spot" style="padding-right: ${isMobileSheet ? '36px' : '0'};" data-lat="${safeLat}" data-lng="${safeLng}" title="지도를 장소 중심으로 이동">
@@ -2862,6 +2874,7 @@ function updateSmartResetButtons() {
             ${adminTopActions}
             ${campBanBannerHtml(spot)}
 
+            ${isCampBanned(spot) ? '' : `
           <!-- 2행: 좌측 세부 포인트 ── 우측 등록자(구형: 오라네) + SNS 미니 아이콘 -->
             <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin:4px 0 3px 0; width:100%; min-height:24px;">
               <div style="display:flex; align-items:center; min-width:0; flex:1;">
@@ -2919,7 +2932,7 @@ function updateSmartResetButtons() {
               <button type="button" class="btn-action-3 btn-action-share" data-id="${sId}" onclick="shareSpotCard(this.dataset.id)">
                 ${ICONS.SHARE} <span>공유</span>
               </button>
-            </div>
+            </div>`}
 
             ${isCampBanned(spot) ? '' : !isMember ? `
               <div class="guest-member-lock-card">
