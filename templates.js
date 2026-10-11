@@ -4955,8 +4955,12 @@ if (!document.getElementById('template-cards-core-style')) {
 }
 
 function generateCardMarkup(tmplId, record, items, spot, memo) {
-  var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
-  var nick = profile ? profile.nickname : '낭만탐험가';
+  var nick = record ? String(record.author || record.nickname || record.authorName || record.nick || '').trim() : '';
+  if (!nick) {
+    var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+    nick = profile && profile.nickname ? String(profile.nickname).trim() : '';
+  }
+  if (!nick) nick = '낭만탐험가';
   var list = collapseDuplicatePackItems(items || []);
   var fallbackWeightGrams = (items || []).reduce(function(sum, it) {
     var w = (typeof it === 'object' && it !== null) ? Number(it.weight || it.weight_g || 0) : 0;
