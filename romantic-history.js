@@ -6541,7 +6541,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
           btnPerPhoto.style.background = 'transparent';
           btnPerPhoto.style.color = '#94a3b8';
           btnPerPhoto.style.fontWeight = '700';
-          if (helperLabel) helperLabel.innerText = '대표 일지 30자 이상, 최대 120자';
+          if (helperLabel) helperLabel.innerText = '대표 일지 최대 120자';
           if (memoInput) memoInput.value = window.__tempSingleMemo;
           window.__paintRichMemoCounter((window.__tempSingleMemo || '').length);
         } else {
@@ -6610,7 +6610,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
             <span id="richMemoCharCounter" style="font-size:0.70rem; color:#ffffff; font-family:'Space Grotesk', sans-serif; font-weight:800;">0/120자</span>
           </div>
           <div id="richMemoModeHelperLabel" style="font-size:0.62rem; color:#64748b; margin-top:-2px;">
-            ${window.__tempMemoMode==='single' ? '대표 일지 30자 이상, 최대 120자' : '사진별 메모는 선택, 최대 120자'}
+            ${window.__tempMemoMode==='single' ? '대표 일지 최대 120자' : '사진별 메모는 선택, 최대 120자'}
           </div>
           <textarea id="richFormMemoInput" maxlength="120" placeholder="지형 상태, 뷰, 실전 팁 등 현장 기록을 120자 이내로 남겨보세요." oninput="window.__handleRichMemoInput(this.value);" style="width:100%; height:95px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:12px; padding:12px 14px; font-size:0.84rem; line-height:1.55; box-sizing:border-box; outline:none; resize:none; font-family:'Pretendard Variable', -apple-system, sans-serif; letter-spacing:-0.02em;"></textarea>
         </div>
@@ -6697,15 +6697,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       if (!singleMemoCheck) {
         triggerHaptic(20);
         if (typeof showToast === 'function') showToast('대표 일지를 작성해주세요.', 'warn', 2400, 'center');
-        window.__isSubmittingRichTrip = false;
-        if (memoInputEl) memoInputEl.focus();
-        return;
-      }
-      if (singleMemoCheck.length < 30) {
-        triggerHaptic(20);
-        if (typeof showToast === 'function') {
-          showToast('대표 일지는 30자 이상 작성해주세요. (현재 ' + singleMemoCheck.length + '자)', 'warn', 2800, 'center');
-        }
         window.__isSubmittingRichTrip = false;
         if (memoInputEl) memoInputEl.focus();
         return;

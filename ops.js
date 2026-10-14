@@ -123,6 +123,8 @@
     });
     var homeViews = get('home', 'view').visitors;
     var writes = get('quick_write', 'click').visitors;
+    var feedWrites = get('feed_write', 'click').visitors;
+    var spotChanges = get('feed_spot_change', 'event').hits;
 
     var html = '';
     html += '<section><h2>한눈에 (' + days + '일)</h2><p class="h">방문자는 하루 기준 합계예요. 같은 사람이 이틀 오면 2로 셉니다.</p><div class="kpis">' +
@@ -177,6 +179,8 @@
         return '<tr><td style="color:' + color + '">' + esc(p[1]) + '</td><td>' + num(n) + '</td><td>' + pct(n, pubTotal) + '%</td></tr>';
       }).join('') + '</tbody></table>' +
       (writes ? '<p class="h" style="margin-top:10px">바로가기 "후기 올리기"를 누른 사람: ' + num(writes) + '</p>' : '') +
+      (feedWrites ? '<p class="h">낭만피드 "후기 올리기"를 누른 사람: ' + num(feedWrites) + '</p>' : '') +
+      (spotChanges ? '<p class="h">낭만피드에서 내 글 장소를 바꾼 횟수: ' + num(spotChanges) + '</p>' : '') +
       '</section>';
 
     html += bookmarkSection(bmRes, spots || []);
