@@ -9571,22 +9571,6 @@ window.openFeedsInterestFromReport = function(ev) {
 window.openMyFeedsModal = window.openMyPastTripsFromReport;
 window.openFollowingUsersModal = window.openRoutersInterestFromReport;
 
-window.okbmEnsurePastTripRegisterCta = function() {
-  var body = document.getElementById('userProfileScrollBody');
-  if (!body) return;
-  var buttons = body.querySelectorAll('button');
-  for (var i = 0; i < buttons.length; i++) {
-    var b = buttons[i];
-    var t = String(b.innerText || '').replace(/\s+/g, ' ').trim();
-    if (t.indexOf('결산 카드') !== -1 || t.indexOf('과거 추억 등록') !== -1 || t.indexOf('추억등록') !== -1) {
-      b.setAttribute('onclick', 'window.openPastTripRegisterModal(event);');
-      var span = b.querySelector('span');
-      if (span) span.textContent = '추억등록';
-      return;
-    }
-  }
-};
-
 function openUserProfileModal() {
   try {
     if (!isUserLoggedIn()) {
@@ -9615,9 +9599,6 @@ function openUserProfileModal() {
     }
 
     ensureMyReportAndAuthModalsInDOM();
-    if (typeof window.okbmEnsurePastTripRegisterCta === 'function') {
-      window.okbmEnsurePastTripRegisterCta();
-    }
     window.__reportRenderCache = {};
 
     var targetUserId = okbmGetCurrentUserId();
