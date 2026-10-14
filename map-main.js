@@ -2855,21 +2855,6 @@ function updateSmartResetButtons() {
         return 'https://instagram.com/oklionnature';
       }
 
-      function okbmSpotAuthorSnsDrawerHtml(snsUrl) {
-        var raw = String(snsUrl || '').trim();
-        var safe = (typeof okbmSafeExternalUrl === 'function') ? okbmSafeExternalUrl(raw) : raw;
-        if (!safe || safe === '#') safe = raw;
-        var isInsta = /instagram\.com/i.test(raw);
-        var title = isInsta ? '등록자 인스타그램' : '등록자 SNS';
-        return '<a href="' + escapeHtml(safe) + '" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:46px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:6px 10px; text-decoration:none; box-sizing:border-box; width:100%;">' +
-          '<div style="min-width:0; display:flex; flex-direction:column; gap:2px;">' +
-            '<span style="font-size:0.64rem; font-weight:800; color:#f472b6;">' + title + '</span>' +
-            '<span style="font-size:0.76rem; font-weight:700; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(raw.replace(/^https?:\/\//i, '')) + '</span>' +
-          '</div>' +
-          '<div style="color:#64748b; font-size:0.85rem; font-weight:800; flex-shrink:0;">›</div>' +
-        '</a>';
-      }
-
       function generateDetailContentHtml(spot, isMobileSheet = false) {
         const sId = String(spot.id).trim();
         const isMember = isUserLoggedIn();
@@ -2895,9 +2880,6 @@ function updateSmartResetButtons() {
         const memoText = userMemos[sId] || '', diffClass = getSpotDiffColorClass(spot.difficulty);
         const isGpxActive = (activeGpxSpotId === sId), isUnlocked = isSpotUnlocked(sId) || isAdminMode;
         
-        const storedYtUrls = okbmStoredSpotYouTubeUrls(spot);
-        const authorSnsUrl = okbmSpotAuthorSnsUrl(spot);
-        const snsOpensFirst = storedYtUrls.length === 0 && authorSnsUrl.length > 0;
         const targetUnlockLink = okbmSpotUnlockTarget(spot);
         const closeBtn = isMobileSheet ? '' : `<button type="button" class="sheet-close-btn" onclick="closePcSlidingDrawer()" title="닫기">✕</button>`;
         const adminTopActions = isAdminMode ? `
@@ -3071,12 +3053,10 @@ function updateSmartResetButtons() {
               var ytBadge = cachedYt ? cachedYt.length : (existingYt.length || 0);
               var blogBadge = cachedBlogs ? cachedBlogs.length : (existingBlog.length || 0);
 
-              var ytTabBg = snsOpensFirst ? 'rgba(255,255,255,0.04)' : 'rgba(244,63,94,0.12)';
-              var ytTabBorder = snsOpensFirst ? 'rgba(255,255,255,0.12)' : '#f43f5e';
-              var drawerOpened = snsOpensFirst ? 'sns' : 'yt';
-              var drawerInner = snsOpensFirst
-                ? okbmSpotAuthorSnsDrawerHtml(authorSnsUrl)
-                : '<div style="display:flex; align-items:center; justify-content:center; padding:18px 0; color:var(--text-muted); font-size:0.72rem; gap:6px;"><svg viewBox="0 0 24 24" style="width:14px; height:14px; animation:spin 1s linear infinite;" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke="#f43f5e"/></svg><span>실시간 추천 유튜브 영상 불러오는 중...</span></div>';
+              var ytTabBg = 'rgba(244,63,94,0.12)';
+              var ytTabBorder = '#f43f5e';
+              var drawerOpened = 'yt';
+              var drawerInner = '<div style="display:flex; align-items:center; justify-content:center; padding:18px 0; color:var(--text-muted); font-size:0.72rem; gap:6px;"><svg viewBox="0 0 24 24" style="width:14px; height:14px; animation:spin 1s linear infinite;" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke="#f43f5e"/></svg><span>실시간 추천 유튜브 영상 불러오는 중...</span></div>';
 
               return `
                 <div style="display:flex; flex-direction:column; width:100%; margin-top:6px; box-sizing:border-box;">
@@ -3847,12 +3827,6 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         var spotName = spot.spot_main || spot.name || '장소';
         var drawer = document.getElementById('spotMediaDrawerBox_' + spotId);
         if (!drawer) return;
-
-        if ((drawer.dataset.opened || '') === 'sns') {
-          drawer.innerHTML = okbmSpotAuthorSnsDrawerHtml(okbmSpotAuthorSnsUrl(spot));
-          window.prefetchSpotMediaForSpot(spot);
-          return;
-        }
 
         var ytReg = window.getSpotRegisteredMediaUrls(spot, 'yt');
         var blogReg = window.getSpotRegisteredMediaUrls(spot, 'blog');
