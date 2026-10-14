@@ -314,6 +314,8 @@
       if (typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(12); } catch (err) {} }
       toast('고마워요! ' + shortName(spotOf(id)) + ' 후기에 쌓였어요.');
       load(id, true);
+      // 라운지 "박지 후기" 탭 등 다른 화면도 새로 받게 알린다
+      try { window.dispatchEvent(new CustomEvent('okbm_spot_review_saved', { detail: { spotId: id } })); } catch (e2) {}
     }).catch(function (err) {
       console.warn('[spot-tips:save]', err);
       var m = String((err && err.message) || '');
@@ -387,6 +389,13 @@
       document.querySelectorAll('[data-okbm-tips-box]').forEach(function (bx) { load(bx.getAttribute('data-okbm-tips-box'), true); });
     });
   });
+
+  // 라운지(lounge.js)의 "후기 쓰기"도 이 창을 쓴다
+  window.okbmOpenSpotReviewSheet = function (spotId) {
+    var id = String(spotId || '').trim();
+    if (!id) return;
+    load(id, true).then(function () { openSheet(id, false); });
+  };
 
   function start() {
     injectCss();

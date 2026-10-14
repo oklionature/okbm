@@ -66,7 +66,8 @@
     recent: null, recentTier: '', recentDone: false, comments: {}, admin: false,
     fail: [false, false, false, false],
     liked: new Set(), likeChecked: new Set(), // 내가 좋아요 누른 글(본인 것만 보임)
-    spotRev: null, // 박지 하나의 후기 {spot_id, tier, summary, reviews, mine, done}
+    spotRev: null, // 박지 하나의 후기 {spot_id, tier, summary, reviews, mine, done, tipSum, tipRows}
+    tipsRecent: null, // 최근 팁(칩·한 줄) — 박지 후기 탭에서 별점 후기와 섞는다 (SUPABASE_G4)
   };
   // 화면 상태. tab = 홈 탭, wtab = 라운지 창 탭 (서로 따로 기억), revSpot = 후기 탭을 한 박지로 좁힘
   const S = { tab: 0, wtab: 0, cat: 'all', revSpot: null };
@@ -230,6 +231,8 @@
       '#okbmLoungeHome .hg-t.r{border-color:#ff8a65;color:#ff8a65}',
       '#okbmLoungeHome .hg-t.g{border-color:#9ccc65;color:#9ccc65}',
       '#okbmLoungeHome .hg-x{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.lm-tchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.lm-tchips span{font-size:11px;font-weight:700;color:var(--tx);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:2px 8px}',
+      '.lm-tchips.lg{margin:4px 0 6px}.lm-tchips.lg span{font-size:12px;padding:3px 9px}',
       '#okbmLoungeHome .lmh-empty{height:192px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:12.5px;color:var(--sub);text-align:center}',
       '.lm-sk{height:64px;border-bottom:1px solid var(--div);display:flex;align-items:center;gap:16px}',
       '.lm-sk i,.lm-sk b{display:block;border-radius:6px;background:linear-gradient(90deg,#17171b 25%,#222228 37%,#17171b 63%);background-size:400% 100%;animation:lmShine 1.2s ease infinite}',
@@ -570,12 +573,19 @@
     if (!c) throw new Error('no_client');
     const cur = D.spotRev && D.spotRev.spot_id === spotId ? D.spotRev : null;
     const before = more && cur && cur.reviews.length ? cur.reviews[cur.reviews.length - 1].created_at : null;
-    const res = await q(c.rpc('get_spot_reviews', { p_spot_id: spotId, p_limit: 20, p_before: before }));
+    const both = await Promise.all([
+      q(c.rpc('get_spot_reviews', { p_spot_id: spotId, p_limit: 20, p_before: before })),
+      more ? Promise.resolve(null) : q(c.rpc('okbm_spot_tips_summary', { p_spot_id: spotId })).catch(function () { return null; }),
+      more ? Promise.resolve(null) : q(c.rpc('okbm_recent_spot_tips', { p_spot_id: spotId, p_limit: 50, p_before: null })).catch(function () { return null; })
+    ]);
+    const res = both[0];
     const list = (res && Array.isArray(res.reviews)) ? res.reviews : [];
     const out = {
       spot_id: spotId, tier: (res && res.tier) || 'guest', summary: (res && res.summary) || null,
       mine: (res && res.mine) || (cur && more ? cur.mine : null),
-      reviews: more && cur ? cur.reviews.concat(list) : list, done: list.length < 20
+      reviews: more && cur ? cur.reviews.concat(list) : list, done: list.length < 20,
+      tipSum: more && cur ? cur.tipSum : both[1],
+      tipRows: more && cur ? cur.tipRows : ((both[2] && Array.isArray(both[2].rows)) ? both[2].rows : [])
     };
     // 늦게 온 다른 박지 응답이 지금 보고 있는 박지를 덮지 않게, 좁혀 보는 박지일 때만 저장한다
     if (S.revSpot === spotId) D.spotRev = out;
@@ -604,6 +614,10 @@
     D.recentTier = (res && res.tier) || 'guest';
     D.recent = more ? (D.recent || []).concat(list) : list;
     D.recentDone = list.length < 20;
+    if (!more) {
+      const t = await q(c.rpc('okbm_recent_spot_tips', { p_spot_id: null, p_limit: 30, p_before: null })).catch(function () { return null; });
+      D.tipsRecent = (t && Array.isArray(t.rows)) ? t.rows : [];
+    }
   }
   async function loadComments(postId) {
     const c = sb();
@@ -1146,7 +1160,41 @@
       <div class="lm-rb"><div class="lm-rt">${esc(spotName(s))}</div><div class="lm-rs">${esc([spotRegion(s), '후기 ' + (Number(r.review_count) || 0) + '개'].filter(Boolean).join(' · '))}</div></div>${chev(false)}</button>`;
   }
   const bestRowFull = function (r) { return bestRow(r, true); };
-  function reviewItem(r, inSpot) {
+  const tipChips = function (tips) {
+    return (Array.isArray(tips) && tips.length) ? '<div class="lm-tchips">' + tips.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</div>' : '';
+  };
+  const tipKey = function (spotId, uid) { return String(spotId) + '|' + String(uid); };
+  // 팁만 남긴 사람(별점 없음): 칩과 한 줄
+  function tipRowItem(t, inSpot) {
+    const s = spotById(t.spot_id);
+    if ((!s && !inSpot) || hidden({ id: 'tip_' + t.spot_id + '_' + t.user_id, user_id: t.user_id })) return '';
+    const own = isMine(t.user_id);
+    return `<div class="lm-post" style="cursor:default"><div class="lm-lcol">${av(t.nickname, t.user_id)}</div><div class="lm-rb">
+      <div class="lm-who"><b>${esc(t.nickname || '백패커')}</b>${own ? '<span class="lm-mine">내 후기</span>' : ''}<span>${esc(ago(t.updated_at))}</span></div>
+      ${inSpot ? '' : `<div class="lm-rs" style="margin-top:1px"><button type="button" data-a="rev-spot" data-v="${esc(t.spot_id)}" style="color:var(--sub)">${esc(spotName(s))}</button></div>`}
+      ${tipChips(t.tips)}${t.note ? `<div class="lm-bd">${esc(t.note)}</div>` : ''}
+      <div class="lm-cm-acts" style="display:flex;gap:14px;margin-top:6px;font-size:11px;color:var(--faint)">${own
+        ? `<button type="button" data-a="review" data-v="${esc(t.spot_id)}" style="font-weight:600">수정</button>`
+        : (D.admin ? `<button type="button" style="font-weight:600;color:#ff6b6b" data-a="del-tip" data-v="${esc(t.spot_id)}" data-uid="${esc(t.user_id)}">삭제 (운영팀)</button>` : '')}</div>
+      </div></div>`;
+  }
+  // 별점 후기 + 팁을 날짜순으로 섞는다. 같은 사람·같은 박지면 별점 후기 밑에 그 사람 칩을 붙인다
+  function mixedReviewList(reviews, tipRows, inSpot) {
+    const byKey = {};
+    (tipRows || []).forEach(function (t) { byKey[tipKey(t.spot_id, t.user_id)] = t; });
+    const used = {};
+    const items = (reviews || []).map(function (r) {
+      const t = byKey[tipKey(r.spot_id, r.user_id)];
+      if (t) used[tipKey(t.spot_id, t.user_id)] = true;
+      return { at: r.created_at, html: reviewItem(r, inSpot, t ? t.tips : null) };
+    });
+    (tipRows || []).forEach(function (t) {
+      if (used[tipKey(t.spot_id, t.user_id)]) return;
+      items.push({ at: t.updated_at, html: tipRowItem(t, inSpot) });
+    });
+    return items.sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); }).map(function (x) { return x.html; }).join('');
+  }
+  function reviewItem(r, inSpot, chips) {
     const s = spotById(r.spot_id);
     if ((!s && !inSpot) || hidden(r)) return '';
     const own = isMine(r.user_id);
@@ -1154,7 +1202,7 @@
     return `<div class="lm-post" style="cursor:default"><div class="lm-lcol">${av(r.nickname, r.user_id)}</div><div class="lm-rb">
       <div class="lm-who"><b>${esc(r.nickname)}</b>${own ? '<span class="lm-mine">내 후기</span>' : ''}<span>${esc(ago(r.created_at))}${edited ? ' · 수정됨' : ''}</span></div>
       <div class="lm-rs" style="margin-top:1px">${inSpot ? '' : `<button type="button" data-a="rev-spot" data-v="${esc(r.spot_id)}" style="color:var(--sub)">${esc(spotName(s))}</button> `}${stars(r.rating)}</div>
-      ${r.text ? `<div class="lm-bd">${esc(r.text)}</div>` : ''}
+      ${tipChips(chips)}${r.text ? `<div class="lm-bd">${esc(r.text)}</div>` : ''}
       <div class="lm-cm-acts" style="display:flex;gap:14px;margin-top:6px;font-size:11px;color:var(--faint)">${own
         ? `<button type="button" data-a="review" data-v="${esc(r.spot_id)}" style="font-weight:600">수정</button>`
         : ugcBtn('spot_review', r.id, r.user_id, r.nickname) + (D.admin ? `<button type="button" style="font-weight:600;color:#ff6b6b" data-a="del-review" data-v="${esc(r.id)}" data-spot="${esc(r.spot_id)}">삭제 (운영팀)</button>` : '')}</div>
@@ -1172,16 +1220,20 @@
     if (R.error) return h + '<div class="lm-empty">후기를 불러오지 못했어요<br><button type="button" class="lm-btn sm" style="margin:14px auto 0;width:100%;max-width:180px" data-a="rev-spot" data-v="' + esc(sid) + '">다시 시도</button></div>';
     const cnt = R.summary ? Number(R.summary.review_count) || 0 : 0;
     const avg = R.summary ? Number(R.summary.avg_rating) || 0 : 0;
-    if (cnt) h += `<div class="lm-revhead"><b>${avg.toFixed(1)}</b>${stars(avg)}<span class="lm-cnt">후기 ${cnt}개</span></div>`;
+    const visits = R.tipSum ? Number(R.tipSum.visits) || 0 : 0;
+    const tipMap = (R.tipSum && R.tipSum.tips) || {};
+    const topTips = Object.keys(tipMap).sort(function (a, b) { return tipMap[b] - tipMap[a]; }).slice(0, 10);
+    if (cnt || visits) h += `<div class="lm-revhead">${cnt ? `<b>${avg.toFixed(1)}</b>${stars(avg)}<span class="lm-cnt">후기 ${cnt}개</span>` : ''}${visits ? `<span class="lm-cnt" style="color:#6ee7b7">${visits}명 다녀옴</span>` : ''}</div>`;
+    if (topTips.length) h += '<div class="lm-tchips lg">' + topTips.map(function (t) { return '<span>' + esc(t) + ' ' + tipMap[t] + '</span>'; }).join('') + '</div>';
     h += `<div class="lmx-btns">${s ? `<button type="button" class="lm-btn sm" data-a="spot" data-v="${esc(sid)}">${ico(P.pin, 16)}지도에서 보기</button>` : ''}
       <button type="button" class="lm-btn sm main" data-a="review" data-v="${esc(sid)}">${R.mine ? '내 후기 고치기' : '후기 쓰기'}</button></div>`;
     if (R.tier !== 'member') {
-      h += cnt
+      h += (cnt || visits)
         ? '<div class="lm-empty">후기 글은 로그인하면 볼 수 있어요<br><button type="button" class="lm-btn sm main" style="margin:14px auto 0;width:100%;max-width:220px" data-a="login">로그인</button></div>'
         : '<div class="lm-empty">아직 후기가 없어요</div>';
       return h;
     }
-    const items = R.reviews.map(function (r) { return reviewItem(r, true); }).join('');
+    const items = mixedReviewList(R.reviews, R.tipRows, true);
     h += items || '<div class="lm-empty">아직 후기가 없어요.<br>다녀왔다면 첫 후기를 남겨 주세요</div>';
     if (!R.done && R.reviews.length) h += '<button type="button" class="lmh-more" data-a="more-spot-reviews">더 보기' + ico(P.chevR, 16) + '</button>';
     return h;
@@ -1203,11 +1255,11 @@
     } else if (D.recentTier !== 'member') {
       h += '<div class="lm-empty">후기는 로그인하면 볼 수 있어요<br><button type="button" class="lm-btn sm main" style="margin:14px auto 0;width:100%;max-width:220px" data-a="login">로그인</button></div>';
     } else {
-      const items = D.recent.map(function (r) { return reviewItem(r, false); }).join('');
+      const items = mixedReviewList(D.recent, D.tipsRecent || [], false);
       h += items || '<div class="lm-empty">아직 후기가 없어요</div>';
       if (!D.recentDone && D.recent.length) h += '<button type="button" class="lmh-more" data-a="more-reviews">더 보기' + ico(P.chevR, 16) + '</button>';
     }
-    h += '<p class="lm-hint" style="margin-top:20px">후기는 박지마다 한 사람에 하나예요. 지도에서 박지를 열거나 위 박지를 눌러 남길 수 있어요.</p>';
+    h += '<p class="lm-hint" style="margin-top:20px">후기는 박지마다 한 사람에 하나예요. 별점 없이 팁만 남겨도 돼요. 지도에서 박지를 열거나 위 박지를 눌러 남길 수 있어요.</p>';
     return h;
   }
   const PANES = [paneEvents, paneGuide, paneBoard, paneReviews];
@@ -2298,6 +2350,7 @@
       try { window.okbmLoadSpotReviewBox({ id: sid }, true); } catch (e) { console.warn('[lounge.js:afterReviewChange]', e); }
     }
     D.recent = null;
+    D.tipsRecent = null;
     const jobs = [loadTop().catch(function () {})];
     if (S.revSpot === sid) jobs.push(loadSpotReviews(sid, false).catch(function () {}));
     Promise.all(jobs).then(function () { renderAll(); if (win) ensureRecent(); });
@@ -2525,7 +2578,20 @@
         t.disabled = true;
         loadSpotReviews(S.revSpot, true).then(function () { rerenderPane(3); }).catch(function (err) { console.warn('[lounge.js:more-spot-reviews]', err); toast('더 불러오지 못했어요', true); t.disabled = false; });
         break;
-      case 'review': openReviewSheet(v); break;
+      case 'review':
+        // 지도 정보창과 같은 창(spot-tips.js: 별점 선택 + 팁 + 한 줄). 없으면 예전 별점 창
+        if (typeof window.okbmOpenSpotReviewSheet === 'function') window.okbmOpenSpotReviewSheet(v);
+        else openReviewSheet(v);
+        break;
+      case 'del-tip':
+        if (!D.admin) break;
+        if (!window.confirm('이 팁을 지울까요?')) break;
+        Promise.resolve(sb() && sb().rpc('okbm_admin_delete_spot_tip', { p_spot_id: v, p_user_id: t.dataset.uid })).then(function (res) {
+          if (res && res.error) throw res.error;
+          toast('지웠어요');
+          afterReviewChange(v);
+        }).catch(function (err) { console.warn('[lounge.js:del-tip]', err); toast('지우지 못했어요', true); });
+        break;
       case 'star': setStar(Number(v)); break;
       case 'review-del': if (SH.kind === 'review' && SH.mine) deleteReview(SH.mine.id, SH.spot_id, '내 후기를 지울까요?'); break;
       case 'del-review': deleteReview(v, t.dataset.spot, '이 후기를 삭제할까요? (운영팀)'); break;
@@ -2731,7 +2797,15 @@
   window.closeLoungeSheet = function () { closeSheet(); };
   // 지도 정보창 후기 블록(romantic-sync.js)에서 부른다. 두 페이지 부트로더에 bindLazy로 걸려 있다
   window.openLoungeSpotReviews = function (spotId) { ensureLayer(); if (D.status === 'idle') loadAll(); showSpotReviews(spotId); };
-  window.openSpotReviewSheet = function (spotId) { return openReviewSheet(spotId); };
+  window.openSpotReviewSheet = function (spotId) {
+    if (typeof window.okbmOpenSpotReviewSheet === 'function') return window.okbmOpenSpotReviewSheet(spotId);
+    return openReviewSheet(spotId);
+  };
+  // 합친 후기 창(spot-tips.js)에서 남기면 라운지도 새로 받는다
+  window.addEventListener('okbm_spot_review_saved', function (e) {
+    const sid = String((e && e.detail && e.detail.spotId) || '');
+    if (sid) afterReviewChange(sid);
+  });
   // 달력에서 행사를 빼면(romantic-plan.js) 라운지 버튼도 맞춘다
   window.addEventListener('okbm_plan_events_changed', function (e) {
     const id = String((e && e.detail && e.detail.id) || '');
