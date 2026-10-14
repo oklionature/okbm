@@ -5325,6 +5325,10 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     var targetAuthor = String(authorName || '').trim();
     var targetUserId = String(userId || '').trim();
+    // 제보자 이름이 오라네인데 장소 user_id가 비어 있으면 계정 정보창이 안 붙는다.
+    if (!targetUserId && targetAuthor === '오라네') {
+      targetUserId = 'kakao_5060259862';
+    }
 
     var profile = safeGetJSON('user_profile', null);
     var myUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
