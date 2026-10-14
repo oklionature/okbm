@@ -8109,7 +8109,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       // 아래에 피드가 이어진다는 표시 (첫 장이 안내라 넘길 줄 모르는 경우가 있다)
       '<div class="vault-intro-next" aria-hidden="true">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:20px; height:20px;"><polyline points="6 15 12 9 18 15"/></svg>' +
-        '<span>위로 넘겨서 후기 보기</span>' +
+        '<span>위로 넘겨서 피드 보기</span>' +
       '</div>' +
     '</div>';
   }
