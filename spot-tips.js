@@ -354,7 +354,7 @@
     box.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }, true);
 
-  // 칸 안의 버튼
+  // 칸 안의 버튼. 지도 아래 시트(mobileBottomSheet)가 누름을 위로 올려 보내지 않아서 잡기 단계에서 듣는다
   document.addEventListener('click', function (e) {
     var b = e.target && e.target.closest ? e.target.closest('[data-okbm-tips-box] [data-stp], [data-okbm-tips-box] [data-act="ugc"]') : null;
     if (!b) return;
@@ -381,7 +381,7 @@
         .then(function () { toast('지웠어요.'); load(id, true); })
         .catch(function (err) { console.warn('[spot-tips:del]', err); toast('지우지 못했어요.', 'warn'); });
     }
-  });
+  }, true);
 
   // 신고·차단·관리자 삭제 뒤 다시 그린다
   ['okbm_ugc_report_result', 'okbm_ugc_blocked', 'okbm_lounge_content_deleted'].forEach(function (ev) {
