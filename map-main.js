@@ -2811,6 +2811,65 @@ function updateSmartResetButtons() {
         return { view, access, pitch, tip, hasParsed };
       }
 
+      // 제보자가 적어 둔 유튜브만. 검색으로 채운 영상은 여기 넣지 않는다.
+      function okbmStoredSpotYouTubeUrls(spot) {
+        if (!spot) return [];
+        var raw = spot.youtubeUrls || spot.youtube_urls || [];
+        if (typeof raw === 'string') {
+          raw = raw.split(/[\r\n,]+/).map(function(u) { return String(u || '').trim(); }).filter(Boolean);
+        }
+        if ((!raw || !raw.length) && spot.mediaUrls) {
+          raw = String(spot.mediaUrls).split(/[\r\n,]+/).map(function(u) { return u.trim(); }).filter(function(u) {
+            return /youtube\.com|youtu\.be/i.test(u);
+          });
+        }
+        var out = [];
+        var seen = {};
+        (Array.isArray(raw) ? raw : []).forEach(function(u) {
+          if (typeof u !== 'string') return;
+          var s = u.trim();
+          if (s.length < 6) return;
+          if (typeof window.isSearchPageUrl === 'function' && window.isSearchPageUrl(s)) return;
+          var key = s.toLowerCase();
+          if (seen[key]) return;
+          seen[key] = true;
+          out.push(s);
+        });
+        return out;
+      }
+
+      function okbmSpotAuthorSnsUrl(spot) {
+        if (!spot) return '';
+        return String(spot.authorSnsUrl || spot.author_sns_url || '').trim();
+      }
+
+      // 등록 유튜브가 있으면 그 영상. 없고 인스타만 있으면 인스타. 검색 영상은 잠금 링크로 쓰지 않는다.
+      function okbmSpotUnlockTarget(spot) {
+        var yts = okbmStoredSpotYouTubeUrls(spot);
+        if (yts.length) {
+          var clean = cleanYouTubeUrl(yts[0]);
+          if (clean) return clean;
+        }
+        var sns = okbmSpotAuthorSnsUrl(spot);
+        if (sns) return sns;
+        return 'https://instagram.com/oklionnature';
+      }
+
+      function okbmSpotAuthorSnsDrawerHtml(snsUrl) {
+        var raw = String(snsUrl || '').trim();
+        var safe = (typeof okbmSafeExternalUrl === 'function') ? okbmSafeExternalUrl(raw) : raw;
+        if (!safe || safe === '#') safe = raw;
+        var isInsta = /instagram\.com/i.test(raw);
+        var title = isInsta ? '등록자 인스타그램' : '등록자 SNS';
+        return '<a href="' + escapeHtml(safe) + '" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:46px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:6px 10px; text-decoration:none; box-sizing:border-box; width:100%;">' +
+          '<div style="min-width:0; display:flex; flex-direction:column; gap:2px;">' +
+            '<span style="font-size:0.64rem; font-weight:800; color:#f472b6;">' + title + '</span>' +
+            '<span style="font-size:0.76rem; font-weight:700; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(raw.replace(/^https?:\/\//i, '')) + '</span>' +
+          '</div>' +
+          '<div style="color:#64748b; font-size:0.85rem; font-weight:800; flex-shrink:0;">›</div>' +
+        '</a>';
+      }
+
       function generateDetailContentHtml(spot, isMobileSheet = false) {
         const sId = String(spot.id).trim();
         const isMember = isUserLoggedIn();
@@ -2836,8 +2895,10 @@ function updateSmartResetButtons() {
         const memoText = userMemos[sId] || '', diffClass = getSpotDiffColorClass(spot.difficulty);
         const isGpxActive = (activeGpxSpotId === sId), isUnlocked = isSpotUnlocked(sId) || isAdminMode;
         
-        const ytList = (spot.youtubeUrls || []).filter(u => u && u.trim().length > 5);
-        const targetUnlockLink = ytList.length > 0 ? cleanYouTubeUrl(ytList[0]) : (spot.authorSnsUrl || 'https://instagram.com/oklionnature');
+        const storedYtUrls = okbmStoredSpotYouTubeUrls(spot);
+        const authorSnsUrl = okbmSpotAuthorSnsUrl(spot);
+        const snsOpensFirst = storedYtUrls.length === 0 && authorSnsUrl.length > 0;
+        const targetUnlockLink = okbmSpotUnlockTarget(spot);
         const closeBtn = isMobileSheet ? '' : `<button type="button" class="sheet-close-btn" onclick="closePcSlidingDrawer()" title="닫기">✕</button>`;
         const adminTopActions = isAdminMode ? `
           <div class="sheet-admin-actions" onclick="event.stopPropagation();">
@@ -3010,10 +3071,17 @@ function updateSmartResetButtons() {
               var ytBadge = cachedYt ? cachedYt.length : (existingYt.length || 0);
               var blogBadge = cachedBlogs ? cachedBlogs.length : (existingBlog.length || 0);
 
+              var ytTabBg = snsOpensFirst ? 'rgba(255,255,255,0.04)' : 'rgba(244,63,94,0.12)';
+              var ytTabBorder = snsOpensFirst ? 'rgba(255,255,255,0.12)' : '#f43f5e';
+              var drawerOpened = snsOpensFirst ? 'sns' : 'yt';
+              var drawerInner = snsOpensFirst
+                ? okbmSpotAuthorSnsDrawerHtml(authorSnsUrl)
+                : '<div style="display:flex; align-items:center; justify-content:center; padding:18px 0; color:var(--text-muted); font-size:0.72rem; gap:6px;"><svg viewBox="0 0 24 24" style="width:14px; height:14px; animation:spin 1s linear infinite;" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke="#f43f5e"/></svg><span>실시간 추천 유튜브 영상 불러오는 중...</span></div>';
+
               return `
                 <div style="display:flex; flex-direction:column; width:100%; margin-top:6px; box-sizing:border-box;">
                   <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; width:100%;">
-                    <button type="button" id="btnMediaTab_yt_${sId}" data-type="yt" data-id="${sId}" onclick="window.handleSpotMediaTabClick(this);" style="height:38px; background:rgba(244,63,94,0.12); border:1px solid #f43f5e; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:#ffffff; transition:all 0.15s ease;">
+                    <button type="button" id="btnMediaTab_yt_${sId}" data-type="yt" data-id="${sId}" onclick="window.handleSpotMediaTabClick(this);" style="height:38px; background:${ytTabBg}; border:1px solid ${ytTabBorder}; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:#ffffff; transition:all 0.15s ease;">
                       <svg viewBox="0 0 24 24" style="width:14px; height:14px; flex-shrink:0;" fill="#f43f5e"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1 31.4 31.4 0 0 0 .5-5.8 31.4 31.4 0 0 0-.5-5.8z"/><polygon points="9.6 15.6 15.8 12 9.6 8.4 9.6 15.6" fill="#ffffff"/></svg>
                       <span style="font-size:0.75rem; font-weight:800;">YouTube</span>
                       <span id="ytBadgeCount_${sId}" style="font-size:0.65rem; color:#f43f5e; font-weight:900; font-family:'Space Grotesk',sans-serif;">${ytBadge}</span>
@@ -3026,11 +3094,8 @@ function updateSmartResetButtons() {
                     </button>
                   </div>
 
-                  <div id="spotMediaDrawerBox_${sId}" data-opened="yt" style="display:flex; flex-direction:column; gap:6px; margin-top:6px; width:100%; box-sizing:border-box;">
-                    <div style="display:flex; align-items:center; justify-content:center; padding:18px 0; color:var(--text-muted); font-size:0.72rem; gap:6px;">
-                      <svg viewBox="0 0 24 24" style="width:14px; height:14px; animation:spin 1s linear infinite;" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke="#f43f5e"/></svg>
-                      <span>실시간 추천 유튜브 영상 불러오는 중...</span>
-                    </div>
+                  <div id="spotMediaDrawerBox_${sId}" data-opened="${drawerOpened}" style="display:flex; flex-direction:column; gap:6px; margin-top:6px; width:100%; box-sizing:border-box;">
+                    ${drawerInner}
                   </div>
                 </div>
               `;
@@ -3782,6 +3847,12 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         var spotName = spot.spot_main || spot.name || '장소';
         var drawer = document.getElementById('spotMediaDrawerBox_' + spotId);
         if (!drawer) return;
+
+        if ((drawer.dataset.opened || '') === 'sns') {
+          drawer.innerHTML = okbmSpotAuthorSnsDrawerHtml(okbmSpotAuthorSnsUrl(spot));
+          window.prefetchSpotMediaForSpot(spot);
+          return;
+        }
 
         var ytReg = window.getSpotRegisteredMediaUrls(spot, 'yt');
         var blogReg = window.getSpotRegisteredMediaUrls(spot, 'blog');
