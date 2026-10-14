@@ -3940,7 +3940,7 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
   if (vaultBtn) {
     vaultBtn.style.pointerEvents = 'none';
     vaultBtn.style.opacity = '0.75';
-    vaultBtn.innerHTML = '<span>보관함 등록 중...</span>';
+    vaultBtn.innerHTML = '<span>저장 중...</span>';
   }
 
   try {
@@ -4067,7 +4067,7 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     }
     if (savedRec && savedRec.__serverSaveFailed) {
       if (typeof showToast === 'function') {
-        showToast('보관함 저장에 실패했습니다. 네트워크를 확인하고 다시 시도해주세요.', 'warn', 2600);
+        showToast('저장에 실패했습니다. 네트워크를 확인하고 다시 시도해주세요.', 'warn', 2600);
       }
       return;
     }
@@ -4079,19 +4079,19 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     if (typeof closePackShareModal === 'function') closePackShareModal();
 
     if (typeof showToast === 'function') {
-      showToast('✓ 보관함에 등록되었습니다.', 'success', 2200);
+      showToast('내 기록에 저장했어요.\n다녀온 뒤 현장 사진을 올리면 피드에 올라가요.', 'success', 3600);
     }
     if (typeof triggerHaptic === 'function') triggerHaptic(15);
   } catch (err) {
     console.warn('[templates.js:saveCardToVaultAndOpenBasecamp]', err);
     if (typeof showToast === 'function') {
-      showToast('보관함 저장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'warn', 2400);
+      showToast('저장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'warn', 2400);
     }
   } finally {
     if (vaultBtn) {
       vaultBtn.style.pointerEvents = '';
       vaultBtn.style.opacity = '';
-      vaultBtn.innerHTML = prevVaultHtml || '<span>낭만보관함에 저장</span>';
+      vaultBtn.innerHTML = prevVaultHtml || '<span>낭만피드에 저장</span>';
     }
     setTimeout(function() { window.__isSavingCardLock = false; }, 1200);
   }
@@ -4160,7 +4160,7 @@ function ensurePackShareModalDOM() {
             <div id="shareCardSpotLabel" style="width:100%; height:32px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#e2e8f0; font-size:0.75rem; font-weight:800; padding:0 10px 0 26px; box-sizing:border-box; display:flex; align-items:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="장소는 패킹계획에서 설정됩니다">장소 미설정</div>
           </div>
           <button type="button" id="btnSaveCardToVault" onclick="window.saveCardToVaultAndOpenBasecamp();" style="flex:3; min-width:0; height:32px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:1px solid #38bdf8; color:#ffffff; font-size:0.68rem; font-weight:900; padding:0 6px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(2,132,199,0.35); box-sizing:border-box; white-space:nowrap;">
-            <span>낭만보관함에 저장</span>
+            <span>낭만피드에 저장</span>
           </button>
         </div>
 
