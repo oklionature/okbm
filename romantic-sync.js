@@ -2089,6 +2089,8 @@ window.okbmFormatReportTime = okbmFormatReportTime;
 function okbmMountAdminReportInspectorEntry() {
   var old = document.getElementById('adminReportInspectorEntry');
   if (old) old.remove();
+  var oldOps = document.getElementById('adminOpsStatsEntry');
+  if (oldOps) oldOps.remove();
   if (!window.okbmIsCurrentUserAdmin()) return;
   var modal = document.getElementById('userAccountSettingsModal');
   if (!modal) return;
@@ -2117,6 +2119,15 @@ function okbmMountAdminReportInspectorEntry() {
     window.location.assign('map.html?open=admin_inbox');
   };
   logoutBtn.parentNode.insertBefore(spotEntry, logoutBtn);
+
+  // 운영 숫자(ops.html): 홈 칸별 노출·누름과 방문자 수
+  var opsEntry = document.createElement('button');
+  opsEntry.id = 'adminOpsStatsEntry';
+  opsEntry.type = 'button';
+  opsEntry.textContent = '운영 숫자';
+  opsEntry.style.cssText = 'background:none; border:none; color:#e2e8f0; font-size:0.78rem; font-weight:700; text-align:left; padding:8px 0 2px 0; cursor:pointer;';
+  opsEntry.onclick = function() { window.location.assign('ops.html'); };
+  logoutBtn.parentNode.insertBefore(opsEntry, logoutBtn);
 }
 
 window.openAdminReportInspector = async function() {
