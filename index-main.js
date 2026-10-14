@@ -1,6 +1,25 @@
 // 인덱스(홈) 페이지 본문 스크립트. 예전 index.html 인라인 <script>(약 240KB)를 그대로 옮겼다(FILE_AUDIT F7).
 // 같은 자리에서 동기(<script src>, defer 없음)로 실행되므로 실행 순서·전역 선언은 인라인 때와 같다.
 // 이 파일을 고치면 index.html의 index-main.js?v= 를 올리고, on* 핸들러 문자열을 바꿨다면 node scripts/csp-extract.mjs --write.
+
+    // 하루마다 바뀌는 순서. 한국 날짜 + 칸 이름 + 항목 키로 점수를 매겨 정렬하므로,
+    // 같은 날에는 누가 언제 열어도(캐시든 네트워크든) 같은 순서이고 다음 날 새로 섞인다.
+    window.okbmSeoulDayKey = function() {
+      return new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+    };
+    window.okbmDailyOrder = function(list, keyOf, salt) {
+      var day = window.okbmSeoulDayKey() + '|' + String(salt || '');
+      var score = function(k) {
+        var h = 2166136261;
+        var str = day + '|' + k;
+        for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+        h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15;
+        return h >>> 0;
+      };
+      return (Array.isArray(list) ? list : []).map(function(item, i) {
+        return { item: item, s: score(String(keyOf ? keyOf(item, i) : i)) };
+      }).sort(function(a, b) { return a.s - b.s; }).map(function(x) { return x.item; });
+    };
     window.smoothNavigate = function(url, e) {
       var currentPath = window.location.pathname;
       var targetPath = (url || '').split('?')[0];
@@ -626,7 +645,8 @@
         }
       });
 
-      var filteredFeeds = validPhotoFeeds;
+      // 테마 스팟도 날마다 순서를 바꾼다 (같은 테마 안에서)
+      var filteredFeeds = window.okbmDailyOrder(validPhotoFeeds, function(item) { return item.cleanSpotName; }, 'theme_' + themeKey);
       if (filteredFeeds.length === 0) {
         setRailHtml(themeRailEmptyHtml(themeKey !== 'all'));
         return;
@@ -726,12 +746,12 @@
           var curText = (memos[curIdx] !== undefined) ? String(memos[curIdx] || '').trim() : '';
           if (filledCount <= 1 && !curText) curText = String(defaultMemo || '').trim();
           if (curText) {
-            quoteEl.innerText = '“' + curText + '”';
+            quoteEl.innerText = curText;
           } else {
-            quoteEl.innerText = '“자연 속에서 비화식으로 즐기는 조용한 하룻밤.”';
+            quoteEl.innerText = '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
           }
         } catch (err) {
-          quoteEl.innerText = '“' + defaultMemo + '”';
+          quoteEl.innerText = defaultMemo;
         }
       }
     };
@@ -1245,12 +1265,12 @@
             var curText = (memos[curIdx] !== undefined) ? String(memos[curIdx] || '').trim() : '';
             if (filledCount <= 1 && !curText) curText = String(defaultMemo || '').trim();
             if (curText) {
-              quoteEl.innerText = '“' + curText + '”';
+              quoteEl.innerText = curText;
             } else {
-              quoteEl.innerText = '“자연 속에서 비화식으로 즐기는 조용한 하룻밤.”';
+              quoteEl.innerText = '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
             }
           } catch (err) {
-            quoteEl.innerText = '“' + defaultMemo + '”';
+            quoteEl.innerText = defaultMemo;
           }
         }
       };
@@ -1269,6 +1289,15 @@
     function okbmHeroUgcVisible(f) {
       return !(typeof window.isFeedHiddenByUgc === 'function' && window.isFeedHiddenByUgc(f));
     }
+
+    // 박지 목록이 늦게 오면 박지를 못 찾아 찜 수가 빠지므로, 목록이 온 뒤 home-layout.js가 한 번 더 부른다
+    window.okbmRefreshHeroStat = function() {
+      var rec = window.currentHeroRecord;
+      if (!rec || typeof window.okbmHomeHeroStat !== 'function') return;
+      try {
+        window.okbmHomeHeroStat(rec, findThemeSpotMaster(rec, getThemeSpotPool()));
+      } catch (eStat) { console.warn('[index-main:heroStat]', eStat); }
+    };
 
     function renderCurrentHeroCard() {
       var records = (window.heroTopRecords || []).filter(function(f) {
@@ -1291,7 +1320,7 @@
           var emptyIndicator = document.getElementById('heroCardIndexIndicator');
           if (emptyTitle) emptyTitle.innerText = '장소 로딩 중...';
           if (emptyAuthor) emptyAuthor.innerText = '낭만백패커';
-          if (emptyQuote) emptyQuote.innerText = '“자연 속에서 비화식으로 즐기는 조용한 하룻밤”';
+          if (emptyQuote) emptyQuote.innerText = '자연 속에서 비화식으로 즐기는 조용한 하룻밤';
           if (emptyIndicator) emptyIndicator.innerText = '(0/0)';
           var emptyStage = document.querySelector('.insta-stage-wrap');
           if (emptyStage) emptyStage.classList.add('okbm-hero-loading');
@@ -1353,8 +1382,10 @@
 
       if (titleEl) titleEl.innerText = spotTitle;
       if (authorEl) authorEl.innerText = authorName;
-      if (quoteEl && !heroTrackUnchanged) quoteEl.innerText = '“' + firstMemoText + '”';
+      if (quoteEl && !heroTrackUnchanged) quoteEl.innerText = firstMemoText;
       if (indicatorEl) indicatorEl.innerText = '(' + (window.currentHeroCardIndex + 1) + '/' + records.length + ')';
+      // 카드의 "후기 N · 찜 N" (home-layout.js가 숫자를 받아 채운다)
+      window.okbmRefreshHeroStat();
 
       window.refreshHeroDotsCount = function() {
         var track = document.getElementById('heroPhotoSwipeTrack');
@@ -1593,8 +1624,9 @@
           }
         });
 
-        var nextHeroRecords = photoFeedsOnly.slice(0, 10);
         var heroKeyOf = function(f) { return f ? String(f.id || ((f.spot || '') + '_' + (f.date || ''))) : ''; };
+        // 인기 글(좋아요 순 30개) 안에서 날마다 다른 10개를 다른 순서로 보여 준다
+        var nextHeroRecords = window.okbmDailyOrder(photoFeedsOnly, heroKeyOf, 'hero').slice(0, 10);
         var prevHeroKeys = (window.heroTopRecords || []).map(heroKeyOf).join('|');
         var nextHeroKeys = nextHeroRecords.map(heroKeyOf).join('|');
         window.__allLoadedFeeds = allCleanFeeds;
@@ -1748,7 +1780,12 @@
       }
       if (railSection) railSection.style.display = '';
 
-      slider.innerHTML = db.map(function(item, idx) {
+      // 영상도 날마다 순서를 바꾼다. 누르면 원래 번호(idx)로 연다
+      var dailyVideos = window.okbmDailyOrder(db.map(function(item, idx) { return { item: item, idx: idx }; }), function(v) {
+        return v.item.videoId || v.item.url || v.item.title || v.idx;
+      }, 'video');
+      slider.innerHTML = dailyVideos.map(function(v) {
+        var item = v.item, idx = v.idx;
         var spotTitle = item.spot || item.title || '백패킹 필드';
         var thumb = item.thumbUrl || (item.videoId ? ('https://img.youtube.com/vi/' + item.videoId + '/hqdefault.jpg') : '');
 
@@ -2183,7 +2220,6 @@ var adBannersHtml = `
     function renderHomeTripJoinSlider() {
       var slider = document.getElementById('homeTripJoinRailSlider');
       var countEl = document.getElementById('tripJoinTotalCountText');
-      if (!slider) return;
 
       var activeTrips = (window.TRIP_JOINS_DATABASE || []).filter(function(t) {
         return t && t.tripId && !getTripDDayBadge(t.date).isExpired;
@@ -2195,6 +2231,11 @@ var adBannersHtml = `
         var pB = b.date.match(/\d+/g) || [9999,1,1];
         return new Date(pA[0], pA[1]-1, pA[2]) - new Date(pB[0], pB[1]-1, pB[2]);
       });
+      // 홈 "함께하기" 동행 상자 (home-layout.js)
+      if (typeof window.okbmHomeTogetherTrips === 'function') {
+        try { window.okbmHomeTogetherTrips(activeTrips); } catch (eTg) { console.warn('[index-main:togetherTrips]', eTg); }
+      }
+      if (!slider) return;
 
       // 모집 글이 없으면 "(0)" 대신 숫자를 비운다
       if (countEl) countEl.innerText = activeTrips.length ? "(" + activeTrips.length + ")" : "";

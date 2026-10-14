@@ -67,7 +67,7 @@ BEGIN
       -- 하단 탭
       'dock_home', 'dock_map', 'dock_plan', 'dock_history', 'dock_report',
       -- 새 홈 칸 (홈 개편 후)
-      'quick_guide', 'quick_event', 'quick_join', 'quick_write',
+      'quick_guide', 'quick_event', 'quick_join', 'quick_board', 'quick_write',
       'recent_reviews', 'events', 'guides', 'together',
       -- 후기 저장 결과
       'publish_ok', 'publish_private', 'publish_unregistered', 'publish_nophoto'

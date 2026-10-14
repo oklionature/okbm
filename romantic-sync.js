@@ -1118,6 +1118,61 @@ window.okbmPublicFetch = function(url, options) {
   return fetch(url, opts);
 };
 
+// 박지별 찜 수 (SUPABASE_G2_SPOT_BOOKMARK_COUNTS.sql). ids를 주면 그 박지만, 안 주면 찜 많은 순 전체.
+// 결과 { 박지id: 찜 수 } — 찜이 없는 박지는 0. 5분 동안 같은 박지는 다시 묻지 않는다.
+(function() {
+  var cache = {}; // id → { n, at }
+  var TTL = 5 * 60 * 1000;
+  function callRpc(ids) {
+    var body = { p_spot_ids: ids && ids.length ? ids : null };
+    if (window.supabaseClient && typeof window.supabaseClient.rpc === 'function') {
+      return window.supabaseClient.rpc('okbm_spot_bookmark_counts', body).then(function(res) {
+        if (res.error) throw res.error;
+        return res.data || [];
+      });
+    }
+    var base = window.SUPABASE_URL || '';
+    if (!base) return Promise.resolve([]);
+    return window.okbmPublicFetch(base + '/rest/v1/rpc/okbm_spot_bookmark_counts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function(res) {
+      if (!res.ok) throw new Error('okbm_spot_bookmark_counts ' + res.status);
+      return res.json();
+    });
+  }
+  window.okbmFetchSpotBookmarkCounts = function(spotIds) {
+    var now = Date.now();
+    var ids = Array.isArray(spotIds)
+      ? Array.from(new Set(spotIds.map(function(s) { return String(s == null ? '' : s).trim(); }).filter(Boolean))).slice(0, 500)
+      : null;
+    var out = {};
+    var need = ids ? ids.filter(function(id) {
+      var hit = cache[id];
+      if (hit && now - hit.at < TTL) { out[id] = hit.n; return false; }
+      return true;
+    }) : null;
+    if (ids && !need.length) return Promise.resolve(out);
+    return callRpc(need).then(function(rows) {
+      (need || []).forEach(function(id) { out[id] = 0; cache[id] = { n: 0, at: now }; });
+      (Array.isArray(rows) ? rows : []).forEach(function(r) {
+        var id = String(r.spot_id || '').trim();
+        if (!id) return;
+        var n = Number(r.bookmarks) || 0;
+        out[id] = n;
+        cache[id] = { n: n, at: now };
+      });
+      return out;
+    });
+  };
+  // 내가 찜을 누르거나 빼면 그 박지 숫자를 다시 받게 한다
+  window.addEventListener('okbm_bookmark_changed', function(e) {
+    var id = e && e.detail && e.detail.spotId;
+    if (id) delete cache[String(id).trim()];
+  });
+})();
+
 function okbmWriteRestHeaders(extra) {
   var tok = okbmRequireAccessToken();
   if (!tok) return null;

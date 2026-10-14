@@ -222,6 +222,14 @@
       '#okbmLoungeHome .lmh-av{flex:none;width:48px;display:flex}',
       '#okbmLoungeHome .lmh-meta{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums}',
       '#okbmLoungeHome .lmh-pane{min-height:236px}',
+      '#okbmLoungeHome .hg{border:1px solid #1f2430;border-radius:14px;overflow:hidden}',
+      '#okbmLoungeHome .hg-row{width:100%;display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #161a24;font-size:13px;font-weight:700;color:var(--tx);text-align:left}',
+      '#okbmLoungeHome .hg-row:last-child{border-bottom:0}',
+      '#okbmLoungeHome .hg-row:active{background:rgba(255,255,255,.04)}',
+      '#okbmLoungeHome .hg-t{flex:none;font-size:10px;border:1px solid #f5b93a;color:#f5b93a;border-radius:5px;padding:2px 5px}',
+      '#okbmLoungeHome .hg-t.r{border-color:#ff8a65;color:#ff8a65}',
+      '#okbmLoungeHome .hg-t.g{border-color:#9ccc65;color:#9ccc65}',
+      '#okbmLoungeHome .hg-x{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '#okbmLoungeHome .lmh-empty{height:192px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:12.5px;color:var(--sub);text-align:center}',
       '.lm-sk{height:64px;border-bottom:1px solid var(--div);display:flex;align-items:center;gap:16px}',
       '.lm-sk i,.lm-sk b{display:block;border-radius:6px;background:linear-gradient(90deg,#17171b 25%,#222228 37%,#17171b 63%);background-size:400% 100%;animation:lmShine 1.2s ease infinite}',
@@ -1024,7 +1032,9 @@
     const list = kits();
     const tipList = tips();
     if (!full) {
-      const homeTips = tipList.slice(0, HOME_N);
+      // 홈 3줄은 날마다 다른 팁 (index-main.js okbmDailyOrder, 같은 날엔 같은 순서)
+      const dailyTips = typeof window.okbmDailyOrder === 'function' ? window.okbmDailyOrder(tipList, function (t) { return t.id; }, 'guides') : tipList;
+      const homeTips = dailyTips.slice(0, HOME_N);
       const homeKits = list.slice(0, HOME_N - homeTips.length);
       if (!homeTips.length && !homeKits.length) return homeEmpty('초보 가이드를 준비하고 있어요', 1, '라운지 열기');
       return homeTips.map(tipItem).join('') + homeKits.map(function (k) { return kitItem(k); }).join('') +
@@ -1363,7 +1373,67 @@
     clearTimeout(hTimer);
     hTimer = setTimeout(function () { if (!hpanel) return; hpanel.classList.remove('anim'); hpanel.style.height = ''; }, 420);
   }
+  // 홈 개편(2026-10-14): 탭 없이 행사·초보 가이드·자유게시판을 각자 칸에 3줄씩 (index.html #okbmHome*Body)
+  const SPLIT = [['okbmHomeEventsBody', 0], ['okbmHomeGuidesBody', 1], ['okbmHomeBoardBody', 2]];
+  const isSplit = function () { return !!document.getElementById('okbmHomeEventsBody'); };
+  function paintQuickCounts() {
+    if (D.status !== 'ready') return;
+    const g = document.getElementById('hqGuideCount');
+    const e = document.getElementById('hqEventCount');
+    const gn = tips().length + kits().length;
+    const en = thisMonthEvents().length;
+    if (g) g.textContent = gn ? gn + '편' : '\u00a0';
+    if (e) e.textContent = en ? en + '개' : '\u00a0';
+  }
+  // 시안 넷째 판 모양: 행사는 목록만(전체 링크는 제목 옆), 가이드는 테두리 상자 안 꼬리표+제목, 자유게시판은 상자 하나
+  const TIP_TONE = { '주의점': 'r', '기본상식': 'g' };
+  function splitEvents() {
+    const list = homeEventList().slice(0, HOME_N);
+    return list.length ? list.map(evItem).join('') : '<div class="lmh-empty" style="height:120px">다가오는 행사가 아직 없어요</div>';
+  }
+  function splitGuides() {
+    const tipList = tips();
+    const daily = typeof window.okbmDailyOrder === 'function' ? window.okbmDailyOrder(tipList, function (t) { return t.id; }, 'guides') : tipList;
+    const rows = daily.slice(0, HOME_N).concat(kits().slice(0, Math.max(0, HOME_N - daily.length)));
+    if (!rows.length) return '<div class="lmh-empty" style="height:120px">초보 가이드를 준비하고 있어요</div>';
+    return '<div class="hg">' + rows.map(function (t) {
+      const note = t.kind === 'kit' ? '장비' : (TIP_NOTES.indexOf(t.note) >= 0 ? t.note : '팁');
+      return '<button type="button" class="hg-row" data-a="lounge" data-v="1" data-id="' + esc(t.id) + '"><span class="hg-t ' + (TIP_TONE[note] || '') + '">' + esc(note) + '</span><span class="hg-x">' + esc(t.title) + '</span></button>';
+    }).join('') + '</div>';
+  }
+  function splitBoard() {
+    const p = visiblePosts('all')[0];
+    let sub = '첫 글을 남겨 보세요';
+    if (p) {
+      const d = new Date(p.created_at);
+      const md = isNaN(d) ? '' : (d.getMonth() + 1) + '.' + d.getDate();
+      sub = [p.title, p.nickname, md].filter(Boolean).join(' · ');
+    }
+    return '<b>자유게시판</b><p>' + esc(sub) + '</p><button type="button" class="tg-act" data-a="new-post">글쓰기</button>';
+  }
+  function renderSplit(only) {
+    const ready = D.status === 'ready';
+    SPLIT.forEach(function (x) {
+      if (only != null && x[1] !== only) return;
+      const el = document.getElementById(x[0]);
+      if (!el) return;
+      if (x[1] === 2) {
+        el.setAttribute('data-a', 'lounge');
+        el.setAttribute('data-v', '2');
+        if (ready && !D.fail[2]) el.innerHTML = splitBoard();
+        return;
+      }
+      if (!ready || D.fail[x[1]]) { el.innerHTML = paneHtml(x[1], false); return; }
+      keepOpen(el, function () { el.innerHTML = x[1] === 0 ? splitEvents() : splitGuides(); });
+    });
+    const ea = document.getElementById('okbmHomeEventsAll');
+    const ga = document.getElementById('okbmHomeGuidesAll');
+    if (ready && ea) ea.textContent = D.events.length + '개 전체';
+    if (ready && ga) ga.textContent = (tips().length + kits().length) + '편 전체';
+    paintQuickCounts();
+  }
   function renderHome() {
+    if (isSplit()) { renderSplit(); return; }
     const body = document.getElementById('okbmLoungeHomeBody');
     if (!body) return;
     if (!hpanel || !body.contains(hpanel)) {
@@ -1435,7 +1505,8 @@
   // 자유게시판만 바뀐 경우(댓글·글 쓰기/삭제): 홈은 게시판 탭일 때만, 창은 게시판 칸만 다시 그린다
   const BOARD_TAB = 2;
   function renderBoard() {
-    if (S.tab === BOARD_TAB) renderHome();
+    if (isSplit()) renderSplit(BOARD_TAB);
+    else if (S.tab === BOARD_TAB) renderHome();
     rerenderPane(BOARD_TAB);
   }
   function renderBoardList() {

@@ -19,13 +19,14 @@
     quick_guide: '바로가기: 초보 가이드',
     quick_event: '바로가기: 이번 달 행사',
     quick_join: '바로가기: 동행 찾기',
+    quick_board: '바로가기: 자유게시판',
     quick_write: '바로가기: 후기 올리기',
     recent_reviews: '최근 다녀온 후기',
     events: '이번 달 행사',
     guides: '처음 가는 백패킹',
     together: '함께하기'
   };
-  var HOME_ORDER = ['hero', 'hero_detail', 'hero_gear', 'quick_guide', 'quick_event', 'quick_join', 'quick_write',
+  var HOME_ORDER = ['hero', 'hero_detail', 'hero_gear', 'quick_guide', 'quick_event', 'quick_join', 'quick_board', 'quick_write',
     'recent_reviews', 'theme', 'events', 'video', 'guides', 'tripjoin', 'together', 'lounge', 'ready'];
   var DOCK = [['dock_home', '낭만루터'], ['dock_map', '낭만루트'], ['dock_plan', '낭만플랜'], ['dock_history', '낭만피드'], ['dock_report', '마이리포트']];
   var PUBLISH = [['publish_ok', '피드에 공개됨', 'ok'], ['publish_private', '직접 비공개 선택', ''], ['publish_unregistered', '등록 안 된 장소라 비공개', 'warn'], ['publish_nophoto', '현장 사진 없어 비공개', 'warn']];
@@ -59,7 +60,9 @@
     var from = seoulDate(days - 1);
     var results = await Promise.all([
       client.rpc('okbm_home_metrics_summary', { p_days: days }),
-      client.from('stats').select('date,guest_uv,member_uv').gte('date', from).order('date', { ascending: true })
+      client.from('stats').select('date,guest_uv,member_uv').gte('date', from).order('date', { ascending: true }),
+      client.rpc('okbm_spot_bookmark_counts', { p_spot_ids: null }),
+      client.from('spots').select('id,fullName,spot_main,region')
     ]);
     var m = results[0];
     var st = results[1];
@@ -70,10 +73,35 @@
       else showMessage('불러오지 못했어요: ' + t, true);
       return;
     }
-    render(days, m.data || [], (st && !st.error && st.data) || []);
+    render(days, m.data || [], (st && !st.error && st.data) || [], results[2], (results[3] && !results[3].error && results[3].data) || []);
   }
 
-  function render(days, rows, stats) {
+  // 박지별 찜 수 (SUPABASE_G2_SPOT_BOOKMARK_COUNTS.sql). 찜한 사람이 있는 박지만, 많은 순.
+  function bookmarkSection(res, spots) {
+    var html = '<section><h2>박지별 찜</h2><p class="h">지금 찜해 둔 회원 수예요. 찜을 빼면 숫자도 줄어요.</p>';
+    if (!res || res.error) {
+      var t = String((res && res.error && res.error.message) || '');
+      var missing = res && res.error && (res.error.code === 'PGRST202' || t.indexOf('Could not find the function') !== -1);
+      return html + '<p class="dim">' + esc(missing ? '찜 수 DB가 아직 없어요. SUPABASE_G2_SPOT_BOOKMARK_COUNTS.sql을 먼저 실행해 주세요.' : '불러오지 못했어요: ' + t) + '</p></section>';
+    }
+    var byId = {};
+    spots.forEach(function (sp) { byId[String(sp.id)] = sp; });
+    var list = (res.data || []).filter(function (r) { return byId[String(r.spot_id)]; });
+    if (!list.length) return html + '<p class="dim">아직 찜한 박지가 없어요.</p></section>';
+    var total = list.reduce(function (a, r) { return a + Number(r.bookmarks || 0); }, 0);
+    html += '<p class="h">찜이 있는 박지 ' + num(list.length) + '곳 · 찜 ' + num(total) + '개</p>' +
+      '<input id="bmFilter" type="search" placeholder="박지 이름으로 찾기" style="width:100%;margin:0 0 10px;padding:10px 12px;border-radius:10px;border:1px solid var(--line,#2a2f37);background:transparent;color:inherit;font:inherit">' +
+      '<table id="bmTable"><thead><tr><th>순위</th><th>박지</th><th>찜</th></tr></thead><tbody>' +
+      list.map(function (r, i) {
+        var sp = byId[String(r.spot_id)];
+        var name = sp.fullName || sp.spot_main || ('박지 ' + r.spot_id);
+        return '<tr data-name="' + esc(String(name).toLowerCase()) + '"><td>' + (i + 1) + '</td><td>' + esc(name) +
+          (sp.region ? ' <span class="dim">' + esc(sp.region) + '</span>' : '') + '</td><td>' + num(r.bookmarks) + '</td></tr>';
+      }).join('') + '</tbody></table></section>';
+    return html;
+  }
+
+  function render(days, rows, stats, bmRes, spots) {
     // 기간 합계: 칸·종류별로 방문자 수(날짜별 고유 합)와 횟수
     var sum = {};
     var homeByDay = {};
@@ -151,8 +179,18 @@
       (writes ? '<p class="h" style="margin-top:10px">바로가기 "후기 올리기"를 누른 사람: ' + num(writes) + '</p>' : '') +
       '</section>';
 
+    html += bookmarkSection(bmRes, spots || []);
+
     out.innerHTML = html;
   }
+
+  out.addEventListener('input', function (e) {
+    if (!e.target || e.target.id !== 'bmFilter') return;
+    var q = String(e.target.value || '').trim().toLowerCase();
+    Array.prototype.forEach.call(out.querySelectorAll('#bmTable tbody tr'), function (tr) {
+      tr.style.display = !q || tr.getAttribute('data-name').indexOf(q) !== -1 ? '' : 'none';
+    });
+  });
 
   document.getElementById('range').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-days]');
