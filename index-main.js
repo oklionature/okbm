@@ -2196,14 +2196,15 @@ var adBannersHtml = `
         return new Date(pA[0], pA[1]-1, pA[2]) - new Date(pB[0], pB[1]-1, pB[2]);
       });
 
-      if (countEl) countEl.innerText = "(" + activeTrips.length + ")";
+      // 모집 글이 없으면 "(0)" 대신 숫자를 비운다
+      if (countEl) countEl.innerText = activeTrips.length ? "(" + activeTrips.length + ")" : "";
 
       var html = `
         <div class="okbm-press" onclick="openTripCreateModal()" style="width:115px; min-height:140px; flex-shrink:0; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.22); border-radius:12px; padding:12px 10px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:6px; cursor:pointer; box-sizing:border-box;">
           <div style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:700;">+</div>
           <div>
             <div style="font-size:var(--fs-body); font-weight:800; color:var(--tx-1);">동행 모집하기</div>
-            <div style="font-size:var(--fs-caption); color:var(--tx-3); line-height:1.4; margin-top:3px;">카카오 오픈채팅<br>공고 올리기</div>
+            <div style="font-size:var(--fs-caption); color:var(--tx-3); line-height:1.4; margin-top:3px;">${activeTrips.length ? '카카오 오픈채팅<br>공고 올리기' : '첫 동행을<br>모집해 보세요'}</div>
           </div>
         </div>
       `;

@@ -584,7 +584,7 @@
   async function loadTop() {
     const c = sb();
     if (!c) throw new Error('no_client');
-    const rows = await q(c.rpc('get_top_reviewed_spots', { p_min_count: 3, p_limit: 10 }));
+    const rows = await q(c.rpc('get_top_reviewed_spots', { p_min_count: 1, p_limit: 10 }));
     D.top = Array.isArray(rows) ? rows : [];
   }
   async function loadRecentReviews(more) {
@@ -1180,13 +1180,13 @@
     if (full && S.revSpot) return paneSpotReviews();
     const top = D.top.filter(function (r) { return spotById(r.spot_id); });
     if (!full) {
-      if (!top.length) return homeEmpty('후기가 3개 이상 쌓인 박지가 아직 없어요', 3, '라운지 열기');
+      if (!top.length) return homeEmpty('아직 박지 후기가 없어요', 3, '라운지 열기');
       return top.slice(0, HOME_N).map(function (r) { return bestRow(r, false); }).join('') + moreBtn(3, '최근 후기까지 전체 보기');
     }
     // 받침이 있으면 "이에요", 없으면 "예요" (한글이 아니면 "이에요")
     const bestName = top.length ? spotName(spotById(top[0].spot_id)) : '';
     let h = top.length ? `<div class="lm-head">평점이 가장 높은 박지는<br><em>${esc(bestName)}</em>${josa(bestName, '이에요', '예요')}</div>` : '<div class="lm-head">박지 후기</div>';
-    h += '<div class="lmh-cap">평점 높은 박지</div>' + (top.length ? top.map(bestRowFull).join('') : '<div class="lm-empty">후기가 3개 이상 쌓인 박지가 아직 없어요</div>');
+    h += '<div class="lmh-cap">평점 높은 박지</div>' + (top.length ? top.map(bestRowFull).join('') : '<div class="lm-empty">아직 박지 후기가 없어요</div>');
     h += '<div class="lmh-cap">최근 후기</div>';
     if (D.recent === null) {
       h += '<div class="lm-empty" data-recent>불러오는 중…</div>';

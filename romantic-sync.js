@@ -8868,6 +8868,7 @@ window.openPastTripRegisterModal = function(ev) {
         '</div>' +
       '</div>' +
       '<div style="flex-shrink:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) 16px; border-top:1px solid rgba(255,255,255,0.08); box-sizing:border-box;">' +
+        '<div id="pastTripPublishHint" role="status" style="font-size:0.72rem; font-weight:700; line-height:1.45; margin:0 2px 8px; color:#94a3b8;"></div>' +
         '<button type="button" id="pastTripSubmitBtn" onclick="window.submitPastTripRegister();" style="width:100%; height:46px; border-radius:12px; border:1px solid rgba(56,189,248,0.45); background:#38bdf8; color:#000000; font-size:0.90rem; font-weight:900; cursor:pointer;">등록하기</button>' +
       '</div>' +
     '</div>';
@@ -9031,8 +9032,9 @@ window.submitPastTripRegister = async function() {
     return;
   }
 
-  if (isUnregistered && typeof showToast === 'function') {
-    showToast('비등록 장소는 나만보기로 저장되며 마이데이터에 합산됩니다.', 'info', 2800);
+  if (typeof showToast === 'function') {
+    if (isUnregistered) showToast('비등록 장소는 나만보기로 저장되며 마이데이터에 합산됩니다.', 'info', 2800);
+    else if (!photos.length) showToast('현장 사진이 없어서 나만 보기로 저장돼요.', 'info', 2800);
   }
 
   if (submitBtn) {
@@ -9100,7 +9102,8 @@ window.submitPastTripRegister = async function() {
 
     triggerHaptic(15);
     if (typeof showToast === 'function') {
-      showToast(isUnregistered ? '나만보기로 저장되었습니다. 마이데이터에 합산됩니다.' : '과거 일정이 등록되었습니다.', 'success', 2200);
+      showToast(isUnregistered ? '나만 보기로 저장했어요. 마이데이터에는 합산돼요.'
+        : (photos.length ? '피드에 올라갔어요.' : '나만 보기로 저장했어요. 사진을 넣으면 피드에 올라가요.'), 'success', 2200);
     }
 
     var el = document.getElementById('pastTripRegisterModal');
@@ -9132,6 +9135,48 @@ window.submitPastTripRegister = async function() {
     }
   }
 };
+
+// 추억등록: 지금 상태로 올리면 피드에 공개되는지 등록 버튼 위에 알려 준다.
+// 공개 조건은 저장 때와 같다(등록된 박지 + 현장 사진 1장 이상). 규칙은 바꾸지 않는다.
+window._pastTripPublishState = function() {
+  var st = window.__pastTripRegisterState || {};
+  var hasSpot = !!String(st.spotId || '').trim();
+  var hasPhoto = (st.photos || []).some(function(u) {
+    return typeof u === 'string' && (u.startsWith('https://') || u.startsWith('http://'));
+  });
+  if (!hasSpot) return 'unregistered';
+  if (!hasPhoto) return 'nophoto';
+  return 'ok';
+};
+
+window._pastTripRenderPublishHint = function() {
+  var el = document.getElementById('pastTripPublishHint');
+  if (!el) return;
+  var state = window._pastTripPublishState();
+  var text = {
+    unregistered: '등록된 박지가 아니라서 나만 보기로 저장돼요. 지도에 있는 박지를 고르면 피드에도 올라가요.',
+    nophoto: '현장 사진을 1장 이상 넣어야 피드에 올라가요. 지금은 나만 보기로 저장돼요.',
+    ok: '피드와 지도 후기에 함께 올라가요.'
+  }[state];
+  el.textContent = text;
+  el.style.color = state === 'ok' ? '#6ee7b7' : '#fbbf24';
+};
+
+// 장소 선택·사진 변경 뒤에 안내를 다시 그린다.
+['_pastTripRenderPhotoStage', 'selectPastTripSpot', 'confirmPastTripCustomSpot', 'choosePastTripSpotRegister',
+  'choosePastTripSpotSkip', 'onPastTripSpotTyped'].forEach(function(name) {
+  var orig = window[name];
+  if (typeof orig !== 'function' || orig.__publishHintWrapped) return;
+  var wrapped = function() {
+    var out = orig.apply(this, arguments);
+    var redraw = function() { setTimeout(window._pastTripRenderPublishHint, 0); };
+    if (out && typeof out.then === 'function') out.then(redraw, redraw);
+    else redraw();
+    return out;
+  };
+  wrapped.__publishHintWrapped = true;
+  window[name] = wrapped;
+});
 
 window.openMyPastTripsFromReport = function(ev) {
   if (ev) {
