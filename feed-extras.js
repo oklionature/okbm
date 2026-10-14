@@ -155,7 +155,7 @@
     }
     var hits = registeredMatches(query);
     if (!hits.length) {
-      listEl.innerHTML = '<div class="sc-empty">일치하는 등록 박지가 없습니다.<br>지도에서 박지 제보를 하면 등록 후 고를 수 있어요.</div>';
+      listEl.innerHTML = '<div class="sc-empty">일치하는 등록 박지가 없어요.<br>지도에서 박지 제보를 하면 등록 후 고를 수 있어요.</div>';
       return;
     }
     listEl.innerHTML = hits.map(function (s, i) {
@@ -179,7 +179,7 @@
     sheet.innerHTML =
       '<div class="sc-box">' +
         '<div class="sc-h"><b>장소 바꾸기</b><button type="button" class="sc-x" aria-label="닫기">✕</button></div>' +
-        '<p class="sc-sub">등록된 박지로 바꾸면 피드에 공개할 수 있어요. 저장을 눌러야 바뀝니다.</p>' +
+        '<p class="sc-sub">등록된 박지로 바꾸면 피드에 공개할 수 있어요. 저장을 눌러야 바뀌어요.</p>' +
         '<input type="search" placeholder="박지 이름 검색 (예: 선자령)" enterkeyhint="search" autocomplete="off">' +
         '<div class="sc-list"></div>' +
       '</div>';
@@ -198,7 +198,7 @@
         label.style.color = '#5bb8f0';
       }
       closeSheet();
-      toast('저장을 누르면 장소가 바뀝니다.', 'info', 2200);
+      toast('저장을 누르면 장소가 바뀌어요.', 'info', 2200);
     };
     input.addEventListener('input', function () { renderList(listEl, input.value, pick); });
     renderList(listEl, '', pick);
