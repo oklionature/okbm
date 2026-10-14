@@ -9382,6 +9382,34 @@ window._ptwSyncSwitch = function() {
   };
 })();
 
+// 장비 검색 목록(CATEGORIES[].db)은 낭만플랜(romantic-plan.js)이 서버에서 받아 채운다.
+// 홈 등 다른 곳에서 바로 열면 비어 있으므로, 장비 칸을 펼치거나 검색창을 누를 때 받아 온다.
+window._ptwEnsureGears = function() {
+  if (window.__ptwGearsReady) return window.__ptwGearsReady;
+  var hasDb = (window.CATEGORIES || []).some(function(c) { return c && Array.isArray(c.db) && c.db.length; });
+  if (hasDb) { window.__ptwGearsReady = Promise.resolve(); return window.__ptwGearsReady; }
+  var listEl = document.getElementById('pastTripGearSuggest');
+  var input = document.getElementById('pastTripGearSearchInput');
+  if (listEl && input && String(input.value || '').trim()) {
+    listEl.style.display = 'block';
+    listEl.innerHTML = '<div style="padding:12px; color:#64748b; font-size:0.74rem; text-align:center;">장비 목록을 불러오는 중이에요</div>';
+  }
+  var load = function() {
+    return typeof window.ensureAllGearCategoriesLoaded === 'function' ? window.ensureAllGearCategoriesLoaded(false) : null;
+  };
+  var p = (typeof window.ensureAllGearCategoriesLoaded !== 'function' && typeof window.okbmEnsurePlan === 'function')
+    ? window.okbmEnsurePlan().then(load)
+    : Promise.resolve(load());
+  window.__ptwGearsReady = p.then(function() {
+    var i2 = document.getElementById('pastTripGearSearchInput');
+    if (i2 && String(i2.value || '').trim()) window.onPastTripGearTyped();
+  }).catch(function(e) {
+    console.warn('[ptw:gears]', e);
+    window.__ptwGearsReady = null; // 다음에 다시 시도
+  });
+  return window.__ptwGearsReady;
+};
+
 window._ptwInit = function(modal) {
   if (!modal || modal.__ptw) return;
   modal.__ptw = true;
@@ -9394,6 +9422,12 @@ window._ptwInit = function(modal) {
   modal.addEventListener('change', function(e) {
     if (e.target && e.target.id === 'pastTripPhotoInput') window._ptwOnPhotosPicked(e.target.files);
   }, true);
+  modal.addEventListener('toggle', function(e) {
+    if (e.target && e.target.open && e.target.querySelector && e.target.querySelector('#pastTripGearSearchInput')) window._ptwEnsureGears();
+  }, true);
+  modal.addEventListener('focusin', function(e) {
+    if (e.target && e.target.id === 'pastTripGearSearchInput') window._ptwEnsureGears();
+  });
   modal.addEventListener('click', function(e) {
     var t = e.target && e.target.closest ? e.target : null;
     if (!t) return;
