@@ -8861,7 +8861,7 @@ window.openPastTripRegisterModal = function(ev) {
       '.ptw-chips{display:flex;flex-wrap:wrap;gap:6px}.ptw-chip{height:32px;padding:0 12px;border-radius:999px;border:1px solid #262c3b;background:#141824;color:#cfd4df;font-size:0.72rem;font-weight:800;cursor:pointer;font-family:inherit}.ptw-chip.on{background:#fff;color:#000;border-color:#fff}' +
       '.ptw-fold{border:1px solid rgba(255,255,255,0.1);border-radius:12px;background:rgba(255,255,255,0.02)}.ptw-fold>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:0.80rem;font-weight:900;color:#e2e8f0}.ptw-fold>summary::-webkit-details-marker{display:none}' +
       '.ptw-fold>summary span{font-size:0.66rem;color:#64748b;font-weight:700}.ptw-fb{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px}' +
-      '.ptw-pub{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 2px 6px}.ptw-pub b{font-size:0.80rem;color:#fff;font-weight:900}' +
+      '.ptw-pubcard{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}.ptw-pub{display:flex;justify-content:space-between;align-items:center;gap:10px}.ptw-pub b{font-size:0.80rem;color:#fff;font-weight:900}' +
       '.ptw-sw{flex:none;width:44px;height:26px;border-radius:13px;border:0;background:#334155;position:relative;cursor:pointer;padding:0;transition:background .2s}.ptw-sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}' +
       '.ptw-sw[aria-checked="true"]{background:#5bb8f0}.ptw-sw[aria-checked="true"]:after{transform:translateX(18px)}.ptw-sw:disabled{opacity:.45;cursor:default}' +
       '.ptw-done{position:absolute;inset:0;z-index:30;background:#07090e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}.ptw-done[hidden]{display:none}.ptw-done .ck{width:56px;height:56px;border-radius:50%;background:#5bb8f0;color:#001521;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center}' +
@@ -8936,10 +8936,12 @@ window.openPastTripRegisterModal = function(ev) {
           '<input type="text" id="pastTripNaverInput" inputmode="url" placeholder="네이버 블로그 링크" onblur="window.onPastTripLinkBlur(\'blog\');" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(3,199,90,0.28); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />' +
           '<div style="font-size:calc(0.66rem + 1pt); color:#64748b; line-height:1.45;">다른 낭만 루터분들에게 도움이 됩니다</div>' +
         '</div></details>' +
+        '<div class="ptw-pubcard">' +
+          '<div class="ptw-pub"><b>피드에 공개</b><button type="button" id="pastTripPublishSwitch" class="ptw-sw" role="switch" aria-checked="true" aria-label="피드에 공개"></button></div>' +
+          '<div id="pastTripPublishHint" role="status" style="font-size:0.72rem; font-weight:700; line-height:1.45; margin:0; color:#94a3b8;"></div>' +
+        '</div>' +
       '</div>' +
       '<div style="flex-shrink:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) 16px; border-top:1px solid rgba(255,255,255,0.08); box-sizing:border-box;">' +
-        '<div class="ptw-pub"><b>피드에 공개</b><button type="button" id="pastTripPublishSwitch" class="ptw-sw" role="switch" aria-checked="true" aria-label="피드에 공개"></button></div>' +
-        '<div id="pastTripPublishHint" role="status" style="font-size:0.72rem; font-weight:700; line-height:1.45; margin:0 2px 8px; color:#94a3b8;"></div>' +
         '<button type="button" id="pastTripSubmitBtn" onclick="window.submitPastTripRegister();" style="width:100%; height:46px; border-radius:12px; border:1px solid rgba(56,189,248,0.45); background:#38bdf8; color:#000000; font-size:0.90rem; font-weight:900; cursor:pointer;">올리기</button>' +
       '</div>' +
       '<div id="pastTripDone" class="ptw-done" hidden></div>' +
