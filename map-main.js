@@ -5362,6 +5362,11 @@ var liveSearchTimer = null;
             if (subInput) subInput.value = defaultSub;
           }
         }
+        var authorSnsInput = document.getElementById('modalInputAuthorSns');
+        if (authorSnsInput && !String(authorSnsInput.value || '').trim() && typeof window.okbmProfileInstagramForForm === 'function') {
+          var profileInsta = window.okbmProfileInstagramForForm();
+          if (profileInsta) authorSnsInput.value = profileInsta;
+        }
 var overlay = document.getElementById('customModalOverlay');
         if (overlay) {
           overlay.style.setProperty('display', 'flex', 'important');
@@ -6189,6 +6194,9 @@ var overlay = document.getElementById('customModalOverlay');
               if (!curUserId) {
                 if (typeof window.okbmRequireCurrentUserId === 'function') window.okbmRequireCurrentUserId();
                 return;
+              }
+              if (!isCorrection && authorSnsUrl && typeof window.okbmRememberProfileInstagram === 'function') {
+                window.okbmRememberProfileInstagram(authorSnsUrl);
               }
 
               var propRecord = {

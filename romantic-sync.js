@@ -4388,6 +4388,64 @@ window.toggleVisitorActivity = function(mode, e) {
   });
 };
 
+function okbmInstagramHandle(raw) {
+  var s = String(raw || '').trim();
+  if (!s) return '';
+  var fromUrl = s.match(/instagram\.com\/([A-Za-z0-9._]{1,30})/i);
+  if (fromUrl) {
+    if (/^(p|reel|reels|stories|explore|accounts)$/i.test(fromUrl[1])) return '';
+    return fromUrl[1];
+  }
+  if (/^https?:/i.test(s)) return '';
+  s = s.replace(/^@+/, '').split(/[/?#\s]/)[0];
+  if (!/^[A-Za-z0-9._]{1,30}$/.test(s)) return '';
+  return s;
+}
+
+window.okbmProfileInstagramForForm = function() {
+  var raw = '';
+  try { raw = localStorage.getItem('okbm_user_instagram') || ''; } catch (e) {}
+  if (!raw && typeof safeGetJSON === 'function') {
+    var profile = safeGetJSON('user_profile', null);
+    raw = (profile && profile.instagram) || '';
+  }
+  var handle = okbmInstagramHandle(raw);
+  return handle ? ('@' + handle) : '';
+};
+
+window.okbmRememberProfileInstagram = function(raw) {
+  var handle = okbmInstagramHandle(raw);
+  if (!handle) return;
+  var stored = '@' + handle;
+  var prev = okbmInstagramHandle(localStorage.getItem('okbm_user_instagram') || '');
+  if (prev && prev.toLowerCase() === handle.toLowerCase()) return;
+
+  try { localStorage.setItem('okbm_user_instagram', stored); } catch (e) {}
+
+  var profile = (typeof safeGetJSON === 'function') ? (safeGetJSON('user_profile', null) || {}) : {};
+  var valYt = profile.youtube || '';
+  var valBlog = profile.blog || '';
+  try {
+    if (!valYt) valYt = localStorage.getItem('okbm_user_youtube') || '';
+    if (!valBlog) valBlog = localStorage.getItem('okbm_user_blog') || '';
+  } catch (e2) {}
+  profile.instagram = stored;
+  profile.youtube = valYt;
+  profile.blog = valBlog;
+  try {
+    localStorage.setItem('user_profile', JSON.stringify(profile));
+    if (profile.id) localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
+  } catch (e3) {}
+
+  if (typeof okbmMarkUserDataDirty === 'function') okbmMarkUserDataDirty('__profile_sns');
+  if (typeof window.saveUserToSupabase === 'function') {
+    window.saveUserToSupabase(profile).catch(function(e) {
+      console.warn('[romantic-sync.js:okbmRememberProfileInstagram]', e);
+    });
+  }
+  if (typeof window.refreshMyReportFullStats === 'function') window.refreshMyReportFullStats();
+};
+
 window.openSnsEditorModal = function() {
   var curInsta = localStorage.getItem('okbm_user_instagram') || '';
   var curYt = localStorage.getItem('okbm_user_youtube') || '';
