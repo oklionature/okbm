@@ -83,7 +83,11 @@
     else if (kind === 'event' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(0);
     else if (kind === 'board' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(2);
     else if (kind === 'join' && typeof window.openTripJoinListModal === 'function') window.openTripJoinListModal();
-    else if (kind === 'write' && typeof window.openPastTripRegisterModal === 'function') window.openPastTripRegisterModal(e);
+    else if (kind === 'write' && typeof window.openPastTripRegisterModal === 'function') {
+      // 홈에서 열면 올린 뒤·닫은 뒤 홈으로 돌아온다 (낭만플랜에서 연 것과 같은 처리: 마이리포트로 넘어가지 않음)
+      if (typeof isUserLoggedIn !== 'function' || isUserLoggedIn()) window.__pastTripOpenedFromPlan = true;
+      window.openPastTripRegisterModal(e);
+    }
     else if (kind === 'feed' && typeof window.navigateToDockTab === 'function') window.navigateToDockTab('history');
   }
 

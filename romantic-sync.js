@@ -7788,7 +7788,7 @@ window._pastTripRenderPhotoStage = function() {
   var stage = document.getElementById('pastTripPhotoStage');
   var countEl = document.getElementById('pastTripPhotoCountLabel');
   var badgeEl = document.getElementById('pastTripPhotoIndexBadge');
-  if (countEl) countEl.textContent = '등록된 사진 (' + photos.length + '장 / 최대 10장)';
+  if (countEl) countEl.textContent = photos.length + '장 / 최대 10장';
   if (badgeEl) badgeEl.textContent = photos.length ? ((idx + 1) + ' / ' + photos.length) : '0 / 0';
   if (stage) {
     if (!photos.length) {
@@ -8057,8 +8057,8 @@ window.switchPastTripMemoMode = function(mode) {
   }
   if (helper) {
     helper.textContent = st.memoMode === 'single'
-      ? '대표 일지 30자 이상, 최대 120자'
-      : '사진별 메모는 선택, 최대 120자';
+      ? '한 줄이면 충분해요. 최대 120자'
+      : '사진마다 따로 써요. 비워 둬도 돼요. 최대 120자';
   }
   window._pastTripSyncMemoInput();
 };
@@ -8853,53 +8853,31 @@ window.openPastTripRegisterModal = function(ev) {
 
   var fieldCss = 'height:42px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.84rem; font-weight:700; outline:none; box-sizing:border-box; width:100%;';
   modal.innerHTML =
-    '<style>#pastTripPhotoSwipeTrack::-webkit-scrollbar{display:none}#pastTripSpotSuggest::-webkit-scrollbar,#pastTripGearSuggest::-webkit-scrollbar{display:none}</style>' +
-    '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; background:#07090e; box-sizing:border-box;">' +
+    '<style>#pastTripPhotoSwipeTrack::-webkit-scrollbar{display:none}#pastTripSpotSuggest::-webkit-scrollbar,#pastTripGearSuggest::-webkit-scrollbar{display:none}' +
+      '#pastTripPhotoStage>div[onclick]{aspect-ratio:auto !important;height:150px !important}.ptw-step{display:flex;flex-direction:column;gap:8px}.ptw-h{display:flex;align-items:center;gap:8px;justify-content:space-between}' +
+      '.ptw-h h5{margin:0;font-size:0.86rem;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px}.ptw-n{width:20px;height:20px;border-radius:50%;background:#5bb8f0;color:#001521;font-size:0.68rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center}' +
+      '.ptw-sub{font-size:0.64rem;color:#64748b;font-weight:700}.ptw-date{display:flex;align-items:center;gap:8px}.ptw-date label{font-size:0.74rem;font-weight:800;color:#94a3b8;flex:none}.ptw-date button{height:38px !important;font-size:0.84rem !important;flex:1}' +
+      '.ptw-geo{background:#0f1219;border:1px solid #1f2430;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}.ptw-geo[hidden]{display:none}.ptw-geo small{font-size:0.66rem;color:#8b93a5;font-weight:700}.ptw-geo b{font-size:0.88rem;color:#fff}' +
+      '.ptw-chips{display:flex;flex-wrap:wrap;gap:6px}.ptw-chip{height:32px;padding:0 12px;border-radius:999px;border:1px solid #262c3b;background:#141824;color:#cfd4df;font-size:0.72rem;font-weight:800;cursor:pointer;font-family:inherit}.ptw-chip.on{background:#fff;color:#000;border-color:#fff}' +
+      '.ptw-fold{border:1px solid rgba(255,255,255,0.1);border-radius:12px;background:rgba(255,255,255,0.02)}.ptw-fold>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:0.80rem;font-weight:900;color:#e2e8f0}.ptw-fold>summary::-webkit-details-marker{display:none}' +
+      '.ptw-fold>summary span{font-size:0.66rem;color:#64748b;font-weight:700}.ptw-fb{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px}' +
+      '.ptw-pub{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 2px 6px}.ptw-pub b{font-size:0.80rem;color:#fff;font-weight:900}' +
+      '.ptw-sw{flex:none;width:44px;height:26px;border-radius:13px;border:0;background:#334155;position:relative;cursor:pointer;padding:0;transition:background .2s}.ptw-sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}' +
+      '.ptw-sw[aria-checked="true"]{background:#5bb8f0}.ptw-sw[aria-checked="true"]:after{transform:translateX(18px)}.ptw-sw:disabled{opacity:.45;cursor:default}' +
+      '.ptw-done{position:absolute;inset:0;z-index:30;background:#07090e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}.ptw-done[hidden]{display:none}.ptw-done .ck{width:56px;height:56px;border-radius:50%;background:#5bb8f0;color:#001521;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center}' +
+      '.ptw-done h6{margin:0;font-size:1.05rem;font-weight:900;color:#fff}.ptw-done p{margin:0;font-size:0.78rem;color:#94a3b8;line-height:1.55}.ptw-card{width:220px;height:150px;border-radius:14px;background:#141824;position:relative;overflow:hidden}.ptw-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}' +
+      '.ptw-card div{position:absolute;left:0;right:0;bottom:0;padding:24px 10px 8px;background:linear-gradient(transparent,rgba(0,0,0,.85));text-align:left;font-size:0.66rem;color:#cbd5e1}.ptw-card b{display:block;font-size:0.82rem;color:#fff}' +
+      '.ptw-row2{display:flex;gap:8px;width:100%;max-width:300px}.ptw-row2 button{flex:1;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e2e8f0;font-size:0.84rem;font-weight:900;cursor:pointer;font-family:inherit}.ptw-row2 button.p{background:#5bb8f0;border-color:#5bb8f0;color:#001521}' +
+    '</style>' +
+    '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; background:#07090e; box-sizing:border-box; position:relative;">' +
       '<div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">' +
         '<button type="button" onclick="window.closePastTripRegisterModal();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer;">◀</button>' +
-        '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">추억등록</span>' +
+        '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">후기 올리기</span>' +
         '<div style="width:30px;"></div>' +
       '</div>' +
-      '<div style="flex:1 1 0%; min-height:0; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box;">' +
-        '<div style="display:flex; flex-direction:column; gap:10px;">' +
-          '<div style="display:flex; flex-direction:column; gap:6px;">' +
-            '<label style="font-size:0.82rem; color:#ffffff; font-weight:900;">날짜</label>' +
-            '<input type="hidden" id="pastTripDateInput" value="' + maxDate + '" />' +
-            '<button type="button" id="pastTripDateDisplay" onclick="window.openPastTripDatePicker();" style="height:44px; width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.92rem; font-weight:800; outline:none; box-sizing:border-box; text-align:left; cursor:pointer;">' + window._pastTripIsoToDisplay(maxDate) + '</button>' +
-          '</div>' +
-          '<div style="display:flex; flex-direction:column; gap:6px; position:relative;">' +
-            '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">' +
-              '<label style="font-size:0.82rem; color:#ffffff; font-weight:900; flex-shrink:0;">장소</label>' +
-              '<span id="pastTripSpotStatusBadge" style="font-size:0.62rem; color:#64748b; font-weight:700; text-align:right; line-height:1.35; min-width:0;">등록 장소를 선택하면 마이데이터에 합산됩니다.</span>' +
-            '</div>' +
-            '<div style="display:flex; gap:6px;">' +
-              '<input type="text" id="pastTripSpotInput" maxlength="60" placeholder="장소명 검색" autocomplete="off" onfocus="window.onPastTripSpotTyped();" oninput="window.onPastTripSpotTyped();" style="' + fieldCss + '" />' +
-              '<button type="button" id="pastTripSpotConfirmBtn" onclick="window.confirmPastTripCustomSpot();" style="display:none; flex-shrink:0; height:42px; padding:0 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.08); color:#e2e8f0; font-size:0.74rem; font-weight:800; cursor:pointer; white-space:nowrap; align-items:center; justify-content:center; line-height:1; box-sizing:border-box;">확인</button>' +
-            '</div>' +
-            '<div id="pastTripSpotSuggest" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:20; margin-top:4px; max-height:220px; overflow-y:auto; background:#0c1017; border:1px solid rgba(255,255,255,0.12); border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,0.55);"></div>' +
-          '</div>' +
-        '</div>' +
-        '<div id="pastTripSpotDetailPanel" style="display:none; flex-direction:column; gap:8px;">' +
-          '<input type="text" id="pastTripRegionInput" maxlength="30" placeholder="지역 (시군구, 예: 평창)" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#cbd5e1; padding:0 12px; font-size:0.80rem; font-weight:700; outline:none; box-sizing:border-box;" />' +
-          '<input type="text" id="pastTripElevInput" maxlength="12" placeholder="고도 (있으면 숫자, 예: 580)" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#cbd5e1; padding:0 12px; font-size:0.80rem; font-weight:700; outline:none; box-sizing:border-box;" />' +
-        '</div>' +
-        '<div style="display:flex; flex-direction:column; gap:8px;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">' +
-            '<label style="font-size:0.82rem; color:#ffffff; font-weight:900;">장비</label>' +
-            '<span style="font-size:0.62rem; color:#64748b; font-weight:700;">선택 시 마이데이터에 합산됩니다</span>' +
-          '</div>' +
-          '<div style="display:flex; flex-direction:column; gap:6px;">' +
-            '<input type="text" id="pastTripGearSearchInput" maxlength="40" placeholder="장비 검색" autocomplete="off" onfocus="window.onPastTripGearTyped();" oninput="window.onPastTripGearTyped();" style="width:100%; height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.82rem; outline:none; box-sizing:border-box;" />' +
-            '<div id="pastTripGearSuggest" style="display:none; max-height:220px; overflow-y:auto; background:#0c1017; border:1px solid rgba(255,255,255,0.12); border-radius:10px;"></div>' +
-            '<button type="button" onclick="window.togglePastTripPresetSheet();" style="width:100%; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:#e2e8f0; font-size:0.76rem; font-weight:800; cursor:pointer;">장비세트로 추가하기</button>' +
-          '</div>' +
-          '<div id="pastTripPresetSheet" style="display:none; flex-direction:column; gap:6px;"></div>' +
-          '<div id="pastTripGearList" style="display:flex; flex-direction:column; gap:6px;"></div>' +
-          '<div id="pastTripPresetHint" style="font-size:0.68rem; color:#64748b;">장비 없이 일정·사진·일지만 등록합니다.</div>' +
-        '</div>' +
-        '<div style="display:flex; flex-direction:column; gap:8px;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-            '<span id="pastTripPhotoCountLabel" style="font-size:0.82rem; color:#ffffff; font-weight:900;">등록된 사진 (0장 / 최대 10장)</span>' +
+      '<div style="flex:1 1 0%; min-height:0; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:18px; box-sizing:border-box;">' +
+        '<div class="ptw-step">' +
+          '<div class="ptw-h"><h5><span class="ptw-n">1</span>사진 <span id="pastTripPhotoCountLabel" class="ptw-sub">0장 / 최대 10장</span></h5>' +
             '<div style="display:flex; align-items:center; gap:6px;">' +
               '<span id="pastTripPhotoIndexBadge" style="font-size:0.62rem; color:#cbd5e1; background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:10px; font-weight:900;">0 / 0</span>' +
               '<button type="button" onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="height:30px; padding:0 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:#e2e8f0; font-size:0.72rem; font-weight:800; cursor:pointer;">사진 추가</button>' +
@@ -8909,29 +8887,62 @@ window.openPastTripRegisterModal = function(ev) {
           '<div id="pastTripPhotoStage"></div>' +
           '<div id="pastTripPhotoStatus" style="font-size:0.68rem; color:#64748b;"></div>' +
         '</div>' +
-        '<div style="display:flex; flex-direction:column; gap:8px;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-            '<label style="font-size:0.74rem; font-weight:800; color:#94a3b8;">일지</label>' +
+        '<div class="ptw-step">' +
+          '<div class="ptw-h"><h5><span class="ptw-n">2</span>장소</h5>' +
+            '<span id="pastTripSpotStatusBadge" style="font-size:0.62rem; color:#64748b; font-weight:700; text-align:right; line-height:1.35; min-width:0;">등록 장소를 선택하면 마이데이터에 합산됩니다.</span>' +
+          '</div>' +
+          '<div id="pastTripGeoBox" class="ptw-geo" hidden></div>' +
+          '<div style="display:flex; flex-direction:column; gap:6px; position:relative;">' +
+            '<div style="display:flex; gap:6px;">' +
+              '<input type="text" id="pastTripSpotInput" maxlength="60" placeholder="장소명 검색" autocomplete="off" onfocus="window.onPastTripSpotTyped();" oninput="window.onPastTripSpotTyped();" style="' + fieldCss + '" />' +
+              '<button type="button" id="pastTripSpotConfirmBtn" onclick="window.confirmPastTripCustomSpot();" style="display:none; flex-shrink:0; height:42px; padding:0 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.08); color:#e2e8f0; font-size:0.74rem; font-weight:800; cursor:pointer; white-space:nowrap; align-items:center; justify-content:center; line-height:1; box-sizing:border-box;">확인</button>' +
+            '</div>' +
+            '<div id="pastTripSpotSuggest" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:20; margin-top:4px; max-height:220px; overflow-y:auto; background:#0c1017; border:1px solid rgba(255,255,255,0.12); border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,0.55);"></div>' +
+          '</div>' +
+          '<div id="pastTripSpotDetailPanel" style="display:none; flex-direction:column; gap:8px;">' +
+            '<input type="text" id="pastTripRegionInput" maxlength="30" placeholder="지역 (시군구, 예: 평창)" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#cbd5e1; padding:0 12px; font-size:0.80rem; font-weight:700; outline:none; box-sizing:border-box;" />' +
+            '<input type="text" id="pastTripElevInput" maxlength="12" placeholder="고도 (있으면 숫자, 예: 580)" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#cbd5e1; padding:0 12px; font-size:0.80rem; font-weight:700; outline:none; box-sizing:border-box;" />' +
+          '</div>' +
+          '<div class="ptw-date"><label>날짜</label>' +
+            '<input type="hidden" id="pastTripDateInput" value="' + maxDate + '" />' +
+            '<button type="button" id="pastTripDateDisplay" onclick="window.openPastTripDatePicker();" style="height:44px; width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.92rem; font-weight:800; outline:none; box-sizing:border-box; text-align:left; cursor:pointer;">' + window._pastTripIsoToDisplay(maxDate) + '</button>' +
+          '</div>' +
+          '<div id="pastTripDateSource" class="ptw-sub" hidden></div>' +
+        '</div>' +
+        '<div class="ptw-step">' +
+          '<div class="ptw-h"><h5><span class="ptw-n">3</span>한 줄 소감</h5>' +
             '<span id="pastTripMemoCount" style="font-size:0.68rem; color:#64748b;">0/120</span>' +
           '</div>' +
           '<div style="display:inline-flex; gap:4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:3px; align-self:flex-start;">' +
             '<button type="button" id="pastTripMemoModeSingle" onclick="window.switchPastTripMemoMode(\'single\');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:#38bdf8; color:#000; font-weight:900;">한 번에 쓰기</button>' +
             '<button type="button" id="pastTripMemoModePerPhoto" onclick="window.switchPastTripMemoMode(\'per_photo\');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:transparent; color:#94a3b8; font-weight:700;">사진별 쓰기</button>' +
           '</div>' +
-          '<div id="pastTripMemoModeHelper" style="font-size:0.68rem; color:#64748b;">대표 일지 30자 이상, 최대 120자</div>' +
-          '<textarea id="pastTripMemoInput" maxlength="120" placeholder="그날의 추억을 적어주세요." oninput="window.updatePastTripMemoCount();" style="min-height:110px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:10px 12px; font-size:0.88rem; line-height:1.45; outline:none; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>' +
+          '<div id="pastTripMemoModeHelper" style="font-size:0.68rem; color:#64748b;">한 줄이면 충분해요. 최대 120자</div>' +
+          '<textarea id="pastTripMemoInput" maxlength="120" placeholder="어땠는지 한 줄이면 충분해요. 길게 써도 좋아요." oninput="window.updatePastTripMemoCount();" style="min-height:96px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:10px 12px; font-size:0.88rem; line-height:1.45; outline:none; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>' +
         '</div>' +
-        '<div style="display:flex; flex-direction:column; gap:8px;">' +
-          '<label style="font-size:0.74rem; font-weight:800; color:#94a3b8;">유튜브 / 네이버 블로그 링크 (선택)</label>' +
+        '<details class="ptw-fold"><summary>장비도 기록하기 <span>선택 ▾</span></summary><div class="ptw-fb">' +
+          '<div style="font-size:0.68rem; color:#64748b; line-height:1.5;">내 장비나 장비 세트에서 고르면 무게가 함께 기록돼요. 안 넣어도 피드에 올라가요.</div>' +
+          '<div style="display:flex; flex-direction:column; gap:6px;">' +
+            '<input type="text" id="pastTripGearSearchInput" maxlength="40" placeholder="장비 검색" autocomplete="off" onfocus="window.onPastTripGearTyped();" oninput="window.onPastTripGearTyped();" style="width:100%; height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.82rem; outline:none; box-sizing:border-box;" />' +
+            '<div id="pastTripGearSuggest" style="display:none; max-height:220px; overflow-y:auto; background:#0c1017; border:1px solid rgba(255,255,255,0.12); border-radius:10px;"></div>' +
+            '<button type="button" onclick="window.togglePastTripPresetSheet();" style="width:100%; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:#e2e8f0; font-size:0.76rem; font-weight:800; cursor:pointer;">장비세트로 추가하기</button>' +
+          '</div>' +
+          '<div id="pastTripPresetSheet" style="display:none; flex-direction:column; gap:6px;"></div>' +
+          '<div id="pastTripGearList" style="display:flex; flex-direction:column; gap:6px;"></div>' +
+          '<div id="pastTripPresetHint" style="font-size:0.68rem; color:#64748b;">장비 없이 일정·사진·일지만 등록합니다.</div>' +
+        '</div></details>' +
+        '<details class="ptw-fold"><summary>영상·블로그 링크 남기기 <span>선택 ▾</span></summary><div class="ptw-fb">' +
           '<input type="text" id="pastTripYoutubeInput" inputmode="url" placeholder="YouTube 링크" onblur="window.onPastTripLinkBlur(\'yt\');" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(244,63,94,0.28); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />' +
           '<input type="text" id="pastTripNaverInput" inputmode="url" placeholder="네이버 블로그 링크" onblur="window.onPastTripLinkBlur(\'blog\');" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(3,199,90,0.28); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />' +
           '<div style="font-size:calc(0.66rem + 1pt); color:#64748b; line-height:1.45;">다른 낭만 루터분들에게 도움이 됩니다</div>' +
-        '</div>' +
+        '</div></details>' +
       '</div>' +
       '<div style="flex-shrink:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) 16px; border-top:1px solid rgba(255,255,255,0.08); box-sizing:border-box;">' +
+        '<div class="ptw-pub"><b>피드에 공개</b><button type="button" id="pastTripPublishSwitch" class="ptw-sw" role="switch" aria-checked="true" aria-label="피드에 공개"></button></div>' +
         '<div id="pastTripPublishHint" role="status" style="font-size:0.72rem; font-weight:700; line-height:1.45; margin:0 2px 8px; color:#94a3b8;"></div>' +
-        '<button type="button" id="pastTripSubmitBtn" onclick="window.submitPastTripRegister();" style="width:100%; height:46px; border-radius:12px; border:1px solid rgba(56,189,248,0.45); background:#38bdf8; color:#000000; font-size:0.90rem; font-weight:900; cursor:pointer;">등록하기</button>' +
+        '<button type="button" id="pastTripSubmitBtn" onclick="window.submitPastTripRegister();" style="width:100%; height:46px; border-radius:12px; border:1px solid rgba(56,189,248,0.45); background:#38bdf8; color:#000000; font-size:0.90rem; font-weight:900; cursor:pointer;">올리기</button>' +
       '</div>' +
+      '<div id="pastTripDone" class="ptw-done" hidden></div>' +
     '</div>';
 
   document.body.appendChild(modal);
@@ -8986,7 +8997,7 @@ window.updatePastTripMemoCount = function() {
   } else {
     st.singleMemo = raw;
     countEl.textContent = cur + '/120';
-    countEl.style.color = (cur >= 30 && cur <= 120) ? '#34d399' : '#64748b';
+    countEl.style.color = (cur >= 1 && cur <= 120) ? '#34d399' : '#64748b';
   }
   window.__pastTripRegisterState = st;
 };
@@ -9023,17 +9034,9 @@ window.submitPastTripRegister = async function() {
     memo = String(st.singleMemo || '').trim().slice(0, 120);
     photoMemos = [memo];
     if (!memo) {
-      if (typeof showToast === 'function') showToast('대표 일지를 작성해주세요.', 'warn', 2400, 'center');
+      if (typeof showToast === 'function') showToast('한 줄 소감을 적어 주세요.', 'warn', 2400, 'center');
       var memoElEmpty = document.getElementById('pastTripMemoInput');
       if (memoElEmpty) memoElEmpty.focus();
-      return;
-    }
-    if (memo.length < 30) {
-      if (typeof showToast === 'function') {
-        showToast('대표 일지는 30자 이상 작성해주세요. (현재 ' + memo.length + '자)', 'warn', 2800, 'center');
-      }
-      var memoEl = document.getElementById('pastTripMemoInput');
-      if (memoEl) memoEl.focus();
       return;
     }
   } else {
@@ -9093,14 +9096,10 @@ window.submitPastTripRegister = async function() {
     return;
   }
 
-  if (typeof showToast === 'function') {
-    if (isUnregistered) showToast('비등록 장소는 나만보기로 저장되며 마이데이터에 합산됩니다.', 'info', 2800);
-    else if (!photos.length) showToast('현장 사진이 없어서 나만 보기로 저장돼요.', 'info', 2800);
-  }
 
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.textContent = '등록 중...';
+    submitBtn.textContent = '올리는 중...';
     submitBtn.style.opacity = '0.6';
   }
 
@@ -9127,7 +9126,7 @@ window.submitPastTripRegister = async function() {
     photoMemos: photoMemos,
     memoMode: isSingle ? 'single' : 'per_photo',
     isDraft: false,
-    isPublished: isUnregistered ? false : (photos.length > 0),
+    isPublished: isUnregistered ? false : (photos.length > 0 && st.publishOff !== true),
     unregisteredSpot: isUnregistered,
     items: packedItems,
     photos: photos,
@@ -9143,7 +9142,7 @@ window.submitPastTripRegister = async function() {
     if (saved && saved.__serverSaveFailed) {
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = '등록하기';
+        submitBtn.textContent = '올리기';
         submitBtn.style.opacity = '1';
       }
       return;
@@ -9162,15 +9161,11 @@ window.submitPastTripRegister = async function() {
     }
 
     triggerHaptic(15);
-    if (typeof showToast === 'function') {
-      showToast(isUnregistered ? '나만 보기로 저장했어요. 마이데이터에는 합산돼요.'
-        : (photos.length ? '피드에 올라갔어요.' : '나만 보기로 저장했어요. 사진을 넣으면 피드에 올라가요.'), 'success', 2200);
-    }
-
+    if (typeof window.refreshMyReportFullStats === 'function') window.refreshMyReportFullStats();
+    window._ptwShowDone(newRecord, function() {
     var el = document.getElementById('pastTripRegisterModal');
     var fromPlan = !!(el && el.dataset.fromPlan === '1');
     if (el) el.remove();
-    if (typeof window.refreshMyReportFullStats === 'function') window.refreshMyReportFullStats();
     if (fromPlan) return;
 
     if (typeof window.openPastTripsListModal === 'function') {
@@ -9186,12 +9181,13 @@ window.submitPastTripRegister = async function() {
     } else if (typeof window.openUserProfileModal === 'function') {
       window.openUserProfileModal();
     }
+    });
   } catch (err) {
     console.error('[submitPastTripRegister]', err);
     if (typeof showToast === 'function') showToast('등록 중 오류가 발생했습니다.', 'error');
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = '등록하기';
+      submitBtn.textContent = '올리기';
       submitBtn.style.opacity = '1';
     }
   }
@@ -9238,6 +9234,236 @@ window._pastTripRenderPublishHint = function() {
   wrapped.__publishHintWrapped = true;
   window[name] = wrapped;
 });
+
+// =========================================================================
+// 후기 올리기 개편 (2026-10-14, 시안 "4. 후기 올리기"): 사진 → 장소·날짜 → 한 줄, 장비·링크는 접어 둠
+// · 피드에 공개 스위치: 공개 조건(등록된 박지 + 현장 사진)은 그대로, 끄면 나만 보기
+// · 사진의 촬영 날짜·위치(exifr, vendor/exifr-7.1.3.lite.umd.js)로 날짜를 채우고 가까운 박지를 먼저 보여 준다.
+//   위치는 기기 안에서 거리 계산에만 쓰고 서버로 보내지 않는다.
+// =========================================================================
+window._ptwLoadExifr = function() {
+  if (window.exifr) return Promise.resolve(window.exifr);
+  if (window.__ptwExifrLoading) return window.__ptwExifrLoading;
+  window.__ptwExifrLoading = new Promise(function(resolve, reject) {
+    var sc = document.createElement('script');
+    sc.src = 'vendor/exifr-7.1.3.lite.umd.js';
+    sc.async = true;
+    sc.onload = function() { window.exifr ? resolve(window.exifr) : reject(new Error('exifr missing')); };
+    sc.onerror = function() { window.__ptwExifrLoading = null; reject(new Error('exifr load failed')); };
+    document.head.appendChild(sc);
+  });
+  return window.__ptwExifrLoading;
+};
+
+window._ptwIsoOf = function(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+
+// 사진들에서 가장 이른 촬영 날짜와 첫 위치를 읽는다 (실패하면 비워 둔다)
+window._ptwReadPhotoMeta = async function(files) {
+  var out = { date: null, lat: null, lng: null };
+  var list = Array.from(files || []).slice(0, 10);
+  if (!list.length) return out;
+  var ex;
+  try { ex = await window._ptwLoadExifr(); } catch (e) { console.warn('[ptw:exifr]', e); return out; }
+  for (var i = 0; i < list.length; i++) {
+    var f = list[i];
+    try {
+      var meta = await ex.parse(f); // lite 판은 pick 옵션이 동작하지 않아 기본값으로 읽는다
+      var d = meta && (meta.DateTimeOriginal || meta.CreateDate);
+      if (d instanceof Date && !isNaN(d) && (!out.date || d < out.date)) out.date = d;
+    } catch (e) {}
+    if (out.lat == null) {
+      try {
+        var g = await ex.gps(f);
+        if (g && isFinite(g.latitude) && isFinite(g.longitude) && (g.latitude || g.longitude)) {
+          out.lat = g.latitude; out.lng = g.longitude;
+        }
+      } catch (e) {}
+    }
+  }
+  return out;
+};
+
+// 날짜: 사용자가 직접 바꾸지 않았고 어제 이전일 때만 채운다
+window._ptwApplyPhotoDate = function(d) {
+  var st = window.__pastTripRegisterState || {};
+  var hidden = document.getElementById('pastTripDateInput');
+  var src = document.getElementById('pastTripDateSource');
+  if (!hidden || !(d instanceof Date)) return;
+  var cur = String(hidden.value || '');
+  if (cur !== st.__ptwDateDefault && cur !== st.__ptwDateAuto) return;
+  var iso = window._ptwIsoOf(d);
+  if (iso > window._pastTripYesterdayIso()) return;
+  hidden.value = iso;
+  st.__ptwDateAuto = iso;
+  window.__pastTripRegisterState = st;
+  window._pastTripSyncDateDisplay();
+  if (src) { src.textContent = '사진을 찍은 날짜로 채웠어요. 눌러서 바꿀 수 있어요.'; src.hidden = false; }
+};
+
+// 위치: 3km 안 가까운 박지 최대 3곳
+window._ptwNearbySpots = function(lat, lng) {
+  var raw = [];
+  if (Array.isArray(window.spots)) raw = raw.concat(window.spots);
+  if (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots)) raw = raw.concat(registeredSpots);
+  var pool = window._pastTripBuildSpotSearchPool();
+  var byId = {};
+  pool.forEach(function(p) { if (p && p.id) byId[String(p.id)] = p; });
+  var rad = Math.PI / 180;
+  var seen = {};
+  var hits = [];
+  raw.forEach(function(s) {
+    var id = String((s && (s.id || s.spot_id)) || '').trim();
+    if (!id || seen[id] || !byId[id]) return;
+    var la = Number(s.campsite_lat || s.lat), lo = Number(s.campsite_lng || s.lng);
+    if (!isFinite(la) || !isFinite(lo) || (!la && !lo)) return;
+    seen[id] = true;
+    var dLa = (la - lat) * rad, dLo = (lo - lng) * rad;
+    var h = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(lat * rad) * Math.cos(la * rad) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
+    var km = 12742 * Math.asin(Math.sqrt(h));
+    if (km <= 3) hits.push({ item: byId[id], km: km });
+  });
+  return hits.sort(function(a, b) { return a.km - b.km; }).slice(0, 3);
+};
+
+window._ptwRenderGeo = function(hits) {
+  var box = document.getElementById('pastTripGeoBox');
+  var st = window.__pastTripRegisterState || {};
+  if (!box) return;
+  if (!hits || !hits.length || st.spotId) { box.hidden = true; box.innerHTML = ''; return; }
+  st.__ptwGeoHits = hits;
+  window.__pastTripRegisterState = st;
+  var esc = window._pastTripEsc || function(t) { return String(t || ''); };
+  var km = function(v) { return v < 1 ? Math.round(v * 1000) + 'm' : v.toFixed(1) + 'km'; };
+  var first = hits[0];
+  var others = hits.slice(1);
+  box.innerHTML = '<small>사진 위치에서 가까운 박지</small><b>' + esc(first.item.name) + ' <span class="ptw-sub">' + km(first.km) + '</span></b>' +
+    '<div class="ptw-chips"><button type="button" class="ptw-chip on" data-ptw-geo="0">이 장소 맞아요</button>' +
+    others.map(function(h, i) { return '<button type="button" class="ptw-chip" data-ptw-geo="' + (i + 1) + '">' + esc(h.item.name) + ' · ' + km(h.km) + '</button>'; }).join('') +
+    '<button type="button" class="ptw-chip" data-ptw-geo="search">다른 장소 찾기</button></div>';
+  box.hidden = false;
+};
+
+window._ptwOnPhotosPicked = function(files) {
+  var copy = Array.from(files || []);
+  if (!copy.length) return;
+  window._ptwReadPhotoMeta(copy).then(function(meta) {
+    if (!document.getElementById('pastTripRegisterModal')) return;
+    if (meta.date) window._ptwApplyPhotoDate(meta.date);
+    if (meta.lat != null) window._ptwRenderGeo(window._ptwNearbySpots(meta.lat, meta.lng));
+  });
+};
+
+// 공개 스위치와 안내
+window._ptwSyncSwitch = function() {
+  var sw = document.getElementById('pastTripPublishSwitch');
+  if (!sw) return;
+  var st = window.__pastTripRegisterState || {};
+  var can = window._pastTripPublishState() === 'ok';
+  sw.disabled = !can;
+  sw.setAttribute('aria-checked', String(can && st.publishOff !== true));
+};
+(function() {
+  var origHint = window._pastTripRenderPublishHint;
+  window._pastTripRenderPublishHint = function() {
+    if (typeof origHint === 'function') origHint();
+    window._ptwSyncSwitch();
+    var st = window.__pastTripRegisterState || {};
+    var el = document.getElementById('pastTripPublishHint');
+    if (el && window._pastTripPublishState() === 'ok' && st.publishOff === true) {
+      el.textContent = '나만 보기로 저장돼요. 나중에 피드에 공개할 수 있어요.';
+      el.style.color = '#94a3b8';
+    } else if (el && window._pastTripPublishState() === 'ok') {
+      el.textContent = '다른 낭만루터들의 피드와 이 박지 후기에 올라가요.';
+    }
+  };
+})();
+
+window._ptwInit = function(modal) {
+  if (!modal || modal.__ptw) return;
+  modal.__ptw = true;
+  var st = window.__pastTripRegisterState || {};
+  var hidden = document.getElementById('pastTripDateInput');
+  st.__ptwDateDefault = hidden ? String(hidden.value || '') : '';
+  st.publishOff = false;
+  window.__pastTripRegisterState = st;
+  // 사진을 고른 순간 원본 파일에서 읽는다 (줄이기·변환 전이라 촬영 정보가 남아 있다)
+  modal.addEventListener('change', function(e) {
+    if (e.target && e.target.id === 'pastTripPhotoInput') window._ptwOnPhotosPicked(e.target.files);
+  }, true);
+  modal.addEventListener('click', function(e) {
+    var t = e.target && e.target.closest ? e.target : null;
+    if (!t) return;
+    var sw = t.closest('#pastTripPublishSwitch');
+    if (sw && !sw.disabled) {
+      var s2 = window.__pastTripRegisterState || {};
+      s2.publishOff = sw.getAttribute('aria-checked') === 'true';
+      window.__pastTripRegisterState = s2;
+      window._pastTripRenderPublishHint();
+      return;
+    }
+    var geo = t.closest('[data-ptw-geo]');
+    if (geo) {
+      var s3 = window.__pastTripRegisterState || {};
+      var v = geo.getAttribute('data-ptw-geo');
+      var box = document.getElementById('pastTripGeoBox');
+      if (v === 'search') {
+        if (box) box.hidden = true;
+        var input = document.getElementById('pastTripSpotInput');
+        if (input) input.focus();
+        return;
+      }
+      var hit = (s3.__ptwGeoHits || [])[Number(v)];
+      if (hit) {
+        window.selectPastTripSpot(hit.item, false);
+        if (box) box.hidden = true;
+      }
+    }
+  });
+  window._pastTripRenderPublishHint();
+};
+(function() {
+  var origOpen = window.openPastTripRegisterModal;
+  if (typeof origOpen !== 'function' || origOpen.__ptw) return;
+  var wrapped = function() {
+    var r = origOpen.apply(this, arguments);
+    window._ptwInit(document.getElementById('pastTripRegisterModal'));
+    return r;
+  };
+  wrapped.__ptw = true;
+  window.openPastTripRegisterModal = wrapped;
+})();
+
+// 올린 뒤 완료 화면. "닫기"를 누르면 원래 하던 다음 동작(목록 열기 등)을 이어서 한다
+window._ptwShowDone = function(record, next) {
+  var box = document.getElementById('pastTripDone');
+  if (!box) { next(); return; }
+  var esc = window._pastTripEsc || function(t) { return String(t || ''); };
+  var pub = record.isPublished === true;
+  var photo = (record.photos || [])[0] || '';
+  var st = window.__pastTripRegisterState || {};
+  var why = record.unregisteredSpot ? '등록된 박지가 아니라서 나만 보기로 저장했어요. 마이데이터에는 합산돼요.'
+    : (!(record.photos || []).length ? '현장 사진이 없어서 나만 보기로 저장했어요. 사진을 넣으면 피드에 올라가요.'
+    : (st.publishOff ? '나만 보기로 저장했어요. 나중에 피드에 공개할 수 있어요.' : ''));
+  var spotShort = String(record.spot || '').replace(/\s*\(.*?\)/g, '').trim();
+  box.innerHTML = '<div class="ck">✓</div>' +
+    '<h6>' + (pub ? '피드에 올라갔어요' : '나만 보기로 저장했어요') + '</h6>' +
+    '<p>' + (pub ? '다른 낭만루터들이 피드와 박지 후기에서 볼 수 있어요.<br>좋은 후기는 낭만루트 인스타에 소개돼요.' : esc(why)) + '</p>' +
+    (photo ? '<div class="ptw-card"><img src="' + escapeHtml(okbmSafeImageUrl(photo)) + '" alt="" referrerpolicy="no-referrer"><div><b>' + esc(spotShort) + '</b>' + esc(record.date || '') + '</div></div>' : '') +
+    '<div class="ptw-row2"><button type="button" data-ptw-done="close">닫기</button>' +
+    (pub ? '<button type="button" class="p" data-ptw-done="share">공유하기</button>' : '') + '</div>';
+  box.hidden = false;
+  box.onclick = function(e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-ptw-done]') : null;
+    if (!b) return;
+    if (b.getAttribute('data-ptw-done') === 'share') {
+      if (typeof window.shareCurrentFeed === 'function') window.shareCurrentFeed(record.id, record.spot, record.memo);
+      return;
+    }
+    next();
+  };
+};
 
 window.openMyPastTripsFromReport = function(ev) {
   if (ev) {
