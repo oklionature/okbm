@@ -2416,6 +2416,12 @@ window.okbmAdminInspectDismissReport = async function(reportId) {
 // targetType: feed(기본) | lounge_post | lounge_comment | spot_review (백패커 라운지·지도 박지 후기)
 window.openUgcSafetyMenu = function(feedId, userId, nickname, e, targetType) {
   if (e) { e.preventDefault(); e.stopPropagation(); }
+  // 신고·차단 메뉴는 로그인한 사람만 (비로그인은 보기만)
+  if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
+    if (typeof showToast === 'function') showToast('로그인 후 이용할 수 있습니다.', 'info', 2200);
+    if (typeof window.openLoginModal === 'function') window.openLoginModal();
+    return;
+  }
 
   var tType = okbmReportType(targetType);
   var sFeedId = String(feedId || '').trim();
@@ -5237,7 +5243,7 @@ function ensureMyReportAndAuthModalsInDOM() {
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
                 <span style="color:#ffffff; font-size:0.78rem; font-weight:900;">메인 대표 사진</span>
-                <p style="color:#64748b; font-size:0.62rem; margin-top:2px;">마이리포트 아바타 및 낭만보관함 배경에 즉시 반영됩니다.</p>
+                <p style="color:#64748b; font-size:0.62rem; margin-top:2px;">마이리포트 아바타 및 낭만피드 배경에 즉시 반영됩니다.</p>
               </div>
               <div id="settingsModalCoverPreviewWrap" onclick="window.previewMasterUserCoverPhotoLarge();" title="터치하여 사진 크게 보기" style="width:48px; height:48px; border-radius:50%; border:1.5px solid rgba(186,230,253,0.4); background:#090d14; background-size:cover; background-position:center; background-repeat:no-repeat; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.6);">
                 <svg id="settingsModalCoverDefaultSvg" viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="#64748b" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -6654,7 +6660,7 @@ window.ensureMasterBottomDock = function(activeTabId) {
     { id: 'router', name: '낭만루터', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>', action: "window.navigateToDockTab('router')" },
     { id: 'map', name: '낭만루트', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>', action: "window.navigateToDockTab('map')" },
     { id: 'plan', name: '낭만플랜', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>', action: "window.navigateToDockTab('plan')" },
-    { id: 'history', name: '낭만보관함', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>', action: "window.navigateToDockTab('history')" },
+    { id: 'history', name: '낭만피드', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>', action: "window.navigateToDockTab('history')" },
     { id: 'report', name: '마이리포트', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>', action: "window.navigateToDockTab('report')" }
   ];
 

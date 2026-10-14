@@ -14,6 +14,7 @@
     '낭만루터': 'dock_home',
     '낭만루트': 'dock_map',
     '낭만플랜': 'dock_plan',
+    '낭만피드': 'dock_history',
     '낭만보관함': 'dock_history',
     '마이리포트': 'dock_report'
   };

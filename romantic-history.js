@@ -5307,6 +5307,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (!authorName && !userId) return;
     if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
       if (typeof showToast === 'function') showToast('프로필은 로그인 후 볼 수 있습니다.', 'info', 1800);
+      if (typeof window.openLoginModal === 'function') window.openLoginModal();
       return;
     }
 
