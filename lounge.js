@@ -895,7 +895,7 @@
     if (yid) return ytBlock(yid);
     const safe = okbmSafeExternalUrl(src);
     if (!src || safe === '#') return '';
-    return `<a class="lm-blog" href="${escapeHtml(safe)}" target="_blank" rel="noopener noreferrer">글 보기${ico(P.chevR, 16)}</a>`;
+    return `<a class="lm-blog" href="${escapeHtml(okbmSafeExternalUrl(src))}" target="_blank" rel="noopener noreferrer">글 보기${ico(P.chevR, 16)}</a>`;
   }
   function gearRows(items, plain) {
     let cat = null;
@@ -909,7 +909,7 @@
       const about = String(it.about || '').trim();
       const inner = `<div class="nm"><b>${esc(itemName(it))}</b>${about ? `<small>${esc(about)}</small>` : ''}</div>${price ? `<em>${esc(price)}</em>` : ''}${g ? `<em>${(g / 1000).toFixed(2)}kg</em>` : ''}${url !== '#' ? ico(P.chevR, 14) : ''}`;
       return cap + (url !== '#'
-        ? `<a class="lm-item" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${inner}</a>`
+        ? `<a class="lm-item" href="${escapeHtml(okbmSafeExternalUrl(it.link_url))}" target="_blank" rel="noopener noreferrer">${inner}</a>`
         : `<div class="lm-item">${inner}</div>`);
     }).join('');
     return plain && rows ? `<div class="lm-gear">${rows}</div>` : rows;
