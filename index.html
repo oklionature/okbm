@@ -958,7 +958,7 @@
     })();
   </script>
     <script src="romantic-sync.js?v=2.9.42" defer></script>
-    <script src="romantic-history.js?v=2.7.98" defer></script>
+    <script src="romantic-history.js?v=2.7.99" defer></script>
 
   <style>
     :root {
@@ -2299,7 +2299,7 @@
   </header>
  <main class="netflix-feed-container notranslate">
 
- <section class="insta-stage-wrap okbm-hero-loading" style="padding-top:6px !important; margin-top:0 !important; gap:4px !important;">
+ <section data-metric="hero" class="insta-stage-wrap okbm-hero-loading" style="padding-top:6px !important; margin-top:0 !important; gap:4px !important;">
   <!-- 🌟 우측 밀착 타이틀: 골드 낭만별 + 이주의 낭만 스팟 + (순번) -->
   <div style="width:100%; display:flex; justify-content:flex-end; align-items:center; gap:5px; margin-bottom:2px; padding-right:4px; box-sizing:border-box; line-height:1;">
     <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:#fde047; stroke:#fde047; filter:drop-shadow(0 0 5px rgba(253,224,71,0.8)); flex-shrink:0;">
@@ -2337,10 +2337,10 @@
     <div class="insta-memo-quote" id="heroQuoteText">“자연 속에서 비화식으로 즐기는 조용한 하룻밤”</div>
 
     <div class="insta-memo-actions-row" style="margin-top:2px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.12);">
-      <button type="button" class="btn-insta-action btn-action-map" id="btnHeroSpotNav" onclick="handleHeroNavClick(event)">
+      <button type="button" class="btn-insta-action btn-action-map" id="btnHeroSpotNav" data-metric-click="hero_detail" onclick="handleHeroNavClick(event)">
         <span><svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> 자세히보기</span>
       </button>
-      <button type="button" class="btn-insta-action btn-action-template" onclick="openCurrentTemplateModal(event)">
+      <button type="button" class="btn-insta-action btn-action-template" data-metric-click="hero_gear" onclick="openCurrentTemplateModal(event)">
         <span><svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> 장비 세팅보기</span>
       </button>
     </div>
@@ -2369,7 +2369,7 @@ window.okbmIsHomePublicFeed = function(f) {
 })();
 </script>
 
-   <section class="n-rail-section" id="heroTrailerSectionWrap" style="overscroll-behavior: none;">
+   <section class="n-rail-section" id="heroTrailerSectionWrap" data-metric="theme" style="overscroll-behavior: none;">
       <div style="display:flex; justify-content:space-between; align-items:center; padding-right:14px;">
         <h2 class="n-rail-title" style="display:flex; align-items:center; gap:5px;">
           <span class="icon-svg" style="width:16px; height:16px; color:var(--accent); display:flex; align-items:center;">
@@ -2488,12 +2488,12 @@ window.okbmIsHomePublicFeed = function(f) {
     
   </style>
 
-   <section class="n-rail-section">
+   <section class="n-rail-section" data-metric="video">
   <h2 class="n-rail-title">영상 속 그 장소 & 기어 랩</h2>
   <div class="n-rail-slider" id="homeVideoRailSlider"></div>
 </section>
 
-    <section class="n-rail-section">
+    <section class="n-rail-section" data-metric="tripjoin">
       <div style="display:flex; justify-content:space-between; align-items:center; padding-right:14px;">
         <h2 class="n-rail-title" style="display:flex; align-items:center; gap:5px;">
           <span class="icon-svg"><svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
@@ -2506,7 +2506,7 @@ window.okbmIsHomePublicFeed = function(f) {
       <div class="n-rail-slider" id="homeTripJoinRailSlider"></div>
     </section>
     <!-- 백패커 라운지: 내용·동작은 lounge.js (data-a 위임, 인라인 핸들러 없음) -->
-    <section class="n-rail-section" id="okbmLoungeHome" aria-labelledby="okbmLoungeHomeTitle">
+    <section class="n-rail-section" id="okbmLoungeHome" data-metric="lounge" aria-labelledby="okbmLoungeHomeTitle">
       <div class="lmh-title" style="display:flex; justify-content:space-between; align-items:center; padding-right:14px;">
         <h2 class="n-rail-title" id="okbmLoungeHomeTitle"><button type="button" class="lmh-open" data-a="lounge" style="background:none; border:0; padding:0; font:inherit; color:inherit; letter-spacing:inherit; cursor:pointer;">백패커 라운지</button></h2>
         <button type="button" class="lmh-all okbm-link" data-a="lounge" aria-label="백패커 라운지 전체 보기" style="font-size:var(--fs-meta); font-weight:800; color:var(--accent); cursor:pointer; display:inline-flex; align-items:center;">전체보기</button>
@@ -2514,7 +2514,7 @@ window.okbmIsHomePublicFeed = function(f) {
       <div class="lmh" id="okbmLoungeHomeBody" style="min-height:283px;"></div>
     </section>
 
-    <section style="padding:0 14px;">
+    <section style="padding:0 14px;" data-metric="ready">
       <div class="okbm-press" onclick="if(typeof openPlanModal==='function') openPlanModal('calculator');" style="background:#0c1018; border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
         <div>
           <div style="font-size:var(--fs-meta); color:var(--tx-3); font-weight:800;">출발 전 배낭무게 체크하고</div>
@@ -2614,6 +2614,7 @@ window.okbmIsHomePublicFeed = function(f) {
  <!-- 🎨 [엽서 스튜디오 / 공유 액션시트 / 포토 카드 스튜디오는 templates.js에서 동적 생성 통제] -->
 
   <script src="index-main.js?v=1.0.5"></script>
+  <script src="home-metrics.js?v=1" defer></script>
 
   <script>
 

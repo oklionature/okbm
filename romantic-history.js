@@ -1532,6 +1532,17 @@
       var finalPublished = canPublish && (normalized.isPublished !== false || autoOpenReadyShotPrivate);
       normalized.isPublished = finalPublished;
       normalized.is_published = finalPublished;
+      // 새 기록만 공개 결과를 센다(home-metrics.js). 비공개 이유: 직접 선택 / 등록 안 된 장소 / 현장 사진 없음.
+      if (existIdx === -1 && typeof window.okbmMetric === 'function') {
+        var metricSpot = String(normalized.spot || '').trim();
+        var metricUnregistered = !metricSpot || normalized.unregisteredSpot === true ||
+          (typeof window.isSpotRegisteredInMasterDB === 'function' && !window.isSpotRegisteredInMasterDB(metricSpot));
+        window.okbmMetric(
+          finalPublished ? 'publish_ok'
+            : (canPublish ? 'publish_private' : (metricUnregistered ? 'publish_unregistered' : 'publish_nophoto')),
+          'event'
+        );
+      }
       var stampPublishedFlag = function(rec) {
         if (!rec || String(rec.id || '').trim() !== String(normalized.id || '').trim()) return;
         rec.isPublished = finalPublished;
