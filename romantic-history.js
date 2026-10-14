@@ -292,6 +292,30 @@
         text-align: center !important;
         box-sizing: border-box !important;
       }
+      .reel-page-snap[data-vault-intro="1"] .vault-intro-next {
+        position: absolute !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 2px !important;
+        color: #94a3b8 !important;
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        pointer-events: none !important;
+      }
+      .reel-page-snap[data-vault-intro="1"] .vault-intro-next svg {
+        animation: okbmVaultIntroNudge 1.8s ease-in-out infinite;
+      }
+      @keyframes okbmVaultIntroNudge {
+        0%, 100% { transform: translateY(0); opacity: 0.55; }
+        50% { transform: translateY(-6px); opacity: 1; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .reel-page-snap[data-vault-intro="1"] .vault-intro-next svg { animation: none; }
+      }
       .reel-page-snap[data-vault-intro="1"] .vault-intro-close {
         position: absolute !important;
         top: calc(var(--okbm-status-top, 0px) + 10px) !important;
@@ -8082,6 +8106,11 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       '<p style="margin:0; max-width:280px; font-size:0.96rem; font-weight:800; color:#ffffff; line-height:1.65; word-break:keep-all; letter-spacing:-0.2px;">등록된 장소에 추억을 피드로 남기시면<br>지도 후기피드에 노출이됩니다.</p>' +
       '<img src="logo.png" alt="낭만루트 로고" style="width:128px; height:128px; object-fit:contain; display:block; flex-shrink:0;" />' +
       '<p style="margin:0; max-width:260px; font-size:0.96rem; font-weight:800; color:#ffffff; line-height:1.65; word-break:keep-all; letter-spacing:-0.2px;">다음 낭만루터 분들에게<br>생생한 후기를 알려주세요</p>' +
+      // 아래에 피드가 이어진다는 표시 (첫 장이 안내라 넘길 줄 모르는 경우가 있다)
+      '<div class="vault-intro-next" aria-hidden="true">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:20px; height:20px;"><polyline points="6 15 12 9 18 15"/></svg>' +
+        '<span>위로 넘겨서 후기 보기</span>' +
+      '</div>' +
     '</div>';
   }
 
