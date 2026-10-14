@@ -8821,7 +8821,7 @@ window.openPastTripRegisterModal = function(ev) {
   if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
     window.__pastTripOpenedFromPlan = false;
     window.__pastTripPrefillDate = '';
-    if (typeof showToast === 'function') showToast('로그인 후 과거 일정을 등록할 수 있습니다.', 'info', 2200);
+    if (typeof showToast === 'function') showToast('로그인하면 후기를 올릴 수 있어요.', 'info', 2200);
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
     return;
   }
