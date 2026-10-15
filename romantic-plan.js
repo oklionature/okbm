@@ -3880,6 +3880,25 @@ window.saveCurrentPackingRecord = function() {
       if (!prevSaved && nextSaved) monthHistoryByDay[hD] = h;
     });
 
+    // 날짜에 장소만 넣어도 계획(초록)으로 본다. 패킹 카드까지 만든 날은 초록 위에 작은 체크를 단다.
+    var planSpotDays = {};
+    var planSpotsForCal = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_plan_spots', {})
+      : safeGetJSON('okbm_plan_spots', {});
+    if (planSpotsForCal && typeof planSpotsForCal === 'object') {
+      Object.keys(planSpotsForCal).forEach(function(k) {
+        var entry = planSpotsForCal[k];
+        var list = Array.isArray(entry) ? entry : (entry && entry.name ? [entry] : []);
+        if (!list.some(function(sp) { return sp && String(sp.name || '').trim(); })) return;
+        var nk = (typeof window.okbmNormalizePlanDateKey === 'function')
+          ? window.okbmNormalizePlanDateKey(k)
+          : String(k).replace(/[-/]/g, '.');
+        var np = String(nk || '').split('.');
+        if (np.length < 3 || Number(np[0]) !== Number(viewYear) || Number(np[1]) !== Number(viewMonth)) return;
+        planSpotDays[Number(np[2])] = true;
+      });
+    }
+
     for (var d = 1; d <= lastDayOfMonth; d++) {
       var isSelected = (d === activeDay);
       var isToday = (Number(viewYear) === todayYear && Number(viewMonth) === todayMonth && Number(d) === todayDate);
@@ -3891,7 +3910,10 @@ window.saveCurrentPackingRecord = function() {
       var isPastDay = window.isPastPlanDate(thisDateKey);
       var isCompleted = Boolean(isPastDay && dayRecord && hasFieldPhoto);
       var isRecorded = !!dayRecord;
-      var hasPlan = isSavedPlan && !isCompleted;
+      var hasPlan = (isSavedPlan || !!planSpotDays[d]) && !isCompleted;
+      var packCheck = (hasPlan && isSavedPlan)
+        ? '<span aria-label="패킹 완료" style="position:absolute; top:-3px; right:-3px; width:11px; height:11px; border-radius:50%; background:#34d399; border:1px solid #0c1017; display:flex; align-items:center; justify-content:center; pointer-events:none;"><svg viewBox="0 0 24 24" style="width:8px; height:8px; fill:none; stroke:#052e16; stroke-width:4; stroke-linecap:round; stroke-linejoin:round;"><polyline points="20 6 9 17 4 12"/></svg></span>'
+        : '';
 
       var circleStyle = 'position:relative; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.78rem; font-weight:800; transition:all 0.15s ease;';
       var indicatorDot = '';
@@ -3939,7 +3961,7 @@ window.saveCurrentPackingRecord = function() {
         'ontouchend="window.cancelDateLongPress(event)" ' +
         'ontouchcancel="window.cancelDateLongPress(event)" ' +
         'oncontextmenu="return false;">' +
-        '<div style="' + circleStyle + '">' + d + indicatorDot + '</div>' + evBand + '</div>';
+        '<div style="' + circleStyle + '">' + d + indicatorDot + packCheck + '</div>' + evBand + '</div>';
     }
 
     for (var te = 0; te < (42 - (firstDayIndex + lastDayOfMonth)); te++) {
@@ -3991,6 +4013,7 @@ window.saveCurrentPackingRecord = function() {
               <button type="button" onclick="window.jumpToPlanToday()" style="height:24px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.70rem; font-weight:800; padding:0 8px; border-radius:5px; cursor:pointer;">오늘</button>
               <span style="font-size:0.70rem; color:#f59e0b; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:rgba(245,158,11,0.25); border:1.2px solid #f59e0b; border-radius:50%; display:inline-block;"></span><span>완료</span></span>
               <span style="font-size:0.70rem; color:#34d399; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:rgba(52,211,153,0.3); border:1px solid #34d399; border-radius:50%; display:inline-block;"></span><span>계획</span></span>
+              <span style="font-size:0.70rem; color:#34d399; font-weight:800; display:flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" style="width:9px; height:9px; fill:none; stroke:#34d399; stroke-width:4; stroke-linecap:round; stroke-linejoin:round;"><polyline points="20 6 9 17 4 12"/></svg><span>패킹</span></span>
               ${monthHasPlanEvents ? '<span style="font-size:0.70rem; color:#c4b5fd; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:1.5px; background:#a78bfa; border-radius:1px; display:inline-block;"></span><span>행사</span></span>' : ''}
             </div>
           </div>
@@ -4541,6 +4564,7 @@ window.saveCurrentPackingRecord = function() {
               <button type="button" onclick="window.jumpToPlanToday()" style="height:26px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#ffffff; font-size:0.72rem; font-weight:800; padding:0 8px; border-radius:6px; cursor:pointer;">오늘</button>
               <span style="font-size:0.74rem; color:rgba(217,180,99,0.9); font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.starGold}<span>완료</span></span>
               <span style="font-size:0.74rem; color:#34d399; font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.flagGreen}<span>계획</span></span>
+              <span style="font-size:0.74rem; color:#34d399; font-weight:800; display:flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" style="width:9px; height:9px; fill:none; stroke:#34d399; stroke-width:4; stroke-linecap:round; stroke-linejoin:round;"><polyline points="20 6 9 17 4 12"/></svg><span>패킹</span></span>
               ${monthHasPlanEvents ? '<span style="font-size:0.70rem; color:#c4b5fd; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:1.5px; background:#a78bfa; border-radius:1px; display:inline-block;"></span><span>행사</span></span>' : ''}
             </div>
           </div>
