@@ -2933,9 +2933,7 @@ window.normalizeHistoryRecord = function(r, idx) {
 
     try {
       var query = targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(currentUserId) + '&order=date.desc,created_at.desc&offset=' + state.offset + '&limit=' + state.limit;
-      if (activeTab === 'private') {
-        query += '&is_published=eq.false';
-      }
+      query += (activeTab === 'private') ? '&is_published=eq.false' : '&is_published=eq.true';
 
       var res = await fetch(query, {
         headers: {
@@ -3039,14 +3037,18 @@ window.normalizeHistoryRecord = function(r, idx) {
         return norm;
       });
 
+      // 같이보기 탭(route)은 전체 공개 글만, 나만보기 탭(private)은 비공개 글만 보여 준다.
       var activeTab = window.__pastTripsActiveTab || 'route';
       if (activeTab === 'private') {
         logs = logs.filter(function(r) { return r && r.isPublished !== true; });
+      } else {
+        logs = logs.filter(function(r) { return r && r.isPublished === true; });
       }
       window.__currentScopedPastTripLogs = logs.slice();
 
+      // 서버 offset은 기기 목록 개수와 무관하다. 기기 목록 개수로 시작하면 그만큼 건너뛰어 일부 글이 빠졌다.
       window.__pastTripsPagingState = {
-        offset: logs.length,
+        offset: 0,
         limit: 10,
         hasMore: true,
         isLoading: false
@@ -3098,7 +3100,7 @@ window.normalizeHistoryRecord = function(r, idx) {
 
         <div style="flex-shrink:0; padding:8px 14px; background:#000000; display:flex; gap:6px; border-bottom:1px solid rgba(255,255,255,0.06);">
           <button type="button" onclick="window.switchPastTripsTab('route');" style="flex:1; height:32px; border-radius:8px; font-size:0.74rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:3px; transition:all 0.15s ease; background:${isRouteTabActive ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${isRouteTabActive ? '#38bdf8' : 'rgba(255,255,255,0.12)'}; color:${isRouteTabActive ? '#38bdf8' : '#94a3b8'};">
-            <span>낭만루트</span>
+            <span>같이보기</span>
           </button>
           <button type="button" onclick="window.switchPastTripsTab('private');" style="flex:1; height:32px; border-radius:8px; font-size:0.74rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:3px; transition:all 0.15s ease; background:${isPrivateTabActive ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${isPrivateTabActive ? '#fbbf24' : 'rgba(255,255,255,0.12)'}; color:${isPrivateTabActive ? '#fbbf24' : '#94a3b8'};">
             <span>나만보기</span>
@@ -3124,9 +3126,7 @@ window.normalizeHistoryRecord = function(r, idx) {
       var targetKey = window.SUPABASE_ANON_KEY || '';
       if (targetUrl && targetKey && currentUserId) {
         var countQuery = targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(currentUserId) + '&select=id';
-        if (activeTab === 'private') {
-          countQuery += '&is_published=eq.false';
-        }
+        countQuery += (activeTab === 'private') ? '&is_published=eq.false' : '&is_published=eq.true';
         fetch(countQuery, {
           method: 'HEAD',
           headers: {
@@ -3147,10 +3147,99 @@ window.normalizeHistoryRecord = function(r, idx) {
             }
           }
         }).catch(function() {});
+        window.okbmLoadAllPastTripsFromServer(activeTab, currentUserId);
       }
     } catch (err) {
       console.error('[OpenPastTripsListModal Error]', err);
     }
+  };
+
+  // 모아보기 목록은 기기에 불러온 글로 먼저 그리고, 스크롤해야만 서버에서 더 받아 와 목록이 짧으면 나머지가 안 보였다.
+  // 창을 열 때 서버에서 내 글을 끝까지 받아 기기 목록과 합친 뒤 날짜순으로 다시 그린다.
+  function okbmPastTripSortKey(r) {
+    var parts = String((r && r.date) || '').match(/\d+/g) || [];
+    var y = 0, m = 0, d = 0;
+    if (parts.length >= 3) {
+      if (parts[0].length === 4) { y = +parts[0]; m = +parts[1]; d = +parts[2]; }
+      else if (parts[2].length === 4) { y = +parts[2]; m = +parts[0]; d = +parts[1]; }
+    }
+    return y * 10000 + m * 100 + d;
+  }
+
+  window.okbmLoadAllPastTripsFromServer = async function(activeTab, currentUserId) {
+    var targetUrl = window.SUPABASE_URL || '';
+    if (!targetUrl || !currentUserId) return;
+    var seq = (window.__pastTripsLoadSeq = (window.__pastTripsLoadSeq || 0) + 1);
+    var state = window.__pastTripsPagingState;
+    if (state) state.isLoading = true;
+    var headers = (typeof window.okbmPublicRestHeaders === 'function')
+      ? window.okbmPublicRestHeaders()
+      : { 'apikey': window.SUPABASE_ANON_KEY || '', 'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : 'Bearer ' + (window.SUPABASE_ANON_KEY || '')) };
+    var pageSize = 100;
+    var rows = [];
+    var complete = false;
+    try {
+      for (var guard = 0; guard < 30; guard++) {
+        var query = targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(currentUserId)
+          + (activeTab === 'private' ? '&is_published=eq.false' : '&is_published=eq.true')
+          + '&order=date.desc,created_at.desc&offset=' + rows.length + '&limit=' + pageSize;
+        var res = await fetch(query, { headers: headers });
+        if (!res.ok) break;
+        var page = await res.json();
+        if (!Array.isArray(page)) break;
+        rows = rows.concat(page);
+        if (page.length < pageSize) { complete = true; break; }
+      }
+    } catch (e) {
+      console.warn('[romantic-history.js:okbmLoadAllPastTripsFromServer]', e);
+    }
+    if (seq !== window.__pastTripsLoadSeq) return;
+    state = window.__pastTripsPagingState;
+    if (state) {
+      state.isLoading = false;
+      // 끝까지 받았으면 스크롤 추가 로드는 끈다. 중간에 실패하면 받은 곳부터 스크롤로 이어 받는다.
+      state.offset = rows.length;
+      if (complete) state.hasMore = false;
+    }
+    if (!rows.length) return;
+
+    var byId = {};
+    var merged = [];
+    (window.__currentScopedPastTripLogs || []).forEach(function(r) {
+      var id = String((r && r.id) || '').trim();
+      if (!id || byId[id]) return;
+      byId[id] = true;
+      merged.push(r);
+    });
+    var added = 0;
+    rows.forEach(function(row, idx) {
+      var id = String((row && row.id) || '').trim();
+      if (!id || byId[id]) return;
+      byId[id] = true;
+      var norm = window.normalizeHistoryRecord(row, idx);
+      norm._isLocalOwner = true;
+      merged.push(norm);
+      added++;
+    });
+    if (!added) return;
+    merged.sort(function(a, b) {
+      var diff = okbmPastTripSortKey(b) - okbmPastTripSortKey(a);
+      if (diff) return diff;
+      return String(b.created_at || b.createdAt || '').localeCompare(String(a.created_at || a.createdAt || ''));
+    });
+    window.__currentScopedPastTripLogs = merged;
+
+    var modalEl = document.getElementById('pastTripsListModal');
+    var container = document.getElementById('pastTripsScrollContainer');
+    if (!modalEl || !container || (window.__pastTripsActiveTab || 'route') !== activeTab) return;
+    var isSelectMode = Boolean(window.__isPastTripsSelectMode);
+    var keepTop = container.scrollTop;
+    container.innerHTML = merged.map(function(r) {
+      return window.__renderPastTripCardRow(r, isSelectMode, activeTab);
+    }).join('');
+    container.scrollTop = keepTop;
+    var countBadge = document.getElementById('pastTripsTotalCountBadge');
+    if (countBadge) countBadge.innerText = '총 ' + merged.length + '개';
   };
 
 window.okbmGetNormalizedUserId = function(rawId) {
@@ -4726,10 +4815,14 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       var userFeeds = allFeeds.filter(function(f) {
         return f && (String(f.userId || f.user_id || '').trim() === cleanKey || String(f.author || f.nick || f.nickname || '').trim() === cleanKey);
       });
-      var latestFeed = userFeeds[0] || null;
+      // 불러온 피드에 없으면 서버에서 받아 둔 프로필·최근 기록을 쓴다 (okbmEnrichFollowedRouters)
+      var cached = (window.__okbmFollowedRouterCache || {})[cleanKey] || null;
+      var latestFeed = userFeeds[0] || (cached && cached.feed) || null;
 
       var displayNick = '';
-      if (latestFeed && (latestFeed.author || latestFeed.nick || latestFeed.nickname)) {
+      if (cached && cached.nickname) {
+        displayNick = String(cached.nickname).trim();
+      } else if (latestFeed && (latestFeed.author || latestFeed.nick || latestFeed.nickname)) {
         displayNick = String(latestFeed.author || latestFeed.nick || latestFeed.nickname).trim();
       }
       if (!displayNick && !cleanKey.startsWith('kakao_')) {
@@ -4739,10 +4832,10 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         displayNick = '낭만루터';
       }
 
-      var thumbPhoto = (latestFeed && window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(latestFeed)[0]) || '';
+      var thumbPhoto = (latestFeed && window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(latestFeed)[0]) || (cached && cached.photoUrl) || '';
       var latestSpot = latestFeed ? (latestFeed.spot || '활동 기록') : '기록 없음';
       var latestDate = latestFeed ? (latestFeed.date || '') : '';
-      var targetUserId = (latestFeed && (latestFeed.userId || latestFeed.user_id)) || (cleanKey.startsWith('kakao_') ? cleanKey : '');
+      var targetUserId = (latestFeed && (latestFeed.userId || latestFeed.user_id)) || (cached && cached.userId) || (cleanKey.startsWith('kakao_') ? cleanKey : '');
 
       return {
         rawKey: cleanKey,
@@ -4809,6 +4902,63 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (typeof window.okbmLiftReportChildModal === 'function') window.okbmLiftReportChildModal(modalEl);
     else if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('history');
+    }
+    window.okbmEnrichFollowedRouters(followingList);
+  };
+
+  // 관심루터 목록은 이미 불러온 피드에서만 닉네임·기록을 찾아, 피드가 안 실린 사람은 "낭만루터 · 기록 없음"으로 보였다.
+  // 처음 보는 키만 서버에서 공개 프로필과 최근 공개 기록 1건을 받아 캐시에 담고, 창이 열려 있으면 다시 그린다.
+  window.__okbmFollowedRouterCache = window.__okbmFollowedRouterCache || {};
+  window.okbmEnrichFollowedRouters = async function(keys) {
+    var cache = window.__okbmFollowedRouterCache;
+    var targetUrl = window.SUPABASE_URL || '';
+    if (!targetUrl) return;
+    var todo = (Array.isArray(keys) ? keys : []).map(function(k) { return String(k || '').trim(); }).filter(function(k) {
+      return k && !cache[k];
+    });
+    if (!todo.length) return;
+    todo.forEach(function(k) { cache[k] = { pending: true }; });
+
+    var headers = (typeof window.okbmPublicRestHeaders === 'function')
+      ? window.okbmPublicRestHeaders()
+      : { 'apikey': window.SUPABASE_ANON_KEY || '', 'Authorization': 'Bearer ' + (window.SUPABASE_ANON_KEY || '') };
+    var isIdKey = function(k) { return /^(kakao_|naver_|apple_|google_|user_)/.test(k); };
+
+    var profiles = {};
+    var idKeys = todo.filter(isIdKey);
+    if (idKeys.length && typeof window.okbmFetchPublicProfiles === 'function') {
+      try {
+        (await window.okbmFetchPublicProfiles(idKeys) || []).forEach(function(row) {
+          if (row && row.id) profiles[String(row.id)] = row;
+        });
+      } catch (eProf) {}
+    }
+
+    var changed = false;
+    await Promise.all(todo.map(async function(k) {
+      var entry = { feed: null, nickname: '', photoUrl: '', userId: isIdKey(k) ? k : '' };
+      var prof = profiles[k];
+      if (prof) {
+        entry.nickname = String(prof.nickname || '').trim();
+        entry.photoUrl = String(prof.photo_url || '').trim();
+      }
+      var filter = isIdKey(k) ? ('user_id=eq.' + encodeURIComponent(k)) : ('author=eq.' + encodeURIComponent(k));
+      try {
+        var res = await fetch(targetUrl + '/rest/v1/feeds?' + filter + '&is_published=eq.true&order=date.desc,created_at.desc&limit=1', { headers: headers });
+        if (res.ok) {
+          var rows = await res.json();
+          if (Array.isArray(rows) && rows[0]) {
+            entry.feed = (typeof window.normalizeHistoryRecord === 'function') ? window.normalizeHistoryRecord(rows[0], 0) : rows[0];
+            if (!entry.userId) entry.userId = String(rows[0].user_id || '').trim();
+          }
+        }
+      } catch (eFeed) {}
+      cache[k] = entry;
+      if (entry.feed || entry.nickname || entry.photoUrl) changed = true;
+    }));
+
+    if (changed && document.getElementById('followedRoutersModal')) {
+      window.openFollowedRoutersModal(true);
     }
   };
 
