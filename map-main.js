@@ -1641,8 +1641,8 @@ function updateSmartResetButtons() {
           return '<div style="margin-top:6px;"><div style="font-weight:800; color:#fecdd3;">' + r[0] + '</div><div style="color:#fda4af;">' + r[1] + '</div></div>';
         }).join('');
         return '<div style="margin:6px 0 4px; padding:11px 12px; border-radius:10px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.45); color:#fecdd3; font-size:0.74rem; line-height:1.45;">' +
-          '<div style="font-weight:900; color:#fb7185; font-size:0.9rem;">🚫 야영금지된 장소입니다</div>' +
-          '<div style="margin-top:3px;">소중한 박지를 보호하기 위해 LNT 원칙을 꼭 지켜주세요.</div>' +
+          '<div style="font-weight:900; color:#fb7185; font-size:0.9rem;">🚫 야영이 금지되었습니다</div>' +
+          '<div style="margin-top:4px; font-size:0.84rem; font-weight:800;">소중한 박지를 보호하기 위해 LNT 원칙을 꼭 지켜주세요.</div>' +
           list +
         '</div>';
       }
@@ -5228,7 +5228,7 @@ var liveSearchTimer = null;
           </div>
 
           ${isCampBanned(spot)
-            ? '<div class="spot-desc-multi" style="color:#fda4af; font-weight:800;">🚫 야영금지된 장소입니다</div>'
+            ? '<div class="spot-desc-multi" style="color:#fda4af; font-weight:800;">🚫 야영이 금지되었습니다</div>'
             : `<div class="spot-desc-multi" title="${escapeHtml(descText)}">${ICONS.VIEW_CARD} ${escapeHtml(descText)}</div>`}`;
 
         li.addEventListener('click', () => {
