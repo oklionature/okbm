@@ -1664,7 +1664,7 @@
       setTimeout(async function() {
         try {
           var rawRows = null;
-          var homeSelect = window.FEEDS_HOME_SELECT || 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,likes_count,is_published,feed_type,created_at,items,template_id';
+          var homeSelect = window.FEEDS_HOME_SELECT || 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,instagram,likes_count,is_published,feed_type,created_at,items,template_id';
           var guestMode = !(typeof isUserLoggedIn === 'function' && isUserLoggedIn());
 
           if (!guestMode && window.supabaseClient) {
@@ -1744,7 +1744,8 @@
                 items: itemsArr,
                 author: r.author || '낭만백패커',
                 nick: r.author || '낭만백패커',
-                photoMemos: parsedMemos
+                photoMemos: parsedMemos,
+                instagram: String(r.instagram || '').trim()
               };
             });
 

@@ -4469,6 +4469,23 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
  // 👤 [특정 작성자 피드 모아보기 전담 모달 엔진 - 하단 단일 진실 공급원(SSOT) 통합 완료]
 // 📖 [단일 피드 카드 마크업 생성기 - 각 사진별 120자 캡션 1:1 결합 렌더러]
+  window.okbmFeedInstagramBadgeHtml = function(raw) {
+    var text = String(raw || '').trim();
+    if (!text) return '';
+    var href = '';
+    if (text.indexOf('instagram.com') !== -1) {
+      var clean = text.replace(/^@+/, '').split('?')[0].trim();
+      href = clean.indexOf('http') === 0 ? clean : ('https://' + clean);
+    } else if (text.indexOf('youtube.com') === -1 && text.indexOf('youtu.be') === -1) {
+      var handle = text.replace(/[@\s]/g, '').trim();
+      if (!/^[A-Za-z0-9._]{1,30}$/.test(handle)) return '';
+      href = 'https://instagram.com/' + handle;
+    }
+    if (!href || typeof okbmSafeExternalUrl !== 'function' || okbmSafeExternalUrl(href) === '#') return '';
+    return '<a href="' + escapeHtml(okbmSafeExternalUrl(href)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" title="인스타그램" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;">' +
+      '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0;" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></a>';
+  };
+
   window.buildSingleFeedCardHtml = function(log) {
     if (!log) return '';
     var rawTmplId = log.template_id !== undefined ? log.template_id : log.templateId;
@@ -4587,6 +4604,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         '<div style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">' + escapeHtml(log.spot || '낭만 스팟') + (log.elevation ? (' <span style="font-size:0.75rem; color:#fde047; font-weight:800;">(' + escapeHtml(log.elevation) + ')</span>') : '') + '</div>' +
         '<div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">' +
           '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(log.date || '') + '</span>' +
+          window.okbmFeedInstagramBadgeHtml(log.instagram || log.insta || '') +
           ((typeof window.isRecordOwner === 'function' && window.isRecordOwner(log)) ? '' : okbmBuildFeedOthersMoreBtnHtml(log.id, log.userId || log.user_id, log.author || log.nick || log.nickname, 'inline')) +
         '</div>' +
       '</div>' +
@@ -4811,7 +4829,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (window.__okbmSavedFeedResolveInflight) return;
     window.__okbmSavedFeedResolveInflight = true;
 
-    var projection = 'id,user_id,author,author_photo,spot,elevation,weight_kg,date,memo,photos,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+    var projection = 'id,user_id,author,author_photo,instagram,spot,elevation,weight_kg,date,memo,photos,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
     var foundIds = {};
     var allOk = true;
     try {
@@ -7104,7 +7122,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         };
 
         var fetchTableRows = function(tableName) {
-          var projectionColumns = 'id,user_id,author,author_photo,spot,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+          var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
           var filterParam = currentUserId
             ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
             : '&is_published=eq.true';
@@ -7235,7 +7253,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           };
         var profile = safeGetJSON('user_profile', null);
         var currentUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
-        var projectionColumns = 'id,user_id,author,author_photo,spot,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+        var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
         var filterParam = currentUserId
           ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
           : '&is_published=eq.true';
@@ -7831,9 +7849,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var socialBadgesHtml = '';
     if (!isMyRecord) {
       if (instaTargetUrl && okbmSafeExternalUrl(instaTargetUrl) !== '#') {
-        socialBadgesHtml += '<a href="' + escapeHtml(okbmSafeExternalUrl(instaTargetUrl)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="인스타그램">' +
-          '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' +
-          '</a>';
+        socialBadgesHtml += window.okbmFeedInstagramBadgeHtml(record.instagram || instaTargetUrl);
       }
       if (youtubeTargetUrl && okbmSafeExternalUrl(youtubeTargetUrl) !== '#') {
         socialBadgesHtml += '<a href="' + escapeHtml(okbmSafeExternalUrl(youtubeTargetUrl)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="유튜브">' +

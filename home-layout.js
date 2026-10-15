@@ -120,7 +120,8 @@
       items: parseArr(r.items),
       author: r.author || '낭만백패커',
       nick: r.author || '낭만백패커',
-      photoMemos: parseArr(r.photo_memos_json || r.photo_memos)
+      photoMemos: parseArr(r.photo_memos_json || r.photo_memos),
+      instagram: String(r.instagram || '').trim()
     };
   }
   function firstPhoto(f) {
@@ -163,7 +164,7 @@
   function loadRecent() {
     var base = window.SUPABASE_URL;
     if (!base || typeof window.okbmPublicFetch !== 'function') return Promise.resolve();
-    var select = window.FEEDS_HOME_SELECT || 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,likes_count,is_published,feed_type,created_at,items,template_id';
+    var select = window.FEEDS_HOME_SELECT || 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,instagram,likes_count,is_published,feed_type,created_at,items,template_id';
     var url = base + '/rest/v1/feeds?select=' + encodeURIComponent(select) +
       '&is_published=eq.true&user_id=neq.' + encodeURIComponent(OPERATOR_UID) +
       '&order=created_at.desc&limit=' + RECENT_LIMIT;

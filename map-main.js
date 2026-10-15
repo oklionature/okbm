@@ -1086,7 +1086,7 @@
             var targetKey = window.SUPABASE_ANON_KEY || '';
             var spotMainName = (spot.spot_main || spot.name || '').trim();
             if (!sId && !spotMainName) return [];
-            var selectCols = 'id,user_id,spot,spot_id,photos,photo_memos_json,author,memo,weight_kg,likes_count,date,created_at,feed_type';
+            var selectCols = 'id,user_id,spot,spot_id,photos,photo_memos_json,author,instagram,memo,weight_kg,likes_count,date,created_at,feed_type';
             var headers = {
               'apikey': targetKey,
               'Authorization': 'Bearer ' + targetKey,
@@ -4472,6 +4472,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
                 <button type="button" data-author="${escapeHtml(authorNick)}" data-user-id="${escapeHtml(recordUserId)}" onclick="document.getElementById('mapSpotFeedDetailModal').remove(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="background:none; border:none; padding:0; font-size:0.86rem; color:#ffffff; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; text-align:left;">
                   ${escapeHtml(authorNick)}
                 </button>
+                ${(typeof window.okbmFeedInstagramBadgeHtml === 'function') ? window.okbmFeedInstagramBadgeHtml(cleanInsta) : ''}
                 ${followBtnHtml}
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
