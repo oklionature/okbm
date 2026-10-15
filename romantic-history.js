@@ -1032,6 +1032,7 @@
     }
     delete safePayload.likes_count;
     delete safePayload.likes;
+    if (window.__okbmNoPrivateByUserCol) delete safePayload.private_by_user;
     // [헌법 2] 최종 관문: 레디샷은 https만 DB로 보낸다.
     if (safePayload.ready_shot_photo !== undefined && safePayload.ready_shot_photo !== null &&
         String(safePayload.ready_shot_photo).trim().indexOf('https://') !== 0) {
@@ -1083,6 +1084,10 @@
             }
           }
         }
+        if (safePayload.private_by_user !== undefined && errText.indexOf('private_by_user') !== -1) {
+          window.__okbmNoPrivateByUserCol = true;
+          return window.submitFeedPayload(safePayload);
+        }
         console.error('[submitFeedPayload] 서버 저장 실패 status=' + res.status, errText);
         return { ok: false, status: res.status, error: errText || ('HTTP ' + res.status) };
       }
@@ -1096,7 +1101,7 @@
     }
   };
 
-  window.patchFeedPublishStatus = async function(recordId, isPublished) {
+  window.patchFeedPublishStatus = async function(recordId, isPublished, spotId, opts) {
     var sId = String(recordId || '').trim();
     var targetUrl = window.SUPABASE_URL || (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '') || '';
     var targetKey = window.SUPABASE_ANON_KEY || (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '') || '';
@@ -1105,6 +1110,16 @@
     }
 
     try {
+      var patchBody = {
+        is_published: Boolean(isPublished),
+        updated_at: new Date().toISOString()
+      };
+      var linkedSpot = String(spotId || '').trim();
+      if (linkedSpot) patchBody.spot_id = linkedSpot;
+      if (!window.__okbmNoPrivateByUserCol) {
+        if (opts && opts.byUser) patchBody.private_by_user = !isPublished;
+        else if (isPublished) patchBody.private_by_user = false;
+      }
       var res = await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
         method: 'PATCH',
         headers: (typeof window.okbmWriteHeaders === 'function' && window.okbmWriteHeaders({ Prefer: 'return=representation' })) || {
@@ -1113,15 +1128,16 @@
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
-        body: JSON.stringify({
-          is_published: Boolean(isPublished),
-          updated_at: new Date().toISOString()
-        })
+        body: JSON.stringify(patchBody)
       });
 
       if (!res.ok) {
         var errText = '';
         try { errText = await res.text(); } catch (readErr) {}
+        if (patchBody.private_by_user !== undefined && errText.indexOf('private_by_user') !== -1) {
+          window.__okbmNoPrivateByUserCol = true;
+          return window.patchFeedPublishStatus(recordId, isPublished, spotId, opts);
+        }
         console.error('[patchFeedPublishStatus] 서버 갱신 실패 status=' + res.status, errText);
         return { ok: false, status: res.status, error: errText || ('HTTP ' + res.status) };
       }
@@ -1553,7 +1569,23 @@
       var autoOpenReadyShotPrivate = Boolean(
         canPublish && !prevHadFieldPhotos && prevWasPrivate && prevReadyForPublish
       );
+      var wasUnregistered = normalized.unregisteredSpot === true || normalized.unregistered_spot === true;
       var finalPublished = canPublish && (normalized.isPublished !== false || autoOpenReadyShotPrivate);
+      if (canPublish && wasUnregistered && !window.okbmIsPrivateByUser(normalized)) {
+        finalPublished = true;
+        normalized.unregisteredSpot = false;
+        normalized.unregistered_spot = false;
+        if (!String(normalized.spotId || normalized.spot_id || '').trim() &&
+            typeof window.okbmFindSpotByFocusQuery === 'function' &&
+            typeof okbmCollectMasterSpotPool === 'function') {
+          var adopted = window.okbmFindSpotByFocusQuery(okbmCollectMasterSpotPool(), String(normalized.spot || '').trim());
+          var adoptedId = adopted && (adopted.id || adopted.spot_id);
+          if (adoptedId) {
+            normalized.spotId = String(adoptedId).trim();
+            normalized.spot_id = normalized.spotId;
+          }
+        }
+      }
       normalized.isPublished = finalPublished;
       normalized.is_published = finalPublished;
       // 새 기록만 공개 결과를 센다(home-metrics.js). 비공개 이유: 직접 선택 / 등록 안 된 장소 / 현장 사진 없음.
@@ -1567,10 +1599,12 @@
           'event'
         );
       }
+      if (finalPublished) normalized.privateByUser = false;
       var stampPublishedFlag = function(rec) {
         if (!rec || String(rec.id || '').trim() !== String(normalized.id || '').trim()) return;
         rec.isPublished = finalPublished;
         rec.is_published = finalPublished;
+        rec.privateByUser = normalized.privateByUser === true;
       };
       list.forEach(stampPublishedFlag);
       safeStorageList.forEach(stampPublishedFlag);
@@ -1603,6 +1637,7 @@
         youtube: normalized.youtube || '',
         photo_memos_json: normalized.photoMemos || [],
         is_published: finalPublished,
+        private_by_user: finalPublished ? false : window.okbmIsPrivateByUser(normalized),
         photos: normalized.photos || [],
         items: normalized.items || [],
         ready_shot_photo: tmplPhoto,
@@ -2048,6 +2083,12 @@ function getRecordPhotos(record) {
     return raw === false || raw === 'false' || raw === 'FALSE' || raw === 0 || raw === '0' || raw === 'N' || raw === 'n';
   };
 
+  // 글쓴이가 직접 나만보기를 고른 기록. 미등록 박지라 어쩔 수 없이 비공개된 기록과 구분한다.
+  // 박지가 나중에 등록되면 어쩔 수 없이 비공개된 기록만 자동 공개한다.
+  window.okbmIsPrivateByUser = function(item) {
+    return Boolean(item && (item.privateByUser === true || item.private_by_user === true));
+  };
+
   window.okbmPublicPhotoUrls = function(item) {
     if (!item) return [];
     return getRecordPhotos(item);
@@ -2313,6 +2354,7 @@ window.normalizeHistoryRecord = function(r, idx) {
       spotId: (r && (r.spotId || r.spot_id)) ? String(r.spotId || r.spot_id).trim() : '',
       memoMode: (r && (r.memoMode || r.memo_mode)) ? String(r.memoMode || r.memo_mode) : 'single',
       unregisteredSpot: Boolean(r && (r.unregisteredSpot === true || r.unregistered_spot === true)),
+      privateByUser: window.okbmIsPrivateByUser(r),
       items: cleanItems,
       photos: rawPhotos
     };
@@ -3908,6 +3950,8 @@ window.toggleFeedStar = async function(cardId, e) {
       target.isPublished = nextStatus;
       target.is_published = nextStatus;
     }
+    target.privateByUser = !nextStatus;
+    target.private_by_user = !nextStatus;
 
     var paintLockButton = function(published) {
       var lockBtn = document.querySelector('[data-lock-btn-id="' + sId + '"]');
@@ -3943,7 +3987,7 @@ window.toggleFeedStar = async function(cardId, e) {
         if (typeof window.patchFeedPublishStatus !== 'function') {
           return Promise.resolve({ ok: false, error: 'NO_PATCH' });
         }
-        return window.patchFeedPublishStatus(sId, nextStatus);
+        return window.patchFeedPublishStatus(sId, nextStatus, null, { byUser: true });
       };
 
       persistPublish().then(function(result) {

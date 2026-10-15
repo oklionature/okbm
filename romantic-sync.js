@@ -7374,7 +7374,8 @@ window._pastTripLinkUnregisteredRecordsToSpot = async function(spot, spotId, nam
     r.spot_id = id;
     r.unregisteredSpot = false;
     r.unregistered_spot = false;
-    var nextPublished = window._pastTripHasValidFieldPhotos(r);
+    var nextPublished = window._pastTripHasValidFieldPhotos(r) &&
+      !(typeof window.okbmIsPrivateByUser === 'function' && window.okbmIsPrivateByUser(r));
     r.isPublished = nextPublished;
     r.is_published = nextPublished;
     return true;
@@ -7428,7 +7429,7 @@ window._pastTripLinkUnregisteredRecordsToSpot = async function(spot, spotId, nam
     for (var i = 0; i < linkedIds.length; i++) {
       if (!linkedIds[i].published) continue;
       try {
-        await window.patchFeedPublishStatus(linkedIds[i].id, linkedIds[i].published);
+        await window.patchFeedPublishStatus(linkedIds[i].id, linkedIds[i].published, id);
       } catch (pubErr) {
         console.warn('[romantic-sync.js:_pastTripLinkUnregisteredRecordsToSpot publish]', pubErr);
       }
@@ -7680,10 +7681,45 @@ window.flushPendingSpotMediaForSpot = async function(spot) {
   } catch (linkErr) {
     console.warn('[romantic-sync.js:flushPendingSpotMediaForSpot link]', linkErr);
   }
-  if (linked > 0 && typeof showToast === 'function') {
-    showToast('같은 이름 비등록 기록 ' + linked + '건을 이 장소에 연결했습니다.', 'success', 2400);
+  var serverLinked = 0;
+  try {
+    serverLinked = await window.okbmLinkUnregisteredFeeds(spotId);
+  } catch (rpcErr) {
+    console.warn('[romantic-sync.js:flushPendingSpotMediaForSpot rpc]', rpcErr);
   }
-  return mediaOk || linked > 0;
+  if (window.__spotFeedsCache && typeof window.__spotFeedsCache.delete === 'function') {
+    window.__spotFeedsCache.delete(spotId);
+    var mainKey = String((spot && (spot.spot_main || spot.name)) || '').trim();
+    if (mainKey) window.__spotFeedsCache.delete(mainKey);
+  }
+  var shown = serverLinked > 0 ? serverLinked : linked;
+  if (shown > 0 && typeof showToast === 'function') {
+    showToast('같은 이름 비등록 기록 ' + shown + '건을 이 장소에 연결했습니다.', 'success', 2400);
+  }
+  return mediaOk || shown > 0;
+};
+
+window.okbmLinkUnregisteredFeeds = async function(spotId) {
+  var id = String(spotId || '').trim();
+  if (!id) return 0;
+  var targetUrl = window.SUPABASE_URL || (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '') || '';
+  if (!targetUrl) return 0;
+  var headers = (typeof okbmWriteRestHeaders === 'function') ? okbmWriteRestHeaders() : null;
+  if (!headers) return 0;
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/rpc/okbm_link_unregistered_feeds', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ p_spot_id: id })
+    });
+    if (!res.ok) return 0;
+    var data = await res.json();
+    var n = Number(data);
+    return isFinite(n) ? n : 0;
+  } catch (e) {
+    console.warn('[romantic-sync.js:okbmLinkUnregisteredFeeds]', e);
+    return 0;
+  }
 };
 
 window.okbmRpcMergeSpotMediaUrls = async function(spotId, urls) {
@@ -9129,6 +9165,7 @@ window.submitPastTripRegister = async function() {
     memoMode: isSingle ? 'single' : 'per_photo',
     isDraft: false,
     isPublished: isUnregistered ? false : (photos.length > 0 && st.publishOff !== true),
+    privateByUser: !isUnregistered && st.publishOff === true,
     unregisteredSpot: isUnregistered,
     items: packedItems,
     photos: photos,

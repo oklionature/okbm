@@ -4800,7 +4800,7 @@ var liveSearchTimer = null;
                   ${isCampBanned(item) ? '<span style="font-size:0.58rem; color:#fda4af; font-weight:900; flex-shrink:0;">🚫 야영금지</span>' : ''}
                 </div>
                 <span style="font-size:0.60rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                  ${escapeHtml(item.region || '')} ${escapeHtml(item.cityName || '')} · ${escapeHtml(item.elevation || '')}
+                  ${escapeHtml(item.region || '')} ${escapeHtml(item.cityName || '')}
                 </span>
               </div>
             </div>
@@ -6360,6 +6360,7 @@ var overlay = document.getElementById('customModalOverlay');
             var saved = await persistSpotToSupabase(target, isInsert);
             if (saved && typeof window.flushPendingSpotMediaForSpot === 'function') {
               try { await window.flushPendingSpotMediaForSpot(target); } catch (flushErr) { console.warn('[map.html:flushPendingSpotMediaForSpot]', flushErr); }
+              refreshCurrentSpotPopup();
             }
             if (inboxItem && typeof window.updateAdminSpotInboxStatus === 'function') {
               var newStatus = saved ? '반영완료' : '반영실패';

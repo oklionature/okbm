@@ -1629,6 +1629,123 @@ CREATE INDEX IF NOT EXISTS feeds_spot_id_idx
   ON public.feeds (spot_id)
   WHERE spot_id IS NOT NULL;
 
+-- 글쓴이가 직접 나만보기를 고른 글 표시. 미등록 박지라 어쩔 수 없이 비공개된 글은 false로 남는다.
+ALTER TABLE public.feeds
+  ADD COLUMN IF NOT EXISTS private_by_user boolean NOT NULL DEFAULT false;
+
+-- 미등록 박지라 비공개로 남은 글은, 같은 이름의 박지가 하나 등록되면 공개하고 박지 번호를 붙인다.
+-- 글쓴이가 직접 나만보기를 고른 글(private_by_user)과 등록 박지를 고른 글(spot_id 있음)은 대상이 아니다.
+-- 동명 박지가 둘 이상이면 붙이지 않는다.
+CREATE OR REPLACE FUNCTION public.okbm_norm_spot_key(p_name text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+  SELECT lower(regexp_replace(btrim(COALESCE(p_name, '')), '\s+', '', 'g'));
+$$;
+
+CREATE OR REPLACE FUNCTION public.okbm_link_unregistered_feeds(p_spot_id text)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_spot public.spots%ROWTYPE;
+  v_main_key text;
+  v_same integer;
+  v_updated integer;
+BEGIN
+  IF coalesce(current_setting('okbm.allow_feed_link', true), '') IS DISTINCT FROM '1'
+     AND auth.role() IS DISTINCT FROM 'service_role'
+     AND NOT coalesce(public.okbm_is_admin(), false) THEN
+    RETURN 0;
+  END IF;
+
+  SELECT * INTO v_spot
+  FROM public.spots
+  WHERE id = btrim(COALESCE(p_spot_id, ''));
+  IF NOT FOUND THEN
+    RETURN 0;
+  END IF;
+
+  v_main_key := public.okbm_norm_spot_key(v_spot.spot_main);
+  IF v_main_key = '' OR v_main_key IN (
+    '자유일정', '나의해힐링스팟', '나의힐링스팟', '힐링박지', '방문스팟', '힐링장소', '힐링스팟'
+  ) THEN
+    RETURN 0;
+  END IF;
+
+  SELECT count(*) INTO v_same
+  FROM public.spots s
+  WHERE public.okbm_norm_spot_key(s.spot_main) = v_main_key;
+  IF v_same <> 1 THEN
+    RETURN 0;
+  END IF;
+
+  UPDATE public.feeds f
+  SET spot_id = v_spot.id,
+      is_published = true,
+      updated_at = now()
+  WHERE f.spot_id IS NULL
+    AND coalesce(f.is_published, false) = false
+    AND coalesce(f.private_by_user, false) = false
+    AND coalesce(f.feed_type, 'route') <> 'snap'
+    AND public.okbm_norm_spot_key(f.spot) <> ''
+    AND public.okbm_norm_spot_key(f.spot) IN (
+      v_main_key,
+      public.okbm_norm_spot_key(v_spot."fullName"),
+      public.okbm_norm_spot_key(coalesce(v_spot."cityName", '') || ' ' || coalesce(v_spot.spot_main, '')),
+      public.okbm_norm_spot_key(coalesce(v_spot."cityName", '') || ' ' || coalesce(v_spot."fullName", '')),
+      public.okbm_norm_spot_key(coalesce(v_spot.region, '') || ' ' || coalesce(v_spot.spot_main, ''))
+    )
+    AND EXISTS (
+      SELECT 1
+      FROM jsonb_array_elements_text(
+        CASE WHEN jsonb_typeof(f.photos) = 'array' THEN f.photos ELSE '[]'::jsonb END
+      ) AS u(url)
+      WHERE btrim(u.url) ~* '^https?://'
+        AND u.url !~* 'unsplash\.com'
+        AND btrim(u.url) IS DISTINCT FROM btrim(coalesce(f.ready_shot_photo, ''))
+    );
+
+  GET DIAGNOSTICS v_updated = ROW_COUNT;
+  RETURN v_updated;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_norm_spot_key(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.okbm_norm_spot_key(text) TO anon, authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.okbm_link_unregistered_feeds(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.okbm_link_unregistered_feeds(text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.okbm_link_unregistered_feeds_trg()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' AND OLD.spot_main IS NOT DISTINCT FROM NEW.spot_main THEN
+    RETURN NEW;
+  END IF;
+  PERFORM set_config('okbm.allow_feed_link', '1', true);
+  PERFORM public.okbm_link_unregistered_feeds(NEW.id);
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_link_unregistered_feeds_trg() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.okbm_link_unregistered_feeds_trg() TO authenticated, service_role;
+
+DROP TRIGGER IF EXISTS trg_okbm_link_unregistered_feeds ON public.spots;
+CREATE TRIGGER trg_okbm_link_unregistered_feeds
+  AFTER INSERT OR UPDATE OF spot_main ON public.spots
+  FOR EACH ROW
+  EXECUTE FUNCTION public.okbm_link_unregistered_feeds_trg();
+
 -- F2(9/30): 누가 어떤 피드에 좋아요를 눌렀는지는 본인·관리자만. 좋아요 수는 feeds.likes_count로 공개.
 -- 클라이언트 조회는 모두 user_id로 거른다(romantic-history.js fetchUserFeedLikesFromServer).
 -- 옛 변형 id(kakao_ 접두 유무)로 남은 행은 DELETE 정책(본인 id 일치)상 이미 지울 수 없었고 이제 보이지도 않는다.
