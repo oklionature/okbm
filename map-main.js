@@ -4345,6 +4345,13 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         `;
       }
 
+      function splitOfficialPhotoCredit(text) {
+        var raw = String(text || '').replace(/\r\n/g, '\n').trim();
+        var matched = raw.match(/^📷\s*사진\s*[:：]\s*@?([A-Za-z0-9._]{1,30})(?:\s*\n+|\s+|$)/);
+        if (!matched) return { handle: '', body: raw };
+        return { handle: matched[1], body: raw.slice(matched[0].length).trim() };
+      }
+
     // 📱 [글래스모피즘 순수 피드 히어로 모달 - 피드 주소 1:1 직통 정밀 매칭 엔진]
       window.openMapSpotFeedDetailModal = function(feedId, spotId) {
         var old = document.getElementById('mapSpotFeedDetailModal');
@@ -4404,6 +4411,17 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         }
 
         var initialMemo = photoMemosArr[0] || memoText || '';
+        var isOfficialRoute = recordUserId === 'official_romanticroute' || authorNick === '낭만루트';
+        var creditParsed = isOfficialRoute ? splitOfficialPhotoCredit(initialMemo) : { handle: '', body: initialMemo };
+        var creditHandle = creditParsed.handle || (isOfficialRoute ? cleanInsta : '');
+        var shownMemo = (isOfficialRoute && creditParsed.handle) ? creditParsed.body : initialMemo;
+        var creditBadgeHtml = (isOfficialRoute && creditHandle && typeof window.okbmFeedInstagramBadgeHtml === 'function')
+          ? window.okbmFeedInstagramBadgeHtml(creditHandle)
+          : '';
+        var creditInlineHtml = (isOfficialRoute && creditHandle)
+          ? '<span style="font-size:0.72rem; color:#cbd5e1; font-weight:700; letter-spacing:-0.01em; white-space:nowrap;">@' + escapeHtml(creditHandle) + '</span>' +
+            creditBadgeHtml
+          : '';
 
         var starsMap = safeGetJSON('okbm_feed_stars_counts', {}) || {};
         var curProfile = safeGetJSON('user_profile', null);
@@ -4472,7 +4490,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
                 <button type="button" data-author="${escapeHtml(authorNick)}" data-user-id="${escapeHtml(recordUserId)}" onclick="document.getElementById('mapSpotFeedDetailModal').remove(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="background:none; border:none; padding:0; font-size:0.86rem; color:#ffffff; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; text-align:left;">
                   ${escapeHtml(authorNick)}
                 </button>
-                ${(typeof window.okbmFeedInstagramBadgeHtml === 'function') ? window.okbmFeedInstagramBadgeHtml(cleanInsta) : ''}
+                ${(!isOfficialRoute && typeof window.okbmFeedInstagramBadgeHtml === 'function') ? window.okbmFeedInstagramBadgeHtml(cleanInsta) : ''}
                 ${followBtnHtml}
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
@@ -4508,6 +4526,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
                 </div>
 
                 <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                  ${creditInlineHtml}
                   ${weightStr ? `
                     <span style="font-size:0.66rem; color:#cbd5e1; font-weight:800; font-family:'Space Grotesk',sans-serif; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); padding:2px 6px; border-radius:4px; display:inline-flex; align-items:center; gap:3px;">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:11px; height:11px; display:inline-block; vertical-align:-1.5px; flex-shrink:0;"><rect x="4" y="2" width="16" height="5" rx="2.5"/><path d="M8 2v5M16 2v5M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M12 7l-4 4M12 7l4 4M8 15h8v4H8z"/></svg>
@@ -4516,8 +4535,8 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
                 </div>
               </div>
 
-              <div id="mapFeedPhotoMemoText" style="width:100%; height:calc(1.35em * 3); min-height:calc(1.35em * 3); max-height:calc(1.35em * 3); flex:0 0 calc(1.35em * 3); line-height:1.35em; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif; font-size:0.76rem; font-weight:450; color:#e2e8f0; word-break:break-all; display:-webkit-box; -webkit-line-clamp:3; line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em; padding:0 2px; margin:0; background:transparent; border:none; box-sizing:border-box;">
-                ${initialMemo ? escapeHtml(initialMemo) : '<span style="color:#64748b;">등록된 일지 메모가 없습니다.</span>'}
+              <div id="mapFeedPhotoMemoText" data-strip-credit="${isOfficialRoute ? '1' : '0'}" style="width:100%; height:calc(1.35em * 3); min-height:calc(1.35em * 3); max-height:calc(1.35em * 3); flex:0 0 calc(1.35em * 3); line-height:1.35em; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif; font-size:0.76rem; font-weight:450; color:#e2e8f0; word-break:break-all; display:-webkit-box; -webkit-line-clamp:3; line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em; padding:0 2px; margin:0; background:transparent; border:none; box-sizing:border-box;">
+                ${shownMemo ? escapeHtml(shownMemo) : '<span style="color:#64748b;">등록된 일지 메모가 없습니다.</span>'}
               </div>
             </div>
 
@@ -4562,6 +4581,9 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             if (filledCount <= 1) {
               if (!curText && container.dataset.defaultMemo) curText = String(container.dataset.defaultMemo || '').trim();
               if (!curText && memos[0]) curText = String(memos[0] || '').trim();
+            }
+            if (memoEl.getAttribute('data-strip-credit') === '1') {
+              curText = splitOfficialPhotoCredit(curText).body;
             }
             memoEl.innerHTML = curText
               ? escapeHtml(curText)

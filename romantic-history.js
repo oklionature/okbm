@@ -7387,6 +7387,19 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     window.addEventListener('orientationchange', function() { window.__okbmSlideWidthGen++; });
   }
 
+  function splitFeedPhotoCredit(text) {
+    var raw = String(text || '').replace(/\r\n/g, '\n').trim();
+    var matched = raw.match(/^📷\s*사진\s*[:：]\s*@?([A-Za-z0-9._]{1,30})(?:\s*\n+|\s+|$)/);
+    if (!matched) return { handle: '', body: raw };
+    return { handle: matched[1], body: raw.slice(matched[0].length).trim() };
+  }
+
+  function okbmFeedCreditAccount(userId, authorName) {
+    var uid = String(userId || '').trim();
+    var author = String(authorName || '').trim();
+    return uid === 'kakao_5060259862' || uid === 'official_romanticroute' || author === '낭만루트';
+  }
+
   window.updateCarouselFeedState = function(container, cardId) {
     if (!container || !cardId) return;
 
@@ -7431,6 +7444,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         if (filledCount <= 1) {
           if (!curText && cardRoot.dataset.defaultMemo) curText = String(cardRoot.dataset.defaultMemo || '').trim();
           if (!curText && memos[0]) curText = String(memos[0] || '').trim();
+        }
+        if (memoEl.getAttribute('data-strip-credit') === '1') {
+          curText = splitFeedPhotoCredit(curText).body;
         }
         if (memoEl._okbmMemoIdx === curIdx && memoEl._okbmMemoText === curText) return;
         memoEl._okbmMemoIdx = curIdx;
@@ -7621,8 +7637,10 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
     var memoEl = document.getElementById('feedPhotoMemoText_' + cardIdEsc) || document.getElementById('feedPhotoMemoText_' + cleanCardId);
     if (memoEl) {
-      memoEl.innerHTML = initialPhotoMemo.trim()
-        ? escapeHtml(initialPhotoMemo.trim())
+      var syncMemo = initialPhotoMemo.trim();
+      if (memoEl.getAttribute('data-strip-credit') === '1') syncMemo = splitFeedPhotoCredit(syncMemo).body;
+      memoEl.innerHTML = syncMemo
+        ? escapeHtml(syncMemo)
         : '<span style="color:#475569;">등록된 일지 메모가 없습니다.</span>';
     }
     return true;
@@ -7846,9 +7864,24 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       }
     }
 
+    var creditSource = (Array.isArray(record.photoMemos) && record.photoMemos[0])
+      ? String(record.photoMemos[0])
+      : String(record.memo || record.oneLineMemo || '');
+    var isCreditAccount = okbmFeedCreditAccount(recordUserId, authorName);
+    var creditParsed = isCreditAccount
+      ? splitFeedPhotoCredit(window.okbmBlankAutoPackingCaption(creditSource, record.spot))
+      : { handle: '', body: '' };
+    var instaHandle = String(record.instagram || '').replace(/^@+/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').split(/[/?#]/)[0].trim();
+    var creditHandle = creditParsed.handle || (isCreditAccount ? instaHandle : '');
+    var showFeedCredit = Boolean(isCreditAccount && creditHandle);
+    var feedCreditHtml = showFeedCredit
+      ? '<span style="font-size:0.72rem; color:#cbd5e1; font-weight:700; letter-spacing:-0.01em; white-space:nowrap;">@' + escapeHtml(creditHandle) + '</span>' +
+        ((typeof window.okbmFeedInstagramBadgeHtml === 'function') ? window.okbmFeedInstagramBadgeHtml(creditHandle) : '')
+      : '';
+
     var socialBadgesHtml = '';
     if (!isMyRecord) {
-      if (instaTargetUrl && okbmSafeExternalUrl(instaTargetUrl) !== '#') {
+      if (!showFeedCredit && instaTargetUrl && okbmSafeExternalUrl(instaTargetUrl) !== '#') {
         socialBadgesHtml += window.okbmFeedInstagramBadgeHtml(record.instagram || instaTargetUrl);
       }
       if (youtubeTargetUrl && okbmSafeExternalUrl(youtubeTargetUrl) !== '#') {
@@ -8031,8 +8064,10 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       : [memo120];
     while (photoMemosArr.length < totalPhotosCount) photoMemosArr.push('');
     var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
-    var cleanMemoContentHtml = initialPhotoMemo.trim()
-      ? escapeHtml(initialPhotoMemo.trim())
+    var shownPhotoMemo = initialPhotoMemo.trim();
+    if (showFeedCredit) shownPhotoMemo = splitFeedPhotoCredit(shownPhotoMemo).body;
+    var cleanMemoContentHtml = shownPhotoMemo
+      ? escapeHtml(shownPhotoMemo)
       : '<span style="color:#475569;">등록된 일지 메모가 없습니다.</span>';
 
     var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
@@ -8077,12 +8112,13 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           '</div>' +
 
           '<div style="display:flex; align-items:center; gap:8px;">' +
+            feedCreditHtml +
             bottomToolsHtml +
           '</div>' +
         '</div>' +
 
         '<div class="reel-memo-fixed-slot">' +
-          '<div id="feedPhotoMemoText_' + cardId + '" class="reel-memo-fixed-box">' +
+          '<div id="feedPhotoMemoText_' + cardId + '" class="reel-memo-fixed-box" data-strip-credit="' + (showFeedCredit ? '1' : '0') + '">' +
             cleanMemoContentHtml +
           '</div>' +
         '</div>' +
