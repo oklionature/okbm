@@ -7237,4 +7237,43 @@ var overlay = document.getElementById('customModalOverlay');
         };
         reader.readAsText(file);
       }
-   
+
+      (function initNewSpotNotice() {
+        var root = document.getElementById('okbmNewSpotNotice');
+        if (!root) return;
+        var noticeId = String(root.getAttribute('data-notice-id') || '').trim();
+        if (!noticeId) return;
+        var storageKey = 'okbm_map_notice_id';
+
+        function storedId() {
+          try { return String(localStorage.getItem(storageKey) || ''); } catch (e) { return noticeId; }
+        }
+
+        function showNotice() {
+          if (storedId() === noticeId) {
+            root.hidden = true;
+            return;
+          }
+          var img = document.getElementById('okbmNewSpotNoticeImg');
+          if (img && img.getAttribute('data-notice-bound') !== noticeId) {
+            img.setAttribute('data-notice-bound', noticeId);
+            img.src = '/notice/new-spots.jpg?v=' + encodeURIComponent(noticeId);
+            img.addEventListener('error', function() { root.hidden = true; });
+          }
+          root.hidden = false;
+          if (root.parentNode) root.parentNode.appendChild(root);
+        }
+
+        var closeBtn = document.getElementById('okbmNewSpotNoticeClose');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', function() {
+            try { localStorage.setItem(storageKey, noticeId); } catch (e) {}
+            root.hidden = true;
+          });
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', showNotice);
+        else showNotice();
+        window.addEventListener('pageshow', showNotice);
+      })();
+    
