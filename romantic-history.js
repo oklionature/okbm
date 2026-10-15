@@ -4726,10 +4726,14 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       var userFeeds = allFeeds.filter(function(f) {
         return f && (String(f.userId || f.user_id || '').trim() === cleanKey || String(f.author || f.nick || f.nickname || '').trim() === cleanKey);
       });
-      var latestFeed = userFeeds[0] || null;
+      // 불러온 피드에 없으면 서버에서 받아 둔 프로필·최근 기록을 쓴다 (okbmEnrichFollowedRouters)
+      var cached = (window.__okbmFollowedRouterCache || {})[cleanKey] || null;
+      var latestFeed = userFeeds[0] || (cached && cached.feed) || null;
 
       var displayNick = '';
-      if (latestFeed && (latestFeed.author || latestFeed.nick || latestFeed.nickname)) {
+      if (cached && cached.nickname) {
+        displayNick = String(cached.nickname).trim();
+      } else if (latestFeed && (latestFeed.author || latestFeed.nick || latestFeed.nickname)) {
         displayNick = String(latestFeed.author || latestFeed.nick || latestFeed.nickname).trim();
       }
       if (!displayNick && !cleanKey.startsWith('kakao_')) {
@@ -4739,10 +4743,10 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         displayNick = '낭만루터';
       }
 
-      var thumbPhoto = (latestFeed && window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(latestFeed)[0]) || '';
+      var thumbPhoto = (latestFeed && window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(latestFeed)[0]) || (cached && cached.photoUrl) || '';
       var latestSpot = latestFeed ? (latestFeed.spot || '활동 기록') : '기록 없음';
       var latestDate = latestFeed ? (latestFeed.date || '') : '';
-      var targetUserId = (latestFeed && (latestFeed.userId || latestFeed.user_id)) || (cleanKey.startsWith('kakao_') ? cleanKey : '');
+      var targetUserId = (latestFeed && (latestFeed.userId || latestFeed.user_id)) || (cached && cached.userId) || (cleanKey.startsWith('kakao_') ? cleanKey : '');
 
       return {
         rawKey: cleanKey,
@@ -4809,6 +4813,63 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (typeof window.okbmLiftReportChildModal === 'function') window.okbmLiftReportChildModal(modalEl);
     else if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('history');
+    }
+    window.okbmEnrichFollowedRouters(followingList);
+  };
+
+  // 관심루터 목록은 이미 불러온 피드에서만 닉네임·기록을 찾아, 피드가 안 실린 사람은 "낭만루터 · 기록 없음"으로 보였다.
+  // 처음 보는 키만 서버에서 공개 프로필과 최근 공개 기록 1건을 받아 캐시에 담고, 창이 열려 있으면 다시 그린다.
+  window.__okbmFollowedRouterCache = window.__okbmFollowedRouterCache || {};
+  window.okbmEnrichFollowedRouters = async function(keys) {
+    var cache = window.__okbmFollowedRouterCache;
+    var targetUrl = window.SUPABASE_URL || '';
+    if (!targetUrl) return;
+    var todo = (Array.isArray(keys) ? keys : []).map(function(k) { return String(k || '').trim(); }).filter(function(k) {
+      return k && !cache[k];
+    });
+    if (!todo.length) return;
+    todo.forEach(function(k) { cache[k] = { pending: true }; });
+
+    var headers = (typeof window.okbmPublicRestHeaders === 'function')
+      ? window.okbmPublicRestHeaders()
+      : { 'apikey': window.SUPABASE_ANON_KEY || '', 'Authorization': 'Bearer ' + (window.SUPABASE_ANON_KEY || '') };
+    var isIdKey = function(k) { return /^(kakao_|naver_|apple_|google_|user_)/.test(k); };
+
+    var profiles = {};
+    var idKeys = todo.filter(isIdKey);
+    if (idKeys.length && typeof window.okbmFetchPublicProfiles === 'function') {
+      try {
+        (await window.okbmFetchPublicProfiles(idKeys) || []).forEach(function(row) {
+          if (row && row.id) profiles[String(row.id)] = row;
+        });
+      } catch (eProf) {}
+    }
+
+    var changed = false;
+    await Promise.all(todo.map(async function(k) {
+      var entry = { feed: null, nickname: '', photoUrl: '', userId: isIdKey(k) ? k : '' };
+      var prof = profiles[k];
+      if (prof) {
+        entry.nickname = String(prof.nickname || '').trim();
+        entry.photoUrl = String(prof.photo_url || '').trim();
+      }
+      var filter = isIdKey(k) ? ('user_id=eq.' + encodeURIComponent(k)) : ('author=eq.' + encodeURIComponent(k));
+      try {
+        var res = await fetch(targetUrl + '/rest/v1/feeds?' + filter + '&is_published=eq.true&order=date.desc,created_at.desc&limit=1', { headers: headers });
+        if (res.ok) {
+          var rows = await res.json();
+          if (Array.isArray(rows) && rows[0]) {
+            entry.feed = (typeof window.normalizeHistoryRecord === 'function') ? window.normalizeHistoryRecord(rows[0], 0) : rows[0];
+            if (!entry.userId) entry.userId = String(rows[0].user_id || '').trim();
+          }
+        }
+      } catch (eFeed) {}
+      cache[k] = entry;
+      if (entry.feed || entry.nickname || entry.photoUrl) changed = true;
+    }));
+
+    if (changed && document.getElementById('followedRoutersModal')) {
+      window.openFollowedRoutersModal(true);
     }
   };
 
