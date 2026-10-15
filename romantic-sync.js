@@ -13313,15 +13313,25 @@ window.okbmPaintNotifInboxList = async function() {
     var openAttrs = loungePostId
       ? ' class="okbm-notif-row" role="button" tabindex="0" data-lounge-post="' + _escapeReportPropHtml(loungePostId) + '"'
       : '';
-    return '<div' + openAttrs + ' style="padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; gap:8px; align-items:flex-start;' + (loungePostId ? ' cursor:pointer;' : '') + '">' +
-      unreadDot +
-      '<div style="min-width:0; flex:1;">' +
-        '<div style="font-size:0.80rem; font-weight:800; color:#e2e8f0;">' + _escapeReportPropHtml(r.title || '알림') + '</div>' +
-        '<div style="font-size:0.68rem; color:#94a3b8; margin-top:4px; line-height:1.45;">' + _escapeReportPropHtml(r.body || '') + '</div>' +
-        (when ? '<div style="font-size:0.58rem; color:#64748b; margin-top:6px;">' + when + (loungePostId ? ' · 글 보기 ›' : '') + '</div>' : '') +
+    // 쪽지 줄과 같은 밀어서 삭제 구조 (okbmBindNoteSwipeRows가 함께 묶는다)
+    var safeNotifId = _escapeReportPropHtml(String(r.id || ''));
+    return '<div class="okbm-note-swipe" data-notif-id="' + safeNotifId + '" style="position:relative; overflow:hidden; border-bottom:1px solid rgba(255,255,255,0.06);">' +
+      '<div class="okbm-note-swipe-actions" style="position:absolute; right:0; top:0; bottom:0; width:76px; display:flex;">' +
+        '<button type="button" data-notif-id="' + safeNotifId + '" onclick="window.deleteUserNotification(this.dataset.notifId, event);" style="width:76px; border:none; background:#f43f5e; color:#ffffff; font-size:0.78rem; font-weight:900; cursor:pointer;">삭제</button>' +
+      '</div>' +
+      '<div class="okbm-note-swipe-front" data-open="0" style="position:relative; background:#0c1017; transform:translateX(0); will-change:transform; touch-action:pan-y;">' +
+        '<div' + openAttrs + ' style="padding:12px 0; display:flex; gap:8px; align-items:flex-start;' + (loungePostId ? ' cursor:pointer;' : '') + '">' +
+          unreadDot +
+          '<div style="min-width:0; flex:1;">' +
+            '<div style="font-size:0.80rem; font-weight:800; color:#e2e8f0;">' + _escapeReportPropHtml(r.title || '알림') + '</div>' +
+            '<div style="font-size:0.68rem; color:#94a3b8; margin-top:4px; line-height:1.45;">' + _escapeReportPropHtml(r.body || '') + '</div>' +
+            (when ? '<div style="font-size:0.58rem; color:#64748b; margin-top:6px;">' + when + (loungePostId ? ' · 글 보기 ›' : '') + '</div>' : '') +
+          '</div>' +
+        '</div>' +
       '</div>' +
     '</div>';
   }).join('');
+  window.okbmBindNoteSwipeRows();
   okbmBindNotifRowOpen(listEl);
   if (unreadIds.length) {
     await window.markUserNotificationsRead(unreadIds);
@@ -13329,6 +13339,43 @@ window.okbmPaintNotifInboxList = async function() {
       window.pollUserNotifications(true).catch(function() {});
     }
   }
+};
+
+// 알림 한 건 삭제. 서버 삭제가 확인된 뒤에만 목록과 배지에서 뺀다.
+window.deleteUserNotification = async function(notifId, ev) {
+  if (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+  }
+  var id = String(notifId || '').trim();
+  if (!id) return false;
+  var del = await window.okbmDeleteRowsConfirmed('user_notifications', id);
+  // 0건 삭제 확인은 공개 조회라 RLS에 가려 "이미 없음"으로 보일 수 있다. 내 알림 목록으로 다시 확인한다.
+  if (del.ok && del.alreadyGone) {
+    var mine = await window.fetchUserNotifications();
+    if ((mine || []).some(function(r) { return r && String(r.id || '') === id; })) del = { ok: false };
+  }
+  if (!del.ok) {
+    if (typeof showToast === 'function') showToast('알림을 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.', 'error', 2200);
+    return false;
+  }
+  window.__okbmUserNotifications = (window.__okbmUserNotifications || []).filter(function(r) {
+    return !r || String(r.id || '') !== id;
+  });
+  var listEl = document.getElementById('userNotificationInboxList');
+  if (listEl) {
+    listEl.querySelectorAll('.okbm-note-swipe[data-notif-id]').forEach(function(row) {
+      if (row.getAttribute('data-notif-id') === id) row.remove();
+    });
+    if (window.__okbmInboxTab === 'notif' && !listEl.querySelector('.okbm-note-swipe')) {
+      listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">아직 도착한 알림이 없습니다.</div>';
+    }
+  }
+  if (typeof showToast === 'function') showToast('알림을 삭제했습니다.', 'success', 1600);
+  if (typeof window.pollUserNotifications === 'function') {
+    window.pollUserNotifications(true).catch(function() {});
+  }
+  return true;
 };
 
 // 알림 줄 누르기(위임, 인라인 핸들러 없음). 목록 칸은 알림함을 열 때마다 새로 만들어진다.
