@@ -5743,6 +5743,13 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       return;
     }
 
+    // 홈 "최근 다녀온 후기"는 누른 글만. 목록이 넘어와도 앞뒤 글을 붙이지 않는다.
+    var singleOnly = contextTitle === '최근 다녀온 후기';
+    if (singleOnly) {
+      logs = logs.filter(function(r) { return r && String(r.id).trim() === sId; });
+      if (!logs.length && targetRec) logs = [targetRec];
+    }
+
     if (logs.length === 0) {
       if (typeof showToast === 'function') showToast('선택한 기록을 찾을 수 없습니다.', 'warn');
       return;
@@ -5756,9 +5763,9 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var old = document.getElementById('singleTripFeedModal');
     if (old) old.remove();
 
-    var dualFrom = Math.max(0, startIdx - 1);
-    var dualTo = Math.min(logs.length - 1, startIdx + 1);
-    window.__dualFeedWindow = { from: dualFrom, to: dualTo, logs: logs, growing: false };
+    var dualFrom = singleOnly ? startIdx : Math.max(0, startIdx - 1);
+    var dualTo = singleOnly ? startIdx : Math.min(logs.length - 1, startIdx + 1);
+    window.__dualFeedWindow = { from: dualFrom, to: dualTo, logs: logs, growing: false, singleOnly: singleOnly };
     var allCardsHtml = '';
     for (var dualI = dualFrom; dualI <= dualTo; dualI++) {
       allCardsHtml += window.buildSingleFeedCardHtml(logs[dualI]);
@@ -5813,7 +5820,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
    window.__growDualFeedWindow = function(container) {
       var state = window.__dualFeedWindow;
-      if (!state || state.growing || !container) return;
+      if (!state || state.singleOnly || state.growing || !container) return;
       var wrapper = document.getElementById('dualFeedCardsWrapper');
       if (!wrapper) return;
       var fitNew = function(node) {
@@ -7126,7 +7133,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           var filterParam = currentUserId
             ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
             : '&is_published=eq.true';
-          var queryUrl = targetUrl + '/rest/v1/' + tableName + '?select=' + projectionColumns + filterParam + '&order=created_at.desc&offset=' + offset + '&limit=' + limit;
+          // 올린 시각이 아니라 다녀온 날짜. created_at으로 자르면 최근 여행이 뒤로 밀리고 예전 글이 위에 섞인다.
+          var queryUrl = targetUrl + '/rest/v1/' + tableName + '?select=' + projectionColumns + filterParam + '&order=date.desc.nullslast,created_at.desc&offset=' + offset + '&limit=' + limit;
           var doFetch = (typeof window.okbmPublicFetch === 'function')
             ? window.okbmPublicFetch(queryUrl, { headers: headers, signal: fetchSignal })
             : fetch(queryUrl, { headers: headers, signal: fetchSignal });
@@ -7257,7 +7265,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         var filterParam = currentUserId
           ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
           : '&is_published=eq.true';
-        var queryUrl = targetUrl + '/rest/v1/feeds?select=' + projectionColumns + filterParam + '&order=created_at.desc&offset=0&limit=10';
+        var queryUrl = targetUrl + '/rest/v1/feeds?select=' + projectionColumns + filterParam + '&order=date.desc.nullslast,created_at.desc&offset=0&limit=10';
         var res = await ((typeof window.okbmPublicFetch === 'function')
           ? window.okbmPublicFetch(queryUrl, { headers: headers })
           : fetch(queryUrl, { headers: headers }));
@@ -7875,7 +7883,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var creditHandle = creditParsed.handle || (isCreditAccount ? instaHandle : '');
     var showFeedCredit = Boolean(isCreditAccount && creditHandle);
     var feedCreditHtml = showFeedCredit
-      ? '<span style="font-size:0.72rem; color:#cbd5e1; font-weight:700; letter-spacing:-0.01em; white-space:nowrap;">@' + escapeHtml(creditHandle) + '</span>' +
+      ? '<span style="font-size:0.72rem; color:#cbd5e1; font-weight:700; letter-spacing:-0.01em; white-space:nowrap;">사진: @' + escapeHtml(creditHandle) + '</span>' +
         ((typeof window.okbmFeedInstagramBadgeHtml === 'function') ? window.okbmFeedInstagramBadgeHtml(creditHandle) : '')
       : '';
 

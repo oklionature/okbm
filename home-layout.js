@@ -4,7 +4,7 @@
 //
 // · 바로가기 다섯 개(#homeQuickNav [data-quick])는 누르면 그 화면으로 넘어간다(스크롤 아님).
 //   초보 가이드·행사 개수는 lounge.js가 #hqGuideCount·#hqEventCount에 채운다.
-// · 최근 다녀온 후기는 운영자 글을 빼고 회원이 공개한 글만 최신순. 개수와 상관없이 바로가기 바로 밑(대표님 10-14).
+// · 최근 다녀온 후기는 운영자 글을 빼고 회원이 공개한 글만, 다녀온 날짜가 최근인 것부터. 개수와 상관없이 바로가기 바로 밑(대표님 10-14).
 // · 인라인 핸들러 없음(이벤트 위임) → csp-extract 대상 아님.
 // · src 보간은 escapeHtml(okbmSafeImageUrl(...))만 (scripts/check-unsafe-url-interpolation.py).
 // =========================================================================
@@ -15,6 +15,7 @@
 
   var OPERATOR_UID = 'kakao_5060259862'; // 오라네(운영자). romantic-history.js openUserFeedCollectionModal과 같은 값
   var RECENT_LIMIT = 12;
+  var RECENT_FETCH = 40; // 사진 없는 글을 거른 뒤에도 날짜 최근 12건이 남도록 더 가져온다
 
   var escapeHtml = typeof window.escapeHtml === 'function' ? window.escapeHtml : function (t) {
     return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
@@ -133,6 +134,27 @@
     var p = String(f.date || f.createdAt || '').match(/\d+/g);
     return p && p.length >= 3 ? (String(p[1]).padStart(2, '0') + '.' + String(p[2]).padStart(2, '0')) : '';
   }
+  // 카드에 보이는 다녀온 날짜. 연-월-일 숫자. 날짜가 없으면 올린 날.
+  function tripDateNum(f) {
+    var p = String((f && f.date) || '').match(/\d+/g);
+    var y = 0;
+    var m = 0;
+    var d = 0;
+    if (p && p.length >= 3) {
+      if (String(p[0]).length === 4) { y = +p[0]; m = +p[1]; d = +p[2]; }
+      else if (String(p[2]).length === 4) { y = +p[2]; m = +p[0]; d = +p[1]; }
+    }
+    if (!(y && m && d)) {
+      var iso = String((f && f.createdAt) || '').match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (iso) { y = +iso[1]; m = +iso[2]; d = +iso[3]; }
+    }
+    return (y && m && d) ? (y * 10000 + m * 100 + d) : 0;
+  }
+  function byTripDateDesc(a, b) {
+    var diff = tripDateNum(b) - tripDateNum(a);
+    if (diff) return diff;
+    return String((b && b.createdAt) || '').localeCompare(String((a && a.createdAt) || ''));
+  }
   function cardHtml(f) {
     var photo = firstPhoto(f);
     var spot = String(f.spot || '').replace(/\s*\(.*?\)/g, '').trim() || '백패킹 필드';
@@ -149,7 +171,7 @@
       if (typeof window.isFeedHiddenByUgc === 'function' && window.isFeedHiddenByUgc({ id: f.id, user_id: f.userId })) return false;
       return !!firstPhoto(f);
     });
-    return list;
+    return list.sort(byTripDateDesc).slice(0, RECENT_LIMIT);
   }
   function renderRecent() {
     var sec = document.getElementById('homeRecentReviews');
@@ -167,7 +189,7 @@
     var select = window.FEEDS_HOME_SELECT || 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,instagram,likes_count,is_published,feed_type,created_at,items,template_id';
     var url = base + '/rest/v1/feeds?select=' + encodeURIComponent(select) +
       '&is_published=eq.true&user_id=neq.' + encodeURIComponent(OPERATOR_UID) +
-      '&order=created_at.desc&limit=' + RECENT_LIMIT;
+      '&order=date.desc.nullslast,created_at.desc&limit=' + RECENT_FETCH;
     return window.okbmPublicFetch(url).then(function (res) {
       if (!res.ok) throw new Error('recent feeds ' + res.status);
       return res.json();
@@ -180,9 +202,10 @@
     var card = e.target && e.target.closest ? e.target.closest('[data-recent-id]') : null;
     if (!card) return;
     var id = card.getAttribute('data-recent-id');
-    if (typeof window.openSingleTripDualFeedModal === 'function') {
-      window.openSingleTripDualFeedModal(id, visibleRecent(), '최근 다녀온 후기');
-    }
+    if (typeof window.openSingleTripDualFeedModal !== 'function') return;
+    // 목록을 넘기면 누른 글 아래 다음 글이 이어서 붙는다. 홈에서는 그 글만 연다.
+    var one = visibleRecent().filter(function (f) { return String(f.id) === String(id); });
+    if (one.length) window.openSingleTripDualFeedModal(id, one, '최근 다녀온 후기');
   }
 
   // ---------- 인기 스팟 "후기 N · 찜 N" ----------

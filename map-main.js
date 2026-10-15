@@ -4419,7 +4419,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           ? window.okbmFeedInstagramBadgeHtml(creditHandle)
           : '';
         var creditInlineHtml = (isOfficialRoute && creditHandle)
-          ? '<span style="font-size:0.72rem; color:#cbd5e1; font-weight:700; letter-spacing:-0.01em; white-space:nowrap;">@' + escapeHtml(creditHandle) + '</span>' +
+          ? '<span style="font-size:0.72rem; color:#cbd5e1; font-weight:700; letter-spacing:-0.01em; white-space:nowrap;">사진: @' + escapeHtml(creditHandle) + '</span>' +
             creditBadgeHtml
           : '';
 
