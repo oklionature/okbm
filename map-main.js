@@ -5217,6 +5217,7 @@ var liveSearchTimer = null;
               <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'};" data-id="${sId}" onclick="editSpotById(event, this.dataset.id)">수정</button>
               <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'}; background:#0f766e;" data-id="${sId}" onclick="startAdminPinMove(this.dataset.id, event)">핀</button>
               <button class="btn-del" style="display:${isAdminMode ? 'inline-block' : 'none'};" data-id="${sId}" onclick="deleteSpotById(event, this.dataset.id)">삭제</button>
+              <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'}; background:${isCampBanned(spot) ? '#475569' : '#9f1239'};" data-id="${sId}" onclick="window.toggleSpotCampBanById(this.dataset.id, event)">${isCampBanned(spot) ? '금지해제' : '🚫금지'}</button>
             </div>
           </div>
 
@@ -5993,14 +5994,29 @@ var overlay = document.getElementById('customModalOverlay');
         var noticeEl = document.getElementById('modalNotice');
         var btnEl = document.getElementById('modalSubmitBtn');
         if (titleEl) titleEl.innerHTML = ICONS.EDIT + ' <span>[' + escapeHtml(target.spot_main || target.name) + '] 장소 수정 (관리자)</span>';
-        if (noticeEl) {
-          noticeEl.style.display = 'flex';
-          noticeEl.innerHTML = ICONS.PIN + ' <span>핀 위치는 [콕 찍기]로 바꾸거나, 지도에서 마커를 드래그해 바로 저장할 수 있습니다.</span>';
-        }
+        renderEditModalCampBanNotice(target);
         if (btnEl) btnEl.innerText = '수정 내용 저장';
         showCustomModalOverlay();
       }
       window.openEditModal = openEditModal;
+
+      // 수정 모달 안내줄에 야영금지 토글을 둔다. 상태가 바뀌면 같은 줄을 다시 그린다.
+      function renderEditModalCampBanNotice(target) {
+        var noticeEl = document.getElementById('modalNotice');
+        if (!noticeEl || !target) return;
+        var banned = isCampBanned(target);
+        noticeEl.style.display = 'flex';
+        noticeEl.innerHTML = ICONS.PIN + ' <span style="flex:1;">핀 위치는 [콕 찍기]로 바꾸거나, 지도에서 마커를 드래그해 바로 저장할 수 있습니다.</span>' +
+          '<button type="button" class="btn-edit" style="display:inline-block; flex-shrink:0; background:' + (banned ? '#475569' : '#9f1239') + ';" data-id="' + escapeHtml(String(target.id)) + '" onclick="window.toggleEditModalCampBan(this.dataset.id, event)">' + (banned ? '금지해제' : '🚫야영금지') + '</button>';
+      }
+
+      window.toggleEditModalCampBan = async function(spotId, e) {
+        await window.toggleSpotCampBanById(spotId, e);
+        if (modalMode !== 'EDIT') return;
+        var sId = String(spotId || '').trim();
+        var spot = (spots || []).find(function(s) { return String(s.id).trim() === sId; });
+        if (spot) renderEditModalCampBanNotice(spot);
+      };
 
       function openAddModal(defaultName = "", lat = 0, lng = 0, address = "") {
         if (!checkAdminAuthorization()) {
