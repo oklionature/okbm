@@ -4489,22 +4489,23 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         function actionsHtml(sId, r) {
           var up = r.my_vote === 'up';
           var rep = r.my_vote === 'report';
-          var btn = 'background:none; border:none; cursor:pointer; font-family:inherit; font-size:0.62rem; font-weight:800; padding:2px 4px;';
+          // 손가락으로 누르기 쉽게 높이 30px 알약 버튼
+          var btn = 'display:inline-flex; align-items:center; gap:3px; height:30px; padding:0 11px; border-radius:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); cursor:pointer; font-family:inherit; font-size:0.76rem; font-weight:800; flex-shrink:0;';
           var tools = '';
           if (r.mine) {
-            tools = '<span style="font-size:0.60rem; color:#3182f6; font-weight:800; padding:0 4px;">내 콘텐츠 · 👍 ' + (Number(r.ups) || 0) + '</span>' +
+            tools = '<span style="font-size:0.74rem; color:#60a5fa; font-weight:800; padding:0 4px; flex-shrink:0;">내 콘텐츠 · 👍 ' + (Number(r.ups) || 0) + '</span>' +
               '<button type="button" data-act="del" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' style="' + btn + ' color:#64748b;">삭제</button>';
           } else {
-            tools = '<button type="button" data-act="up" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + up + '" style="' + btn + ' color:' + (up ? '#fbbf24' : '#94a3b8') + ';">👍 ' + (Number(r.ups) || 0) + '</button>' +
-              '<button type="button" data-act="report" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + rep + '" style="' + btn + ' color:' + (rep ? '#f87171' : '#64748b') + ';">' + (rep ? '신고함' : '신고') + '</button>';
+            tools = '<button type="button" data-act="up" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + up + '" style="' + btn + ' color:' + (up ? '#fbbf24' : '#e2e8f0') + ';' + (up ? ' border-color:rgba(251,191,36,0.6); background:rgba(251,191,36,0.12);' : '') + '">👍 추천 ' + (Number(r.ups) || 0) + '</button>' +
+              '<button type="button" data-act="report" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + rep + '" style="' + btn + ' color:' + (rep ? '#f87171' : '#94a3b8') + ';' + (rep ? ' border-color:rgba(248,113,113,0.6); background:rgba(248,113,113,0.12);' : '') + '">' + (rep ? '신고함' : '신고') + '</button>';
           }
           if (isAdminMode) {
             tools += '<button type="button" data-act="' + (r.hidden ? 'show' : 'hide') + '" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' style="' + btn + ' color:#fbbf24;">' + (r.hidden ? '보이기' : '숨김') + '</button>' +
               (r.mine ? '' : '<button type="button" data-act="del" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' style="' + btn + ' color:#f87171;">삭제</button>');
           }
-          return '<div style="display:flex; align-items:center; gap:4px; padding:0 2px; min-width:0;">' +
-            '<span style="flex-shrink:0; font-size:0.56rem; font-weight:900; color:#c4b5fd; background:rgba(167,139,250,0.14); border-radius:4px; padding:1px 5px;">크리에이터</span>' +
-            '<span style="flex:1; min-width:0; font-size:0.62rem; color:#94a3b8; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(r.author || '백패커') +
+          return '<div style="display:flex; align-items:center; gap:6px; padding:2px 2px 4px; min-width:0;">' +
+            '<span style="flex-shrink:0; font-size:0.66rem; font-weight:900; color:#c4b5fd; background:rgba(167,139,250,0.16); border-radius:5px; padding:2px 6px;">크리에이터</span>' +
+            '<span style="flex:1; min-width:0; font-size:0.78rem; color:#f1f5f9; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(r.author || '백패커') +
               (r.sunk ? ' · <span style="color:#f87171;">신고 많음</span>' : '') + (r.hidden ? ' · <span style="color:#fbbf24;">숨김</span>' : '') + '</span>' +
             tools +
           '</div>';
