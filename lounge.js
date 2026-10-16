@@ -82,14 +82,29 @@
     const today = parseD(todayKey());
     const dd = Math.round((s - today) / 86400000);
     const nights = Math.max(0, Math.round((en - s) / 86400000));
+    const past = en < today;
+    // 이미 시작해 아직 안 끝난 여러 날 행사: 시작일 대신 종료일 기준으로 보여 준다
+    const ongoing = !past && dd < 0;
+    const endDd = Math.round((en - today) / 86400000);
+    const sinceStart = -dd;
+    const totalDays = nights + 1;
+    let ddText = 'D-' + dd;
+    if (past) ddText = '지남';
+    else if (ongoing) ddText = endDd === 0 ? '오늘 종료' : '종료 D-' + endDd;
+    else if (dd === 0) ddText = '오늘';
     return {
-      d: s.getDate(),
-      mon: (s.getMonth() + 1) + '월',
-      wd: WD[s.getDay()],
-      days: nights === 0 ? '당일' : (nights === 1 ? '1박 2일' : (nights + 1) + '일'),
+      d: ongoing ? '~' + en.getDate() : s.getDate(),
+      mon: ongoing ? (en.getMonth() + 1) + '월' : (s.getMonth() + 1) + '월',
+      wd: ongoing ? '까지' : WD[s.getDay()],
+      days: nights === 0 ? '당일' : (nights === 1 ? '1박 2일' : (s.getMonth() + 1) + '.' + s.getDate() + ' – ' + (en.getMonth() + 1) + '.' + en.getDate()),
       dateText: pad(s.getMonth() + 1) + '.' + pad(s.getDate()) + (nights > 0 ? ' – ' + pad(en.getMonth() + 1) + '.' + pad(en.getDate()) : ''),
-      ddText: dd > 0 ? 'D-' + dd : (en >= today ? (dd === 0 ? '오늘' : '진행 중') : '지남'),
-      start: s, end: en, past: en < today
+      ddText: ddText,
+      // 상태 꼬리표: 시작 7일 이내 NEW, 끝나기 7일 전부터 곧 마감, 30일 이상 장기
+      isNew: !past && dd <= 0 && sinceStart < 7 && nights > 0,
+      endingSoon: ongoing && endDd <= 7,
+      isLong: !past && totalDays >= 30,
+      weekday: WD[s.getDay()],
+      start: s, end: en, past: past
     };
   }
   function ago(iso) {
@@ -287,6 +302,9 @@
       '.lm-rs{margin-top:3px;font-size:11.5px;color:var(--sub);line-height:1.45}',
       '.lm-dd{flex:none;font-size:11.5px;font-weight:800;color:var(--blue);padding-top:2px}',
       '.lm-tag{display:inline-block;margin-left:5px;padding:0 5px;border-radius:4px;font-size:9.5px;font-weight:800;vertical-align:1px;color:var(--star);border:1px solid rgba(255,195,66,.4)}',
+      '.lm-tag.new{color:#6fa8ff;border-color:rgba(49,130,246,.5)}',
+      '.lm-tag.soon{color:#ff8a3d;border-color:rgba(255,138,61,.55)}',
+      '.lm-tag.long{color:var(--sub);border-color:rgba(139,139,147,.45)}',
       '.lm-score{flex:none;width:48px;font-size:18px;font-weight:900;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}',
       '.lm-score small{display:block;margin-top:4px;font-size:10px;font-weight:700;letter-spacing:0;color:var(--sub)}',
       '.lm-post{position:relative;display:flex;gap:12px;padding:14px 0 12px;border-bottom:1px solid var(--div);cursor:pointer;transition:opacity .15s}',
@@ -719,7 +737,11 @@
 
   // 행사
   function evTags(e) {
+    const v = evView(e);
     let t = '';
+    if (v.isNew) t += '<span class="lm-tag new">NEW</span>';
+    if (v.endingSoon) t += '<span class="lm-tag soon">곧 마감</span>';
+    if (v.isLong) t += '<span class="lm-tag long">장기</span>';
     if (e.is_pinned) t += '<span class="lm-tag">고정</span>';
     if (D.admin && !e.is_active) t += '<span class="lm-tag">숨김</span>';
     return t;
@@ -778,7 +800,7 @@
     const body = `<div class="lmx-in">
       ${poster ? `<img class="lm-poster" src="${escapeHtml(okbmSafeImageUrl(e.poster_url))}" alt="" loading="lazy" decoding="async">` : ''}
       ${e.subtitle ? `<div class="lm-rs" style="margin:0 0 6px">${esc(e.subtitle)}</div>` : ''}
-      ${kv('일정', v.dateText + ' (' + v.wd + ')')}${kv('장소', place)}${kv('주최', e.host)}${kv('참가', e.fee)}
+      ${kv('일정', v.dateText + ' (' + v.weekday + ')')}${kv('장소', place)}${kv('주최', e.host)}${kv('참가', e.fee)}
       ${e.description ? `<p class="lm-desc">${esc(e.description)}</p>` : ''}
       ${(e.apply_url || e.spot_id) ? `<div class="lmx-btns">
         ${e.spot_id ? `<button type="button" class="lm-btn sm" data-a="spot" data-v="${esc(e.spot_id)}">${ico(P.pin, 16)}지도에서 보기</button>` : ''}
