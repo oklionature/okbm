@@ -4362,7 +4362,6 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
               '<iframe src="' + escapeHtml(postUrl + 'embed/') + '" title="인스타그램 게시물" loading="lazy" scrolling="no" referrerpolicy="strict-origin-when-cross-origin"' +
               ' sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"' +
               ' style="width:100%; max-width:360px; align-self:center; height:' + (isReel ? '600' : '500') + 'px; border:0; border-radius:10px; background:#ffffff; display:block;"></iframe>' +
-              '<a href="' + escapeHtml(okbmSafeExternalUrl(postUrl)) + '" target="_blank" rel="noopener noreferrer" style="align-self:flex-end; font-size:0.66rem; font-weight:800; color:#f9a8d4; text-decoration:none;">인스타그램에서 보기 ›</a>' +
             '</div>' +
           '</details>';
         }).join('');
