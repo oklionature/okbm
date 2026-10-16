@@ -400,3 +400,14 @@ COMMIT;
 -- 되돌리기:
 -- UPDATE public.spots s SET "mediaUrls" = b."mediaUrls"
 -- FROM public.spots_media_backup_20261016 b WHERE b.id = s.id;
+
+-- ─────────────────────────────────────────────────────────────
+-- 2026-10-16 후속(실행 완료): 위에서 지운 343개는 박지 조사 때 넣은 영상이라 되살렸다.
+-- 백업으로 전부 되돌리고, 없는 영상 4개와 숏츠 1개만 다시 뺐다.
+--
+-- UPDATE public.spots s SET "mediaUrls" = b."mediaUrls"
+-- FROM public.spots_media_backup_20261016 b
+-- WHERE b.id = s.id AND s."mediaUrls" IS DISTINCT FROM b."mediaUrls";
+-- 그다음 위 정리 쿼리를 rm 목록만 아래 5개로 바꿔 실행:
+--   ('255','7IkTZhSRrls'), ('298','gaedo_cheongseokpo'), ('299','saengildo_geumgok'),
+--   ('456','d8kH035dK1w'), ('456','94h149QGv7s')
