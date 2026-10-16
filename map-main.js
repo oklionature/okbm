@@ -4556,8 +4556,8 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           var st = ui[sId] || {};
           var input = 'width:100%; box-sizing:border-box; background:#0b0f16; border:1px solid rgba(255,255,255,0.14); border-radius:7px; color:#e2e8f0; font-size:0.74rem; padding:8px 9px; font-family:inherit;';
           return '<div style="display:flex; flex-direction:column; gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06);">' +
-            '<input type="url" inputmode="url" data-creator-url="' + esc(sId) + '" value="' + esc(st.url || '') + '" placeholder="유튜브·네이버 블로그·인스타 게시물 주소" style="' + input + '">' +
-            '<input type="text" maxlength="120" data-creator-title="' + esc(sId) + '" value="' + esc(st.title || '') + '" placeholder="한 줄 소개 (선택, 유튜브는 비우면 영상 제목)" style="' + input + '">' +
+            '<textarea rows="2" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" data-creator-url="' + esc(sId) + '" placeholder="유튜브·네이버 블로그·인스타 게시물 주소 (여러 개는 쉼표로 구분)" style="' + input + ' resize:vertical; line-height:1.4;">' + esc(st.url || '') + '</textarea>' +
+            '<input type="text" maxlength="120" data-creator-title="' + esc(sId) + '" value="' + esc(st.title || '') + '" placeholder="한 줄 소개 (선택, 주소가 하나일 때만. 유튜브는 비우면 영상 제목)" style="' + input + '">' +
             '<div style="display:flex; gap:6px; justify-content:flex-end;">' +
               '<button type="button" data-act="cancel" data-spot="' + esc(sId) + '"' + ACT + ' style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; border-radius:7px; height:30px; padding:0 12px; font-size:0.70rem; font-weight:800; cursor:pointer; font-family:inherit;">취소</button>' +
               '<button type="button" data-act="submit" data-spot="' + esc(sId) + '"' + ACT + (st.busy ? ' disabled' : '') + ' style="background:#3182f6; border:1px solid #3182f6; color:#ffffff; border-radius:7px; height:30px; padding:0 14px; font-size:0.70rem; font-weight:900; cursor:pointer; font-family:inherit;">' + (st.busy ? '등록 중…' : '등록') + '</button>' +
@@ -4633,25 +4633,47 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           } catch (e) { return ''; }
         }
 
+        // 주소 여러 개를 쉼표·줄바꿈·띄어쓰기로 나눠 한 번에 등록한다(유튜브·블로그·인스타 섞어도 된다).
+        // 한 줄 소개는 주소가 하나일 때만 쓰고, 여러 개면 유튜브만 영상 제목을 자동으로 넣는다.
         async function submit(sId) {
           var st = ui[sId] = ui[sId] || {};
           keepInputs(sId);
-          var url = String(st.url || '').trim().replace(/^http:\/\//i, 'https://');
-          var title = String(st.title || '').trim();
-          var kind = kindOf(url);
-          if (!kind) { showToast(ERR.bad_url); return; }
+          var urls = [];
+          String(st.url || '').split(/[\s,，]+/).forEach(function(u) {
+            u = u.trim().replace(/^http:\/\//i, 'https://');
+            if (u && urls.indexOf(u) === -1) urls.push(u);
+          });
+          if (!urls.length) { showToast(ERR.bad_url); return; }
+          var bad = urls.filter(function(u) { return !kindOf(u); });
+          if (bad.length) {
+            showToast((urls.length > 1 ? '등록할 수 없는 주소가 있어요: ' + bad[0].slice(0, 40) + '\n' : '') + ERR.bad_url);
+            return;
+          }
+          var oneTitle = urls.length === 1 ? String(st.title || '').trim() : '';
           st.busy = true;
           paint(sId);
-          try {
-            if (!title && kind === 'yt') title = await youtubeTitle(url);
-            await rpc('add_spot_creator_link', { p_spot_id: sId, p_url: url, p_title: title });
+          var ok = 0, fails = [];
+          for (var i = 0; i < urls.length; i++) {
+            var url = urls[i];
+            try {
+              var title = oneTitle;
+              if (!title && kindOf(url) === 'yt') title = await youtubeTitle(url);
+              await rpc('add_spot_creator_link', { p_spot_id: sId, p_url: url, p_title: title });
+              ok++;
+            } catch (e) {
+              fails.push(errText(e));
+            }
+          }
+          if (ok) {
             ui[sId] = {};
-            showToast('콘텐츠를 등록했어요. 고마워요!');
+            showToast(fails.length
+              ? (urls.length + '개 중 ' + ok + '개를 등록했어요. 나머지: ' + fails[0])
+              : (ok > 1 ? ok + '개를 등록했어요. 고마워요!' : '콘텐츠를 등록했어요. 고마워요!'));
             await window.okbmLoadCreatorLinks(sId, true);
-          } catch (e) {
+          } else {
             st.busy = false;
             paint(sId);
-            showToast(errText(e));
+            showToast(fails[0] || ERR.bad_url);
           }
         }
 
