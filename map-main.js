@@ -3054,6 +3054,7 @@ function updateSmartResetButtons() {
               var cachedBlogs = (window.__spotBlogCardsCache && window.__spotBlogCardsCache[sId]) || null;
               var ytBadge = cachedYt ? cachedYt.length : (existingYt.length || 0);
               var blogBadge = cachedBlogs ? cachedBlogs.length : (existingBlog.length || 0);
+              var instaBadge = spotInstaPosts(spot).length;
 
               var ytTabBg = 'rgba(244,63,94,0.12)';
               var ytTabBorder = '#f43f5e';
@@ -3062,7 +3063,7 @@ function updateSmartResetButtons() {
 
               return `
                 <div style="display:flex; flex-direction:column; width:100%; margin-top:6px; box-sizing:border-box;">
-                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; width:100%;">
+                  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; width:100%;">
                     <button type="button" id="btnMediaTab_yt_${sId}" data-type="yt" data-id="${sId}" onclick="window.handleSpotMediaTabClick(this);" style="height:38px; background:${ytTabBg}; border:1px solid ${ytTabBorder}; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:#ffffff; transition:all 0.15s ease;">
                       <svg viewBox="0 0 24 24" style="width:14px; height:14px; flex-shrink:0;" fill="#f43f5e"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1 31.4 31.4 0 0 0 .5-5.8 31.4 31.4 0 0 0-.5-5.8z"/><polygon points="9.6 15.6 15.8 12 9.6 8.4 9.6 15.6" fill="#ffffff"/></svg>
                       <span style="font-size:0.75rem; font-weight:800;">YouTube</span>
@@ -3074,6 +3075,12 @@ function updateSmartResetButtons() {
                       <span style="font-size:0.75rem; font-weight:800;">블로그</span>
                       <span id="blogBadgeCount_${sId}" style="font-size:0.65rem; color:#34d399; font-weight:900; font-family:'Space Grotesk',sans-serif;">${blogBadge}</span>
                     </button>
+
+                    <button type="button" id="btnMediaTab_insta_${sId}" data-type="insta" data-id="${sId}" onclick="window.handleSpotMediaTabClick(this);" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:#ffffff; transition:all 0.15s ease;">
+                      <svg viewBox="0 0 24 24" style="width:14px; height:14px; flex-shrink:0;" fill="none" stroke="#f472b6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="#f472b6"/></svg>
+                      <span style="font-size:0.75rem; font-weight:800;">인스타</span>
+                      <span id="instaBadgeCount_${sId}" style="font-size:0.65rem; color:#f472b6; font-weight:900; font-family:'Space Grotesk',sans-serif;">${instaBadge}</span>
+                    </button>
                   </div>
 
                   <div id="spotMediaDrawerBox_${sId}" data-opened="${drawerOpened}" style="display:flex; flex-direction:column; gap:6px; margin-top:6px; width:100%; box-sizing:border-box;">
@@ -3082,8 +3089,6 @@ function updateSmartResetButtons() {
                 </div>
               `;
             })()}
-
-            ${isCampBanned(spot) ? '' : `<div data-okbm-insta-row="${escapeHtml(sId)}">${renderSpotInstaRowHtml(spot)}</div>`}
 
             ${isCampBanned(spot) ? '' : `<div data-okbm-creator-box="${escapeHtml(sId)}">${window.okbmCreatorBoxHtml(sId)}</div>`}
 
@@ -3842,6 +3847,10 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
 
         var opened = drawer.dataset.opened || 'yt';
         if (opened === 'none') return;
+        if (opened === 'insta') {
+          drawer.innerHTML = renderSpotInstaRowHtml(spot);
+          return;
+        }
 
         var cache = (opened === 'yt') ? window.__spotYtCardsCache : window.__spotBlogCardsCache;
         if (Object.prototype.hasOwnProperty.call(cache, spotId)) {
@@ -3863,7 +3872,9 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         var drawer = document.getElementById('spotMediaDrawerBox_' + spotId);
         var btnYt = document.getElementById('btnMediaTab_yt_' + spotId);
         var btnBlog = document.getElementById('btnMediaTab_blog_' + spotId);
+        var btnInsta = document.getElementById('btnMediaTab_insta_' + spotId);
         if (!drawer) return;
+        var tabOff = function(b) { if (b) { b.style.borderColor = 'rgba(255,255,255,0.12)'; b.style.background = 'rgba(255,255,255,0.04)'; } };
 
         var currentOpened = drawer.dataset.opened || 'none';
         var list = Array.isArray(rawList) ? rawList.filter(function(u) {
@@ -3874,21 +3885,30 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         if (currentOpened === type && drawer.style.display !== 'none') {
           drawer.style.display = 'none';
           drawer.dataset.opened = 'none';
-          if (btnYt) { btnYt.style.borderColor = 'rgba(255,255,255,0.12)'; btnYt.style.background = 'rgba(255,255,255,0.04)'; }
-          if (btnBlog) { btnBlog.style.borderColor = 'rgba(255,255,255,0.12)'; btnBlog.style.background = 'rgba(255,255,255,0.04)'; }
+          tabOff(btnYt); tabOff(btnBlog); tabOff(btnInsta);
           return;
         }
 
+        tabOff(btnYt); tabOff(btnBlog); tabOff(btnInsta);
         if (isYt) {
           if (btnYt) { btnYt.style.borderColor = '#f43f5e'; btnYt.style.background = 'rgba(244,63,94,0.12)'; }
-          if (btnBlog) { btnBlog.style.borderColor = 'rgba(255,255,255,0.12)'; btnBlog.style.background = 'rgba(255,255,255,0.04)'; }
+        } else if (type === 'insta') {
+          if (btnInsta) { btnInsta.style.borderColor = '#f472b6'; btnInsta.style.background = 'rgba(244,114,182,0.12)'; }
         } else {
           if (btnBlog) { btnBlog.style.borderColor = '#10b981'; btnBlog.style.background = 'rgba(16,185,129,0.12)'; }
-          if (btnYt) { btnYt.style.borderColor = 'rgba(255,255,255,0.12)'; btnYt.style.background = 'rgba(255,255,255,0.04)'; }
         }
 
         drawer.style.display = 'flex';
         drawer.dataset.opened = type;
+
+        // 인스타는 검색 없이 등록된 게시물만 그린다
+        if (type === 'insta') {
+          drawer.dataset.mediaType = 'insta';
+          drawer.dataset.mediaSeq = String(Number(drawer.dataset.mediaSeq || 0) + 1);
+          var instaSpot = (spots || []).find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
+          drawer.innerHTML = renderSpotInstaRowHtml(instaSpot);
+          return;
+        }
 
         window.invalidateSpotMediaCacheIfStale(spotId, type, list);
 
@@ -4374,9 +4394,9 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         `;
       }
 
-      // 관리자가 등록한 인스타그램 게시물만 유튜브·블로그 아래에 작은 줄로 보여 준다. 누르면 그 자리에서 게시물(인스타 공식 embed)이 펼쳐진다.
-      // <details>라 스크립트 없이 열고 닫히고, 닫혀 있는 동안에는 embed를 불러오지 않는다. 등록이 없으면 아무것도 그리지 않는다.
-      function renderSpotInstaRowHtml(spot) {
+      // 인스타 탭: 관리자 등록 → 크리에이터 등록(추천순) 게시물. 줄을 누르면 그 자리에서 인스타 공식 embed가 펼쳐진다.
+      // <details>라 스크립트 없이 열고 닫히고, 닫혀 있는 동안에는 embed를 불러오지 않는다.
+      function spotInstaPosts(spot) {
         var posts = [];
         var addPost = function(u, creator) {
           var m = String(u || '').match(/^https?:\/\/(?:www\.)?instagram\.com\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i);
@@ -4385,22 +4405,31 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           if (posts.some(function(x) { return x.code === m[2]; })) return;
           posts.push({ kind: kind, code: m[2], creator: creator || null });
         };
-        // 관리자 등록 → 크리에이터 등록(추천순) 순서
         (spot && Array.isArray(spot.instaUrls) ? spot.instaUrls : []).forEach(function(u) { addPost(u, null); });
+        var sId = spot ? String(spot.id).trim() : '';
+        (typeof window.okbmCreatorLinksFor === 'function' ? window.okbmCreatorLinksFor(sId, 'insta') : []).forEach(function(c) { addPost(c.url, c); });
+        return posts.slice(0, 20);
+      }
+
+      function renderSpotInstaRowHtml(spot) {
+        var posts = spotInstaPosts(spot);
         var sIdForCreators = spot ? String(spot.id).trim() : '';
-        (typeof window.okbmCreatorLinksFor === 'function' ? window.okbmCreatorLinksFor(sIdForCreators, 'insta') : []).forEach(function(c) { addPost(c.url, c); });
-        posts = posts.slice(0, 20);
-        if (!posts.length) return '';
+        var badge = document.getElementById('instaBadgeCount_' + sIdForCreators);
+        if (badge) badge.innerText = String(posts.length);
+        if (!posts.length) {
+          return '<div style="padding:14px 4px; color:#94a3b8; font-size:0.72rem; text-align:center; line-height:1.5;">등록된 인스타 게시물이 없어요.<br>다녀왔다면 아래에서 내 게시물을 등록해 주세요.</div>';
+        }
         var icon = '<svg viewBox="0 0 24 24" style="width:14px; height:14px; flex-shrink:0;" fill="none" stroke="#f9a8d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="#f9a8d4"/></svg>';
         var postNo = 0, reelNo = 0;
-        var rows = posts.map(function(p) {
+        return posts.map(function(p) {
           var postUrl = 'https://www.instagram.com/' + p.kind + '/' + p.code + '/';
           var isReel = p.kind !== 'p';
           var label = isReel ? ('릴스 ' + (++reelNo)) : ('게시물 ' + (++postNo));
           if (p.creator) label += ' · ' + (p.creator.author || '백패커');
-          return '<details class="spot-insta-item" style="border:1px solid rgba(249,168,212,0.28); border-radius:9px; background:rgba(249,168,212,0.06); overflow:hidden;">' +
-            '<summary style="list-style:none; cursor:pointer; display:flex; align-items:center; gap:6px; padding:7px 10px; font-size:0.72rem; font-weight:800; color:#fbcfe8;">' +
-              icon + '<span style="flex:1;">' + label + '</span><span style="font-size:0.64rem; color:#f9a8d4;">눌러서 보기 ▾</span>' +
+          var dim = p.creator && (p.creator.sunk || p.creator.hidden);
+          return '<details class="spot-insta-item" style="border:1px solid rgba(249,168,212,0.28); border-radius:9px; background:rgba(249,168,212,0.06); overflow:hidden;' + (dim ? ' opacity:0.55;' : '') + '">' +
+            '<summary style="list-style:none; cursor:pointer; display:flex; align-items:center; gap:6px; padding:9px 10px; font-size:0.74rem; font-weight:800; color:#fbcfe8;">' +
+              icon + '<span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(label) + '</span><span style="font-size:0.64rem; color:#f9a8d4; flex-shrink:0;">눌러서 보기 ▾</span>' +
             '</summary>' +
             '<div style="padding:0 8px 8px; display:flex; flex-direction:column; gap:4px;">' +
               '<iframe src="' + escapeHtml(postUrl + 'embed/') + '" title="인스타그램 게시물" loading="lazy" scrolling="no" referrerpolicy="strict-origin-when-cross-origin"' +
@@ -4410,15 +4439,11 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             '</div>' +
           '</details>';
         }).join('');
-        return '<div class="spot-insta-row" style="margin:6px 0 4px; display:flex; flex-direction:column; gap:5px;">' +
-          '<div style="font-size:0.72rem; font-weight:900; color:#f9a8d4;">인스타그램 (' + posts.length + ')</div>' +
-          rows +
-        '</div>';
       }
 
       // ---------- 크리에이터 콘텐츠 (SUPABASE_H2) ----------
       // 다녀온 사람이 유튜브·블로그·인스타 게시물 링크를 정보창에서 바로 등록한다. 바로 공개되고,
-      // 기존 유튜브·블로그 목록과 인스타 줄 안에 관리자 등록 다음, 자동 검색 앞에 들어간다.
+      // 유튜브·블로그·인스타 탭 목록 안에 관리자 등록 다음, 자동 검색 앞에 들어간다.
       // 순서는 서버가 정한다: 신고 3건 이상은 맨 뒤 → 추천 많은 순 → 최근 순. 이 칸은 등록 버튼과 입력창만 둔다.
       (function() {
         var store = {};    // 박지 id → { at, list, error }
@@ -4516,13 +4541,14 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           if (typeof window.prefetchSpotMediaForSpot === 'function') window.prefetchSpotMediaForSpot(spot);
           repaintInsta(sId);
         }
-        // 인스타 줄은 정보창을 그릴 때 아직 크리에이터 목록이 없을 수 있어, 받은 뒤 다시 그린다
+        // 인스타 탭(개수·목록)은 정보창을 그릴 때 아직 크리에이터 목록이 없을 수 있어, 받은 뒤 다시 그린다
         function repaintInsta(sId) {
           var spot = (Array.isArray(spots) ? spots : []).find(function(x) { return String(x.id).trim() === sId; });
           if (!spot) return;
-          document.querySelectorAll('[data-okbm-insta-row]').forEach(function(el) {
-            if (el.getAttribute('data-okbm-insta-row') === sId) el.innerHTML = renderSpotInstaRowHtml(spot);
-          });
+          var badge = document.getElementById('instaBadgeCount_' + sId);
+          if (badge) badge.innerText = String(spotInstaPosts(spot).length);
+          var drawer = document.getElementById('spotMediaDrawerBox_' + sId);
+          if (drawer && drawer.dataset.opened === 'insta') drawer.innerHTML = renderSpotInstaRowHtml(spot);
         }
 
         function formHtml(sId) {
@@ -4542,7 +4568,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           var st = ui[sId] || {};
           var wrap = '<div style="background:var(--bg-card, #0e121a); border:1px solid var(--border-hairline, rgba(255,255,255,0.08)); border-radius:7px; padding:8px 9px; margin:6px 0 2px; color:#e2e8f0;">';
           var head = '<div style="display:flex; align-items:center; gap:8px;">' +
-            '<div style="flex:1; min-width:0; font-size:0.68rem; color:#94a3b8; line-height:1.4;">여기 다녀온 영상·블로그·인스타가 있나요? 등록하면 위 목록에 바로 올라가요.</div>' +
+            '<div style="flex:1; min-width:0; font-size:0.68rem; color:#94a3b8; line-height:1.4;">여기 다녀온 영상·블로그·인스타가 있나요? 등록하면 위 탭에 바로 올라가요.</div>' +
             (st.form ? '' : '<button type="button" data-act="' + (loggedIn() ? 'open' : 'login') + '" data-spot="' + esc(sId) + '"' + ACT + ' style="background:#3182f6; border:1px solid #3182f6; border-radius:8px; height:28px; padding:0 10px; color:#ffffff; font-size:0.68rem; font-weight:800; cursor:pointer; font-family:inherit; flex-shrink:0;">' + (loggedIn() ? '내 콘텐츠 등록' : '로그인하고 등록') + '</button>') +
           '</div>';
           return wrap + head + (st.form ? formHtml(sId) : '') + '</div>';
@@ -4589,7 +4615,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           }).then(function() {
             delete inflight[sId];
             paint(sId);
-            // 처음 받을 때는 유튜브·블로그 수집이 이 결과를 기다리므로 인스타 줄만 다시 그린다
+            // 처음 받을 때는 유튜브·블로그 수집이 이 결과를 기다리므로 인스타 탭만 다시 그린다
             if (prevSig !== null && prevSig !== sigOf(store[sId].list)) refreshMedia(sId);
             else repaintInsta(sId);
             return store[sId].list;
