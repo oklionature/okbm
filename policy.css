@@ -1,0 +1,24 @@
+/* 개인정보처리방침·이용약관 공용 */
+:root { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #000000; color: #D6D9DE; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif;
+  font-size: 15px; line-height: 1.7; word-break: keep-all; -webkit-text-size-adjust: 100%;
+}
+.doc { max-width: 720px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 20px) 18px calc(env(safe-area-inset-bottom, 0px) + 48px); }
+.back { display: inline-block; color: #9AA0A6; text-decoration: none; font-size: 14px; margin-bottom: 18px; }
+h1 { color: #FFFFFF; font-size: 24px; margin: 0 0 4px; }
+.meta { color: #7C828A; font-size: 13px; margin: 0 0 24px; }
+h2 { color: #FFFFFF; font-size: 16px; margin: 30px 0 8px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.08); }
+p { margin: 0 0 10px; }
+b { color: #FFFFFF; }
+ul { margin: 0 0 10px; padding-left: 20px; }
+li { margin: 3px 0; }
+a { color: #FFB547; }
+table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 10px; border: 1px solid rgba(255,255,255,.1); }
+th { color: #FFFFFF; background: #0E1013; font-weight: 700; }
+td:first-child { color: #FFFFFF; white-space: nowrap; }
+.foot { margin-top: 32px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08); font-size: 14px; }
+@media (max-width: 420px) { td:first-child { white-space: normal; } }

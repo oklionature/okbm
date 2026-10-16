@@ -5164,6 +5164,7 @@ function ensureMyReportAndAuthModalsInDOM() {
               <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
               <span>Google로 계속하기</span>
             </button>
+            <p style="margin:2px 0 0; color:#64748b; font-size:0.6rem; line-height:1.5; text-align:center;">시작하면 <a href="/terms.html" style="color:#94a3b8; text-decoration:underline;">이용약관</a>과 <a href="/privacy.html" style="color:#94a3b8; text-decoration:underline;">개인정보처리방침</a>에 동의하게 됩니다.<br>만 14세 미만은 가입할 수 없어요.</p>
             <button type="button" class="modal-btn" style="width:100%; height:34px; min-height:34px; background:rgba(255,255,255,0.06); color:#cbd5e1; font-weight:800; font-size:0.72rem; border-radius:8px; border:none; cursor:pointer;" onclick="closeLoginModal()">
               닫기
             </button>
@@ -5418,6 +5419,10 @@ function ensureMyReportAndAuthModalsInDOM() {
           <!-- 회원 탈퇴는 로그아웃과 헷갈려 누르지 않도록 간격을 크게 벌리고 작은 글자 링크로 둔다.
                누르면 "탈퇴" 입력 확인 창이 한 번 더 뜬다. -->
           <div id="settingsModalDeleteAccountWrap" style="margin-top:28px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06); text-align:center;">
+            <div style="display:flex; justify-content:center; gap:14px; margin-bottom:4px;">
+              <a href="/terms.html" style="color:#94a3b8; font-size:0.68rem; text-decoration:none; padding:6px 4px;">이용약관</a>
+              <a href="/privacy.html" style="color:#94a3b8; font-size:0.68rem; font-weight:700; text-decoration:none; padding:6px 4px;">개인정보처리방침</a>
+            </div>
             <button type="button" id="settingsModalDeleteAccountBtn" style="background:none; border:none; color:#64748b; font-weight:600; font-size:0.68rem; text-decoration:underline; text-underline-offset:3px; padding:8px 12px; cursor:pointer;" onclick="if(typeof window.confirmUserAccountDeletion==='function'){ window.confirmUserAccountDeletion(); }">
               회원 탈퇴
             </button>
