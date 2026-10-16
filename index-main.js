@@ -20,6 +20,22 @@
         return { item: item, s: score(String(keyOf ? keyOf(item, i) : i)) };
       }).sort(function(a, b) { return a.s - b.s; }).map(function(x) { return x.item; });
     };
+    // 날마다 바뀌는 무작위 순서인데, 무게(별 수)가 클수록 앞에 올 확률이 높다.
+    // 별이 없는 글도 뽑힐 수 있게 무게는 별 수 + 1. (가중 무작위 정렬: -ln(u)/무게가 작은 순)
+    window.okbmDailyWeightedOrder = function(list, keyOf, weightOf, salt) {
+      var day = window.okbmSeoulDayKey() + '|' + String(salt || '');
+      var unit = function(k) {
+        var h = 2166136261;
+        var str = day + '|' + k;
+        for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+        h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15;
+        return ((h >>> 0) + 1) / 4294967297;
+      };
+      return (Array.isArray(list) ? list : []).map(function(item, i) {
+        var w = Math.max(0, Number(weightOf ? weightOf(item) : 0) || 0) + 1;
+        return { item: item, s: -Math.log(unit(String(keyOf ? keyOf(item, i) : i))) / w };
+      }).sort(function(a, b) { return a.s - b.s; }).map(function(x) { return x.item; });
+    };
     window.smoothNavigate = function(url, e) {
       var currentPath = window.location.pathname;
       var targetPath = (url || '').split('?')[0];
@@ -197,6 +213,17 @@
         return registeredSpots;
       }
       return (typeof safeGetJSON === 'function' ? (safeGetJSON('okbm_spots_cache', []) || []) : []);
+    }
+
+    // 같은 박지인지 가르는 키. "둔덕산"과 "둔덕산 복주머니바위"처럼 이름이 달라도 같은 박지로 찾아지면 같은 키다.
+    // 박지 목록에서 못 찾으면 괄호를 뺀 이름으로 비교한다.
+    function okbmFeedSpotKey(f, spotPool) {
+      if (!f) return '';
+      var master = null;
+      try { master = findThemeSpotMaster(f, spotPool); } catch (eKey) { master = null; }
+      if (master && (master.id || master.spot_id)) return 'id:' + String(master.id || master.spot_id).trim();
+      var name = String(f.spot || f.spotName || '').replace(/\s*\(.*?\)/g, '').trim();
+      return name ? 'name:' + name : '';
     }
 
     function findThemeSpotMaster(feedOrName, spotPool) {
@@ -500,13 +527,14 @@
 
         var spotName = String(f.spot || f.spotName || '').trim();
         var cleanSpotName = spotName.replace(/\s*\(.*?\)/g, '').trim();
-        if (!cleanSpotName || seenSpots.has(cleanSpotName)) return;
+        var spotKey = okbmFeedSpotKey(f, spotPool);
+        if (!cleanSpotName || !spotKey || seenSpots.has(spotKey)) return;
         if (!feedHasGalleryPhotos(f)) return;
 
         var photoUrl = (window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(f)[0]) || '';
 
         if (typeof photoUrl === 'string' && photoUrl.trim().length > 10) {
-          seenSpots.add(cleanSpotName);
+          seenSpots.add(spotKey);
           validPhotoFeeds.push({
             feed: f,
             spotName: spotName,
@@ -629,13 +657,14 @@
 
         var spotName = String(f.spot || f.spotName || '').trim();
         var cleanSpotName = spotName.replace(/\s*\(.*?\)/g, '').trim();
-        if (!cleanSpotName || seenSpots.has(cleanSpotName)) return;
+        var spotKey = okbmFeedSpotKey(f, spotPool);
+        if (!cleanSpotName || !spotKey || seenSpots.has(spotKey)) return;
         if (!feedHasGalleryPhotos(f)) return;
 
         var photoUrl = (window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(f)[0]) || '';
 
         if (typeof photoUrl === 'string' && photoUrl.trim().length > 10) {
-          seenSpots.add(cleanSpotName);
+          seenSpots.add(spotKey);
           validPhotoFeeds.push({
             feed: f,
             spotName: spotName,
@@ -1625,8 +1654,20 @@
         });
 
         var heroKeyOf = function(f) { return f ? String(f.id || ((f.spot || '') + '_' + (f.date || ''))) : ''; };
-        // 인기 글(좋아요 순 30개) 안에서 날마다 다른 10개를 다른 순서로 보여 준다
-        var nextHeroRecords = window.okbmDailyOrder(photoFeedsOnly, heroKeyOf, 'hero').slice(0, 10);
+        // 인기 글(좋아요 순 30개) 안에서 날마다 다른 10개를 다른 순서로 보여 준다.
+        // 별이 많은 글일수록 뽑히고 앞에 올 확률이 높다. 같은 박지는 이름이 달라도 별이 가장 많은 글 하나만 남긴 뒤 섞는다.
+        var heroSpotPool = getThemeSpotPool();
+        var seenHeroSpots = {};
+        var heroOnePerSpot = photoFeedsOnly.filter(function(f) {
+          var k = okbmFeedSpotKey(f, heroSpotPool);
+          if (!k) return true;
+          if (seenHeroSpots[k]) return false;
+          seenHeroSpots[k] = true;
+          return true;
+        });
+        var nextHeroRecords = window.okbmDailyWeightedOrder(heroOnePerSpot, heroKeyOf, function(f) {
+          return (f && f.likes != null) ? f.likes : (f && f.likes_count) || 0;
+        }, 'hero').slice(0, 10);
         var prevHeroKeys = (window.heroTopRecords || []).map(heroKeyOf).join('|');
         var nextHeroKeys = nextHeroRecords.map(heroKeyOf).join('|');
         window.__allLoadedFeeds = allCleanFeeds;
