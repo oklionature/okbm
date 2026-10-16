@@ -42,12 +42,29 @@
     .days i { display: block; width: 100%; max-width: 22px; background: var(--accent); border-radius: 4px 4px 0 0; }
     .days small { font-size: 10px; color: var(--tx-3); margin-top: 4px; }
     .days em { font-style: normal; font-size: 10px; color: var(--tx-2); margin-bottom: 2px; }
+    /* 관리자 새 소식 */
+    .kpis a.kpi { color: inherit; text-decoration: none; }
+    .kpi .new { color: var(--accent); font-size: 12px; font-weight: 800; margin-left: 4px; }
+    .tabs { display: flex; gap: 6px; margin: 14px 0 8px; }
+    .tabs button { background: var(--raise); color: var(--tx-2); border: 1px solid var(--line); border-radius: 10px; padding: 7px 12px; font: inherit; font-weight: 700; cursor: pointer; }
+    .tabs button.on { background: var(--tx-1); color: var(--bg); border-color: var(--tx-1); }
+    .act-row { padding: 10px 0; border-bottom: 1px solid var(--raise); }
+    .act-row.is-new { border-left: 3px solid var(--accent); padding-left: 8px; }
+    .act-row .t { font-weight: 800; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .act-row .m { color: var(--tx-3); font-size: 12px; margin-top: 3px; line-height: 1.5; }
+    .act-row .b { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .act-row .b a, .act-row .b button { background: var(--raise); color: var(--tx-1); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; font: inherit; font-size: 12px; font-weight: 700; text-decoration: none; cursor: pointer; }
+    .act-row .b button.red { color: var(--warn); }
+    .tag { display: inline-block; font-size: 11px; font-weight: 800; border-radius: 5px; padding: 1px 6px; margin-right: 4px; background: var(--raise); }
+    .ok { color: var(--ok); } .warn { color: var(--warn); }
+    .seen-btn { background: none; border: 1px solid var(--line); color: var(--tx-2); border-radius: 10px; padding: 6px 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 12px; }
   </style>
 </head>
 <body>
   <a class="back" href="index.html?open=report">‹ 마이리포트로</a>
   <h1>낭만루트 운영 숫자</h1>
   <p class="sub">관리자 계정으로만 보입니다. 관리자 본인 접속과 ?qa=1 접속은 세지 않습니다.</p>
+  <div id="activity"></div>
   <div class="range" id="range">
     <button type="button" data-days="7" class="on">7일</button>
     <button type="button" data-days="14">14일</button>
@@ -56,6 +73,6 @@
   <div id="out"><p class="msg">불러오는 중…</p></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script>
-  <script src="ops.js?v=4"></script>
+  <script src="ops.js?v=5"></script>
 </body>
 </html>

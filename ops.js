@@ -204,4 +204,115 @@
   });
 
   load(7);
+
+  // ---------- 관리자 새 소식 (SUPABASE_H3_ADMIN_ACTIVITY.sql) ----------
+  // 최근 크리에이터 링크·새 피드와 검수 대기 수. 마지막으로 "확인했어요"를 누른 뒤 들어온 것은 새 표시를 한다.
+  var SEEN_KEY = 'okbm_admin_activity_seen';
+  var act = document.getElementById('activity');
+  var actTab = 'links';
+  var actData = null;
+  var KIND_LABEL = { yt: '유튜브', blog: '블로그', insta: '인스타' };
+
+  function readSeen() {
+    try { return localStorage.getItem(SEEN_KEY) || ''; } catch (e) { return ''; }
+  }
+  function when(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    var k = new Date(d.getTime() + 9 * 3600 * 1000);
+    return (k.getUTCMonth() + 1) + '.' + k.getUTCDate() + ' ' + String(k.getUTCHours()).padStart(2, '0') + ':' + String(k.getUTCMinutes()).padStart(2, '0');
+  }
+  function isNew(iso) {
+    var seen = readSeen();
+    return !seen || (Date.parse(iso) || 0) > (Date.parse(seen) || 0);
+  }
+  function safeUrl(u) {
+    var s = String(u || '').trim();
+    return /^https:\/\//i.test(s) ? s : '#';
+  }
+
+  function linkRow(l) {
+    var title = String(l.title || '').trim() || String(l.url || '').replace(/^https?:\/\//, '');
+    var rep = Number(l.reports || 0);
+    return '<div class="act-row' + (isNew(l.created_at) ? ' is-new' : '') + '">' +
+      '<div class="t"><span class="tag">' + esc(KIND_LABEL[l.kind] || l.kind) + '</span>' + esc(title) + '</div>' +
+      '<div class="m">' + esc(l.spot_name || ('박지 ' + l.spot_id)) + ' · ' + esc(l.author || '') + ' · ' + esc(when(l.created_at)) +
+        ' · 👍 ' + num(l.ups) + ' · <span class="' + (rep >= 3 ? 'warn' : '') + '">신고 ' + num(rep) + '</span>' +
+        (l.hidden ? ' · <span class="warn">숨김</span>' : '') + '</div>' +
+      '<div class="b">' +
+        '<a href="' + esc(safeUrl(l.url)) + '" target="_blank" rel="noopener noreferrer">링크 열기</a>' +
+        '<a href="map.html?id=' + encodeURIComponent(l.spot_id) + '" target="_blank" rel="noopener">박지 열기</a>' +
+        '<button type="button" data-link-act="' + (l.hidden ? 'show' : 'hide') + '" data-id="' + esc(l.id) + '">' + (l.hidden ? '다시 보이기' : '숨김') + '</button>' +
+        '<button type="button" class="red" data-link-act="delete" data-id="' + esc(l.id) + '">삭제</button>' +
+      '</div></div>';
+  }
+  function feedRow(f) {
+    return '<div class="act-row' + (isNew(f.created_at) ? ' is-new' : '') + '">' +
+      '<div class="t">' + esc(f.spot || '(장소 없음)') + '</div>' +
+      '<div class="m">' + esc(f.author || '') + ' · ' + esc(when(f.created_at)) + ' · ' + (f.is_published ? '공개' : '<span class="dim">비공개</span>') + ' · ' +
+        (f.linked ? '<span class="ok">✓ 박지 연결: ' + esc(f.spot_name || f.spot_id) + '</span>' : '<span class="warn">✗ 박지 연결 안 됨</span>') + '</div>' +
+      '<div class="b">' +
+        '<a href="index.html?feed=' + encodeURIComponent(f.id) + '" target="_blank" rel="noopener">피드 열기</a>' +
+        (f.linked ? '<a href="map.html?id=' + encodeURIComponent(f.spot_id) + '" target="_blank" rel="noopener">박지 열기</a>' : '') +
+      '</div></div>';
+  }
+
+  function renderActivity() {
+    var d = actData;
+    var html = '<section><h2>관리자 새 소식</h2><p class="h">새로 들어온 링크·피드와 검수 대기예요. 노란 줄은 마지막으로 확인한 뒤 들어온 거예요.</p>';
+    if (!d) { act.innerHTML = html + '<p class="dim">불러오는 중…</p></section>'; return; }
+    if (d.error) { act.innerHTML = html + '<p class="dim">' + esc(d.error) + '</p></section>'; return; }
+    html += '<div class="kpis" style="grid-template-columns:repeat(2, 1fr)">' +
+      '<div class="kpi"><b>' + num((d.links || []).length) + (d.new_links ? '<span class="new">새 ' + num(d.new_links) + '</span>' : '') + '</b><span>크리에이터 링크 (최근)</span></div>' +
+      '<div class="kpi"><b>' + num((d.feeds || []).length) + (d.new_feeds ? '<span class="new">새 ' + num(d.new_feeds) + '</span>' : '') + '</b><span>피드 (최근)</span></div>' +
+      '<a class="kpi" href="map.html?open=admin_inbox"><b class="' + (d.inbox_pending ? 'warn' : '') + '">' + num(d.inbox_pending) + '</b><span>장소 검수 대기 ›</span></a>' +
+      '<div class="kpi"><b class="' + (d.reports_pending ? 'warn' : '') + '">' + num(d.reports_pending) + '</b><span>신고 대기 (계정 설정 › 신고 검수함)</span></div>' +
+      '</div>';
+    html += '<div class="tabs"><button type="button" data-act-tab="links" class="' + (actTab === 'links' ? 'on' : '') + '">크리에이터 링크</button>' +
+      '<button type="button" data-act-tab="feeds" class="' + (actTab === 'feeds' ? 'on' : '') + '">새 피드</button></div>';
+    var list = actTab === 'links' ? (d.links || []) : (d.feeds || []);
+    html += list.length
+      ? list.map(actTab === 'links' ? linkRow : feedRow).join('')
+      : '<p class="dim">' + (actTab === 'links' ? '아직 등록된 크리에이터 링크가 없어요.' : '아직 피드가 없어요.') + '</p>';
+    html += '<button type="button" class="seen-btn" data-act-seen="1">모두 확인했어요 (새 표시 지우기)</button></section>';
+    act.innerHTML = html;
+  }
+
+  async function loadActivity() {
+    actData = null;
+    renderActivity();
+    var sess = await client.auth.getSession();
+    if (!sess || !sess.data || !sess.data.session) { act.innerHTML = ''; return; }
+    var res = await client.rpc('okbm_admin_activity', { p_since: readSeen() || null, p_limit: 50 });
+    if (res.error) {
+      var t = String(res.error.message || '');
+      actData = { error: t.indexOf('admin only') !== -1 ? '관리자 계정만 볼 수 있어요.'
+        : (res.error.code === 'PGRST202' || t.indexOf('Could not find the function') !== -1)
+          ? '새 소식 DB가 아직 없어요. SUPABASE_H3_ADMIN_ACTIVITY.sql을 먼저 실행해 주세요.'
+          : '불러오지 못했어요: ' + t };
+    } else {
+      actData = res.data || {};
+    }
+    renderActivity();
+  }
+
+  act.addEventListener('click', async function (e) {
+    var tab = e.target.closest('[data-act-tab]');
+    if (tab) { actTab = tab.getAttribute('data-act-tab'); renderActivity(); return; }
+    if (e.target.closest('[data-act-seen]')) {
+      try { localStorage.setItem(SEEN_KEY, (actData && actData.now) || new Date().toISOString()); } catch (eSeen) {}
+      loadActivity();
+      return;
+    }
+    var b = e.target.closest('[data-link-act]');
+    if (!b) return;
+    var action = b.getAttribute('data-link-act');
+    if (action === 'delete' && !confirm('이 링크를 삭제할까요?')) return;
+    b.disabled = true;
+    var r = await client.rpc('manage_spot_creator_link', { p_link_id: Number(b.getAttribute('data-id')), p_action: action });
+    if (r.error) { alert('처리하지 못했어요: ' + (r.error.message || '')); b.disabled = false; return; }
+    loadActivity();
+  });
+
+  loadActivity();
 })();
