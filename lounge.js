@@ -318,7 +318,7 @@
       '.lm-kv span{flex:none;color:var(--sub)}',
       '.lm-kv b{font-weight:600;text-align:right}',
       '.lm-desc{margin:10px 0 0;font-size:13.5px;line-height:1.65;color:#d1d1d6;white-space:pre-wrap}',
-      '.lm-poster{display:block;width:100%;max-height:420px;object-fit:cover;border-radius:14px;margin:2px 0 10px;background:#17171b}',
+      '.lm-poster{display:block;width:100%;height:auto;object-fit:contain;border-radius:14px;margin:2px 0 10px;background:#17171b}', // 세로로 긴 포스터도 잘리지 않게 원본 비율로
       '.lm-src{flex:none;width:48px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;align-self:center}',
       '.lm-src b{display:grid;place-items:center;width:22px;height:16px;border-radius:4px;background:#2a2a30;color:#fff;font-size:9px;font-weight:800;line-height:1}',
       '.lm-src.yt b{background:#ff0033}',
