@@ -3717,11 +3717,26 @@ window.__okbmSpotsIdbReady = (function() {
 window.__spotDetailCache = window.__spotDetailCache || {};
 window.__spotDetailInflight = window.__spotDetailInflight || {};
 
+// 상세 요청용 토큰. 저장된 세션이 만료됐으면 새로 받아 온다.
+// 만료된 토큰을 그대로 보내면 서버가 401로 거절해 회원 화면에 "상세 정보를 불러오지 못했어요"가 떴다.
+async function okbmSpotDetailAccessToken(forceRefresh) {
+  var tok = (typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || '';
+  if (!tok) return '';
+  var session = window.__okbmSessionCache && window.__okbmSessionCache.session;
+  if (forceRefresh || !session || okbmSessionExpired(session)) {
+    var fresh = (typeof window.okbmUploadAccessToken === 'function') ? await window.okbmUploadAccessToken() : '';
+    if (fresh) return fresh;
+    // 새로 받지 못하면 만료 토큰 대신 비회원으로 요청한다(화면은 "다시 로그인" 안내로 바뀐다).
+    return okbmSessionExpired(session) ? '' : tok;
+  }
+  return tok;
+}
+
 window.fetchSpotDetailById = async function(spotId) {
   var id = String(spotId || '').trim();
   if (!id) return null;
   // 서버는 비회원에게 [뷰/특징]만 준다(E1). 로그인 전후 응답이 다르므로 캐시를 나눈다.
-  var accessToken = (typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || '';
+  var accessToken = await okbmSpotDetailAccessToken(false);
   var cacheKey = id + (accessToken ? ':m' : ':g');
   if (window.__spotDetailCache[cacheKey]) return window.__spotDetailCache[cacheKey];
   if (window.__spotDetailInflight[cacheKey]) return window.__spotDetailInflight[cacheKey];
@@ -3732,20 +3747,32 @@ window.fetchSpotDetailById = async function(spotId) {
 
   var request = (async function() {
     try {
-      var res = await fetch(targetUrl + '/rest/v1/rpc/get_spot_detail', {
-        method: 'POST',
-        headers: {
-          'apikey': targetKey,
-          'Authorization': 'Bearer ' + (accessToken || targetKey),
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ p_id: id })
-      });
-      if (!res.ok) return null;
+      var callDetail = function(tok) {
+        return fetch(targetUrl + '/rest/v1/rpc/get_spot_detail', {
+          method: 'POST',
+          headers: {
+            'apikey': targetKey,
+            'Authorization': 'Bearer ' + (tok || targetKey),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ p_id: id })
+        });
+      };
+      var res = await callDetail(accessToken);
+      // 토큰이 서버에서 거절되면(만료 등) 한 번만 새로 받아 다시 요청한다.
+      if (res.status === 401 && accessToken) {
+        var retryToken = await okbmSpotDetailAccessToken(true);
+        if (retryToken !== accessToken) res = await callDetail(retryToken);
+      }
+      if (!res.ok) {
+        console.warn('[romantic-sync.js:fetchSpotDetailById] HTTP ' + res.status);
+        return null;
+      }
       var detail = await res.json();
       if (!detail || typeof detail !== 'object') return null;
       // 한도 초과 응답(E2)은 캐시하지 않는다. 잠시 뒤·다음 날 다시 받을 수 있어야 한다.
-      if (!detail.limited) window.__spotDetailCache[cacheKey] = detail;
+      // 회원 토큰으로 물었는데 비회원 응답이 온 경우도 캐시하지 않는다(다시 로그인하면 바로 열려야 한다).
+      if (!detail.limited && !(accessToken && detail.tier === 'guest')) window.__spotDetailCache[cacheKey] = detail;
       return detail;
     } catch (e) {
       console.warn('[romantic-sync.js:fetchSpotDetailById]', e);
