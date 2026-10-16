@@ -3549,6 +3549,7 @@ window.stripSpotDetailFields = function(spot) {
   out.mediaUrls = '';
   out.youtubeUrls = [];
   out.blogUrls = [];
+  out.instaUrls = [];
   out.__detailLoaded = false;
   return out;
 };
@@ -3623,19 +3624,27 @@ window.normalizeSpotMapRow = function(row) {
   var media = window.parseSpotMediaUrls(out.mediaUrls);
   out.youtubeUrls = media.youtubeUrls;
   out.blogUrls = media.blogUrls;
+  out.instaUrls = media.instaUrls;
   return out;
+};
+
+// 인스타그램 게시물·릴스 주소만 (계정 주소는 제보자 SNS라 제외)
+window.okbmIsInstaPostUrl = function(u) {
+  return /^https?:\/\/(www\.)?instagram\.com\/(p|reel|reels|tv)\/[A-Za-z0-9_-]+/i.test(String(u || '').trim());
 };
 
 window.parseSpotMediaUrls = function(mediaUrls) {
   var ytUrls = [];
   var blogUrls = [];
+  var instaUrls = [];
   if (mediaUrls && typeof mediaUrls === 'string') {
     mediaUrls.split(/[\r\n,]+/).map(function(u) { return u.trim(); }).filter(Boolean).forEach(function(u) {
       if (u.indexOf('youtube.com') !== -1 || u.indexOf('youtu.be') !== -1) ytUrls.push(u);
       else if (u.indexOf('blog.naver.com') !== -1) blogUrls.push(u);
+      else if (window.okbmIsInstaPostUrl(u)) instaUrls.push(u);
     });
   }
-  return { youtubeUrls: ytUrls, blogUrls: blogUrls };
+  return { youtubeUrls: ytUrls, blogUrls: blogUrls, instaUrls: instaUrls };
 };
 
 window.mergeSpotDetailInto = function(spot, detail) {
@@ -3650,6 +3659,7 @@ window.mergeSpotDetailInto = function(spot, detail) {
   spot.mediaUrls = detail.mediaUrls || '';
   spot.youtubeUrls = media.youtubeUrls;
   spot.blogUrls = media.blogUrls;
+  spot.instaUrls = media.instaUrls;
   spot.author_sns_url = String(detail.author_sns_url || '').trim();
   spot.authorSnsUrl = spot.author_sns_url;
   // 'guest'면 비회원용 요약만 받은 상태. 로그인 후 다시 받는다. (E1 이전 서버는 tier 없음 = 전체)
