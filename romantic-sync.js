@@ -2179,10 +2179,28 @@ function okbmMountAdminReportInspectorEntry() {
   var opsEntry = document.createElement('button');
   opsEntry.id = 'adminOpsStatsEntry';
   opsEntry.type = 'button';
-  opsEntry.textContent = '운영 숫자';
+  opsEntry.textContent = '관리자 새 소식 · 운영 숫자';
   opsEntry.style.cssText = 'background:none; border:none; color:#e2e8f0; font-size:0.78rem; font-weight:700; text-align:left; padding:8px 0 2px 0; cursor:pointer;';
   opsEntry.onclick = function() { window.location.assign('ops.html'); };
   logoutBtn.parentNode.insertBefore(opsEntry, logoutBtn);
+  // 마지막으로 확인한 뒤 들어온 크리에이터 링크·피드 수와 검수·신고 대기 수 (SUPABASE_H3)
+  var client = window.supabaseClient;
+  if (client && typeof client.rpc === 'function') {
+    var seen = '';
+    try { seen = localStorage.getItem('okbm_admin_activity_seen') || ''; } catch (eSeen) {}
+    Promise.resolve(client.rpc('okbm_admin_activity', { p_since: seen || null, p_limit: 1 })).then(function(res) {
+      var d = res && !res.error && res.data;
+      if (!d || !document.body.contains(opsEntry)) return;
+      var fresh = Number(d.new_links || 0) + Number(d.new_feeds || 0);
+      var waiting = Number(d.inbox_pending || 0) + Number(d.reports_pending || 0);
+      if (!fresh && !waiting) return;
+      opsEntry.textContent = '관리자 새 소식 · 운영 숫자 ';
+      var badge = document.createElement('span');
+      badge.style.cssText = 'display:inline-block; margin-left:4px; padding:1px 7px; border-radius:9px; background:#f43f5e; color:#ffffff; font-size:0.66rem; font-weight:900;';
+      badge.textContent = [fresh ? '새 ' + fresh : '', waiting ? '대기 ' + waiting : ''].filter(Boolean).join(' · ');
+      opsEntry.appendChild(badge);
+    }).catch(function() {});
+  }
 }
 
 window.openAdminReportInspector = async function() {
