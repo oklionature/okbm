@@ -16,7 +16,7 @@
 
   // 백패킹 박지 기준 팁. one=true 묶음은 하나만 고른다 (DB okbm_spot_tip_allowed와 같아야 한다)
   var GROUPS = [
-    { key: 'view', label: '풍경', tips: ['일출 명소', '일몰 명소', '운해', '야경', '별이 잘 보임'] },
+    { key: 'view', label: '풍경', tips: ['일출 명소', '일몰 명소', '운해', '야경', '별이 잘 보임', '360도 파노라마 뷰', '바다 뷰', '호수 뷰'] },
     { key: 'size', label: '박지 크기', one: true, tips: ['텐트 1~2동', '텐트 3~5동', '텐트 6동 이상'] },
     { key: 'mood', label: '분위기', one: true, tips: ['조용함', '사람 많음'] },
     { key: 'note', label: '알아 둘 것', tips: ['바람 셈', '그늘 없음', '벌레 많음', '통신 약함'] }
