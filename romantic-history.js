@@ -1295,6 +1295,7 @@
     var normalized = window.normalizeHistoryRecord(record, 0);
     normalized.feedType = 'route';
     normalized._isLocalOwner = true;
+    okbmLinkRecordToRegisteredSpot(normalized);
 
     if (incomingReadyShot && incomingReadyShot.length > 10) {
       normalized.readyShotPhoto = incomingReadyShot;
@@ -4439,6 +4440,34 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       if (s && String(s.id || s.spot_id || '').trim() === sid) return s;
     }
     return null;
+  }
+
+  // 등록된 박지로 찾아지는 기록은 그 박지 번호와 현재 박지 이름으로 저장한다.
+  // 박지 등록 전에 마음대로 적은 이름은 그대로 두고, 등록된 뒤 비슷한 이름으로 쓰면 그 박지로 모인다.
+  // (같은 박지가 "둔덕산"·"둔덕산 복주머니바위"처럼 다른 이름으로 저장돼 따로 보이던 문제)
+  function okbmLinkRecordToRegisteredSpot(rec) {
+    if (!rec) return;
+    try {
+      var pool = okbmCollectMasterSpotPool();
+      if (!pool.length) return;
+      var sid = String(rec.spotId || rec.spot_id || '').trim();
+      var found = sid ? okbmFindSpotInPoolById(pool, sid) : null;
+      if (!found) {
+        var name = String(rec.spot || '').trim();
+        if (!name || !window.isSpotRegisteredInMasterDB(name)) return;
+        found = window.okbmFindSpotByFocusQuery(pool, name);
+      }
+      var foundId = found ? String(found.id || found.spot_id || '').trim() : '';
+      if (!foundId) return;
+      rec.spotId = foundId;
+      rec.spot_id = foundId;
+      var canonical = String(found.fullName || found.name || [found.spot_main, found.spot_sub].filter(Boolean).join(' ')).trim();
+      if (canonical) rec.spot = canonical;
+      rec.unregisteredSpot = false;
+      rec.unregistered_spot = false;
+    } catch (eLink) {
+      console.warn('[romantic-history.js:okbmLinkRecordToRegisteredSpot]', eLink);
+    }
   }
 
   window.isSpotRegisteredInMasterDB = function(rawSpotName) {
