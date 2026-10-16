@@ -4394,8 +4394,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         `;
       }
 
-      // 인스타 탭: 관리자 등록 → 크리에이터 등록(추천순) 게시물. 줄을 누르면 그 자리에서 인스타 공식 embed가 펼쳐진다.
-      // <details>라 스크립트 없이 열고 닫히고, 닫혀 있는 동안에는 embed를 불러오지 않는다.
+      // 인스타 탭: 관리자 등록 → 크리에이터 등록(추천순) 게시물. 줄을 누르면 화면 전체 보기 창에서 인스타 공식 embed를 연다.
       function spotInstaPosts(spot) {
         var posts = [];
         var addPost = function(u, creator) {
@@ -4422,24 +4421,68 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         var icon = '<svg viewBox="0 0 24 24" style="width:14px; height:14px; flex-shrink:0;" fill="none" stroke="#f9a8d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="#f9a8d4"/></svg>';
         var postNo = 0, reelNo = 0;
         return posts.map(function(p) {
-          var postUrl = 'https://www.instagram.com/' + p.kind + '/' + p.code + '/';
           var isReel = p.kind !== 'p';
           var label = isReel ? ('릴스 ' + (++reelNo)) : ('게시물 ' + (++postNo));
           if (p.creator) label += ' · ' + (p.creator.author || '백패커');
           var dim = p.creator && (p.creator.sunk || p.creator.hidden);
-          return '<details class="spot-insta-item" style="border:1px solid rgba(249,168,212,0.28); border-radius:9px; background:rgba(249,168,212,0.06); overflow:hidden;' + (dim ? ' opacity:0.55;' : '') + '">' +
-            '<summary style="list-style:none; cursor:pointer; display:flex; align-items:center; gap:6px; padding:9px 10px; font-size:0.74rem; font-weight:800; color:#fbcfe8;">' +
-              icon + '<span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(label) + '</span><span style="font-size:0.64rem; color:#f9a8d4; flex-shrink:0;">눌러서 보기 ▾</span>' +
-            '</summary>' +
-            '<div style="padding:0 8px 8px; display:flex; flex-direction:column; gap:4px;">' +
-              '<iframe src="' + escapeHtml(postUrl + 'embed/') + '" title="인스타그램 게시물" loading="lazy" scrolling="no" referrerpolicy="strict-origin-when-cross-origin"' +
-              ' sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"' +
-              ' style="width:100%; max-width:360px; align-self:center; height:' + (isReel ? '600' : '500') + 'px; border:0; border-radius:10px; background:#ffffff; display:block;"></iframe>' +
-              (p.creator && typeof window.okbmCreatorActionsHtml === 'function' ? window.okbmCreatorActionsHtml(sIdForCreators, p.creator) : '') +
-            '</div>' +
-          '</details>';
+          // 줄을 누르면 정보창 크기는 그대로 두고 화면 전체 보기 창에서 게시물을 연다
+          return '<div style="display:flex; flex-direction:column; gap:3px;' + (dim ? ' opacity:0.55;' : '') + '">' +
+            '<button type="button" data-kind="' + escapeHtml(p.kind) + '" data-code="' + escapeHtml(p.code) + '" onclick="window.okbmOpenInstaViewer(this);"' +
+            ' style="width:100%; display:flex; align-items:center; gap:6px; padding:10px; border:1px solid rgba(249,168,212,0.28); border-radius:9px; background:rgba(249,168,212,0.06); cursor:pointer; font-family:inherit; font-size:0.74rem; font-weight:800; color:#fbcfe8; text-align:left;">' +
+              icon + '<span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(label) + '</span><span style="font-size:0.64rem; color:#f9a8d4; flex-shrink:0;">크게 보기 ›</span>' +
+            '</button>' +
+            (p.creator && typeof window.okbmCreatorActionsHtml === 'function' ? window.okbmCreatorActionsHtml(sIdForCreators, p.creator) : '') +
+          '</div>';
         }).join('');
       }
+
+      // 인스타 게시물 보기 창: 화면 전체를 덮고, 게시물 높이에 맞춰 늘어난다(길면 창 안에서 스크롤).
+      // 높이는 인스타 embed가 보내는 MEASURE 신호(공식 embed.js와 같은 방식)로 맞추고, 신호가 없으면 기본 높이를 쓴다.
+      window.okbmOpenInstaViewer = function(btn) {
+        if (!btn || !btn.dataset) return;
+        var kind = /^(p|reel|tv)$/.test(btn.dataset.kind) ? btn.dataset.kind : 'p';
+        var code = String(btn.dataset.code || '').replace(/[^A-Za-z0-9_-]/g, '');
+        if (!code) return;
+        window.okbmCloseInstaViewer();
+        var overlay = document.createElement('div');
+        overlay.id = 'okbmInstaViewer';
+        overlay.setAttribute('onclick', 'if(event.target===this)window.okbmCloseInstaViewer();');
+        // 정보창 피드 크기 정도(최대 400px)로 가운데에 띄우고, 길면 창 안에서 스크롤한다
+        overlay.style.cssText = 'position:fixed; inset:0; z-index:2147483646; background:rgba(0,0,0,0.72); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:calc(12px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)); box-sizing:border-box;';
+        var postUrl = 'https://www.instagram.com/' + kind + '/' + code + '/';
+        overlay.innerHTML =
+          '<div style="width:100%; max-width:400px; max-height:100%; display:flex; flex-direction:column; background:#0c1017; border:1px solid rgba(255,255,255,0.12); border-radius:14px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.5);">' +
+            '<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; flex-shrink:0;">' +
+              '<span style="font-size:0.76rem; font-weight:900; color:#fbcfe8;">인스타그램</span>' +
+              '<button type="button" onclick="window.okbmCloseInstaViewer();" aria-label="닫기" style="width:30px; height:30px; border-radius:50%; border:none; background:rgba(255,255,255,0.10); color:#ffffff; font-size:0.9rem; font-weight:900; cursor:pointer;">✕</button>' +
+            '</div>' +
+            '<div style="flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 8px;">' +
+              '<iframe src="' + postUrl + 'embed/" title="인스타그램 게시물" scrolling="no" referrerpolicy="strict-origin-when-cross-origin"' +
+              ' sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"' +
+              ' style="width:100%; height:' + (kind === 'p' ? '560' : '700') + 'px; border:0; border-radius:10px; background:#ffffff; display:block;"></iframe>' +
+            '</div>' +
+            '<a href="' + postUrl + '" target="_blank" rel="noopener noreferrer" style="flex-shrink:0; margin:8px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center; text-decoration:none; color:#ffffff; font-size:0.76rem; font-weight:900; background:linear-gradient(135deg, #833ab4, #fd1d1d 55%, #fcb045);">인스타그램에서 보기 ›</a>' +
+          '</div>';
+        document.body.appendChild(overlay);
+        if (typeof window.registerModalOpen === 'function') window.registerModalOpen('okbmInstaViewer', window.okbmCloseInstaViewer);
+      };
+      window.okbmCloseInstaViewer = function() {
+        var el = document.getElementById('okbmInstaViewer');
+        if (!el) return;
+        el.remove();
+        if (typeof window.unregisterModalClose === 'function') window.unregisterModalClose('okbmInstaViewer');
+      };
+      window.addEventListener('message', function(e) {
+        if (e.origin !== 'https://www.instagram.com') return;
+        var data = e.data;
+        if (typeof data === 'string') { try { data = JSON.parse(data); } catch (eParse) { return; } }
+        if (!data || data.type !== 'MEASURE' || !data.details) return;
+        var h = Number(data.details.height);
+        if (!isFinite(h) || h < 200 || h > 4000) return;
+        var viewer = document.getElementById('okbmInstaViewer');
+        var frame = viewer && viewer.querySelector('iframe');
+        if (frame && frame.contentWindow === e.source) frame.style.height = Math.ceil(h) + 'px';
+      });
 
       // ---------- 크리에이터 콘텐츠 (SUPABASE_H2) ----------
       // 다녀온 사람이 유튜브·블로그·인스타 게시물 링크를 정보창에서 바로 등록한다. 바로 공개되고,
