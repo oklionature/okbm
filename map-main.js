@@ -478,6 +478,38 @@
         return /youtube\.com\/shorts\//i.test(String(url || ''));
       };
 
+      // 주소가 watch?v= 라도 세로 영상이면 숏츠로 본다. 유튜브는 세로 영상에만 세로 썸네일(oardefault)을 만들고,
+      // 일반 영상은 120x90 빈 그림을 준다. 결과는 기기에 기억해 두고, 4초 안에 못 받으면 일반 영상으로 본다.
+      window.okbmIsVerticalYouTube = (function() {
+        var KEY = 'okbm_yt_vertical_v1';
+        var memo = {};
+        try { memo = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { memo = {}; }
+        var pending = {};
+        function save() { try { localStorage.setItem(KEY, JSON.stringify(memo)); } catch (e) {} }
+        return function(id) {
+          id = String(id || '');
+          if (!/^[\w-]{11}$/.test(id)) return Promise.resolve(false);
+          if (Object.prototype.hasOwnProperty.call(memo, id)) return Promise.resolve(!!memo[id]);
+          if (pending[id]) return pending[id];
+          pending[id] = new Promise(function(resolve) {
+            var img = new Image();
+            var done = false;
+            var finish = function(vertical, remember) {
+              if (done) return;
+              done = true;
+              delete pending[id];
+              if (remember) { memo[id] = vertical ? 1 : 0; save(); }
+              resolve(vertical);
+            };
+            var timer = setTimeout(function() { finish(false, false); }, 4000);
+            img.onload = function() { clearTimeout(timer); finish(img.naturalHeight > img.naturalWidth, true); };
+            img.onerror = function() { clearTimeout(timer); finish(false, true); };
+            img.src = 'https://i.ytimg.com/vi/' + id + '/oardefault.jpg';
+          });
+          return pending[id];
+        };
+      })();
+
      function cleanYouTubeUrl(url) {
         if (!url) return '';
         const match = String(url).match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/)|[?&]v=)([\w-]{11})/i);
@@ -4041,6 +4073,8 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         });
 
         recordCards.forEach(function(card) { finalCards.push(card); });
+        var verticalFlags = await Promise.all(finalCards.map(function(card) { return window.okbmIsVerticalYouTube(card.id); }));
+        finalCards = finalCards.filter(function(card, idx) { return !verticalFlags[idx]; });
         var ytCap = Math.min(15, Math.max(5, finalCards.length));
 
         if (typeof onPartial === 'function' && finalCards.length) {
@@ -4051,9 +4085,10 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           var targetSpot = (spots || []).find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
           var areaName = window.extractAreaForSearch(targetSpot);
           var autoFetched = await window.fetchRealYouTubeVideosForSpot(spotName, areaName);
+          var autoVertical = await Promise.all(autoFetched.map(function(it) { return window.okbmIsVerticalYouTube(it && it.id); }));
           for (var i = 0; i < autoFetched.length && finalCards.length < 5; i++) {
             var item = autoFetched[i];
-            if (!item || !item.id || seenVideoIds.has(item.id) || window.okbmIsYouTubeShorts(item.url)) continue;
+            if (!item || !item.id || seenVideoIds.has(item.id) || window.okbmIsYouTubeShorts(item.url) || autoVertical[i]) continue;
             seenVideoIds.add(item.id);
             finalCards.push({
               id: item.id,
