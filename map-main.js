@@ -3041,6 +3041,7 @@ function updateSmartResetButtons() {
 
             ${isCampBanned(spot) ? '' : `<div data-okbm-review-box="${escapeHtml(sId)}">${typeof window.okbmSpotReviewBoxHtml === 'function' ? window.okbmSpotReviewBoxHtml(sId) : ''}</div>`}
 
+    ${isCampBanned(spot) ? '' : renderSpotInstaRowHtml(spot)}
     ${isCampBanned(spot) ? '' : (function() {
               var existingYt = (typeof window.getSpotRegisteredMediaUrls === 'function')
                 ? window.getSpotRegisteredMediaUrls(spot, 'yt')
@@ -4333,6 +4334,35 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         `;
       }
 
+      // 관리자가 등록한 인스타그램 게시물만 유튜브·블로그 위에 게시물 그대로(인스타 공식 embed) 보여 준다.
+      // 등록이 없으면 아무것도 그리지 않는다. 여러 개면 가로로 넘겨 본다.
+      function renderSpotInstaRowHtml(spot) {
+        var posts = [];
+        (spot && Array.isArray(spot.instaUrls) ? spot.instaUrls : []).forEach(function(u) {
+          var m = String(u || '').match(/^https?:\/\/(?:www\.)?instagram\.com\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i);
+          if (!m) return;
+          var kind = m[1].toLowerCase() === 'p' ? 'p' : (m[1].toLowerCase() === 'tv' ? 'tv' : 'reel');
+          if (posts.some(function(x) { return x.code === m[2]; })) return;
+          posts.push({ kind: kind, code: m[2] });
+        });
+        posts = posts.slice(0, 10);
+        if (!posts.length) return '';
+        var frames = posts.map(function(p) {
+          var postUrl = 'https://www.instagram.com/' + p.kind + '/' + p.code + '/';
+          var isReel = p.kind !== 'p';
+          return '<div style="flex-shrink:0; width:' + (posts.length > 1 ? '86%' : '100%') + '; max-width:340px; scroll-snap-align:start; display:flex; flex-direction:column; gap:4px;">' +
+            '<iframe src="' + escapeHtml(postUrl + 'embed/') + '" title="인스타그램 게시물" loading="lazy" scrolling="no" referrerpolicy="strict-origin-when-cross-origin"' +
+            ' sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"' +
+            ' style="width:100%; height:' + (isReel ? '600' : '500') + 'px; border:0; border-radius:12px; background:#ffffff; display:block;"></iframe>' +
+            '<a href="' + escapeHtml(okbmSafeExternalUrl(postUrl)) + '" target="_blank" rel="noopener noreferrer" style="align-self:flex-end; font-size:0.66rem; font-weight:800; color:#f9a8d4; text-decoration:none;">인스타그램에서 보기 ›</a>' +
+          '</div>';
+        }).join('');
+        return '<div class="spot-insta-row" style="margin:6px 0 2px;">' +
+          '<div style="font-size:0.72rem; font-weight:900; color:#f9a8d4; margin-bottom:5px;">인스타그램' + (posts.length > 1 ? ' (' + posts.length + ')' : '') + '</div>' +
+          '<div style="display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory; padding-bottom:2px;">' + frames + '</div>' +
+        '</div>';
+      }
+
       function renderSpotFieldFeedsTrackHtml(spot) {
         var sId = String(spot.id || '').trim();
         var cachedFeeds = (window.__spotFeedsCache && window.__spotFeedsCache.has(sId)) ? window.__spotFeedsCache.get(sId) : null;
@@ -5260,6 +5290,7 @@ var liveSearchTimer = null;
         setVal('modalInputDescTip', '');
         setVal('modalInputYoutube', '');
         setVal('modalInputBlog', '');
+        setVal('modalInputInsta', '');
         setVal('modalInputDistance', '');
         
         var diffSelect = document.getElementById('modalSelectDiff');
@@ -5594,6 +5625,7 @@ var overlay = document.getElementById('customModalOverlay');
         var media = [];
         (spot.youtubeUrls || []).forEach(function(u) { if (u && String(u).trim()) media.push(String(u).trim()); });
         (spot.blogUrls || []).forEach(function(u) { if (u && String(u).trim()) media.push(String(u).trim()); });
+        (spot.instaUrls || []).forEach(function(u) { if (u && String(u).trim()) media.push(String(u).trim()); });
         if (spot.authorSnsUrl) media.push(String(spot.authorSnsUrl).trim());
         var payload = {
           id: String(spot.id).trim(),
@@ -5925,6 +5957,7 @@ var overlay = document.getElementById('customModalOverlay');
         var blog = Array.isArray(source.blogUrls) ? (source.blogUrls[0] || '') : (source.blogurl || source.blogUrl || '');
         setV('modalInputBlog', blog);
         setV('modalInputAuthorSns', source.authorSnsUrl || source.authorsnsurl || '');
+        setV('modalInputInsta', Array.isArray(source.instaUrls) ? source.instaUrls.join('\n') : '');
         setV('modalInputDescView', source.descView || parsed.view || '');
         setV('modalInputDescAccess', source.descAccess || parsed.access || '');
         setV('modalInputDescPitch', source.descPitch || parsed.pitch || '');
@@ -5958,6 +5991,9 @@ var overlay = document.getElementById('customModalOverlay');
       function showCustomModalOverlay() {
         var overlay = document.getElementById('customModalOverlay');
         if (!overlay) return;
+        // 인스타 게시물 링크는 관리자 등록·수정에서만 받는다(제보·수정건의에는 숨김)
+        var instaField = document.getElementById('modalFieldInsta');
+        if (instaField) instaField.style.display = (modalMode !== 'PROPOSAL' && isAdminMode) ? '' : 'none';
         overlay.style.setProperty('display', 'flex', 'important');
         overlay.style.setProperty('z-index', '999999', 'important');
         overlay.style.setProperty('opacity', '1', 'important');
@@ -6127,6 +6163,8 @@ var overlay = document.getElementById('customModalOverlay');
         const rawYt = document.getElementById('modalInputYoutube')?.value.trim();
           const ytList = rawYt ? rawYt.split(/[\n,]+/).map(u => u.trim()).filter(Boolean) : [];
           const blogUrl = document.getElementById('modalInputBlog')?.value.trim();
+          const rawInsta = document.getElementById('modalInputInsta')?.value.trim() || '';
+          const instaList = rawInsta.split(/[\n,]+/).map(u => u.trim()).filter(u => typeof window.okbmIsInstaPostUrl === 'function' && window.okbmIsInstaPostUrl(u)).slice(0, 10);
           
           // 🌐 @아이디 또는 아이디만 입력해도 인스타그램 전체 풀주소로 자동 변환 완성
           let authorSnsUrl = document.getElementById('modalInputAuthorSns')?.value.trim() || '';
@@ -6335,6 +6373,8 @@ var overlay = document.getElementById('customModalOverlay');
               desc: desc,
               youtubeUrls: ytList,
               blogUrls: blogUrl ? [blogUrl] : (target.blogUrls || []),
+              // 제보 채택(ADMIN_APPLY)은 제보 내용으로 창을 채워 인스타 칸이 비어 있다. 비어 있으면 기존 등록을 지키고 덧붙이지 않는다.
+              instaUrls: (modalMode === 'ADMIN_APPLY' && !instaList.length) ? (target.instaUrls || []) : instaList,
               authorSnsUrl: authorSnsUrl,
               distance: distance ? (distance + 'km') : (target.distance || ''),
               difficulty: difficulty,
