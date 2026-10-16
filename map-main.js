@@ -4489,22 +4489,23 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         function actionsHtml(sId, r) {
           var up = r.my_vote === 'up';
           var rep = r.my_vote === 'report';
-          var btn = 'background:none; border:none; cursor:pointer; font-family:inherit; font-size:0.62rem; font-weight:800; padding:2px 4px;';
+          // 손가락으로 누르기 쉽게 높이 30px 알약 버튼
+          var btn = 'display:inline-flex; align-items:center; gap:3px; height:30px; padding:0 11px; border-radius:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); cursor:pointer; font-family:inherit; font-size:0.76rem; font-weight:800; flex-shrink:0;';
           var tools = '';
           if (r.mine) {
-            tools = '<span style="font-size:0.60rem; color:#3182f6; font-weight:800; padding:0 4px;">내 콘텐츠 · 👍 ' + (Number(r.ups) || 0) + '</span>' +
+            tools = '<span style="font-size:0.74rem; color:#60a5fa; font-weight:800; padding:0 4px; flex-shrink:0;">내 콘텐츠 · 👍 ' + (Number(r.ups) || 0) + '</span>' +
               '<button type="button" data-act="del" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' style="' + btn + ' color:#64748b;">삭제</button>';
           } else {
-            tools = '<button type="button" data-act="up" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + up + '" style="' + btn + ' color:' + (up ? '#fbbf24' : '#94a3b8') + ';">👍 ' + (Number(r.ups) || 0) + '</button>' +
-              '<button type="button" data-act="report" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + rep + '" style="' + btn + ' color:' + (rep ? '#f87171' : '#64748b') + ';">' + (rep ? '신고함' : '신고') + '</button>';
+            tools = '<button type="button" data-act="up" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + up + '" style="' + btn + ' color:' + (up ? '#fbbf24' : '#e2e8f0') + ';' + (up ? ' border-color:rgba(251,191,36,0.6); background:rgba(251,191,36,0.12);' : '') + '">👍 추천 ' + (Number(r.ups) || 0) + '</button>' +
+              '<button type="button" data-act="report" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + rep + '" style="' + btn + ' color:' + (rep ? '#f87171' : '#94a3b8') + ';' + (rep ? ' border-color:rgba(248,113,113,0.6); background:rgba(248,113,113,0.12);' : '') + '">' + (rep ? '신고함' : '신고') + '</button>';
           }
           if (isAdminMode) {
             tools += '<button type="button" data-act="' + (r.hidden ? 'show' : 'hide') + '" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' style="' + btn + ' color:#fbbf24;">' + (r.hidden ? '보이기' : '숨김') + '</button>' +
               (r.mine ? '' : '<button type="button" data-act="del" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' style="' + btn + ' color:#f87171;">삭제</button>');
           }
-          return '<div style="display:flex; align-items:center; gap:4px; padding:0 2px; min-width:0;">' +
-            '<span style="flex-shrink:0; font-size:0.56rem; font-weight:900; color:#c4b5fd; background:rgba(167,139,250,0.14); border-radius:4px; padding:1px 5px;">크리에이터</span>' +
-            '<span style="flex:1; min-width:0; font-size:0.62rem; color:#94a3b8; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(r.author || '백패커') +
+          return '<div style="display:flex; align-items:center; gap:6px; padding:2px 2px 4px; min-width:0;">' +
+            '<span style="flex-shrink:0; font-size:0.66rem; font-weight:900; color:#c4b5fd; background:rgba(167,139,250,0.16); border-radius:5px; padding:2px 6px;">크리에이터</span>' +
+            '<span style="flex:1; min-width:0; font-size:0.78rem; color:#f1f5f9; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(r.author || '백패커') +
               (r.sunk ? ' · <span style="color:#f87171;">신고 많음</span>' : '') + (r.hidden ? ' · <span style="color:#fbbf24;">숨김</span>' : '') + '</span>' +
             tools +
           '</div>';
@@ -4551,15 +4552,33 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           if (drawer && drawer.dataset.opened === 'insta') drawer.innerHTML = renderSpotInstaRowHtml(spot);
         }
 
+        // 등록 칸 3개: 유튜브·블로그·인스타. 칸을 잘못 골라도 주소를 보고 맞는 탭으로 보낸다.
+        var FIELDS = [
+          { key: 'yt', label: '유튜브', color: '#f43f5e', ph: 'https://youtu.be/…',
+            icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="#f43f5e"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1 31.4 31.4 0 0 0 .5-5.8 31.4 31.4 0 0 0-.5-5.8z"/><polygon points="9.6 15.6 15.8 12 9.6 8.4 9.6 15.6" fill="#ffffff"/></svg>' },
+          { key: 'blog', label: '블로그', color: '#10b981', ph: 'https://blog.naver.com/…',
+            icon: '<span style="width:14px; height:14px; border-radius:3px; background:#03c75a; display:inline-flex; align-items:center; justify-content:center; font-size:0.60rem; font-weight:900; color:#fff;">N</span>' },
+          { key: 'insta', label: '인스타', color: '#f472b6', ph: 'https://www.instagram.com/p/…',
+            icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="#f472b6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="#f472b6"/></svg>' }
+        ];
+
         function formHtml(sId) {
           var st = ui[sId] || {};
-          var input = 'width:100%; box-sizing:border-box; background:#0b0f16; border:1px solid rgba(255,255,255,0.14); border-radius:7px; color:#e2e8f0; font-size:0.74rem; padding:8px 9px; font-family:inherit;';
+          var bad = st.bad || {};
+          var rows = FIELDS.map(function(f) {
+            var border = bad[f.key] ? '#f87171' : 'rgba(255,255,255,0.14)';
+            return '<label style="display:flex; align-items:center; gap:7px;">' +
+              '<span style="flex-shrink:0; width:64px; display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; font-weight:800; color:' + f.color + ';">' + f.icon + f.label + '</span>' +
+              '<input type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" data-creator-field="' + f.key + '" value="' + esc(st[f.key] || '') + '" placeholder="' + esc(f.ph) + '"' +
+              ' style="flex:1; min-width:0; box-sizing:border-box; background:#0b0f16; border:1px solid ' + border + '; border-radius:7px; color:#e2e8f0; font-size:0.74rem; padding:8px 9px; font-family:inherit;">' +
+            '</label>';
+          }).join('');
           return '<div style="display:flex; flex-direction:column; gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06);">' +
-            '<input type="url" inputmode="url" data-creator-url="' + esc(sId) + '" value="' + esc(st.url || '') + '" placeholder="유튜브·네이버 블로그·인스타 게시물 주소" style="' + input + '">' +
-            '<input type="text" maxlength="120" data-creator-title="' + esc(sId) + '" value="' + esc(st.title || '') + '" placeholder="한 줄 소개 (선택, 유튜브는 비우면 영상 제목)" style="' + input + '">' +
+            rows +
+            '<div style="font-size:0.62rem; color:#64748b;">있는 것만 넣으면 돼요. 제목은 자동으로 가져와요.</div>' +
             '<div style="display:flex; gap:6px; justify-content:flex-end;">' +
-              '<button type="button" data-act="cancel" data-spot="' + esc(sId) + '"' + ACT + ' style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; border-radius:7px; height:30px; padding:0 12px; font-size:0.70rem; font-weight:800; cursor:pointer; font-family:inherit;">취소</button>' +
-              '<button type="button" data-act="submit" data-spot="' + esc(sId) + '"' + ACT + (st.busy ? ' disabled' : '') + ' style="background:#3182f6; border:1px solid #3182f6; color:#ffffff; border-radius:7px; height:30px; padding:0 14px; font-size:0.70rem; font-weight:900; cursor:pointer; font-family:inherit;">' + (st.busy ? '등록 중…' : '등록') + '</button>' +
+              '<button type="button" data-act="cancel" data-spot="' + esc(sId) + '"' + ACT + ' style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; border-radius:7px; height:32px; padding:0 12px; font-size:0.72rem; font-weight:800; cursor:pointer; font-family:inherit;">취소</button>' +
+              '<button type="button" data-act="submit" data-spot="' + esc(sId) + '"' + ACT + (st.busy ? ' disabled' : '') + ' style="background:#3182f6; border:1px solid #3182f6; color:#ffffff; border-radius:7px; height:32px; padding:0 16px; font-size:0.72rem; font-weight:900; cursor:pointer; font-family:inherit;">' + (st.busy ? '등록 중…' : '등록') + '</button>' +
             '</div>' +
           '</div>';
         }
@@ -4584,10 +4603,9 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           var st = ui[sId];
           if (!st || !st.form) return;
           boxes(sId).forEach(function(el) {
-            var u = el.querySelector('[data-creator-url]');
-            var t = el.querySelector('[data-creator-title]');
-            if (u) st.url = u.value;
-            if (t) st.title = t.value;
+            el.querySelectorAll('[data-creator-field]').forEach(function(inp) {
+              st[inp.getAttribute('data-creator-field')] = inp.value;
+            });
           });
         }
         function paint(sId) {
@@ -4632,25 +4650,50 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           } catch (e) { return ''; }
         }
 
+        // 채운 칸만 한 번에 등록한다. 칸 안에 주소를 여러 개(쉼표·띄어쓰기) 넣어도 받는다.
         async function submit(sId) {
           var st = ui[sId] = ui[sId] || {};
           keepInputs(sId);
-          var url = String(st.url || '').trim().replace(/^http:\/\//i, 'https://');
-          var title = String(st.title || '').trim();
-          var kind = kindOf(url);
-          if (!kind) { showToast(ERR.bad_url); return; }
+          var urls = [];
+          var bad = {};
+          FIELDS.forEach(function(f) {
+            String(st[f.key] || '').split(/[\s,，]+/).forEach(function(u) {
+              u = u.trim().replace(/^http:\/\//i, 'https://');
+              if (!u) return;
+              if (!kindOf(u)) { bad[f.key] = true; return; }
+              if (urls.indexOf(u) === -1) urls.push(u);
+            });
+          });
+          st.bad = bad;
+          if (Object.keys(bad).length) {
+            paint(sId);
+            showToast('빨간 칸의 주소를 확인해 주세요. ' + ERR.bad_url);
+            return;
+          }
+          if (!urls.length) { showToast('등록할 주소를 한 칸 이상 넣어 주세요.'); return; }
           st.busy = true;
           paint(sId);
-          try {
-            if (!title && kind === 'yt') title = await youtubeTitle(url);
-            await rpc('add_spot_creator_link', { p_spot_id: sId, p_url: url, p_title: title });
+          var ok = 0, fails = [];
+          for (var i = 0; i < urls.length; i++) {
+            var url = urls[i];
+            try {
+              var title = kindOf(url) === 'yt' ? await youtubeTitle(url) : '';
+              await rpc('add_spot_creator_link', { p_spot_id: sId, p_url: url, p_title: title });
+              ok++;
+            } catch (e) {
+              fails.push(errText(e));
+            }
+          }
+          if (ok) {
             ui[sId] = {};
-            showToast('콘텐츠를 등록했어요. 고마워요!');
+            showToast(fails.length
+              ? (urls.length + '개 중 ' + ok + '개를 등록했어요. 나머지: ' + fails[0])
+              : (ok > 1 ? ok + '개를 등록했어요. 고마워요!' : '콘텐츠를 등록했어요. 고마워요!'));
             await window.okbmLoadCreatorLinks(sId, true);
-          } catch (e) {
+          } else {
             st.busy = false;
             paint(sId);
-            showToast(errText(e));
+            showToast(fails[0] || ERR.bad_url);
           }
         }
 
@@ -4688,7 +4731,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           } else if (a === 'open') {
             st.form = true;
             paint(sId);
-            var u = boxes(sId)[0] && boxes(sId)[0].querySelector('[data-creator-url]');
+            var u = boxes(sId)[0] && boxes(sId)[0].querySelector('[data-creator-field]');
             if (u) u.focus();
           } else if (a === 'cancel') {
             ui[sId] = {};
