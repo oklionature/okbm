@@ -3201,9 +3201,15 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         html = window.decodeSearchPayload(html);
         var extracted = [];
         var seenIds = new Set();
+        // 검색 결과에 shorts/ 주소로 한 번이라도 나온 영상은 숏츠다. watch?v= 로 바꾸기 전에 골라 둔다.
+        var shortsIds = new Set();
+        var shortsRe = /shorts\/([a-zA-Z0-9_-]{11})/g;
+        var sm;
+        while ((sm = shortsRe.exec(html)) !== null) shortsIds.add(sm[1]);
         function add(id, title) {
           id = String(id || '').replace(/[^a-zA-Z0-9_-]/g, '');
           if (!id || id.length !== 11 || seenIds.has(id) || extracted.length >= max) return;
+          if (shortsIds.has(id) || /#shorts?\b/i.test(String(title || ''))) return;
           if (/^[a-zA-Z0-9_-]{11}$/.test(id) === false) return;
           seenIds.add(id);
           extracted.push({
@@ -3234,7 +3240,9 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         for (var i = 0; i < items.length && out.length < max; i++) {
           var it = items[i] || {};
           var kind = String(it.type || it.kind || '').toLowerCase();
-          if (kind && kind !== 'video' && kind !== 'stream' && kind !== 'short') continue;
+          if (kind && kind !== 'video' && kind !== 'stream') continue;
+          // 숏츠는 정보창에 넣지 않는다(파이프드 isShort, 주소의 shorts/, 제목의 #shorts)
+          if (it.isShort || it.is_short || /shorts\//i.test(String(it.url || it.webpage_url || '')) || /#shorts?\b/i.test(String(it.title || it.name || ''))) continue;
           var id = String(it.videoId || it.videoID || it.id || '').trim();
           if (!id || id.length !== 11) {
             var m = String(it.url || it.webpage_url || '').match(/(?:v=|\/watch\/|youtu\.be\/|shorts\/)([\w-]{11})/);
@@ -3415,14 +3423,14 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         if (!spotName) return [];
         var variants = window.buildSpotMediaQueryVariants(spotName, areaName);
         if (!variants.length) variants = [window.buildSpotMediaQuery(spotName, areaName)];
-        var cacheKey = 'yt:v4:' + variants[0];
+        var cacheKey = 'yt:v5:' + variants[0];
 
         if (window.__spotAutoVideosCache.has(cacheKey)) {
           return window.__spotAutoVideosCache.get(cacheKey);
         }
 
         try {
-          var sessionCached = sessionStorage.getItem('okbm_yt_cache_v4_' + cacheKey);
+          var sessionCached = sessionStorage.getItem('okbm_yt_cache_v5_' + cacheKey);
           if (sessionCached) {
             var parsed = JSON.parse(sessionCached);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -3472,7 +3480,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
 
         if (extracted.length > 0) {
           limitedMapSet(window.__spotAutoVideosCache, cacheKey, extracted, 80);
-          try { sessionStorage.setItem('okbm_yt_cache_v4_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
+          try { sessionStorage.setItem('okbm_yt_cache_v5_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
         }
         return extracted;
       };
@@ -3989,7 +3997,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
 
         var finalCards = [];
         var seenVideoIds = new Set();
-        // 순서: 관리자가 넣은 링크 → 크리에이터 등록(추천순) → 기록 저장으로 들어온 링크 → 자동 검색. 숏츠는 어디서 왔든 뺀다.
+        // 순서: 크리에이터 등록(추천순) → 관리자가 넣은 링크 → 기록 저장으로 들어온 링크 → 자동 검색. 숏츠는 어디서 왔든 뺀다.
         var creators = (typeof window.okbmGetCreatorLinks === 'function') ? await window.okbmGetCreatorLinks(spotId, 'yt') : [];
         var ytIdOf = function(u) {
           var m = cleanYouTubeUrl(u).match(/[?&]v=([\w-]{11})/);
@@ -3999,22 +4007,6 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         ((typeof window.okbmContributedUrlsFor === 'function') ? window.okbmContributedUrlsFor(spotId) : []).forEach(function(u) { var id = ytIdOf(u); if (id) fromRecords[id] = true; });
         (window.collectSpotMediaFromHistory(spotId, spotName, 'yt') || []).forEach(function(u) { var id = ytIdOf(u); if (id) fromRecords[id] = true; });
         var recordCards = [];
-
-        registered.forEach(function(u) {
-          if (window.okbmIsYouTubeShorts(u)) return;
-          var vId = ytIdOf(u);
-          if (!vId || seenVideoIds.has(vId)) return;
-          seenVideoIds.add(vId);
-          var targetUrl = 'https://www.youtube.com/watch?v=' + vId;
-          var card = {
-            id: vId,
-            url: targetUrl,
-            title: window.__ytMetaCache[targetUrl] || '',
-            thumb: 'https://img.youtube.com/vi/' + vId + '/mqdefault.jpg',
-            isOfficial: !fromRecords[vId]
-          };
-          (fromRecords[vId] ? recordCards : finalCards).push(card);
-        });
 
         creators.forEach(function(c) {
           if (window.okbmIsYouTubeShorts(c.url)) return;
@@ -4032,6 +4024,22 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             creator: c
           });
         });
+        registered.forEach(function(u) {
+          if (window.okbmIsYouTubeShorts(u)) return;
+          var vId = ytIdOf(u);
+          if (!vId || seenVideoIds.has(vId)) return;
+          seenVideoIds.add(vId);
+          var targetUrl = 'https://www.youtube.com/watch?v=' + vId;
+          var card = {
+            id: vId,
+            url: targetUrl,
+            title: window.__ytMetaCache[targetUrl] || '',
+            thumb: 'https://img.youtube.com/vi/' + vId + '/mqdefault.jpg',
+            isOfficial: !fromRecords[vId]
+          };
+          (fromRecords[vId] ? recordCards : finalCards).push(card);
+        });
+
         recordCards.forEach(function(card) { finalCards.push(card); });
         var ytCap = Math.min(15, Math.max(5, finalCards.length));
 
@@ -4161,7 +4169,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         });
         var finalCards = [];
         var seenKeys = new Set();
-        // 순서: 관리자가 넣은 링크 → 크리에이터 등록(추천순) → 기록 저장으로 들어온 링크 → 자동 검색
+        // 순서: 크리에이터 등록(추천순) → 관리자가 넣은 링크 → 기록 저장으로 들어온 링크 → 자동 검색
         var blogCreators = (typeof window.okbmGetCreatorLinks === 'function') ? await window.okbmGetCreatorLinks(spotId, 'blog') : [];
         var blogKeyOf = function(u) {
           var pp = window.normalizeNaverBlogPost(u);
@@ -4171,6 +4179,14 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         ((typeof window.okbmContributedUrlsFor === 'function') ? window.okbmContributedUrlsFor(spotId) : []).forEach(function(u) { var k = blogKeyOf(u); if (k) blogFromRecords[k] = true; });
         (window.collectSpotMediaFromHistory(spotId, spotName, 'blog') || []).forEach(function(u) { var k = blogKeyOf(u); if (k) blogFromRecords[k] = true; });
         var blogRecordCards = [];
+        blogCreators.forEach(function(c) {
+          var parsedC = window.normalizeNaverBlogPost(c.url);
+          if (!parsedC) return;
+          var cKey = parsedC.blogId + '/' + parsedC.logNo;
+          if (seenKeys.has(cKey)) return;
+          seenKeys.add(cKey);
+          finalCards.push({ url: parsedC.url, blogId: parsedC.blogId, title: String(c.title || '').trim(), isOfficial: false, creator: c });
+        });
         registered.forEach(function(u) {
           var parsed = window.normalizeNaverBlogPost(u);
           if (!parsed) return;
@@ -4184,14 +4200,6 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             isOfficial: !blogFromRecords[rk]
           };
           (blogFromRecords[rk] ? blogRecordCards : finalCards).push(card);
-        });
-        blogCreators.forEach(function(c) {
-          var parsedC = window.normalizeNaverBlogPost(c.url);
-          if (!parsedC) return;
-          var cKey = parsedC.blogId + '/' + parsedC.logNo;
-          if (seenKeys.has(cKey)) return;
-          seenKeys.add(cKey);
-          finalCards.push({ url: parsedC.url, blogId: parsedC.blogId, title: String(c.title || '').trim(), isOfficial: false, creator: c });
         });
         blogRecordCards.forEach(function(card) { finalCards.push(card); });
         var blogCap = Math.min(15, Math.max(5, finalCards.length));
