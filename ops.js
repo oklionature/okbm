@@ -222,9 +222,13 @@
     var k = new Date(d.getTime() + 9 * 3600 * 1000);
     return (k.getUTCMonth() + 1) + '.' + k.getUTCDate() + ' ' + String(k.getUTCHours()).padStart(2, '0') + ':' + String(k.getUTCMinutes()).padStart(2, '0');
   }
+  // 서버 시각은 마이크로초(6자리)까지 와서, 브라우저에 따라 못 읽는 경우가 있어 밀리초로 자른다
+  function ms(iso) {
+    return Date.parse(String(iso || '').replace(/(\.\d{3})\d+/, '$1')) || 0;
+  }
   function isNew(iso) {
     var seen = readSeen();
-    return !seen || (Date.parse(iso) || 0) > (Date.parse(seen) || 0);
+    return !seen || ms(iso) > ms(seen);
   }
   function safeUrl(u) {
     var s = String(u || '').trim();
@@ -265,8 +269,8 @@
     html += '<div class="kpis" style="grid-template-columns:repeat(2, 1fr)">' +
       '<div class="kpi"><b>' + num((d.links || []).length) + (d.new_links ? '<span class="new">새 ' + num(d.new_links) + '</span>' : '') + '</b><span>크리에이터 링크 (최근)</span></div>' +
       '<div class="kpi"><b>' + num((d.feeds || []).length) + (d.new_feeds ? '<span class="new">새 ' + num(d.new_feeds) + '</span>' : '') + '</b><span>피드 (최근)</span></div>' +
-      '<a class="kpi" href="map.html?open=admin_inbox"><b class="' + (d.inbox_pending ? 'warn' : '') + '">' + num(d.inbox_pending) + '</b><span>장소 검수 대기 ›</span></a>' +
-      '<div class="kpi"><b class="' + (d.reports_pending ? 'warn' : '') + '">' + num(d.reports_pending) + '</b><span>신고 대기 (계정 설정 › 신고 검수함)</span></div>' +
+      '<a class="kpi" href="map.html?open=admin_inbox"><b class="' + (d.inbox_pending ? 'warn' : '') + '">' + num(d.inbox_pending) + '</b><span>장소 검수 대기 ›<br>검수함에서 처리하면 줄어요</span></a>' +
+      '<div class="kpi"><b class="' + (d.reports_pending ? 'warn' : '') + '">' + num(d.reports_pending) + '</b><span>신고 대기<br>신고 검수함에서 처리하면 줄어요</span></div>' +
       '</div>';
     html += '<div class="tabs"><button type="button" data-act-tab="links" class="' + (actTab === 'links' ? 'on' : '') + '">크리에이터 링크</button>' +
       '<button type="button" data-act-tab="feeds" class="' + (actTab === 'feeds' ? 'on' : '') + '">새 피드</button></div>';
@@ -274,7 +278,8 @@
     html += list.length
       ? list.map(actTab === 'links' ? linkRow : feedRow).join('')
       : '<p class="dim">' + (actTab === 'links' ? '아직 등록된 크리에이터 링크가 없어요.' : '아직 피드가 없어요.') + '</p>';
-    html += '<button type="button" class="seen-btn" data-act-seen="1">모두 확인했어요 (새 표시 지우기)</button></section>';
+    html += '<button type="button" class="seen-btn" data-act-seen="1">모두 확인했어요 (새 표시 지우기)</button>' +
+      '<p class="h" style="margin-top:6px">노란 줄과 「새」 숫자만 지워져요. 검수·신고 대기는 처리해야 줄어요.</p></section>';
     act.innerHTML = html;
   }
 
@@ -300,7 +305,13 @@
     var tab = e.target.closest('[data-act-tab]');
     if (tab) { actTab = tab.getAttribute('data-act-tab'); renderActivity(); return; }
     if (e.target.closest('[data-act-seen]')) {
-      try { localStorage.setItem(SEEN_KEY, (actData && actData.now) || new Date().toISOString()); } catch (eSeen) {}
+      // 지금 보이는 것 중 가장 늦은 시각(서버 시각·기기 시각 포함)까지 확인한 것으로 둔다.
+      // 서버와 기기 시계가 어긋나도 방금 본 줄이 다시 새로 표시되지 않게 한다.
+      var latest = Math.max(Date.now(), ms(actData && actData.now));
+      ((actData && actData.links) || []).concat((actData && actData.feeds) || []).forEach(function (x) {
+        latest = Math.max(latest, ms(x && x.created_at));
+      });
+      try { localStorage.setItem(SEEN_KEY, new Date(latest + 1).toISOString()); } catch (eSeen) {}
       loadActivity();
       return;
     }
