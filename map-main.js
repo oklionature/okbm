@@ -473,6 +473,11 @@
         return { navAddress: parts[0].trim(), guide: parts.slice(1).map(p => p.trim()).filter(Boolean).join(', ') };
       }
 
+     // 유튜브 숏츠는 정보창에 넣지 않는다(등록·기록·자동 검색 모두)
+      window.okbmIsYouTubeShorts = function(url) {
+        return /youtube\.com\/shorts\//i.test(String(url || ''));
+      };
+
      function cleanYouTubeUrl(url) {
         if (!url) return '';
         const match = String(url).match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/)|[?&]v=)([\w-]{11})/i);
@@ -3984,25 +3989,35 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
 
         var finalCards = [];
         var seenVideoIds = new Set();
+        // 순서: 관리자가 넣은 링크 → 크리에이터 등록(추천순) → 기록 저장으로 들어온 링크 → 자동 검색. 숏츠는 어디서 왔든 뺀다.
+        var creators = (typeof window.okbmGetCreatorLinks === 'function') ? await window.okbmGetCreatorLinks(spotId, 'yt') : [];
+        var ytIdOf = function(u) {
+          var m = cleanYouTubeUrl(u).match(/[?&]v=([\w-]{11})/);
+          return (m && m[1]) ? m[1] : '';
+        };
+        var fromRecords = {};
+        ((typeof window.okbmContributedUrlsFor === 'function') ? window.okbmContributedUrlsFor(spotId) : []).forEach(function(u) { var id = ytIdOf(u); if (id) fromRecords[id] = true; });
+        (window.collectSpotMediaFromHistory(spotId, spotName, 'yt') || []).forEach(function(u) { var id = ytIdOf(u); if (id) fromRecords[id] = true; });
+        var recordCards = [];
 
         registered.forEach(function(u) {
-          var targetUrl = cleanYouTubeUrl(u);
-          var m = targetUrl.match(/[?&]v=([\w-]{11})/);
-          var vId = (m && m[1]) ? m[1] : '';
-          if (!vId) return;
+          if (window.okbmIsYouTubeShorts(u)) return;
+          var vId = ytIdOf(u);
+          if (!vId || seenVideoIds.has(vId)) return;
           seenVideoIds.add(vId);
-          finalCards.push({
+          var targetUrl = 'https://www.youtube.com/watch?v=' + vId;
+          var card = {
             id: vId,
             url: targetUrl,
             title: window.__ytMetaCache[targetUrl] || '',
             thumb: 'https://img.youtube.com/vi/' + vId + '/mqdefault.jpg',
-            isOfficial: true
-          });
+            isOfficial: !fromRecords[vId]
+          };
+          (fromRecords[vId] ? recordCards : finalCards).push(card);
         });
 
-        // 크리에이터 등록 영상(추천순)은 관리자 등록 다음, 자동 검색보다 앞
-        var creators = (typeof window.okbmGetCreatorLinks === 'function') ? await window.okbmGetCreatorLinks(spotId, 'yt') : [];
         creators.forEach(function(c) {
+          if (window.okbmIsYouTubeShorts(c.url)) return;
           var cUrl = cleanYouTubeUrl(c.url);
           var cm = cUrl.match(/[?&]v=([\w-]{11})/) || String(c.url).match(/(?:youtu\.be\/|shorts\/|live\/)([\w-]{11})/);
           var cId = (cm && cm[1]) ? cm[1] : '';
@@ -4017,6 +4032,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             creator: c
           });
         });
+        recordCards.forEach(function(card) { finalCards.push(card); });
         var ytCap = Math.min(15, Math.max(5, finalCards.length));
 
         if (typeof onPartial === 'function' && finalCards.length) {
@@ -4029,7 +4045,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           var autoFetched = await window.fetchRealYouTubeVideosForSpot(spotName, areaName);
           for (var i = 0; i < autoFetched.length && finalCards.length < 5; i++) {
             var item = autoFetched[i];
-            if (!item || !item.id || seenVideoIds.has(item.id)) continue;
+            if (!item || !item.id || seenVideoIds.has(item.id) || window.okbmIsYouTubeShorts(item.url)) continue;
             seenVideoIds.add(item.id);
             finalCards.push({
               id: item.id,
@@ -4145,19 +4161,30 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         });
         var finalCards = [];
         var seenKeys = new Set();
+        // 순서: 관리자가 넣은 링크 → 크리에이터 등록(추천순) → 기록 저장으로 들어온 링크 → 자동 검색
+        var blogCreators = (typeof window.okbmGetCreatorLinks === 'function') ? await window.okbmGetCreatorLinks(spotId, 'blog') : [];
+        var blogKeyOf = function(u) {
+          var pp = window.normalizeNaverBlogPost(u);
+          return pp ? (pp.blogId + '/' + pp.logNo) : '';
+        };
+        var blogFromRecords = {};
+        ((typeof window.okbmContributedUrlsFor === 'function') ? window.okbmContributedUrlsFor(spotId) : []).forEach(function(u) { var k = blogKeyOf(u); if (k) blogFromRecords[k] = true; });
+        (window.collectSpotMediaFromHistory(spotId, spotName, 'blog') || []).forEach(function(u) { var k = blogKeyOf(u); if (k) blogFromRecords[k] = true; });
+        var blogRecordCards = [];
         registered.forEach(function(u) {
           var parsed = window.normalizeNaverBlogPost(u);
           if (!parsed) return;
-          if (seenKeys.has(parsed.blogId + '/' + parsed.logNo)) return;
-          seenKeys.add(parsed.blogId + '/' + parsed.logNo);
-          finalCards.push({
+          var rk = parsed.blogId + '/' + parsed.logNo;
+          if (seenKeys.has(rk)) return;
+          seenKeys.add(rk);
+          var card = {
             url: parsed.url,
             blogId: parsed.blogId,
             title: '',
-            isOfficial: true
-          });
+            isOfficial: !blogFromRecords[rk]
+          };
+          (blogFromRecords[rk] ? blogRecordCards : finalCards).push(card);
         });
-        var blogCreators = (typeof window.okbmGetCreatorLinks === 'function') ? await window.okbmGetCreatorLinks(spotId, 'blog') : [];
         blogCreators.forEach(function(c) {
           var parsedC = window.normalizeNaverBlogPost(c.url);
           if (!parsedC) return;
@@ -4166,6 +4193,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           seenKeys.add(cKey);
           finalCards.push({ url: parsedC.url, blogId: parsedC.blogId, title: String(c.title || '').trim(), isOfficial: false, creator: c });
         });
+        blogRecordCards.forEach(function(card) { finalCards.push(card); });
         var blogCap = Math.min(15, Math.max(5, finalCards.length));
         if (finalCards.length < 5) {
           var targetSpot = (spots || []).find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
@@ -4508,7 +4536,8 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         function esc(t) { return escapeHtml(t == null ? '' : String(t)); }
         function kindOf(url) {
           var u = String(url || '').trim().replace(/^http:\/\//i, 'https://');
-          if (/^https:\/\/(www\.|m\.)?youtube\.com\/(watch\?([^#\s]*&)?v=|shorts\/|live\/)[A-Za-z0-9_-]{11}/i.test(u) || /^https:\/\/youtu\.be\/[A-Za-z0-9_-]{11}/i.test(u)) return 'yt';
+          if (window.okbmIsYouTubeShorts(u)) return '';
+          if (/^https:\/\/(www\.|m\.)?youtube\.com\/(watch\?([^#\s]*&)?v=|live\/)[A-Za-z0-9_-]{11}/i.test(u) || /^https:\/\/youtu\.be\/[A-Za-z0-9_-]{11}/i.test(u)) return 'yt';
           if (/^https:\/\/(m\.)?blog\.naver\.com\/([A-Za-z0-9_-]+\/[0-9]+|PostView\.naver\?.*logNo=[0-9]+)/i.test(u)) return 'blog';
           if (/^https:\/\/(www\.)?instagram\.com\/(p|reel|reels|tv)\/[A-Za-z0-9_-]+/i.test(u)) return 'insta';
           return '';
@@ -4561,6 +4590,10 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           return '<div style="display:flex; flex-direction:column; gap:3px; width:100%;' + (dim ? ' opacity:0.55;' : '') + '">' + cardHtml + actionsHtml(String(spotId || '').trim(), item.creator) + '</div>';
         };
         // 지금 받아 둔 크리에이터 링크(종류별). 아직 안 받았으면 빈 목록
+        window.okbmContributedUrlsFor = function(spotId) {
+          var hit = store[String(spotId || '').trim()];
+          return (hit && Array.isArray(hit.contrib)) ? hit.contrib : [];
+        };
         window.okbmCreatorLinksFor = function(spotId, kind) {
           var hit = store[String(spotId || '').trim()];
           return ((hit && hit.list) || []).filter(function(r) { return r && (!kind || r.kind === kind); });
@@ -4572,8 +4605,8 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           var ready = (hit && !hit.error && (Date.now() - hit.at) < TTL) ? Promise.resolve() : window.okbmLoadCreatorLinks(sId);
           return Promise.resolve(ready).catch(function() {}).then(function() { return window.okbmCreatorLinksFor(sId, kind); });
         };
-        function sigOf(list) {
-          return (list || []).map(function(r) { return [r.id, r.ups, r.reports, r.my_vote, r.hidden].join(':'); }).join('|');
+        function sigOf(list, contrib) {
+          return (list || []).map(function(r) { return [r.id, r.ups, r.reports, r.my_vote, r.hidden].join(':'); }).join('|') + '#' + (contrib || []).length;
         }
         // 크리에이터 목록이 바뀌면 유튜브·블로그 목록과 인스타 줄을 다시 만든다
         function refreshMedia(sId) {
@@ -4667,17 +4700,20 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             return Promise.resolve(hit.list);
           }
           if (inflight[sId]) return inflight[sId];
-          var prevSig = hit ? sigOf(hit.list) : null;
-          inflight[sId] = rpc('get_spot_creator_links', { p_spot_id: sId }).then(function(data) {
-            store[sId] = { at: Date.now(), list: Array.isArray(data) ? data : [] };
+          var prevSig = hit ? sigOf(hit.list, hit.contrib) : null;
+          // 기록 저장으로 덧붙은 주소(SUPABASE_H4). 함수가 없거나 실패하면 빈 목록(전부 관리자 등록으로 본다)
+          var contribJob = rpc('get_spot_contributed_media', { p_spot_id: sId }).catch(function() { return []; });
+          inflight[sId] = Promise.all([rpc('get_spot_creator_links', { p_spot_id: sId }), contribJob]).then(function(both) {
+            var data = both[0];
+            store[sId] = { at: Date.now(), list: Array.isArray(data) ? data : [], contrib: Array.isArray(both[1]) ? both[1] : [] };
           }).catch(function(e) {
             console.warn('[map-main.js:okbmLoadCreatorLinks]', e);
-            store[sId] = { at: Date.now(), list: hit ? hit.list : [], error: true };
+            store[sId] = { at: Date.now(), list: hit ? hit.list : [], contrib: hit ? hit.contrib : [], error: true };
           }).then(function() {
             delete inflight[sId];
             paint(sId);
             // 처음 받을 때는 유튜브·블로그 수집이 이 결과를 기다리므로 인스타 탭만 다시 그린다
-            if (prevSig !== null && prevSig !== sigOf(store[sId].list)) refreshMedia(sId);
+            if (prevSig !== null && prevSig !== sigOf(store[sId].list, store[sId].contrib)) refreshMedia(sId);
             else repaintInsta(sId);
             return store[sId].list;
           });
@@ -4710,7 +4746,8 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           st.bad = bad;
           if (Object.keys(bad).length) {
             paint(sId);
-            showToast('빨간 칸의 주소를 확인해 주세요. ' + ERR.bad_url);
+            var hasShorts = FIELDS.some(function(f) { return window.okbmIsYouTubeShorts(st[f.key]); });
+            showToast(hasShorts ? '유튜브 숏츠는 등록할 수 없어요. 일반 영상 주소를 넣어 주세요.' : ('빨간 칸의 주소를 확인해 주세요. ' + ERR.bad_url));
             return;
           }
           if (!urls.length) { showToast('등록할 주소를 한 칸 이상 넣어 주세요.'); return; }
