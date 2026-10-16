@@ -713,6 +713,12 @@
   // ---------- 목록 조각 (홈·라운지 창 공용. full = 창에서 전부) ----------
   const chev = function (rot) { return '<span class="lm-chev ' + (rot ? 'rot' : '') + '">' + ico(P.chevR, 18) + '</span>'; };
   const stars = function (n) { n = Math.max(0, Math.min(5, Math.round(Number(n) || 0))); return '<span class="lm-stars">' + '★'.repeat(n) + '<span>' + '★'.repeat(5 - n) + '</span></span>'; };
+  // 후기 글쓴이 이름: 누르면 그 사람 정보창(프로필)
+  const whoName = function (name, uid) {
+    const n = String(name || '백패커');
+    if (!uid) return '<b>' + esc(n) + '</b>';
+    return '<button type="button" data-a="user" data-v="' + esc(uid) + '" data-n="' + esc(n) + '" style="font:inherit;font-weight:700;color:inherit;padding:0" aria-label="' + esc(n) + ' 정보 보기"><b>' + esc(n) + '</b></button>';
+  };
   const av = function (name, uid, cls) {
     const ch = String(name || '낭').trim().charAt(0) || '낭';
     return '<div class="lm-av ' + (cls || '') + '" style="background:' + avColor(uid) + '">' + esc(ch) + '</div>';
@@ -1192,7 +1198,7 @@
     if ((!s && !inSpot) || hidden({ id: 'tip_' + t.spot_id + '_' + t.user_id, user_id: t.user_id })) return '';
     const own = isMine(t.user_id);
     return `<div class="lm-post" style="cursor:default"><div class="lm-lcol">${av(t.nickname, t.user_id)}</div><div class="lm-rb">
-      <div class="lm-who"><b>${esc(t.nickname || '백패커')}</b>${own ? '<span class="lm-mine">내 후기</span>' : ''}<span>${esc(ago(t.updated_at))}</span></div>
+      <div class="lm-who">${whoName(t.nickname, t.user_id)}${own ? '<span class="lm-mine">내 후기</span>' : ''}<span>${esc(ago(t.updated_at))}</span></div>
       ${inSpot ? '' : `<div class="lm-rs" style="margin-top:1px"><button type="button" data-a="rev-spot" data-v="${esc(t.spot_id)}" style="color:var(--sub)">${esc(spotName(s))}</button></div>`}
       ${tipChips(t.tips)}${t.note ? `<div class="lm-bd">${esc(t.note)}</div>` : ''}
       <div class="lm-cm-acts" style="display:flex;gap:14px;margin-top:6px;font-size:11px;color:var(--faint)">${own
@@ -1222,7 +1228,7 @@
     const own = isMine(r.user_id);
     const edited = r.updated_at && r.created_at && (new Date(r.updated_at) - new Date(r.created_at) > 60000);
     return `<div class="lm-post" style="cursor:default"><div class="lm-lcol">${av(r.nickname, r.user_id)}</div><div class="lm-rb">
-      <div class="lm-who"><b>${esc(r.nickname)}</b>${own ? '<span class="lm-mine">내 후기</span>' : ''}<span>${esc(ago(r.created_at))}${edited ? ' · 수정됨' : ''}</span></div>
+      <div class="lm-who">${whoName(r.nickname, r.user_id)}${own ? '<span class="lm-mine">내 후기</span>' : ''}<span>${esc(ago(r.created_at))}${edited ? ' · 수정됨' : ''}</span></div>
       <div class="lm-rs" style="margin-top:1px">${inSpot ? '' : `<button type="button" data-a="rev-spot" data-v="${esc(r.spot_id)}" style="color:var(--sub)">${esc(spotName(s))}</button> `}${stars(r.rating)}</div>
       ${tipChips(chips)}${r.text ? `<div class="lm-bd">${esc(r.text)}</div>` : ''}
       <div class="lm-cm-acts" style="display:flex;gap:14px;margin-top:6px;font-size:11px;color:var(--faint)">${own
@@ -2589,6 +2595,9 @@
       case 'like': toggleLike(v); break;
       case 'del-comment': deleteComment(v, t.dataset.post); break;
       case 'ugc': openUgc(t); break;
+      case 'user':
+        if (typeof window.openUserFeedCollectionModal === 'function') window.openUserFeedCollectionModal(t.dataset.n || '', v);
+        break;
       case 'rev-spot': showSpotReviews(v); break;
       case 'rev-all':
         S.revSpot = null;
