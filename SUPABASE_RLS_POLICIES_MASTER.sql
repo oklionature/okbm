@@ -1052,8 +1052,90 @@ REVOKE ALL ON FUNCTION public.track_visit(text, boolean) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.track_visit(text, boolean) TO anon, authenticated, service_role;
 
 -- -------------------------------------------------------------------------
--- 제보 승인/반려 알림: 관리자만, 제목/본문/수신자는 DB 행에서만 구성
+-- 제보 승인/반려 알림: 제목/본문/수신자는 DB 행에서만 구성.
+-- 상태 변경 트리거가 폰·컴퓨터 구분 없이 넣고, 관리자 RPC도 같은 함수를 쓴다.
 -- -------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.okbm_write_proposal_decision_notice(
+  p_item_id text,
+  p_is_correction boolean,
+  p_status text,
+  p_user_id text,
+  p_name text,
+  p_approved_spot_id text,
+  p_orig_spot_id text,
+  p_reason text
+)
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_id text := btrim(COALESCE(p_item_id, ''));
+  v_status text := btrim(COALESCE(p_status, ''));
+  v_user_id text := NULLIF(btrim(COALESCE(p_user_id, '')), '');
+  v_name text := COALESCE(NULLIF(btrim(COALESCE(p_name, '')), ''), '제보한 장소');
+  v_approved text := NULLIF(btrim(COALESCE(p_approved_spot_id, '')), '');
+  v_orig text := NULLIF(btrim(COALESCE(p_orig_spot_id, '')), '');
+  v_reason text := NULLIF(btrim(COALESCE(p_reason, '')), '');
+  v_accepted boolean := false;
+  v_rejected boolean := false;
+  v_kind text;
+  v_title text;
+  v_body text;
+  v_notif_id text;
+  v_related text;
+BEGIN
+  IF v_id = '' OR v_user_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  v_accepted := (position('반영완료' IN v_status) > 0)
+             OR (position('채택' IN v_status) > 0)
+             OR (position('승인' IN v_status) > 0);
+  v_rejected := (position('반려' IN v_status) > 0)
+             OR (position('거절' IN v_status) > 0);
+  IF NOT v_accepted AND NOT v_rejected THEN
+    RETURN NULL;
+  END IF;
+
+  v_kind := (CASE WHEN COALESCE(p_is_correction, false) THEN 'correction_' ELSE 'proposal_' END)
+         || (CASE WHEN v_accepted THEN 'accepted' ELSE 'rejected' END);
+  v_notif_id := left('pn_' || v_kind || '_' || v_id, 180);
+  v_related := COALESCE(v_approved, v_orig, '');
+
+  IF v_accepted THEN
+    v_title := CASE WHEN COALESCE(p_is_correction, false)
+      THEN '수정 건의가 채택되었습니다'
+      ELSE '장소 제보가 채택되었습니다'
+    END;
+    v_body := '[' || v_name || ']이(가) 지도에 반영되었습니다. '
+           || CASE WHEN COALESCE(p_is_correction, false) THEN '수정 건의해주셔서' ELSE '제보해주셔서' END
+           || ' 감사합니다. 많은 낭만루터들에게 큰 도움이 됩니다. 이후 내용 변경은 수정문의로만 신청할 수 있습니다.';
+  ELSE
+    v_title := CASE WHEN COALESCE(p_is_correction, false)
+      THEN '수정 건의가 반려되었습니다'
+      ELSE '장소 제보가 반려되었습니다'
+    END;
+    v_body := '[' || v_name || '] 제보가 반려되었습니다.'
+           || CASE WHEN v_reason IS NOT NULL THEN ' 사유: ' || v_reason ELSE '' END
+           || ' 마이리포트에서 확인할 수 있습니다.';
+  END IF;
+
+  INSERT INTO public.user_notifications (
+    id, user_id, kind, title, body, related_id, related_spot_id, related_spot_name, is_read
+  ) VALUES (
+    v_notif_id, v_user_id, v_kind, v_title, v_body, v_id, v_related, v_name, false
+  )
+  ON CONFLICT (id) DO NOTHING;
+
+  RETURN v_notif_id;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.okbm_write_proposal_decision_notice(text, boolean, text, text, text, text, text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.okbm_write_proposal_decision_notice(text, boolean, text, text, text, text, text, text) TO service_role;
+
 CREATE OR REPLACE FUNCTION public.okbm_notify_proposal_decision(
   p_item_id text,
   p_is_correction boolean,
@@ -1076,11 +1158,7 @@ DECLARE
   v_reason text;
   v_accepted boolean := false;
   v_rejected boolean := false;
-  v_kind text;
-  v_title text;
-  v_body text;
   v_notif_id text;
-  v_related_spot text;
 BEGIN
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'not authenticated';
@@ -1126,35 +1204,19 @@ BEGIN
     RAISE EXCEPTION 'item_not_found';
   END IF;
 
-  v_kind := (CASE WHEN COALESCE(p_is_correction, false) THEN 'correction_' ELSE 'proposal_' END)
-         || (CASE WHEN v_accepted THEN 'accepted' ELSE 'rejected' END);
-  v_notif_id := left('pn_' || v_kind || '_' || v_id, 180);
-  v_related_spot := COALESCE(NULLIF(v_approved, ''), v_row_approved, v_orig_spot, '');
-
-  IF v_accepted THEN
-    v_title := CASE WHEN COALESCE(p_is_correction, false)
-      THEN '수정 건의가 채택되었습니다'
-      ELSE '장소 제보가 채택되었습니다'
-    END;
-    v_body := '[' || v_name || ']이(가) 지도에 반영되었습니다. '
-           || CASE WHEN COALESCE(p_is_correction, false) THEN '수정 건의해주셔서' ELSE '제보해주셔서' END
-           || ' 감사합니다. 많은 낭만루터들에게 큰 도움이 됩니다. 이후 내용 변경은 수정문의로만 신청할 수 있습니다.';
-  ELSE
-    v_title := CASE WHEN COALESCE(p_is_correction, false)
-      THEN '수정 건의가 반려되었습니다'
-      ELSE '장소 제보가 반려되었습니다'
-    END;
-    v_body := '[' || v_name || '] 제보가 반려되었습니다.'
-           || CASE WHEN v_reason IS NOT NULL THEN ' 사유: ' || v_reason ELSE '' END
-           || ' 마이리포트에서 확인할 수 있습니다.';
+  v_notif_id := public.okbm_write_proposal_decision_notice(
+    v_id,
+    COALESCE(p_is_correction, false),
+    v_status,
+    v_user_id,
+    v_name,
+    COALESCE(NULLIF(v_approved, ''), v_row_approved),
+    v_orig_spot,
+    v_reason
+  );
+  IF v_notif_id IS NULL THEN
+    RAISE EXCEPTION 'notice_failed';
   END IF;
-
-  INSERT INTO public.user_notifications (
-    id, user_id, kind, title, body, related_id, related_spot_id, related_spot_name, is_read
-  ) VALUES (
-    v_notif_id, v_user_id, v_kind, v_title, v_body, v_id, v_related_spot, v_name, false
-  )
-  ON CONFLICT (id) DO NOTHING;
 
   RETURN jsonb_build_object('success', true, 'id', v_notif_id);
 END;
@@ -1874,6 +1936,53 @@ CREATE TRIGGER trg_okbm_guard_spot_corrections_decision
   BEFORE INSERT OR UPDATE ON public.spot_corrections
   FOR EACH ROW
   EXECUTE FUNCTION public.okbm_guard_proposal_decision_cols();
+
+-- 반영완료/반려로 상태가 바뀌면 제보자 알림을 넣는다. 폰·컴퓨터 클라이언트가 알림 RPC를 빠뜨려도 같다.
+CREATE OR REPLACE FUNCTION public.okbm_trg_proposal_decision_notice()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_orig text := NULL;
+BEGIN
+  IF TG_OP <> 'UPDATE' THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.status IS NOT DISTINCT FROM OLD.status THEN
+    RETURN NEW;
+  END IF;
+  IF TG_TABLE_NAME = 'spot_corrections' THEN
+    v_orig := NEW.orig_spot_id;
+  END IF;
+  PERFORM public.okbm_write_proposal_decision_notice(
+    NEW.id,
+    TG_TABLE_NAME = 'spot_corrections',
+    NEW.status,
+    NEW.user_id,
+    NEW.spot_main,
+    NEW.approved_spot_id,
+    v_orig,
+    NEW.reject_reason
+  );
+  RETURN NEW;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.okbm_trg_proposal_decision_notice() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS trg_okbm_proposal_decision_notice ON public.proposals;
+CREATE TRIGGER trg_okbm_proposal_decision_notice
+  AFTER UPDATE OF status ON public.proposals
+  FOR EACH ROW
+  EXECUTE FUNCTION public.okbm_trg_proposal_decision_notice();
+
+DROP TRIGGER IF EXISTS trg_okbm_correction_decision_notice ON public.spot_corrections;
+CREATE TRIGGER trg_okbm_correction_decision_notice
+  AFTER UPDATE OF status ON public.spot_corrections
+  FOR EACH ROW
+  EXECUTE FUNCTION public.okbm_trg_proposal_decision_notice();
 
 CREATE POLICY ranking_stats_select_public ON public.ranking_stats
   FOR SELECT USING (true);

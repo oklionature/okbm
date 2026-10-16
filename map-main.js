@@ -5584,6 +5584,47 @@ var overlay = document.getElementById('customModalOverlay');
         };
       }
 
+      // 검수함 처리 상태를 저장한다. 알림 행은 DB 트리거가 폰·컴퓨터 구분 없이 넣는다.
+      async function settleAdminInboxDecision(item, status, approvedSpotId) {
+        if (!item || !item.id) return false;
+        var isCorr = item.type === 'correction';
+        var spotId = String(approvedSpotId || '').trim();
+        var ok = false;
+        try {
+          if (typeof window.updateAdminSpotInboxStatus === 'function') {
+            ok = await window.updateAdminSpotInboxStatus(item.id, isCorr, status, spotId ? { approved_spot_id: spotId } : null);
+          } else {
+            var cfg = getSupabaseRestConfig();
+            var headers = (typeof window.okbmWriteHeaders === 'function')
+              ? window.okbmWriteHeaders({ Prefer: 'return=minimal' })
+              : null;
+            if (!cfg.url || !headers) return false;
+            var tableName = isCorr ? 'spot_corrections' : 'proposals';
+            var payload = { status: String(status || 'pending') };
+            if (spotId) payload.approved_spot_id = spotId;
+            var res = await fetch(cfg.url + '/rest/v1/' + tableName + '?id=eq.' + encodeURIComponent(String(item.id)), {
+              method: 'PATCH',
+              headers: headers,
+              body: JSON.stringify(payload)
+            });
+            ok = res.ok;
+          }
+        } catch (e) {
+          console.warn('[map.html:settleAdminInboxDecision]', e);
+          return false;
+        }
+        if (ok && typeof window.notifyProposalDecision === 'function') {
+          var decided = String(status || '');
+          var shouldNotify = decided.indexOf('반영완료') !== -1 || decided.indexOf('채택') !== -1 || decided.indexOf('승인') !== -1 || decided.indexOf('반려') !== -1;
+          if (shouldNotify) {
+            try { await window.notifyProposalDecision(item, status, spotId); } catch (notifyErr) {
+              console.warn('[map.html:settleAdminInboxDecision:notify]', notifyErr);
+            }
+          }
+        }
+        return ok;
+      }
+
       function parseNumericField(value) {
         var num = parseFloat(String(value || '').replace(/[^\d.-]/g, ''));
         return isNaN(num) ? 0 : num;
@@ -6359,14 +6400,16 @@ var overlay = document.getElementById('customModalOverlay');
 
             var saved = await persistSpotToSupabase(target, isInsert);
             if (saved && typeof window.flushPendingSpotMediaForSpot === 'function') {
-              try { await window.flushPendingSpotMediaForSpot(target); } catch (flushErr) { console.warn('[map.html:flushPendingSpotMediaForSpot]', flushErr); }
-              refreshCurrentSpotPopup();
+              try {
+                await window.flushPendingSpotMediaForSpot(target);
+                refreshCurrentSpotPopup();
+              } catch (flushErr) { console.warn('[map.html:flushPendingSpotMediaForSpot]', flushErr); }
             }
-            if (inboxItem && typeof window.updateAdminSpotInboxStatus === 'function') {
+            if (inboxItem) {
               var newStatus = saved ? '반영완료' : '반영실패';
-              await window.updateAdminSpotInboxStatus(inboxItem.id, inboxItem.type === 'correction', newStatus, saved ? { approved_spot_id: String(target.id) } : null);
-              if (saved && typeof window.notifyProposalDecision === 'function') {
-                await window.notifyProposalDecision(inboxItem, newStatus, String(target.id));
+              var decided = await settleAdminInboxDecision(inboxItem, newStatus, saved ? String(target.id) : '');
+              if (saved && !decided && typeof showToast === 'function') {
+                showToast('장소는 저장됐지만 제보자 알림을 보내지 못했습니다.', 'warn');
               }
             }
             window.__adminApplyingInboxItem = null;
