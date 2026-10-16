@@ -29,6 +29,7 @@
   var HOME_ORDER = ['hero', 'hero_detail', 'hero_gear', 'quick_guide', 'quick_event', 'quick_join', 'quick_board', 'quick_write',
     'recent_reviews', 'theme', 'events', 'video', 'guides', 'tripjoin', 'together', 'lounge', 'ready'];
   var DOCK = [['dock_home', '낭만루터'], ['dock_map', '낭만루트'], ['dock_plan', '낭만플랜'], ['dock_history', '낭만피드'], ['dock_report', '마이리포트']];
+  var DEVICE = [['device_ios', '아이폰 사파리'], ['device_ios_home', '아이폰 홈 화면'], ['device_android', '안드로이드 웹'], ['device_app', '낭만루트 앱'], ['device_other', 'PC·기타']];
   var PUBLISH = [['publish_ok', '피드에 공개됨', 'ok'], ['publish_private', '직접 비공개 선택', ''], ['publish_unregistered', '등록 안 된 장소라 비공개', 'warn'], ['publish_nophoto', '현장 사진 없어 비공개', 'warn']];
 
   var out = document.getElementById('out');
@@ -182,6 +183,21 @@
       (feedWrites ? '<p class="h">낭만피드 "후기 올리기"를 누른 사람: ' + num(feedWrites) + '</p>' : '') +
       (spotChanges ? '<p class="h">낭만피드에서 내 글 장소를 바꾼 횟수: ' + num(spotChanges) + '</p>' : '') +
       '</section>';
+
+    // 기기 종류 (홈을 연 기기, 하루 기준)
+    var devTotal = DEVICE.reduce(function (a, d) { return a + get(d[0], 'view').visitors; }, 0);
+    if (devTotal) {
+      var guideViews = get('home_guide', 'view').visitors;
+      var guideCloses = get('home_guide_close', 'click').visitors;
+      html += '<section><h2>기기 종류</h2><p class="h">홈을 연 기기를 하루 한 번 셉니다.</p>' +
+        '<table><thead><tr><th>기기</th><th>방문자</th><th>비율</th></tr></thead><tbody>' +
+        DEVICE.map(function (d) {
+          var n = get(d[0], 'view').visitors;
+          return '<tr><td>' + esc(d[1]) + '</td><td>' + num(n) + '</td><td>' + pct(n, devTotal) + '%</td></tr>';
+        }).join('') + '</tbody></table>' +
+        (guideViews ? '<p class="h" style="margin-top:10px">홈 화면 추가 안내를 본 아이폰: ' + num(guideViews) + ' · 닫은 아이폰: ' + num(guideCloses) + '</p>' : '') +
+        '</section>';
+    }
 
     html += bookmarkSection(bmRes, spots || []);
 
