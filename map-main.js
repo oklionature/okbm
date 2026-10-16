@@ -3041,7 +3041,6 @@ function updateSmartResetButtons() {
 
             ${isCampBanned(spot) ? '' : `<div data-okbm-review-box="${escapeHtml(sId)}">${typeof window.okbmSpotReviewBoxHtml === 'function' ? window.okbmSpotReviewBoxHtml(sId) : ''}</div>`}
 
-    ${isCampBanned(spot) ? '' : renderSpotInstaRowHtml(spot)}
     ${isCampBanned(spot) ? '' : (function() {
               var existingYt = (typeof window.getSpotRegisteredMediaUrls === 'function')
                 ? window.getSpotRegisteredMediaUrls(spot, 'yt')
@@ -3081,6 +3080,8 @@ function updateSmartResetButtons() {
                 </div>
               `;
             })()}
+
+            ${isCampBanned(spot) ? '' : renderSpotInstaRowHtml(spot)}
 
             <div class="app-disclaimer-box">
               <ul>
@@ -4334,8 +4335,8 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         `;
       }
 
-      // 관리자가 등록한 인스타그램 게시물만 유튜브·블로그 위에 게시물 그대로(인스타 공식 embed) 보여 준다.
-      // 등록이 없으면 아무것도 그리지 않는다. 여러 개면 가로로 넘겨 본다.
+      // 관리자가 등록한 인스타그램 게시물만 유튜브·블로그 아래에 작은 줄로 보여 준다. 누르면 그 자리에서 게시물(인스타 공식 embed)이 펼쳐진다.
+      // <details>라 스크립트 없이 열고 닫히고, 닫혀 있는 동안에는 embed를 불러오지 않는다. 등록이 없으면 아무것도 그리지 않는다.
       function renderSpotInstaRowHtml(spot) {
         var posts = [];
         (spot && Array.isArray(spot.instaUrls) ? spot.instaUrls : []).forEach(function(u) {
@@ -4347,19 +4348,27 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         });
         posts = posts.slice(0, 10);
         if (!posts.length) return '';
-        var frames = posts.map(function(p) {
+        var icon = '<svg viewBox="0 0 24 24" style="width:14px; height:14px; flex-shrink:0;" fill="none" stroke="#f9a8d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="#f9a8d4"/></svg>';
+        var postNo = 0, reelNo = 0;
+        var rows = posts.map(function(p) {
           var postUrl = 'https://www.instagram.com/' + p.kind + '/' + p.code + '/';
           var isReel = p.kind !== 'p';
-          return '<div style="flex-shrink:0; width:' + (posts.length > 1 ? '86%' : '100%') + '; max-width:340px; scroll-snap-align:start; display:flex; flex-direction:column; gap:4px;">' +
-            '<iframe src="' + escapeHtml(postUrl + 'embed/') + '" title="인스타그램 게시물" loading="lazy" scrolling="no" referrerpolicy="strict-origin-when-cross-origin"' +
-            ' sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"' +
-            ' style="width:100%; height:' + (isReel ? '600' : '500') + 'px; border:0; border-radius:12px; background:#ffffff; display:block;"></iframe>' +
-            '<a href="' + escapeHtml(okbmSafeExternalUrl(postUrl)) + '" target="_blank" rel="noopener noreferrer" style="align-self:flex-end; font-size:0.66rem; font-weight:800; color:#f9a8d4; text-decoration:none;">인스타그램에서 보기 ›</a>' +
-          '</div>';
+          var label = isReel ? ('릴스 ' + (++reelNo)) : ('게시물 ' + (++postNo));
+          return '<details class="spot-insta-item" style="border:1px solid rgba(249,168,212,0.28); border-radius:9px; background:rgba(249,168,212,0.06); overflow:hidden;">' +
+            '<summary style="list-style:none; cursor:pointer; display:flex; align-items:center; gap:6px; padding:7px 10px; font-size:0.72rem; font-weight:800; color:#fbcfe8;">' +
+              icon + '<span style="flex:1;">' + label + '</span><span style="font-size:0.64rem; color:#f9a8d4;">눌러서 보기 ▾</span>' +
+            '</summary>' +
+            '<div style="padding:0 8px 8px; display:flex; flex-direction:column; gap:4px;">' +
+              '<iframe src="' + escapeHtml(postUrl + 'embed/') + '" title="인스타그램 게시물" loading="lazy" scrolling="no" referrerpolicy="strict-origin-when-cross-origin"' +
+              ' sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"' +
+              ' style="width:100%; max-width:360px; align-self:center; height:' + (isReel ? '600' : '500') + 'px; border:0; border-radius:10px; background:#ffffff; display:block;"></iframe>' +
+              '<a href="' + escapeHtml(okbmSafeExternalUrl(postUrl)) + '" target="_blank" rel="noopener noreferrer" style="align-self:flex-end; font-size:0.66rem; font-weight:800; color:#f9a8d4; text-decoration:none;">인스타그램에서 보기 ›</a>' +
+            '</div>' +
+          '</details>';
         }).join('');
-        return '<div class="spot-insta-row" style="margin:6px 0 2px;">' +
-          '<div style="font-size:0.72rem; font-weight:900; color:#f9a8d4; margin-bottom:5px;">인스타그램' + (posts.length > 1 ? ' (' + posts.length + ')' : '') + '</div>' +
-          '<div style="display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory; padding-bottom:2px;">' + frames + '</div>' +
+        return '<div class="spot-insta-row" style="margin:6px 0 4px; display:flex; flex-direction:column; gap:5px;">' +
+          '<div style="font-size:0.72rem; font-weight:900; color:#f9a8d4;">인스타그램 (' + posts.length + ')</div>' +
+          rows +
         '</div>';
       }
 
