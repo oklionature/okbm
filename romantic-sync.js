@@ -2195,10 +2195,19 @@ function okbmMountAdminReportInspectorEntry() {
       var waiting = Number(d.inbox_pending || 0) + Number(d.reports_pending || 0);
       if (!fresh && !waiting) return;
       opsEntry.textContent = '관리자 새 소식 · 운영 숫자 ';
-      var badge = document.createElement('span');
-      badge.style.cssText = 'display:inline-block; margin-left:4px; padding:1px 7px; border-radius:9px; background:#f43f5e; color:#ffffff; font-size:0.66rem; font-weight:900;';
-      badge.textContent = [fresh ? '새 ' + fresh : '', waiting ? '대기 ' + waiting : ''].filter(Boolean).join(' · ');
-      opsEntry.appendChild(badge);
+      // 빨간 숫자는 확인 안 한 새 건, 회색은 처리 대기(검수함에서 처리해야 줄어든다)
+      if (fresh) {
+        var badge = document.createElement('span');
+        badge.style.cssText = 'display:inline-block; margin-left:4px; padding:1px 7px; border-radius:9px; background:#f43f5e; color:#ffffff; font-size:0.66rem; font-weight:900;';
+        badge.textContent = '새 ' + fresh;
+        opsEntry.appendChild(badge);
+      }
+      if (waiting) {
+        var wait = document.createElement('span');
+        wait.style.cssText = 'display:inline-block; margin-left:4px; padding:1px 7px; border-radius:9px; background:rgba(148,163,184,0.25); color:#cbd5e1; font-size:0.66rem; font-weight:800;';
+        wait.textContent = '대기 ' + waiting;
+        opsEntry.appendChild(wait);
+      }
     }).catch(function() {});
   }
 }
