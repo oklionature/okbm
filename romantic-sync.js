@@ -7787,7 +7787,11 @@ window._pastTripMergeSpotMediaUrls = async function(spotId, ytUrls, blogUrls) {
   var incoming = window._pastTripMergeUniqueUrls(
     window._pastTripCoerceUrlList(ytUrls),
     window._pastTripCoerceUrlList(blogUrls)
-  ).filter(function(u) { return /^https?:\/\//i.test(String(u || '').trim()); });
+  ).filter(function(u) {
+    var s = String(u || '').trim();
+    // 유튜브 숏츠는 박지 링크로 넣지 않는다(정보창에 보이지 않게 막음)
+    return /^https?:\/\//i.test(s) && !/youtube\.com\/shorts\//i.test(s);
+  });
   if (!incoming.length) return false;
 
   var rpcResult = await window.okbmRpcMergeSpotMediaUrls(id, incoming);
