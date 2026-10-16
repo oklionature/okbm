@@ -1638,17 +1638,18 @@
         });
 
         var heroKeyOf = function(f) { return f ? String(f.id || ((f.spot || '') + '_' + (f.date || ''))) : ''; };
-        // 별(좋아요)이 많은 순서 그대로 10개. 같은 박지는 별이 가장 많은 글 하나만 남긴다.
-        // (예전에는 상위 30개 안에서 날마다 섞어 별 순서가 보이지 않았다)
+        // 인기 글(좋아요 순 30개) 안에서 날마다 다른 10개를 다른 순서로 보여 준다.
+        // 같은 박지는 이름이 달라도 별이 가장 많은 글 하나만 남긴 뒤 섞는다.
         var heroSpotPool = getThemeSpotPool();
         var seenHeroSpots = {};
-        var nextHeroRecords = photoFeedsOnly.filter(function(f) {
+        var heroOnePerSpot = photoFeedsOnly.filter(function(f) {
           var k = okbmFeedSpotKey(f, heroSpotPool);
           if (!k) return true;
           if (seenHeroSpots[k]) return false;
           seenHeroSpots[k] = true;
           return true;
-        }).slice(0, 10);
+        });
+        var nextHeroRecords = window.okbmDailyOrder(heroOnePerSpot, heroKeyOf, 'hero').slice(0, 10);
         var prevHeroKeys = (window.heroTopRecords || []).map(heroKeyOf).join('|');
         var nextHeroKeys = nextHeroRecords.map(heroKeyOf).join('|');
         window.__allLoadedFeeds = allCleanFeeds;
