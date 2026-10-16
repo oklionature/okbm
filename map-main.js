@@ -806,6 +806,7 @@
           });
         }
         if (typeof window.okbmLoadSpotReviewBox === 'function') window.okbmLoadSpotReviewBox(spot);
+        if (typeof window.okbmLoadCreatorLinks === 'function') window.okbmLoadCreatorLinks(spot);
         refreshSpotDetailAfterOpen(spot);
         requestAnimationFrame(() => { content.scrollTop = 0; });
       }
@@ -856,6 +857,7 @@
           });
         }
         if (typeof window.okbmLoadSpotReviewBox === 'function') window.okbmLoadSpotReviewBox(spot);
+        if (typeof window.okbmLoadCreatorLinks === 'function') window.okbmLoadCreatorLinks(spot);
         refreshSpotDetailAfterOpen(spot);
         requestAnimationFrame(() => { drawer.scrollTop = 0; });
       }
@@ -3083,6 +3085,8 @@ function updateSmartResetButtons() {
 
             ${isCampBanned(spot) ? '' : renderSpotInstaRowHtml(spot)}
 
+            ${isCampBanned(spot) ? '' : `<div data-okbm-creator-box="${escapeHtml(sId)}">${window.okbmCreatorBoxHtml(sId)}</div>`}
+
             <div class="app-disclaimer-box">
               <ul>
                 <li><span style="color: #fbbf24; font-weight: 800;">•</span> <b>실제 정보와 다를 수 있으니</b> 출발 전 관련 링크를 꼭 확인하세요.</li>
@@ -4370,6 +4374,273 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           rows +
         '</div>';
       }
+
+      // ---------- 크리에이터 콘텐츠 (SUPABASE_H2) ----------
+      // 다녀온 사람이 유튜브·블로그·인스타 게시물 링크를 정보창에서 바로 등록한다. 바로 공개되고,
+      // 관리자 등록 콘텐츠 다음에 보인다. 순서는 서버가 정한다: 신고 3건 이상은 맨 아래 → 추천 많은 순 → 최근 순.
+      (function() {
+        var store = {};    // 박지 id → { at, list, error }
+        var inflight = {};
+        var ui = {};       // 박지 id → { more, form, url, title, busy }
+        var TTL = 60000;
+        var SHOW = 5;
+        var ACT = ' onclick="window.okbmCreatorAction(this, event);"';
+        var KIND = {
+          yt: { label: '유튜브', color: '#f87171', bg: 'rgba(248,113,113,0.12)', fallback: '유튜브 영상' },
+          blog: { label: '블로그', color: '#4ade80', bg: 'rgba(74,222,128,0.12)', fallback: '블로그 글' },
+          insta: { label: '인스타', color: '#f9a8d4', bg: 'rgba(249,168,212,0.12)', fallback: '인스타 게시물' }
+        };
+        var ERR = {
+          login_required: '로그인 후 이용할 수 있어요.',
+          bad_url: '유튜브 영상, 네이버 블로그 글, 인스타 게시물 주소만 등록할 수 있어요.',
+          duplicate: '이미 등록된 콘텐츠예요.',
+          spot_limit: '한 박지에는 3개까지 등록할 수 있어요.',
+          day_limit: '하루에 10개까지 등록할 수 있어요.',
+          rate_limited: '잠시 후 다시 시도해 주세요.',
+          no_spot: '박지를 찾지 못했어요.',
+          own_link: '내 콘텐츠에는 추천·신고할 수 없어요.',
+          forbidden: '권한이 없어요.'
+        };
+        function esc(t) { return escapeHtml(t == null ? '' : String(t)); }
+        function kindOf(url) {
+          var u = String(url || '').trim().replace(/^http:\/\//i, 'https://');
+          if (/^https:\/\/(www\.|m\.)?youtube\.com\/(watch\?([^#\s]*&)?v=|shorts\/|live\/)[A-Za-z0-9_-]{11}/i.test(u) || /^https:\/\/youtu\.be\/[A-Za-z0-9_-]{11}/i.test(u)) return 'yt';
+          if (/^https:\/\/(m\.)?blog\.naver\.com\/([A-Za-z0-9_-]+\/[0-9]+|PostView\.naver\?.*logNo=[0-9]+)/i.test(u)) return 'blog';
+          if (/^https:\/\/(www\.)?instagram\.com\/(p|reel|reels|tv)\/[A-Za-z0-9_-]+/i.test(u)) return 'insta';
+          return '';
+        }
+        function ago(iso) {
+          var t = new Date(iso).getTime();
+          if (!t) return '';
+          var d = Math.floor((Date.now() - t) / 86400000);
+          if (d < 1) return '오늘';
+          if (d < 7) return d + '일 전';
+          var dt = new Date(t);
+          return (dt.getMonth() + 1) + '.' + dt.getDate();
+        }
+        function errText(e) {
+          var m = String((e && (e.message || e.details)) || e || '');
+          var key = Object.keys(ERR).filter(function(k) { return m.indexOf(k) !== -1; })[0];
+          return key ? ERR[key] : '처리하지 못했어요. 잠시 후 다시 시도해 주세요.';
+        }
+        function rpc(name, args) {
+          var client = window.supabaseClient;
+          if (!client || typeof client.rpc !== 'function') return Promise.reject(new Error('no_client'));
+          return Promise.resolve(client.rpc(name, args)).then(function(res) {
+            if (res && res.error) throw res.error;
+            return res ? res.data : null;
+          });
+        }
+        function loggedIn() { return typeof isUserLoggedIn === 'function' && isUserLoggedIn(); }
+
+        function rowHtml(sId, r) {
+          var k = KIND[r.kind] || KIND.yt;
+          var title = String(r.title || '').trim() || k.fallback;
+          var up = r.my_vote === 'up';
+          var rep = r.my_vote === 'report';
+          var btn = 'background:none; border:none; cursor:pointer; font-family:inherit; font-size:0.62rem; font-weight:800; padding:2px 4px;';
+          var tools = '';
+          if (r.mine) {
+            tools = '<span style="font-size:0.60rem; color:#3182f6; font-weight:800;">내 콘텐츠</span>' +
+              '<button type="button" data-act="del" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' style="' + btn + ' color:#64748b;">삭제</button>';
+          } else {
+            tools = '<button type="button" data-act="up" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + up + '" style="' + btn + ' color:' + (up ? '#fbbf24' : '#94a3b8') + ';">👍 ' + (Number(r.ups) || 0) + '</button>' +
+              '<button type="button" data-act="report" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + rep + '" style="' + btn + ' color:' + (rep ? '#f87171' : '#64748b') + ';">' + (rep ? '신고함' : '신고') + '</button>';
+          }
+          if (isAdminMode) {
+            tools += '<button type="button" data-act="' + (r.hidden ? 'show' : 'hide') + '" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' style="' + btn + ' color:#fbbf24;">' + (r.hidden ? '보이기' : '숨김') + '</button>' +
+              (r.mine ? '' : '<button type="button" data-act="del" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' style="' + btn + ' color:#f87171;">삭제</button>');
+          }
+          var dim = r.sunk || r.hidden;
+          return '<div style="display:flex; align-items:center; gap:7px; padding:7px 0; border-top:1px solid rgba(255,255,255,0.06);' + (dim ? ' opacity:0.55;' : '') + '">' +
+            '<span style="flex-shrink:0; font-size:0.58rem; font-weight:900; color:' + k.color + '; background:' + k.bg + '; border-radius:4px; padding:2px 5px;">' + k.label + '</span>' +
+            '<div style="flex:1; min-width:0;">' +
+              '<a href="' + esc(okbmSafeExternalUrl(r.url)) + '" target="_blank" rel="noopener noreferrer" style="display:block; color:#e2e8f0; font-size:0.74rem; font-weight:800; text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(title) + '</a>' +
+              '<div style="font-size:0.60rem; color:#64748b; margin-top:2px;">' + esc(r.author || '백패커') + ' · ' + esc(ago(r.created_at)) +
+                (r.sunk ? ' · <span style="color:#f87171;">신고 많음</span>' : '') + (r.hidden ? ' · <span style="color:#fbbf24;">숨김</span>' : '') + '</div>' +
+            '</div>' +
+            '<div style="flex-shrink:0; display:flex; align-items:center;">' + tools + '</div>' +
+          '</div>';
+        }
+
+        function formHtml(sId) {
+          var st = ui[sId] || {};
+          var input = 'width:100%; box-sizing:border-box; background:#0b0f16; border:1px solid rgba(255,255,255,0.14); border-radius:7px; color:#e2e8f0; font-size:0.74rem; padding:8px 9px; font-family:inherit;';
+          return '<div style="display:flex; flex-direction:column; gap:6px; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06);">' +
+            '<input type="url" inputmode="url" data-creator-url="' + esc(sId) + '" value="' + esc(st.url || '') + '" placeholder="유튜브·네이버 블로그·인스타 게시물 주소" style="' + input + '">' +
+            '<input type="text" maxlength="120" data-creator-title="' + esc(sId) + '" value="' + esc(st.title || '') + '" placeholder="한 줄 소개 (선택, 유튜브는 비우면 영상 제목)" style="' + input + '">' +
+            '<div style="display:flex; gap:6px; justify-content:flex-end;">' +
+              '<button type="button" data-act="cancel" data-spot="' + esc(sId) + '"' + ACT + ' style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; border-radius:7px; height:30px; padding:0 12px; font-size:0.70rem; font-weight:800; cursor:pointer; font-family:inherit;">취소</button>' +
+              '<button type="button" data-act="submit" data-spot="' + esc(sId) + '"' + ACT + (st.busy ? ' disabled' : '') + ' style="background:#3182f6; border:1px solid #3182f6; color:#ffffff; border-radius:7px; height:30px; padding:0 14px; font-size:0.70rem; font-weight:900; cursor:pointer; font-family:inherit;">' + (st.busy ? '등록 중…' : '등록') + '</button>' +
+            '</div>' +
+          '</div>';
+        }
+
+        function boxInner(sId) {
+          var hit = store[sId];
+          var st = ui[sId] || {};
+          var list = (hit && Array.isArray(hit.list)) ? hit.list : [];
+          var wrap = '<div style="background:var(--bg-card, #0e121a); border:1px solid var(--border-hairline, rgba(255,255,255,0.08)); border-radius:7px; padding:8px 9px; margin:6px 0 2px; color:#e2e8f0;">';
+          var head = '<div style="display:flex; align-items:center; gap:6px;">' +
+            '<div style="flex:1; min-width:0; font-size:0.76rem; font-weight:900;">크리에이터 콘텐츠' + (list.length ? ' <span style="font-size:0.66rem; color:#64748b; font-weight:800;">' + list.length + '</span>' : '') + '</div>' +
+            (st.form ? '' : '<button type="button" data-act="' + (loggedIn() ? 'open' : 'login') + '" data-spot="' + esc(sId) + '"' + ACT + ' style="background:#3182f6; border:1px solid #3182f6; border-radius:8px; height:28px; padding:0 10px; color:#ffffff; font-size:0.68rem; font-weight:800; cursor:pointer; font-family:inherit; flex-shrink:0;">' + (loggedIn() ? '내 콘텐츠 등록' : '로그인하고 등록') + '</button>') +
+          '</div>';
+          var body = '';
+          if (!hit) {
+            body = '<div style="font-size:0.68rem; color:#64748b; margin-top:6px;">불러오는 중…</div>';
+          } else if (hit.error && !list.length) {
+            body = '<div style="font-size:0.68rem; color:#94a3b8; margin-top:6px;">불러오지 못했어요. <button type="button" data-act="retry" data-spot="' + esc(sId) + '"' + ACT + ' style="background:none; border:none; color:#3182f6; font-weight:800; cursor:pointer; font-family:inherit; font-size:0.68rem;">다시</button></div>';
+          } else if (!list.length) {
+            body = '<div style="font-size:0.68rem; color:#94a3b8; margin-top:6px; line-height:1.45;">여기 다녀온 영상·블로그·인스타가 있다면 등록해 주세요. 추천을 많이 받으면 위로 올라가요.</div>';
+          } else {
+            var shown = st.more ? list : list.slice(0, SHOW);
+            body = '<div style="margin-top:4px;">' + shown.map(function(r) { return rowHtml(sId, r); }).join('') + '</div>';
+            if (list.length > SHOW) {
+              body += '<button type="button" data-act="more" data-spot="' + esc(sId) + '"' + ACT + ' style="width:100%; margin-top:2px; background:none; border:none; border-top:1px solid rgba(255,255,255,0.06); padding:8px 0 0; color:#94a3b8; font-size:0.70rem; font-weight:800; cursor:pointer; font-family:inherit;">' +
+                (st.more ? '접기' : (list.length - SHOW) + '개 더 보기 ›') + '</button>';
+            }
+          }
+          return wrap + head + (st.form ? formHtml(sId) : '') + body + '</div>';
+        }
+
+        function boxes(sId) {
+          return Array.prototype.filter.call(document.querySelectorAll('[data-okbm-creator-box]'), function(el) {
+            return el.getAttribute('data-okbm-creator-box') === sId;
+          });
+        }
+        // 입력 중인 값은 다시 그려도 남긴다
+        function keepInputs(sId) {
+          var st = ui[sId];
+          if (!st || !st.form) return;
+          boxes(sId).forEach(function(el) {
+            var u = el.querySelector('[data-creator-url]');
+            var t = el.querySelector('[data-creator-title]');
+            if (u) st.url = u.value;
+            if (t) st.title = t.value;
+          });
+        }
+        function paint(sId) {
+          keepInputs(sId);
+          boxes(sId).forEach(function(el) { el.innerHTML = boxInner(sId); });
+        }
+
+        window.okbmCreatorBoxHtml = function(spotId) { return boxInner(String(spotId || '').trim()); };
+
+        window.okbmLoadCreatorLinks = function(spot, force) {
+          var sId = String((spot && typeof spot === 'object') ? spot.id : (spot || '')).trim();
+          if (!sId) return Promise.resolve(null);
+          var hit = store[sId];
+          if (!force && hit && !hit.error && (Date.now() - hit.at) < TTL) {
+            paint(sId);
+            return Promise.resolve(hit.list);
+          }
+          if (inflight[sId]) return inflight[sId];
+          inflight[sId] = rpc('get_spot_creator_links', { p_spot_id: sId }).then(function(data) {
+            store[sId] = { at: Date.now(), list: Array.isArray(data) ? data : [] };
+          }).catch(function(e) {
+            console.warn('[map-main.js:okbmLoadCreatorLinks]', e);
+            store[sId] = { at: Date.now(), list: hit ? hit.list : [], error: true };
+          }).then(function() {
+            delete inflight[sId];
+            paint(sId);
+            return store[sId].list;
+          });
+          return inflight[sId];
+        };
+
+        async function youtubeTitle(url) {
+          try {
+            var res = await fetch('https://noembed.com/embed?url=' + encodeURIComponent(url));
+            if (!res.ok) return '';
+            var data = await res.json();
+            return String((data && data.title) || '').trim().slice(0, 120);
+          } catch (e) { return ''; }
+        }
+
+        async function submit(sId) {
+          var st = ui[sId] = ui[sId] || {};
+          keepInputs(sId);
+          var url = String(st.url || '').trim().replace(/^http:\/\//i, 'https://');
+          var title = String(st.title || '').trim();
+          var kind = kindOf(url);
+          if (!kind) { showToast(ERR.bad_url); return; }
+          st.busy = true;
+          paint(sId);
+          try {
+            if (!title && kind === 'yt') title = await youtubeTitle(url);
+            await rpc('add_spot_creator_link', { p_spot_id: sId, p_url: url, p_title: title });
+            ui[sId] = {};
+            showToast('콘텐츠를 등록했어요. 고마워요!');
+            await window.okbmLoadCreatorLinks(sId, true);
+          } catch (e) {
+            st.busy = false;
+            paint(sId);
+            showToast(errText(e));
+          }
+        }
+
+        async function act(sId, action, id) {
+          try {
+            if (action === 'up' || action === 'report') {
+              var hit = store[sId];
+              var row = hit && (hit.list || []).filter(function(r) { return String(r.id) === String(id); })[0];
+              if (action === 'report' && !(row && row.my_vote === 'report') &&
+                !confirm('이 콘텐츠를 신고할까요?\n박지와 관련 없거나 부적절한 링크라면 신고해 주세요. 신고가 쌓이면 아래로 내려가요.')) return;
+              var res = await rpc('vote_spot_creator_link', { p_link_id: Number(id), p_vote: action });
+              if (row && res) {
+                row.my_vote = res.my_vote;
+                row.ups = res.ups;
+                row.reports = res.reports;
+                row.sunk = Number(res.reports) >= 3;
+                paint(sId);
+              }
+              // 순서는 서버 기준으로 다시 받는다
+              window.okbmLoadCreatorLinks(sId, true);
+            } else {
+              if (action === 'del' && !confirm('이 콘텐츠를 삭제할까요?')) return;
+              await rpc('manage_spot_creator_link', { p_link_id: Number(id), p_action: action === 'del' ? 'delete' : action });
+              showToast(action === 'del' ? '삭제했어요.' : (action === 'hide' ? '숨겼어요.' : '다시 보이게 했어요.'));
+              window.okbmLoadCreatorLinks(sId, true);
+            }
+          } catch (e) {
+            showToast(errText(e));
+          }
+        }
+
+        window.okbmCreatorAction = function(el, e) {
+          if (e) { if (typeof e.preventDefault === 'function') e.preventDefault(); if (typeof e.stopPropagation === 'function') e.stopPropagation(); }
+          if (!el || !el.dataset) return;
+          var a = el.dataset.act;
+          var sId = String(el.dataset.spot || '').trim();
+          if (!sId) return;
+          var st = ui[sId] = ui[sId] || {};
+          if (a === 'login') {
+            if (typeof openLoginModal === 'function') openLoginModal();
+          } else if (a === 'open') {
+            st.form = true;
+            paint(sId);
+            var u = boxes(sId)[0] && boxes(sId)[0].querySelector('[data-creator-url]');
+            if (u) u.focus();
+          } else if (a === 'cancel') {
+            ui[sId] = {};
+            boxes(sId).forEach(function(b) { b.innerHTML = boxInner(sId); });
+          } else if (a === 'submit') {
+            if (!st.busy) submit(sId);
+          } else if (a === 'more') {
+            st.more = !st.more;
+            paint(sId);
+          } else if (a === 'retry') {
+            window.okbmLoadCreatorLinks(sId, true);
+          } else if (a === 'up' || a === 'report' || a === 'del' || a === 'hide' || a === 'show') {
+            if (!loggedIn()) {
+              showToast(ERR.login_required);
+              if (typeof openLoginModal === 'function') openLoginModal();
+              return;
+            }
+            act(sId, a, el.dataset.id);
+          }
+        };
+      })();
 
       function renderSpotFieldFeedsTrackHtml(spot) {
         var sId = String(spot.id || '').trim();
