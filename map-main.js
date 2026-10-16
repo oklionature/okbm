@@ -4334,23 +4334,32 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         `;
       }
 
-      // 관리자가 등록한 인스타그램 게시물만 유튜브·블로그 위에 링크 카드로 보여 준다. 등록이 없으면 아무것도 그리지 않는다.
+      // 관리자가 등록한 인스타그램 게시물만 유튜브·블로그 위에 게시물 그대로(인스타 공식 embed) 보여 준다.
+      // 등록이 없으면 아무것도 그리지 않는다. 여러 개면 가로로 넘겨 본다.
       function renderSpotInstaRowHtml(spot) {
-        var list = (spot && Array.isArray(spot.instaUrls) ? spot.instaUrls : []).filter(function(u) {
-          return typeof window.okbmIsInstaPostUrl === 'function' && window.okbmIsInstaPostUrl(u);
-        }).slice(0, 10);
-        if (!list.length) return '';
-        var icon = '<svg viewBox="0 0 24 24" style="width:15px; height:15px; flex-shrink:0;" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="#ffffff"/></svg>';
-        var postNo = 0, reelNo = 0;
-        var cards = list.map(function(u) {
-          var isReel = /instagram\.com\/(reel|reels|tv)\//i.test(u);
-          var label = isReel ? ('릴스 ' + (++reelNo)) : ('게시물 ' + (++postNo));
-          return '<a href="' + escapeHtml(okbmSafeExternalUrl(u)) + '" target="_blank" rel="noopener noreferrer" style="flex-shrink:0; display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:10px; text-decoration:none; color:#ffffff; font-size:0.74rem; font-weight:800; background:linear-gradient(135deg, rgba(131,58,180,0.35), rgba(253,29,29,0.28) 55%, rgba(252,176,69,0.3)); border:1px solid rgba(255,255,255,0.18);">' +
-            icon + '<span>' + label + '</span><span style="opacity:0.7;">›</span></a>';
+        var posts = [];
+        (spot && Array.isArray(spot.instaUrls) ? spot.instaUrls : []).forEach(function(u) {
+          var m = String(u || '').match(/^https?:\/\/(?:www\.)?instagram\.com\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i);
+          if (!m) return;
+          var kind = m[1].toLowerCase() === 'p' ? 'p' : (m[1].toLowerCase() === 'tv' ? 'tv' : 'reel');
+          if (posts.some(function(x) { return x.code === m[2]; })) return;
+          posts.push({ kind: kind, code: m[2] });
+        });
+        posts = posts.slice(0, 10);
+        if (!posts.length) return '';
+        var frames = posts.map(function(p) {
+          var postUrl = 'https://www.instagram.com/' + p.kind + '/' + p.code + '/';
+          var isReel = p.kind !== 'p';
+          return '<div style="flex-shrink:0; width:' + (posts.length > 1 ? '86%' : '100%') + '; max-width:340px; scroll-snap-align:start; display:flex; flex-direction:column; gap:4px;">' +
+            '<iframe src="' + escapeHtml(postUrl + 'embed/') + '" title="인스타그램 게시물" loading="lazy" scrolling="no" referrerpolicy="strict-origin-when-cross-origin"' +
+            ' sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"' +
+            ' style="width:100%; height:' + (isReel ? '600' : '500') + 'px; border:0; border-radius:12px; background:#ffffff; display:block;"></iframe>' +
+            '<a href="' + escapeHtml(okbmSafeExternalUrl(postUrl)) + '" target="_blank" rel="noopener noreferrer" style="align-self:flex-end; font-size:0.66rem; font-weight:800; color:#f9a8d4; text-decoration:none;">인스타그램에서 보기 ›</a>' +
+          '</div>';
         }).join('');
         return '<div class="spot-insta-row" style="margin:6px 0 2px;">' +
-          '<div style="font-size:0.72rem; font-weight:900; color:#f9a8d4; margin-bottom:5px;">인스타그램 (' + list.length + ')</div>' +
-          '<div style="display:flex; gap:6px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:2px;">' + cards + '</div>' +
+          '<div style="font-size:0.72rem; font-weight:900; color:#f9a8d4; margin-bottom:5px;">인스타그램' + (posts.length > 1 ? ' (' + posts.length + ')' : '') + '</div>' +
+          '<div style="display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory; padding-bottom:2px;">' + frames + '</div>' +
         '</div>';
       }
 

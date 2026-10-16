@@ -169,8 +169,8 @@ const CONNECT_BY_PAGE = {
 };
 // img-src는 https: 전체: 라운지 행사 포스터·블로그 썸네일이 임의의 외부 https 주소다. http:·기타 스킴만 막는다.
 const IMG_SRC = ["'self'", "data:", "blob:", "https:"];
-// frame-src: 영상 모달(youtube-nocookie), HEIC 변환 iframe(self), Kakao SDK 내부 iframe
-const FRAME_SRC = ["'self'", "https://www.youtube-nocookie.com", "https://www.youtube.com", "https://*.kakao.com"];
+// frame-src: 영상 모달(youtube-nocookie), HEIC 변환 iframe(self), Kakao SDK 내부 iframe, 정보창 인스타 게시물(embed)
+const FRAME_SRC = ["'self'", "https://www.youtube-nocookie.com", "https://www.youtube.com", "https://*.kakao.com", "https://www.instagram.com"];
 function cspFor(file) {
   const vals = new Set();
   for (const src of PAGE_SOURCES[file]) for (const v of handlersBySource[src] || []) vals.add(v);
