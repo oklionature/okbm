@@ -15,6 +15,8 @@ BEGIN;
 -- 원본 백업(이미 있으면 처음 백업을 그대로 둔다)
 CREATE TABLE IF NOT EXISTS public.spots_media_backup_20261016 AS
   SELECT id, "mediaUrls" FROM public.spots WHERE false;
+-- 정책 없이 RLS만 켠다: 사이트(anon·회원 키)에서는 못 읽고 SQL 편집기에서만 본다
+ALTER TABLE public.spots_media_backup_20261016 ENABLE ROW LEVEL SECURITY;
 INSERT INTO public.spots_media_backup_20261016 (id, "mediaUrls")
 SELECT s.id, s."mediaUrls" FROM public.spots s
 WHERE NOT EXISTS (SELECT 1 FROM public.spots_media_backup_20261016 b WHERE b.id = s.id);
