@@ -2,7 +2,7 @@
 // 백패커 라운지 (index.html 홈 섹션 + 라운지 창) — 2026-09-29 P3
 // 디자인: audit/mockups/lounge-minimal.js v4 (미니멀). DB: SUPABASE_F1_LOUNGE.sql
 //
-// · 홈(#okbmLoungeHomeBody): 메뉴 "이번 달 행사 · 초보 가이드 · 자유게시판 · 박지 후기" + 탭마다 3줄(높이 고정).
+// · 홈(#okbmLoungeHomeBody): 메뉴 "이번 달 행사 · 장비 할인 · 초보 가이드 · 자유게시판 · 박지 후기" + 탭마다 3줄(높이 고정).
 //   행사·장비 세트는 그 자리에서 펼치고, 글 줄은 라운지 창에서 그 글을 펼친다.
 // · 라운지 창(#loungeWindow): 같은 목록 조각으로 전부. 탭은 가로 스크롤 스냅. 닫기: 뒤로·Esc·기존 가장자리 밀기(index 6930).
 // · 시트(#loungeSheet): 관리자 행사·가이드 등록/수정.
@@ -51,7 +51,18 @@
     pack: '<path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/>'
   };
 
-  const TABS = ['이번 달 행사', '초보 가이드', '자유게시판', '박지 후기'];
+  const TABS = ['이번 달 행사', '초보 가이드', '자유게시판', '박지 후기', '장비 할인'];
+  // 창에 보이는 순서. 번호는 그대로라 ?lounge=2(자유게시판) 같은 기존 링크가 안 밀린다.
+  const TAB_ORDER = [0, 4, 1, 2, 3];
+  const TAB_DEAL = 4;
+  function trackOf(tab) {
+    const i = TAB_ORDER.indexOf(Number(tab));
+    return i < 0 ? 0 : i;
+  }
+  function tabAt(track) {
+    const i = Math.max(0, Math.min(TAB_ORDER.length - 1, Math.round(Number(track) || 0)));
+    return TAB_ORDER[i];
+  }
   const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['life', '사는이야기'], ['suggestion', '건의']];
   const CAT_LABEL = { backpacking: '백패킹이야기', life: '사는이야기', suggestion: '건의' };
   const GEAR_CAT = { shelter: '텐트', sleep: '침낭', pack: '배낭', food: '식량', kitchen: '조리', wear: '의류', electronics: '전자', camp: '캠프', other: '기타' };
@@ -62,7 +73,7 @@
   // 서버 데이터 (loadAll이 채움)
   const D = {
     status: 'idle', // idle | loading | ready | error
-    events: [], pastEvents: null, guides: [], posts: [], postsDone: false, top: [],
+    events: [], pastEvents: null, guides: [], deals: [], posts: [], postsDone: false, top: [],
     recent: null, recentTier: '', recentDone: false, comments: {}, admin: false,
     fail: [false, false, false, false],
     liked: new Set(), likeChecked: new Set(), // 내가 좋아요 누른 글(본인 것만 보임)
@@ -526,6 +537,13 @@
       .order('sort', { ascending: true }).order('created_at', { ascending: true }).limit(100));
     D.guides = Array.isArray(rows) ? rows : [];
   }
+  async function loadDeals() {
+    const c = sb();
+    if (!c) throw new Error('no_client');
+    const rows = await q(c.from('lounge_deals').select('*')
+      .order('sort', { ascending: true }).order('created_at', { ascending: true }).limit(80));
+    D.deals = Array.isArray(rows) ? rows : [];
+  }
   async function loadPosts(cat, more) {
     const c = sb();
     if (!c) throw new Error('no_client');
@@ -658,7 +676,7 @@
   }
   // 탭 순서와 같은 순서로 불러온다. D.fail[i] = 그 탭만 실패
   function loadTabs() {
-    return Promise.allSettled([loadEvents(), loadGuides(), loadPosts('all'), loadTop()]).then(function (r) {
+    return Promise.allSettled([loadEvents(), loadGuides(), loadPosts('all'), loadTop(), loadDeals()]).then(function (r) {
       r.forEach(function (x) { if (x.status === 'rejected') console.warn('[lounge.js:loadTabs]', x.reason); });
       D.fail = r.map(function (x) { return x.status === 'rejected'; });
       return r;
@@ -735,9 +753,13 @@
     }).join('') + '</div>';
   };
   function menuHtml(active, countFirst) {
-    return '<div class="lmh-menu" role="tablist">' + TABS.map(function (t, i) {
-      const n = (i === 0 && countFirst && D.status === 'ready') ? ' <em>' + thisMonthEvents().length + '</em>' : '';
-      return '<button type="button" role="tab" aria-selected="' + (i === active) + '" class="' + (i === active ? 'on' : '') + '" data-a="tab" data-v="' + i + '">' + esc(t) + n + '</button>';
+    return '<div class="lmh-menu" role="tablist">' + TAB_ORDER.map(function (i) {
+      let n = '';
+      if (countFirst && D.status === 'ready') {
+        if (i === 0) n = ' <em>' + thisMonthEvents().length + '</em>';
+        else if (i === TAB_DEAL) n = ' <em>' + ongoingDeals().length + '</em>';
+      }
+      return '<button type="button" role="tab" aria-selected="' + (i === active) + '" class="' + (i === active ? 'on' : '') + '" data-a="tab" data-v="' + i + '">' + esc(TABS[i]) + n + '</button>';
     }).join('') + '<span class="lmh-ind"></span></div>';
   }
 
@@ -840,6 +862,91 @@
       h += '<div class="lmh-cap">지난 행사</div>' + D.pastEvents.map(evItem).join('');
     }
     if (D.admin) h += '<button type="button" class="lmh-cta adm" data-a="new-event">' + ico(P.plus, 18) + '행사 등록</button>';
+    return h;
+  }
+
+  // 장비 할인. 번호(sort) 순. 끝나는 날이 지나면 빠지고, 끝 날짜가 없는 글은 올린 날부터 14일.
+  function addDaysKey(key, days) {
+    const d = parseD(key);
+    if (!d) return '';
+    d.setDate(d.getDate() + days);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+  function mdLabel(key) {
+    const d = parseD(key);
+    return d ? (d.getMonth() + 1) + '/' + d.getDate() : '';
+  }
+  function dealPhase(d) {
+    const t = todayKey();
+    if (d.start_date && String(d.start_date) > t) return 'upcoming';
+    if (!d.start_date && d.phase === 'upcoming') return 'upcoming';
+    return 'ongoing';
+  }
+  function dealAlive(d) {
+    if (!d || (d.is_active === false && !D.admin)) return false;
+    const t = todayKey();
+    if (d.end_date && String(d.end_date) < t) return false;
+    if (dealPhase(d) === 'ongoing' && !d.end_date && d.posted_on && addDaysKey(d.posted_on, 14) < t) return false;
+    return true;
+  }
+  function sortDeals(list) {
+    return list.slice().sort(function (a, b) { return (Number(a.sort) || 0) - (Number(b.sort) || 0); });
+  }
+  function ongoingDeals() {
+    return sortDeals((D.deals || []).filter(function (d) { return dealAlive(d) && dealPhase(d) === 'ongoing'; }));
+  }
+  function upcomingDeals() {
+    return sortDeals((D.deals || []).filter(function (d) { return dealAlive(d) && dealPhase(d) === 'upcoming'; }));
+  }
+  function dealMark(d) {
+    const s = String(d.summary || '');
+    let m = s.match(/최대\s*(\d+)\s*%/);
+    if (m) return m[1] + '%';
+    m = s.match(/(\d+)\s*%\s*할인/);
+    if (m) return m[1] + '%';
+    m = s.match(/~\s*(\d+)\s*%/);
+    if (m) return m[1] + '%';
+    if (dealPhase(d) === 'upcoming' && d.start_date) return mdLabel(d.start_date);
+    if (/플리|중고/.test(d.title)) return '중고';
+    if (/오픈/.test(d.title)) return '오픈';
+    if (/세일|패밀리/.test(d.title)) return '세일';
+    return '할인';
+  }
+  function dealMeta(d) {
+    const t = todayKey();
+    if (dealPhase(d) === 'upcoming') return d.end_date ? mdLabel(d.end_date) : '예정';
+    if (d.end_date) {
+      if (String(d.end_date) === t) return '오늘';
+      if (String(d.end_date) === addDaysKey(t, 1)) return '내일';
+      return mdLabel(d.end_date);
+    }
+    if (d.posted_on && String(d.posted_on) === t) return '오늘';
+    return '진행중';
+  }
+  function dealItem(d) {
+    const url = okbmSafeExternalUrl(d.source_url);
+    const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="false"><div class="lm-date"><b>${esc(dealMark(d))}</b></div>
+      <div class="lm-rb"><div class="lm-rt">${esc(d.title)}${D.admin && !d.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc(d.summary)}</div></div><span class="lm-dd">${esc(dealMeta(d))}</span></button>`;
+    const body = `<div class="lmx-in">
+      ${d.summary ? `<p class="lm-desc" style="margin:0">${esc(d.summary)}</p>` : ''}
+      ${url !== '#' ? `<div class="lmx-btns"><a class="lm-btn sm main" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">게시물 보기</a></div>` : ''}
+    </div>`;
+    return fold(d.id, head, body);
+  }
+  function dealStripRow(d) {
+    return '<button type="button" class="hd-row" data-a="lounge" data-v="' + TAB_DEAL + '" data-id="' + esc(d.id) + '"><span class="hd-mk">' + esc(dealMark(d)) + '</span><span class="hd-tx"><b>' + esc(d.title) + '</b><small>' + esc(d.summary) + '</small></span><span class="hd-meta">' + esc(dealMeta(d)) + '</span></button>';
+  }
+  function paneDeals(full) {
+    const now = ongoingDeals();
+    const later = upcomingDeals();
+    if (!full) {
+      const list = now.slice(0, HOME_N);
+      if (!list.length && !later.length) return homeEmpty('진행중인 할인이 없어요', TAB_DEAL, '라운지 열기');
+      return (list.length ? list : later.slice(0, HOME_N)).map(dealItem).join('') + moreBtn(TAB_DEAL, '할인 ' + (now.length + later.length) + '개 전체 보기');
+    }
+    let h = `<div class="lm-head">진행중<br><em>${now.length}</em>개가 있어요</div>`;
+    h += now.length ? now.map(dealItem).join('') : '<div class="lm-empty">진행중인 할인이 없어요</div>';
+    if (later.length) h += '<div class="lmh-cap">예정</div>' + later.map(dealItem).join('');
     return h;
   }
 
@@ -1290,7 +1397,7 @@
     h += '<p class="lm-hint" style="margin-top:20px">후기는 박지마다 한 사람에 하나예요. 별점 없이 팁만 남겨도 돼요. 지도에서 박지를 열거나 위 박지를 눌러 남길 수 있어요.</p>';
     return h;
   }
-  const PANES = [paneEvents, paneGuide, paneBoard, paneReviews];
+  const PANES = [paneEvents, paneGuide, paneBoard, paneReviews, paneDeals];
 
   // 로딩·실패 상태를 거쳐 탭 내용을 고른다 (i = 탭 번호, full = 라운지 창)
   function paneHtml(i, full) {
@@ -1364,11 +1471,15 @@
     ind.style.width = (a.offsetWidth + (b.offsetWidth - a.offsetWidth) * f) + 'px';
     ind.style.transform = 'translateX(' + (a.offsetLeft + (b.offsetLeft - a.offsetLeft) * f) + 'px)';
   }
-  function setMenuOn(menuEl, i) {
-    menuEl.querySelectorAll('button').forEach(function (b, j) { b.classList.toggle('on', j === i); b.setAttribute('aria-selected', String(j === i)); });
+  function setMenuOn(menuEl, tabId) {
+    menuEl.querySelectorAll('button').forEach(function (b) {
+      const on = Number(b.getAttribute('data-v')) === Number(tabId);
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-selected', String(on));
+    });
   }
-  function revealBtn(menuEl, i) {
-    const b = menuEl.querySelectorAll('button')[i];
+  function revealBtn(menuEl, tabId) {
+    const b = menuEl.querySelector('button[data-v="' + tabId + '"]');
     if (!b) return;
     if (b.offsetLeft < menuEl.scrollLeft || b.offsetLeft + b.offsetWidth > menuEl.scrollLeft + menuEl.clientWidth) {
       menuEl.scrollTo({ left: Math.max(0, b.offsetLeft - 20), behavior: reduce ? 'auto' : 'smooth' });
@@ -1381,7 +1492,7 @@
     tmp.innerHTML = menuHtml(active, true);
     const fresh = tmp.querySelectorAll('.lmh-menu button');
     menuEl.querySelectorAll('button').forEach(function (b, i) { if (fresh[i]) b.innerHTML = fresh[i].innerHTML; });
-    placeInd(menuEl, active);
+    placeInd(menuEl, trackOf(active));
   }
 
   // ----- 펼치기 (같은 목록에서는 하나만) -----
@@ -1491,6 +1602,30 @@
     }
     return '<b>자유게시판</b><p>' + esc(sub) + '</p><button type="button" class="tg-act" data-a="new-post">글쓰기</button>';
   }
+  function paintDealSurfaces() {
+    const strip = document.getElementById('homeDealStrip');
+    const sec = document.getElementById('okbmHomeDeals');
+    const body = document.getElementById('okbmHomeDealsBody');
+    const all = document.getElementById('okbmHomeDealsAll');
+    const ready = D.status === 'ready' && !D.fail[TAB_DEAL];
+    const now = ready ? ongoingDeals() : [];
+    if (strip) {
+      if (!now.length) { strip.hidden = true; strip.innerHTML = ''; }
+      else {
+        strip.hidden = false;
+        strip.innerHTML = '<div class="hd-h"><b>장비 할인</b><button type="button" data-a="lounge" data-v="' + TAB_DEAL + '">' + now.length + '건 ›</button></div>'
+          + now.slice(0, 2).map(dealStripRow).join('');
+      }
+    }
+    if (sec && body) {
+      if (!now.length) sec.hidden = true;
+      else {
+        sec.hidden = false;
+        if (all) all.textContent = now.length + '건';
+        keepOpen(body, function () { body.innerHTML = now.slice(0, HOME_N).map(dealItem).join(''); });
+      }
+    }
+  }
   function renderSplit(only) {
     const ready = D.status === 'ready';
     SPLIT.forEach(function (x) {
@@ -1511,6 +1646,7 @@
     if (ready && ea) ea.textContent = D.events.length + '개 전체';
     if (ready && ga) ga.textContent = (tips().length + kits().length) + '편 전체';
     paintQuickCounts();
+    paintDealSurfaces();
   }
   function renderHome() {
     if (isSplit()) { renderSplit(); return; }
@@ -1520,7 +1656,7 @@
       body.innerHTML = menuHtml(S.tab, true) + '<div class="lmh-panel" role="tabpanel" aria-label="' + esc(TABS[S.tab]) + '"><div class="lmh-pane">' + paneHtml(S.tab, false) + '</div></div>';
       hmenu = body.querySelector('.lmh-menu');
       hpanel = body.querySelector('.lmh-panel');
-      placeInd(hmenu, S.tab);
+      placeInd(hmenu, trackOf(S.tab));
       return;
     }
     refreshMenu(hmenu, S.tab);
@@ -1538,7 +1674,7 @@
     const dir = i > S.tab ? 1 : -1;
     S.tab = i;
     setMenuOn(hmenu, i);
-    placeInd(hmenu, i);
+    placeInd(hmenu, trackOf(i));
     revealBtn(hmenu, i);
     hpanel.setAttribute('aria-label', TABS[i]);
     tick();
@@ -1566,12 +1702,20 @@
         <h2 class="lmw-big">백패커 라운지</h2>
         ${menuHtml(tab, true)}
       </div>
-      <div class="lmw-track">${TABS.map(function (t, i) { return `<section class="lmw-pane" role="tabpanel" aria-label="${esc(t)}">${paneHtml(i, true)}</section>`; }).join('')}</div>
+      <div class="lmw-track">${TAB_ORDER.map(function (i) { return `<section class="lmw-pane" data-tab="${i}" role="tabpanel" aria-label="${esc(TABS[i])}">${paneHtml(i, true)}</section>`; }).join('')}</div>
       <div class="lmw-edge" aria-hidden="true"></div></div>`;
   }
+  function paneByTab(tab) {
+    if (!wpanes || !wpanes.length) return null;
+    for (let i = 0; i < wpanes.length; i++) {
+      if (Number(wpanes[i].dataset.tab) === Number(tab)) return wpanes[i];
+    }
+    return null;
+  }
   function rerenderPane(i) {
-    if (!win || !wpanes[i]) return;
-    const p = wpanes[i];
+    if (!win) return;
+    const p = paneByTab(i);
+    if (!p) return;
     keepOpen(p, function () { p.innerHTML = paneHtml(i, true); });
   }
   function rerenderWindow() {
@@ -1581,7 +1725,7 @@
     if (adm) adm.textContent = D.admin ? '관리자' : '';
     for (let i = 0; i < wpanes.length; i++) rerenderPane(i);
   }
-  function renderAll() { renderHome(); rerenderWindow(); }
+  function renderAll() { renderHome(); paintDealSurfaces(); rerenderWindow(); }
   // 자유게시판만 바뀐 경우(댓글·글 쓰기/삭제): 홈은 게시판 탭일 때만, 창은 게시판 칸만 다시 그린다
   const BOARD_TAB = 2;
   function renderBoard() {
@@ -1590,8 +1734,9 @@
     rerenderPane(BOARD_TAB);
   }
   function renderBoardList() {
-    if (!win || !wpanes[2]) return;
-    const l = wpanes[2].querySelector('.lmh-list');
+    const boardPane = paneByTab(2);
+    if (!win || !boardPane) return;
+    const l = boardPane.querySelector('.lmh-list');
     if (l) keepOpen(l, function () { l.innerHTML = boardListHtml(); });
   }
   // 최근 후기(회원만 본문)는 창을 열 때 한 번 불러온다
@@ -1605,7 +1750,7 @@
   }
   // 창 안의 항목을 펼치고 보이는 곳까지 내린다 (홈 글 줄, 나중에 ?lounge=탭&id= 딥링크)
   function focusItem(tab, id, animate) {
-    const pane = wpanes[tab];
+    const pane = paneByTab(tab);
     if (!pane || !id) return null;
     let t = findLmx(pane, id);
     if (!t && tab === 2 && S.cat !== 'all') { S.cat = 'all'; rerenderPane(2); t = findLmx(pane, id); }
@@ -1666,8 +1811,8 @@
     wmenu = win.querySelector('.lmh-menu');
     wpanes = Array.prototype.slice.call(win.querySelectorAll('.lmw-pane'));
     wmenu.querySelector('.lmh-ind').classList.add('live'); // 창 안 밑줄은 가로 스크롤을 그대로 따라감
-    wtrack.scrollLeft = tab * wtrack.clientWidth;
-    placeInd(wmenu, tab);
+    wtrack.scrollLeft = trackOf(tab) * wtrack.clientWidth;
+    placeInd(wmenu, trackOf(tab));
     revealBtn(wmenu, tab);
     const target = itemId ? focusItem(tab, itemId, false) : null;
     if (itemId && !target && tab === 2) focusPostWhenReady(itemId);
@@ -1712,8 +1857,8 @@
     if (t === wtrack) {
       const r = wtrack.scrollLeft / Math.max(1, wtrack.clientWidth);
       placeInd(wmenu, r);
-      const i = Math.round(r);
-      if (i !== S.wtab && wpanes[i]) {
+      const i = tabAt(r);
+      if (i !== S.wtab && paneByTab(i)) {
         S.wtab = i;
         setMenuOn(wmenu, i);
         revealBtn(wmenu, i);
@@ -2244,7 +2389,8 @@
       renderBoard();
       if (win && !st.id) {
         winTo(2);
-        if (wpanes[2]) wpanes[2].scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+        const posted = paneByTab(2);
+        if (posted) posted.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
       }
     } catch (e) {
       console.warn('[lounge.js:savePost]', e);
@@ -2274,7 +2420,7 @@
       tick();
       renderBoard();
       // 다시 그린 뒤 새 입력칸에 포커스를 돌려준다(이어서 쓰기)
-      const nf = win && findLmx(wpanes[2], pid);
+      const nf = win && findLmx(paneByTab(2), pid);
       const ni = nf && nf.querySelector('form[data-form="comment"] input');
       if (ni) ni.focus({ preventScroll: true });
     } catch (e) {
@@ -2424,7 +2570,8 @@
     S.revSpot = sid;
     if (!(D.spotRev && D.spotRev.spot_id === sid)) D.spotRev = null;
     if (!win) openLoungeWindow(3, null, null); else { winTo(3); rerenderPane(3); }
-    if (wpanes[3]) wpanes[3].scrollTop = 0;
+    const revPane = paneByTab(3);
+    if (revPane) revPane.scrollTop = 0;
     whenClient().then(function () { return loadSpotReviews(sid, false); }).catch(function (e) {
       console.warn('[lounge.js:showSpotReviews]', e);
       if (S.revSpot === sid) D.spotRev = { spot_id: sid, error: true };
@@ -2518,7 +2665,8 @@
   function onClick(e) {
     const t = e.target.closest('[data-a]');
     if (!t || t.disabled) return;
-    if (!((home && home.contains(t)) || (layer && layer.contains(t)))) return;
+    const dealStrip = document.getElementById('homeDealStrip');
+    if (!((home && home.contains(t)) || (layer && layer.contains(t)) || (dealStrip && dealStrip.contains(t)))) return;
     const a = t.dataset.a, v = t.dataset.v;
     const inWin = !!t.closest('.lm-win');
     const item = t.closest('.lmx');
@@ -2602,7 +2750,8 @@
       case 'rev-all':
         S.revSpot = null;
         rerenderPane(3);
-        if (wpanes[3]) wpanes[3].scrollTop = 0;
+        const allRev = paneByTab(3);
+        if (allRev) allRev.scrollTop = 0;
         ensureRecent();
         break;
       case 'more-spot-reviews':
@@ -2758,8 +2907,8 @@
     if (sheet) { e.preventDefault(); closeSheet(); } else if (win) { e.preventDefault(); closeLoungeWindow(); }
   }
   function onResize() {
-    placeInd(hmenu, S.tab);
-    if (win) { wtrack.scrollLeft = S.wtab * wtrack.clientWidth; placeInd(wmenu, S.wtab); }
+    placeInd(hmenu, trackOf(S.tab));
+    if (win) { wtrack.scrollLeft = trackOf(S.wtab) * wtrack.clientWidth; placeInd(wmenu, trackOf(S.wtab)); }
   }
 
   // 로그인·로그아웃·관리자 권한이 바뀌면 다시 불러온다 (romantic-sync.js okbmPersistAdminFlag가 알림)
@@ -2815,6 +2964,11 @@
   }
   function start() {
     injectCss();
+    const dealStrip = document.getElementById('homeDealStrip');
+    if (dealStrip && !dealStrip.__okbmDeal) {
+      dealStrip.__okbmDeal = true;
+      dealStrip.addEventListener('click', onClick);
+    }
     if (mountHome()) loadAll();
     openFromUrl();
     if (window.__okbmSpotsBootReady && typeof window.__okbmSpotsBootReady.then === 'function') {

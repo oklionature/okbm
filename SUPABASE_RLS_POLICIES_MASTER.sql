@@ -2397,6 +2397,35 @@ CREATE TRIGGER trg_lounge_guides_touch
   FOR EACH ROW EXECUTE FUNCTION public.okbm_lounge_touch_updated_at();
 
 -- -------------------------------------------------------------------------
+-- 7-2b. lounge_deals (관리자 게시: 아웃도어 장비 할인·팝업)
+--    phase: ongoing 진행중 / upcoming 예정. 화면은 시작일이 오늘 이전이면 진행중으로 올린다.
+--    end_date가 지나면 화면에서 빠진다. end_date가 없고 posted_on만 있으면 올린 날부터 14일.
+--    summary에 「최대 90%」「25% 할인」이 있으면 그 숫자를 왼쪽 칸에 쓴다.
+-- -------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.lounge_deals (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL CHECK (char_length(btrim(title)) BETWEEN 1 AND 80),
+  summary text NOT NULL DEFAULT '' CHECK (char_length(summary) <= 400),
+  source_url text NOT NULL DEFAULT ''
+    CHECK (source_url = '' OR (source_url ~ '^https://' AND source_url !~ '[[:space:]<>"'']')),
+  phase text NOT NULL DEFAULT 'ongoing' CHECK (phase IN ('ongoing', 'upcoming')),
+  start_date date,
+  end_date date,
+  posted_on date,
+  sort integer NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT lounge_deals_dates_chk CHECK (end_date IS NULL OR start_date IS NULL OR end_date >= start_date)
+);
+CREATE INDEX IF NOT EXISTS lounge_deals_sort_idx ON public.lounge_deals (sort) WHERE is_active;
+
+DROP TRIGGER IF EXISTS trg_lounge_deals_touch ON public.lounge_deals;
+CREATE TRIGGER trg_lounge_deals_touch
+  BEFORE UPDATE ON public.lounge_deals
+  FOR EACH ROW EXECUTE FUNCTION public.okbm_lounge_touch_updated_at();
+
+-- -------------------------------------------------------------------------
 -- 7-3. 박지 후기 = 기존 comments (2026-09-26 백업 기준 0행, 클라이언트 사용처 없음)
 --    spots FK는 걸지 않는다: 관리자 도구가 박지를 자유롭게 지우므로 RESTRICT면 삭제가 막히고
 --    CASCADE면 후기가 조용히 사라진다. 박지가 없어진 후기는 화면에 안 나올 뿐 해가 없다.
@@ -2814,15 +2843,16 @@ CREATE TRIGGER trg_lounge_post_likes_after
 -- -------------------------------------------------------------------------
 ALTER TABLE public.lounge_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_guides ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.lounge_deals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_post_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lounge_post_likes ENABLE ROW LEVEL SECURITY;
 
-REVOKE ALL ON TABLE public.lounge_events, public.lounge_guides, public.lounge_posts,
+REVOKE ALL ON TABLE public.lounge_events, public.lounge_guides, public.lounge_deals, public.lounge_posts,
   public.lounge_post_comments, public.lounge_post_likes FROM PUBLIC, anon, authenticated;
-GRANT SELECT ON TABLE public.lounge_events, public.lounge_guides, public.lounge_posts,
+GRANT SELECT ON TABLE public.lounge_events, public.lounge_guides, public.lounge_deals, public.lounge_posts,
   public.lounge_post_comments TO anon, authenticated;
-GRANT INSERT, UPDATE, DELETE ON TABLE public.lounge_events, public.lounge_guides, public.lounge_posts TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON TABLE public.lounge_events, public.lounge_guides, public.lounge_deals, public.lounge_posts TO authenticated;
 GRANT INSERT, DELETE ON TABLE public.lounge_post_comments TO authenticated;
 GRANT SELECT, INSERT, DELETE ON TABLE public.lounge_post_likes TO authenticated;
 
@@ -2847,6 +2877,13 @@ CREATE POLICY lounge_guides_select ON public.lounge_guides
   FOR SELECT USING (is_active OR (SELECT public.okbm_is_admin()));
 DROP POLICY IF EXISTS lounge_guides_admin_write ON public.lounge_guides;
 CREATE POLICY lounge_guides_admin_write ON public.lounge_guides
+  FOR ALL USING ((SELECT public.okbm_is_admin())) WITH CHECK ((SELECT public.okbm_is_admin()));
+
+DROP POLICY IF EXISTS lounge_deals_select ON public.lounge_deals;
+CREATE POLICY lounge_deals_select ON public.lounge_deals
+  FOR SELECT USING (is_active OR (SELECT public.okbm_is_admin()));
+DROP POLICY IF EXISTS lounge_deals_admin_write ON public.lounge_deals;
+CREATE POLICY lounge_deals_admin_write ON public.lounge_deals
   FOR ALL USING ((SELECT public.okbm_is_admin())) WITH CHECK ((SELECT public.okbm_is_admin()));
 
 -- 글: 건의는 작성자·관리자만 보임
