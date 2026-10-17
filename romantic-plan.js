@@ -2140,6 +2140,7 @@
   };
 
   window.addCustomGearToCurrentCategory = function() {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_gear_add'); // 기능 사용 세기 (H8)
     var nameEl = document.getElementById('customInputGearName');
     var weightEl = document.getElementById('customInputGearWeight');
     var catId = window.currentOpeningCategoryId;
@@ -2337,6 +2338,7 @@ window.openQuickGearRegisterModal = function(opts) {
   };
 
   window.submitQuickGearRegister = function() {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_gear_register'); // 기능 사용 세기 (H8)
     var nameEl = document.getElementById('regGearName');
     var catEl = document.getElementById('regGearCat');
     var weightEl = document.getElementById('regGearWeight');
@@ -3238,6 +3240,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.addChecklistConsumableItem = function() {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_checklist_add'); // 기능 사용 세기 (H8)
     var nameInput = document.getElementById('inputChecklistFoodName');
     var weightInput = document.getElementById('inputChecklistFoodWeight');
     if (!nameInput) return;
@@ -4889,6 +4892,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.saveGearMetaFromSheet = function(gearName) {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_gear_info_save'); // 기능 사용 세기 (H8)
     var pDateEl = document.getElementById('editSheetPurchaseDate');
     var priceEl = document.getElementById('editSheetPrice');
     var statusEl = document.getElementById('editSheetStatus');
@@ -5232,6 +5236,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.saveCurrentGearsAsPreset = function() {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_gear_set_save'); // 기능 사용 세기 (H8)
     var gearMap = window.selectedGearMap || {};
     var totalGrams = 0, totalCount = 0;
     Object.keys(gearMap).forEach(function(catId) {
@@ -5585,6 +5590,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.savePlanMemo = function(dateStr) {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_plan_memo'); // 기능 사용 세기 (H8)
     var input = document.getElementById('planDailyMemoInput');
     var val = input ? input.value : '';
 
@@ -6580,6 +6586,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
 window.commitPlanDestination = async function(dateKey) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_plan_destination'); // 기능 사용 세기 (H8)
     var dest = window.__pendingPlanDestination;
     window.__pendingPlanDestination = null;
 

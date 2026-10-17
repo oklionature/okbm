@@ -3776,6 +3776,7 @@ window.toggleFeedStar = async function(cardId, e) {
   };
 
   window.shareCurrentFeed = function(recordId, spotName, memoText) {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_feed_share'); // 기능 사용 세기 (H8)
     var payload = window.okbmBuildFeedSharePayload(recordId, spotName, memoText);
     window.__okbmLastFeedShare = payload;
     var safeId = escapeHtml(payload.id);
@@ -3871,6 +3872,7 @@ window.toggleFeedStar = async function(cardId, e) {
   };
 
   window.copyFeedShareLink = function(recordId) {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_feed_share'); // 기능 사용 세기 (H8)
     var p = window.okbmResolveFeedSharePayload(recordId);
     window.copyShareLinkFallback(p.body, '✓ 같은 공유 내용이 복사되었습니다!');
   };

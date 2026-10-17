@@ -1279,6 +1279,7 @@ function uploadReadyShotBlobOnce(blob) {
 }
 
 window.handleReadyShotShareAction = async function(act) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_readyshot_save'); // 기능 사용 세기 (H8)
   var blob = window.__readyShotShareBlob;
   if (!blob) {
     if (typeof showToast === 'function') showToast('공유할 이미지가 없습니다.', 'warn');
@@ -3901,6 +3902,7 @@ window.handleSpotSearchInput = function(val) {
 
 
 window.sharePackCardDirect = async function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_readyshot_make'); // 기능 사용 세기 (H8)
   var btn = document.getElementById('btnShareCardShareTop');
   var prevHtml = btn ? btn.innerHTML : '';
   if (btn) {
@@ -4422,6 +4424,7 @@ window.closePackShareModal = function() {
 };
 
 window.openPackShareModal = function(record, items, forceStudio) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_pack_share_open'); // 기능 사용 세기 (H8)
   if (record && typeof record.then === 'function') {
     record = (window.currentShareRecord && typeof window.currentShareRecord.then !== 'function')
       ? window.currentShareRecord

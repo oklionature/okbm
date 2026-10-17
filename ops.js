@@ -32,6 +32,28 @@
   var DEVICE = [['device_ios', '아이폰 사파리'], ['device_ios_home', '아이폰 홈 화면'], ['device_android', '안드로이드 웹'], ['device_app', '낭만루트 앱'], ['device_other', 'PC·기타']];
   var PUBLISH = [['publish_ok', '피드에 공개됨', 'ok'], ['publish_private', '직접 비공개 선택', ''], ['publish_unregistered', '등록 안 된 장소라 비공개', 'warn'], ['publish_nophoto', '현장 사진 없어 비공개', 'warn']];
 
+  // 기능 사용 (SUPABASE_H8_FEATURE_METRICS.sql). [이름, 화면, 보이는 이름]
+  var FEATURES = [
+    ['feat_readyshot_make', '낭만플랜', '레디샷 만들기'],
+    ['feat_readyshot_save', '낭만플랜', '레디샷 저장·공유'],
+    ['feat_pack_share_open', '낭만플랜', '패킹 공유 창 열기'],
+    ['feat_gear_register', '낭만플랜', '내 장비 등록'],
+    ['feat_gear_add', '낭만플랜', '장비 직접 추가'],
+    ['feat_gear_info_save', '낭만플랜', '장비 정보 저장'],
+    ['feat_gear_set_save', '낭만플랜', '장비 세트 저장'],
+    ['feat_checklist_add', '낭만플랜', '체크리스트 추가'],
+    ['feat_plan_destination', '낭만플랜', '일정 목적지 등록'],
+    ['feat_plan_memo', '낭만플랜', '일정 메모 저장'],
+    ['feat_feed_share', '낭만피드', '피드 공유'],
+    ['feat_spot_fav', '정보창', '찜하기'],
+    ['feat_spot_visited', '정보창', '다녀왔음'],
+    ['feat_spot_share', '정보창', '박지 공유'],
+    ['feat_spot_gpx', '정보창', 'GPX 경로 보기'],
+    ['feat_spot_media', '정보창', '유튜브·블로그·인스타 탭'],
+    ['feat_spot_correction', '정보창', '수정건의'],
+    ['feat_spot_unlock', '정보창', '들머리 정보 열기']
+  ];
+
   var out = document.getElementById('out');
   var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, detectSessionInUrl: false } });
 
@@ -244,6 +266,25 @@
       var topDev = DEVICE.slice().sort(function (a, b) { return get(b[0], 'view').visitors - get(a[0], 'view').visitors; })[0];
       foldFrom(mark, '기기 종류', '가장 많은 기기: ' + esc(topDev[1]) + ' ' + pct(get(topDev[0], 'view').visitors, devTotal) + '%');
     }
+
+    // 기능 사용: 쓴 사람 적은 순. 0이면 "안 씀"
+    var featRows = FEATURES.map(function (f) { var c = get(f[0], 'click'); return { f: f, v: c.visitors, h: c.hits }; });
+    Object.keys(sum).forEach(function (k) {
+      var key = k.split('|')[0];
+      if (key.indexOf('feat_') === 0 && !FEATURES.some(function (f) { return f[0] === key; })) {
+        var c = get(key, 'click'); featRows.push({ f: [key, '기타', key], v: c.visitors, h: c.hits });
+      }
+    });
+    featRows.sort(function (a, b) { return a.v - b.v || a.h - b.h; });
+    var unused = featRows.filter(function (r) { return !r.v; }).length;
+    var featAny = featRows.some(function (r) { return r.v; });
+    var featBody = '<section><p class="h">기능을 쓴 사람(하루 기준 합)과 횟수예요. 적게 쓴 것부터 보여요. 기록은 이 기능을 올린 뒤부터 쌓여요.</p>' +
+      (featAny ? '' : '<p class="h warn">아직 기록이 없어요. SUPABASE_H8_FEATURE_METRICS.sql을 실행했는지 확인해 주세요.</p>') +
+      '<table><thead><tr><th>기능</th><th>화면</th><th>쓴 사람</th><th>횟수</th></tr></thead><tbody>' +
+      featRows.map(function (r) {
+        return '<tr><td>' + esc(r.f[2]) + (r.v ? '' : ' <span class="warn" style="font-size:11px;font-weight:800">안 씀</span>') + '</td><td class="dim">' + esc(r.f[1]) + '</td><td>' + num(r.v) + '</td><td>' + num(r.h) + '</td></tr>';
+      }).join('') + '</tbody></table></section>';
+    html += fold('기능 사용', featAny ? ('안 쓴 기능 ' + num(unused) + '개') : '기록 없음', featBody, true);
 
     var bmList = (bmRes && !bmRes.error && bmRes.data) || [];
     var bmTotal = bmList.reduce(function (a, r) { return a + Number(r.bookmarks || 0); }, 0);

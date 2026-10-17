@@ -2988,7 +2988,7 @@ function updateSmartResetButtons() {
                 <span data-okbm-review-chip="${escapeHtml(sId)}" style="display:contents;">${typeof window.okbmSpotReviewChipHtml === 'function' ? window.okbmSpotReviewChipHtml(sId) : ''}</span>
                 ${getMetaBadgesHtml(spot)}
               </div>
-              <button type="button" data-id="${sId}" onclick="window.openSpotCorrectionModal(this.dataset.id, event);" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:2px 6px; border-radius:10px; font-size:0.62rem; font-weight:700; color:#94a3b8; cursor:pointer; flex-shrink:0; outline:none;" title="틀린 정보 수정 건의">
+              <button data-metric-click="feat_spot_correction" type="button" data-id="${sId}" onclick="window.openSpotCorrectionModal(this.dataset.id, event);" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:2px 6px; border-radius:10px; font-size:0.62rem; font-weight:700; color:#94a3b8; cursor:pointer; flex-shrink:0; outline:none;" title="틀린 정보 수정 건의">
                 <svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 <span>수정건의</span>
               </button>
@@ -3010,13 +3010,13 @@ function updateSmartResetButtons() {
             </div>`}
 
             <div class="user-action-grid-3" style="display:flex; gap:5px; width:100%; margin:6px 0 4px 0;" onclick="event.stopPropagation();">
-              <button type="button" class="btn-action-3 btn-action-fav ${isFav ? 'bookmarked' : ''}" data-id="${sId}" onclick="toggleUserBookmark(this.dataset.id, event)">
+              <button data-metric-click="feat_spot_fav" type="button" class="btn-action-3 btn-action-fav ${isFav ? 'bookmarked' : ''}" data-id="${sId}" onclick="toggleUserBookmark(this.dataset.id, event)">
                 ${ICONS.HEART} <span>${isFav ? '찜됨' : '찜하기'}</span>
               </button>
-              <button type="button" class="btn-action-3 btn-action-visited ${isDone ? 'visited' : ''}" data-id="${sId}" onclick="toggleUserVisited(this.dataset.id, event)">
+              <button data-metric-click="feat_spot_visited" type="button" class="btn-action-3 btn-action-visited ${isDone ? 'visited' : ''}" data-id="${sId}" onclick="toggleUserVisited(this.dataset.id, event)">
                 ${ICONS.FLAG} <span>${isDone ? '클리어' : '다녀왔음'}</span>
               </button>
-              <button type="button" class="btn-action-3 btn-action-share" data-id="${sId}" onclick="shareSpotCard(this.dataset.id)">
+              <button data-metric-click="feat_spot_share" type="button" class="btn-action-3 btn-action-share" data-id="${sId}" onclick="shareSpotCard(this.dataset.id)">
                 ${ICONS.SHARE} <span>공유</span>
               </button>
             </div>`}
@@ -3052,13 +3052,13 @@ function updateSmartResetButtons() {
                   </div>` : ''}
 
                 ${!isUnlocked ? `
-                  <div class="entry-lock-overlay-tight" id="entryLockOverlay_${sId}" data-id="${sId}" data-target="${escapeHtml(targetUnlockLink)}" onclick="triggerSpotUnlock(this.dataset.id, this.dataset.target)">
+                  <div data-metric-click="feat_spot_unlock" class="entry-lock-overlay-tight" id="entryLockOverlay_${sId}" data-id="${sId}" data-target="${escapeHtml(targetUnlockLink)}" onclick="triggerSpotUnlock(this.dataset.id, this.dataset.target)">
                     <span class="lock-main-text">${ICONS.LOCK} 클릭 시 들머리 주소, 4대 내비 & 코스 공개 </span>
                     <span class="lock-sub-text">등록자의 링크와 K-LNT 서약 후 상세 목적지, 코스 안내가 열립니다</span>
                   </div>` : ''}
 
                 ${spot.gpxUrl ? `
-                  <button type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
+                  <button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
                     ${ICONS.HIKING} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : '등산로 GPX 코스선 지도에 표시'}
                   </button>
                 ` : ''}
@@ -3101,19 +3101,19 @@ function updateSmartResetButtons() {
               return `
                 <div style="display:flex; flex-direction:column; width:100%; margin-top:6px; box-sizing:border-box;">
                   <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; width:100%;">
-                    <button type="button" id="btnMediaTab_yt_${sId}" data-type="yt" data-id="${sId}" onclick="window.handleSpotMediaTabClick(this);" style="height:38px; background:${ytTabBg}; border:1px solid ${ytTabBorder}; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:#ffffff; transition:all 0.15s ease;">
+                    <button data-metric-click="feat_spot_media" type="button" id="btnMediaTab_yt_${sId}" data-type="yt" data-id="${sId}" onclick="window.handleSpotMediaTabClick(this);" style="height:38px; background:${ytTabBg}; border:1px solid ${ytTabBorder}; border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:#ffffff; transition:all 0.15s ease;">
                       <svg viewBox="0 0 24 24" style="width:14px; height:14px; flex-shrink:0;" fill="#f43f5e"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1 31.4 31.4 0 0 0 .5-5.8 31.4 31.4 0 0 0-.5-5.8z"/><polygon points="9.6 15.6 15.8 12 9.6 8.4 9.6 15.6" fill="#ffffff"/></svg>
                       <span style="font-size:0.75rem; font-weight:800;">YouTube</span>
                       <span id="ytBadgeCount_${sId}" style="font-size:0.65rem; color:#f43f5e; font-weight:900; font-family:'Space Grotesk',sans-serif;">${ytBadge}</span>
                     </button>
 
-                    <button type="button" id="btnMediaTab_blog_${sId}" data-type="blog" data-id="${sId}" onclick="window.handleSpotMediaTabClick(this);" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:#ffffff; transition:all 0.15s ease;">
+                    <button data-metric-click="feat_spot_media" type="button" id="btnMediaTab_blog_${sId}" data-type="blog" data-id="${sId}" onclick="window.handleSpotMediaTabClick(this);" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:#ffffff; transition:all 0.15s ease;">
                       <div style="width:14px; height:14px; border-radius:3px; background:#03c75a; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-size:0.62rem; font-weight:900; color:#fff; flex-shrink:0;">N</div>
                       <span style="font-size:0.75rem; font-weight:800;">블로그</span>
                       <span id="blogBadgeCount_${sId}" style="font-size:0.65rem; color:#34d399; font-weight:900; font-family:'Space Grotesk',sans-serif;">${blogBadge}</span>
                     </button>
 
-                    <button type="button" id="btnMediaTab_insta_${sId}" data-type="insta" data-id="${sId}" onclick="window.handleSpotMediaTabClick(this);" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:#ffffff; transition:all 0.15s ease;">
+                    <button data-metric-click="feat_spot_media" type="button" id="btnMediaTab_insta_${sId}" data-type="insta" data-id="${sId}" onclick="window.handleSpotMediaTabClick(this);" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:#ffffff; transition:all 0.15s ease;">
                       <svg viewBox="0 0 24 24" style="width:14px; height:14px; flex-shrink:0;" fill="none" stroke="#f472b6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="#f472b6"/></svg>
                       <span style="font-size:0.75rem; font-weight:800;">인스타</span>
                       <span id="instaBadgeCount_${sId}" style="font-size:0.65rem; color:#f472b6; font-weight:900; font-family:'Space Grotesk',sans-serif;">${instaBadge}</span>
@@ -5832,8 +5832,8 @@ var liveSearchTimer = null;
               ${mainTerrainHtml}
             </div>
             <div class="spot-card-quick-actions" style="display:flex; align-items:center; gap:3px; flex-shrink:0; margin-left:auto;" onclick="event.stopPropagation();">
-              <button type="button" class="btn-card-quick ${isFav ? 'active-fav' : ''}" data-id="${sId}" onclick="toggleUserBookmark(this.dataset.id, event)">${ICONS.HEART} 찜</button>
-              <button type="button" class="btn-card-quick ${isDone ? 'active-done' : ''}" data-id="${sId}" onclick="toggleUserVisited(this.dataset.id, event)">${ICONS.FLAG} 클리어</button>
+              <button data-metric-click="feat_spot_fav" type="button" class="btn-card-quick ${isFav ? 'active-fav' : ''}" data-id="${sId}" onclick="toggleUserBookmark(this.dataset.id, event)">${ICONS.HEART} 찜</button>
+              <button data-metric-click="feat_spot_visited" type="button" class="btn-card-quick ${isDone ? 'active-done' : ''}" data-id="${sId}" onclick="toggleUserVisited(this.dataset.id, event)">${ICONS.FLAG} 클리어</button>
               <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'};" data-id="${sId}" onclick="editSpotById(event, this.dataset.id)">수정</button>
               <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'}; background:#0f766e;" data-id="${sId}" onclick="startAdminPinMove(this.dataset.id, event)">핀</button>
               <button class="btn-del" style="display:${isAdminMode ? 'inline-block' : 'none'};" data-id="${sId}" onclick="deleteSpotById(event, this.dataset.id)">삭제</button>

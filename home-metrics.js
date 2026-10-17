@@ -19,6 +19,8 @@
     '마이리포트': 'dock_report'
   };
 
+  // 지도(map.html)에서도 기능 사용(feat_*)을 센다. 홈 노출·하단 탭은 홈에서만 센다.
+  var onHome = !/map\.html/i.test(location.pathname || '');
   var queue = [];
   var seenViews = {};
   var flushTimer = null;
@@ -127,7 +129,7 @@
   function onClick(e) {
     var t = e.target;
     if (!t || typeof t.closest !== 'function') return;
-    var dock = t.closest('#romanticMasterBottomDock .dock-item');
+    var dock = onHome ? t.closest('#romanticMasterBottomDock .dock-item') : null;
     if (dock) {
       log(DOCK_SECTIONS[dock.getAttribute('title') || ''], 'click');
       return;
@@ -140,7 +142,7 @@
 
   function start() {
     // 낭만플랜·보관함으로 바로 열린 경우(open=/tab=)는 홈을 본 게 아니므로 칸 노출을 세지 않는다.
-    var direct = /[?&](open|tab)=/.test(location.search || '');
+    var direct = !onHome || /[?&](open|tab)=/.test(location.search || '');
     if (!direct) {
       log('home', 'view');
       observeSections();
