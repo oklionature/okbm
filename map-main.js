@@ -4086,9 +4086,18 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           var areaName = window.extractAreaForSearch(targetSpot);
           var autoFetched = await window.fetchRealYouTubeVideosForSpot(spotName, areaName);
           var autoVertical = await Promise.all(autoFetched.map(function(it) { return window.okbmIsVerticalYouTube(it && it.id); }));
+          // 자동 검색에 딸려 오는 패러글라이딩·비행 영상은 뺀다. 활공장 박지는 제목에 야영 말이 없으면 비행 영상으로 본다.
+          var flightRe = /비행|패러|글라이딩|글라이더|이륙|착륙|텐덤|스카이다이빙|활공(?!장)|paraglid|hang ?glid|skydiv/i;
+          var campRe = /백패킹|캠핑|캠프|야영|차박|박지|비박|솔캠|텐트|backpack|camp/i;
+          var gliderSpot = /활공장/.test(String((targetSpot && (targetSpot.spot_sub || targetSpot.fullName)) || '') + spotName);
+          var isFlightVideo = function(it) {
+            var t = String((it && it.title) || '');
+            if (!t || campRe.test(t)) return false;
+            return flightRe.test(t) || gliderSpot;
+          };
           for (var i = 0; i < autoFetched.length && finalCards.length < 5; i++) {
             var item = autoFetched[i];
-            if (!item || !item.id || seenVideoIds.has(item.id) || window.okbmIsYouTubeShorts(item.url) || autoVertical[i]) continue;
+            if (!item || !item.id || seenVideoIds.has(item.id) || window.okbmIsYouTubeShorts(item.url) || autoVertical[i] || isFlightVideo(item)) continue;
             seenVideoIds.add(item.id);
             finalCards.push({
               id: item.id,
