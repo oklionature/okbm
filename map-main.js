@@ -3430,8 +3430,18 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         return variants;
       };
 
-      window.rankMediaBySpot = function(list, spotName, areaName, limit) {
+      // 세부 장소(spot_sub)에서 "정상·데크·활공장" 같은 흔한 말을 빼고 고유 이름만 남긴다. 예: "국사봉 활공장" → "국사봉"
+      window.extractSubSearchName = function(sub) {
+        var words = String(sub || '').replace(/\(.*?\)|\[.*?\]/g, ' ').split(/[\s,·&\/]+/);
+        var generic = /^(정상|정상부|데크|전망데크|전망대|전망|나무데크|헬기장|활공장|노지|능선|암릉|박지|아래|인근|및|쉼터|야영장|해변|해수욕장|공터|잔디|바위|절벽|중턱|입구|주차장|일대|부근|\d+봉|\d+층|1박)$/;
+        var keep = words.map(function(w) { return w.trim(); }).filter(function(w) { return w && !generic.test(w) && !generic.test(w.replace(/^(정상|전망|나무|바다|산불감시)+/, '')); });
+        var name = keep.join(' ').trim();
+        return name.replace(/\s/g, '').length >= 2 ? name : '';
+      };
+
+      window.rankMediaBySpot = function(list, spotName, areaName, limit, subKey) {
         var max = limit || 5;
+        var subTight = String(subKey || '').replace(/\s/g, '');
         var name = window.cleanSpotSearchName(spotName);
         var mountain = window.extractMountainSearchName(spotName);
         var area = String(areaName || '').trim();
@@ -3439,6 +3449,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
           var t = String((item && item.title) || '');
           var score = 0;
           if (mountain && t.indexOf(mountain) !== -1) score += 10;
+          if (subTight && t.replace(/\s/g, '').indexOf(subTight) !== -1) score += 10;
           if (name && name !== mountain && t.indexOf(name) !== -1) score += 6;
           if (area && t.indexOf(area) !== -1) score += 4;
           if (/장소|백패킹|야영|캠핑|비박|등산/.test(t)) score += 3;
@@ -3451,18 +3462,25 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         return (matched.length ? matched : fallback).slice(0, max);
       };
 
-      window.fetchRealYouTubeVideosForSpot = async function(spotName, areaName) {
+      window.fetchRealYouTubeVideosForSpot = async function(spotName, areaName, subName) {
         if (!spotName) return [];
         var variants = window.buildSpotMediaQueryVariants(spotName, areaName);
         if (!variants.length) variants = [window.buildSpotMediaQuery(spotName, areaName)];
-        var cacheKey = 'yt:v5:' + variants[0];
+        // 세부 장소 이름이 있으면 그 이름으로 먼저 찾는다(예: 매악산 → "상주 국사봉 백패킹")
+        var subKey = window.extractSubSearchName(subName);
+        if (subKey) {
+          var subArea = window.normalizeSearchAreaName(areaName) || '';
+          var subFirst = [(subArea ? subArea + ' ' : '') + subKey + ' 백패킹', String(subName || '').replace(/\(.*?\)/g, ' ').replace(/\s+/g, ' ').trim() + ' 백패킹'];
+          variants = subFirst.filter(function(q, i, arr) { return q && arr.indexOf(q) === i; }).concat(variants.filter(function(q) { return subFirst.indexOf(q) === -1; }));
+        }
+        var cacheKey = 'yt:v6:' + variants[0];
 
         if (window.__spotAutoVideosCache.has(cacheKey)) {
           return window.__spotAutoVideosCache.get(cacheKey);
         }
 
         try {
-          var sessionCached = sessionStorage.getItem('okbm_yt_cache_v5_' + cacheKey);
+          var sessionCached = sessionStorage.getItem('okbm_yt_cache_v6_' + cacheKey);
           if (sessionCached) {
             var parsed = JSON.parse(sessionCached);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -3491,7 +3509,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
           htmls.forEach(function(html) {
             if (html) absorb(window.extractYouTubeVideosFromText(html, 8));
           });
-          if (merged.length >= 5) return;
+          if (merged.length >= 10) return;
           try {
             var piped = await window.fetchJsonFast('https://api.piped.private.coffee/search?q=' + encodeURIComponent(query) + '&filter=videos', 8000);
             absorb(window.parsePipedOrInvidiousVideos(piped, 8));
@@ -3499,20 +3517,20 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         }
 
         var primary = variants.slice(0, 2);
-        for (var i = 0; i < primary.length && merged.length < 5; i++) {
+        for (var i = 0; i < primary.length && merged.length < 10; i++) {
           await searchOne(primary[i]);
         }
-        if (merged.length < 3) {
-          for (var j = 2; j < Math.min(variants.length, 5) && merged.length < 5; j++) {
+        if (merged.length < 6) {
+          for (var j = 2; j < Math.min(variants.length, 5) && merged.length < 10; j++) {
             await searchOne(variants[j]);
           }
         }
 
-        var extracted = window.rankMediaBySpot(merged, spotName, areaName, 5);
+        var extracted = window.rankMediaBySpot(merged, spotName, areaName, 10, subKey);
 
         if (extracted.length > 0) {
           limitedMapSet(window.__spotAutoVideosCache, cacheKey, extracted, 80);
-          try { sessionStorage.setItem('okbm_yt_cache_v5_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
+          try { sessionStorage.setItem('okbm_yt_cache_v6_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
         }
         return extracted;
       };
@@ -4084,7 +4102,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         if (finalCards.length < 5) {
           var targetSpot = (spots || []).find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
           var areaName = window.extractAreaForSearch(targetSpot);
-          var autoFetched = await window.fetchRealYouTubeVideosForSpot(spotName, areaName);
+          var autoFetched = await window.fetchRealYouTubeVideosForSpot(spotName, areaName, targetSpot && targetSpot.spot_sub);
           var autoVertical = await Promise.all(autoFetched.map(function(it) { return window.okbmIsVerticalYouTube(it && it.id); }));
           // 자동 검색에 딸려 오는 패러글라이딩·비행 영상은 뺀다. 활공장 박지는 제목에 야영 말이 없으면 비행 영상으로 본다.
           var flightRe = /비행|패러|글라이딩|글라이더|이륙|착륙|텐덤|스카이다이빙|활공(?!장)|paraglid|hang ?glid|skydiv/i;
