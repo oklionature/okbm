@@ -226,6 +226,7 @@
   var SEEN_KEY = 'okbm_admin_activity_seen';
   var act = document.getElementById('activity');
   var actTab = 'links';
+  var actShowAll = false; // 확인한 지난 것도 보기
   var actData = null;
   var KIND_LABEL = { yt: '유튜브', blog: '블로그', insta: '인스타' };
 
@@ -279,23 +280,32 @@
 
   function renderActivity() {
     var d = actData;
-    var html = '<section><h2>관리자 새 소식</h2><p class="h">새로 들어온 링크·피드와 검수 대기예요. 노란 줄은 마지막으로 확인한 뒤 들어온 거예요.</p>';
+    var html = '<section><h2>관리자 새 소식</h2><p class="h">마지막으로 확인한 뒤 새로 들어온 링크·피드와 검수 대기예요. 「모두 확인했어요」를 누르면 목록이 비워져요.</p>';
     if (!d) { act.innerHTML = html + '<p class="dim">불러오는 중…</p></section>'; return; }
     if (d.error) { act.innerHTML = html + '<p class="dim">' + esc(d.error) + '</p></section>'; return; }
+    // 확인한 뒤 들어온 것만 목록에 둔다(지난 것은 「지난 것도 보기」로)
+    var newLinks = (d.links || []).filter(function (x) { return isNew(x.created_at); });
+    var newFeeds = (d.feeds || []).filter(function (x) { return isNew(x.created_at); });
     html += '<div class="kpis" style="grid-template-columns:repeat(2, 1fr)">' +
-      '<div class="kpi"><b>' + num((d.links || []).length) + (d.new_links ? '<span class="new">새 ' + num(d.new_links) + '</span>' : '') + '</b><span>크리에이터 링크 (최근)</span></div>' +
-      '<div class="kpi"><b>' + num((d.feeds || []).length) + (d.new_feeds ? '<span class="new">새 ' + num(d.new_feeds) + '</span>' : '') + '</b><span>피드 (최근)</span></div>' +
+      '<div class="kpi"><b class="' + (newLinks.length ? 'warn' : '') + '">' + num(newLinks.length) + '</b><span>새 크리에이터 링크</span></div>' +
+      '<div class="kpi"><b class="' + (newFeeds.length ? 'warn' : '') + '">' + num(newFeeds.length) + '</b><span>새 피드</span></div>' +
       '<a class="kpi" href="map.html?open=admin_inbox"><b class="' + (d.inbox_pending ? 'warn' : '') + '">' + num(d.inbox_pending) + '</b><span>장소 검수 대기 ›<br>검수함에서 처리하면 줄어요</span></a>' +
       '<div class="kpi"><b class="' + (d.reports_pending ? 'warn' : '') + '">' + num(d.reports_pending) + '</b><span>신고 대기<br>신고 검수함에서 처리하면 줄어요</span></div>' +
       '</div>';
-    html += '<div class="tabs"><button type="button" data-act-tab="links" class="' + (actTab === 'links' ? 'on' : '') + '">크리에이터 링크</button>' +
-      '<button type="button" data-act-tab="feeds" class="' + (actTab === 'feeds' ? 'on' : '') + '">새 피드</button></div>';
-    var list = actTab === 'links' ? (d.links || []) : (d.feeds || []);
+    html += '<div class="tabs"><button type="button" data-act-tab="links" class="' + (actTab === 'links' ? 'on' : '') + '">크리에이터 링크 ' + num(newLinks.length) + '</button>' +
+      '<button type="button" data-act-tab="feeds" class="' + (actTab === 'feeds' ? 'on' : '') + '">새 피드 ' + num(newFeeds.length) + '</button></div>';
+    var all = actTab === 'links' ? (d.links || []) : (d.feeds || []);
+    var list = actShowAll ? all : (actTab === 'links' ? newLinks : newFeeds);
     html += list.length
       ? list.map(actTab === 'links' ? linkRow : feedRow).join('')
-      : '<p class="dim">' + (actTab === 'links' ? '아직 등록된 크리에이터 링크가 없어요.' : '아직 피드가 없어요.') + '</p>';
-    html += '<button type="button" class="seen-btn" data-act-seen="1">모두 확인했어요 (새 표시 지우기)</button>' +
-      '<p class="h" style="margin-top:6px">노란 줄과 「새」 숫자만 지워져요. 검수·신고 대기는 처리해야 줄어요.</p></section>';
+      : '<p class="dim">' + (actTab === 'links' ? '새로 들어온 크리에이터 링크가 없어요.' : '새로 들어온 피드가 없어요.') + '</p>';
+    if (all.length > list.length || actShowAll) {
+      html += '<button type="button" class="seen-btn" data-act-all="1">' + (actShowAll ? '새로 들어온 것만 보기' : '확인한 지난 것도 보기 (' + num(all.length - list.length) + ')') + '</button> ';
+    }
+    if (newLinks.length || newFeeds.length) {
+      html += '<button type="button" class="seen-btn" data-act-seen="1">모두 확인했어요 (목록 비우기)</button>';
+    }
+    html += '<p class="h" style="margin-top:6px">확인하면 크리에이터 링크·피드 목록이 비워져요. 검수·신고 대기는 처리해야 줄어요.</p></section>';
     act.innerHTML = html;
   }
 
@@ -320,6 +330,7 @@
   act.addEventListener('click', async function (e) {
     var tab = e.target.closest('[data-act-tab]');
     if (tab) { actTab = tab.getAttribute('data-act-tab'); renderActivity(); return; }
+    if (e.target.closest('[data-act-all]')) { actShowAll = !actShowAll; renderActivity(); return; }
     if (e.target.closest('[data-act-seen]')) {
       // 지금 보이는 것 중 가장 늦은 시각(서버 시각·기기 시각 포함)까지 확인한 것으로 둔다.
       // 서버와 기기 시계가 어긋나도 방금 본 줄이 다시 새로 표시되지 않게 한다.
@@ -328,6 +339,7 @@
         latest = Math.max(latest, ms(x && x.created_at));
       });
       try { localStorage.setItem(SEEN_KEY, new Date(latest + 1).toISOString()); } catch (eSeen) {}
+      actShowAll = false;
       loadActivity();
       return;
     }
