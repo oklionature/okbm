@@ -923,13 +923,84 @@
     if (d.posted_on && String(d.posted_on) === t) return '오늘';
     return '진행중';
   }
+  function instaPost(url) {
+    const safe = okbmSafeExternalUrl(url);
+    if (!safe || safe === '#') return null;
+    let parsed;
+    try { parsed = new URL(safe); } catch (e) { return null; }
+    if (parsed.hostname.replace(/^www\./i, '') !== 'instagram.com') return null;
+    const m = parsed.pathname.match(/\/(?:[A-Za-z0-9._]{1,30}\/)?(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i);
+    if (!m) return null;
+    const raw = m[1].toLowerCase();
+    return { kind: raw === 'p' ? 'p' : (raw === 'tv' ? 'tv' : 'reel'), code: m[2] };
+  }
+  // 게시물 보기: 인스타로 나가지 않고, 화면 위에 창을 띄워 게시물 높이에 맞춰 늘린다.
+  function closeDealInsta() {
+    const el = document.getElementById('okbmDealInsta');
+    if (!el) return;
+    el.remove();
+    unregister('okbmDealInsta');
+  }
+  function openDealInsta(kind, code) {
+    if (!/^(p|reel|tv)$/.test(kind) || !/^[A-Za-z0-9_-]+$/.test(code)) return;
+    closeDealInsta();
+    const overlay = document.createElement('div');
+    overlay.id = 'okbmDealInsta';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', '인스타그램 게시물');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom,8px));z-index:2147483646;background:rgba(0,0,0,.72);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(12px + env(safe-area-inset-top,0px)) 12px 12px;box-sizing:border-box';
+    overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeDealInsta(); });
+    const card = document.createElement('div');
+    card.style.cssText = 'width:100%;max-width:400px;max-height:100%;display:flex;flex-direction:column;background:#0c1017;border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.5)';
+    const bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 10px;flex-shrink:0';
+    const title = document.createElement('span');
+    title.textContent = '인스타그램';
+    title.style.cssText = 'font-size:0.76rem;font-weight:900;color:#fbcfe8';
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', '닫기');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'width:30px;height:30px;border-radius:50%;border:none;background:rgba(255,255,255,.10);color:#fff;font-size:0.9rem;font-weight:900;cursor:pointer';
+    closeBtn.addEventListener('click', closeDealInsta);
+    bar.appendChild(title);
+    bar.appendChild(closeBtn);
+    const scroller = document.createElement('div');
+    scroller.style.cssText = 'flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 8px 8px';
+    const frame = document.createElement('iframe');
+    frame.title = '인스타그램 게시물';
+    frame.setAttribute('scrolling', 'no');
+    frame.referrerPolicy = 'strict-origin-when-cross-origin';
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+    frame.style.cssText = 'width:100%;height:' + (kind === 'p' ? '560' : '700') + 'px;border:0;border-radius:10px;background:#fff;display:block';
+    frame.src = 'https://www.instagram.com/' + kind + '/' + code + '/embed/';
+    scroller.appendChild(frame);
+    card.appendChild(bar);
+    card.appendChild(scroller);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    register('okbmDealInsta', closeDealInsta);
+    closeBtn.focus();
+  }
+  function onInstaMeasure(e) {
+    if (e.origin !== 'https://www.instagram.com') return;
+    let data = e.data;
+    if (typeof data === 'string') { try { data = JSON.parse(data); } catch (err) { return; } }
+    if (!data || data.type !== 'MEASURE' || !data.details) return;
+    const h = Number(data.details.height);
+    if (!isFinite(h) || h < 200 || h > 4000) return;
+    const viewer = document.getElementById('okbmDealInsta');
+    const frame = viewer && viewer.querySelector('iframe');
+    if (frame && frame.contentWindow === e.source) frame.style.height = Math.ceil(h) + 'px';
+  }
   function dealItem(d) {
-    const url = okbmSafeExternalUrl(d.source_url);
+    const post = instaPost(d.source_url);
     const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="false"><div class="lm-date"><b>${esc(dealMark(d))}</b></div>
       <div class="lm-rb"><div class="lm-rt">${esc(d.title)}${D.admin && !d.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc(d.summary)}</div></div><span class="lm-dd">${esc(dealMeta(d))}</span></button>`;
     const body = `<div class="lmx-in">
       ${d.summary ? `<p class="lm-desc" style="margin:0">${esc(d.summary)}</p>` : ''}
-      ${url !== '#' ? `<div class="lmx-btns"><a class="lm-btn sm main" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">게시물 보기</a></div>` : ''}
+      ${post ? `<div class="lmx-btns"><button type="button" class="lm-btn sm main" data-a="deal-ig" data-kind="${post.kind}" data-code="${esc(post.code)}">게시물 보기</button></div>` : ''}
     </div>`;
     return fold(d.id, head, body);
   }
@@ -1604,27 +1675,13 @@
   }
   function paintDealSurfaces() {
     const strip = document.getElementById('homeDealStrip');
-    const sec = document.getElementById('okbmHomeDeals');
-    const body = document.getElementById('okbmHomeDealsBody');
-    const all = document.getElementById('okbmHomeDealsAll');
+    if (!strip) return;
     const ready = D.status === 'ready' && !D.fail[TAB_DEAL];
     const now = ready ? ongoingDeals() : [];
-    if (strip) {
-      if (!now.length) { strip.hidden = true; strip.innerHTML = ''; }
-      else {
-        strip.hidden = false;
-        strip.innerHTML = '<div class="hd-h"><b>장비 할인</b><button type="button" data-a="lounge" data-v="' + TAB_DEAL + '">' + now.length + '건 ›</button></div>'
-          + now.slice(0, 2).map(dealStripRow).join('');
-      }
-    }
-    if (sec && body) {
-      if (!now.length) sec.hidden = true;
-      else {
-        sec.hidden = false;
-        if (all) all.textContent = now.length + '건';
-        keepOpen(body, function () { body.innerHTML = now.slice(0, HOME_N).map(dealItem).join(''); });
-      }
-    }
+    if (!now.length) { strip.hidden = true; strip.innerHTML = ''; return; }
+    strip.hidden = false;
+    strip.innerHTML = '<div class="hd-h"><b>장비 할인</b><button type="button" data-a="lounge" data-v="' + TAB_DEAL + '">' + now.length + '건 ›</button></div>'
+      + now.slice(0, 2).map(dealStripRow).join('');
   }
   function renderSplit(only) {
     const ready = D.status === 'ready';
@@ -2673,6 +2730,7 @@
     if (t.tagName === 'A') return;
     switch (a) {
       case 'x': toggleItem(item); break;
+      case 'deal-ig': openDealInsta(t.dataset.kind, t.dataset.code); break;
       case 'tip-play': {
         const box = t.closest('[data-yt]');
         const yid = box ? youtubeId('https://youtu.be/' + box.dataset.yt) : '';
@@ -2904,6 +2962,7 @@
   }
   function onKey(e) {
     if (e.key !== 'Escape') return;
+    if (document.getElementById('okbmDealInsta')) { e.preventDefault(); closeDealInsta(); return; }
     if (sheet) { e.preventDefault(); closeSheet(); } else if (win) { e.preventDefault(); closeLoungeWindow(); }
   }
   function onResize() {
@@ -3041,6 +3100,7 @@
   })();
   window.addEventListener('okbm_admin_flag', onAdminFlag);
   document.addEventListener('keydown', onKey);
+  window.addEventListener('message', onInstaMeasure);
   window.addEventListener('resize', onResize);
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
