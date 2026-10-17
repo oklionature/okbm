@@ -2,7 +2,7 @@
 // 백패커 라운지 (index.html 홈 섹션 + 라운지 창) — 2026-09-29 P3
 // 디자인: audit/mockups/lounge-minimal.js v4 (미니멀). DB: SUPABASE_F1_LOUNGE.sql
 //
-// · 홈(#okbmLoungeHomeBody): 메뉴 "이번 달 행사 · 장비 할인 · 초보 가이드 · 자유게시판 · 박지 후기" + 탭마다 3줄(높이 고정).
+// · 홈(#okbmLoungeHomeBody): 메뉴 "이번 달 행사 · 장비 세일 소식 · 초보 가이드 · 자유게시판 · 박지 후기" + 탭마다 3줄(높이 고정).
 //   행사·장비 세트는 그 자리에서 펼치고, 글 줄은 라운지 창에서 그 글을 펼친다.
 // · 라운지 창(#loungeWindow): 같은 목록 조각으로 전부. 탭은 가로 스크롤 스냅. 닫기: 뒤로·Esc·기존 가장자리 밀기(index 6930).
 // · 시트(#loungeSheet): 관리자 행사·가이드 등록/수정.
@@ -51,7 +51,7 @@
     pack: '<path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/>'
   };
 
-  const TABS = ['이번 달 행사', '초보 가이드', '자유게시판', '박지 후기', '장비 할인'];
+  const TABS = ['이번 달 행사', '초보 가이드', '자유게시판', '박지 후기', '장비 세일 소식'];
   // 창에 보이는 순서. 번호는 그대로라 ?lounge=2(자유게시판) 같은 기존 링크가 안 밀린다.
   const TAB_ORDER = [0, 4, 1, 2, 3];
   const TAB_DEAL = 4;
@@ -865,7 +865,7 @@
     return h;
   }
 
-  // 장비 할인. 번호(sort) 순. 끝나는 날이 지나면 빠지고, 끝 날짜가 없는 글은 올린 날부터 14일.
+  // 장비 세일 소식. 번호(sort) 순. 끝나는 날이 지나면 빠지고, 끝 날짜가 없는 글은 올린 날부터 14일.
   function addDaysKey(key, days) {
     const d = parseD(key);
     if (!d) return '';
@@ -1680,7 +1680,7 @@
     const now = ready ? ongoingDeals() : [];
     if (!now.length) { strip.hidden = true; strip.innerHTML = ''; return; }
     strip.hidden = false;
-    strip.innerHTML = '<div class="hd-h"><b>장비 할인</b><button type="button" data-a="lounge" data-v="' + TAB_DEAL + '">' + now.length + '건 ›</button></div>'
+    strip.innerHTML = '<div class="hd-h"><b>장비 세일 소식</b><button type="button" data-a="lounge" data-v="' + TAB_DEAL + '">' + now.length + '건 ›</button></div>'
       + now.slice(0, 2).map(dealStripRow).join('');
   }
   function renderSplit(only) {
@@ -1845,7 +1845,8 @@
       toast('글을 불러오지 못했어요', true);
     }
   }
-  function winTo(i) { if (wtrack) wtrack.scrollTo({ left: i * wtrack.clientWidth, behavior: reduce ? 'auto' : 'smooth' }); }
+  // i는 탭 번호(TABS). 칸은 TAB_ORDER 순이라 화면 위치는 trackOf로 바꾼다.
+  function winTo(i) { if (wtrack) wtrack.scrollTo({ left: trackOf(i) * wtrack.clientWidth, behavior: reduce ? 'auto' : 'smooth' }); }
   function openLoungeWindow(tab, itemId, from) {
     tab = Number(tab);
     if (!(tab >= 0 && tab < TABS.length)) tab = S.tab;
