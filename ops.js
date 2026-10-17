@@ -58,12 +58,13 @@
       showMessage('로그인이 필요해요. 같은 브라우저에서 낭만루트에 관리자 계정으로 로그인한 뒤 다시 열어 주세요.', true);
       return;
     }
-    var from = seoulDate(days - 1);
+    var from = seoulDate(days * 2 - 1); // 지난 기간과 비교하려고 두 배로 받는다
     var results = await Promise.all([
       client.rpc('okbm_home_metrics_summary', { p_days: days }),
       client.from('stats').select('date,guest_uv,member_uv').gte('date', from).order('date', { ascending: true }),
       client.rpc('okbm_spot_bookmark_counts', { p_spot_ids: null }),
-      client.from('spots').select('id,fullName,spot_main,region')
+      client.from('spots').select('id,fullName,spot_main,region'),
+      client.rpc('okbm_admin_member_stats', { p_days: days })
     ]);
     var m = results[0];
     var st = results[1];
@@ -74,12 +75,12 @@
       else showMessage('불러오지 못했어요: ' + t, true);
       return;
     }
-    render(days, m.data || [], (st && !st.error && st.data) || [], results[2], (results[3] && !results[3].error && results[3].data) || []);
+    render(days, m.data || [], (st && !st.error && st.data) || [], results[2], (results[3] && !results[3].error && results[3].data) || [], results[4]);
   }
 
   // 박지별 찜 수 (SUPABASE_G2_SPOT_BOOKMARK_COUNTS.sql). 찜한 사람이 있는 박지만, 많은 순.
   function bookmarkSection(res, spots) {
-    var html = '<section><h2>박지별 찜</h2><p class="h">지금 찜해 둔 회원 수예요. 찜을 빼면 숫자도 줄어요.</p>';
+    var html = '<section><p class="h">지금 찜해 둔 회원 수예요. 찜을 빼면 숫자도 줄어요.</p>';
     if (!res || res.error) {
       var t = String((res && res.error && res.error.message) || '');
       var missing = res && res.error && (res.error.code === 'PGRST202' || t.indexOf('Could not find the function') !== -1);
@@ -102,7 +103,20 @@
     return html;
   }
 
-  function render(days, rows, stats, bmRes, spots) {
+  // 접어 두는 칸. sum은 접혀 있어도 보이는 한 줄 요약
+  function fold(title, sum, body, open) {
+    return '<details class="fold"' + (open ? ' open' : '') + '><summary>' + esc(title) + (sum ? ' <span class="sum">' + sum + '</span>' : '') + '</summary><div class="in">' + body + '</div></details>';
+  }
+  // 지난 기간 대비
+  function cmp(cur, prev) {
+    if (!prev && !cur) return '<span class="cmp same">지난 기간과 같음</span>';
+    if (!prev) return '<span class="cmp up">지난 기간 0 → 새로 생김</span>';
+    var d = Math.round(((cur - prev) / prev) * 100);
+    if (d === 0) return '<span class="cmp same">지난 기간과 같음</span>';
+    return '<span class="cmp ' + (d > 0 ? 'up' : 'down') + '">지난 기간보다 ' + (d > 0 ? '▲' : '▼') + Math.abs(d) + '%</span>';
+  }
+
+  function render(days, rows, stats, bmRes, spots, memRes) {
     // 기간 합계: 칸·종류별로 방문자 수(날짜별 고유 합)와 횟수
     var sum = {};
     var homeByDay = {};
@@ -115,36 +129,59 @@
     });
     function get(section, kind) { return sum[section + '|' + kind] || { visitors: 0, hits: 0 }; }
 
-    var visitTotal = 0;
-    var visitByDay = {};
+    var visitTotal = 0, visitPrev = 0;
+    var visitByDay = {}, memberByDay = {};
+    var curFrom = seoulDate(days - 1);
     stats.forEach(function (s) {
       var v = Number(s.guest_uv || 0) + Number(s.member_uv || 0);
       visitByDay[s.date] = v;
-      visitTotal += v;
+      memberByDay[s.date] = Number(s.member_uv || 0);
+      if (s.date >= curFrom) visitTotal += v; else visitPrev += v;
     });
+    var today = seoulDate(0);
+    // 회원가입 (SUPABASE_H7_ADMIN_MEMBER_STATS.sql)
+    var mem = memRes && !memRes.error && memRes.data ? memRes.data : null;
+    var joinByDay = (mem && mem.by_day) || {};
+    var joinTotal = 0, joinPrev = 0;
+    Object.keys(joinByDay).forEach(function (d) { if (d >= curFrom) joinTotal += Number(joinByDay[d] || 0); else joinPrev += Number(joinByDay[d] || 0); });
     var homeViews = get('home', 'view').visitors;
     var writes = get('quick_write', 'click').visitors;
     var feedWrites = get('feed_write', 'click').visitors;
     var spotChanges = get('feed_spot_change', 'event').hits;
 
     var html = '';
-    html += '<section><h2>한눈에 (' + days + '일)</h2><p class="h">방문자는 하루 기준 합계예요. 같은 사람이 이틀 오면 2로 셉니다.</p><div class="kpis">' +
-      '<div class="kpi"><b>' + num(visitTotal) + '</b><span>앱 방문자</span></div>' +
-      '<div class="kpi"><b>' + num(homeViews) + '</b><span>홈을 본 사람</span></div>' +
+    var memMissing = !mem;
+    html += '<section><h2>한눈에 (' + days + '일)</h2><p class="h">방문자는 하루 기준 합계예요. 같은 사람이 이틀 오면 2로 셉니다. 비교는 바로 앞 ' + days + '일과 해요.</p><div class="kpis">' +
+      '<div class="kpi"><b>' + num(visitByDay[today] || 0) + '</b><span>오늘 방문자</span><span class="cmp same">회원 ' + num(memberByDay[today] || 0) + ' · 비회원 ' + num((visitByDay[today] || 0) - (memberByDay[today] || 0)) + '</span></div>' +
+      '<div class="kpi"><b>' + (memMissing ? '-' : num(joinByDay[today] || 0)) + '</b><span>오늘 회원가입</span></div>' +
+      '<div class="kpi"><b>' + (memMissing ? '-' : num(mem.total)) + '</b><span>전체 회원</span></div>' +
+      '<div class="kpi"><b>' + num(visitTotal) + '</b><span>방문자 (' + days + '일)</span>' + cmp(visitTotal, visitPrev) + '</div>' +
+      '<div class="kpi"><b>' + (memMissing ? '-' : num(joinTotal)) + '</b><span>회원가입 (' + days + '일)</span>' + (memMissing ? '' : cmp(joinTotal, joinPrev)) + '</div>' +
       '<div class="kpi"><b>' + num(get('publish_ok', 'event').hits) + '</b><span>피드에 공개된 새 글</span></div>' +
-      '</div></section>';
+      '</div>' + (memMissing ? '<p class="h" style="margin-top:10px">회원가입 숫자는 SUPABASE_H7_ADMIN_MEMBER_STATS.sql을 실행하면 보여요.</p>' : '') + '</section>';
 
     // 날짜별 방문자 막대
     var dayKeys = [];
     for (var i = days - 1; i >= 0; i--) dayKeys.push(seoulDate(i));
     var maxV = 1;
     dayKeys.forEach(function (d) { maxV = Math.max(maxV, visitByDay[d] || 0); });
-    html += '<section><h2>날짜별 방문자</h2><div class="days">' + dayKeys.map(function (d) {
+    html += '<section><h2>날짜별 방문자 · 회원가입</h2><div class="days" style="height:140px">' + dayKeys.map(function (d) {
       var v = visitByDay[d] || 0;
-      return '<div><em>' + (v || '') + '</em><i style="height:' + Math.max(2, Math.round((v / maxV) * 90)) + 'px"></i><small>' + d.slice(8) + '</small></div>';
-    }).join('') + '</div></section>';
+      var mv = Math.min(v, memberByDay[d] || 0);
+      var h = Math.max(2, Math.round((v / maxV) * 90));
+      var mh = v ? Math.round(h * mv / v) : 0;
+      var j = Number(joinByDay[d] || 0);
+      return '<div title="' + d + ' 방문 ' + v + ' (회원 ' + mv + ') · 가입 ' + j + '"><em>' + (v || '') + '</em><i style="height:' + (h - mh) + 'px"></i>' +
+        (mh ? '<i class="m" style="height:' + mh + 'px"></i>' : '') + '<small>' + d.slice(8) + '</small><span class="join">' + (j ? '+' + j : '') + '</span></div>';
+    }).join('') + '</div><div class="legend"><span><b style="background:var(--accent)"></b>비회원</span><span><b style="background:var(--ok)"></b>회원</span><span style="color:var(--ok)">+N 그날 회원가입</span></div></section>';
+
+    function foldFrom(start, title, sum) {
+      var body = html.slice(start).replace(/<h2>[\s\S]*?<\/h2>/, '');
+      html = html.slice(0, start) + fold(title, sum, body, false);
+    }
 
     // 홈 칸별
+    var mark = html.length;
     var sectionsSeen = HOME_ORDER.filter(function (s) { return get(s, 'view').visitors || get(s, 'click').visitors; });
     html += '<section><h2>홈 칸별로 본 사람·누른 사람</h2><p class="h">비율은 홈을 본 사람(' + num(homeViews) + ') 대비예요. "본 사람"은 그 칸이 화면에 35% 이상 보인 경우예요.</p>';
     if (!sectionsSeen.length) {
@@ -162,15 +199,20 @@
         }).join('') + '</tbody></table>';
     }
     html += '</section>';
+    foldFrom(mark, '홈 칸별로 본 사람·누른 사람', '홈 ' + num(homeViews) + '명');
 
     // 하단 탭
+    mark = html.length;
+    var dockTotal = DOCK.reduce(function (a, d) { return a + get(d[0], 'click').visitors; }, 0);
     html += '<section><h2>하단 탭 누름 (홈에서)</h2><table><thead><tr><th>탭</th><th>누른 사람</th><th>누른 횟수</th></tr></thead><tbody>' +
       DOCK.map(function (d) {
         var c = get(d[0], 'click');
         return '<tr><td>' + esc(d[1]) + '</td><td>' + num(c.visitors) + '</td><td>' + num(c.hits) + '</td></tr>';
       }).join('') + '</tbody></table></section>';
+    foldFrom(mark, '하단 탭 누름', '누른 사람 ' + num(dockTotal));
 
     // 후기 저장 결과
+    mark = html.length;
     var pubTotal = PUBLISH.reduce(function (a, p) { return a + get(p[0], 'event').hits; }, 0);
     html += '<section><h2>새 후기 저장 결과</h2><p class="h">새로 저장된 기록이 피드에 공개됐는지, 아니라면 왜인지예요. 규칙은 그대로이고 숫자만 셉니다.</p>' +
       '<table><thead><tr><th>결과</th><th>건수</th><th>비율</th></tr></thead><tbody>' +
@@ -183,10 +225,12 @@
       (feedWrites ? '<p class="h">낭만피드 "후기 올리기"를 누른 사람: ' + num(feedWrites) + '</p>' : '') +
       (spotChanges ? '<p class="h">낭만피드에서 내 글 장소를 바꾼 횟수: ' + num(spotChanges) + '</p>' : '') +
       '</section>';
+    foldFrom(mark, '새 후기 저장 결과', '저장 ' + num(pubTotal) + '건 · 공개 ' + pct(get('publish_ok', 'event').hits, pubTotal) + '%');
 
     // 기기 종류 (홈을 연 기기, 하루 기준)
     var devTotal = DEVICE.reduce(function (a, d) { return a + get(d[0], 'view').visitors; }, 0);
     if (devTotal) {
+      mark = html.length;
       var guideViews = get('home_guide', 'view').visitors;
       var guideCloses = get('home_guide_close', 'click').visitors;
       html += '<section><h2>기기 종류</h2><p class="h">홈을 연 기기를 하루 한 번 셉니다.</p>' +
@@ -197,9 +241,13 @@
         }).join('') + '</tbody></table>' +
         (guideViews ? '<p class="h" style="margin-top:10px">홈 화면 추가 안내를 본 아이폰: ' + num(guideViews) + ' · 닫은 아이폰: ' + num(guideCloses) + '</p>' : '') +
         '</section>';
+      var topDev = DEVICE.slice().sort(function (a, b) { return get(b[0], 'view').visitors - get(a[0], 'view').visitors; })[0];
+      foldFrom(mark, '기기 종류', '가장 많은 기기: ' + esc(topDev[1]) + ' ' + pct(get(topDev[0], 'view').visitors, devTotal) + '%');
     }
 
-    html += bookmarkSection(bmRes, spots || []);
+    var bmList = (bmRes && !bmRes.error && bmRes.data) || [];
+    var bmTotal = bmList.reduce(function (a, r) { return a + Number(r.bookmarks || 0); }, 0);
+    html += fold('박지별 찜', bmList.length ? '찜 ' + num(bmTotal) + '개 · ' + num(bmList.length) + '곳' : '', bookmarkSection(bmRes, spots || []), false);
 
     out.innerHTML = html;
   }

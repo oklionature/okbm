@@ -57,6 +57,22 @@
     .act-row .b button.red { color: var(--warn); }
     .tag { display: inline-block; font-size: 11px; font-weight: 800; border-radius: 5px; padding: 1px 6px; margin-right: 4px; background: var(--raise); }
     .ok { color: var(--ok); } .warn { color: var(--warn); }
+    /* 펼치기 칸 */
+    details.fold { background: var(--card); border: 1px solid var(--line); border-radius: 16px; margin-top: 16px; }
+    details.fold > summary { list-style: none; cursor: pointer; padding: 14px 16px; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; }
+    details.fold > summary::-webkit-details-marker { display: none; }
+    details.fold > summary::after { content: '▾'; margin-left: auto; color: var(--tx-3); transition: transform .2s; }
+    details.fold[open] > summary::after { transform: rotate(180deg); }
+    details.fold > summary .sum { color: var(--tx-3); font-size: 12px; font-weight: 700; }
+    details.fold > .in { padding: 0 16px 16px; }
+    details.fold > .in > section { background: none; border: 0; padding: 0; margin: 0; }
+    .kpi .cmp { display: block; font-size: 11px; font-weight: 700; margin-top: 2px; }
+    .kpi .cmp.up { color: var(--ok); } .kpi .cmp.down { color: var(--warn); } .kpi .cmp.same { color: var(--tx-3); }
+    .days i.m { background: var(--ok); border-radius: 0; }
+    .days .join { font-size: 10px; color: var(--ok); font-weight: 800; height: 12px; }
+    .legend { display: flex; gap: 12px; font-size: 11px; color: var(--tx-3); margin-top: 6px; }
+    .legend b { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: 0; }
+    @media (max-width: 420px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
     .seen-btn { background: none; border: 1px solid var(--line); color: var(--tx-2); border-radius: 10px; padding: 6px 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 12px; }
   </style>
 </head>
@@ -73,6 +89,6 @@
   <div id="out"><p class="msg">불러오는 중…</p></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script>
-  <script src="ops.js?v=8"></script>
+  <script src="ops.js?v=9"></script>
 </body>
 </html>
