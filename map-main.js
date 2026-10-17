@@ -4496,16 +4496,65 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
       function spotInstaPosts(spot) {
         var posts = [];
         var addPost = function(u, creator) {
-          var m = String(u || '').match(/^https?:\/\/(?:www\.)?instagram\.com\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i);
+          var m = String(u || '').match(/^https?:\/\/(?:www\.)?instagram\.com\/(?:([A-Za-z0-9._]{1,30})\/)?(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i);
           if (!m) return;
-          var kind = m[1].toLowerCase() === 'p' ? 'p' : (m[1].toLowerCase() === 'tv' ? 'tv' : 'reel');
-          if (posts.some(function(x) { return x.code === m[2]; })) return;
-          posts.push({ kind: kind, code: m[2], creator: creator || null });
+          var who = m[1] && !/^(p|reel|reels|tv|stories|explore|accounts)$/i.test(m[1]) ? m[1] : '';
+          var kindRaw = m[2].toLowerCase();
+          var kind = kindRaw === 'p' ? 'p' : (kindRaw === 'tv' ? 'tv' : 'reel');
+          if (posts.some(function(x) { return x.code === m[3]; })) return;
+          posts.push({ kind: kind, code: m[3], handle: who, creator: creator || null });
         };
         (spot && Array.isArray(spot.instaUrls) ? spot.instaUrls : []).forEach(function(u) { addPost(u, null); });
         var sId = spot ? String(spot.id).trim() : '';
         (typeof window.okbmCreatorLinksFor === 'function' ? window.okbmCreatorLinksFor(sId, 'insta') : []).forEach(function(c) { addPost(c.url, c); });
         return posts.slice(0, 20);
+      }
+
+      var instaIdCache = {};
+      var instaIdWait = {};
+      function instaIdKey(code) { return 'okbm_insta_id_' + code; }
+      function readInstaId(code) {
+        if (instaIdCache[code]) return instaIdCache[code];
+        try {
+          var saved = sessionStorage.getItem(instaIdKey(code));
+          if (saved && /^[A-Za-z0-9._]{1,30}$/.test(saved)) {
+            instaIdCache[code] = saved;
+            return saved;
+          }
+        } catch (e) {}
+        return '';
+      }
+      function writeInstaId(code, handle) {
+        if (!/^[A-Za-z0-9._]{1,30}$/.test(handle)) return;
+        instaIdCache[code] = handle;
+        try { sessionStorage.setItem(instaIdKey(code), handle); } catch (e) {}
+        document.querySelectorAll('[data-insta-id="' + code + '"]').forEach(function(el) {
+          el.textContent = '@' + handle;
+        });
+      }
+      function instaIdFromMicrolink(body) {
+        var data = body && body.data;
+        if (!data) return '';
+        var canon = String(data.url || '');
+        var m = canon.match(/instagram\.com\/([A-Za-z0-9._]{1,30})\/(?:p|reel|reels|tv)\//i);
+        if (m && !/^(p|reel|reels|tv|stories|explore|accounts)$/i.test(m[1])) return m[1];
+        var t = String(data.title || '').match(/@([A-Za-z0-9._]{1,30})/);
+        return t ? t[1] : '';
+      }
+      function resolveInstaId(p) {
+        var code = p && p.code;
+        if (!code || readInstaId(code) || instaIdWait[code]) return;
+        instaIdWait[code] = true;
+        var kind = p.kind === 'tv' ? 'tv' : (p.kind === 'p' ? 'p' : 'reel');
+        var url = 'https://www.instagram.com/' + kind + '/' + code + '/';
+        fetch('https://api.microlink.io/?url=' + encodeURIComponent(url))
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(body) {
+            var handle = instaIdFromMicrolink(body);
+            if (handle) writeInstaId(code, handle);
+          })
+          .catch(function() {})
+          .then(function() { delete instaIdWait[code]; });
       }
 
       function renderSpotInstaRowHtml(spot) {
@@ -4518,20 +4567,23 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         }
         var icon = '<svg viewBox="0 0 24 24" style="width:14px; height:14px; flex-shrink:0;" fill="none" stroke="#f9a8d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="#f9a8d4"/></svg>';
         var postNo = 0, reelNo = 0;
-        return posts.map(function(p) {
+        var html = posts.map(function(p) {
           var isReel = p.kind !== 'p';
-          var label = isReel ? ('릴스 ' + (++reelNo)) : ('게시물 ' + (++postNo));
-          if (p.creator) label += ' · ' + (p.creator.author || '백패커');
+          var known = p.handle || readInstaId(p.code);
+          var label = known ? ('@' + known) : (isReel ? ('릴스 ' + (++reelNo)) : ('게시물 ' + (++postNo)));
+          if (!known && p.creator) label += ' · ' + (p.creator.author || '백패커');
           var dim = p.creator && (p.creator.sunk || p.creator.hidden);
           // 줄을 누르면 정보창 크기는 그대로 두고 화면 전체 보기 창에서 게시물을 연다
           return '<div style="display:flex; flex-direction:column; gap:3px;' + (dim ? ' opacity:0.55;' : '') + '">' +
             '<button type="button" data-kind="' + escapeHtml(p.kind) + '" data-code="' + escapeHtml(p.code) + '" onclick="window.okbmOpenInstaViewer(this);"' +
             ' style="width:100%; display:flex; align-items:center; gap:6px; padding:10px; border:1px solid rgba(249,168,212,0.28); border-radius:9px; background:rgba(249,168,212,0.06); cursor:pointer; font-family:inherit; font-size:0.74rem; font-weight:800; color:#fbcfe8; text-align:left;">' +
-              icon + '<span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(label) + '</span><span style="font-size:0.64rem; color:#f9a8d4; flex-shrink:0;">크게 보기 ›</span>' +
+              icon + '<span data-insta-id="' + escapeHtml(p.code) + '" style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(label) + '</span><span style="font-size:0.64rem; color:#f9a8d4; flex-shrink:0;">크게 보기 ›</span>' +
             '</button>' +
             (p.creator && typeof window.okbmCreatorActionsHtml === 'function' ? window.okbmCreatorActionsHtml(sIdForCreators, p.creator) : '') +
           '</div>';
         }).join('');
+        setTimeout(function() { posts.forEach(function(p) { if (!p.handle) resolveInstaId(p); }); }, 0);
+        return html;
       }
 
       // 인스타 게시물 보기 창: 화면 전체를 덮고, 게시물 높이에 맞춰 늘어난다(길면 창 안에서 스크롤).
@@ -4609,7 +4661,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           if (window.okbmIsYouTubeShorts(u)) return '';
           if (/^https:\/\/(www\.|m\.)?youtube\.com\/(watch\?([^#\s]*&)?v=|live\/)[A-Za-z0-9_-]{11}/i.test(u) || /^https:\/\/youtu\.be\/[A-Za-z0-9_-]{11}/i.test(u)) return 'yt';
           if (/^https:\/\/(m\.)?blog\.naver\.com\/([A-Za-z0-9_-]+\/[0-9]+|PostView\.naver\?.*logNo=[0-9]+)/i.test(u)) return 'blog';
-          if (/^https:\/\/(www\.)?instagram\.com\/(p|reel|reels|tv)\/[A-Za-z0-9_-]+/i.test(u)) return 'insta';
+          if (/^https:\/\/(www\.)?instagram\.com\/(?:[A-Za-z0-9._]{1,30}\/)?(p|reel|reels|tv)\/[A-Za-z0-9_-]+/i.test(u)) return 'insta';
           return '';
         }
         function errText(e) {

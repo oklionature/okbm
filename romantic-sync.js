@@ -3657,7 +3657,7 @@ window.normalizeSpotMapRow = function(row) {
 
 // 인스타그램 게시물·릴스 주소만 (계정 주소는 제보자 SNS라 제외)
 window.okbmIsInstaPostUrl = function(u) {
-  return /^https?:\/\/(www\.)?instagram\.com\/(p|reel|reels|tv)\/[A-Za-z0-9_-]+/i.test(String(u || '').trim());
+  return /^https?:\/\/(www\.)?instagram\.com\/(?:[A-Za-z0-9._]{1,30}\/)?(p|reel|reels|tv)\/[A-Za-z0-9_-]+/i.test(String(u || '').trim());
 };
 
 window.parseSpotMediaUrls = function(mediaUrls) {
