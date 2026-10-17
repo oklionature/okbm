@@ -49,9 +49,9 @@
       '.hd-tx b{display:block;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '.hd-tx small{display:block;margin-top:2px;font-size:11px;font-weight:700;color:#8b8b93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '.hd-meta{flex:none;font-size:11.5px;font-weight:800;color:#7ec8ff}',
-      // 시안: 인기 스팟 제목은 로고 줄 오른쪽, 카드는 이름·숫자·설명·버튼만
+      // 시안: 인기 스팟 제목은 로고 줄 오른쪽(사진 쪽으로 15px 내림), 카드는 이름·숫자·설명·버튼만
       '.header-top-row{display:flex;align-items:center;justify-content:space-between}',
-      '.hh-pick{font-size:12px;font-weight:800;color:#ffd77a;font-variant-numeric:tabular-nums;white-space:nowrap;transition:opacity .3s ease}',
+      '.hh-pick{position:relative;top:15px;font-size:13px;font-weight:800;color:#ffd77a;font-variant-numeric:tabular-nums;white-space:nowrap;transition:opacity .3s ease}',
       '.hh-pick.off{opacity:0;pointer-events:none}',
       '#btnHeroAuthorFeed{display:none !important}',
       '.insta-memo-actions-row{border-top:0 !important;padding-top:4px !important}',
