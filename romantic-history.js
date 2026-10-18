@@ -4360,6 +4360,9 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       var score = 0;
       if (main && main === q) score = 100;
       else if (hay && hay === q) score = 90;
+      // 산 이름만 쿼리에 들어 있으면 80점에서 끊긴다. 쿼리가 산명보다 길고 이 박지 이름 안에 그대로 있으면
+      // 같은 산의 다른 박지(마니산 함허동천 vs 비밀박지)보다 먼저 고른다.
+      else if (hay && main && q.length > main.length && hay.indexOf(q) !== -1) score = 88;
       else if (main && main.length >= 2 && q.indexOf(main) !== -1) score = 80;
       else if (hay && hay.indexOf(q) !== -1) score = 70;
       else if (hay && q.indexOf(hay) !== -1 && hay.length >= 4) score = 60;
@@ -4486,13 +4489,14 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     window.__okbmSpotMapNavLock = true;
     setTimeout(function() { window.__okbmSpotMapNavLock = false; }, 800);
 
-    var cleanSpot = String(rawSpotName || '')
+    var rawSpot = String(rawSpotName || '').replace(/\s+/g, ' ').trim();
+    var cleanSpot = rawSpot
       .replace(/\(.*?\)/g, '')
       .replace(/\[.*?\]/g, '')
       .replace(/\s+/g, ' ')
       .trim();
     var cleanId = String(rawSpotId || '').trim();
-    if (!cleanSpot && !cleanId) return;
+    if (!rawSpot && !cleanId) return;
 
     if ((!cleanSpot || cleanSpot === '나의 힐링 스팟' || cleanSpot === '힐링 장소') && !cleanId) {
       if (typeof showToast === 'function') showToast('정확한 장소 위치 정보가 등록되지 않았습니다.', 'info', 1800);
@@ -4501,7 +4505,9 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     var pool = okbmCollectMasterSpotPool();
     var found = cleanId ? okbmFindSpotInPoolById(pool, cleanId) : null;
-    if (!found && cleanSpot) found = window.okbmFindSpotByFocusQuery(pool, cleanSpot);
+    // 괄호 안 세부 박지(비밀박지)를 먼저 남긴 채 찾는다. 지우면 같은 산의 다른 박지와 동점이 된다.
+    if (!found && rawSpot) found = window.okbmFindSpotByFocusQuery(pool, rawSpot);
+    if (!found && cleanSpot && cleanSpot !== rawSpot) found = window.okbmFindSpotByFocusQuery(pool, cleanSpot);
 
     var targetId = (found && (found.id || found.spot_id)) ? String(found.id || found.spot_id).trim() : cleanId;
     var mapName = (found && String(found.spot_main || found.name || found.spot || '').trim()) || cleanSpot;
@@ -4525,7 +4531,8 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     var href = 'map.html';
     var qs = [];
-    if (mapName) qs.push('spot=' + encodeURIComponent(mapName));
+    var hrefName = targetId ? mapName : (rawSpot || mapName);
+    if (hrefName) qs.push('spot=' + encodeURIComponent(hrefName));
     if (targetId) qs.push('id=' + encodeURIComponent(targetId));
     if (qs.length) href += '?' + qs.join('&');
 
@@ -4702,6 +4709,13 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var sIsSaved = sSavedList.includes(sCleanId) || sSavedList.includes(sFeedId);
     var sSpot = log.spot || '낭만 스팟';
     var sMemo = fallbackMemo || sSpot;
+    var sSpotId = String(log.spotId || log.spot_id || '').trim();
+    var sSpotName = String(log.spot || '').trim();
+    var sCanMap = Boolean(sSpotName) && sSpotName !== '나의 힐링 스팟' && sSpotName !== '힐링 장소' && log.unregisteredSpot !== true;
+    var spotLabelHtml = escapeHtml(sSpotName || '낭만 스팟') + (log.elevation ? (' <span style="font-size:0.75rem; color:#fde047; font-weight:800;">(' + escapeHtml(String(log.elevation)) + ')</span>') : '');
+    var spotTitleHtml = sCanMap
+      ? okbmFeedSpotPillHtml(sSpotName, sSpotId)
+      : ('<div style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">' + spotLabelHtml + '</div>');
 
     var interactiveBarHtml =
       '<div style="padding:10px 16px 14px 16px; background:#000000; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.06);">' +
@@ -4721,7 +4735,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:2px solid rgba(255,255,255,0.12); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:28px; box-sizing:border-box;">' +
       '<div style="padding:14px 16px 10px 16px; background:#000000; display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid rgba(255,255,255,0.06);">' +
-        '<div style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">' + escapeHtml(log.spot || '낭만 스팟') + (log.elevation ? (' <span style="font-size:0.75rem; color:#fde047; font-weight:800;">(' + escapeHtml(log.elevation) + ')</span>') : '') + '</div>' +
+        spotTitleHtml +
         '<div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">' +
           '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(log.date || '') + '</span>' +
           window.okbmFeedInstagramBadgeHtml(log.instagram || log.insta || '') +
@@ -5010,7 +5024,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (window.__okbmSavedFeedResolveInflight) return;
     window.__okbmSavedFeedResolveInflight = true;
 
-    var projection = 'id,user_id,author,author_photo,instagram,spot,elevation,weight_kg,date,memo,photos,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+    var projection = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
     var foundIds = {};
     var allOk = true;
     try {
@@ -7310,7 +7324,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         };
 
         var fetchTableRows = function(tableName) {
-          var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+          var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
           var filterParam = currentUserId
             ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
             : '&is_published=eq.true';
@@ -7442,7 +7456,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           };
         var profile = safeGetJSON('user_profile', null);
         var currentUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
-        var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+        var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
         var filterParam = currentUserId
           ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
           : '&is_published=eq.true';
@@ -7649,18 +7663,42 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
  window.updateCarouselDots = window.updateCarouselFeedState;
 
+  function okbmFeedSpotPillLabel(name, spotId) {
+    var sid = String(spotId || '').trim();
+    if (sid) {
+      try {
+        var found = okbmFindSpotInPoolById(okbmCollectMasterSpotPool(), sid);
+        var main = found && String(found.spot_main || found.name || '').replace(/\s*\(.*?\)/g, '').trim();
+        if (main) return main;
+      } catch (ePill) {}
+    }
+    var s = String(name || '')
+      .replace(/\s*\(.*?\)/g, ' ')
+      .replace(/\[[^\]]*\]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    s = s.replace(/^(강원|경기|인천|충북|충남|전북|전남|경북|경남|제주|서울|세종|울산|부산|대구|광주|대전)\s+/, '');
+    s = s.replace(/^[가-힣]{2,12}(?:시|군|구)\s+/, '');
+    return s || String(name || '').trim();
+  }
+
+  function okbmFeedSpotPillHtml(name, spotId) {
+    var safeSpot = escapeHtml(name || '');
+    var safeSpotId = escapeHtml(spotId || '');
+    var safeLabel = escapeHtml(okbmFeedSpotPillLabel(name, spotId));
+    return '<button type="button" class="js-feed-spot-map" data-spot="' + safeSpot + '" data-spot-id="' + safeSpotId + '" onclick="event.preventDefault(); event.stopPropagation(); window.navigateToSpotMap(this.dataset.spot, event, this.dataset.spotId);" aria-label="' + safeLabel + ' 위치 보기" style="display:inline-flex; align-items:center; max-width:100%; min-height:26px; margin:0; padding:0 10px; border-radius:999px; border:1px solid rgba(125,211,252,0.55); background:#083044; color:#e0f2fe; font:inherit; font-size:0.74rem; font-weight:800; letter-spacing:-0.02em; line-height:1; cursor:pointer; text-align:left; pointer-events:auto; position:relative; z-index:401; touch-action:manipulation;">' +
+      '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + safeLabel + '</span>' +
+    '</button>';
+  }
+
   function okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, canNavigateSpot, extraRightHtml, spotId) {
     var safeAuthor = escapeHtml(authorName || '낭만백패커');
     var safeUserId = escapeHtml(recordUserId || '');
     var safeSpot = escapeHtml(spotName || '나의 힐링 스팟');
-    var safeSpotId = escapeHtml(spotId || '');
     var safeDate = escapeHtml(tripDate || '');
     var textShadowStyle = 'text-shadow:0 1px 4px rgba(0,0,0,0.95), 0 2px 8px rgba(0,0,0,0.7);';
     var spotRow = canNavigateSpot
-      ? ('<button type="button" class="js-feed-spot-map" data-spot="' + safeSpot + '" data-spot-id="' + safeSpotId + '" onclick="event.preventDefault(); event.stopPropagation(); window.navigateToSpotMap(this.dataset.spot, event, this.dataset.spotId);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; cursor:pointer; text-align:left; min-width:0; overflow:hidden; pointer-events:auto; position:relative; z-index:401; touch-action:manipulation;" title="지도에서 장소 위치 확인">' +
-          '<span style="font-size:0.74rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.55); text-underline-offset:2px; line-height:1.3; ' + textShadowStyle + '">' + safeSpot + '</span>' +
-          '<span style="font-size:0.60rem; color:#38bdf8; font-weight:900; flex-shrink:0; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.9));">↗</span>' +
-        '</button>')
+      ? okbmFeedSpotPillHtml(spotName, spotId)
       : ('<span style="font-size:0.74rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3; ' + textShadowStyle + '">' + safeSpot + '</span>');
 
     return '<div class="reel-header-row" style="position:absolute !important; top:var(--okbm-status-top) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:400 !important; isolation:isolate !important; transform:none !important; -webkit-transform:none !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important; border-bottom:none !important; pointer-events:none !important;">' +

@@ -294,12 +294,14 @@
         var subRaw = String(s.spot_sub || '').trim();
         var subParts = subRaw.match(/[가-힣]{3,}/g) || [];
         var feedCompact = feedClean.replace(/\s+/g, '');
+        // 괄호를 지우기 전의 이름. "마니산 (비밀박지)"의 비밀박지는 여기서만 남는다.
+        var rawCompact = raw.replace(/[()[\]]/g, '').replace(/\s+/g, '').toLowerCase();
         var subHit = false;
         var subUnique = true;
         for (var sp = 0; sp < subParts.length; sp++) {
           var part = subParts[sp];
           if (!part || part === sMain.replace(/\s+/g, '')) continue;
-          if (feedCompact.indexOf(part) === -1 && feedClean.indexOf(part) === -1) continue;
+          if (feedCompact.indexOf(part) === -1 && feedClean.indexOf(part) === -1 && rawCompact.indexOf(part) === -1) continue;
           subHit = true;
           for (var oj = 0; oj < spotPool.length; oj++) {
             var os = spotPool[oj];
@@ -829,8 +831,9 @@
       var spotName = matchedFeed ? (matchedFeed.spot || matchedFeed.spotName) : (matchedSpot.name || matchedSpot.spot_main || '장소');
       var cleanMapSpotName = matchedSpot
         ? String(matchedSpot.spot_main || matchedSpot.name || spotName).replace(/\s*\(.*?\)/g, '').trim()
-        : String(spotName).replace(/\s*\(.*?\)/g, '').trim();
-      var mapSpotId = matchedSpot ? String(matchedSpot.id || '').trim() : '';
+        : String(spotName || '').trim();
+      var feedLinkedId = matchedFeed ? String(matchedFeed.spotId || matchedFeed.spot_id || '').trim() : '';
+      var mapSpotId = matchedSpot ? String(matchedSpot.id || matchedSpot.spot_id || '').trim() : feedLinkedId;
       var desc = (matchedFeed && (matchedFeed.memo || matchedFeed.oneLineMemo))
         ? (matchedFeed.memo || matchedFeed.oneLineMemo)
         : (matchedSpot ? (matchedSpot.desc || matchedSpot.desc_summary || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.') : '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.');
@@ -1770,6 +1773,8 @@
                 id: r.id,
                 userId: r.user_id,
                 spot: r.spot || r.spot_name || '백패킹 필드',
+                spotId: r.spot_id ? String(r.spot_id).trim() : '',
+                spot_id: r.spot_id ? String(r.spot_id).trim() : '',
                 elevation: r.elevation || '',
                 weightKg: r.weight_kg != null ? String(r.weight_kg) : '',
                 date: r.date || '',
