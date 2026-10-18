@@ -2349,6 +2349,9 @@ CREATE TABLE IF NOT EXISTS public.lounge_events (
   fee text NOT NULL DEFAULT '' CHECK (char_length(fee) <= 60),
   apply_url text NOT NULL DEFAULT ''
     CHECK (apply_url = '' OR (apply_url ~ '^https://' AND apply_url !~ '[[:space:]<>"'']')),
+  instagram_url text NOT NULL DEFAULT ''
+    CONSTRAINT lounge_events_instagram_url_chk
+    CHECK (instagram_url = '' OR (instagram_url ~ '^https://' AND instagram_url !~ '[[:space:]<>"'']')),
   poster_url text NOT NULL DEFAULT ''
     CHECK (poster_url = '' OR (poster_url ~ '^https://' AND poster_url !~ '[[:space:]<>"'']')),
   description text NOT NULL DEFAULT '' CHECK (char_length(description) <= 2000),
@@ -2401,13 +2404,20 @@ CREATE TRIGGER trg_lounge_guides_touch
 --    phase: ongoing 진행중 / upcoming 예정. 화면은 시작일이 오늘 이전이면 진행중으로 올린다.
 --    end_date가 지나면 화면에서 빠진다. end_date가 없고 posted_on만 있으면 올린 날부터 14일.
 --    summary에 「최대 90%」「25% 할인」이 있으면 그 숫자를 왼쪽 칸에 쓴다.
+--    body: 펼치면 보이는 안내. 비어 있으면 summary를 그대로 보여 준다.
+--    source_url: 인스타 게시물. link_url: 블로그·안내 글. 둘 다 둘 수 있다.
 -- -------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.lounge_deals (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   title text NOT NULL CHECK (char_length(btrim(title)) BETWEEN 1 AND 80),
   summary text NOT NULL DEFAULT '' CHECK (char_length(summary) <= 400),
+  body text NOT NULL DEFAULT ''
+    CONSTRAINT lounge_deals_body_len_chk CHECK (char_length(body) <= 2000),
   source_url text NOT NULL DEFAULT ''
     CHECK (source_url = '' OR (source_url ~ '^https://' AND source_url !~ '[[:space:]<>"'']')),
+  link_url text NOT NULL DEFAULT ''
+    CONSTRAINT lounge_deals_link_url_chk
+    CHECK (link_url = '' OR (link_url ~ '^https://' AND link_url !~ '[[:space:]<>"'']')),
   phase text NOT NULL DEFAULT 'ongoing' CHECK (phase IN ('ongoing', 'upcoming')),
   start_date date,
   end_date date,
@@ -2424,6 +2434,32 @@ DROP TRIGGER IF EXISTS trg_lounge_deals_touch ON public.lounge_deals;
 CREATE TRIGGER trg_lounge_deals_touch
   BEFORE UPDATE ON public.lounge_deals
   FOR EACH ROW EXECUTE FUNCTION public.okbm_lounge_touch_updated_at();
+
+-- 이미 만들어진 표에 칸을 더한다. 신청 링크에 들어 있던 인스타 주소는 복사만 하고 비우지 않는다.
+ALTER TABLE public.lounge_events ADD COLUMN IF NOT EXISTS instagram_url text NOT NULL DEFAULT '';
+ALTER TABLE public.lounge_deals ADD COLUMN IF NOT EXISTS body text NOT NULL DEFAULT '';
+ALTER TABLE public.lounge_deals ADD COLUMN IF NOT EXISTS link_url text NOT NULL DEFAULT '';
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lounge_events_instagram_url_chk') THEN
+    ALTER TABLE public.lounge_events
+      ADD CONSTRAINT lounge_events_instagram_url_chk
+      CHECK (instagram_url = '' OR (instagram_url ~ '^https://' AND instagram_url !~ '[[:space:]<>"'']'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lounge_deals_body_len_chk') THEN
+    ALTER TABLE public.lounge_deals
+      ADD CONSTRAINT lounge_deals_body_len_chk CHECK (char_length(body) <= 2000);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lounge_deals_link_url_chk') THEN
+    ALTER TABLE public.lounge_deals
+      ADD CONSTRAINT lounge_deals_link_url_chk
+      CHECK (link_url = '' OR (link_url ~ '^https://' AND link_url !~ '[[:space:]<>"'']'));
+  END IF;
+END $$;
+UPDATE public.lounge_events
+SET instagram_url = apply_url
+WHERE instagram_url = ''
+  AND apply_url ~* '^https://(www\.)?instagram\.com/(?:[A-Za-z0-9._]{1,30}/)?(p|reel|reels|tv)/[A-Za-z0-9_-]+';
 
 -- -------------------------------------------------------------------------
 -- 7-3. 박지 후기 = 기존 comments (2026-09-26 백업 기준 0행, 클라이언트 사용처 없음)

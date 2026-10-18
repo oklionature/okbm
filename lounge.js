@@ -830,9 +830,10 @@
       ${e.subtitle ? `<div class="lm-rs" style="margin:0 0 6px">${esc(e.subtitle)}</div>` : ''}
       ${kv('일정', v.dateText + ' (' + v.weekday + ')')}${kv('장소', place)}${kv('주최', e.host)}${kv('참가', e.fee)}
       ${e.description ? `<p class="lm-desc">${esc(e.description)}</p>` : ''}
-      ${(e.apply_url || e.spot_id) ? `<div class="lmx-btns">
+      ${(eventIg(e) || eventApplyUrl(e) || e.spot_id) ? `<div class="lmx-btns">
         ${e.spot_id ? `<button type="button" class="lm-btn sm" data-a="spot" data-v="${esc(e.spot_id)}">${ico(P.pin, 16)}지도에서 보기</button>` : ''}
-        ${e.apply_url ? `<a class="lm-btn sm main" href="${escapeHtml(okbmSafeExternalUrl(e.apply_url))}" target="_blank" rel="noopener noreferrer">신청하기</a>` : ''}
+        ${igBtn(eventIg(e))}
+        ${webBtn(eventApplyUrl(e), '신청하기', !eventIg(e))}
       </div>` : ''}
       ${v.past ? '' : `<div class="lm-cal-row" data-cal-slot>${calSlotInner(e)}</div>`}
       ${adminLinks([['edit-event', '수정', 'adm', e.id], ['pin-event', e.is_pinned ? '고정 풀기' : '홈 상단 고정', 'adm', e.id], ['hide-event', e.is_active ? '숨기기' : '다시 보이기', 'adm', e.id], ['del-event', '삭제', 'red', e.id]])}
@@ -934,6 +935,49 @@
     const raw = m[1].toLowerCase();
     return { kind: raw === 'p' ? 'p' : (raw === 'tv' ? 'tv' : 'reel'), code: m[2] };
   }
+  const INSTA_IN_TEXT = /https:\/\/(?:www\.)?instagram\.com\/(?:[A-Za-z0-9._]{1,30}\/)?(?:p|reel|reels|tv)\/[A-Za-z0-9_-]+/i;
+  function instaInText(text) {
+    const m = String(text || '').match(INSTA_IN_TEXT);
+    return m ? instaPost(m[0]) : null;
+  }
+  function igBtn(post) {
+    if (!post) return '';
+    return '<button type="button" class="lm-btn sm main" data-a="deal-ig" data-kind="' + esc(post.kind) + '" data-code="' + esc(post.code) + '">게시물 보기</button>';
+  }
+  function webBtn(url, label, primary) {
+    const safe = okbmSafeExternalUrl(url);
+    if (!url || safe === '#' || instaPost(url)) return '';
+    return '<a class="lm-btn sm' + (primary ? ' main' : '') + '" href="' + escapeHtml(safe) + '" target="_blank" rel="noopener noreferrer">' + esc(label) + '</a>';
+  }
+  // 행사: 신청 링크(홈페이지)와 인스타 게시물을 같이 둔다. 예전 글은 인스타 주소가 신청 링크나 설명에만 있다.
+  function eventIg(e) {
+    return instaPost(e && e.instagram_url) || instaPost(e && e.apply_url) || instaInText(e && e.description);
+  }
+  function eventApplyUrl(e) {
+    const url = String((e && e.apply_url) || '').trim();
+    return url && !instaPost(url) ? url : '';
+  }
+  function eventIgUrl(e) {
+    if (e && instaPost(e.instagram_url)) return String(e.instagram_url).trim();
+    if (e && instaPost(e.apply_url)) return String(e.apply_url).trim();
+    return '';
+  }
+  // 할인: 한 줄 요약·본문과, 인스타·글 링크를 같이 둔다. 글 링크만 출처에 있던 예전 행도 버튼으로 연다.
+  function dealIg(d) {
+    return instaPost(d && d.source_url) || instaPost(d && d.link_url) || instaInText(d && d.body) || instaInText(d && d.summary);
+  }
+  function dealWebUrl(d) {
+    const link = String((d && d.link_url) || '').trim();
+    if (link && !instaPost(link)) return link;
+    const src = String((d && d.source_url) || '').trim();
+    if (src && !instaPost(src)) return src;
+    return '';
+  }
+  function dealIgUrl(d) {
+    if (d && instaPost(d.source_url)) return String(d.source_url).trim();
+    if (d && instaPost(d.link_url)) return String(d.link_url).trim();
+    return '';
+  }
   // 게시물 보기: 인스타로 나가지 않고, 화면 위에 창을 띄워 게시물 높이에 맞춰 늘린다.
   function closeDealInsta() {
     const el = document.getElementById('okbmDealInsta');
@@ -995,12 +1039,16 @@
     if (frame && frame.contentWindow === e.source) frame.style.height = Math.ceil(h) + 'px';
   }
   function dealItem(d) {
-    const post = instaPost(d.source_url);
+    const ig = dealIg(d);
+    const web = dealWebUrl(d);
+    const postText = String(d.body || '').trim();
+    const shown = postText || String(d.summary || '').trim();
     const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="false"><div class="lm-date"><b>${esc(dealMark(d))}</b></div>
       <div class="lm-rb"><div class="lm-rt">${esc(d.title)}${D.admin && !d.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc(d.summary)}</div></div><span class="lm-dd">${esc(dealMeta(d))}</span></button>`;
     const body = `<div class="lmx-in">
-      ${d.summary ? `<p class="lm-desc" style="margin:0">${esc(d.summary)}</p>` : ''}
-      ${post ? `<div class="lmx-btns"><button type="button" class="lm-btn sm main" data-a="deal-ig" data-kind="${post.kind}" data-code="${esc(post.code)}">게시물 보기</button></div>` : ''}
+      ${shown ? `<p class="lm-desc" style="margin:0">${esc(shown)}</p>` : ''}
+      ${(ig || web) ? `<div class="lmx-btns">${igBtn(ig)}${webBtn(web, '글 보기', !ig)}</div>` : ''}
+      ${adminLinks([['edit-deal', '수정', 'adm', d.id], ['hide-deal', d.is_active ? '숨기기' : '다시 보이기', 'adm', d.id], ['del-deal', '삭제', 'red', d.id]])}
     </div>`;
     return fold(d.id, head, body);
   }
@@ -1018,6 +1066,7 @@
     let h = `<div class="lm-head">진행중<br><em>${now.length}</em>개가 있어요</div>`;
     h += now.length ? now.map(dealItem).join('') : '<div class="lm-empty">진행중인 할인이 없어요</div>';
     if (later.length) h += '<div class="lmh-cap">예정</div>' + later.map(dealItem).join('');
+    if (D.admin) h += '<button type="button" class="lmh-cta adm" data-a="new-deal">' + ico(P.plus, 18) + '할인 등록</button>';
     return h;
   }
 
@@ -2028,7 +2077,9 @@
         <div class="lm-picked" data-picked ${spot ? '' : 'hidden'}><span>${spot ? '지도 연결: ' + esc(spotName(spot)) : ''}</span><button type="button" data-a="unpick-spot">연결 해제</button></div>
         <div class="lm-two"><div>${field('lmEvHost', '주최', inp('lmEvHost', 'host', e && e.host, 'maxlength="60"'))}</div>
           <div>${field('lmEvFee', '참가', inp('lmEvFee', 'fee', e && e.fee, 'maxlength="60" placeholder="무료 · 선착순 80팀"'))}</div></div>
-        ${field('lmEvUrl', '신청 링크', inp('lmEvUrl', 'apply_url', e && e.apply_url, 'type="url" inputmode="url" placeholder="https://"'))}
+        ${field('lmEvUrl', '신청 링크', inp('lmEvUrl', 'apply_url', e && eventApplyUrl(e), 'type="url" inputmode="url" placeholder="https://"'))}
+        ${field('lmEvIg', '인스타 게시물 링크', inp('lmEvIg', 'instagram_url', e && eventIgUrl(e), 'type="url" inputmode="url" maxlength="300" placeholder="https://www.instagram.com/p/…"'))}
+        <p class="lm-hint">신청 페이지와 인스타 게시물은 같이 넣을 수 있어요. 인스타는 앱 안에서 열려요.</p>
         <span class="lm-lbl">포스터</span>
         <img class="lm-prev" data-prev alt="포스터 미리보기" ${e && okbmSafeImageUrl(e.poster_url) ? `src="${escapeHtml(okbmSafeImageUrl(e.poster_url))}"` : 'hidden'}>
         <div style="display:flex;gap:18px;align-items:center"><label class="lm-file">${ico(P.img, 18)}<span data-poster-label>${e && e.poster_url ? '다른 사진으로' : '사진 고르기'}</span><input type="file" accept="image/*,.heic,.heif" data-file hidden></label>
@@ -2094,9 +2145,13 @@
   async function saveEvent(f) {
     const st = SH;
     const val = function (n) { return String((f.elements[n] && f.elements[n].value) || '').trim(); };
+    let apply = val('apply_url');
+    let ig = val('instagram_url');
+    if (!ig && instaPost(apply)) { ig = apply; apply = ''; }
+    if (apply && ig && apply === ig) apply = '';
     const row = {
       title: val('title'), subtitle: val('subtitle'), start_date: val('start_date'), end_date: val('end_date') || null,
-      place: val('place'), spot_id: st.spot_id || null, host: val('host'), fee: val('fee'), apply_url: val('apply_url'),
+      place: val('place'), spot_id: st.spot_id || null, host: val('host'), fee: val('fee'), apply_url: apply, instagram_url: ig,
       poster_url: st.poster_url || '', description: val('description'), is_pinned: !!st.sw.is_pinned, is_active: !!st.sw.is_active
     };
     const bad = function (name, msg) { toast(msg, true); if (f.elements[name]) f.elements[name].focus(); };
@@ -2104,8 +2159,69 @@
     if (!/^\d{4}-\d{2}-\d{2}$/.test(row.start_date)) return bad('start_date', '시작일을 골라 주세요');
     if (row.end_date && row.end_date < row.start_date) return bad('end_date', '끝나는 날이 시작일보다 빨라요');
     if (row.apply_url && !HTTPS_RE.test(row.apply_url)) return bad('apply_url', '신청 링크는 https://로 시작해야 해요');
+    if (row.apply_url && instaPost(row.apply_url)) return bad('apply_url', '인스타 게시물 주소는 인스타 칸에 넣어 주세요');
+    if (row.instagram_url && !(HTTPS_RE.test(row.instagram_url) && instaPost(row.instagram_url))) return bad('instagram_url', '인스타 게시물 주소만 넣을 수 있어요');
     if (st.uploading) return toast('포스터를 올리는 중이에요. 잠시 뒤 다시 눌러 주세요', true);
     await submitRow(f, 'lounge_events', st.id, row, st.id ? '행사를 고쳤어요' : '행사를 등록했어요');
+  }
+
+  // ----- 할인 (본문 + 인스타 + 글 링크) -----
+  function findDeal(id) {
+    return (D.deals || []).find(function (d) { return String(d.id) === String(id); }) || null;
+  }
+  function dealFormHtml(d) {
+    return `<h3 id="loungeSheetTitle">${d ? '할인 수정' : '할인 등록'}</h3><p class="lm-ssub">관리자에게만 보이는 화면이에요. 본문과 인스타, 글 링크는 같이 넣을 수 있어요.</p>
+      <form data-form="deal" novalidate autocomplete="off">
+        ${field('lmDlTitle', '제목', inp('lmDlTitle', 'title', d && d.title, 'maxlength="80" required data-autofocus placeholder="예: 코베아 일산직영점 폐점 세일"'), true)}
+        ${field('lmDlSum', '한 줄 요약', inp('lmDlSum', 'summary', d && d.summary, 'maxlength="400" placeholder="목록에 보이는 한 줄"'))}
+        <div class="lm-two"><div>${field('lmDlStart', '시작일', inp('lmDlStart', 'start_date', d && d.start_date, 'type="date"'))}</div>
+          <div>${field('lmDlEnd', '끝나는 날', inp('lmDlEnd', 'end_date', d && d.end_date, 'type="date"'))}</div></div>
+        <p class="lm-hint">끝나는 날이 없으면, 올린 날부터 14일 뒤에 목록에서 빠져요.</p>
+        ${field('lmDlIg', '인스타 게시물 링크', inp('lmDlIg', 'source_url', d && dealIgUrl(d), 'type="url" inputmode="url" maxlength="300" placeholder="https://www.instagram.com/p/…"'))}
+        ${field('lmDlLink', '글 링크', inp('lmDlLink', 'link_url', d && dealWebUrl(d), 'type="url" inputmode="url" maxlength="500" placeholder="https:// 블로그·안내 글"'))}
+        ${field('lmDlBody', '내용', '<textarea class="lm-ta" id="lmDlBody" name="body" maxlength="2000" placeholder="펼치면 보이는 안내. 비워 두면 한 줄 요약만 보여요.">' + esc(d && d.body) + '</textarea>')}
+        ${field('lmDlSort', '순서 (작을수록 위)', inp('lmDlSort', 'sort', d ? d.sort : 0, 'type="number" inputmode="numeric" min="-999" max="999"'))}
+        <div style="margin-top:10px">${sw('is_active', '모두에게 보이기', d ? d.is_active !== false : true)}</div>
+        <button type="submit" class="lm-btn main">${d ? '저장' : '등록하기'}</button>
+      </form>`;
+  }
+  function openDealForm(d) {
+    if (!D.admin) return;
+    openSheet(dealFormHtml(d), {
+      kind: 'deal', id: d ? d.id : null, posted_on: d && d.posted_on ? d.posted_on : null,
+      sw: { is_active: d ? d.is_active !== false : true }
+    });
+  }
+  async function saveDeal(f) {
+    const st = SH;
+    const val = function (n) { return String((f.elements[n] && f.elements[n].value) || '').trim(); };
+    let source = val('source_url');
+    let link = val('link_url');
+    if (!source && instaPost(link)) { source = link; link = ''; }
+    if (source && !instaPost(source) && !link) { link = source; source = ''; }
+    if (link && source && link === source) link = '';
+    const start = val('start_date') || null;
+    const end = val('end_date') || null;
+    const prev = st.id ? findDeal(st.id) : null;
+    const row = {
+      title: val('title'), summary: val('summary'), body: val('body'),
+      source_url: source, link_url: link,
+      phase: start && start > todayKey() ? 'upcoming' : 'ongoing',
+      start_date: start, end_date: end,
+      posted_on: end ? null : ((prev && prev.posted_on) || st.posted_on || todayKey()),
+      sort: Math.max(-999, Math.min(999, parseInt(val('sort'), 10) || 0)),
+      is_active: !!st.sw.is_active
+    };
+    const bad = function (name, msg) { toast(msg, true); if (f.elements[name]) f.elements[name].focus(); };
+    if (!row.title) return bad('title', '제목을 적어 주세요');
+    if (start && !/^\d{4}-\d{2}-\d{2}$/.test(start)) return bad('start_date', '시작일을 다시 골라 주세요');
+    if (end && !/^\d{4}-\d{2}-\d{2}$/.test(end)) return bad('end_date', '끝나는 날을 다시 골라 주세요');
+    if (start && end && end < start) return bad('end_date', '끝나는 날이 시작일보다 빨라요');
+    if (row.source_url && !(HTTPS_RE.test(row.source_url) && instaPost(row.source_url))) return bad('source_url', '인스타 게시물 주소만 넣을 수 있어요');
+    if (row.link_url && !HTTPS_RE.test(row.link_url)) return bad('link_url', '글 링크는 https://로 시작해야 해요');
+    if (row.link_url && instaPost(row.link_url)) return bad('link_url', '인스타 주소는 인스타 칸에 넣어 주세요');
+    if (!row.summary && !row.body && !row.source_url && !row.link_url) return bad('summary', '요약, 내용, 링크 중 하나는 적어 주세요');
+    await submitRow(f, 'lounge_deals', st.id, row, st.id ? '할인을 고쳤어요' : '할인을 등록했어요');
   }
 
   // ----- 가이드 (입문 장비 kit / 백패킹 팁 tip) -----
@@ -2273,6 +2389,9 @@
       } else if (table === 'lounge_guides') {
         await loadGuides();
         D.fail[1] = false;
+      } else if (table === 'lounge_deals') {
+        await loadDeals();
+        D.fail[4] = false;
       }
     } catch (e) { console.warn('[lounge.js:reloadAdminData]', e); }
     renderAll();
@@ -2853,6 +2972,10 @@
       case 'pin-event': { const ev = findEvent(v); if (ev) patchRow('lounge_events', v, { is_pinned: !ev.is_pinned }, ev.is_pinned ? '고정을 풀었어요' : '홈 맨 위에 고정했어요'); break; }
       case 'hide-event': { const ev = findEvent(v); if (ev) patchRow('lounge_events', v, { is_active: !ev.is_active }, ev.is_active ? '숨겼어요. 관리자에게만 보여요' : '다시 보이게 했어요'); break; }
       case 'del-event': deleteEvent(v); break;
+      case 'new-deal': openDealForm(null); break;
+      case 'edit-deal': openDealForm(findDeal(v)); break;
+      case 'hide-deal': { const dl = findDeal(v); if (dl) patchRow('lounge_deals', v, { is_active: !dl.is_active }, dl.is_active ? '숨겼어요. 관리자에게만 보여요' : '다시 보이게 했어요'); break; }
+      case 'del-deal': deleteRow('lounge_deals', v, '이 할인을 삭제할까요?').then(function (ok) { if (ok) reloadAdminData('lounge_deals'); }); break;
       case 'new-guide': openGuideForm(null, 'kit'); break;
       case 'edit-guide': openGuideForm(findGuide(v)); break;
       case 'hide-guide': { const g = findGuide(v); if (g) patchRow('lounge_guides', v, { is_active: !g.is_active }, g.is_active ? '숨겼어요. 관리자에게만 보여요' : '다시 보이게 했어요'); break; }
@@ -2956,6 +3079,7 @@
     if (!f.dataset || !f.dataset.form) return;
     e.preventDefault();
     if (f.dataset.form === 'event') saveEvent(f);
+    else if (f.dataset.form === 'deal') saveDeal(f);
     else if (f.dataset.form === 'guide') saveGuide(f);
     else if (f.dataset.form === 'post') savePost(f);
     else if (f.dataset.form === 'comment') saveComment(f);
