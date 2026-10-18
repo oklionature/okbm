@@ -7668,26 +7668,35 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     if (sid) {
       try {
         var found = okbmFindSpotInPoolById(okbmCollectMasterSpotPool(), sid);
-        var main = found && String(found.spot_main || found.name || '').replace(/\s*\(.*?\)/g, '').trim();
-        if (main) return main;
+        if (found) {
+          var main = String(found.spot_main || found.name || '').replace(/\s*\(.*?\)/g, '').trim();
+          var sub = String(found.spot_sub || '').trim();
+          if (main && sub && main.indexOf(sub) === -1) return main + ' ' + sub;
+          if (main) return main;
+        }
       } catch (ePill) {}
     }
-    var s = String(name || '')
+    var raw = String(name || '').trim();
+    var paren = '';
+    var parenMatch = raw.match(/\(([^)]+)\)/);
+    if (parenMatch) paren = String(parenMatch[1] || '').trim();
+    var s = raw
       .replace(/\s*\(.*?\)/g, ' ')
       .replace(/\[[^\]]*\]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
     s = s.replace(/^(강원|경기|인천|충북|충남|전북|전남|경북|경남|제주|서울|세종|울산|부산|대구|광주|대전)\s+/, '');
     s = s.replace(/^[가-힣]{2,12}(?:시|군|구)\s+/, '');
-    return s || String(name || '').trim();
+    if (s && paren && s.indexOf(paren) === -1) return (s + ' ' + paren).trim();
+    return s || raw;
   }
 
   function okbmFeedSpotPillHtml(name, spotId) {
     var safeSpot = escapeHtml(name || '');
     var safeSpotId = escapeHtml(spotId || '');
     var safeLabel = escapeHtml(okbmFeedSpotPillLabel(name, spotId));
-    return '<button type="button" class="js-feed-spot-map" data-spot="' + safeSpot + '" data-spot-id="' + safeSpotId + '" onclick="event.preventDefault(); event.stopPropagation(); window.navigateToSpotMap(this.dataset.spot, event, this.dataset.spotId);" aria-label="' + safeLabel + ' 위치 보기" style="display:inline-flex; align-items:center; max-width:100%; min-height:26px; margin:0; padding:0 10px; border-radius:999px; border:1px solid rgba(125,211,252,0.55); background:#083044; color:#e0f2fe; font:inherit; font-size:0.74rem; font-weight:800; letter-spacing:-0.02em; line-height:1; cursor:pointer; text-align:left; pointer-events:auto; position:relative; z-index:401; touch-action:manipulation;">' +
-      '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + safeLabel + '</span>' +
+    return '<button type="button" class="js-feed-spot-map" data-spot="' + safeSpot + '" data-spot-id="' + safeSpotId + '" onclick="event.preventDefault(); event.stopPropagation(); window.navigateToSpotMap(this.dataset.spot, event, this.dataset.spotId);" aria-label="' + safeLabel + ' 위치 보기" style="display:inline-flex; align-items:center; align-self:flex-start; width:fit-content; max-width:100%; flex:0 1 auto; box-sizing:border-box; min-height:26px; margin:0; padding:0 10px; border-radius:999px; border:1px solid rgba(125,211,252,0.55); background:#083044; color:#e0f2fe; font:inherit; font-size:0.74rem; font-weight:800; letter-spacing:-0.02em; line-height:1; cursor:pointer; text-align:left; white-space:nowrap; pointer-events:auto; position:relative; z-index:401; touch-action:manipulation;">' +
+      '<span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + safeLabel + '</span>' +
     '</button>';
   }
 
