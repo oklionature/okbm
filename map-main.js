@@ -2361,22 +2361,27 @@ function updateSmartResetButtons() {
         }
       }
 
-      // 검색 페이지 등 링크로 들어온 비회원은 로그인 창 없이 그 산 이름이 보이는 곳까지만 옮긴다.
+      // 공유 링크·검색 페이지로 들어온 비회원에게는 그 박지 하나만 정보창을 열어 준다(홍보).
+      // 비회원 정보창은 [뷰/특징]·사진까지이고 들머리·내비는 회원 전용 안내로 가려진다. 다른 박지는 누르면 로그인 안내.
+      var guestLinkedSpotId = '';
       function openSpotFromLink(spot) {
-        if (!isGuestViewer()) { focusSpotOnMap(spot); return; }
-        try {
-          if (!map || !spot) return;
-          map.setLevel(8, { animate: false });
-          map.setCenter(new kakao.maps.LatLng(spot.lat, spot.lng));
-          window.__MANUAL_ACTIVE_ID__ = String(spot.id).trim();
-          updateLODLabels();
-        } catch (e) {}
+        if (!spot) return;
+        if (isGuestViewer()) {
+          guestLinkedSpotId = String(spot.id).trim();
+          try {
+            if (map) {
+              map.setLevel(8, { animate: false });
+              map.setCenter(new kakao.maps.LatLng(spot.lat, spot.lng));
+            }
+          } catch (e) {}
+        }
+        focusSpotOnMap(spot);
       }
 
       function focusSpotOnMap(spot) {
         if (!spot) return;
         if (isPickingLocationMode || window.__adminPinMoveSpotId) return;
-        if (isGuestViewer()) {
+        if (isGuestViewer() && String(spot.id).trim() !== guestLinkedSpotId) {
           askGuestLoginForSpot(spot);
           return;
         }
