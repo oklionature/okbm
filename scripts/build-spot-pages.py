@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""박지별 검색용 정적 페이지(spot/<id>/index.html), 목록(spot/index.html), sitemap.xml을 만든다.
+"""박지별 검색용 정적 페이지(spot/<id>/index.html), 목록(spot/index.html), sitemap.xml, llms.txt를 만든다.
 
     python3 scripts/build-spot-pages.py            # 생성
     python3 scripts/build-spot-pages.py --dry-run  # 파일을 쓰지 않고 요약만
@@ -108,6 +108,55 @@ def display_name(row):
     return main, sub
 
 
+def has_batchim(word):
+    for ch in reversed(str(word)):
+        if "가" <= ch <= "힣":
+            return (ord(ch) - 0xAC00) % 28 != 0
+        if ch.isdigit():
+            return ch in "013678"
+        if ch.isalpha():
+            return False
+    return False
+
+
+def josa(word, with_b, without_b):
+    return with_b if has_batchim(word) else without_b
+
+
+def answer_text(name_full, place, elev, d, d_label, dist, course, terrains):
+    """첫 문단 한눈에 보기. 공개 컬럼(지역·고도·난이도·거리·지형)만 쓴다."""
+    name = re.sub(r"\s*\([^)]*\)\s*$", "", name_full).strip() or name_full
+    parts = [f"{name}{josa(name, '은', '는')} {place}에 있는 백패킹 박지예요."]
+    stat = (f"해발 {elev}m, " if elev else "") + f"난이도 {d_label}({d}/5)"
+    if dist:
+        walk = f"편도 약 {dist}km" if course == "편도" else f"약 {dist}km"
+        parts.append(f"{stat}이고 들머리에서 {walk}를 걸어요.")
+    else:
+        parts.append(f"{stat}예요.")
+    if terrains:
+        t = "·".join(terrains)
+        parts.append(f"지형은 {t}{josa(t, '이에요', '예요')}.")
+    return " ".join(parts)
+
+
+def faq_items(main, d, d_label, region, more):
+    if d <= 2:
+        level = f"난이도가 쉬움({d}/5)이라 처음 가는 분도 도전하기 좋아요."
+    elif d >= 4:
+        level = f"난이도가 어려움({d}/5)이에요. 백패킹 경험을 몇 번 쌓은 뒤에 가는 걸 권해요."
+    else:
+        level = f"난이도는 보통({d}/5)이에요. 처음이라면 배낭 무게를 가볍게 줄여서 가세요."
+    items = [(f"{main} 박지는 초보도 갈 수 있나요?", level)]
+    if more > 0:
+        items.append((f"{region}에 다른 백패킹 박지도 있나요?",
+                      f"{region}에는 낭만루트에 정리된 박지가 {more}곳 더 있어요. "
+                      f"아래 '{region}의 다른 박지'에서 바로 볼 수 있어요."))
+    items.append(("정확한 위치와 들머리는 어디서 보나요?",
+                  "소중한 장소를 지키려고 정확한 위치, 들머리 주소, 코스는 낭만루트에 로그인한 회원에게만 보여 드려요. "
+                  "낭만루트 지도에서 확인하세요."))
+    return items
+
+
 def esc(s):
     return html.escape(str(s), quote=True)
 
@@ -136,6 +185,10 @@ h1{margin:0;font-size:1.6rem;line-height:1.35;color:#f8fafc;letter-spacing:-.02e
 .card{margin:18px 0;padding:16px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
 .card h2{margin:0 0 8px;font-size:.95rem;color:#f8fafc}
 .card p{margin:0}
+.answer{margin:14px 0 0;font-size:1rem;color:#f1f5f9}
+.faq dt{margin:12px 0 2px;font-weight:700;color:#f8fafc;font-size:.92rem}
+.faq dt:first-child{margin-top:0}
+.faq dd{margin:0;color:#cbd5e1;font-size:.9rem}
 .cta{display:block;margin:10px 0 0;padding:12px;border-radius:12px;background:#fde047;color:#111;font-weight:800;text-align:center;text-decoration:none}
 .lock{color:#cbd5e1;font-size:.88rem}
 .qr{display:none;margin-top:14px;text-align:center;font-size:.8rem;color:#94a3b8}
@@ -163,7 +216,7 @@ FOOTER = """<footer>
 </footer>"""
 
 
-def spot_page(row, same_region):
+def spot_page(row, same_region, region_more=0):
     sid = str(row["id"]).strip()
     main, sub = display_name(row)
     city = clean_text(row.get("cityName"))
@@ -214,6 +267,15 @@ def spot_page(row, same_region):
         "address": address,
         "touristType": "백패킹",
     }
+    answer = answer_text(name_full, place, elev, d, d_label, dist, course, terrains)
+    faqs = faq_items(main, d, d_label, region, region_more)
+    faq_html = "\n".join(f"<dt>{esc(q)}</dt><dd>{esc(a)}</dd>" for q, a in faqs)
+    ld_faq = {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [{"@type": "Question", "name": q,
+                        "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faqs],
+    }
     ld_crumb = {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
@@ -242,6 +304,7 @@ def spot_page(row, same_region):
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">{json_ld(ld_place)}</script>
 <script type="application/ld+json">{json_ld(ld_crumb)}</script>
+<script type="application/ld+json">{json_ld(ld_faq)}</script>
 <style>{STYLE}</style>
 </head>
 <body>
@@ -254,6 +317,7 @@ def spot_page(row, same_region):
 <ul class="badges" aria-label="장소 요약">
 {"".join(badges)}
 </ul>
+<p class="answer">{esc(answer)}</p>
 <section class="card">
 <h2>뷰와 특징</h2>
 <p>{esc(brief) if brief else '낭만루트에 등록된 백패킹 장소예요.'}</p>
@@ -271,6 +335,12 @@ def spot_page(row, same_region):
 <li>국립·도립공원 안에서 허가 없이 야영하면 자연공원법 위반이에요.</li>
 <li>쓰레기는 되가져오고, 사유지에는 들어가지 마세요.</li>
 </ul>
+</section>
+<section class="card">
+<h2>자주 묻는 질문</h2>
+<dl class="faq">
+{faq_html}
+</dl>
 </section>
 {f'<section><h2 class="region">{esc(region)}의 다른 박지</h2><ul class="related">{related}</ul></section>' if related else ''}
 </main>
@@ -327,6 +397,34 @@ def index_page(groups, total):
 """
 
 
+def llms_txt(groups, total):
+    lines = [
+        "# 낭만루트",
+        "",
+        "> 전국 백패킹 박지를 지도로 찾고 패킹·기록·장비 관리까지 한곳에서 하는 국내 아웃도어 서비스 (romanticroute.kr)",
+        "",
+        "낭만루트는 자연에서 하룻밤을 보내는 백패커를 위한 국내 아웃도어 서비스입니다. "
+        "전국 백패킹 박지를 지역별로 정리하고 고도, 난이도, 거리, 지형을 함께 보여 줍니다. "
+        "박지 목록은 운영진과 회원 제보로 만들고 국립·도립·군립공원 안의 장소는 야영이 금지라 싣지 않습니다. "
+        "정확한 좌표와 들머리, 코스는 장소 보존을 위해 로그인한 회원에게만 공개합니다.",
+        "",
+        f"- 기준일: {date.today().isoformat()}",
+        f"- 공개 박지: {total}곳",
+        "",
+        "## 주요 페이지",
+        "",
+        f"- [전국 백패킹 박지 목록]({SITE}/spot/): 지역별 박지 {total}곳",
+        f"- [낭만루트 지도]({SITE}/map.html): 박지 위치·들머리·코스 (로그인 회원 공개)",
+        f"- [개인정보처리방침]({SITE}/privacy.html)",
+        f"- [이용약관]({SITE}/terms.html)",
+        "",
+        "## 지역별 박지",
+        "",
+    ]
+    lines += [f"- [{g} {len(rows)}곳]({SITE}/spot/#{urllib.parse.quote(g)})" for g, rows in groups]
+    return "\n".join(lines) + "\n"
+
+
 def sitemap(ids):
     today = date.today().isoformat()
     urls = [f"  <url>\n    <loc>{SITE}/</loc>\n    <lastmod>{today}</lastmod>\n  </url>",
@@ -373,7 +471,7 @@ def main():
         sid = str(r["id"]).strip()
         keep_ids.add(sid)
         peers = [p for p in by_region[region_of(r)] if p is not r][:8]
-        write(os.path.join(OUT_DIR, sid, "index.html"), spot_page(r, peers), dry)
+        write(os.path.join(OUT_DIR, sid, "index.html"), spot_page(r, peers, len(by_region[region_of(r)]) - 1), dry)
     write(os.path.join(OUT_DIR, "index.html"), index_page(groups, len(kept)), dry)
 
     # 제외됐거나 DB에서 사라진 박지 페이지 삭제 (숫자 id 폴더 중 이 스크립트가 만든 것만)
@@ -391,6 +489,7 @@ def main():
 
     ids_sorted = sorted(keep_ids, key=lambda x: (not x.isdigit(), int(x) if x.isdigit() else 0, x))
     write(os.path.join(ROOT, "sitemap.xml"), sitemap(ids_sorted), dry)
+    write(os.path.join(ROOT, "llms.txt"), llms_txt(groups, len(kept)), dry)
 
     print(f"spots {len(rows)} | pages {len(kept)} | park-excluded {len(park)} | manual-excluded {len(manual)} | removed {len(removed)}"
           + (" (dry-run)" if dry else ""))

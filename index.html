@@ -2297,7 +2297,7 @@
         <div class="brand-sym-box">
           <img src="logo.png" alt="낭만루트 로고" class="brand-logo-img" />
         </div>
-        <span class="brand-title">낭만루트</span>
+        <h1 class="brand-title" style="margin:0;">낭만루트</h1>
       </a>
       <span class="hh-pick">이주의 인기 스팟 <span id="heroCardIndexIndicator">(1/10)</span></span>
     </div>
@@ -2322,7 +2322,7 @@
 <!-- 하단 글래스 메모 -->
   <div class="insta-glass-memo">
    <div class="insta-memo-title-line" style="display:flex; justify-content:space-between; align-items:center;">
-      <h1 class="insta-memo-spot-title" id="heroMainTitle">장소 로딩 중...</h1>
+      <h2 class="insta-memo-spot-title" id="heroMainTitle" style="margin:0;">장소 로딩 중...</h2>
 
       <span id="heroStatText" class="hm-stat" hidden></span>
       <button type="button" id="btnHeroAuthorFeed" class="okbm-press" onclick="window.openHeroAuthorCollection(event)" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:3px 8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
@@ -2548,6 +2548,15 @@ window.okbmIsHomePublicFeed = function(f) {
         <span id="mainBannerKgText" hidden>0.00 kg</span>
       </div>
    </section>
+
+    <footer class="okbm-home-about" style="padding:28px 18px 8px; font-size:var(--fs-meta); line-height:1.6; color:var(--tx-3);">
+      <p style="margin:0 0 8px;">낭만루트는 전국 백패킹 박지 400여 곳을 지도로 찾고 패킹·기록·장비 관리까지 한곳에서 하는 아웃도어 앱이에요.</p>
+      <nav aria-label="낭만루트 안내" style="display:flex; flex-wrap:wrap; gap:4px 14px;">
+        <a href="/spot/" style="color:var(--tx-2);">전국 백패킹 박지 목록</a>
+        <a href="/privacy.html" style="color:var(--tx-3);">개인정보처리방침</a>
+        <a href="/terms.html" style="color:var(--tx-3);">이용약관</a>
+      </nav>
+    </footer>
   </main>
 
   <div id="romanticMasterBottomDock" class="mobile-bottom-dock notranslate"></div>

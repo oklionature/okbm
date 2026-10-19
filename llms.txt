@@ -1,0 +1,28 @@
+# 낭만루트
+
+> 전국 백패킹 박지를 지도로 찾고 패킹·기록·장비 관리까지 한곳에서 하는 국내 아웃도어 서비스 (romanticroute.kr)
+
+낭만루트는 자연에서 하룻밤을 보내는 백패커를 위한 국내 아웃도어 서비스입니다. 전국 백패킹 박지를 지역별로 정리하고 고도, 난이도, 거리, 지형을 함께 보여 줍니다. 박지 목록은 운영진과 회원 제보로 만들고 국립·도립·군립공원 안의 장소는 야영이 금지라 싣지 않습니다. 정확한 좌표와 들머리, 코스는 장소 보존을 위해 로그인한 회원에게만 공개합니다.
+
+- 기준일: 2026-10-19
+- 공개 박지: 413곳
+
+## 주요 페이지
+
+- [전국 백패킹 박지 목록](https://romanticroute.kr/spot/): 지역별 박지 413곳
+- [낭만루트 지도](https://romanticroute.kr/map.html): 박지 위치·들머리·코스 (로그인 회원 공개)
+- [개인정보처리방침](https://romanticroute.kr/privacy.html)
+- [이용약관](https://romanticroute.kr/terms.html)
+
+## 지역별 박지
+
+- [서울/인천 31곳](https://romanticroute.kr/spot/#%EC%84%9C%EC%9A%B8/%EC%9D%B8%EC%B2%9C)
+- [경기 85곳](https://romanticroute.kr/spot/#%EA%B2%BD%EA%B8%B0)
+- [강원 62곳](https://romanticroute.kr/spot/#%EA%B0%95%EC%9B%90)
+- [충북 25곳](https://romanticroute.kr/spot/#%EC%B6%A9%EB%B6%81)
+- [충남 25곳](https://romanticroute.kr/spot/#%EC%B6%A9%EB%82%A8)
+- [전북 29곳](https://romanticroute.kr/spot/#%EC%A0%84%EB%B6%81)
+- [전남 45곳](https://romanticroute.kr/spot/#%EC%A0%84%EB%82%A8)
+- [경북 52곳](https://romanticroute.kr/spot/#%EA%B2%BD%EB%B6%81)
+- [경남 55곳](https://romanticroute.kr/spot/#%EA%B2%BD%EB%82%A8)
+- [제주 4곳](https://romanticroute.kr/spot/#%EC%A0%9C%EC%A3%BC)
