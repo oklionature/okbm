@@ -1278,6 +1278,19 @@
     if (outro) html += `<p class="lm-desc">${esc(outro)}</p>`;
     return `<div class="lm-guide">${html}</div>`;
   }
+  // 같은 영상을 다룬 웹 가이드(romanticroute.kr/guide/)가 있으면 "자세히 보기" 단추를 붙인다
+  const WEB_GUIDE_BY_YT = {
+    l6qrayW5wKs: 'sleeping-bag-temperature', yYl7w7JkNLk: 'backpacking-tent-guide',
+    '8MvNgtWJiiE': 'winter-backpacking-budget-set', IpIuffqLSBw: 'where-can-i-camp-in-mountains',
+    rRtzM9yEBZQ: 'toilet-in-the-mountains', HiN4TCmfvE8: 'what-to-eat-backpacking',
+    '9TPkBxnQuqQ': 'winter-backpacking-budget-set', p08x3cRpiKI: 'ultralight-budget-set'
+  };
+  const WEB_GUIDE_BY_ID = { '32f7d535-18c0-48ea-b922-071dfee19e36': 'three-season-starter-set' };
+  function webGuideBtn(g) {
+    const slug = WEB_GUIDE_BY_YT[youtubeId(guideSource(g && g.body))] || WEB_GUIDE_BY_ID[g && g.id];
+    if (!slug) return '';
+    return `<a class="lm-blog" style="margin:12px 0 14px" href="${escapeHtml(okbmSafeExternalUrl('https://romanticroute.kr/guide/' + slug + '/'))}" target="_blank" rel="noopener noreferrer">웹 가이드에서 자세히 보기${ico(P.chevR, 16)}</a>`;
+  }
   function kitItem(k, open) {
     const items = kitItems(k);
     const shown = !!(open && guideSource(k.body));
@@ -1285,7 +1298,7 @@
     const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="${shown}">${mark}
       <div class="lm-rb"><div class="lm-rt">${esc(k.title)}${D.admin && !k.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc([k.note, items.length + '가지'].filter(Boolean).join(' · '))}</div></div>${chev(true)}</button>`;
     const parts = guideParts(k.body);
-    const intro = `${advisorBlock(k, parts.channel)}${sourceBlock(k.body)}${guideWithGear(parts.prose, items)}`;
+    const intro = `${advisorBlock(k, parts.channel)}${sourceBlock(k.body)}${guideWithGear(parts.prose, items)}${webGuideBtn(k)}`;
     const body = `<div class="lmx-in">
       ${intro}
       ${adminLinks([['edit-guide', '수정', 'adm', k.id], ['hide-guide', k.is_active ? '숨기기' : '다시 보이기', 'adm', k.id], ['del-guide', '삭제', 'red', k.id]])}
@@ -1306,7 +1319,7 @@
     const video = tp.yid ? `<div class="lm-tv${tp.short ? ' short' : ''}" data-yt="${esc(tp.yid)}">${tipPoster(tp.yid)}</div>` : '';
     return fold(t.id,
       `<button type="button" class="lm-faq-q" data-a="x" aria-expanded="false"><span>${tag}${esc(t.title)}${D.admin && !t.is_active ? '<span class="lm-tag">숨김</span>' : ''}</span>${chev(true)}</button>`,
-      `<div class="lmx-in">${video}${tp.text ? `<p class="lm-desc" style="margin:0">${esc(tp.text)}</p>` : ''}
+      `<div class="lmx-in">${video}${tp.text ? `<p class="lm-desc" style="margin:0">${esc(tp.text)}</p>` : ''}${webGuideBtn(t)}
         ${adminLinks([['edit-guide', '수정', 'adm', t.id], ['hide-guide', t.is_active ? '숨기기' : '다시 보이기', 'adm', t.id], ['del-guide', '삭제', 'red', t.id]])}</div>`);
   }
   const kits = function () { return D.guides.filter(function (g) { return g.kind === 'kit' && (D.admin || g.is_active !== false); }); };
