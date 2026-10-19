@@ -755,9 +755,17 @@ def sitemap(ids, extra=()):
             + "\n".join(urls) + "\n</urlset>\n")
 
 
+DATE_LINE_RE = re.compile(r"<lastmod>[\d-]+</lastmod>|기준일: [\d-]+")
+
+
 def write(path, text, dry):
     if dry:
         return
+    # 날짜(사이트맵 lastmod, llms.txt 기준일)만 바뀐 파일은 그대로 둔다. 매일 도는 자동 갱신이 빈 커밋을 만들지 않게.
+    if os.path.exists(path):
+        old = open(path, encoding="utf-8").read()
+        if old == text or DATE_LINE_RE.sub("", old) == DATE_LINE_RE.sub("", text):
+            return
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write(text)

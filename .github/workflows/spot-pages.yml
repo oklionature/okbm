@@ -1,0 +1,37 @@
+name: spot-pages
+
+# 새 박지가 등록되면 검색용 페이지(spot/, theme/, region/, city/)와 sitemap.xml, llms.txt를
+# 매일 새로 만들고, 바뀐 것이 있을 때만 main에 올린다. 올리면 GitHub Pages가 바로 배포한다.
+on:
+  schedule:
+    - cron: "0 19 * * *"  # 매일 한국 시각 새벽 4시
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: spot-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build spot pages
+        run: python3 scripts/build-spot-pages.py
+      - name: Commit if changed
+        run: |
+          git add -A spot theme region city sitemap.xml llms.txt
+          if git diff --cached --quiet; then
+            echo "바뀐 박지 없음"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "검색: 박지 페이지 자동 갱신 ($(date -u -d '+9 hours' +%Y-%m-%d))"
+          git push
