@@ -2182,7 +2182,9 @@ function updateSmartResetButtons() {
           const screenPoint = proj.containerPointFromCoords(latlng);
           if (!screenPoint) continue;
 
-          const isFullMode = isSelected || (currentLevel <= 7);
+          // 비회원은 산 이름 한 줄만. 산 이름·세부 이름·해발 세 줄은 회원에게만 보인다.
+          const isGuest = isGuestViewer();
+          const isFullMode = !isGuest && (isSelected || (currentLevel <= 7));
           const labelWidth = isFullMode ? 90 : 58;
           const labelHeight = isFullMode ? 54 : 22;
 
@@ -2230,8 +2232,6 @@ function updateSmartResetButtons() {
             const isDone = userVisited.has(id);
             // 이름·난이도·고도가 바뀐 spot(목록 교체·수정)도 다시 그리도록 내용 값을 키에 넣는다
             const isBan = isCampBanned(spot);
-            // 비회원은 산 이름까지만. 세부 이름(정상 데크 등)이 나오는 단계부터는 로그인해야 보인다.
-            const isGuest = isGuestViewer();
             const labelKey = `${id}_${isFullMode ? 'full' : 'mini'}_${isSelected ? 'sel' : 'nor'}_${isFav ? 'f' : 'nf'}_${isDone ? 'd' : 'nd'}_${isBan ? 'ban' : 'ok'}_${isGuest ? 'g' : 'm'}_${row1Name}|${row2Sub}|${row3Elev}|${diffClass}`;
             if (overlay._cachedLabelKey !== labelKey) {
               const labelDiv = document.createElement('div');
@@ -2250,9 +2250,7 @@ function updateSmartResetButtons() {
                 <div class="lod-marker-label" style="position: absolute; bottom: 44px; left: 50%; pointer-events: auto; ${labelTransform}">
                   <div class="lod-label-row-1 ${isBan ? '' : diffClass}"${isBan ? ' style="color:#fda4af;"' : ''}>${isBan ? '🚫 ' : ''}${escapeHtml(row1Name)}</div>
                   ${isBan ? '<div class="lod-label-row-2" style="color:#fb7185; font-weight:900;">야영금지</div>' : ''}
-                  ${(isFullMode && row2Sub) ? (isGuest
-                    ? `<div class="lod-label-row-2" style="color:#FFB547;">🔒 로그인하면 보여요</div>`
-                    : `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>`) : ''}
+                  ${(isFullMode && row2Sub) ? `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>` : ''}
                   ${(isFullMode && row3Elev) ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${escapeHtml(row3Elev)}</div>` : ''}
                 </div>
               `;
