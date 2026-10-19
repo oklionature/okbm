@@ -341,6 +341,10 @@
       '.lm-who span{color:var(--faint)}',
       '.lm-tt{margin-top:2px;font-size:14px;font-weight:800;line-height:1.45}',
       '.lm-bd{margin-top:2px;font-size:13.5px;line-height:1.55;color:#d1d1d6;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}',
+      '.lm-bd a{color:#8eb6ff;font-weight:700;text-decoration:underline;word-break:break-all}',
+      '.lm-ytap{display:inline}',
+      '.lm-ytap iframe{display:block;width:100%;margin-top:8px;border:0;border-radius:12px;background:#17171b;aspect-ratio:16/9}',
+      '.lm-ytap.short iframe{width:min(70%,236px);aspect-ratio:9/16}',
       '.lmx-cm .lm-bd{display:block}',
       '.lm-photos{display:flex;gap:6px;margin-top:10px;overflow-x:auto;scrollbar-width:none}',
       '.lm-photos img{flex:none;width:100%;max-height:340px;object-fit:cover;border-radius:12px;background:#17171b}',
@@ -1390,6 +1394,37 @@
       <input name="body" maxlength="500" placeholder="${p.is_private ? '답변 달기' : '댓글 달기'}" aria-label="댓글 입력" enterkeyhint="send">
       <button type="submit">등록</button></form>`;
   }
+  // 본문 주소는 글자만 둔다. 유튜브·인스타는 눌렀을 때만 불러 온다.
+  function bodyHtml(text) {
+    const s = String(text || '');
+    const re = /https?:\/\/[^\s<>"']+/g;
+    let html = '';
+    let i = 0;
+    let m;
+    while ((m = re.exec(s))) {
+      html += esc(s.slice(i, m.index));
+      let raw = m[0];
+      let tail = '';
+      const cut = raw.match(/[),.]+$/);
+      if (cut) { tail = cut[0]; raw = raw.slice(0, -tail.length); }
+      html += bodyLink(raw) + esc(tail);
+      i = m.index + m[0].length;
+    }
+    return html + esc(s.slice(i));
+  }
+  function bodyLink(url) {
+    const safe = okbmSafeExternalUrl(url);
+    if (!safe || safe === '#') return esc(url);
+    const ig = instaPost(url);
+    if (ig) {
+      return '<a class="lm-link" data-a="deal-ig" data-kind="' + esc(ig.kind) + '" data-code="' + esc(ig.code) + '" href="' + escapeHtml(okbmSafeExternalUrl(url)) + '">' + esc(url) + '</a>';
+    }
+    const yid = youtubeId(url);
+    if (yid) {
+      return '<a class="lm-link" data-a="body-yt" data-yt="' + esc(yid) + '" data-short="' + (/\/shorts\//.test(url) ? '1' : '0') + '" href="' + escapeHtml(okbmSafeExternalUrl(url)) + '">' + esc(url) + '</a>';
+    }
+    return '<a class="lm-out" href="' + escapeHtml(okbmSafeExternalUrl(url)) + '" target="_blank" rel="noopener noreferrer">' + esc(url) + '</a>';
+  }
   function postItem(p) {
     const photos = postPhotos(p);
     const cc = Number(p.comments_count) || 0;
@@ -1398,7 +1433,7 @@
       <div class="lm-lcol">${av(p.nickname, p.user_id)}${cc ? '<div class="lm-thread"></div>' : ''}</div>
       <div class="lm-rb">
         <div class="lm-who"><b>${esc(p.nickname)}</b><span>${esc(ago(p.created_at))}</span><span>· ${esc(CAT_LABEL[p.category] || '')}</span></div>
-        <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}</div>${p.body ? `<div class="lm-bd">${esc(p.body)}</div>` : ''}
+        <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}</div>${p.body ? `<div class="lm-bd">${bodyHtml(p.body)}</div>` : ''}
         ${photos.length ? `<div class="lm-photos ${photos.length > 1 ? 'multi' : ''}">${photos.map(function (u) { return `<img src="${escapeHtml(okbmSafeImageUrl(u))}" alt="" loading="lazy" decoding="async">`; }).join('')}</div>` : ''}
         ${p.is_private ? `<div class="lm-private">${ico(P.lock, 13)}나와 운영팀만 볼 수 있어요 · 댓글 ${cc}</div>`
           : `<div class="lm-acts">${likeBtn(p)}<span class="lm-act">${ico(P.chat, 17)}<span>${cc}</span></span></div>`}
@@ -1650,7 +1685,11 @@
   }
   function setOpen(item, open) {
     item.classList.toggle('open', open);
-    if (!open) { item.classList.remove('cal'); resetTipVideo(item); }
+    if (!open) {
+      item.classList.remove('cal');
+      resetTipVideo(item);
+      item.querySelectorAll('.lm-ytap iframe').forEach(function (f) { f.remove(); });
+    }
     const h = item.querySelector('[data-a="x"]');
     if (h) h.setAttribute('aria-expanded', String(open));
   }
@@ -2522,7 +2561,6 @@
         <span class="lm-lbl">사진 <span data-pcount>${(SH.photos || []).length}</span>/5</span>
         <div class="lm-thumbs" data-thumbs>${thumbsHtml()}</div>
         <label class="lm-file">${ico(P.img, 18)}<span>사진 추가</span><input type="file" accept="image/*,.heic,.heif" multiple data-post-files hidden></label>
-        <p class="lm-hint">사람 얼굴·차 번호판·정확한 비박 위치가 드러나지 않게 올려 주세요.</p>
         <button type="submit" class="lm-btn main">${p ? '저장' : '올리기'}</button>
       </form>`;
   }
@@ -2874,10 +2912,40 @@
     const a = t.dataset.a, v = t.dataset.v;
     const inWin = !!t.closest('.lm-win');
     const item = t.closest('.lmx');
-    if (t.tagName === 'A') return;
+    if (e.target.closest('a.lm-out')) return;
+    if (t.tagName === 'A' && a !== 'deal-ig' && a !== 'body-yt') return;
     switch (a) {
       case 'x': toggleItem(item); break;
-      case 'deal-ig': openDealInsta(t.dataset.kind, t.dataset.code); break;
+      case 'deal-ig': e.preventDefault(); openDealInsta(t.dataset.kind, t.dataset.code); break;
+      case 'body-yt': {
+        e.preventDefault();
+        const yid = youtubeId('https://youtu.be/' + String(t.dataset.yt || ''));
+        if (!yid) break;
+        if (item && !item.classList.contains('open')) {
+          if (item.parentElement) {
+            Array.prototype.forEach.call(item.parentElement.children, function (n) {
+              if (n !== item && n.classList && n.classList.contains('lmx') && n.classList.contains('open')) setOpen(n, false);
+            });
+          }
+          setOpen(item, true);
+          afterOpen(item);
+        }
+        let box = t.closest('.lm-ytap');
+        if (!box) {
+          box = document.createElement('span');
+          box.className = 'lm-ytap' + (t.dataset.short === '1' ? ' short' : '');
+          t.parentNode.insertBefore(box, t);
+          box.appendChild(t);
+        }
+        if (box.querySelector('iframe')) break;
+        const frame = document.createElement('iframe');
+        frame.title = 'YouTube 영상';
+        frame.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
+        frame.allowFullscreen = true;
+        frame.src = 'https://www.youtube-nocookie.com/embed/' + yid + '?autoplay=1&playsinline=1&rel=0';
+        box.appendChild(frame);
+        break;
+      }
       case 'tip-play': {
         const box = t.closest('[data-yt]');
         const yid = box ? youtubeId('https://youtu.be/' + box.dataset.yt) : '';
