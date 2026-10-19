@@ -320,6 +320,21 @@ h1{margin:0;font-size:1.6rem;line-height:1.35;color:#f8fafc;letter-spacing:-.02e
 .related small{display:block;color:#94a3b8}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 0;padding:0;list-style:none}
 .chips a{display:block;font-size:.8rem;padding:4px 11px;border-radius:999px;background:rgba(253,224,71,.08);border:1px solid rgba(253,224,71,.35);color:#fde047;text-decoration:none}
+.bars{margin:0;padding:0;list-style:none}
+.bars li{display:grid;grid-template-columns:7.5em 1fr 3.2em;align-items:center;gap:8px;margin:7px 0;font-size:.86rem}
+.bars .lb{color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bars .lb a{color:#e2e8f0}
+.bars .tr{height:12px;border-radius:6px;background:rgba(255,255,255,.06);overflow:hidden}
+.bars .fl{display:block;height:100%;border-radius:6px;background:#fde047}
+.bars .v{text-align:right;color:#cbd5e1;font-variant-numeric:tabular-nums}
+.tbl{width:100%;border-collapse:collapse;font-size:.86rem}
+.tbl th,.tbl td{padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.08);text-align:right;font-variant-numeric:tabular-nums}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl th{color:#94a3b8;font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:16px 0 0;padding:0;list-style:none}
+.kpis li{padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
+.kpis b{display:block;font-size:1.35rem;color:#fde047;font-variant-numeric:tabular-nums}
+.kpis span{font-size:.78rem;color:#94a3b8}
 .region{margin:28px 0 8px;font-size:1.1rem;color:#f8fafc}
 footer{margin-top:36px;font-size:.75rem;color:#64748b}
 """
@@ -512,7 +527,7 @@ def index_page(groups, total, theme_counts=None):
 <main>
 <h1 style="margin-top:18px">전국 백패킹 박지</h1>
 <p class="sub">지역별 {total}곳. 들머리와 코스는 <a href="{SITE}/map.html">낭만루트 지도</a>에서 로그인 후 확인할 수 있어요.</p>
-{chips([(f"/theme/{s}/", f"{THEME_LINK[s]} {theme_counts[s]}곳") for s, l in THEMES if theme_counts.get(s)]) if theme_counts else ""}
+{chips([("/stats/", "전국 박지 통계"), ("/guide/", "백패킹 가이드")] + [(f"/theme/{s}/", f"{THEME_LINK[s]} {theme_counts[s]}곳") for s, l in THEMES if theme_counts.get(s)]) if theme_counts else ""}
 {"".join(sections)}
 </main>
 {FOOTER}
@@ -707,7 +722,159 @@ def city_page(region, info, theme_rows, region_total, cities):
         nav_links=nav)
 
 
-def llms_txt(groups, total, theme_counts=None, city_pages=()):
+def fmt_int(n):
+    return f"{n:,}"
+
+
+def bars(items):
+    """items: [(라벨 HTML, 값)] — 가장 큰 값을 100%로 그린다."""
+    top = max((v for _, v in items), default=0) or 1
+    return '<ul class="bars">' + "".join(
+        f'<li><span class="lb">{lb}</span><span class="tr"><span class="fl" style="width:{v * 100 / top:.1f}%"></span></span>'
+        f'<span class="v">{fmt_int(v)}곳</span></li>' for lb, v in items) + "</ul>"
+
+
+def stats_numbers(kept, groups, theme_counts, cities):
+    elev = [float(r["elevation"]) for r in kept if str(r.get("elevation") or "").strip() not in ("", "None")]
+    kms = sorted(k for k in (km_of(r) for r in kept) if k is not None)
+    n = len(kept)
+    return {
+        "n": n,
+        "groups": [(g, len(rows)) for g, rows in groups],
+        "elev_avg": round(sum(elev) / len(elev)) if elev else 0,
+        "elev_bins": [(lb, sum(1 for e in elev if lo <= e < hi)) for lb, lo, hi in [
+            ("200m 아래", 0, 200), ("200~500m", 200, 500), ("500~800m", 500, 800),
+            ("800~1,000m", 800, 1000), ("1,000m 이상", 1000, 99999)]],
+        "km_median": fmt_num(kms[len(kms) // 2]) if kms else "",
+        "km_bins": [(lb, sum(1 for k in kms if lo < k <= hi)) for lb, lo, hi in [
+            ("0.5km 이하", -1, 0.5), ("0.5~1km", 0.5, 1), ("1~2km", 1, 2), ("2~3km", 2, 3), ("3km 넘음", 3, 999)]],
+        "within_1km": sum(1 for k in kms if k <= 1),
+        "diff": [(d, sum(1 for r in kept if difficulty_of(r)[0] == d)) for d in range(1, 6)],
+        "themes": theme_counts,
+        "top_cities": sorted((v for v in cities.values()), key=lambda v: (-len(v["rows"]), v["name"]))[:10],
+        "highest": sorted((r for r in kept if str(r.get("elevation") or "").strip()), key=lambda r: -float(r["elevation"]))[:10],
+    }
+
+
+def stats_page(kept, groups, theme_rows, theme_counts, cities):
+    st = stats_numbers(kept, groups, theme_counts, cities)
+    n = st["n"]
+    ranked = sorted(st["groups"], key=lambda x: -x[1])
+    (r1, n1), (r2, n2), (r3, n3) = ranked[:3]
+    w1 = region_word(r1)
+    low = st["elev_bins"][0][1] + st["elev_bins"][1][1]
+    high = st["elev_bins"][4][1]
+    intro = (f"낭만루트에 등록된 전국 백패킹 박지는 {fmt_int(n)}곳이에요. "
+             f"{w1}{josa(w1, '이', '가')} {n1}곳으로 가장 많고 데크가 있는 박지가 {theme_counts['deck']}곳이에요. "
+             f"박지 높이는 평균 해발 {st['elev_avg']}m이고 들머리에서 걷는 거리는 절반이 {st['km_median']}km 안쪽이에요.")
+    faqs = [
+        ("우리나라에서 백패킹 박지가 가장 많은 지역은 어디예요?",
+         f"낭만루트 집계로는 {w1}{josa(w1, '이', '가')} {n1}곳으로 가장 많고 "
+         f"그다음은 {region_word(r2)} {n2}곳, {region_word(r3)} {n3}곳 순이에요."),
+        ("백패킹 박지는 보통 얼마나 높은 곳에 있나요?",
+         f"평균 해발 {st['elev_avg']}m예요. 500m 아래가 {low}곳으로 전체의 {round(low * 100 / n)}%이고 "
+         f"1,000m 이상인 박지는 {high}곳이에요."),
+        ("들머리에서 박지까지 얼마나 걸어야 하나요?",
+         f"절반은 {st['km_median']}km 안쪽이에요. 1km 안쪽만 걸으면 되는 박지가 {st['within_1km']}곳 있어요."),
+    ]
+    kpis = [(fmt_int(n), "전국 박지"), (f"{st['elev_avg']}m", "평균 해발 고도"),
+            (f"{st['km_median']}km", "걷는 거리 중앙값"), (fmt_int(theme_counts["beginner"]), "초보 박지")]
+    region_bars = bars([(f'<a href="/region/{REGION_SLUG[g]}/">{esc(region_word(g))}</a>' if g in REGION_SLUG
+                         else esc(g), c) for g, c in ranked])
+    city_bars = bars([(f'<a href="{city_href(v, k_region)}">{esc(v["name"])}</a>', len(v["rows"]))
+                      for v in st["top_cities"] for k_region in [region_of(v["rows"][0])]])
+    theme_bars = bars([(f'<a href="/theme/{s}/">{esc(l)}</a>', theme_counts[s]) for s, l in THEMES])
+    elev_bars = bars([(esc(lb), c) for lb, c in st["elev_bins"]])
+    km_bars = bars([(esc(lb), c) for lb, c in st["km_bins"]])
+    diff_bars = bars([(f"{d}/5 {esc(difficulty_of({'difficulty': d})[1])}", c) for d, c in st["diff"]])
+    easy_ids = {id(r) for r in theme_rows["beginner"]}
+    ratio_rows = "".join(
+        f'<tr><td>{esc(region_word(g))}</td><td>{len(rows)}</td><td>{sum(1 for r in rows if id(r) in easy_ids)}</td>'
+        f'<td>{round(sum(1 for r in rows if id(r) in easy_ids) * 100 / len(rows))}%</td></tr>' for g, rows in groups)
+    highest = "".join(
+        f'<li><a href="/spot/{esc(r["id"])}/">{esc(" ".join(display_name(r)).strip())}'
+        f'<small>{esc(region_word(region_of(r)))} · 해발 {esc(fmt_num(r["elevation"]))}m</small></a></li>' for r in st["highest"])
+    today = date.today().isoformat()
+    title = f"전국 백패킹 박지 통계 {fmt_int(n)}곳 - 지역·높이·거리 | 낭만루트"
+    desc = short_desc(intro)
+    page_url = f"{SITE}/stats/"
+    faq_html = "\n".join(f"<dt>{esc(q)}</dt><dd>{esc(a)}</dd>" for q, a in faqs)
+    ld_data = {"@context": "https://schema.org", "@type": "Dataset", "name": "전국 백패킹 박지 통계",
+               "description": intro, "url": page_url, "inLanguage": "ko-KR", "isAccessibleForFree": True,
+               "creator": {"@type": "Organization", "name": "낭만루트", "url": f"{SITE}/"},
+               "spatialCoverage": {"@type": "Place", "name": "대한민국"},
+               "variableMeasured": ["지역별 박지 수", "해발 고도", "들머리에서 걷는 거리", "난이도"]}
+    ld_faq = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faqs]}
+    ld_crumb = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "낭만루트", "item": f"{SITE}/"},
+        {"@type": "ListItem", "position": 2, "name": "박지", "item": f"{SITE}/spot/"},
+        {"@type": "ListItem", "position": 3, "name": "박지 통계", "item": page_url}]}
+
+    def card(h, inner, note=""):
+        return f'<section class="card"><h2>{esc(h)}</h2>{inner}{f"<p class=sub>{esc(note)}</p>" if note else ""}</section>'
+
+    return f"""<!doctype html>
+<html lang="ko">
+<head>
+{GENERATED_MARK}
+{HEAD_COMMON}
+<title>{esc(title)}</title>
+<meta name="description" content="{esc(desc)}">
+<link rel="canonical" href="{page_url}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="낭만루트">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:url" content="{page_url}">
+<meta property="og:title" content="{esc(title)}">
+<meta property="og:description" content="{esc(desc)}">
+<meta property="og:image" content="{SITE}/fulllogoblk.png?v=20260919_v3">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{json_ld(ld_data)}</script>
+<script type="application/ld+json">{json_ld(ld_crumb)}</script>
+<script type="application/ld+json">{json_ld(ld_faq)}</script>
+<style>{STYLE}</style>
+</head>
+<body>
+<div class="wrap">
+<a class="top" href="/"><img src="/logo.png" alt="" width="28" height="28">낭만루트</a>
+<nav class="crumb" aria-label="현재 위치"><a href="/spot/">박지</a> › 박지 통계</nav>
+<main>
+<h1>전국 백패킹 박지 통계</h1>
+<p class="sub">기준일: {today}</p>
+<p class="answer">{esc(intro)}</p>
+<ul class="kpis">{"".join(f"<li><b>{esc(v)}</b><span>{esc(k)}</span></li>" for v, k in kpis)}</ul>
+{card("지역별 박지 수", region_bars)}
+{card("박지가 많은 시·군 TOP10", city_bars)}
+{card("테마별 박지 수", theme_bars, "한 박지가 여러 테마에 들어갈 수 있어요.")}
+{card("해발 고도별 박지 수", elev_bars)}
+{card("들머리에서 걷는 거리", km_bars, "거리가 적힌 박지만 셌어요.")}
+{card("난이도별 박지 수", diff_bars)}
+{card("지역별 초보 박지 비율", f'<table class="tbl"><thead><tr><th>지역</th><th>박지</th><th>초보</th><th>비율</th></tr></thead><tbody>{ratio_rows}</tbody></table>')}
+<section><h2 class="region">가장 높은 박지 TOP10</h2><ul class="related">{highest}</ul></section>
+<section class="card">
+<h2>자주 묻는 질문</h2>
+<dl class="faq">
+{faq_html}
+</dl>
+</section>
+<section class="card">
+<h2>이 통계에 대해</h2>
+<p class="lock">{esc(STATS_NOTE.format(N=fmt_int(n)))}</p>
+</section>
+</main>
+{FOOTER}
+</div>
+</body>
+</html>
+"""
+
+
+STATS_NOTE = ("낭만루트에 등록된 박지 가운데 국립·도립·군립공원 안의 장소를 뺀 {N}곳을 기준으로 매일 다시 계산해요. "
+              "인용할 때는 '낭만루트 집계'와 이 페이지 주소를 함께 적어 주세요.")
+
+
+def llms_txt(groups, total, theme_counts=None, city_pages=(), guides=()):
     lines = [
         "# 낭만루트",
         "",
@@ -724,6 +891,7 @@ def llms_txt(groups, total, theme_counts=None, city_pages=()):
         "## 주요 페이지",
         "",
         f"- [전국 백패킹 박지 목록]({SITE}/spot/): 지역별 박지 {total}곳",
+        f"- [전국 백패킹 박지 통계]({SITE}/stats/): 지역별·높이별·거리별·난이도별 박지 수 (매일 갱신)",
         f"- [낭만루트 지도]({SITE}/map.html): 박지 위치·들머리·코스 (로그인 회원 공개)",
         f"- [개인정보처리방침]({SITE}/privacy.html)",
         f"- [이용약관]({SITE}/terms.html)",
@@ -737,6 +905,9 @@ def llms_txt(groups, total, theme_counts=None, city_pages=()):
         lines += ["", "## 테마별 박지", ""]
         lines += [f"- [{THEME_LINK[s]} {theme_counts[s]}곳]({SITE}/theme/{s}/): {THEME_INTRO[s].format(N=theme_counts[s])}"
                   for s, l in THEMES if theme_counts.get(s)]
+    if guides:
+        lines += ["", "## 백패킹 가이드", ""]
+        lines += [f"- [{m.get('h1') or m['title']}]({SITE}/guide/{m['slug']}/): {m.get('description', '')}" for m in guides]
     if city_pages:
         lines += ["", "## 시·군별 박지", ""]
         lines += [f"- [{v['name']} 백패킹 {len(v['rows'])}곳]({SITE}/city/{v['slug']}/)" for v in city_pages]
@@ -818,6 +989,14 @@ def main():
         if g in REGION_SLUG:
             write(os.path.join(REGION_DIR, REGION_SLUG[g], "index.html"), region_page(g, rows_g, theme_rows, cities), dry)
             extra.append(f"/region/{REGION_SLUG[g]}/")
+    sys.path.insert(0, os.path.join(ROOT, "scripts"))
+    import guides_build
+    guides = guides_build.build(sys.modules[__name__], dry)
+    if guides:
+        extra.append("/guide/")
+        extra += [f"/guide/{m['slug']}/" for m in guides]
+    write(os.path.join(ROOT, "stats", "index.html"), stats_page(kept, groups, theme_rows, theme_counts, cities), dry)
+    extra.append("/stats/")
     city_pages = sorted((v for v in cities.values() if v["page"]), key=lambda v: (-len(v["rows"]), v["name"]))
     for (g, _), v in cities.items():
         if v["page"]:
@@ -846,7 +1025,7 @@ def main():
 
     ids_sorted = sorted(keep_ids, key=lambda x: (not x.isdigit(), int(x) if x.isdigit() else 0, x))
     write(os.path.join(ROOT, "sitemap.xml"), sitemap(ids_sorted, extra), dry)
-    write(os.path.join(ROOT, "llms.txt"), llms_txt(groups, len(kept), theme_counts, city_pages), dry)
+    write(os.path.join(ROOT, "llms.txt"), llms_txt(groups, len(kept), theme_counts, city_pages, guides), dry)
 
     print("themes " + ", ".join(f"{THEME_LABEL[s]} {c}" for s, c in theme_counts.items()))
     print(f"spots {len(rows)} | pages {len(kept)} | list pages {len(extra)} | park-excluded {len(park)} | manual-excluded {len(manual)} | removed {len(removed)}"

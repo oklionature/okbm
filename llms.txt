@@ -10,6 +10,7 @@
 ## 주요 페이지
 
 - [전국 백패킹 박지 목록](https://romanticroute.kr/spot/): 지역별 박지 413곳
+- [전국 백패킹 박지 통계](https://romanticroute.kr/stats/): 지역별·높이별·거리별·난이도별 박지 수 (매일 갱신)
 - [낭만루트 지도](https://romanticroute.kr/map.html): 박지 위치·들머리·코스 (로그인 회원 공개)
 - [개인정보처리방침](https://romanticroute.kr/privacy.html)
 - [이용약관](https://romanticroute.kr/terms.html)
@@ -37,6 +38,14 @@
 - [돌박지 백패킹 94곳](https://romanticroute.kr/theme/rock/): 암릉이나 너럭바위처럼 바위 위에 텐트를 설치하는 박지 94곳이에요.
 - [계곡 백패킹 18곳](https://romanticroute.kr/theme/valley/): 계곡을 끼고 있는 박지 18곳을 모았어요.
 - [오지 백패킹 22곳](https://romanticroute.kr/theme/remote/): 난이도 어려움(4~5/5)에 들머리에서 2km 넘게 걸어야 닿는 박지 22곳이에요. 백패킹 경험을 쌓은 뒤에 도전하길 권해요.
+
+## 백패킹 가이드
+
+- [백패킹 침낭 온도 보는 법](https://romanticroute.kr/guide/sleeping-bag-temperature/): 침낭 라벨의 컴포트·리밋·익스트림 뜻, 크게 적힌 숫자의 함정, 박지 높이로 필요한 침낭 온도를 계산하는 표까지 정리했어요.
+- [동계 백패킹 입문 장비 추천: 가성비 세트 263만 원](https://romanticroute.kr/guide/winter-backpacking-budget-set/): 렌탈샵 유튜버 캠퍼조이의 입문 장비 목록에 겨울 장비를 더한 동계 백패킹 가성비 세트 17개를 제품 사진과 실제 판매가로 정리했어요.
+- [동계 백패킹 장비 가격 총정리](https://romanticroute.kr/guide/winter-backpacking-gear-price/): 동계 백패킹 장비를 가성비·현실·끝판왕 세 세트로 꾸려 품목별 제품과 가격을 비교했어요. 무엇부터 사야 할지도 정리했어요.
+- [극동계 백패킹 장비 리스트: 현실 세트 798만 원](https://romanticroute.kr/guide/winter-backpacking-reality-set/): 백패커 블로그·카페·유튜브에 자주 나온 장비로 꾸린 극동계 백패킹 현실 세트 26개를 옷부터 침낭까지 제품 사진과 가격으로 정리했어요.
+- [동계 백패킹 끝판왕 장비: 풀세트 1,374만 원](https://romanticroute.kr/guide/winter-backpacking-ultimate-set/): 아크테릭스, 발란드레, 파작, 사마야까지 백패커들이 극동계 끝판왕으로 꼽는 장비로 꾸린 풀세트 24개를 제품 사진과 국내 정가로 정리했어요.
 
 ## 시·군별 박지
 

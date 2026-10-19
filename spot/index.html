@@ -53,6 +53,21 @@ h1{margin:0;font-size:1.6rem;line-height:1.35;color:#f8fafc;letter-spacing:-.02e
 .related small{display:block;color:#94a3b8}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 0;padding:0;list-style:none}
 .chips a{display:block;font-size:.8rem;padding:4px 11px;border-radius:999px;background:rgba(253,224,71,.08);border:1px solid rgba(253,224,71,.35);color:#fde047;text-decoration:none}
+.bars{margin:0;padding:0;list-style:none}
+.bars li{display:grid;grid-template-columns:7.5em 1fr 3.2em;align-items:center;gap:8px;margin:7px 0;font-size:.86rem}
+.bars .lb{color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bars .lb a{color:#e2e8f0}
+.bars .tr{height:12px;border-radius:6px;background:rgba(255,255,255,.06);overflow:hidden}
+.bars .fl{display:block;height:100%;border-radius:6px;background:#fde047}
+.bars .v{text-align:right;color:#cbd5e1;font-variant-numeric:tabular-nums}
+.tbl{width:100%;border-collapse:collapse;font-size:.86rem}
+.tbl th,.tbl td{padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.08);text-align:right;font-variant-numeric:tabular-nums}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl th{color:#94a3b8;font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:16px 0 0;padding:0;list-style:none}
+.kpis li{padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
+.kpis b{display:block;font-size:1.35rem;color:#fde047;font-variant-numeric:tabular-nums}
+.kpis span{font-size:.78rem;color:#94a3b8}
 .region{margin:28px 0 8px;font-size:1.1rem;color:#f8fafc}
 footer{margin-top:36px;font-size:.75rem;color:#64748b}
 </style>
@@ -63,7 +78,7 @@ footer{margin-top:36px;font-size:.75rem;color:#64748b}
 <main>
 <h1 style="margin-top:18px">전국 백패킹 박지</h1>
 <p class="sub">지역별 413곳. 들머리와 코스는 <a href="https://romanticroute.kr/map.html">낭만루트 지도</a>에서 로그인 후 확인할 수 있어요.</p>
-<ul class="chips"><li><a href="/theme/beginner/">초보 백패킹 156곳</a></li><li><a href="/theme/afterwork/">퇴근박 백패킹 180곳</a></li><li><a href="/theme/island/">섬 백패킹 76곳</a></li><li><a href="/theme/beach/">해변 백패킹 61곳</a></li><li><a href="/theme/deck/">데크 백패킹 222곳</a></li><li><a href="/theme/rock/">돌박지 백패킹 94곳</a></li><li><a href="/theme/valley/">계곡 백패킹 18곳</a></li><li><a href="/theme/remote/">오지 백패킹 22곳</a></li></ul>
+<ul class="chips"><li><a href="/stats/">전국 박지 통계</a></li><li><a href="/guide/">백패킹 가이드</a></li><li><a href="/theme/beginner/">초보 백패킹 156곳</a></li><li><a href="/theme/afterwork/">퇴근박 백패킹 180곳</a></li><li><a href="/theme/island/">섬 백패킹 76곳</a></li><li><a href="/theme/beach/">해변 백패킹 61곳</a></li><li><a href="/theme/deck/">데크 백패킹 222곳</a></li><li><a href="/theme/rock/">돌박지 백패킹 94곳</a></li><li><a href="/theme/valley/">계곡 백패킹 18곳</a></li><li><a href="/theme/remote/">오지 백패킹 22곳</a></li></ul>
 <section><h2 class="region" id="서울/인천">서울/인천 <small>31곳</small> <a href="/region/seoul-incheon/" style="font-size:.8rem">서울·인천 백패킹</a></h2><ul class="related"><li><a href="/spot/69/">고려산 낙조전망대 데크<small>강화군</small></a></li>
 <li><a href="/spot/135/">국수산 정상 전망데크<small>강화군</small></a></li>
 <li><a href="/spot/20/">굴업도 개머리언덕<small>옹진군</small></a></li>

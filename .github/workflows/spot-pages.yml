@@ -27,7 +27,7 @@ jobs:
         run: python3 scripts/build-spot-pages.py
       - name: Commit if changed
         run: |
-          git add -A spot theme region city sitemap.xml llms.txt
+          git add -A spot theme region city stats guide sitemap.xml llms.txt
           if git diff --cached --quiet; then
             echo "바뀐 박지 없음"
             exit 0
