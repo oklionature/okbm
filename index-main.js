@@ -343,6 +343,8 @@
 
     function tokenLooksLikeIslandName(token) {
       if (!token || THEME_SPOT_PROVINCE_DO_RE.test(token)) return false;
+      // '3도 화합탑'(삼도봉), '임도 계곡노지'처럼 숫자로 시작하거나 '임도'인 낱말은 섬 이름이 아니다.
+      if (/^\d/.test(token) || token === '임도') return false;
       return /도$/.test(token) && token.length >= 2;
     }
 
