@@ -3558,7 +3558,10 @@ function syncUserDataToCloud(isPackHistoryUpdated, immediate) {
 window.syncUserDataToCloud = syncUserDataToCloud;
 
 // 홈/지도 핀용 공개 컬럼. 들머리 주소(trailhead_addr)·author_sns_url은 제외.
-window.SPOTS_MAP_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief';
+window.SPOTS_MAP_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief,camp_status,camp_status_note,camp_status_at';
+// H9: 비회원 목록에는 좌표·들머리 이름이 없다(서버도 막는다). 핀 좌표는 get_spot_pins로 지도 범위만큼만 받는다.
+window.SPOTS_GUEST_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,terrain,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief,camp_status,camp_status_note,camp_status_at';
+window.OKBM_KOREA_BOUNDS = { minLat: 32.8, minLng: 124.3, maxLat: 38.9, maxLng: 132.0 };
 window.FEEDS_HOME_SELECT = 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,instagram,likes_count,is_published,feed_type,created_at,items,template_id';
 
 window.stripSpotDetailFields = function(spot) {
@@ -3648,6 +3651,8 @@ window.normalizeSpotMapRow = function(row) {
     camp_status_at: row.camp_status_at || null,
     mediaUrls: row.mediaUrls || row.mediaurls || ''
   };
+  // 비회원이 받은 대략 좌표면 그 칸 크기(도). 0이면 정확한 좌표.
+  if (Number(row.__pinCell) > 0) out.__pinCell = Number(row.__pinCell);
   var media = window.parseSpotMediaUrls(out.mediaUrls);
   out.youtubeUrls = media.youtubeUrls;
   out.blogUrls = media.blogUrls;
@@ -3823,11 +3828,101 @@ window.fetchSpotDetailById = async function(spotId) {
   return request;
 };
 
+// H9A 비회원 핀 좌표. 범위 안 박지만 { cell, pins: [[id, lat, lng], ...] }.
+// cell은 좌표를 맞춘 칸 크기(도)이고 회원이면 0(정확한 좌표).
+// 실패하면 err.code: 'rate'(횟수 초과) | 'missing'(H9A 전 서버) | 'http'
+window.okbmFetchSpotPins = async function(box) {
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var res = await fetch(targetUrl + '/rest/v1/rpc/get_spot_pins', {
+    method: 'POST',
+    headers: okbmPublicRestHeaders(),
+    body: JSON.stringify({
+      p_min_lat: box.minLat, p_min_lng: box.minLng,
+      p_max_lat: box.maxLat, p_max_lng: box.maxLng
+    })
+  });
+  if (!res.ok) {
+    var text = '';
+    try { text = await res.text(); } catch (e) {}
+    var err = new Error('get_spot_pins ' + res.status);
+    err.code = /rate limit/i.test(text) ? 'rate'
+      : (res.status === 404 || /PGRST202|Could not find the function/i.test(text)) ? 'missing'
+      : 'http';
+    throw err;
+  }
+  var data = await res.json();
+  return {
+    cell: Number(data && data.cell) || 0,
+    pins: (data && Array.isArray(data.pins)) ? data.pins : []
+  };
+};
+
+// 박지 목록 원본 행(spots 표 그대로). 회원은 좌표까지 한 번에 받는다.
+// 비회원은 좌표 없는 목록 + 전국 범위 대략 핀(get_spot_pins)을 합치고, 행마다 __pinCell(칸 크기)을 붙인다.
+// 지도는 확대해서 멈출 때 그 범위를 다시 물어 정확도를 높인다(map-main.js refineGuestPins).
+window.okbmFetchSpotRows = async function(opts) {
+  opts = opts || {};
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var anonKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  var getRows = async function(select, token) {
+    var res = await fetch(targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(select) + '&order=id.asc', {
+      method: 'GET',
+      headers: { 'apikey': anonKey, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      signal: opts.signal
+    });
+    if (!res.ok) throw new Error('spots ' + res.status);
+    var rows = await res.json();
+    return Array.isArray(rows) ? rows : [];
+  };
+
+  if (isUserLoggedIn()) {
+    var tok = okbmFreshSessionToken();
+    if (!tok && typeof window.okbmUploadAccessToken === 'function') tok = await window.okbmUploadAccessToken();
+    if (tok) {
+      try {
+        return await getRows(window.SPOTS_MAP_SELECT, tok);
+      } catch (e) {
+        if (e && e.name === 'AbortError') throw e;
+        // 토큰이 막 만료됐거나 거절되면 아래 비회원 방식으로라도 지도를 띄운다.
+      }
+    }
+  }
+
+  var pinsJob = window.okbmFetchSpotPins(window.OKBM_KOREA_BOUNDS).catch(function(e) { return e; });
+  var rows = await getRows(window.SPOTS_GUEST_SELECT, anonKey);
+  var pins = await pinsJob;
+  if (pins instanceof Error) {
+    // H9A를 아직 실행하지 않은 서버: 예전처럼 목록으로 좌표까지 받는다(H9B 전에는 비회원도 읽힌다).
+    if (pins.code === 'missing') return await getRows(window.SPOTS_MAP_SELECT, anonKey);
+    throw pins;
+  }
+  var byId = {};
+  pins.pins.forEach(function(p) {
+    if (Array.isArray(p) && p.length >= 3) byId[String(p[0]).trim()] = p;
+  });
+  rows.forEach(function(row) {
+    var p = byId[String(row.id).trim()];
+    if (!p) return;
+    row.campsite_lat = Number(p[1]);
+    row.campsite_lng = Number(p[2]);
+    if (pins.cell > 0) row.__pinCell = pins.cell;
+  });
+  return rows;
+};
+
+// 비회원 때 받은 대략 좌표(__pinCell)가 든 캐시는 회원 화면에 쓰지 않는다.
+window.okbmSpotListFitsViewer = function(list) {
+  if (!Array.isArray(list) || !list.length) return false;
+  if (!isUserLoggedIn()) return true;
+  return !list.some(function(s) { return s && s.__pinCell; });
+};
+
 window.fetchMasterSpotsFromSupabase = async function(isForce) {
   var TTL_MS = 5 * 60 * 1000;
   var now = Date.now();
   if (!isForce && window.__okbmSpotsMemoryCache && Array.isArray(window.__okbmSpotsMemoryCache) &&
-      window.__okbmSpotsFetchedAt && (now - window.__okbmSpotsFetchedAt) < TTL_MS) {
+      window.__okbmSpotsFetchedAt && (now - window.__okbmSpotsFetchedAt) < TTL_MS &&
+      window.okbmSpotListFitsViewer(window.__okbmSpotsMemoryCache)) {
     window.SPOTS_MASTER = window.__okbmSpotsMemoryCache;
     return window.__okbmSpotsMemoryCache;
   }
@@ -3840,7 +3935,8 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
   if (!(Array.isArray(cached) && cached.length > 0) && window.__okbmSpotsIdbReady) {
     try { cached = await window.__okbmSpotsIdbReady; } catch (e) { cached = cached || []; }
   }
-  if (!isForce && Array.isArray(cached) && cached.length > 0 && !window.spotCacheHasFullEssay(cached)) {
+  if (!isForce && Array.isArray(cached) && cached.length > 0 && !window.spotCacheHasFullEssay(cached) &&
+      window.okbmSpotListFitsViewer(cached)) {
     var lightCached = cached.map(function(s) { return window.stripSpotDetailFields(s); });
     window.__memoryStore = window.__memoryStore || {};
     window.__memoryStore['okbm_master_spots'] = lightCached;
@@ -3857,37 +3953,21 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
   try {
     var controller = new AbortController();
     var timeoutId = setTimeout(function() { controller.abort(); }, 6000);
-    var select = encodeURIComponent(window.SPOTS_MAP_SELECT);
-    var res = await (typeof window.okbmPublicFetch === 'function'
-      ? window.okbmPublicFetch(targetUrl + '/rest/v1/spots?select=' + select + '&order=id.asc', { method: 'GET', signal: controller.signal })
-      : fetch(targetUrl + '/rest/v1/spots?select=' + select + '&order=id.asc', {
-      method: 'GET',
-      headers: (typeof window.okbmPublicRestHeaders === 'function')
-        ? window.okbmPublicRestHeaders()
-        : {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
-        'Content-Type': 'application/json'
-      },
-      signal: controller.signal
-    }));
+    var rows = await window.okbmFetchSpotRows({ signal: controller.signal });
     clearTimeout(timeoutId);
 
-    if (res.ok) {
-      var rows = await res.json();
-      if (Array.isArray(rows) && rows.length > 0) {
-        var spots = rows.map(function(row) { return window.normalizeSpotMapRow(row); }).filter(function(s) {
-          return s && s.name && s.lat && s.lng;
-        });
-        if (spots.length > 0) {
-          window.persistLightweightSpotsCache(spots);
-          window.__okbmSpotsMemoryCache = spots;
-          window.__okbmSpotsFetchedAt = Date.now();
-          if (typeof window.renderSpots === 'function') {
-            window.renderSpots();
-          }
-          return spots;
+    if (Array.isArray(rows) && rows.length > 0) {
+      var spots = rows.map(function(row) { return window.normalizeSpotMapRow(row); }).filter(function(s) {
+        return s && s.name && s.lat && s.lng;
+      });
+      if (spots.length > 0) {
+        window.persistLightweightSpotsCache(spots);
+        window.__okbmSpotsMemoryCache = spots;
+        window.__okbmSpotsFetchedAt = Date.now();
+        if (typeof window.renderSpots === 'function') {
+          window.renderSpots();
         }
+        return spots;
       }
     }
   } catch (e) { console.warn('[romantic-sync.js:fetchMasterSpotsFromSupabase]', e); }

@@ -4463,19 +4463,21 @@ var adBannersHtml = `
           }
         }
 
-        if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-          var res = await (typeof window.okbmPublicFetch === 'function'
-            ? window.okbmPublicFetch(window.SUPABASE_URL + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc')
-            : fetch(window.SUPABASE_URL + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
+        if (typeof window.okbmFetchSpotRows === 'function') {
+          // 회원은 좌표까지, 비회원은 좌표 없는 목록 + 대략 핀(H9)
+          var data = await window.okbmFetchSpotRows();
+          if (Array.isArray(data) && data.length > 0) supaSpots = data;
+        } else if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+          var res = await fetch(window.SUPABASE_URL + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
             headers: {
               'apikey': window.SUPABASE_ANON_KEY,
               'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY,
               'Content-Type': 'application/json'
             }
-          }));
+          });
           if (res.ok) {
-            var data = await res.json();
-            if (Array.isArray(data) && data.length > 0) supaSpots = data;
+            var resData = await res.json();
+            if (Array.isArray(resData) && resData.length > 0) supaSpots = resData;
           }
         }
 

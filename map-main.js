@@ -217,24 +217,24 @@
         window.__isLoadingSpotsMaster = true;
 
         try {
-          var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-          var targetKey = window.SUPABASE_ANON_KEY || '';
-          var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief,camp_status,camp_status_note,camp_status_at';
-          var spotsUrl = targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc';
-          var res = await (typeof window.okbmPublicFetch === 'function'
-            ? window.okbmPublicFetch(spotsUrl)
-            : fetch(spotsUrl, {
-            headers: (typeof window.okbmPublicRestHeaders === 'function')
-              ? window.okbmPublicRestHeaders()
-              : {
-              'apikey': targetKey,
-              'Authorization': 'Bearer ' + targetKey,
-              'Content-Type': 'application/json'
-            }
-          }));
-
-          if (!res.ok) return;
-          var rows = await res.json();
+          // romantic-sync.js(defer)가 실행된 뒤라야 로그인 여부와 회원 토큰을 안다.
+          // 회원은 좌표까지 받고, 비회원은 좌표 없는 목록 + 대략 핀을 받는다(H9). 핀은 확대하면 refineGuestPins가 정확히 바꾼다.
+          if (typeof window.okbmFetchSpotRows !== 'function' && document.readyState === 'loading') {
+            await new Promise(function(resolve) { document.addEventListener('DOMContentLoaded', resolve, { once: true }); });
+          }
+          var rows;
+          if (typeof window.okbmFetchSpotRows === 'function') {
+            rows = await window.okbmFetchSpotRows();
+          } else {
+            var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
+            var targetKey = window.SUPABASE_ANON_KEY || '';
+            var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief,camp_status,camp_status_note,camp_status_at';
+            var res = await fetch(targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
+              headers: { 'apikey': targetKey, 'Authorization': 'Bearer ' + targetKey, 'Content-Type': 'application/json' }
+            });
+            if (!res.ok) return;
+            rows = await res.json();
+          }
           if (!Array.isArray(rows) || rows.length === 0) return;
 
           var validSpots = [];
@@ -307,6 +307,7 @@
               if (!normalized.created_at) normalized.created_at = row.created_at || null;
             }
 
+            if (Number(row.__pinCell) > 0) normalized.__pinCell = Number(row.__pinCell);
             normalized.trailhead_addr = '';
             normalized.entryPoint = '';
             if (!normalized.desc_summary && !normalized.desc) {
@@ -329,6 +330,8 @@
             renderSubChips();
             if (typeof renderSpots === 'function') renderSpots(true);
             if (map && typeof checkUrlParamSpotFocus === 'function') checkUrlParamSpotFocus();
+            // 확대해 둔 상태에서 새 목록(대략 좌표)을 받았으면 지금 범위를 다시 정확히
+            if (typeof scheduleGuestPinRefine === 'function') scheduleGuestPinRefine();
           }
         } catch (e) {
           console.warn('[map.html:loadSpotsMasterEngine]', e);
@@ -1101,7 +1104,7 @@
 
           kakao.maps.event.addListener(map, 'zoom_start', () => { clearTimeout(lodDebounceTimer); window.hideLongPressProposalTooltip(); });
           kakao.maps.event.addListener(map, 'dragstart', () => { clearTimeout(lodDebounceTimer); window.hideLongPressProposalTooltip(); });
-          kakao.maps.event.addListener(map, 'idle', () => debouncedUpdateLODLabels());
+          kakao.maps.event.addListener(map, 'idle', () => { debouncedUpdateLODLabels(); scheduleGuestPinRefine(); });
           kakao.maps.event.addListener(map, 'click', handleMapClick);
 
           initMapLongPressProposalEngine(container);
@@ -2273,6 +2276,74 @@ function updateSmartResetButtons() {
 
       function isGuestViewer() {
         return !(typeof isUserLoggedIn === 'function' && isUserLoggedIn());
+      }
+
+      // H9: 비회원 핀은 처음에 전국 범위로 받은 대략 좌표다(spot.__pinCell = 좌표를 맞춘 칸 크기, 도).
+      // 지도가 멈추면 지금 범위에 필요한 칸 크기보다 큰 핀이 있을 때만 그 범위를 다시 물어 정확도를 높인다.
+      // 서버는 비회원에게 IP당 분당 30회·하루 200회만 답한다. 회원이 토큰 만료로 대략 좌표를 받았으면 정확한 좌표가 온다.
+      var guestPinTimer = null;
+      var guestPinBusy = false;
+      var guestPinPausedUntil = 0;
+      var guestPinLimitToastShown = false;
+
+      // 서버(get_spot_pins)와 같은 계산: 범위의 긴 변 / 250을 2의 거듭제곱으로 올림
+      function guestPinCellFor(box) {
+        var span = Math.max(box.maxLat - box.minLat, box.maxLng - box.minLng);
+        return Math.pow(2, Math.ceil(Math.log2(Math.max(span / 250, 0.00001))));
+      }
+
+      function scheduleGuestPinRefine() {
+        if (!map || typeof window.okbmFetchSpotPins !== 'function') return;
+        clearTimeout(guestPinTimer);
+        guestPinTimer = setTimeout(refineGuestPins, 300);
+      }
+
+      async function refineGuestPins() {
+        if (guestPinBusy || Date.now() < guestPinPausedUntil || !map) return;
+        var b = map.getBounds();
+        var view = { minLat: b.getSouthWest().getLat(), minLng: b.getSouthWest().getLng(), maxLat: b.getNorthEast().getLat(), maxLng: b.getNorthEast().getLng() };
+        var inView = function(s) {
+          return s.lat >= view.minLat && s.lat <= view.maxLat && s.lng >= view.minLng && s.lng <= view.maxLng;
+        };
+        var want = guestPinCellFor(view);
+        var stale = spots.filter(function(s) { return s && s.__pinCell > want && inView(s); });
+        if (!stale.length) return;
+        // 대략 좌표로는 화면 안이어도 실제는 칸 크기만큼 바깥일 수 있어, 그만큼 넓혀 묻는다
+        var pad = Math.max.apply(null, stale.map(function(s) { return s.__pinCell; }));
+        var box = { minLat: view.minLat - pad, minLng: view.minLng - pad, maxLat: view.maxLat + pad, maxLng: view.maxLng + pad };
+        guestPinBusy = true;
+        try {
+          var res = await window.okbmFetchSpotPins(box);
+          var byId = new Map(spots.map(function(s) { return [String(s.id).trim(), s]; }));
+          var moved = false;
+          res.pins.forEach(function(p) {
+            var s = byId.get(String(p[0]).trim());
+            if (!s || !s.__pinCell || (res.cell && res.cell >= s.__pinCell)) return;
+            s.lat = s.campsite_lat = Number(p[1]);
+            s.lng = s.campsite_lng = Number(p[2]);
+            s._renderLatLng = null;
+            if (res.cell) s.__pinCell = res.cell; else delete s.__pinCell;
+            moved = true;
+          });
+          // 응답에 없던 핀(실제로는 이 범위 밖)은 이 높이에서 다시 묻지 않는다
+          var returned = new Set(res.pins.map(function(p) { return String(p[0]).trim(); }));
+          stale.forEach(function(s) { if (!returned.has(String(s.id).trim()) && s.__pinCell > want) s.__pinCell = want; });
+          if (moved) renderSpots();
+          // 넓혀 물은 만큼 칸이 커졌으면 한 번 더(칸이 줄어들 때만 반복해 끝이 난다)
+          if (res.cell > want && res.cell < pad) setTimeout(scheduleGuestPinRefine, 0);
+        } catch (e) {
+          if (e && e.code === 'rate') {
+            guestPinPausedUntil = Date.now() + 60000;
+            if (!guestPinLimitToastShown && typeof showToast === 'function') {
+              guestPinLimitToastShown = true;
+              showToast('지도를 많이 둘러봤어요. 로그인하면 정확한 위치를 계속 볼 수 있어요.');
+            }
+          } else {
+            guestPinPausedUntil = Date.now() + 5000;
+          }
+        } finally {
+          guestPinBusy = false;
+        }
       }
 
       // 비회원이 박지를 누르면: 산 이름이 보이는 높이로 옮기고 로그인 창을 띄운다.

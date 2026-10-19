@@ -32,6 +32,13 @@ SELECT cron.schedule(
   $$DELETE FROM public.okbm_spot_detail_views WHERE view_day < current_date - 3$$
 );
 
+-- 3-1) 비회원 지도 핀 하루 호출 기록(H9A) 정리: 3일 지난 기록 삭제 (매일 04:25 UTC)
+SELECT cron.schedule(
+  'okbm_spot_pin_calls_gc',
+  '25 4 * * *',
+  $$DELETE FROM public.okbm_spot_pin_calls WHERE call_day < current_date - 3$$
+);
+
 -- 4) 방문자 하루 1회 기록(track_visit용) 정리: 90일 지난 기록 삭제 (매일 04:30 UTC)
 --    visit_seen은 "오늘 이미 셌는지"만 판단한다. 날짜별 합계는 stats에 따로 남아 통계에는 영향 없음.
 --    track_visit은 visit_date에 'YYYY-MM-DD'(Asia/Seoul)를 넣는다. 칸 타입이 text든 date든 되도록 문자열로 비교한다.

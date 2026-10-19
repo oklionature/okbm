@@ -1304,6 +1304,7 @@ WHERE view_brief IS DISTINCT FROM public.okbm_spot_view_brief(desc_summary);
 
 -- 홈/지도 목록: 이름·좌표·들머리 이름·특징 한 줄.
 -- 본문·미디어 링크·들머리 상세 주소·작성자 SNS는 get_spot_detail로 1건씩.
+-- H9: 비회원(anon)은 좌표·들머리 이름을 직접 읽지 못한다. 핀 좌표는 get_spot_pins로 지도 범위만큼만.
 REVOKE SELECT ON TABLE public.spots FROM anon, authenticated;
 GRANT SELECT (
   id,
@@ -1313,10 +1314,7 @@ GRANT SELECT (
   spot_sub,
   "fullName",
   elevation,
-  campsite_lat,
-  campsite_lng,
   terrain,
-  trailhead_name,
   difficulty,
   distance_km,
   "droneStatus",
@@ -1326,6 +1324,7 @@ GRANT SELECT (
   created_at,
   view_brief
 ) ON TABLE public.spots TO anon, authenticated;
+GRANT SELECT (campsite_lat, campsite_lng, trailhead_name) ON TABLE public.spots TO authenticated;
 GRANT INSERT, UPDATE, DELETE ON TABLE public.spots TO authenticated;
 
 -- E1/E2: 상세(들머리·코스/피칭/팁·작성자 SNS)는 로그인 회원에게만.
@@ -1450,6 +1449,108 @@ $$;
 
 REVOKE ALL ON FUNCTION public.get_spot_detail(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_spot_detail(text) TO anon, authenticated, service_role;
+
+-- H9A: 비회원 지도 핀 좌표는 지금 보는 지도 범위만큼, 범위 크기에 맞춘 칸 단위로만 (SUPABASE_H9A_GUEST_SPOT_PINS.sql)
+-- 비회원 하루 호출 수 (IP별). 클라이언트 직접 접근 불가.
+CREATE TABLE IF NOT EXISTS public.okbm_spot_pin_calls (
+  actor_id text NOT NULL,
+  call_day date NOT NULL,
+  call_count integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (actor_id, call_day)
+);
+ALTER TABLE public.okbm_spot_pin_calls ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.okbm_spot_pin_calls FROM PUBLIC, anon, authenticated;
+DROP POLICY IF EXISTS okbm_spot_pin_calls_no_client ON public.okbm_spot_pin_calls;
+CREATE POLICY okbm_spot_pin_calls_no_client ON public.okbm_spot_pin_calls
+  FOR ALL USING (false) WITH CHECK (false);
+
+CREATE OR REPLACE FUNCTION public.get_spot_pins(
+  p_min_lat double precision,
+  p_min_lng double precision,
+  p_max_lat double precision,
+  p_max_lng double precision
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  c_guest_per_minute constant integer := 30;
+  c_guest_per_day constant integer := 200;
+  c_cells constant double precision := 250;
+  c_min_cell constant double precision := 0.00001;
+  v_is_service boolean := auth.role() = 'service_role';
+  v_member boolean;
+  v_actor text;
+  v_day date;
+  v_count integer;
+  v_span double precision;
+  v_cell double precision := 0;
+  v_min_lat double precision;
+  v_max_lat double precision;
+  v_min_lng double precision;
+  v_max_lng double precision;
+  v_pins jsonb;
+BEGIN
+  -- NaN·무한대·범위 밖 값은 BETWEEN에서 걸러진다
+  IF NOT (p_min_lat BETWEEN -90 AND 90 AND p_max_lat BETWEEN -90 AND 90
+      AND p_min_lng BETWEEN -180 AND 180 AND p_max_lng BETWEEN -180 AND 180) THEN
+    RAISE EXCEPTION 'invalid bounds';
+  END IF;
+
+  v_member := v_is_service
+    OR (
+      auth.uid() IS NOT NULL
+      AND COALESCE((auth.jwt() ->> 'is_anonymous')::boolean, false) = false
+    );
+
+  IF NOT v_member THEN
+    v_actor := 'ip:' || public.okbm_request_ip();
+    IF NOT public.okbm_actor_rate_limit(v_actor, 'get_spot_pins', c_guest_per_minute) THEN
+      RAISE EXCEPTION 'rate limit exceeded';
+    END IF;
+    v_day := (now() AT TIME ZONE 'Asia/Seoul')::date;
+    INSERT INTO public.okbm_spot_pin_calls AS c (actor_id, call_day, call_count)
+    VALUES (v_actor, v_day, 1)
+    ON CONFLICT (actor_id, call_day)
+    DO UPDATE SET call_count = c.call_count + 1
+    RETURNING c.call_count INTO v_count;
+    IF v_count > c_guest_per_day THEN
+      RAISE EXCEPTION 'rate limit exceeded';
+    END IF;
+
+    -- 칸 크기는 요청한 범위(자르기 전)의 긴 변으로 정한다. 가늘고 긴 범위로 좁은 칸을 얻지 못하게.
+    v_span := GREATEST(abs(p_max_lat - p_min_lat), abs(p_max_lng - p_min_lng));
+    v_cell := GREATEST(v_span / c_cells, c_min_cell);
+    v_cell := power(2::double precision, ceil(ln(v_cell) / ln(2::double precision)));
+  END IF;
+
+  v_min_lat := LEAST(p_min_lat, p_max_lat);
+  v_max_lat := GREATEST(p_min_lat, p_max_lat);
+  v_min_lng := LEAST(p_min_lng, p_max_lng);
+  v_max_lng := GREATEST(p_min_lng, p_max_lng);
+
+  SELECT COALESCE(jsonb_agg(jsonb_build_array(
+           s.id,
+           CASE WHEN v_cell > 0
+             THEN round(((floor(s.campsite_lat / v_cell) + 0.5) * v_cell)::numeric, 6)
+             ELSE round(s.campsite_lat::numeric, 6) END,
+           CASE WHEN v_cell > 0
+             THEN round(((floor(s.campsite_lng / v_cell) + 0.5) * v_cell)::numeric, 6)
+             ELSE round(s.campsite_lng::numeric, 6) END
+         )), '[]'::jsonb)
+    INTO v_pins
+  FROM public.spots s
+  WHERE s.campsite_lat BETWEEN v_min_lat AND v_max_lat
+    AND s.campsite_lng BETWEEN v_min_lng AND v_max_lng;
+
+  RETURN jsonb_build_object('cell', v_cell, 'pins', v_pins);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_spot_pins(double precision, double precision, double precision, double precision) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_spot_pins(double precision, double precision, double precision, double precision) TO anon, authenticated, service_role;
 
 -- mediaUrls에 누가 어떤 링크를 붙였는지 기록. 사용자별 장소당 추가 개수 제한과
 -- 관리자 정리(스팸 링크 제거)에 쓴다. 클라이언트 직접 접근 불가.
