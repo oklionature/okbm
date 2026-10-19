@@ -1264,8 +1264,15 @@
 
       function locateUserPosition(e) {
         if (e) e.stopPropagation();
-        if (!navigator.geolocation) return showToast('위치 서비스를 지원하지 않습니다.', { html: ICONS.ALERT_CARD });
-        navigator.geolocation.getCurrentPosition((pos) => {
+        // 앱 안에서는 기기 위치 기능을 쓴다. 웹 위치 기능을 쓰면 아이폰이 앱 허락 창 뒤에 사이트 허락 창을 한 번 더 띄운다.
+        const nativeGeo = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation;
+        const useNativeGeo = !!(nativeGeo && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+        if (!useNativeGeo && !navigator.geolocation) return showToast('위치 서비스를 지원하지 않습니다.', { html: ICONS.ALERT_CARD });
+        const getPosition = (onOk, onFail) => {
+          if (useNativeGeo) nativeGeo.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 }).then(onOk, onFail);
+          else navigator.geolocation.getCurrentPosition(onOk, onFail);
+        };
+        getPosition((pos) => {
           if (!map) return;
           const loc = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
           if (!userLocationOverlay) {
