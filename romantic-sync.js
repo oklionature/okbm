@@ -5143,9 +5143,7 @@ function ensureMyReportAndAuthModalsInDOM() {
           <img src="logo.png" alt="낭만루트 로고" style="width:64px; height:64px; object-fit:contain; display:block;" />
           <div>
             <h3 style="color:#ffffff; font-size:1.02rem; font-weight:900; letter-spacing:-0.02em; margin:0;">낭만루트 로그인</h3>
-            <p style="font-size:0.72rem; color:#94a3b8; line-height:1.4; margin-top:5px; margin-bottom:0; word-break:keep-all;">
-              로그인후 낭만루트의 모든 기능을 이용하실수 있습니다.
-            </p>
+            <p id="loginModalMessage" style="font-size:0.72rem; color:#94a3b8; line-height:1.4; margin-top:5px; margin-bottom:0; word-break:keep-all; white-space:pre-line;">로그인후 낭만루트의 모든 기능을 이용하실수 있습니다.</p>
           </div>
           <div style="width:100%; display:flex; flex-direction:column; gap:7px; margin-top:6px;">
             <button type="button" class="modal-btn btn-social-apple" onclick="loginWithApple()" style="display:none !important; width:100%; height:34px !important; min-height:34px !important; border-radius:8px !important; font-size:0.76rem !important; font-weight:800 !important; padding:0 10px !important; cursor:pointer; align-items:center; justify-content:center; gap:6px; background:#ffffff; color:#000000; border:none;">
@@ -6698,12 +6696,19 @@ function handleAuthBtnClick() {
 }
 window.handleAuthBtnClick = handleAuthBtnClick;
 
-function openLoginModal() {
+// opts.message: 이번 상황에 맞는 안내(예: 비회원이 박지를 눌렀을 때). 없으면 기본 문구.
+function openLoginModal(opts) {
   try {
     if (typeof window.okbmEnsureKakaoSdk === 'function') {
       window.okbmEnsureKakaoSdk().catch(function() {});
     }
     ensureMyReportAndAuthModalsInDOM();
+    var msgEl = document.getElementById('loginModalMessage');
+    if (msgEl) {
+      msgEl.textContent = (opts && typeof opts === 'object' && opts.message)
+        ? String(opts.message)
+        : '로그인후 낭만루트의 모든 기능을 이용하실수 있습니다.';
+    }
     var modal = document.getElementById('loginModalOverlay');
     if (modal) {
       modal.style.setProperty('display', 'flex', 'important');

@@ -51,7 +51,15 @@
         window.smoothNavigate(targetUrl);
       };
 
-      window.openLoginModal = function() {
+      // opts.message: 이번 상황에 맞는 안내(romantic-sync.js openLoginModal과 같은 약속). 없으면 기본 문구.
+      window.openLoginModal = function(opts) {
+        try { if (typeof ensureMyReportAndAuthModalsInDOM === 'function') ensureMyReportAndAuthModalsInDOM(); } catch (e) {}
+        var msgEl = document.getElementById('loginModalMessage');
+        if (msgEl) {
+          msgEl.textContent = (opts && typeof opts === 'object' && opts.message)
+            ? String(opts.message)
+            : '로그인후 낭만루트의 모든 기능을 이용하실수 있습니다.';
+        }
         var overlay = document.getElementById('loginModalOverlay');
         if (overlay) {
           overlay.style.setProperty('display', 'flex', 'important');
@@ -1400,6 +1408,11 @@
         try {
           if (!targetId) targetId = sessionStorage.getItem('okbm_pending_map_id') || '';
           if (!targetName) targetName = sessionStorage.getItem('okbm_pending_map_spot') || '';
+          // 비회원 때 누른 박지: 로그인하고 돌아왔을 때만 연다
+          if (!isGuestViewer()) {
+            if (!targetId) targetId = sessionStorage.getItem('okbm_login_return_spot') || '';
+            sessionStorage.removeItem('okbm_login_return_spot');
+          }
         } catch (e) {}
         if (!spots || spots.length === 0) return;
 
@@ -1430,7 +1443,7 @@
             consumeMapFocusQuery();
             window.__okbmSpotFocusTimer = setTimeout(() => {
               window.__okbmSpotFocusTimer = null;
-              focusSpotOnMap(matchedById);
+              openSpotFromLink(matchedById);
             }, 350);
             return;
           }
@@ -1445,7 +1458,7 @@
             consumeMapFocusQuery();
             window.__okbmSpotFocusTimer = setTimeout(() => {
               window.__okbmSpotFocusTimer = null;
-              focusSpotOnMap(found);
+              openSpotFromLink(found);
             }, 350);
             return;
           }
@@ -2217,7 +2230,9 @@ function updateSmartResetButtons() {
             const isDone = userVisited.has(id);
             // 이름·난이도·고도가 바뀐 spot(목록 교체·수정)도 다시 그리도록 내용 값을 키에 넣는다
             const isBan = isCampBanned(spot);
-            const labelKey = `${id}_${isFullMode ? 'full' : 'mini'}_${isSelected ? 'sel' : 'nor'}_${isFav ? 'f' : 'nf'}_${isDone ? 'd' : 'nd'}_${isBan ? 'ban' : 'ok'}_${row1Name}|${row2Sub}|${row3Elev}|${diffClass}`;
+            // 비회원은 산 이름까지만. 세부 이름(정상 데크 등)이 나오는 단계부터는 로그인해야 보인다.
+            const isGuest = isGuestViewer();
+            const labelKey = `${id}_${isFullMode ? 'full' : 'mini'}_${isSelected ? 'sel' : 'nor'}_${isFav ? 'f' : 'nf'}_${isDone ? 'd' : 'nd'}_${isBan ? 'ban' : 'ok'}_${isGuest ? 'g' : 'm'}_${row1Name}|${row2Sub}|${row3Elev}|${diffClass}`;
             if (overlay._cachedLabelKey !== labelKey) {
               const labelDiv = document.createElement('div');
               labelDiv.className = 'lod-marker-container';
@@ -2235,7 +2250,9 @@ function updateSmartResetButtons() {
                 <div class="lod-marker-label" style="position: absolute; bottom: 44px; left: 50%; pointer-events: auto; ${labelTransform}">
                   <div class="lod-label-row-1 ${isBan ? '' : diffClass}"${isBan ? ' style="color:#fda4af;"' : ''}>${isBan ? '🚫 ' : ''}${escapeHtml(row1Name)}</div>
                   ${isBan ? '<div class="lod-label-row-2" style="color:#fb7185; font-weight:900;">야영금지</div>' : ''}
-                  ${(isFullMode && row2Sub) ? `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>` : ''}
+                  ${(isFullMode && row2Sub) ? (isGuest
+                    ? `<div class="lod-label-row-2" style="color:#FFB547;">🔒 로그인하면 보여요</div>`
+                    : `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>`) : ''}
                   ${(isFullMode && row3Elev) ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${escapeHtml(row3Elev)}</div>` : ''}
                 </div>
               `;
@@ -2256,9 +2273,44 @@ function updateSmartResetButtons() {
         updateLODLabels();
       }
 
+      function isGuestViewer() {
+        return !(typeof isUserLoggedIn === 'function' && isUserLoggedIn());
+      }
+
+      // 비회원이 박지를 누르면: 산 이름이 보이는 높이로 옮기고 로그인 창을 띄운다.
+      // 로그인 뒤 페이지가 다시 뜨면 checkUrlParamSpotFocus가 이 박지를 열어 준다.
+      function askGuestLoginForSpot(spot) {
+        try {
+          if (map && spot && spot.lat && spot.lng) {
+            if (map.getLevel() > 9) map.setLevel(9, { animate: false });
+            map.panTo(new kakao.maps.LatLng(spot.lat, spot.lng));
+          }
+        } catch (e) {}
+        try { sessionStorage.setItem('okbm_login_return_spot', String(spot.id).trim()); } catch (e) {}
+        if (typeof window.openLoginModal === 'function') {
+          window.openLoginModal({ message: '박지 세부 위치와 정보는 회원에게만 보여요.\n로그인하면 바로 볼 수 있어요.' });
+        }
+      }
+
+      // 검색 페이지 등 링크로 들어온 비회원은 로그인 창 없이 그 산 이름이 보이는 곳까지만 옮긴다.
+      function openSpotFromLink(spot) {
+        if (!isGuestViewer()) { focusSpotOnMap(spot); return; }
+        try {
+          if (!map || !spot) return;
+          map.setLevel(8, { animate: false });
+          map.setCenter(new kakao.maps.LatLng(spot.lat, spot.lng));
+          window.__MANUAL_ACTIVE_ID__ = String(spot.id).trim();
+          updateLODLabels();
+        } catch (e) {}
+      }
+
       function focusSpotOnMap(spot) {
         if (!spot) return;
         if (isPickingLocationMode || window.__adminPinMoveSpotId) return;
+        if (isGuestViewer()) {
+          askGuestLoginForSpot(spot);
+          return;
+        }
         if (window.__okbmSpotFocusTimer) {
           clearTimeout(window.__okbmSpotFocusTimer);
           window.__okbmSpotFocusTimer = null;
