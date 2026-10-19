@@ -2298,78 +2298,151 @@ function updateSmartResetButtons() {
         guestPinTimer = setTimeout(refineGuestPins, 300);
       }
 
+      function currentMapView() {
+        var b = map.getBounds();
+        return { minLat: b.getSouthWest().getLat(), minLng: b.getSouthWest().getLng(), maxLat: b.getNorthEast().getLat(), maxLng: b.getNorthEast().getLng() };
+      }
+
+      // 이 범위에서 정확도가 모자란 핀을 서버에 묻는다. 모자란 핀이 없으면 null.
+      async function fetchGuestPinsForView(view) {
+        var want = guestPinCellFor(view);
+        var stale = spots.filter(function(s) {
+          return s && s.__pinCell > want && s.lat >= view.minLat && s.lat <= view.maxLat && s.lng >= view.minLng && s.lng <= view.maxLng;
+        });
+        if (!stale.length) return null;
+        // 대략 좌표로는 범위 안이어도 실제는 칸 크기만큼 바깥일 수 있어, 그만큼 넓혀 묻는다
+        var pad = Math.max.apply(null, stale.map(function(s) { return s.__pinCell; }));
+        var res = await window.okbmFetchSpotPins({ minLat: view.minLat - pad, minLng: view.minLng - pad, maxLat: view.maxLat + pad, maxLng: view.maxLng + pad });
+        return { res: res, stale: stale, want: want, pad: pad };
+      }
+
+      // 받은 좌표를 spot에 넣는다. 옮겨진 spot 목록을 돌려준다(마커는 아직 그대로).
+      function applyGuestPins(job) {
+        var res = job.res;
+        var byId = new Map(spots.map(function(s) { return [String(s.id).trim(), s]; }));
+        var moved = [];
+        res.pins.forEach(function(p) {
+          var s = byId.get(String(p[0]).trim());
+          if (!s || !s.__pinCell || (res.cell && res.cell >= s.__pinCell)) return;
+          s.lat = s.campsite_lat = Number(p[1]);
+          s.lng = s.campsite_lng = Number(p[2]);
+          s._renderLatLng = null;
+          if (res.cell) s.__pinCell = res.cell; else delete s.__pinCell;
+          moved.push(s);
+        });
+        // 응답에 없던 핀(실제로는 이 범위 밖)은 이 높이에서 다시 묻지 않는다
+        var returned = new Set(res.pins.map(function(p) { return String(p[0]).trim(); }));
+        job.stale.forEach(function(s) { if (!returned.has(String(s.id).trim()) && s.__pinCell > job.want) s.__pinCell = job.want; });
+        return moved;
+      }
+
+      function handleGuestPinError(e) {
+        if (e && e.code === 'rate') {
+          guestPinPausedUntil = Date.now() + 60000;
+          if (!guestPinLimitToastShown && typeof showToast === 'function') {
+            guestPinLimitToastShown = true;
+            showToast('지도를 많이 둘러봤어요. 로그인하면 정확한 위치를 계속 볼 수 있어요.');
+          }
+        } else {
+          guestPinPausedUntil = Date.now() + 5000;
+        }
+      }
+
+      // 손으로 확대·이동한 뒤 맞추는 핀은 툭 튀지 않게 0.22초 동안 미끄러지듯 제자리로 옮긴다.
+      function glideGuestPins(moved) {
+        var items = [];
+        moved.forEach(function(s) {
+          var id = String(s.id).trim();
+          var marker = spotNativeMarkerMap.get(id);
+          if (!marker || !marker.getMap()) return;
+          var from = marker.getPosition();
+          items.push({ marker: marker, label: spotLabelOverlayMap.get(id), fromLat: from.getLat(), fromLng: from.getLng(), toLat: s.lat, toLng: s.lng });
+        });
+        if (!items.length) { renderSpots(); return; }
+        var t0 = performance.now();
+        var step = function(now) {
+          var t = Math.min(1, (now - t0) / 220);
+          var k = 1 - Math.pow(1 - t, 3);
+          items.forEach(function(it) {
+            var pos = new kakao.maps.LatLng(it.fromLat + (it.toLat - it.fromLat) * k, it.fromLng + (it.toLng - it.fromLng) * k);
+            it.marker.setPosition(pos);
+            if (it.label) it.label.setPosition(pos);
+          });
+          if (t < 1) requestAnimationFrame(step);
+          else renderSpots();
+        };
+        requestAnimationFrame(step);
+      }
+
       async function refineGuestPins() {
         if (guestPinBusy || Date.now() < guestPinPausedUntil || !map) return;
-        var b = map.getBounds();
-        var view = { minLat: b.getSouthWest().getLat(), minLng: b.getSouthWest().getLng(), maxLat: b.getNorthEast().getLat(), maxLng: b.getNorthEast().getLng() };
-        var inView = function(s) {
-          return s.lat >= view.minLat && s.lat <= view.maxLat && s.lng >= view.minLng && s.lng <= view.maxLng;
-        };
-        var want = guestPinCellFor(view);
-        var stale = spots.filter(function(s) { return s && s.__pinCell > want && inView(s); });
-        if (!stale.length) return;
-        // 대략 좌표로는 화면 안이어도 실제는 칸 크기만큼 바깥일 수 있어, 그만큼 넓혀 묻는다
-        var pad = Math.max.apply(null, stale.map(function(s) { return s.__pinCell; }));
-        var box = { minLat: view.minLat - pad, minLng: view.minLng - pad, maxLat: view.maxLat + pad, maxLng: view.maxLng + pad };
         guestPinBusy = true;
         try {
-          var res = await window.okbmFetchSpotPins(box);
-          var byId = new Map(spots.map(function(s) { return [String(s.id).trim(), s]; }));
-          var moved = false;
-          res.pins.forEach(function(p) {
-            var s = byId.get(String(p[0]).trim());
-            if (!s || !s.__pinCell || (res.cell && res.cell >= s.__pinCell)) return;
-            s.lat = s.campsite_lat = Number(p[1]);
-            s.lng = s.campsite_lng = Number(p[2]);
-            s._renderLatLng = null;
-            if (res.cell) s.__pinCell = res.cell; else delete s.__pinCell;
-            moved = true;
-          });
-          // 응답에 없던 핀(실제로는 이 범위 밖)은 이 높이에서 다시 묻지 않는다
-          var returned = new Set(res.pins.map(function(p) { return String(p[0]).trim(); }));
-          stale.forEach(function(s) { if (!returned.has(String(s.id).trim()) && s.__pinCell > want) s.__pinCell = want; });
-          if (moved) renderSpots();
+          var job = await fetchGuestPinsForView(currentMapView());
+          if (!job) return;
+          var moved = applyGuestPins(job);
+          if (moved.length) glideGuestPins(moved);
           // 넓혀 물은 만큼 칸이 커졌으면 한 번 더(칸이 줄어들 때만 반복해 끝이 난다)
-          if (res.cell > want && res.cell < pad) setTimeout(scheduleGuestPinRefine, 0);
+          if (job.res.cell > job.want && job.res.cell < job.pad) setTimeout(scheduleGuestPinRefine, 0);
         } catch (e) {
-          if (e && e.code === 'rate') {
-            guestPinPausedUntil = Date.now() + 60000;
-            if (!guestPinLimitToastShown && typeof showToast === 'function') {
-              guestPinLimitToastShown = true;
-              showToast('지도를 많이 둘러봤어요. 로그인하면 정확한 위치를 계속 볼 수 있어요.');
-            }
-          } else {
-            guestPinPausedUntil = Date.now() + 5000;
-          }
+          handleGuestPinError(e);
         } finally {
           guestPinBusy = false;
         }
       }
 
-      // 비회원이 박지를 누르면: 산 이름이 보이는 높이로 옮기고 로그인 창을 띄운다.
+      // 지도를 옮기기 전에, 옮겨 갈 화면(중심·높이)의 핀을 먼저 정확히 받아 둔다. 옮긴 뒤 핀이 튀지 않게.
+      // 늦어도 0.6초까지만 기다린다. 그 뒤에 온 답은 평소처럼 지도가 멈출 때 맞춘다.
+      async function prefetchGuestPinsAt(lat, lng, level) {
+        if (!map || guestPinBusy || Date.now() < guestPinPausedUntil || typeof window.okbmFetchSpotPins !== 'function') return;
+        if (!spots.some(function(s) { return s && s.__pinCell; })) return;
+        var cur = currentMapView();
+        var scale = Math.pow(2, level - map.getLevel());
+        var halfLat = (cur.maxLat - cur.minLat) * scale / 2;
+        var halfLng = (cur.maxLng - cur.minLng) * scale / 2;
+        var view = { minLat: lat - halfLat, minLng: lng - halfLng, maxLat: lat + halfLat, maxLng: lng + halfLng };
+        guestPinBusy = true;
+        var job = fetchGuestPinsForView(view).then(function(j) {
+          if (j) applyGuestPins(j);
+          return j;
+        }).catch(function(e) {
+          handleGuestPinError(e);
+          return null;
+        }).finally(function() {
+          guestPinBusy = false;
+        });
+        await Promise.race([job, new Promise(function(r) { setTimeout(r, 600); })]);
+      }
+
+      // 비회원이 박지를 누르면: 로그인 창을 띄우고, 뒤로 산 이름이 보이는 높이로 옮긴다.
       // 로그인 뒤 페이지가 다시 뜨면 checkUrlParamSpotFocus가 이 박지를 열어 준다.
-      function askGuestLoginForSpot(spot) {
-        try {
-          if (map && spot && spot.lat && spot.lng) {
-            if (map.getLevel() > 9) map.setLevel(9, { animate: false });
-            map.panTo(new kakao.maps.LatLng(spot.lat, spot.lng));
-          }
-        } catch (e) {}
+      async function askGuestLoginForSpot(spot) {
         try { sessionStorage.setItem('okbm_login_return_spot', String(spot.id).trim()); } catch (e) {}
         if (typeof window.openLoginModal === 'function') {
           window.openLoginModal({ message: '박지 세부 위치와 정보는 회원에게만 보여요.\n로그인하면 바로 볼 수 있어요.' });
         }
+        try {
+          if (map && spot && spot.lat && spot.lng) {
+            var level = Math.min(map.getLevel(), 9);
+            await prefetchGuestPinsAt(spot.lat, spot.lng, level);
+            renderSpots();
+            if (map.getLevel() > level) map.setLevel(level, { animate: false });
+            map.panTo(new kakao.maps.LatLng(spot.lat, spot.lng));
+          }
+        } catch (e) {}
       }
 
       // 공유 링크·검색 페이지로 들어온 비회원에게는 그 박지 하나만 정보창을 열어 준다(홍보).
       // 비회원 정보창은 [뷰/특징]·사진까지이고 들머리·내비는 회원 전용 안내로 가려진다. 다른 박지는 누르면 로그인 안내.
       var guestLinkedSpotId = '';
-      function openSpotFromLink(spot) {
+      async function openSpotFromLink(spot) {
         if (!spot) return;
         if (isGuestViewer()) {
           guestLinkedSpotId = String(spot.id).trim();
           try {
             if (map) {
+              await prefetchGuestPinsAt(spot.lat, spot.lng, 8);
+              renderSpots();
               map.setLevel(8, { animate: false });
               map.setCenter(new kakao.maps.LatLng(spot.lat, spot.lng));
             }
