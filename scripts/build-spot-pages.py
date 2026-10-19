@@ -47,6 +47,8 @@ THEMES = [
 THEME_LABEL = dict(THEMES)
 # 칩·질문에 쓰는 이름. '돌박지 박지'처럼 겹치지 않게 한다.
 THEME_NAME = {slug: label if label in ("퇴근박", "돌박지") else f"{label} 박지" for slug, label in THEMES}
+# 링크 글자는 검색어 그대로('강원 백패킹', '섬 백패킹')로 쓴다.
+THEME_LINK = {slug: f"{label} 백패킹" for slug, label in THEMES}
 PROVINCE_TOKEN_RE = re.compile(r"^(경기|강원|충청|전라|경상|제주|충북|충남|전북|전남|경북|경남)")
 
 
@@ -395,7 +397,7 @@ def spot_page(row, same_region, region_more=0, themes=()):
 {faq_html}
 </dl>
 </section>
-{f'<section class="card"><h2>이 박지가 들어 있는 테마</h2>' + chips([(f"/theme/{t}/", THEME_NAME[t]) for t in themes]) + '</section>' if themes else ''}
+{f'<section class="card"><h2>이 박지가 들어 있는 테마</h2>' + chips([(f"/theme/{t}/", THEME_LINK[t]) for t in themes]) + '</section>' if themes else ''}
 {f'<section><h2 class="region">{esc(region)}의 다른 박지</h2><ul class="related">{related}</ul></section>' if related else ''}
 </main>
 {FOOTER}
@@ -413,7 +415,7 @@ def index_page(groups, total, theme_counts=None):
             f'<small>{esc(clean_text(r.get("cityName")) or region)}</small></a></li>'
             for r in rows
         )
-        more = f' <a href="/region/{REGION_SLUG[region]}/" style="font-size:.8rem">지역 페이지</a>' if region in REGION_SLUG else ""
+        more = f' <a href="/region/{REGION_SLUG[region]}/" style="font-size:.8rem">{esc(region_word(region))} 백패킹</a>' if region in REGION_SLUG else ""
         sections.append(f'<section><h2 class="region" id="{esc(region)}">{esc(region)} <small>{len(rows)}곳</small>{more}</h2>'
                         f'<ul class="related">{items}</ul></section>')
     title = "전국 백패킹 박지 목록 | 낭만루트"
@@ -443,7 +445,7 @@ def index_page(groups, total, theme_counts=None):
 <main>
 <h1 style="margin-top:18px">전국 백패킹 박지</h1>
 <p class="sub">지역별 {total}곳. 들머리와 코스는 <a href="{SITE}/map.html">낭만루트 지도</a>에서 로그인 후 확인할 수 있어요.</p>
-{chips([(f"/theme/{s}/", f"{THEME_NAME[s]} {theme_counts[s]}곳") for s, l in THEMES if theme_counts.get(s)]) if theme_counts else ""}
+{chips([(f"/theme/{s}/", f"{THEME_LINK[s]} {theme_counts[s]}곳") for s, l in THEMES if theme_counts.get(s)]) if theme_counts else ""}
 {"".join(sections)}
 </main>
 {FOOTER}
@@ -569,7 +571,8 @@ def theme_page(slug, rows, region_order):
                      f"{region_word(top[0])}{josa(region_word(top[0]), '이', '가')} {len(by_region[top[0]])}곳으로 가장 많고 "
                      f"그다음은 {rest} 순이에요."))
     faqs.append(LOCATION_FAQ)
-    nav = chips([(f"/theme/{s}/", THEME_NAME[s]) for s, _ in THEMES if s != slug])
+    nav = chips([(f"/theme/{s}/", THEME_LINK[s]) for s, _ in THEMES if s != slug]
+                + [(f"/region/{REGION_SLUG[g]}/", f"{region_word(g)} 백패킹") for g in REGION_ORDER])
     return list_page(
         path=f"/theme/{slug}/", title=f"{label} 백패킹 장소 {n}곳 - 전국 {THEME_NAME[slug]} | 낭만루트",
         h1=f"{label} 백패킹 장소 {n}곳", desc=short_desc(f"{intro} {LIST_NOTE}"), intro=intro,
@@ -599,8 +602,8 @@ def region_page(region, rows, theme_rows):
     for r in rows:
         by_city.setdefault(clean_text(r.get("cityName")) or word, []).append(r)
     cities = sorted(by_city, key=lambda c: (-len(by_city[c]), c))
-    nav = chips([(f"/region/{REGION_SLUG[g]}/", f"{region_word(g)} 박지") for g in REGION_ORDER if g != region]
-                + [(f"/theme/{s}/", f"전국 {THEME_NAME[s]}") for s, _ in THEMES])
+    nav = chips([(f"/region/{REGION_SLUG[g]}/", f"{region_word(g)} 백패킹") for g in REGION_ORDER if g != region]
+                + [(f"/theme/{s}/", f"{THEME_LINK[s]}") for s, _ in THEMES])
     return list_page(
         path=f"/region/{REGION_SLUG[region]}/", title=f"{word} 백패킹 장소 {n}곳 - {word} 박지 추천 | 낭만루트",
         h1=f"{word} 백패킹 장소 {n}곳", desc=short_desc(f"{intro} {LIST_NOTE}"), intro=intro,
@@ -633,11 +636,11 @@ def llms_txt(groups, total, theme_counts=None):
         "## 지역별 박지",
         "",
     ]
-    lines += [f"- [{g} {len(rows)}곳]({SITE}/region/{REGION_SLUG[g]}/)" if g in REGION_SLUG
+    lines += [f"- [{region_word(g)} 백패킹 {len(rows)}곳]({SITE}/region/{REGION_SLUG[g]}/)" if g in REGION_SLUG
               else f"- [{g} {len(rows)}곳]({SITE}/spot/#{urllib.parse.quote(g)})" for g, rows in groups]
     if theme_counts:
         lines += ["", "## 테마별 박지", ""]
-        lines += [f"- [{THEME_NAME[s]} {theme_counts[s]}곳]({SITE}/theme/{s}/): {THEME_INTRO[s].format(N=theme_counts[s])}"
+        lines += [f"- [{THEME_LINK[s]} {theme_counts[s]}곳]({SITE}/theme/{s}/): {THEME_INTRO[s].format(N=theme_counts[s])}"
                   for s, l in THEMES if theme_counts.get(s)]
     return "\n".join(lines) + "\n"
 
