@@ -137,7 +137,20 @@
     const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     return D.events.filter(function (e) { const v = evView(e); return v.start <= monthEnd && v.end >= today; });
   }
-  function laterEvents() { const now = thisMonthEvents(); return D.events.filter(function (e) { return now.indexOf(e) === -1; }); }
+  // 참가 가능(시작일 오늘 이후)이 먼저, 그중 고정이 위. 이미 시작된 일정은 끝나는 날이 가까운 순.
+  function compareEvents(a, b) {
+    const t = todayKey();
+    const rank = function (e) {
+      const start = String(e.start_date || '').slice(0, 10);
+      const end = String(e.end_date || e.start_date || '').slice(0, 10);
+      const joinable = start >= t;
+      return { group: joinable ? 0 : 1, pin: joinable && e.is_pinned ? 0 : 1, key: joinable ? start : end };
+    };
+    const ka = rank(a), kb = rank(b);
+    if (ka.group !== kb.group) return ka.group - kb.group;
+    if (ka.pin !== kb.pin) return ka.pin - kb.pin;
+    return ka.key.localeCompare(kb.key) || String(a.start_date || '').localeCompare(String(b.start_date || ''));
+  }
 
   // ---------- 박지·장비 ----------
   // 박지 목록: 홈은 registeredSpots, 지도는 window.spots
@@ -840,12 +853,9 @@
     </div>`;
     return fold(e.id, head, body);
   }
-  // 홈 3줄: 고정 → 날짜순. 이번 달 행사가 3개보다 적으면(월말 등) 다음 일정으로 채운다
+  // 홈 3줄: 참가 가능한 일정 중 가까운 날부터. 3개보다 적으면 이미 시작된 일정으로 채운다.
   function homeEventList() {
-    return D.events.filter(function (e) { return e.is_active !== false; }).sort(function (a, b) {
-      if (!!b.is_pinned !== !!a.is_pinned) return b.is_pinned ? 1 : -1;
-      return String(a.start_date).localeCompare(String(b.start_date));
-    });
+    return D.events.filter(function (e) { return e.is_active !== false; }).slice().sort(compareEvents);
   }
   function paneEvents(full) {
     if (!full) {
@@ -853,10 +863,14 @@
       if (!list.length) return homeEmpty('다가오는 행사가 아직 없어요', 0, '라운지 열기');
       return list.map(evItem).join('') + moreBtn(0, '행사 ' + D.events.length + '개 전체 보기');
     }
-    const now = thisMonthEvents(), later = laterEvents();
+    const t = todayKey();
+    const open = D.events.filter(function (e) { return String(e.start_date || '').slice(0, 10) >= t; }).sort(compareEvents);
+    const going = D.events.filter(function (e) { return String(e.start_date || '').slice(0, 10) < t; }).sort(compareEvents);
+    const now = thisMonthEvents();
     let h = `<div class="lm-head">이번 달 행사<br><em>${now.length}</em>개가 있어요</div>`;
-    h += now.length ? now.map(evItem).join('') : '<div class="lm-empty">이번 달 행사가 없어요</div>';
-    if (later.length) h += '<div class="lmh-cap">다음 일정</div>' + later.map(evItem).join('');
+    if (!open.length && !going.length) h += '<div class="lm-empty">이번 달 행사가 없어요</div>';
+    else h += open.map(evItem).join('');
+    if (going.length) h += '<div class="lmh-cap">이미 시작된 일정</div>' + going.map(evItem).join('');
     if (D.pastEvents === null) {
       h += '<button type="button" class="lmh-more" data-a="past">지난 행사 보기' + ico(P.chevR, 16) + '</button>';
     } else if (D.pastEvents.length) {
