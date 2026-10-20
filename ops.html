@@ -73,6 +73,14 @@
     .legend { display: flex; gap: 12px; font-size: 11px; color: var(--tx-3); margin-top: 6px; }
     .legend b { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: 0; }
     @media (max-width: 420px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+    /* 공지 푸시 */
+    .push label { display: block; color: var(--tx-3); font-size: 12px; font-weight: 700; margin: 10px 0 4px; }
+    .push input, .push textarea { width: 100%; background: var(--raise); color: var(--tx-1); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; font: inherit; }
+    .push textarea { min-height: 72px; resize: vertical; }
+    .push .row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+    .push button { background: var(--accent); color: #1a1205; border: 0; border-radius: 10px; padding: 9px 16px; font: inherit; font-weight: 800; cursor: pointer; }
+    .push button:disabled { opacity: .5; cursor: default; }
+    .push .st { color: var(--tx-2); font-size: 12px; line-height: 1.5; }
     .seen-btn { background: none; border: 1px solid var(--line); color: var(--tx-2); border-radius: 10px; padding: 6px 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 12px; }
   </style>
 </head>
@@ -81,6 +89,19 @@
   <h1>낭만루트 운영 숫자</h1>
   <p class="sub">관리자 계정으로만 보입니다. 관리자 본인 접속과 ?qa=1 접속은 세지 않습니다.</p>
   <div id="activity"></div>
+  <details class="fold push" id="pushBox" hidden>
+    <summary>공지 푸시 보내기 <span class="sum" id="pushCount"></span></summary>
+    <div class="in">
+      <p class="sub">아이폰 앱에서 알림을 허용한 기기 전체에 보내요. 보내면 되돌릴 수 없어요.</p>
+      <label for="pushTitle">제목 (60자)</label>
+      <input id="pushTitle" maxlength="60" placeholder="예: 새 박지 10곳이 올라왔어요" />
+      <label for="pushBody">내용 (200자)</label>
+      <textarea id="pushBody" maxlength="200" placeholder="알림에 보일 내용"></textarea>
+      <label for="pushUrl">누르면 열 주소 (선택, /로 시작)</label>
+      <input id="pushUrl" maxlength="300" placeholder="예: /notice/new-spots.html" />
+      <div class="row"><button type="button" id="pushSend">보내기</button><span class="st" id="pushStatus"></span></div>
+    </div>
+  </details>
   <div class="range" id="range">
     <button type="button" data-days="7" class="on">7일</button>
     <button type="button" data-days="14">14일</button>
@@ -89,6 +110,6 @@
   <div id="out"><p class="msg">불러오는 중…</p></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script>
-  <script src="ops.js?v=10"></script>
+  <script src="ops.js?v=11"></script>
 </body>
 </html>

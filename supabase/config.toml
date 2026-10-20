@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.lounge-admin-delete]
 verify_jwt = true
+
+[functions.send-notice-push]
+verify_jwt = true

@@ -442,5 +442,56 @@
     loadActivity();
   });
 
+  // 공지 푸시 (supabase/functions/send-notice-push). 관리자에게만 칸을 보이고, 받을 기기 수를 먼저 보여 준다.
+  var pushBox = document.getElementById('pushBox');
+  var pushStatus = document.getElementById('pushStatus');
+  var pushSend = document.getElementById('pushSend');
+
+  async function callNoticePush(payload) {
+    var sess = await client.auth.getSession();
+    var token = sess && sess.data && sess.data.session && sess.data.session.access_token;
+    if (!token) return { error: 'missing_authorization' };
+    try {
+      var res = await fetch(SUPABASE_URL + '/functions/v1/send-notice-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + token },
+        body: JSON.stringify(payload)
+      });
+      var data = await res.json().catch(function () { return {}; });
+      return res.ok ? data : { error: data.error || ('http_' + res.status) };
+    } catch (e) {
+      return { error: 'network' };
+    }
+  }
+
+  async function loadPushCount() {
+    var r = await callNoticePush({ dry: true });
+    if (r.error) return; // 관리자가 아니거나 함수가 아직 없으면 칸을 숨긴 채 둔다
+    pushBox.hidden = false;
+    document.getElementById('pushCount').textContent = '알림 받는 기기 ' + num(r.total) + '대';
+  }
+
+  pushSend.addEventListener('click', async function () {
+    var title = document.getElementById('pushTitle').value.trim();
+    var body = document.getElementById('pushBody').value.trim();
+    var url = document.getElementById('pushUrl').value.trim();
+    if (!title || !body) { pushStatus.textContent = '제목과 내용을 모두 써 주세요.'; return; }
+    if (url && !/^\/(?!\/)/.test(url)) { pushStatus.textContent = '주소는 /로 시작하는 우리 사이트 경로만 돼요.'; return; }
+    if (!confirm('이 공지를 모든 앱 기기에 보낼까요?\n\n' + title + '\n' + body)) return;
+    pushSend.disabled = true;
+    pushStatus.textContent = '보내는 중…';
+    var r = await callNoticePush({ title: title, body: body, url: url });
+    pushSend.disabled = false;
+    if (r.error) {
+      pushStatus.textContent = r.error === 'apns_not_configured'
+        ? 'APNs 키가 아직 함수 Secrets에 없어요.'
+        : '보내지 못했어요 (' + r.error + ')';
+      return;
+    }
+    pushStatus.textContent = num(r.sent) + '대에 보냈어요' + (r.failed ? ' · 실패 ' + num(r.failed) : '') + (r.removed ? ' · 앱 지운 기기 ' + num(r.removed) + '대 정리' : '');
+    loadPushCount();
+  });
+
   loadActivity();
+  loadPushCount();
 })();

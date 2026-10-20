@@ -14359,14 +14359,62 @@ if (typeof window !== 'undefined') {
     }, 250);
   }
 
+  // 🔔 [앱 푸시] 아이폰 앱에서만 알림 권한을 묻고, 받은 기기 토큰을 register_push_token으로 저장한다.
+  // (SUPABASE_H10_PUSH_TOKENS.sql) 공지는 운영 화면 → Edge Function send-notice-push가 보낸다.
+  // 안드로이드 앱은 Firebase 설정이 없어 register()가 앱을 멈추게 하므로 건너뛴다.
+  // 앱을 열 때마다 register()를 다시 불러, 그사이 로그인했다면 토큰에 회원 id가 붙는다.
+  function bootNativePush() {
+    if (isPlainWebPage() || window.__okbmPushBooted) return;
+    var cap = window.Capacitor;
+    if (!cap || typeof cap.getPlatform !== 'function' || cap.getPlatform() !== 'ios') return;
+    var Push = cap.Plugins && cap.Plugins.PushNotifications;
+    if (!Push || typeof Push.addListener !== 'function') return;
+    window.__okbmPushBooted = true;
+
+    Push.addListener('registration', function(t) {
+      var token = String((t && t.value) || '').trim();
+      var client = window.supabaseClient;
+      if (!token || !client || typeof client.rpc !== 'function') return;
+      client.rpc('register_push_token', { p_token: token, p_platform: 'ios' }).then(function(res) {
+        if (res && res.error) console.warn('[push register_push_token]', res.error);
+      });
+    });
+    Push.addListener('registrationError', function(err) {
+      console.warn('[push registrationError]', err);
+    });
+    // 알림을 눌러 들어오면 공지에 붙인 우리 사이트 경로(/로 시작)로 옮긴다.
+    Push.addListener('pushNotificationActionPerformed', function(action) {
+      var data = (action && action.notification && action.notification.data) || {};
+      var url = String(data.url || '');
+      if (/^\/(?!\/)/.test(url)) window.location.href = url;
+    });
+
+    // 첫 화면이 다 뜬 뒤에 권한 창을 띄운다(시작 화면 위에 바로 뜨지 않게).
+    setTimeout(function() {
+      Push.checkPermissions().then(function(p) {
+        var state = p && p.receive;
+        if (state === 'granted') return Push.register();
+        if (state === 'prompt' || state === 'prompt-with-rationale') {
+          return Push.requestPermissions().then(function(r) {
+            if (r && r.receive === 'granted') return Push.register();
+          });
+        }
+      }).catch(function(e) {
+        console.warn('[push permissions]', e);
+      });
+    }, 4000);
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
       bootBackHandler();
       configureCapacitorStatusBar();
+      bootNativePush();
     });
   } else {
     bootBackHandler();
     configureCapacitorStatusBar();
+    bootNativePush();
   }
 })();
 
