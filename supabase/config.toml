@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.send-notice-push]
 verify_jwt = true
+
+[functions.admin-kakao-alert]
+verify_jwt = false

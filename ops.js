@@ -492,6 +492,72 @@
     loadPushCount();
   });
 
+  // 카카오톡 신고 알림 (supabase/functions/admin-kakao-alert). 관리자가 카카오로 talk_message에 동의하면
+  // ops.html?code=…&state=kakao_alert로 돌아오고, 그 code를 함수에 넘겨 토큰을 저장한다.
+  var kakaoBox = document.getElementById('kakaoBox');
+  var kakaoStatus = document.getElementById('kakaoStatus');
+  var kakaoLinkBtn = document.getElementById('kakaoLink');
+  var kakaoTestBtn = document.getElementById('kakaoTest');
+  var kakaoAuthorizeUrl = '';
+
+  async function callKakaoAlert(payload) {
+    var sess = await client.auth.getSession();
+    var token = sess && sess.data && sess.data.session && sess.data.session.access_token;
+    if (!token) return { error: 'missing_authorization' };
+    try {
+      var res = await fetch(SUPABASE_URL + '/functions/v1/admin-kakao-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + token },
+        body: JSON.stringify(payload)
+      });
+      var data = await res.json().catch(function () { return {}; });
+      return res.ok ? data : { error: data.error || ('http_' + res.status) };
+    } catch (e) {
+      return { error: 'network' };
+    }
+  }
+
+  async function loadKakaoAlert() {
+    var params = new URLSearchParams(location.search);
+    if (params.get('state') === 'kakao_alert' && (params.get('code') || params.get('error'))) {
+      history.replaceState(null, '', location.pathname);
+      if (params.get('code')) {
+        kakaoBox.hidden = false;
+        kakaoBox.open = true;
+        kakaoStatus.textContent = '연결하는 중…';
+        var linked = await callKakaoAlert({ action: 'link', code: params.get('code') });
+        kakaoStatus.textContent = linked.error
+          ? (linked.error === 'no_talk_message_scope' ? '카카오톡 메시지 전송에 동의해야 연결돼요.' : '연결하지 못했어요 (' + linked.error + ')')
+          : '연결됐어요. 카카오톡 나와의 채팅을 확인해 보세요.';
+      }
+    }
+    var r = await callKakaoAlert({ action: 'status' });
+    if (r.error) return; // 관리자가 아니거나 함수가 아직 없으면 칸을 숨긴 채 둔다
+    kakaoBox.hidden = false;
+    if (!r.configured) {
+      document.getElementById('kakaoSum').textContent = '설정 필요';
+      kakaoLinkBtn.disabled = true;
+      kakaoStatus.textContent = '함수 Secrets에 KAKAO_REST_API_KEY가 아직 없어요.';
+      return;
+    }
+    kakaoAuthorizeUrl = r.authorize_url;
+    document.getElementById('kakaoSum').textContent = r.linked ? '연결됨' : '연결 안 됨';
+    kakaoLinkBtn.textContent = r.linked ? '다시 연결' : '카카오톡 알림 연결';
+    kakaoTestBtn.hidden = !r.linked;
+  }
+
+  kakaoLinkBtn.addEventListener('click', function () {
+    if (kakaoAuthorizeUrl) location.href = kakaoAuthorizeUrl;
+  });
+  kakaoTestBtn.addEventListener('click', async function () {
+    kakaoTestBtn.disabled = true;
+    kakaoStatus.textContent = '보내는 중…';
+    var r = await callKakaoAlert({ action: 'test' });
+    kakaoTestBtn.disabled = false;
+    kakaoStatus.textContent = r.error ? '보내지 못했어요 (' + r.error + ')' : '보냈어요. 카카오톡을 확인해 보세요.';
+  });
+
   loadActivity();
   loadPushCount();
+  loadKakaoAlert();
 })();

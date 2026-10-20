@@ -102,6 +102,13 @@
       <div class="row"><button type="button" id="pushSend">보내기</button><span class="st" id="pushStatus"></span></div>
     </div>
   </details>
+  <details class="fold push" id="kakaoBox" hidden>
+    <summary>카카오톡 신고 알림 <span class="sum" id="kakaoSum"></span></summary>
+    <div class="in">
+      <p class="sub">새 신고가 들어오면 내 카카오톡 「나와의 채팅」으로 알려 줘요. 매일 오전 9시에 처리 안 한 신고가 있으면 한 번 더 알려요.</p>
+      <div class="row"><button type="button" id="kakaoLink">카카오톡 알림 연결</button><button type="button" id="kakaoTest" hidden>테스트 보내기</button><span class="st" id="kakaoStatus"></span></div>
+    </div>
+  </details>
   <div class="range" id="range">
     <button type="button" data-days="7" class="on">7일</button>
     <button type="button" data-days="14">14일</button>
@@ -110,6 +117,6 @@
   <div id="out"><p class="msg">불러오는 중…</p></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script>
-  <script src="ops.js?v=11"></script>
+  <script src="ops.js?v=12"></script>
 </body>
 </html>
