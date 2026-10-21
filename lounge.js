@@ -910,14 +910,20 @@
     if (dealPhase(d) === 'ongoing' && !d.end_date && d.posted_on && addDaysKey(d.posted_on, 14) < t) return false;
     return true;
   }
-  function sortDeals(list) {
-    return list.slice().sort(function (a, b) { return (Number(a.sort) || 0) - (Number(b.sort) || 0); });
+  // 진행중은 마감이 가까운 것부터(마감일 없는 글은 아래), 예정은 시작이 가까운 것부터. 같으면 번호(sort) 순.
+  function sortDeals(list, key) {
+    return list.slice().sort(function (a, b) {
+      const ka = a[key] ? String(a[key]) : '9999-99-99';
+      const kb = b[key] ? String(b[key]) : '9999-99-99';
+      if (ka !== kb) return ka < kb ? -1 : 1;
+      return (Number(a.sort) || 0) - (Number(b.sort) || 0);
+    });
   }
   function ongoingDeals() {
-    return sortDeals((D.deals || []).filter(function (d) { return dealAlive(d) && dealPhase(d) === 'ongoing'; }));
+    return sortDeals((D.deals || []).filter(function (d) { return dealAlive(d) && dealPhase(d) === 'ongoing'; }), 'end_date');
   }
   function upcomingDeals() {
-    return sortDeals((D.deals || []).filter(function (d) { return dealAlive(d) && dealPhase(d) === 'upcoming'; }));
+    return sortDeals((D.deals || []).filter(function (d) { return dealAlive(d) && dealPhase(d) === 'upcoming'; }), 'start_date');
   }
   function dealMark(d) {
     const s = String(d.summary || '');
