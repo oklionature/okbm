@@ -40,7 +40,8 @@
       '.hq-btn.hq-hi{background:#5bb8f0;border-color:#5bb8f0;color:#001521}',
       '.hq-btn.hq-hi em{color:#00324d}',
       // 바로가기 밑 두 칸: 왼쪽 이달의 행사, 오른쪽 할인 소식 (lounge.js가 #homeDealStrip에 그린다)
-      '.hd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 14px 0;color:#F2F3F5}',
+      // 홈 칸 사이 기본 간격(28px)에서 8px을 당겨 바로가기와 20px만 띄운다
+      '.hd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:-8px 14px 0;color:#F2F3F5}',
       '.hd-col{min-width:0;border-radius:14px;background:#171A1F;border:1px solid #2A2F37;padding:11px 9px 3px}',
       '.hd-h{display:flex;justify-content:space-between;align-items:center;gap:4px;margin-bottom:4px;padding:0 2px}',
       '.hd-h b{font-size:13.5px;font-weight:900;letter-spacing:-.02em;white-space:nowrap}',
