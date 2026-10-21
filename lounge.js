@@ -344,6 +344,8 @@
       '.lm-tt{margin-top:2px;font-size:14px;font-weight:800;line-height:1.45}',
       '.lm-bd{margin-top:2px;font-size:13.5px;line-height:1.55;color:#d1d1d6;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}',
       '.lm-bd a{color:#8eb6ff;font-weight:700;text-decoration:underline;word-break:break-all}',
+      '.lm-ig{margin-top:14px;max-width:400px}',
+      '.lm-ig iframe{display:block;width:100%;border:0;border-radius:12px;background:#17171b}',
       '.lm-ytap{display:inline}',
       '.lm-ytap iframe{display:block;width:100%;margin-top:8px;border:0;border-radius:12px;background:#17171b;aspect-ratio:16/9}',
       '.lm-ytap.short iframe{width:min(70%,236px);aspect-ratio:9/16}',
@@ -1066,7 +1068,35 @@
     if (!isFinite(h) || h < 200 || h > 4000) return;
     const viewer = document.getElementById('okbmDealInsta');
     const frame = viewer && viewer.querySelector('iframe');
-    if (frame && frame.contentWindow === e.source) frame.style.height = Math.ceil(h) + 'px';
+    if (frame && frame.contentWindow === e.source) { frame.style.height = Math.ceil(h) + 'px'; return; }
+    // 펼친 할인 안의 게시물: 아래로만 늘어나므로 보고 있던 자리는 그대로다
+    document.querySelectorAll('.lm-ig iframe').forEach(function (f) {
+      if (f.contentWindow === e.source) { f.style.height = Math.ceil(h) + 'px'; f.parentElement.dataset.h = String(Math.ceil(h)); }
+    });
+  }
+  // 할인을 펼치면 인스타 게시물을 내용 바로 아래에 붙인다(누를 버튼 없이). 펼칠 때만 받는다.
+  function mountInsta(box) {
+    if (!box || box.querySelector('iframe')) return;
+    const kind = box.dataset.kind;
+    const code = box.dataset.code;
+    if (!/^(p|reel|tv)$/.test(kind) || !/^[A-Za-z0-9_-]+$/.test(code)) return;
+    const frame = document.createElement('iframe');
+    frame.title = '인스타그램 게시물';
+    frame.setAttribute('scrolling', 'no');
+    frame.loading = 'lazy';
+    frame.referrerPolicy = 'strict-origin-when-cross-origin';
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+    frame.style.height = (box.dataset.h || (kind === 'p' ? '560' : '700')) + 'px';
+    frame.src = 'https://www.instagram.com/' + kind + '/' + code + '/embed/';
+    box.appendChild(frame);
+  }
+  // 스크롤되는 가장 가까운 상자(라운지 창 안이면 그 창, 아니면 페이지)
+  function scrollBoxOf(el) {
+    for (let n = el && el.parentElement; n && n !== document.body; n = n.parentElement) {
+      const oy = getComputedStyle(n).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight) return n;
+    }
+    return null;
   }
   function dealItem(d) {
     const ig = dealIg(d);
@@ -1077,7 +1107,8 @@
       <div class="lm-rb"><div class="lm-rt">${esc(d.title)}${D.admin && !d.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc(d.summary)}</div></div><span class="lm-dd">${dealMetaHtml(d)}</span></button>`;
     const body = `<div class="lmx-in">
       ${shown ? `<p class="lm-desc" style="margin:0">${esc(shown)}</p>` : ''}
-      ${(ig || web) ? `<div class="lmx-btns">${igBtn(ig)}${webBtn(web, '글 보기', !ig)}</div>` : ''}
+      ${ig ? `<div class="lm-ig" data-kind="${esc(ig.kind)}" data-code="${esc(ig.code)}"></div>` : ''}
+      ${web ? `<div class="lmx-btns">${webBtn(web, '글 보기', !ig)}</div>` : ''}
       ${adminLinks([['edit-deal', '수정', 'adm', d.id], ['hide-deal', d.is_active ? '숨기기' : '다시 보이기', 'adm', d.id], ['del-deal', '삭제', 'red', d.id]])}
     </div>`;
     return fold(d.id, head, body);
@@ -1701,6 +1732,12 @@
       item.classList.remove('cal');
       resetTipVideo(item);
       item.querySelectorAll('.lm-ytap iframe').forEach(function (f) { f.remove(); });
+      // 접히는 동안은 그대로 두고, 다 접힌 뒤에 게시물을 뗀다(다시 펼치면 새로 받는다)
+      if (item.querySelector('.lm-ig iframe')) {
+        setTimeout(function () {
+          if (!item.classList.contains('open')) item.querySelectorAll('.lm-ig iframe').forEach(function (f) { f.remove(); });
+        }, 400);
+      }
     }
     const h = item.querySelector('[data-a="x"]');
     if (h) h.setAttribute('aria-expanded', String(open));
@@ -1708,14 +1745,27 @@
   function toggleItem(item) {
     if (!item) return;
     const open = !item.classList.contains('open');
+    // 인스타 게시물이 붙는 항목: 누른 줄이 화면에서 움직이지 않게 한다.
+    // 위에 펼쳐 둔 항목은 바로 접고, 그만큼 스크롤을 되돌린다. 게시물은 아래로만 늘어난다.
+    const hold = open && item.querySelector('.lm-ig');
+    const head = item.querySelector('[data-a="x"]');
+    const before = hold && head ? head.getBoundingClientRect().top : 0;
     Array.prototype.forEach.call(item.parentElement.children, function (n) {
-      if (n !== item && n.classList && n.classList.contains('lmx') && n.classList.contains('open')) setOpen(n, false);
+      if (n !== item && n.classList && n.classList.contains('lmx') && n.classList.contains('open')) {
+        if (hold) { n.classList.add('noanim'); requestAnimationFrame(function () { n.classList.remove('noanim'); }); }
+        setOpen(n, false);
+      }
     });
     setOpen(item, open);
     tick();
+    if (hold && head) {
+      const moved = head.getBoundingClientRect().top - before;
+      if (moved) { const box = scrollBoxOf(item); if (box) box.scrollTop += moved; else window.scrollBy(0, moved); }
+    }
     if (open) {
       afterOpen(item);
-      setTimeout(function () { if (item.isConnected) item.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); }, 340);
+      item.querySelectorAll('.lm-ig').forEach(mountInsta);
+      if (!hold) setTimeout(function () { if (item.isConnected) item.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); }, 340);
     }
   }
   // 다시 그려도 펼쳐 둔 항목은 그대로
