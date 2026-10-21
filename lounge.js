@@ -1082,7 +1082,7 @@
     const frame = document.createElement('iframe');
     frame.title = '인스타그램 게시물';
     frame.setAttribute('scrolling', 'no');
-    frame.loading = 'lazy';
+    // lazy는 안 쓴다: 홈에서 넘어와 창이 밀려 들어오는 중에 붙이면 브라우저가 보이는 걸 놓쳐 끝내 안 받는다
     frame.referrerPolicy = 'strict-origin-when-cross-origin';
     frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox');
     frame.style.height = (box.dataset.h || (kind === 'p' ? '560' : '700')) + 'px';
