@@ -844,17 +844,19 @@
     const place = String(e.place || '').trim() || spotName(spot);
     const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="false"><div class="lm-date"><b>${v.d}</b><small>${esc(v.mon)} ${esc(v.wd)}</small></div>
       <div class="lm-rb"><div class="lm-rt">${esc(e.title)}${evTags(e)}</div><div class="lm-rs">${esc([place, v.days].filter(Boolean).join(' · '))}</div></div><span class="lm-dd">${esc(v.ddText)}</span></button>`;
-    const poster = okbmSafeImageUrl(e.poster_url);
+    const ig = eventIg(e);
+    // 인스타 게시물이 펼쳐지면 같은 포스터가 두 번 보이므로 포스터는 게시물이 없을 때만
+    const poster = ig ? '' : okbmSafeImageUrl(e.poster_url);
     const kv = function (k, val) { return val ? '<div class="lm-kv"><span>' + k + '</span><b>' + esc(val) + '</b></div>' : ''; };
     const body = `<div class="lmx-in">
       ${poster ? `<img class="lm-poster" src="${escapeHtml(okbmSafeImageUrl(e.poster_url))}" alt="" loading="lazy" decoding="async">` : ''}
       ${e.subtitle ? `<div class="lm-rs" style="margin:0 0 6px">${esc(e.subtitle)}</div>` : ''}
       ${kv('일정', v.dateText + ' (' + v.weekday + ')')}${kv('장소', place)}${kv('주최', e.host)}${kv('참가', e.fee)}
       ${e.description ? `<p class="lm-desc">${esc(e.description)}</p>` : ''}
-      ${(eventIg(e) || eventApplyUrl(e) || e.spot_id) ? `<div class="lmx-btns">
+      ${ig ? `<div class="lm-ig" data-kind="${esc(ig.kind)}" data-code="${esc(ig.code)}"></div>` : ''}
+      ${(eventApplyUrl(e) || e.spot_id) ? `<div class="lmx-btns">
         ${e.spot_id ? `<button type="button" class="lm-btn sm" data-a="spot" data-v="${esc(e.spot_id)}">${ico(P.pin, 16)}지도에서 보기</button>` : ''}
-        ${igBtn(eventIg(e))}
-        ${webBtn(eventApplyUrl(e), '신청하기', !eventIg(e))}
+        ${webBtn(eventApplyUrl(e), '신청하기', true)}
       </div>` : ''}
       ${v.past ? '' : `<div class="lm-cal-row" data-cal-slot>${calSlotInner(e)}</div>`}
       ${adminLinks([['edit-event', '수정', 'adm', e.id], ['pin-event', e.is_pinned ? '고정 풀기' : '홈 상단 고정', 'adm', e.id], ['hide-event', e.is_active ? '숨기기' : '다시 보이기', 'adm', e.id], ['del-event', '삭제', 'red', e.id]])}
@@ -971,10 +973,6 @@
   function instaInText(text) {
     const m = String(text || '').match(INSTA_IN_TEXT);
     return m ? instaPost(m[0]) : null;
-  }
-  function igBtn(post) {
-    if (!post) return '';
-    return '<button type="button" class="lm-btn sm main" data-a="deal-ig" data-kind="' + esc(post.kind) + '" data-code="' + esc(post.code) + '">게시물 보기</button>';
   }
   function webBtn(url, label, primary) {
     const safe = okbmSafeExternalUrl(url);
