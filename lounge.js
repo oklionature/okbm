@@ -324,7 +324,9 @@
       '.lm-rb{flex:1;min-width:0}',
       '.lm-rt{font-size:14px;font-weight:800;line-height:1.35;transition:color .2s}',
       '.lm-rs{margin-top:3px;font-size:11.5px;color:var(--sub);line-height:1.45}',
-      '.lm-dd{flex:none;font-size:11.5px;font-weight:800;color:var(--blue);padding-top:2px}',
+      '.lm-dd{flex:none;font-size:11.5px;font-weight:800;color:var(--blue);padding-top:2px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}',
+      '.lm-dd .dd-s{display:block;margin-bottom:2px;font-size:10.5px;font-weight:700;color:var(--sub)}',
+      '.lm-dd .dd-e{display:block}',
       '.lm-tag{display:inline-block;margin-left:5px;padding:0 5px;border-radius:4px;font-size:9.5px;font-weight:800;vertical-align:1px;color:var(--star);border:1px solid rgba(255,195,66,.4)}',
       '.lm-tag.new{color:#6fa8ff;border-color:rgba(49,130,246,.5)}',
       '.lm-tag.soon{color:#ff8a3d;border-color:rgba(255,138,61,.55)}',
@@ -931,16 +933,20 @@
     if (/세일|패밀리/.test(d.title)) return '세일';
     return '할인';
   }
-  function dealMeta(d) {
+  // 오른쪽 칸: 위 줄 시작일(회색 "10/15 ~"), 아래 줄 마감(파랑 "10/31"·"오늘 마감"·"내일 마감").
+  // 시작일이 없으면 마감만 "~ 10/31", 마감이 없으면 진행중·예정.
+  function dealMetaHtml(d) {
     const t = todayKey();
-    if (dealPhase(d) === 'upcoming') return d.end_date ? mdLabel(d.end_date) : '예정';
+    const s = d.start_date ? mdLabel(d.start_date) : '';
+    let end;
     if (d.end_date) {
-      if (String(d.end_date) === t) return '오늘';
-      if (String(d.end_date) === addDaysKey(t, 1)) return '내일';
-      return mdLabel(d.end_date);
+      if (String(d.end_date) === t) end = '오늘 마감';
+      else if (String(d.end_date) === addDaysKey(t, 1)) end = '내일 마감';
+      else end = (s ? '' : '~ ') + mdLabel(d.end_date);
+    } else {
+      end = dealPhase(d) === 'upcoming' ? '예정' : '진행중';
     }
-    if (d.posted_on && String(d.posted_on) === t) return '오늘';
-    return '진행중';
+    return (s ? '<span class="dd-s">' + esc(s) + ' ~</span>' : '') + '<span class="dd-e">' + esc(end) + '</span>';
   }
   function instaPost(url) {
     const safe = okbmSafeExternalUrl(url);
@@ -1062,7 +1068,7 @@
     const postText = String(d.body || '').trim();
     const shown = postText || String(d.summary || '').trim();
     const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="false"><div class="lm-date"><b>${esc(dealMark(d))}</b></div>
-      <div class="lm-rb"><div class="lm-rt">${esc(d.title)}${D.admin && !d.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc(d.summary)}</div></div><span class="lm-dd">${esc(dealMeta(d))}</span></button>`;
+      <div class="lm-rb"><div class="lm-rt">${esc(d.title)}${D.admin && !d.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc(d.summary)}</div></div><span class="lm-dd">${dealMetaHtml(d)}</span></button>`;
     const body = `<div class="lmx-in">
       ${shown ? `<p class="lm-desc" style="margin:0">${esc(shown)}</p>` : ''}
       ${(ig || web) ? `<div class="lmx-btns">${igBtn(ig)}${webBtn(web, '글 보기', !ig)}</div>` : ''}
@@ -1071,7 +1077,7 @@
     return fold(d.id, head, body);
   }
   function dealStripRow(d) {
-    return '<button type="button" class="hd-row" data-a="lounge" data-v="' + TAB_DEAL + '" data-id="' + esc(d.id) + '"><span class="hd-mk">' + esc(dealMark(d)) + '</span><span class="hd-tx"><b>' + esc(d.title) + '</b><small>' + esc(d.summary) + '</small></span><span class="hd-meta">' + esc(dealMeta(d)) + '</span></button>';
+    return '<button type="button" class="hd-row" data-a="lounge" data-v="' + TAB_DEAL + '" data-id="' + esc(d.id) + '"><span class="hd-mk">' + esc(dealMark(d)) + '</span><span class="hd-tx"><b>' + esc(d.title) + '</b><small>' + esc(d.summary) + '</small></span><span class="hd-meta">' + dealMetaHtml(d) + '</span></button>';
   }
   function paneDeals(full) {
     const now = ongoingDeals();
