@@ -1724,6 +1724,8 @@
   }
   function setOpen(item, open) {
     item.classList.toggle('open', open);
+    // 인스타 게시물은 어떻게 펼치든(직접 누름·홈에서 넘어옴·다시 그림) 펼칠 때 붙인다
+    if (open) item.querySelectorAll('.lm-ig').forEach(mountInsta);
     if (!open) {
       item.classList.remove('cal');
       resetTipVideo(item);
@@ -1760,7 +1762,6 @@
     }
     if (open) {
       afterOpen(item);
-      item.querySelectorAll('.lm-ig').forEach(mountInsta);
       if (!hold) setTimeout(function () { if (item.isConnected) item.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' }); }, 340);
     }
   }
