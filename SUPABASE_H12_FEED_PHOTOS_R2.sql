@@ -49,3 +49,9 @@ select
   (select count(*) from pg_policies
     where schemaname = 'storage' and tablename = 'objects'
       and cmd in ('INSERT', 'UPDATE', 'DELETE', 'ALL')) as storage_write_policies_left;
+
+-- 4) 후속 정리 (2026-10-21, 대시보드에서 실행)
+--    - photos 버킷 비움: feed/ 57장(R2로 옮김) + 9/13~15 테스트 업로드 trip_ 28장(DB 어디에도 연결 없음 확인)
+--    - 목록 보기(SELECT) 정책 2개도 삭제. 이제 storage.objects 정책 0개, Supabase Storage는 쓰지 않는다.
+-- drop policy if exists "Allow public select photos" on storage.objects;
+-- drop policy if exists "anon_storage_photos_read" on storage.objects;
