@@ -3645,48 +3645,63 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         return name.replace(/\s/g, '').length >= 2 ? name : '';
       };
 
+      // 세부 장소 이름 중 봉우리·섬처럼 고유한 이름만 고른다. 예: "국사봉 붕어섬전망대" → ["국사봉"], "마당바위 천연 슬랩" → []
+      window.extractSubPeakNames = function(subKey) {
+        return String(subKey || '').split(/\s+/).filter(function(w) {
+          return /^[가-힣]{1,8}(?:산|봉|도|섬|령|재)$/.test(w) && w.length >= 2;
+        });
+      };
+
+      // 제목에 산 이름이나 세부 장소 이름이 있는 영상만 남긴다. 하나도 없으면 빈 목록을 준다(상관없는 영상으로 채우지 않는다).
       window.rankMediaBySpot = function(list, spotName, areaName, limit, subKey) {
         var max = limit || 5;
         var subTight = String(subKey || '').replace(/\s/g, '');
+        var subPeaks = window.extractSubPeakNames(subKey);
         var name = window.cleanSpotSearchName(spotName);
-        var mountain = window.extractMountainSearchName(spotName);
+        var mountainTight = window.extractMountainSearchName(spotName).replace(/\s/g, '');
         var area = String(areaName || '').trim();
         var scored = (list || []).map(function(item) {
           var t = String((item && item.title) || '');
+          var tTight = t.replace(/\s/g, '');
           var score = 0;
-          if (mountain && t.indexOf(mountain) !== -1) score += 10;
-          if (subTight && t.replace(/\s/g, '').indexOf(subTight) !== -1) score += 10;
-          if (name && name !== mountain && t.indexOf(name) !== -1) score += 6;
+          if (mountainTight && tTight.indexOf(mountainTight) !== -1) score += 10;
+          if (subTight && tTight.indexOf(subTight) !== -1) score += 10;
+          else if (subPeaks.some(function(p) { return t.indexOf(p) !== -1; })) score += 10;
+          if (name && name.replace(/\s/g, '') !== mountainTight && t.indexOf(name) !== -1) score += 6;
           if (area && t.indexOf(area) !== -1) score += 4;
           if (/장소|백패킹|야영|캠핑|비박|등산/.test(t)) score += 3;
           if ((item.title || '').length >= 6) score += 1;
           return { item: item, score: score };
         });
         scored.sort(function(a, b) { return b.score - a.score; });
-        var matched = scored.filter(function(x) { return x.score >= 10; }).map(function(x) { return x.item; });
-        var fallback = scored.map(function(x) { return x.item; });
-        return (matched.length ? matched : fallback).slice(0, max);
+        return scored.filter(function(x) { return x.score >= 10; }).map(function(x) { return x.item; }).slice(0, max);
       };
 
       window.fetchRealYouTubeVideosForSpot = async function(spotName, areaName, subName) {
         if (!spotName) return [];
         var variants = window.buildSpotMediaQueryVariants(spotName, areaName);
         if (!variants.length) variants = [window.buildSpotMediaQuery(spotName, areaName)];
-        // 세부 장소 이름이 있으면 그 이름으로 먼저 찾는다(예: 매악산 → "상주 국사봉 백패킹")
+        // 산 이름 검색을 맨 앞에 두고, 세부 장소는 두 번째로 찾는다.
+        // 세부 장소가 봉우리 이름이면 그 이름으로(예: 매악산 → "상주 국사봉 백패킹"), 아니면 산 이름을 붙여서(예: "병풍산 마당바위 백패킹").
+        // 세부 장소만으로 찾으면 "마당바위·팔각정·산성" 같은 흔한 말 때문에 다른 산 영상이 딸려 온다.
         var subKey = window.extractSubSearchName(subName);
         if (subKey) {
           var subArea = window.normalizeSearchAreaName(areaName) || '';
-          var subFirst = [(subArea ? subArea + ' ' : '') + subKey + ' 백패킹', String(subName || '').replace(/\(.*?\)/g, ' ').replace(/\s+/g, ' ').trim() + ' 백패킹'];
-          variants = subFirst.filter(function(q, i, arr) { return q && arr.indexOf(q) === i; }).concat(variants.filter(function(q) { return subFirst.indexOf(q) === -1; }));
+          var subMountain = window.extractMountainSearchName(spotName);
+          var subPeak = window.extractSubPeakNames(subKey).filter(function(p) { return p !== subMountain; })[0] || '';
+          var subQuery = '';
+          if (subPeak) subQuery = (subArea ? subArea + ' ' : '') + subPeak + ' 백패킹';
+          else if (subMountain && subKey.indexOf(subMountain) === -1) subQuery = subMountain + ' ' + subKey.split(/\s+/)[0] + ' 백패킹';
+          if (subQuery && variants.indexOf(subQuery) === -1) variants = variants.slice(0, 1).concat([subQuery], variants.slice(1));
         }
-        var cacheKey = 'yt:v6:' + variants[0];
+        var cacheKey = 'yt:v7:' + variants[0] + '|' + (subKey || '');
 
         if (window.__spotAutoVideosCache.has(cacheKey)) {
           return window.__spotAutoVideosCache.get(cacheKey);
         }
 
         try {
-          var sessionCached = sessionStorage.getItem('okbm_yt_cache_v6_' + cacheKey);
+          var sessionCached = sessionStorage.getItem('okbm_yt_cache_v7_' + cacheKey);
           if (sessionCached) {
             var parsed = JSON.parse(sessionCached);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -3715,19 +3730,23 @@ window.__ytMetaCache = window.__ytMetaCache || {};
           htmls.forEach(function(html) {
             if (html) absorb(window.extractYouTubeVideosFromText(html, 8));
           });
-          if (merged.length >= 10) return;
+          if (relevantCount() >= 10) return;
           try {
             var piped = await window.fetchJsonFast('https://api.piped.private.coffee/search?q=' + encodeURIComponent(query) + '&filter=videos', 8000);
             absorb(window.parsePipedOrInvidiousVideos(piped, 8));
           } catch (e) {}
         }
+        // 몇 개 모였는지는 이 박지와 맞는 영상만 센다(엉뚱한 영상이 많이 와도 다음 검색어로 넘어가게).
+        function relevantCount() {
+          return window.rankMediaBySpot(merged, spotName, areaName, 10, subKey).length;
+        }
 
         var primary = variants.slice(0, 2);
-        for (var i = 0; i < primary.length && merged.length < 10; i++) {
+        for (var i = 0; i < primary.length && relevantCount() < 10; i++) {
           await searchOne(primary[i]);
         }
-        if (merged.length < 6) {
-          for (var j = 2; j < Math.min(variants.length, 5) && merged.length < 10; j++) {
+        if (relevantCount() < 6) {
+          for (var j = 2; j < Math.min(variants.length, 5) && relevantCount() < 10; j++) {
             await searchOne(variants[j]);
           }
         }
@@ -3736,7 +3755,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
 
         if (extracted.length > 0) {
           limitedMapSet(window.__spotAutoVideosCache, cacheKey, extracted, 80);
-          try { sessionStorage.setItem('okbm_yt_cache_v6_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
+          try { sessionStorage.setItem('okbm_yt_cache_v7_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
         }
         return extracted;
       };
