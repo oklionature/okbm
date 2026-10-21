@@ -940,6 +940,7 @@
     if (dealPhase(d) === 'upcoming' && d.start_date) return mdLabel(d.start_date);
     if (/플리|중고/.test(d.title)) return '중고';
     if (/오픈/.test(d.title)) return '오픈';
+    if (/팝업/.test(d.title)) return '팝업';
     if (/세일|패밀리/.test(d.title)) return '세일';
     return '할인';
   }
@@ -1110,9 +1111,6 @@
       ${adminLinks([['edit-deal', '수정', 'adm', d.id], ['hide-deal', d.is_active ? '숨기기' : '다시 보이기', 'adm', d.id], ['del-deal', '삭제', 'red', d.id]])}
     </div>`;
     return fold(d.id, head, body);
-  }
-  function dealStripRow(d) {
-    return '<button type="button" class="hd-row" data-a="lounge" data-v="' + TAB_DEAL + '" data-id="' + esc(d.id) + '"><span class="hd-mk">' + esc(dealMark(d)) + '</span><span class="hd-tx"><b>' + esc(d.title) + '</b><small>' + esc(d.summary) + '</small></span><span class="hd-meta">' + dealMetaHtml(d) + '</span></button>';
   }
   function paneDeals(full) {
     const now = ongoingDeals();
@@ -1812,7 +1810,7 @@
   }
   // 홈 개편(2026-10-14): 탭 없이 행사·초보 가이드·자유게시판을 각자 칸에 3줄씩 (index.html #okbmHome*Body)
   const SPLIT = [['okbmHomeEventsBody', 0], ['okbmHomeGuidesBody', 1], ['okbmHomeBoardBody', 2]];
-  const isSplit = function () { return !!document.getElementById('okbmHomeEventsBody'); };
+  const isSplit = function () { return !!document.getElementById('okbmHomeGuidesBody'); };
   function paintQuickCounts() {
     if (D.status !== 'ready') return;
     const g = document.getElementById('hqGuideCount');
@@ -1848,15 +1846,42 @@
     }
     return '<b>자유게시판</b><p>' + esc(sub) + '</p><button type="button" class="tg-act" data-a="new-post">글쓰기</button>';
   }
+  // 바로가기 밑 두 칸 (2026-10-21): 왼쪽 이달의 행사, 오른쪽 할인 소식. 칸마다 3줄, 제목 옆 '전체 ›'.
+  // 행사는 참가할 수 있는 가까운 날부터(homeEventList), 할인은 진행중을 마감이 가까운 순(ongoingDeals).
+  function hdEvRow(e) {
+    const v = evView(e);
+    // 이미 시작한 행사는 끝나는 날(~10/31)과 남은 날, 아니면 시작일과 D-n. 오늘·내일이면 빨갛게
+    const going = v.start < parseD(todayKey());
+    const k = going ? '~' + (v.end.getMonth() + 1) + '/' + v.end.getDate() : (v.start.getMonth() + 1) + '/' + v.start.getDate();
+    let chip = v.ddText.replace('종료 ', '');
+    if (chip === 'D-1') chip = '내일';
+    const hot = chip === '오늘' || chip === '오늘 종료' || chip === '내일';
+    return '<button type="button" class="hd-row" data-a="lounge" data-v="0" data-id="' + esc(e.id) + '"><span class="hd-k"><b>' + esc(k) + '</b><small' + (hot ? ' class="hot"' : '') + '>' + esc(chip) + '</small></span><span class="hd-x">' + esc(e.title) + '</span></button>';
+  }
+  function hdDealRow(d) {
+    const t = todayKey();
+    let chip = '진행중', hot = false;
+    if (d.end_date) {
+      const left = Math.round((parseD(d.end_date) - parseD(t)) / 86400000);
+      chip = left <= 0 ? '오늘' : (left === 1 ? '내일' : 'D-' + left);
+      hot = left <= 1;
+    }
+    return '<button type="button" class="hd-row" data-a="lounge" data-v="' + TAB_DEAL + '" data-id="' + esc(d.id) + '"><span class="hd-k"><b>' + esc(dealMark(d)) + '</b><small' + (hot ? ' class="hot"' : '') + '>' + esc(chip) + '</small></span><span class="hd-x">' + esc(d.title) + '</span></button>';
+  }
   function paintDealSurfaces() {
     const strip = document.getElementById('homeDealStrip');
     if (!strip) return;
-    const ready = D.status === 'ready' && !D.fail[TAB_DEAL];
-    const now = ready ? ongoingDeals() : [];
-    if (!now.length) { strip.hidden = true; strip.innerHTML = ''; return; }
+    if (D.status !== 'ready') { strip.hidden = true; strip.innerHTML = ''; return; }
+    const evs = D.fail[0] ? [] : homeEventList();
+    const now = D.fail[TAB_DEAL] ? [] : ongoingDeals();
+    const dealN = now.length;
+    if (!evs.length && !dealN) { strip.hidden = true; strip.innerHTML = ''; return; }
     strip.hidden = false;
-    strip.innerHTML = '<div class="hd-h"><b>장비 세일 소식</b><button type="button" data-a="lounge" data-v="' + TAB_DEAL + '">' + now.length + '건 ›</button></div>'
-      + now.slice(0, 2).map(dealStripRow).join('');
+    strip.innerHTML =
+      '<div class="hd-col hd-ev"><div class="hd-h"><b>이달의 행사<i>' + (thisMonthEvents().length || evs.length) + '</i></b><button type="button" data-a="lounge" data-v="0">전체 ›</button></div>'
+      + (evs.length ? evs.slice(0, HOME_N).map(hdEvRow).join('') : '<div class="hd-empty">다가오는 행사가 아직 없어요</div>') + '</div>'
+      + '<div class="hd-col hd-deal"><div class="hd-h"><b>할인 소식<i>' + dealN + '</i></b><button type="button" data-a="lounge" data-v="' + TAB_DEAL + '">전체 ›</button></div>'
+      + (now.length ? now.slice(0, HOME_N).map(hdDealRow).join('') : '<div class="hd-empty">진행중인 할인이 없어요</div>') + '</div>';
   }
   function renderSplit(only) {
     const ready = D.status === 'ready';

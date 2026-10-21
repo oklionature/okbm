@@ -3,7 +3,7 @@
 // 시안: 인스타에니/낭만루트_앱점검/미리보기/미리보기.html "1. 첫 화면" 넷째 판
 //
 // · 바로가기 다섯 개(#homeQuickNav [data-quick])는 누르면 그 화면으로 넘어간다(스크롤 아님).
-//   초보 가이드·행사 개수는 lounge.js가 #hqGuideCount·#hqEventCount에 채운다.
+//   초보 가이드 개수는 lounge.js가 #hqGuideCount에 채운다. 박지 랭킹은 라운지 박지 후기 탭(평점 높은 박지)을 연다.
 // · 최근 다녀온 후기는 운영자 글을 빼고 회원이 공개한 글만, 다녀온 날짜가 최근인 것부터. 개수와 상관없이 바로가기 바로 밑(대표님 10-14).
 // · 인라인 핸들러 없음(이벤트 위임) → csp-extract 대상 아님.
 // · src 보간은 escapeHtml(okbmSafeImageUrl(...))만 (scripts/check-unsafe-url-interpolation.py).
@@ -39,18 +39,24 @@
       '.hq-btn em{font-style:normal;font-size:10px;font-weight:700;color:#7D8490;min-height:12px}',
       '.hq-btn.hq-hi{background:#5bb8f0;border-color:#5bb8f0;color:#001521}',
       '.hq-btn.hq-hi em{color:#00324d}',
-      '.hd{margin:12px 14px 0;padding:10px 12px 2px;border-radius:14px;background:#171A1F;border:1px solid #2A2F37;color:#F2F3F5}',
-      '.hd-h{display:flex;justify-content:space-between;align-items:center}',
-      '.hd-h b{font-size:13px;font-weight:800}',
-      '.hd-h button{font:inherit;font-size:12px;font-weight:800;color:#5bb8f0;background:none;border:0;padding:0;cursor:pointer}',
-      '.hd-row{width:100%;display:flex;gap:8px;align-items:center;padding:9px 0;border:0;border-top:1px solid rgba(255,255,255,.07);background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}',
-      '.hd-mk{flex:none;width:40px;font-size:13px;font-weight:900;color:#7ec8ff}',
-      '.hd-tx{flex:1;min-width:0}',
-      '.hd-tx b{display:block;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-      '.hd-tx small{display:block;margin-top:2px;font-size:11px;font-weight:700;color:#8b8b93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-      '.hd-meta{flex:none;font-size:11.5px;font-weight:800;color:#7ec8ff;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}',
-      '.hd-meta .dd-s{display:block;margin-bottom:1px;font-size:10px;font-weight:700;color:#8b8b93}',
-      '.hd-meta .dd-e{display:block}',
+      // 바로가기 밑 두 칸: 왼쪽 이달의 행사, 오른쪽 할인 소식 (lounge.js가 #homeDealStrip에 그린다)
+      '.hd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 14px 0;color:#F2F3F5}',
+      '.hd-col{min-width:0;border-radius:14px;background:#171A1F;border:1px solid #2A2F37;padding:11px 9px 3px}',
+      '.hd-h{display:flex;justify-content:space-between;align-items:center;gap:4px;margin-bottom:4px;padding:0 2px}',
+      '.hd-h b{font-size:13.5px;font-weight:900;letter-spacing:-.02em;white-space:nowrap}',
+      '.hd-h b i{font-style:normal;margin-left:3px;font-size:11.5px;font-weight:800;color:#8b8b93}',
+      '.hd-h button{flex:none;font:inherit;font-size:11.5px;font-weight:800;color:#5bb8f0;background:none;border:0;padding:4px 0;cursor:pointer}',
+      '.hd-row{width:100%;display:flex;gap:7px;align-items:flex-start;padding:8px 2px;border:0;border-top:1px solid rgba(255,255,255,.07);background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}',
+      '.hd-row:first-of-type{border-top:0}',
+      '.hd-row:active{opacity:.6}',
+      '.hd-k{flex:none;width:40px;text-align:center}',
+      '.hd-k b{display:block;font-size:14.5px;font-weight:900;letter-spacing:-.04em;line-height:1.1;white-space:nowrap;font-variant-numeric:tabular-nums}',
+      '.hd-ev .hd-k b{color:#8fc1ff}',
+      '.hd-deal .hd-k b{color:#ffb08f}',
+      '.hd-k small{display:inline-block;margin-top:3px;padding:1px 4px;border-radius:4px;font-size:9.5px;font-weight:900;white-space:nowrap;background:rgba(255,255,255,.08);color:#cfd3da}',
+      '.hd-k small.hot{background:#ff4d4f;color:#fff}',
+      '.hd-x{flex:1;min-width:0;padding-top:1px;font-size:12px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere}',
+      '.hd-empty{padding:14px 2px 12px;font-size:11.5px;color:#8b8b93}',
       // 시안: 인기 스팟 제목은 로고 줄 오른쪽(사진 쪽으로 15px 내림), 카드는 이름·숫자·설명·버튼만
       '.header-top-row{display:flex;align-items:center;justify-content:space-between}',
       '.hh-pick{position:relative;top:15px;font-size:13px;font-weight:800;color:#ffd77a;font-variant-numeric:tabular-nums;white-space:nowrap;transition:opacity .3s ease}',
@@ -93,7 +99,7 @@
     var kind = btn.getAttribute('data-quick');
     if (typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(8); } catch (err) {} }
     if (kind === 'guide' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(1);
-    else if (kind === 'event' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(0);
+    else if (kind === 'rank' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(3);
     else if (kind === 'board' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(2);
     else if (kind === 'join' && typeof window.openTripJoinListModal === 'function') window.openTripJoinListModal();
     else if (kind === 'write' && typeof window.openPastTripRegisterModal === 'function') {

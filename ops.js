@@ -17,16 +17,17 @@
     lounge: '백패커 라운지',
     ready: '레디샷 띠',
     quick_guide: '바로가기: 초보 가이드',
-    quick_event: '바로가기: 이번 달 행사',
+    quick_event: '바로가기: 이번 달 행사(10/21까지)',
+    feat_quick_rank: '바로가기: 박지 랭킹',
     quick_join: '바로가기: 동행 찾기',
     quick_board: '바로가기: 자유게시판',
     quick_write: '바로가기: 후기 올리기',
     recent_reviews: '최근 다녀온 후기',
-    events: '이번 달 행사',
+    events: '이달의 행사·할인 소식',
     guides: '처음 가는 백패킹',
     together: '함께하기'
   };
-  var HOME_ORDER = ['hero', 'hero_detail', 'hero_gear', 'quick_guide', 'quick_event', 'quick_join', 'quick_board', 'quick_write',
+  var HOME_ORDER = ['hero', 'hero_detail', 'hero_gear', 'quick_guide', 'feat_quick_rank', 'quick_board', 'quick_join', 'quick_write', 'quick_event',
     'recent_reviews', 'theme', 'events', 'video', 'guides', 'tripjoin', 'together', 'lounge', 'ready'];
   var DOCK = [['dock_home', '낭만루터'], ['dock_map', '낭만루트'], ['dock_plan', '낭만플랜'], ['dock_history', '낭만피드'], ['dock_report', '마이리포트']];
   var DEVICE = [['device_ios', '아이폰 사파리'], ['device_ios_home', '아이폰 홈 화면'], ['device_android', '안드로이드 웹'], ['device_app', '낭만루트 앱'], ['device_other', 'PC·기타']];
@@ -34,6 +35,7 @@
 
   // 기능 사용 (SUPABASE_H8_FEATURE_METRICS.sql). [이름, 화면, 보이는 이름]
   var FEATURES = [
+    ['feat_quick_rank', '홈', '바로가기: 박지 랭킹'],
     ['feat_readyshot_make', '낭만플랜', '레디샷 만들기'],
     ['feat_readyshot_save', '낭만플랜', '레디샷 저장·공유'],
     ['feat_pack_share_open', '낭만플랜', '패킹 공유 창 열기'],
