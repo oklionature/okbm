@@ -100,13 +100,24 @@
     return { apikey: key, Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' };
   }
 
-  var FEED_COLS = 'id,user_id,spot,spot_id,photos,likes_count,created_at,author';
+  var FEED_COLS = 'id,user_id,spot,spot_id,photos,likes_count,created_at';
+  // 피드 목록은 10분 동안 다시 쓴다(Supabase 전송량: 2026-10 무료 한도를 넘긴 적이 있다)
+  var FEED_CACHE_KEY = 'okbm_pm_feeds_v1', FEED_CACHE_MS = 10 * 60 * 1000;
 
   function fetchPublicFeeds() {
+    try {
+      var c = JSON.parse(sessionStorage.getItem(FEED_CACHE_KEY) || 'null');
+      if (c && Date.now() - c.at < FEED_CACHE_MS && Array.isArray(c.rows)) return Promise.resolve(c.rows);
+    } catch (e) {}
     var base = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
     var url = base + '/rest/v1/feeds?select=' + FEED_COLS + '&is_published=eq.true&feed_type=neq.snap&order=created_at.desc&limit=3000';
     var p = typeof window.okbmPublicFetch === 'function' ? window.okbmPublicFetch(url) : fetch(url, { headers: restHeaders() });
-    return p.then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+    return p.then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
+      if (Array.isArray(rows) && rows.length) {
+        try { sessionStorage.setItem(FEED_CACHE_KEY, JSON.stringify({ at: Date.now(), rows: rows })); } catch (e) {}
+      }
+      return rows;
+    }).catch(function () { return []; });
   }
 
   // 내 후기는 공개 전 글도 넣는다(올리자마자 내 지도에 색이 들어가게)
@@ -198,7 +209,7 @@
       var s = spotFor(f);
       if (!s) return;
       var b = bySpot[s.id] || (bySpot[s.id] = { all: [], mine: [] });
-      var item = { id: f.id, photos: ph, likes: Number(f.likes_count) || 0, at: f.created_at || '', author: f.author || '' };
+      var item = { id: f.id, photos: ph, likes: Number(f.likes_count) || 0, at: f.created_at || '' };
       if (uidMe && String(f.user_id) === uidMe) b.mine.push(item);
       if (list.indexOf(f) !== -1) b.all.push(item);
     });
@@ -233,6 +244,27 @@
   }
 
   // ------------------------------------------------------------------ 사진 줄이기
+  // scripts/photo-thumbs.py가 R2에 만들어 둔 작은 사본: <공개 주소>/thumb/s|m/<원본 키> (s 256px, m 640px)
+  var R2_BASE = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
+  var premade = new Map();
+  function premadeThumb(url, size) {
+    if (url.indexOf(R2_BASE) !== 0) return Promise.resolve(null);
+    var t = R2_BASE + 'thumb/' + (size <= 320 ? 's' : 'm') + '/' + url.slice(R2_BASE.length).split('?')[0];
+    if (premade.has(t)) return premade.get(t);
+    var p = new Promise(function (ok) {
+      var img = new Image();
+      img.onload = function () { ok(t); };
+      img.onerror = function () { ok(null); };
+      img.src = t;
+    });
+    premade.set(t, p);
+    return p;
+  }
+  // 작은 사본이 있으면 그것, 없으면(방금 올라온 피드) 원본을 받아 기기에서 줄인다
+  function bestThumb(url, size) {
+    return premadeThumb(url, size).then(function (t) { return t || thumb(url, size); });
+  }
+
   function thumb(url, size) {
     var key = size + '|' + url;
     if (thumbs.has(key)) return thumbs.get(key);
@@ -430,7 +462,7 @@
       // 화면에서 칸이 차지하는 크기만큼만 줄인다(전국에선 작은 칸이 많다)
       var need = Math.max(b[2] - b[0], b[3] - b[1]) * t.k * dpr;
       var size = Math.min(Number(el.getAttribute('data-size')), need < 120 ? 120 : need < 320 ? 320 : 720);
-      thumb(el.getAttribute('data-src'), size).then(function (u) {
+      bestThumb(el.getAttribute('data-src'), size).then(function (u) {
         if (!u) return;
         el.setAttribute('href', u);
         el.classList.add('pm-in');
