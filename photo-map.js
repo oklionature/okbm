@@ -451,8 +451,8 @@
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-    if (exportPart !== 'jeju') { ctx.fillStyle = COLOR.sea; ctx.fillRect(0, 0, canvas.width, canvas.height); }
-    var inc = function (c) { return !exportPart || (exportPart === 'jeju') === (c.code === '50'); };
+    if (!exportPart || exportPart === 'main') { ctx.fillStyle = COLOR.sea; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+    var inc = function (c) { return !exportPart || exportPartOf(c) === exportPart; };
     ctx.setTransform(dpr * kk, 0, 0, dpr * kk, dpr * (ox + t.x), dpr * (oy + t.y));
     ctx.imageSmoothingEnabled = true;
     if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
@@ -537,18 +537,12 @@
       // 공유 이미지: 시군구 이름을 칸 크기에 맞춰 다 넣는다(너무 작은 칸은 뺀다)
       sggs.forEach(function (c) {
         var w = (c.box[1][0] - c.box[0][0]) * kk;
-        if (w < 16 || !inc(c) || /^(울릉군|옹진군)$/.test(c.name)) return;
+        if (!inc(c) || c.name === '옹진군') return;
         var look = c.look || {};
+        // 울릉도는 섬이 작아 이름을 섬 밑에 둔다
+        if (exportPart === 'ulleung') return label('울릉도', X(c.c[0]), Y(c.box[1][1]) + 9, 7, 700, !(look.url || look.green));
+        if (w < 16) return;
         label(c.name, X(c.c[0]), Y(c.c[1]) + 2, Math.max(5.5, Math.min(8.5, w / 4.2)), 700, !(look.url || look.green));
-      });
-      // 시·도 이름은 크게, 노란 글씨로 시군구 이름 위에
-      sidos.forEach(function (c) {
-        if (!inc(c) || METRO[c.code]) return;
-        // 제주는 섬이 작아 '제주시'와 겹치니 섬 위에 둔다
-        var x = X(c.c[0]), y = c.code === '50' ? Y(c.c[1]) - 24 : Y(c.c[1]) - 10;
-        ctx.font = '900 15px ' + fontFamily; ctx.lineJoin = 'round';
-        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.75)'; ctx.strokeText(c.name, x, y);
-        ctx.fillStyle = '#ffd84d'; ctx.fillText(c.name, x, y);
       });
     } else if (wide) {
       // 전국: 도 이름(광역시 이름은 도 이름과 겹쳐서 뺀다)
@@ -575,6 +569,8 @@
   // 전국을 한 장(기본 1080×1350, 인스타 피드)에 꽉 채워 시군구 이름까지 넣어 그린다.
   // 그리기는 render()를 그대로 쓰고, 그동안만 캔버스·크기·확대 상태를 바꿔 끼운다.
   var exporting = false, exportPart = null, exportPaths = {};
+  // 공유 이미지에서 이 칸을 어느 판에 그리나: 본토 / 제주(왼쪽 아래로 옮김) / 울릉도(오른쪽 동해로 옮김)
+  function exportPartOf(c) { return c.code === '50' ? 'jeju' : c.name === '울릉군' ? 'ulleung' : 'main'; }
   var EXPORT_BG = { sky: { sea: '#aad3ea', ink: '#1d2320', sub: '#2f5d48', foot: 'rgba(29,35,32,.7)' }, white: { sea: '#ffffff', ink: '#1d2320', sub: '#2f8a62', foot: 'rgba(29,35,32,.6)' }, navy: { sea: '#0f1d33', ink: '#ffffff', sub: '#8fe0b5', foot: 'rgba(255,255,255,.7)' } };
   function exportImage(opt) {
     opt = opt || {};
@@ -587,15 +583,21 @@
       sggs.forEach(function (c) { if (!test(c)) return; b[0] = Math.min(b[0], c.box[0][0]); b[1] = Math.min(b[1], c.box[0][1]); b[2] = Math.max(b[2], c.box[1][0]); b[3] = Math.max(b[3], c.box[1][1]); });
       return b;
     }
-    var mb = boxOf(function (c) { return c.code !== '50' && !/^(울릉군|옹진군)$/.test(c.name); });
+    var mb = boxOf(function (c) { return exportPartOf(c) === 'main' && c.name !== '옹진군'; });
     var jb = boxOf(function (c) { return c.code === '50'; });
+    var ub = boxOf(function (c) { return c.name === '울릉군'; });
     // 본토를 세로로 꽉 채우고 오른쪽에 붙인다(왼쪽 위는 제목, 왼쪽 아래는 제주)
     var sc = Math.min((LH - 2 * M) / (mb[3] - mb[1]), (LW - 2 * M) / (mb[2] - mb[0]));
     var tMain = d3.zoomIdentity.translate(LW - M - sc * mb[2], M - sc * mb[1]).scale(sc);
     var tJeju = d3.zoomIdentity.translate(M + 6 - sc * jb[0], LH - M - 22 - sc * jb[3]).scale(sc);
+    // 울릉도는 제 위도 그대로, 오른쪽 끝 동해 바다에(섬이 작아 1.6배로)
+    var su = sc * 1.6, uy = tMain.applyY((ub[1] + ub[3]) / 2);
+    var tUll = d3.zoomIdentity.translate(LW - M - 8 - su * ub[2], uy - su * (ub[1] + ub[3]) / 2).scale(su);
     if (!exportPaths.main) {
-      var pick = function (list, jeju) { return new Path2D(list.filter(function (c) { return (c.code === '50') === jeju; }).map(function (c) { return c.d; }).join('')); };
-      exportPaths = { main: { sgg: pick(sggs, false), sido: pick(sidos, false) }, jeju: { sgg: pick(sggs, true), sido: pick(sidos, true) } };
+      var pick = function (list, part) { return new Path2D(list.filter(function (c) { return exportPartOf(c) === part; }).map(function (c) { return c.d; }).join('')); };
+      // 시·도 경계: 경북에는 울릉도가 같이 들어 있어 본토 판에선 제 자리(그림 밖)에 그려지고, 울릉도 판에선 섬 테두리를 쓴다
+      var sidoMain = new Path2D(sidos.filter(function (c) { return c.code !== '50'; }).map(function (c) { return c.d; }).join(''));
+      exportPaths = { main: { sgg: pick(sggs, 'main'), sido: sidoMain }, jeju: { sgg: pick(sggs, 'jeju'), sido: pick(sidos, 'jeju') }, ulleung: { sgg: pick(sggs, 'ulleung'), sido: pick(sggs, 'ulleung') } };
     }
     // 칸 크기에 맞는 사진을 받는다(이 크기 이미지에서 선명하게)
     var jobs = [];
@@ -614,6 +616,7 @@
       try {
         exportPart = 'main'; committed = tMain; k = sc; render();
         exportPart = 'jeju'; committed = tJeju; render();
+        exportPart = 'ulleung'; committed = tUll; k = su; render();
       } finally {
         exporting = false; exportPart = null; COLOR.sea = keep.sea;
         canvas = keep.canvas; ctx = keep.ctx; dpr = keep.dpr; hostW = keep.hostW; hostH = keep.hostH; OVER = keep.OVER; committed = keep.committed; k = keep.k;
@@ -622,12 +625,15 @@
       var c2 = out.getContext('2d');
       c2.setTransform(S, 0, 0, S, 0, 0);
       c2.textBaseline = 'alphabetic'; c2.textAlign = 'left';
-      c2.fillStyle = bg.ink; c2.font = '800 21px ' + fontFamily;
-      c2.fillText(mode === 'mine' ? '내 박지 지도' : '낭만루트', 14, 34);
-      c2.fillText(mode === 'mine' ? '' : '사진 지도', 14, 60);
-      var tmp = document.createElement('div'); tmp.innerHTML = countText(spotList);
-      c2.font = '700 12px ' + fontFamily; c2.fillStyle = bg.sub;
-      c2.fillText(tmp.textContent, 14, mode === 'mine' ? 56 : 82);
+      c2.fillStyle = bg.ink; c2.font = '800 18px ' + fontFamily;
+      c2.fillText('낭만루트 백패킹 지도', 14, 32);
+      // 숫자는 내 지도일 때만: 가 본 박지(내 피드 박지 + 다녀옴) / 전체 박지
+      if (mode === 'mine') {
+        var went = 0, vs = visitedSet();
+        spotList.forEach(function (s) { var x = bySpot[s.id]; if ((x && x.mine.length) || vs.has(String(s.id).trim())) went++; });
+        c2.font = '800 15px ' + fontFamily; c2.fillStyle = bg.sub;
+        c2.fillText(went + ' / ' + spotList.length, 14, 54);
+      }
       c2.textAlign = 'right'; c2.font = '700 11px ' + fontFamily; c2.fillStyle = bg.foot;
       c2.fillText('romanticroute.kr', LW - 12, LH - 10);
       return out;
