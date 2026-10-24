@@ -50,11 +50,10 @@
     '.pm-empty-lbl{fill:var(--pm-sub);stroke:#fff;}',
     '.pm-stamp{font-weight:800;fill:var(--pm-accent);paint-order:stroke;stroke:#fff;stroke-linejoin:round;text-anchor:middle;pointer-events:none;}',
     '.pm-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);left:10px;right:10px;display:flex;gap:8px;align-items:center;justify-content:space-between;z-index:2;}',
-    '.pm-back{width:36px;height:36px;border-radius:50%;border:0;background:var(--pm-chip);color:var(--pm-ink);font-size:20px;box-shadow:0 2px 10px rgba(0,0,0,.2);flex:none;}',
     '.pm-seg{display:flex;background:var(--pm-chip);border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.2);flex:none;}',
     '.pm-seg button{border:0;background:none;padding:6px 11px;border-radius:999px;font-size:12.5px;color:var(--pm-chip-sub);font-weight:600;}',
     '.pm-seg button.on{background:var(--pm-accent);color:#fff;}',
-    '.pm-stat{position:absolute;top:calc(env(safe-area-inset-top,0px) + 108px);left:10px;z-index:2;font-size:12px;color:var(--pm-chip-sub);background:var(--pm-chip);padding:6px 11px;border-radius:10px;opacity:.95;}',
+    '.pm-stat{min-width:0;font-size:12.5px;color:var(--pm-chip-sub);background:var(--pm-chip);padding:8px 13px;border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
     '.pm-stat b{color:var(--pm-accent);font-size:14px;}',
     '.pm-loading,.pm-toast{position:absolute;left:0;right:0;text-align:center;font-size:13px;color:#1d2320;pointer-events:none;}',
     '.pm-loading{top:45%;}',
@@ -385,7 +384,6 @@
       L.lbl.selectAll('.pm-ls,.pm-stamp').style('opacity', function () { return this.getAttribute('data-sgg') === key ? 1 : 0.4; });
     }
     setHeader(lv, sido, sgg);
-    host.querySelector('.pm-back').style.visibility = wide ? 'hidden' : 'visible';
     scheduleImages();
   }
 
@@ -393,10 +391,10 @@
     if (mode === 'mine') {
       var b = 0, v = 0, vs = visitedSet();
       spots.forEach(function (s) { var x = bySpot[s.id]; if (x && x.mine.length) b++; else if (vs.has(String(s.id).trim())) v++; });
-      return '내 사진 <b>' + b + '</b> / ' + spots.length + (v ? ' · 다녀옴 ' + v : '');
+      return '내 피드 박지 <b>' + b + '</b> / ' + spots.length + (v ? ' · 다녀옴 ' + v : '');
     }
     var n = spots.filter(function (s) { return bySpot[s.id] && bySpot[s.id].all.length; }).length;
-    return '사진 있는 박지 <b>' + n + '</b> / ' + spots.length;
+    return '피드 등록 박지 <b>' + n + '</b> / ' + spots.length;
   }
 
   function setHeader(lv, sido, sgg) {
@@ -448,15 +446,6 @@
     if (minK) s = Math.max(s, minK);
     svg.transition().duration(600).call(zoom.transform,
       d3.zoomIdentity.translate(W / 2, H / 2 + 24).scale(s).translate(-(box[0][0] + box[1][0]) / 2, -(box[0][1] + box[1][1]) / 2));
-  }
-
-  function goBack() {
-    var lv = level();
-    if (lv === 2) {
-      var sido = containing(sidos, centerLL());
-      if (sido) return zoomToBox(sido.box, 0.86, LEVEL_SGG + 0.2);
-    }
-    svg.transition().duration(600).call(zoom.transform, d3.zoomIdentity);
   }
 
   // ------------------------------------------------------------------ 박지 보기 창
@@ -589,14 +578,12 @@
     host.className = 'pm-host';
     host.innerHTML =
       '<svg class="pm-svg"></svg>' +
-      '<div class="pm-top"><button type="button" class="pm-back" aria-label="한 단계 뒤로">‹</button>' +
+      '<div class="pm-top"><div class="pm-stat"></div>' +
       '<div class="pm-seg"><button type="button" data-mode="all">모두</button><button type="button" data-mode="mine">내 지도</button></div></div>' +
-      '<div class="pm-stat"></div>' +
       '<div class="pm-loading">사진 지도를 불러오는 중…</div>' +
       '<div class="pm-toast"></div>';
     mapEl.appendChild(host);
     host.style.display = 'block'; // 크기를 재야 하므로 먼저 보이게
-    host.querySelector('.pm-back').addEventListener('click', goBack);
     host.querySelectorAll('.pm-seg button').forEach(function (b) { b.addEventListener('click', function () { setMode(b.getAttribute('data-mode')); }); });
     svg = d3.select(host.querySelector('.pm-svg'));
     defs = svg.append('defs');
