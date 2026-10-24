@@ -31,14 +31,14 @@ const srv=http.createServer((q,r)=>{let u=decodeURIComponent(q.url.split('?')[0]
   await cdp.send('Profiler.enable');await cdp.send('Profiler.start');
   // 사진 있는 시군구 칸을 눌러 박지 단계로 (600ms 전환)
   console.log('시군구 클릭 확대 전환', await frames(async()=>{const im=[...document.querySelectorAll('image.pm-sggimg.pm-in')];const g=im[Math.floor(im.length/2)].parentNode;g.querySelector('.pm-region').dispatchEvent(new MouseEvent('click',{bubbles:true}));await new Promise(r=>setTimeout(r,900));}));
-  console.log('k=',await pg.evaluate(()=>d3.zoomTransform(document.querySelector('.pm-svg')).k));
+  console.log('k=',await pg.evaluate(()=>d3.zoomTransform(document.querySelector('.pm-stage')).k));
   console.log('박지에서 휠 확대', await frames(async()=>{const el=document.querySelector('.pm-svg');for(let i=0;i<15;i++){el.dispatchEvent(new WheelEvent('wheel',{deltaY:-40,clientX:195,clientY:410,bubbles:true,cancelable:true}));await new Promise(r=>setTimeout(r,16));}await new Promise(r=>setTimeout(r,300));}));
   console.log('geoContains 호출', await pg.evaluate(()=>({n:__gc.n,ms:Math.round(__gc.ms)})));
   const prof=(await cdp.send('Profiler.stop')).profile;
   const self={};const dt=prof.timeDeltas;const idx={};prof.nodes.forEach(n=>idx[n.id]=n);
   prof.samples.forEach((id,i)=>{const n=idx[id];const f=n.callFrame;const key=(f.functionName||'(anon)')+' '+(f.url.split('/').pop()||'')+':'+(f.lineNumber+1);self[key]=(self[key]||0)+(dt[i]||0);});
   console.log(Object.entries(self).sort((a,b)=>b[1]-a[1]).slice(0,18).map(([k,v])=>Math.round(v/1000)+'ms '+k).join('\n'));
-  console.log('k=',await pg.evaluate(()=>d3.zoomTransform(document.querySelector('.pm-svg')).k));
+  console.log('k=',await pg.evaluate(()=>d3.zoomTransform(document.querySelector('.pm-stage')).k));
   await pg.waitForTimeout(4000); await pg.screenshot({path:IMG+'/z3.png'});
   const info=await pg.evaluate(()=>{const dpr=devicePixelRatio;return Promise.all([...document.querySelectorAll('.pm-l-spot image.pm-in')].filter(e=>{const r=e.getBoundingClientRect();return r.right>0&&r.left<innerWidth&&r.bottom>0&&r.top<innerHeight;}).map(e=>new Promise(ok=>{const i=new Image();i.onload=()=>{const r=e.getBoundingClientRect();ok({cellPx:Math.round(Math.max(r.width,r.height)*dpr),imgPx:Math.max(i.naturalWidth,i.naturalHeight)})};i.src=e.getAttribute('href');})))});
   console.log('보이는 박지 사진: 칸 크기(기기 px) vs 받은 사진 크기', info);

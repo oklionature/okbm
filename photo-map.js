@@ -26,8 +26,16 @@
 
   var host = null, svg = null, defs = null, root = null, L = {};
   // 화면 크기: 확대 중에 host.clientWidth를 읽으면 강제 레이아웃이 생겨서 열 때·resize 때만 잰다
-  var hostW = 0, hostH = 0;
+  var hostW = 0, hostH = 0, OVER = 0.3;
   function measure() { hostW = host.clientWidth || window.innerWidth; hostH = host.clientHeight || window.innerHeight; }
+  // 확대 상태는 손가락 받는 판(stage)에 있다. 그림에 실제로 적용된 건 committed.
+  var stage = null, committed = null;
+  function zt() { return d3.zoomTransform(stage.node()); }
+  function commit(t) {
+    committed = t; k = t.k;
+    root.attr('transform', 'translate(' + (hostW * OVER) + ',' + (hostH * OVER) + ') ' + t.toString());
+    svg.style('transform', null);
+  }
   var proj = null, gpath = null, zoom = null, k = 1;
   var geo = null, feedsAll = null, feedsMine = null;
   var sidos = [], sggs = [], spotList = [], bySpot = {};
@@ -40,7 +48,10 @@
     'html[data-theme="light"] .pm-host{--pm-ink:#1d2320;--pm-chip:#fff;--pm-chip-sub:#6b726d;}',
     // 사진 모드에선 검색창·필터·확대 버튼을 숨기고, 진행도와 모두/내 지도를 검색창 자리로 올린다
     'body.pm-on #leftBottomFilterWrap,body.pm-on #rightBottomHudGroup,body.pm-on .floating-top-search-wrap{display:none!important;}',
-    '.pm-svg{position:absolute;inset:0;width:100%;height:100%;touch-action:none;}',
+    // 손가락 받는 판(pm-stage)은 화면 크기, 그림(pm-svg)은 사방으로 30%씩 더 크게 그려 둔다(움직이는 동안 가장자리가 비지 않게).
+    // 움직이는 동안엔 그림을 CSS transform으로 통째로 키우고 옮기기만 하고(그래픽 칩이 해서 가볍다) 손을 떼면 다시 그린다.
+    '.pm-stage{position:absolute;inset:0;overflow:hidden;touch-action:none;}',
+    '.pm-svg{position:absolute;left:-30%;top:-30%;width:160%;height:160%;transform-origin:18.75% 18.75%;will-change:transform;}',
     '.pm-region{stroke:var(--pm-line);stroke-width:1;vector-effect:non-scaling-stroke;cursor:pointer;}',
     '.pm-cellline{fill:none;stroke:var(--pm-line);stroke-width:1;vector-effect:non-scaling-stroke;pointer-events:none;}',
     '.pm-edge{fill:none;stroke:var(--pm-line);vector-effect:non-scaling-stroke;pointer-events:none;}',
@@ -162,7 +173,7 @@
       if (o.sido) o.sido.sggs.push(o);
       o.geoBox = d3.geoBounds(g.g);
       return o;
-    });
+    });    commit(zt()); // 화면 크기가 정해졌으니 여분(OVER)만큼 밀어 둔다
   }
 
   // 박지가 들어 있는 시군구: 이름이 하나로 맞으면 그것, 아니면 좌표가 들어 있는 곳, 그래도 없으면 가장 가까운 곳.
@@ -430,7 +441,7 @@
   function level() { return k < LEVEL_SPOT ? 1 : 2; }
 
   function centerLL() {
-    var t = d3.zoomTransform(svg.node());
+    var t = zt();
     var p = t.invert([hostW / 2, hostH / 2 + 20]);
     return proj.invert(p);
   }
@@ -447,7 +458,7 @@
     raf = requestAnimationFrame(function () { raf = 0; if (dirty) { dirty = false; update(); } });
   }
 
-  var spotShown = false, revealToken = 0;
+  var spotShown = false, revealToken = 0, gesture = false;
   function revealSpots() {
     var token = revealToken;
     var waits = ensureImages() || [];
@@ -501,12 +512,6 @@
     var sido = containing(sidos, ll);
     var sgg = lv === 2 ? containing(sggs, ll) : null;
     var sggKey = sgg ? sgg.code + sgg.name : '', sidoKey = sido ? sido.code : '';
-    // 박지 단계: 보고 있는 시군구만 또렷하게(중심 시군구가 바뀔 때만)
-    if (lv === 2 && sggKey !== shown.sggKey) {
-      L.spot.selectAll('g[data-sgg]').style('opacity', function () { return this.getAttribute('data-sgg') === sggKey ? 1 : 0.35; });
-      L.dot.selectAll('.pm-dot').style('opacity', function () { return this.getAttribute('data-sgg') === sggKey ? 1 : 0.4; });
-      L.lbl.selectAll('.pm-ls,.pm-stamp').style('opacity', function () { return this.getAttribute('data-sgg') === sggKey ? 1 : 0.4; });
-    }
     if (sggKey !== shown.sggKey || sidoKey !== shown.sidoKey) setHeader(lv, sido, sgg);
     shown.sggKey = sggKey; shown.sidoKey = sidoKey;
     scheduleImages();
@@ -548,8 +553,9 @@
   function scheduleImages() { clearTimeout(imgTimer); imgTimer = setTimeout(ensureImages, 120); }
   function ensureImages() {
     if (!opened) return;
-    var t = d3.zoomTransform(svg.node());
-    var x0 = t.invertX(0), y0 = t.invertY(0), x1 = t.invertX(hostW), y1 = t.invertY(hostH);
+    var t = zt();
+    // 사방 여분까지 미리 넣는다
+    var x0 = t.invertX(-hostW * OVER), y0 = t.invertY(-hostH * OVER), x1 = t.invertX(hostW * (1 + OVER)), y1 = t.invertY(hostH * (1 + OVER));
     var lv = level();
     var layer = lv === 1 ? L.sgg : L.spot;
     var dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -585,7 +591,7 @@
     var dx = box[1][0] - box[0][0], dy = box[1][1] - box[0][1];
     var s = Math.min(80, fit / Math.max(dx / W, dy / (H - 200)));
     if (minK) s = Math.max(s, minK);
-    svg.transition().duration(600).call(zoom.transform,
+    stage.transition().duration(600).call(zoom.transform,
       d3.zoomIdentity.translate(W / 2, H / 2 + 24).scale(s).translate(-(box[0][0] + box[1][0]) / 2, -(box[0][1] + box[1][1]) / 2));
   }
 
@@ -722,7 +728,7 @@
     host = document.createElement('div');
     host.className = 'pm-host';
     host.innerHTML =
-      '<svg class="pm-svg"></svg>' +
+      '<div class="pm-stage"><svg class="pm-svg"></svg></div>' +
       '<div class="pm-top"><div class="pm-stat"></div>' +
       '<div class="pm-seg"><button type="button" data-mode="all">모두</button><button type="button" data-mode="mine">내 지도</button></div></div>' +
       '<div class="pm-loading">사진 지도를 불러오는 중…</div>' +
@@ -731,11 +737,21 @@
     host.style.display = 'block'; // 크기를 재야 하므로 먼저 보이게
     host.querySelectorAll('.pm-seg button').forEach(function (b) { b.addEventListener('click', function () { setMode(b.getAttribute('data-mode')); }); });
     svg = d3.select(host.querySelector('.pm-svg'));
+    stage = d3.select(host.querySelector('.pm-stage'));
     defs = svg.append('defs');
     root = svg.append('g');
     ['sido', 'sgg', 'spot', 'edge', 'dot', 'lbl'].forEach(function (n) { L[n] = root.append('g').attr('class', 'pm-l-' + n); });
-    zoom = d3.zoom().scaleExtent([0.3, 120]).on('zoom', function (e) { root.attr('transform', e.transform); k = e.transform.k; requestUpdate(); });
-    svg.call(zoom).on('dblclick.zoom', null);
+    // 움직이는 동안: 마지막으로 그린 상태(committed)에서 지금까지 바뀐 만큼만 CSS로 키우고 옮긴다. 끝나면 그 상태로 다시 그린다.
+    zoom = d3.zoom().scaleExtent([0.3, 120])
+      .on('zoom', function (e) {
+        var t = e.transform, c = committed || d3.zoomIdentity;
+        if (!e.sourceEvent && !gesture) { commit(t); requestUpdate(); return; } // 코드로 한 번에 옮길 때(열 때·resize)
+        var sc = t.k / c.k;
+        svg.style('transform', 'translate(' + (t.x - sc * c.x) + 'px,' + (t.y - sc * c.y) + 'px) scale(' + sc + ')');
+      })
+      .on('start', function () { gesture = true; })
+      .on('end', function (e) { gesture = false; commit(e.transform); update(); });
+    stage.call(zoom).on('dblclick.zoom', null);
   }
 
   function setup() {
@@ -764,12 +780,12 @@
     var dx = p1[0] - p0[0], dy = p1[1] - p0[1];
     if (!(dx > 0 && dy > 0)) return;
     var s = Math.max(0.3, Math.min(120, Math.min(W / dx, H / dy)));
-    svg.call(zoom.transform, d3.zoomIdentity.translate(W / 2, H / 2).scale(s).translate(-(p0[0] + p1[0]) / 2, -(p0[1] + p1[1]) / 2));
+    stage.call(zoom.transform, d3.zoomIdentity.translate(W / 2, H / 2).scale(s).translate(-(p0[0] + p1[0]) / 2, -(p0[1] + p1[1]) / 2));
   }
   // 사진 지도가 지금 보는 범위(위도·경도)
   function getView() {
     if (!opened || !host || !proj) return null;
-    var t = d3.zoomTransform(svg.node());
+    var t = zt();
     var a = proj.invert(t.invert([0, 0])), b = proj.invert(t.invert([hostW, hostH]));
     if (!a || !b) return null;
     return { minLat: b[1], maxLat: a[1], minLng: a[0], maxLng: b[0] };
@@ -818,7 +834,7 @@
       var w = host.clientWidth;
       if (Math.abs(w - lastW) < 120) { measure(); return; }
       lastW = w;
-      buildGeo(); buildSpots(); svg.call(zoom.transform, d3.zoomIdentity); draw();
+      buildGeo(); buildSpots(); stage.call(zoom.transform, d3.zoomIdentity); draw();
     }, 250);
   });
 
