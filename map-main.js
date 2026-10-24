@@ -1193,6 +1193,7 @@
       document.addEventListener('DOMContentLoaded', () => {
         initStaticVectors();
         initMapEngine();
+        initMapBottomStrip();
         if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
         if (typeof trackDailyVisit === 'function') trackDailyVisit();
        if (window.innerWidth <= 768) {
@@ -1252,20 +1253,21 @@
         }
       }
 
+      // 지도 종류(하단 줄 세 번째 칸): 누를 때마다 일반 → 위성 → 지형도. 사진지도가 켜져 있으면 끄고 바꾼다.
       function toggleMapTypeMode() {
         if (!map) return;
-        setMapLayerState((currentMapLayerState + 1) % 4);
+        setMapLayerState((mapBaseLayer + 1) % 3);
       }
 
       var photoMapOpenedAt = null;
+      var mapBaseLayer = 0; // 0 일반 · 1 위성 · 2 지형도 (사진지도를 켜도 그대로 둔다)
       // 0 일반 · 1 위성 · 2 지형도 · 3 사진 지도(photo-map.js, 카카오 지도 위를 덮는 시·군·박지 사진 지도)
       function setMapLayerState(next) {
         if (!map) return;
-        const textEl = document.getElementById('dockMapLayerText'), btnEl = document.getElementById('dockMapLayerBtn');
         const wasPhoto = currentMapLayerState === 3;
         currentMapLayerState = next;
-        map.removeOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
-        if (window.okbmPhotoMap && currentMapLayerState !== 3) {
+        if (next !== 3) mapBaseLayer = next;
+        if (window.okbmPhotoMap && next !== 3) {
           // 사진 지도에서 보던 범위를 기본 지도가 이어받는다
           const v = wasPhoto && window.okbmPhotoMap.getView ? window.okbmPhotoMap.getView() : null;
           window.okbmPhotoMap.close();
@@ -1278,29 +1280,134 @@
             map.setCenter(new kakao.maps.LatLng((v.minLat + v.maxLat) / 2, (v.minLng + v.maxLng) / 2));
           }
         }
-
-        if (currentMapLayerState === 0) {
-          map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
-          if (textEl) textEl.innerText = '일 반';
-          if (btnEl) { btnEl.classList.remove('highlight'); btnEl.style.color = 'var(--text-primary)'; }
-        } else if (currentMapLayerState === 1) {
-          map.setMapTypeId(kakao.maps.MapTypeId.HYBRID);
-          if (textEl) textEl.innerText = '위 성';
-          if (btnEl) { btnEl.classList.add('highlight'); btnEl.style.color = '#38bdf8'; }
-        } else if (currentMapLayerState === 2) {
-          map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
-          map.addOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
-          if (textEl) textEl.innerText = '지형도';
-          if (btnEl) { btnEl.classList.add('highlight'); btnEl.style.color = '#34d399'; }
-        } else if (currentMapLayerState === 3) {
-          map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
-          if (textEl) textEl.innerText = '사 진';
-          if (btnEl) { btnEl.classList.add('highlight'); btnEl.style.color = '#f59e0b'; }
+        if (next !== 3) {
+          map.removeOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
+          if (next === 1) map.setMapTypeId(kakao.maps.MapTypeId.HYBRID);
+          else map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
+          if (next === 2) map.addOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
+        } else {
           // 기본 지도가 보던 범위 그대로 사진 지도를 연다
           const b = map.getBounds(), sw = b.getSouthWest(), ne = b.getNorthEast();
           photoMapOpenedAt = { level: map.getLevel(), lngSpan: ne.getLng() - sw.getLng() };
           if (window.okbmPhotoMap) window.okbmPhotoMap.open({ minLat: sw.getLat(), minLng: sw.getLng(), maxLat: ne.getLat(), maxLng: ne.getLng() });
+          try { localStorage.setItem('okbm_pm_seen', '1'); } catch (e) {}
         }
+        updateMapBottomStrip();
+      }
+
+      function togglePhotoMap() {
+        if (!map) return;
+        setMapLayerState(currentMapLayerState === 3 ? mapBaseLayer : 3);
+      }
+
+      function updateMapBottomStrip() {
+        const layerText = document.getElementById('mbsLayerText');
+        if (layerText) layerText.textContent = ['일반', '위성', '지형도'][mapBaseLayer] || '일반';
+        const photoBtn = document.getElementById('mbsPhotoBtn');
+        if (photoBtn) photoBtn.classList.toggle('on', currentMapLayerState === 3);
+        const dot = document.getElementById('mbsPhotoNew');
+        if (dot) { var seen = false; try { seen = localStorage.getItem('okbm_pm_seen') === '1'; } catch (e) {} dot.hidden = seen; }
+      }
+
+      // 하단 한 줄과 검색창 필터 버튼을 연결한다(인라인 핸들러를 쓰지 않아 CSP 해시가 늘지 않는다)
+      function initMapBottomStrip() {
+        const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+        on('mbsPhotoBtn', function() { triggerHaptic(15); togglePhotoMap(); });
+        on('mbsListBtn', function() { if (currentMapLayerState === 3) setMapLayerState(mapBaseLayer); toggleMobileSidebar(); });
+        on('mbsLayerBtn', function() { triggerHaptic(10); toggleMapTypeMode(); });
+        on('mbsLocateBtn', function(e) { if (currentMapLayerState === 3) setMapLayerState(mapBaseLayer); locateUserPosition(e); });
+        on('mbsFoldBtn', function() { handleSmartResetClick(); });
+        on('mbsBackMapBtn', function() { setMobileSidebarCollapsed(true); });
+        on('mbsTopBtn', function() {
+          let el = document.getElementById('spotList');
+          while (el && el !== document.body && el.scrollHeight <= el.clientHeight + 2) el = el.parentElement;
+          if (el && el !== document.body) el.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        on('mapFilterBtn', function(e) { e.preventDefault(); e.stopPropagation(); openMapFilterSheet(); });
+        updateMapBottomStrip();
+        updateMapFilterBtn();
+      }
+
+      // ---------------- 필터 판 (검색창의 "필터" 버튼) ----------------
+      // 난이도·장소·내 기록을 한 판에서 고른다. 한 묶음에 하나씩, 고른 것을 다시 누르면 풀린다.
+      const MAP_FILTER_GROUPS = [
+        { key: 'diff', title: '난이도', opts: [['BEGINNER', '백보킹'], ['EASY', '쉬움'], ['MID', '보통'], ['HARD', '어려움']] },
+        { key: 'terrain', title: '장소', opts: [['데크', '데크'], ['노지', '노지'], ['암릉', '암릉'], ['섬', '섬'], ['해변', '해변'], ['계곡', '계곡'], ['동굴', '동굴']] },
+        { key: 'status', title: '내 기록', opts: [['BOOKMARK', '찜한 곳'], ['VISITED', '다녀온 곳']] }
+      ];
+      var mapFilterDraft = null;
+
+      function mapFilterCount(d) {
+        return (spots || []).filter(function(sp) {
+          return sp && sp.lat && sp.lng && !BLOCKED_SPOT_IDS.has(String(sp.id).trim()) && hudFilterMatches(sp, d.diff, d.status, d.terrain);
+        }).length;
+      }
+
+      function mapFilterEls() {
+        let dim = document.getElementById('mfDim'), sheet = document.getElementById('mfSheet');
+        if (dim) return { dim: dim, sheet: sheet };
+        dim = document.createElement('div'); dim.id = 'mfDim'; dim.className = 'mf-dim';
+        sheet = document.createElement('div'); sheet.id = 'mfSheet'; sheet.className = 'mf-sheet notranslate';
+        document.body.appendChild(dim); document.body.appendChild(sheet);
+        dim.addEventListener('click', closeMapFilterSheet);
+        sheet.addEventListener('click', function(e) {
+          const o = e.target.closest('[data-mf-g]');
+          if (o) {
+            const g = o.getAttribute('data-mf-g'), v = o.getAttribute('data-mf-v');
+            mapFilterDraft[g] = mapFilterDraft[g] === v ? 'ALL' : v;
+            renderMapFilterSheet();
+            return;
+          }
+          const act = e.target.closest('[data-mf-act]');
+          if (!act) return;
+          if (act.getAttribute('data-mf-act') === 'reset') {
+            mapFilterDraft = { diff: 'ALL', terrain: 'ALL', status: 'ALL' };
+            renderMapFilterSheet();
+          } else {
+            applyMapFilters(mapFilterDraft);
+            closeMapFilterSheet();
+          }
+        });
+        return { dim: dim, sheet: sheet };
+      }
+
+      function renderMapFilterSheet() {
+        const els = mapFilterEls();
+        const d = mapFilterDraft;
+        els.sheet.innerHTML = '<div class="mf-grab"></div>' + MAP_FILTER_GROUPS.map(function(g) {
+          return '<div class="mf-g"><div class="mf-gt">' + g.title + '</div><div class="mf-opts">' + g.opts.map(function(o) {
+            return '<button type="button" class="mf-o' + (d[g.key] === o[0] ? ' on' : '') + '" data-mf-g="' + g.key + '" data-mf-v="' + escapeHtml(o[0]) + '">' + o[1] + '</button>';
+          }).join('') + '</div></div>';
+        }).join('') + '<div class="mf-btns"><button type="button" data-mf-act="reset">초기화</button><button type="button" class="mf-apply" data-mf-act="apply">' + mapFilterCount(d) + '곳 보기</button></div>';
+      }
+
+      function openMapFilterSheet() {
+        if (currentMapLayerState === 3) setMapLayerState(mapBaseLayer);
+        mapFilterDraft = { diff: currentHudFilterDiff, terrain: currentHudFilterTerrain, status: currentHudFilterStatus };
+        // 예전 상태 값(HOT·NEW·초보)은 판에 없으니 풀어서 보여 준다
+        if (['BOOKMARK', 'VISITED'].indexOf(mapFilterDraft.status) === -1) mapFilterDraft.status = 'ALL';
+        renderMapFilterSheet();
+        const els = mapFilterEls();
+        els.dim.style.display = 'block'; els.sheet.style.display = 'block';
+      }
+
+      function closeMapFilterSheet() {
+        const dim = document.getElementById('mfDim'), sheet = document.getElementById('mfSheet');
+        if (dim) dim.style.display = 'none';
+        if (sheet) sheet.style.display = 'none';
+      }
+
+      function applyMapFilters(d) {
+        currentHudFilterDiff = d.diff; currentHudFilterTerrain = d.terrain; currentHudFilterStatus = d.status;
+        renderSpots();
+        updateMapFilterBtn();
+      }
+
+      function updateMapFilterBtn() {
+        const n = [currentHudFilterDiff, currentHudFilterTerrain, currentHudFilterStatus].filter(function(v) { return v !== 'ALL'; }).length;
+        const btn = document.getElementById('mapFilterBtn'), cnt = document.getElementById('mapFilterCnt');
+        if (btn) btn.classList.toggle('act', n > 0);
+        if (cnt) { cnt.hidden = n === 0; cnt.textContent = String(n); }
       }
 
       // 사진 지도에서 "박지 정보 보기": 일반 지도로 돌아가 그 박지를 연다
@@ -1629,7 +1736,7 @@ function updateSmartResetButtons() {
         const isListOpen = isMobile ? !isSidebarCollapsed : true;
         const allClosed = areAllRegionAccordionsClosed();
         let labelText = isListOpen ? (allClosed ? '모두 열기' : '모두 닫기') : '초기화';
-        const pcResetText = document.getElementById('pcResetMapBtnText'), dockResetText = document.getElementById('dockResetMapText');
+        const pcResetText = document.getElementById('pcResetMapBtnText'), dockResetText = document.getElementById('mbsFoldText');
         if (pcResetText) pcResetText.innerText = labelText;
         if (dockResetText) dockResetText.innerText = labelText;
       }
@@ -1647,6 +1754,7 @@ function updateSmartResetButtons() {
 
         currentHudFilterDiff = 'ALL'; currentHudFilterStatus = 'ALL'; currentHudFilterTerrain = 'ALL';
         cycleDiffIdx = 0; cycleStatusIdx = 0; cycleTerrainIdx = 0;
+        updateMapFilterBtn();
         currentRegionFilter = 'ALL'; currentTerrainFilter = 'ALL'; currentCourseFilter = 'ALL'; currentMyFilter = 'ALL';
         currentMasterTab = 'REGION';
 
@@ -1672,9 +1780,11 @@ function updateSmartResetButtons() {
         if (!isSidebarCollapsed) closeMobileBottomSheet();
       }
       function updateDockSidebarText(isOpen) {
-        const textEl = document.getElementById('dockSpotListText'), btn = document.getElementById('dockSpotListBtn');
-        if (textEl) textEl.innerText = isOpen ? '지도복귀' : '장소목록';
-        if (btn) btn.classList.toggle('active', isOpen);
+        // 모바일에서 목록이 열리면 하단 줄이 목록용(모두 닫기 | 지도 보기 | 맨 위로)으로 바뀐다
+        const listMode = isOpen && window.innerWidth <= 768;
+        const mapRow = document.getElementById('mbsMapRow'), listRow = document.getElementById('mbsListRow');
+        if (mapRow) mapRow.hidden = listMode;
+        if (listRow) listRow.hidden = !listMode;
         updateSmartResetButtons();
       }
 
@@ -1708,6 +1818,34 @@ function updateSmartResetButtons() {
         if (String(spot.courseType || '').trim() === '종주') return true;
         var hay = [spot.fullName, spot.name, spot.spot_main, spot.spot_sub].filter(Boolean).join(' ');
         return /종주/.test(hay);
+      }
+
+      // 지도 필터(난이도·장소·내 기록) 판정. renderSpots와 필터 판의 "N곳 보기" 개수가 같은 규칙을 쓴다.
+      // 난이도 BEGINNER = 백보킹(초보 코스). 상태의 HOT·NEW·BEGINNER는 예전 값이 남아 있을 때를 위해 둔다.
+      function hudFilterMatches(spot, diff, status, terrain) {
+        const sId = String(spot.id).trim();
+        const diffNum = parseInt(spot.difficulty, 10) || 3;
+        if (diff !== 'ALL') {
+          if (diff === 'BEGINNER') { if (!isBeginnerCourseSpot(spot)) return false; }
+          else if (diff === 'EASY' && diffNum > 2) return false;
+          else if (diff === 'MID' && diffNum !== 3) return false;
+          else if (diff === 'HARD' && diffNum < 4) return false;
+        }
+        if (status !== 'ALL') {
+          if (status === 'BOOKMARK' && !userBookmarks.has(sId)) return false;
+          if (status === 'VISITED' && !userVisited.has(sId)) return false;
+          if (status === 'HOT' && getSpotViews(spot) < 5) return false;
+          if (status === 'NEW' && !spot.isNew) return false;
+          if (status === 'BEGINNER' && !isBeginnerCourseSpot(spot)) return false;
+        }
+        if (terrain !== 'ALL') {
+          const tList = spot.terrain || [];
+          const combinedDesc = ((spot.desc || '') + ' ' + (spot.name || '')).toLowerCase();
+          if (terrain === '동굴') {
+            if (!tList.includes('동굴') && !combinedDesc.includes('동굴') && !combinedDesc.includes('굴')) return false;
+          } else if (!tList.some(t => t.includes(terrain))) return false;
+        }
+        return true;
       }
 
       function isBeginnerCourseSpot(spot) {
@@ -5860,32 +5998,7 @@ var liveSearchTimer = null;
           const sId = String(spot.id).trim();
           const marker = spotNativeMarkerMap.get(sId);
           const labelOverlay = spotLabelOverlayMap.get(sId);
-          let match = true;
-          const diffNum = parseInt(spot.difficulty, 10) || 3;
-
-          if (currentHudFilterDiff !== 'ALL') {
-            if (currentHudFilterDiff === 'EASY' && diffNum > 2) match = false;
-            else if (currentHudFilterDiff === 'MID' && diffNum !== 3) match = false;
-            else if (currentHudFilterDiff === 'HARD' && diffNum < 4) match = false;
-          }
-
-          if (currentHudFilterStatus !== 'ALL') {
-            if (currentHudFilterStatus === 'BOOKMARK' && !userBookmarks.has(sId)) match = false;
-            else if (currentHudFilterStatus === 'VISITED' && !userVisited.has(sId)) match = false;
-            else if (currentHudFilterStatus === 'HOT' && getSpotViews(spot) < 5) match = false;
-            else if (currentHudFilterStatus === 'NEW' && !spot.isNew) match = false;
-            else if (currentHudFilterStatus === 'BEGINNER' && !isBeginnerCourseSpot(spot)) match = false;
-          }
-
-          if (currentHudFilterTerrain !== 'ALL') {
-            const tList = spot.terrain || [];
-            const combinedDesc = ((spot.desc || '') + ' ' + (spot.name || '')).toLowerCase();
-            if (currentHudFilterTerrain === '동굴') {
-              if (!tList.includes('동굴') && !combinedDesc.includes('동굴') && !combinedDesc.includes('굴')) match = false;
-            } else {
-              if (!tList.some(t => t.includes(currentHudFilterTerrain))) match = false;
-            }
-          }
+          let match = hudFilterMatches(spot, currentHudFilterDiff, currentHudFilterStatus, currentHudFilterTerrain);
 
           const regKey = normalizeTo10Regions(spot.region);
 

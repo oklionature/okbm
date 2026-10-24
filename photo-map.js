@@ -245,34 +245,46 @@
   }
 
   // ------------------------------------------------------------------ 사진 줄이기
-  // R2의 작은 사본: <공개 주소>/thumb/<원본 키> (긴 변 480px). 지도엔 피드 대표 사진만 나오므로 그 사진만 사본이 있다.
-  // 없으면 업로드 Worker의 POST /thumb에 만들어 달라고 하고(다음부터 사본을 씀), 이번엔 기기에서 줄여 쓴다.
+  // 사진은 img.romanticroute.kr(R2 버킷에 붙인 우리 도메인, Cloudflare 캐시)에서 Cloudflare가 줄여 준 것을 받는다.
+  //   https://img.romanticroute.kr/cdn-cgi/image/width=W,quality=70,fit=scale-down,format=auto/<원본 키>
+  // 같은 사진·같은 크기는 한 번만 줄이고(월 5,000건 무료) 그다음부터는 캐시에서 나간다. 지도엔 피드 대표 사진만 나온다.
+  // R2가 아닌 사진이나 실패하면 원본을 받아 기기에서 줄인다(thumb).
   var R2_BASE = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
-  var premade = new Map();
-  function premadeThumb(url, size) {
-    if (url.indexOf(R2_BASE) !== 0) return Promise.resolve(null);
-    var t = R2_BASE + 'thumb/' + url.slice(R2_BASE.length).split('?')[0];
-    if (premade.has(t)) return premade.get(t);
+  var IMG_BASE = 'https://img.romanticroute.kr/';
+  function cdnUrl(url, w) {
+    if (!url || url.indexOf(R2_BASE) !== 0) return null;
+    return IMG_BASE + 'cdn-cgi/image/width=' + w + ',quality=70,fit=scale-down,format=auto/' + url.slice(R2_BASE.length).split('?')[0];
+  }
+  var cdnLoads = new Map();
+  function bestThumb(url, size) {
+    var c = cdnUrl(url, size);
+    if (!c) return thumb(url, size);
+    if (cdnLoads.has(c)) return cdnLoads.get(c);
     var p = new Promise(function (ok) {
       var img = new Image();
-      img.onload = function () { ok(t); };
-      img.onerror = function () { ok(null); requestThumb(url); };
-      img.src = t;
+      img.onload = function () { ok(c); };
+      img.onerror = function () { thumb(url, size).then(ok); };
+      img.src = c;
     });
-    premade.set(t, p);
+    cdnLoads.set(c, p);
     return p;
   }
-  var requested = {};
-  function requestThumb(url) {
-    if (requested[url] || !window.OKBM_CF_UPLOAD_URL) return;
-    requested[url] = 1;
-    try {
-      fetch(window.OKBM_CF_UPLOAD_URL + '/thumb', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: url }) }).catch(function () {});
-    } catch (e) {}
-  }
-  // 작은 사본이 있으면 그것, 없으면(방금 올라온 피드) 원본을 받아 기기에서 줄인다
-  function bestThumb(url, size) {
-    return premadeThumb(url, size).then(function (t) { return t || thumb(url, size); });
+
+  // 전국 화면이 뜬 뒤, 박지 칸 사진을 뒤에서 조용히 미리 받아 둔다(확대하면 바로 뜨게)
+  var SPOT_PX = 640, preloadToken = 0;
+  function preloadSpotPhotos() {
+    var token = ++preloadToken;
+    var urls = [];
+    spotList.forEach(function (s) { var l = spotLook(s); if (l.url) urls.push(l.url); });
+    urls = urls.filter(function (u, i) { return urls.indexOf(u) === i; });
+    var i = 0, active = 0;
+    function next() {
+      while (opened && token === preloadToken && active < 3 && i < urls.length) {
+        active++;
+        bestThumb(urls[i++], SPOT_PX).then(function () { active--; next(); });
+      }
+    }
+    setTimeout(next, 1500);
   }
 
   function thumb(url, size) {
@@ -473,7 +485,7 @@
       el.setAttribute('href', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
       // 화면에서 칸이 차지하는 크기만큼만 줄인다(전국에선 작은 칸이 많다)
       var need = Math.max(b[2] - b[0], b[3] - b[1]) * t.k * dpr;
-      var size = Math.min(Number(el.getAttribute('data-size')), need < 120 ? 120 : need < 320 ? 320 : 720);
+      var size = lv === 2 ? SPOT_PX : (need < 120 ? 120 : need < 320 ? 320 : 640);
       bestThumb(el.getAttribute('data-src'), size).then(function (u) {
         if (!u) return;
         el.setAttribute('href', u);
@@ -536,7 +548,7 @@
 
     card.innerHTML =
       '<div class="pm-grab"></div><button type="button" class="pm-x" data-pm="close" aria-label="닫기">×</button>' +
-      (photos.length ? '<div class="pm-gal' + (look.gray ? ' pm-gal-gray' : '') + '">' + photos.map(function (u) { return '<img alt="" loading="lazy" src="' + esc(u) + '">'; }).join('') + '</div>' +
+      (photos.length ? '<div class="pm-gal' + (look.gray ? ' pm-gal-gray' : '') + '">' + photos.map(function (u) { return '<img alt="" loading="lazy" src="' + esc(cdnUrl(u, 1080) || u) + '">'; }).join('') + '</div>' +
         (photos.length > 1 ? '<div class="pm-gcount">1 / ' + photos.length + '</div>' : '') : '<div class="pm-nophoto"></div>') +
       '<div class="pm-sheet-t"><b>' + esc(name) + (sub ? ' · ' + esc(sub) : '') + '</b><small>' + esc(place) + ' · ' + esc(line) + '</small>' + (note ? '<i>' + esc(note) + '</i>' : '') + '</div>' +
       '<div class="pm-btns">' + btns.map(function (x) { return '<button type="button" class="' + x[2] + '" data-pm="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>';
@@ -692,6 +704,7 @@
       }
       draw();
       applyView(view);
+      preloadSpotPhotos();
     }).catch(function (err) {
       console.warn('[photo-map]', err);
       if (typeof window.showToast === 'function') window.showToast('사진 지도를 불러오지 못했어요. 잠시 뒤 다시 눌러 주세요.');
