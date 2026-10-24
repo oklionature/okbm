@@ -516,8 +516,14 @@
         box-shadow: 0 8px 28px rgba(56, 189, 248, 0.35) !important;
       }
       
+      /* 돋보기: 사파리는 크기 없는 svg를 0으로 그려서 안 보였다 */
+      .apple-search-bar > .icon-svg { flex: none; }
+      .apple-search-bar > .icon-svg svg { width: 16px; height: 16px; display: block; }
       .apple-search-input {
-        flex: 1;
+        /* 사파리는 입력칸을 기본 폭(약 280px) 아래로 안 줄여서 필터 버튼이 검색창 밖으로 밀렸다: 남는 자리만 쓰게 한다 */
+        flex: 1 1 0;
+        min-width: 0;
+        width: 0;
         height: 100%;
         background: transparent;
         border: none;
