@@ -1099,7 +1099,7 @@
       '<div class="pm-seg"><button type="button" data-mode="all">모두</button><button type="button" data-mode="mine">내 지도</button></div>' +
       '<button type="button" class="pm-cardbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 15l4.5-4.5L13 15l2.5-2.5L20 17"/><circle cx="15.5" cy="8" r="1.5"/></svg>한눈에 보기</button>' +
       '</div></div>' +
-      '<div class="pm-loading">사진 지도를 불러오는 중…</div>' +
+      '<div class="pm-loading">포토맵을 불러오는 중…</div>' +
       '<div class="pm-toast"></div>';
     mapEl.appendChild(host);
     host.style.display = 'block'; // 크기를 재야 하므로 먼저 보이게
@@ -1195,7 +1195,7 @@
       preloadSpotPhotos();
     }).catch(function (err) {
       console.warn('[photo-map]', err);
-      if (typeof window.showToast === 'function') window.showToast('사진 지도를 불러오지 못했어요. 잠시 뒤 다시 눌러 주세요.');
+      if (typeof window.showToast === 'function') window.showToast('포토맵을 불러오지 못했어요. 잠시 뒤 다시 눌러 주세요.');
     });
   }
 
