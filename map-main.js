@@ -152,6 +152,7 @@
       window.KAKAO_APP_KEY = window.KAKAO_APP_KEY || "557f5de0f6391a2419bc5592e6a9c9c1";
       
       var BLOCKED_SPOT_IDS = new Set(['183', '205', '208', '209', '210', '211']);
+      window.okbmBlockedSpotIds = BLOCKED_SPOT_IDS;
       var NATIONWIDE_CENTER = { lat: 35.85, lng: 127.75 };
       var NATIONWIDE_LEVEL = 13;
       var map = null, geocoder = null, globalClusterer = null, visibleClusters = [];
@@ -1253,9 +1254,16 @@
 
       function toggleMapTypeMode() {
         if (!map) return;
+        setMapLayerState((currentMapLayerState + 1) % 4);
+      }
+
+      // 0 일반 · 1 위성 · 2 지형도 · 3 사진 지도(photo-map.js, 카카오 지도 위를 덮는 시·군·박지 사진 지도)
+      function setMapLayerState(next) {
+        if (!map) return;
         const textEl = document.getElementById('dockMapLayerText'), btnEl = document.getElementById('dockMapLayerBtn');
-        currentMapLayerState = (currentMapLayerState + 1) % 3;
+        currentMapLayerState = next;
         map.removeOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
+        if (window.okbmPhotoMap && currentMapLayerState !== 3) window.okbmPhotoMap.close();
 
         if (currentMapLayerState === 0) {
           map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
@@ -1270,8 +1278,24 @@
           map.addOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
           if (textEl) textEl.innerText = '지형도';
           if (btnEl) { btnEl.classList.add('highlight'); btnEl.style.color = '#34d399'; }
+        } else if (currentMapLayerState === 3) {
+          map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
+          if (textEl) textEl.innerText = '사 진';
+          if (btnEl) { btnEl.classList.add('highlight'); btnEl.style.color = '#f59e0b'; }
+          if (window.okbmPhotoMap) window.okbmPhotoMap.open();
         }
       }
+
+      // 사진 지도에서 "박지 정보 보기": 일반 지도로 돌아가 그 박지를 연다
+      window.okbmPhotoMapGoToSpot = function(spot) {
+        setMapLayerState(0);
+        if (!spot) return;
+        if (map && spot.lat && spot.lng) {
+          map.setLevel(8, { animate: false });
+          map.setCenter(new kakao.maps.LatLng(spot.lat, spot.lng));
+        }
+        focusSpotOnMap(spot);
+      };
 
       function locateUserPosition(e) {
         if (e) e.stopPropagation();
@@ -4642,6 +4666,8 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         }
         return true;
       }
+
+      window.okbmFeedBelongsToMapSpot = feedBelongsToMapSpot;
 
       function filterFeedsForMapSpot(spot, feeds) {
         if (!Array.isArray(feeds) || !feeds.length) return [];
