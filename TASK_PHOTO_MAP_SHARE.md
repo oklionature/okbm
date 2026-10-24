@@ -3,9 +3,9 @@
 2026-10-25에 시작했다. 다음 창에서는 이 문서를 읽고 **"다음에 할 일"** 부터 한다.
 답변·커밋은 한국어(`CLAUDE.md`). 배포는 PR 없이 `main`에 커밋·push.
 
-## 지금 상태 (2026-10-25 디자인 확정)
+## 지금 상태 (2026-10-25 배포: `photo-map.js?v=15`)
 
-- 공유 이미지 기능은 `photo-map.js`의 `exportImage(opt)`에 있다. **아직 버튼은 없고, 커밋만 하고 push는 안 했다(사이트에 안 올라감).**
+- 공유 이미지 기능은 `photo-map.js`의 `exportImage(opt)`에 있다. 사진 지도 '한눈에 보기' 버튼으로 사이트에 올라갔다.
   - `okbmPhotoMap.exportImage({ width, height, bg, style })`가 캔버스를 돌려준다. 기본 1080×1350(인스타 피드), `bg` 기본 `sky`(하늘색, 확정), `style` 기본 `'a'`(확정).
   - 그리기는 `render()`를 그대로 쓰고, 그동안만 캔버스·크기·확대 상태를 바꿔 끼운다(`exporting`, `exportPart`).
   - 판 세 개(`exportPartOf(c)`): 본토(`main`, 오른쪽에 세로로 꽉), 제주(`jeju`, 왼쪽 아래 바다로 옮김), 울릉도(`ulleung`, 제 위도 그대로 오른쪽 끝 동해 바다에 1.6배, 밑에 '울릉도'). 옹진군은 범위에서 뺀다. **독도는 넣지 않는다**(사용자 결정, 경계 파일에도 없음).
@@ -26,12 +26,22 @@
   NODE_PATH=~/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules MINE=1 node scripts/photo-map-bench/export-styles.js scripts/photo-map-bench/img
   ```
 
+## 화면 (배포됨)
+
+- 사진 지도 위쪽 왼쪽: 예전 숫자 칩(`피드 등록 박지 102 / 431`) 대신 공유 이미지와 같은 제목(`.pm-head`: `ROMANTIC ROUTE · PHOTO MAP`, 세리프 제목, 큰 숫자). 숫자·제목은 `headInfo()` 하나로 화면과 이미지가 같이 쓴다. 확대하면(`pm-zoomed`, `k >= LEVEL_SGG`) 제목은 숨긴다.
+- 위쪽 오른쪽: `모두 / 내 지도`(높이 30px로 얇게) 밑에 4px 띄워 **한눈에 보기** 버튼(`.pm-cardbtn`). 사용자가 '공유'·'포토맵 카드'라는 말은 싫다고 했다(자주 눌러 보게).
+- 누르면 `.pm-card`가 화면 전체를 덮는다(아래 탭 줄 `#romanticMasterBottomDock`이 z-index 최댓값이라 같은 값 + 나중에 붙여 덮음). "한 장으로 만드는 중…" → 이미지 → `이미지 저장`·`보내기`(`navigator.canShare` 되는 곳만 보임). 같은 모드·숫자면 만든 이미지를 다시 쓴다(`cardCache`).
+- **피드·스토리 고르기는 없다**(사용자 결정: 스토리판이 배경만 늘린 거라 의미 없음). 이미지는 1080×1350 한 장.
+
 ## 다음에 할 일
 
-1. **스토리 크기(1080×1920)**: 세로가 길어 지도를 더 크게. 위 제목, 아래 큰 숫자·로고. `exportImage({ width: 1080, height: 1920 })`로 먼저 뽑아 보고 제주·울릉도·제목 자리를 맞춘다.
-2. **공유 버튼**: 사진 지도 위쪽 "모두 / 내 지도" 옆. 누르면 `exportImage` → `canvas.toBlob` → `navigator.share({ files: [File] })`(되는 곳: 휴대폰), 안 되면 이미지 내려받기. 만드는 데 4~5초 걸리니(사진을 크게 다시 받음) "이미지 만드는 중…" 표시를 띄운다. 피드/스토리 중 고르게 할지 사용자에게 묻는다.
-   - 앱(Capacitor) 안에서 `navigator.share`에 파일이 되는지 확인한다. 안 되면 앱 공유 플러그인을 쓴다.
-3. 배포 전 확인: `?v=` 올리기(`map.html`의 `photo-map.js?v=14` → 15), 크롬·WebKit으로 사진 지도 기본 동작(확대·누르기·정보창)이 그대로인지(`crossOrigin` 바꾼 영향), 그리고 공유 이미지.
+1. 휴대폰(로그인한 상태)에서 확인: 한눈에 보기 → 이미지가 나오는지, `보내기`로 인스타·카톡 공유가 되는지, `이미지 저장`이 되는지.
+2. 앱(Capacitor) 안: `navigator.share`에 파일이 안 되거나 `a.download` 저장이 안 되면 앱 공유·저장 플러그인을 붙인다.
+3. (나중) 피드를 올리거나 '다녀옴'을 누른 직후 "내 포토맵에 한 칸 채워졌어요 · 한눈에 보기" 안내.
+
+## 시험할 때 조심
+
+- 비회원 박지 핀(`get_spot_pins`)은 **IP당 분당 30회·하루 200회**(`SUPABASE_H9A_GUEST_SPOT_PINS.sql`). 실제 사이트를 playwright로 수십 번 열면 그날은 그 IP의 비회원 지도가 빈다(2026-10-25에 걸림, 한국 시간 자정에 풀림). 화면 확인은 가짜 박지로 도는 `scripts/photo-map-bench/run.js`·`harness.html` 쪽으로 한다.
 
 ## 참고
 
