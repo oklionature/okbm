@@ -244,12 +244,12 @@
   }
 
   // ------------------------------------------------------------------ 사진 줄이기
-  // scripts/photo-thumbs.py가 R2에 만들어 둔 작은 사본: <공개 주소>/thumb/s|m/<원본 키> (s 256px, m 640px)
+  // R2의 작은 사본: <공개 주소>/thumb/<원본 키> (긴 변 480px). 업로드 Worker가 새 사진마다, scripts/photo-thumbs.py가 예전 사진에 만든다
   var R2_BASE = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
   var premade = new Map();
   function premadeThumb(url, size) {
     if (url.indexOf(R2_BASE) !== 0) return Promise.resolve(null);
-    var t = R2_BASE + 'thumb/' + (size <= 320 ? 's' : 'm') + '/' + url.slice(R2_BASE.length).split('?')[0];
+    var t = R2_BASE + 'thumb/' + url.slice(R2_BASE.length).split('?')[0];
     if (premade.has(t)) return premade.get(t);
     var p = new Promise(function (ok) {
       var img = new Image();

@@ -2,9 +2,8 @@
 """피드 사진의 작은 사본을 R2에 만든다(사진 지도용).
 
 원본  https://pub-….r2.dev/<key>
-사본  https://pub-….r2.dev/thumb/s/<key>  (긴 변 256px, 전국·시군 칸)
-      https://pub-….r2.dev/thumb/m/<key>  (긴 변 640px, 박지 칸)
-사본은 확장자와 상관없이 JPEG이다. 이미 있는 사본은 건너뛴다(공개 주소로 HEAD).
+사본  https://pub-….r2.dev/thumb/<key>  (긴 변 480px, 전국·시군·박지 칸 모두. 크게 보는 건 원본으로 연다)
+사본은 확장자와 상관없이 JPEG이다. 업로드 Worker도 새 사진마다 같은 자리에 사본을 만든다. 이미 있는 사본은 건너뛴다(공개 주소로 HEAD).
 photo-map.js는 사본을 먼저 쓰고, 없으면 기기에서 원본을 줄여 쓴다.
 
 사용(이 Mac, wrangler 로그인 필요):
@@ -26,7 +25,7 @@ SUPABASE_URL = "https://qnumfecythtqtrxeasys.supabase.co"
 ANON_KEY = "sb_publishable_PKEidTwAKB7cuXReKSEnKw_VgNvSojA"
 PUBLIC_BASE = "https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev"
 BUCKET = "romanticroute"
-SIZES = {"s": 256, "m": 640}
+THUMB_PX = 480
 UA = {"User-Agent": "okbm-photo-thumbs/1"}
 
 
@@ -61,20 +60,18 @@ def wrangler_put(key, path):
 
 def make(url, work):
     key = urllib.parse.unquote(url[len(PUBLIC_BASE) + 1:])
-    todo = [s for s in SIZES if not exists(f"{PUBLIC_BASE}/thumb/{s}/{key}")]
-    if not todo:
+    if exists(f"{PUBLIC_BASE}/thumb/{key}"):
         return "skip"
     d = tempfile.mkdtemp(dir=work)
     src = os.path.join(d, "src")
     req = urllib.request.Request(url, headers=UA)
     with urllib.request.urlopen(req, timeout=60) as r, open(src, "wb") as f:
         f.write(r.read())
-    for s in todo:
-        out = os.path.join(d, s + ".jpg")
-        subprocess.run(["sips", "-Z", str(SIZES[s]), "-s", "format", "jpeg", "-s", "formatOptions", "72", src, "--out", out],
-                       check=True, capture_output=True, timeout=60)
-        wrangler_put(f"thumb/{s}/{key}", out)
-    return "made " + ",".join(todo)
+    out = os.path.join(d, "thumb.jpg")
+    subprocess.run(["sips", "-Z", str(THUMB_PX), "-s", "format", "jpeg", "-s", "formatOptions", "72", src, "--out", out],
+                   check=True, capture_output=True, timeout=60)
+    wrangler_put(f"thumb/{key}", out)
+    return "made"
 
 
 def main():
@@ -82,12 +79,12 @@ def main():
     urls = feed_photo_urls()
     print(f"피드 사진 {len(urls)}장")
     if dry:
-        missing = [u for u in urls if not exists(f"{PUBLIC_BASE}/thumb/s/{urllib.parse.unquote(u[len(PUBLIC_BASE) + 1:])}")]
+        missing = [u for u in urls if not exists(f"{PUBLIC_BASE}/thumb/{urllib.parse.unquote(u[len(PUBLIC_BASE) + 1:])}")]
         print(f"사본 없는 사진 {len(missing)}장")
         return
     work = tempfile.mkdtemp(prefix="okbm-thumbs-")
     done = {"skip": 0, "made": 0, "fail": 0}
-    with cf.ThreadPoolExecutor(max_workers=6) as ex:
+    with cf.ThreadPoolExecutor(max_workers=14) as ex:
         futs = {ex.submit(make, u, work): u for u in urls}
         for i, fu in enumerate(cf.as_completed(futs), 1):
             try:
