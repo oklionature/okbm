@@ -85,18 +85,13 @@
     '.pm-cardbtn{border:0;display:flex;align-items:center;gap:6px;height:30px;box-sizing:border-box;background:var(--pm-chip);color:var(--pm-ink);font-size:12.5px;font-weight:700;padding:0 13px 0 11px;border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.2);}',
     '.pm-cardbtn svg{width:14px;height:14px;}',
     // 포토맵 카드: 화면 전체에 공유 이미지를 크게, 밑에 저장·보내기
-    '.pm-card{position:fixed;inset:0;z-index:2147483647;background:rgba(12,17,24,.94);display:none;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--okbm-status-top, env(safe-area-inset-top, 0px)) + 52px) 16px calc(env(safe-area-inset-bottom,0px) + 20px);gap:14px;}',
+    '.pm-card{position:fixed;inset:0;z-index:2147483647;background:rgba(12,17,24,.94);display:none;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--okbm-status-top, env(safe-area-inset-top, 0px)) + 52px) 16px calc(env(safe-area-inset-bottom,0px) + 20px);gap:16px;}',
     '.pm-card.on{display:flex;animation:pmFade .2s ease-out;}',
     '@keyframes pmFade{from{opacity:0;}}',
     '.pm-card .x{position:absolute;top:calc(var(--okbm-status-top, env(safe-area-inset-top, 0px)) + 10px);right:12px;border:0;border-radius:50%;width:36px;height:36px;background:rgba(255,255,255,.14);color:#fff;font-size:20px;}',
-    '.pm-card .img{flex:none;width:min(100%, calc((100dvh - var(--okbm-status-top, env(safe-area-inset-top, 0px)) - env(safe-area-inset-bottom,0px) - 210px) * .8));aspect-ratio:4/5;border-radius:10px;overflow:hidden;background:#aad3ea;box-shadow:0 10px 40px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;}',
+    '.pm-card .img{flex:none;width:min(100%, calc((100dvh - var(--okbm-status-top, env(safe-area-inset-top, 0px)) - env(safe-area-inset-bottom,0px) - 160px) * .8));aspect-ratio:4/5;border-radius:10px;overflow:hidden;background:#aad3ea;box-shadow:0 10px 40px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;}',
     '.pm-card .img img{width:100%;height:100%;object-fit:contain;display:block;}',
     '.pm-card .wait{font-size:13px;color:#1d2320;font-weight:700;}',
-    // 스토리(9:16)일 땐 카드 상자를 세로로 길게
-    '.pm-card.story .img{aspect-ratio:9/16;width:min(100%, calc((100dvh - var(--okbm-status-top, env(safe-area-inset-top, 0px)) - env(safe-area-inset-bottom,0px) - 210px) * .5625));}',
-    '.pm-card .size{display:flex;height:30px;box-sizing:border-box;background:rgba(255,255,255,.12);border-radius:999px;padding:2px;flex:none;}',
-    '.pm-card .size button{border:0;background:none;height:26px;padding:0 16px;border-radius:999px;font-size:12.5px;font-weight:700;color:rgba(255,255,255,.7);}',
-    '.pm-card .size button.on{background:#fff;color:#151b23;}',
     '.pm-card .acts{display:flex;gap:10px;width:100%;max-width:420px;flex:none;}',
     '.pm-card .acts button{flex:1;border:0;border-radius:12px;padding:13px 6px;font-size:14.5px;font-weight:700;background:rgba(255,255,255,.14);color:#fff;}',
     '.pm-card .acts button.go{background:#2f9e6a;}',
@@ -835,42 +830,24 @@
 
   // ------------------------------------------------------------------ 한눈에 보기(공유 이미지 카드)
   // 누르면 화면 전체에 공유 이미지를 띄운다(만드는 데 몇 초). 같은 모드·숫자면 만든 걸 다시 쓴다.
-  // 피드(4:5)와 스토리(9:16) 두 크기. 스토리는 인스타가 위아래 약 13%씩 프로필·답장 칸으로 가리므로
-  // 피드 그림을 세로 가운데에 놓고 위아래를 같은 바다색으로 채운다(지도를 더 키우면 제목·주소가 가려짐).
-  var cardEl = null, cardFeed = {}, cardBlobs = {}, cardBlob = null, cardToken = 0, cardSize = 'feed';
-  function storyOf(feed) {
-    var c = document.createElement('canvas'); c.width = 1080; c.height = 1920;
-    var x = c.getContext('2d'); x.fillStyle = EXPORT_BG.sky.sea; x.fillRect(0, 0, c.width, c.height);
-    x.drawImage(feed, 0, Math.round((c.height - feed.height) / 2));
-    return c;
-  }
+  var cardEl = null, cardCache = {}, cardBlob = null, cardToken = 0;
   function openCard() {
     if (!cardEl) {
       cardEl = document.createElement('div'); cardEl.className = 'pm-card';
       cardEl.innerHTML = '<button type="button" class="x" aria-label="닫기">×</button><div class="img"></div>' +
-        '<div class="size"><button type="button" data-s="feed">피드</button><button type="button" data-s="story">스토리</button></div>' +
         '<div class="acts"><button type="button" data-a="save">이미지 저장</button><button type="button" class="go" data-a="send">보내기</button></div>';
       document.body.appendChild(cardEl); // 아래 탭 줄(z-index 최댓값)보다 나중에 붙여 그 위로 덮는다
       cardEl.querySelector('.x').addEventListener('click', closeCard);
       cardEl.querySelector('[data-a="save"]').addEventListener('click', saveCard);
       cardEl.querySelector('[data-a="send"]').addEventListener('click', sendCard);
-      cardEl.querySelectorAll('.size button').forEach(function (b) { b.addEventListener('click', function () { cardSize = b.getAttribute('data-s'); showCard(); }); });
     }
+    var h = headInfo(), key = mode + ':' + h.went + ':' + h.total, token = ++cardToken, box = cardEl.querySelector('.img');
     cardEl.classList.add('on');
-    showCard();
-  }
-  function showCard() {
-    var h = headInfo(), key = mode + ':' + h.went + ':' + h.total, size = cardSize, token = ++cardToken, box = cardEl.querySelector('.img');
-    cardEl.classList.toggle('story', size === 'story');
-    cardEl.querySelectorAll('.size button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-s') === size); });
     cardEl.querySelectorAll('.acts button').forEach(function (b) { b.disabled = true; });
-    var bk = key + ':' + size;
-    if (!cardBlobs[bk]) box.innerHTML = '<div class="wait">한 장으로 만드는 중…</div>';
-    var made = cardBlobs[bk] ? Promise.resolve(cardBlobs[bk]) :
-      (cardFeed[key] ? Promise.resolve(cardFeed[key]) : exportImage().then(function (c) { cardFeed[key] = c; return c; })).then(function (feed) {
-        var c = size === 'story' ? storyOf(feed) : feed;
-        return new Promise(function (r) { c.toBlob(function (b) { r(b); }, 'image/jpeg', 0.92); });
-      }).then(function (b) { if (b) cardBlobs[bk] = b; return b; });
+    box.innerHTML = '<div class="wait">한 장으로 만드는 중…</div>';
+    var made = cardCache[key] ? Promise.resolve(cardCache[key]) : exportImage().then(function (c) {
+      return new Promise(function (r) { c.toBlob(function (b) { r(b); }, 'image/jpeg', 0.92); });
+    }).then(function (b) { if (b) cardCache[key] = b; return b; });
     made.then(function (b) {
       if (token !== cardToken || !b) return;
       cardBlob = b;
