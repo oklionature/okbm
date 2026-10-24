@@ -10,7 +10,7 @@ const feeds=[];for(let i=0;i<102;i++){const s=spots[Math.floor(R()*spots.length)
 const srv=http.createServer((q,r)=>{let u=decodeURIComponent(q.url.split('?')[0]);let f=u==='/h.html'?S+'/harness.html':REPO+u;fs.readFile(f,(e,d)=>{if(e){r.writeHead(404);return r.end();}r.writeHead(200,{'content-type':f.endsWith('.json')?'application/json':f.endsWith('.js')?'text/javascript':'text/html'});r.end(d);});}).listen(0);
 (async()=>{
   const port=srv.address().port;
-  const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:780},deviceScaleFactor:2});
+  const b=await chromium.launch(process.env.GPU?{args:['--use-angle=metal','--enable-gpu-rasterization','--ignore-gpu-blocklist','--enable-gpu']}:{});const ctx=await b.newContext({viewport:{width:390,height:780},deviceScaleFactor:2});
   const pg=await ctx.newPage();
   let imgReq=0, imgBytes=0;
   await pg.route('https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/**',async rt=>{const m=rt.request().url().match(/p(\d+)_/);const d=fs.readFileSync(IMG+'/p'+m[1]+'.jpg');imgReq++;imgBytes+=d.length;await new Promise(r=>setTimeout(r,150));rt.fulfill({body:d,contentType:'image/jpeg',headers:{'access-control-allow-origin':'*'}});});
@@ -20,28 +20,29 @@ const srv=http.createServer((q,r)=>{let u=decodeURIComponent(q.url.split('?')[0]
   await pg.goto(`http://localhost:${port}/h.html`);
   await pg.waitForFunction(()=>window.okbmPhotoMap);
   const t=await pg.evaluate(async()=>{const t0=performance.now();await window.okbmPhotoMap.open();return performance.now()-t0;});
-  const nodes=await pg.evaluate(()=>({all:document.querySelectorAll('.pm-svg *').length,clip:document.querySelectorAll('clipPath').length,img:document.querySelectorAll('image.pm-img').length}));
-  console.log('open ms (4x cpu):',Math.round(t),nodes);
+  const dbg=()=>pg.evaluate(()=>{const d=okbmPhotoMap._debug();delete d.sggAt;delete d.spotAt;delete d.visibleSpot;return d;});
+  console.log('open ms (4x cpu):',Math.round(t),await dbg());
   await pg.waitForTimeout(6000);
   await pg.screenshot({path:IMG+'/z1.png'});
-  console.log('전국 화면 사진 들어간 칸', await pg.evaluate(()=>document.querySelectorAll('image.pm-in').length));
-  async function frames(fn){return pg.evaluate(async(src)=>{const fr=[];let last=performance.now(),run=true;(function f(){const now=performance.now();fr.push(now-last);last=now;if(run)requestAnimationFrame(f)})();
-    await (new Function('return ('+src+')()'))();run=false;fr.shift();fr.sort((a,b)=>a-b);return {frames:fr.length,median:Math.round(fr[fr.length>>1]),p90:Math.round(fr[Math.floor(fr.length*.9)]),max:Math.round(fr[fr.length-1])};},fn.toString());}
-  await pg.evaluate(()=>{const o=d3.geoContains;window.__gc={n:0,ms:0};d3.geoContains=function(a,b){const t=performance.now();const r=o(a,b);__gc.n++;__gc.ms+=performance.now()-t;return r;};});
+  console.log('전국 화면', await dbg());
+  async function frames(fn,arg){return pg.evaluate(async([src,arg])=>{const fr=[];let last=performance.now(),run=true;(function f(){const now=performance.now();fr.push(now-last);last=now;if(run)requestAnimationFrame(f)})();
+    await (new Function('return ('+src+')')())(arg);run=false;fr.shift();fr.sort((a,b)=>a-b);return {frames:fr.length,median:Math.round(fr[fr.length>>1]),p90:Math.round(fr[Math.floor(fr.length*.9)]),max:Math.round(fr[fr.length-1])};},[fn.toString(),arg]);}
   await cdp.send('Profiler.enable');await cdp.send('Profiler.start');
   // 사진 있는 시군구 칸을 눌러 박지 단계로 (600ms 전환)
-  console.log('시군구 클릭 확대 전환', await frames(async()=>{const im=[...document.querySelectorAll('image.pm-sggimg.pm-in')];const g=im[Math.floor(im.length/2)].parentNode;g.querySelector('.pm-region').dispatchEvent(new MouseEvent('click',{bubbles:true}));await new Promise(r=>setTimeout(r,900));}));
-  console.log('k=',await pg.evaluate(()=>d3.zoomTransform(document.querySelector('.pm-stage')).k));
-  console.log('박지에서 휠 확대', await frames(async()=>{const el=document.querySelector('.pm-svg');for(let i=0;i<15;i++){el.dispatchEvent(new WheelEvent('wheel',{deltaY:-40,clientX:195,clientY:410,bubbles:true,cancelable:true}));await new Promise(r=>setTimeout(r,16));}await new Promise(r=>setTimeout(r,300));}));
-  console.log('geoContains 호출', await pg.evaluate(()=>({n:__gc.n,ms:Math.round(__gc.ms)})));
+  const tg=await pg.evaluate(()=>okbmPhotoMap._debug().sggAt.filter(o=>o.x>40&&o.x<350&&o.y>120&&o.y<700&&okbmPhotoMap._hit(o.x,o.y)===o.name).sort((a,b)=>b.w-a.w)[0]);
+  console.log('누른 시군구',tg.name);
+  await pg.evaluate(()=>{window.__pmTrace=[];window.__fr=[];let l=performance.now();(function f(){const n=performance.now();__fr.push([Math.round(n),Math.round(n-l)]);l=n;if(__fr.length<200)requestAnimationFrame(f)})();});
+  console.log('시군구 클릭 확대 전환', await frames(async(tg)=>{document.querySelector('.pm-canvas').dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:tg.x,clientY:tg.y}));await new Promise(r=>setTimeout(r,900));},tg));
+  console.log('박지 단계', await dbg());
+  if(process.env.TRACE) console.log(JSON.stringify(await pg.evaluate(()=>({tr:__pmTrace.slice(0,80),fr:__fr.filter(x=>x[1]>30)}))));
+  console.log('박지에서 휠 확대', await frames(async()=>{const el=document.querySelector('.pm-canvas');for(let i=0;i<15;i++){el.dispatchEvent(new WheelEvent('wheel',{deltaY:-40,clientX:195,clientY:410,bubbles:true,cancelable:true}));await new Promise(r=>setTimeout(r,16));}await new Promise(r=>setTimeout(r,300));}));
+  console.log('박지에서 끌기', await frames(async()=>{const el=document.querySelector('.pm-canvas');const o={bubbles:true,cancelable:true,view:window};el.dispatchEvent(new MouseEvent('mousedown',{...o,clientX:200,clientY:400,button:0}));for(let i=1;i<=20;i++){window.dispatchEvent(new MouseEvent('mousemove',{...o,clientX:200-i*8,clientY:400-i*5}));await new Promise(r=>setTimeout(r,16));}window.dispatchEvent(new MouseEvent('mouseup',{...o,clientX:40,clientY:300}));await new Promise(r=>setTimeout(r,300));}));
   const prof=(await cdp.send('Profiler.stop')).profile;
   const self={};const dt=prof.timeDeltas;const idx={};prof.nodes.forEach(n=>idx[n.id]=n);
   prof.samples.forEach((id,i)=>{const n=idx[id];const f=n.callFrame;const key=(f.functionName||'(anon)')+' '+(f.url.split('/').pop()||'')+':'+(f.lineNumber+1);self[key]=(self[key]||0)+(dt[i]||0);});
-  console.log(Object.entries(self).sort((a,b)=>b[1]-a[1]).slice(0,18).map(([k,v])=>Math.round(v/1000)+'ms '+k).join('\n'));
-  console.log('k=',await pg.evaluate(()=>d3.zoomTransform(document.querySelector('.pm-stage')).k));
+  console.log(Object.entries(self).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([k,v])=>Math.round(v/1000)+'ms '+k).join('\n'));
   await pg.waitForTimeout(4000); await pg.screenshot({path:IMG+'/z3.png'});
-  const info=await pg.evaluate(()=>{const dpr=devicePixelRatio;return Promise.all([...document.querySelectorAll('.pm-l-spot image.pm-in')].filter(e=>{const r=e.getBoundingClientRect();return r.right>0&&r.left<innerWidth&&r.bottom>0&&r.top<innerHeight;}).map(e=>new Promise(ok=>{const i=new Image();i.onload=()=>{const r=e.getBoundingClientRect();ok({cellPx:Math.round(Math.max(r.width,r.height)*dpr),imgPx:Math.max(i.naturalWidth,i.naturalHeight)})};i.src=e.getAttribute('href');})))});
-  console.log('보이는 박지 사진: 칸 크기(기기 px) vs 받은 사진 크기', info);
+  console.log('보이는 박지 사진: 칸 크기(기기 px) vs 받은 사진 크기', JSON.stringify((await pg.evaluate(()=>okbmPhotoMap._debug().visibleSpot)).slice(0,6)));
   console.log('img requests',imgReq,'bytes',(imgBytes/1e6).toFixed(1)+'MB');
   await b.close();srv.close();
 })();

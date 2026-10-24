@@ -18,8 +18,14 @@
   - 손가락이 움직이는 동안엔 그림(`.pm-svg`)을 CSS transform으로 통째로 키우고 옮기기만 하고, 끝나면(`zoom end`) 그 상태로 다시 그린다(`commit`). 확대 상태는 손가락 받는 판(`.pm-stage`)에 있다(`zt()`). 그림은 사방 30%(`OVER`) 더 크게 그려 둔다.
   - "보고 있는 시군구만 또렷하게(나머지 35%)"는 없앴다.
   - 측정: 시군구 눌러 들어가는 전환 그린 장 수 약 55 → 101, p90 45 → 9ms. 손 떼기 직전과 뒤 위치가 같다(크롬·WebKit).
-- 남은 것: 5번(경계 각짐, 흑백 필터), clipPath `<use>` 재사용, **실제 아이폰 사파리 확인**.
-- 측정 도구: `run.js`는 Playwright가 필요하다. Mac에선 `NODE_PATH=~/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules`로 돌렸다. `make-images.py`는 Pillow가 필요하다.
+- 그래도 휴대폰에서 시군 → 박지 단계로 확대할 때 파랗게 비었다(SVG는 확대가 바뀔 때마다 칸·사진을 전부 다시 그리고, 다 그리기 전엔 바탕이 비친다). **캔버스로 바꿨다(`?v=13`)**:
+  - 지도는 `.pm-canvas` 한 장에 직접 그린다(`render`). 칸은 `Path2D`, 사진은 칸 모양으로 `clip` 후 `drawImage`, 흑백은 `saturation` 합성(캔버스 `filter`는 예전 사파리에 없다). 점·글자는 화면 좌표로.
+  - 누르기는 직접 찾는다(`onTap`: 박지 단계는 점 14px 안 → 그 칸의 박지(`delaunay.find`), 시군구 단계는 `isPointInPath`).
+  - 움직이는 동안 그리기가 빠르면 매 장 다시 그리고, 장 사이 간격이 두 번 30ms를 넘으면 그 기기에선 그림만 옮기다 손 뗄 때 그린다.
+  - 예전 SVG 판은 `photo-map-svg.js`, 주소 끝 `?pm=svg`로 본다(되돌리기용).
+  - 측정(4배 느리게, 그래픽 칩 켬 `GPU=1`): 시군구 눌러 들어가기 약 99장·p90 10ms, 박지 단계 휠 확대·끌기 p90 9ms. 그래픽 칩 없이도 p90 9ms(옮기기 방식으로 바뀜).
+- 남은 것: 5번(경계 각짐), 글자 겹침(박지 이름끼리), clipPath `<use>` 재사용, **실제 아이폰 사파리 확인**.
+- 측정 도구: `run.js`는 Playwright가 필요하다. 캔버스판은 `GPU=1`로 그래픽 칩을 켜야 휴대폰과 비슷하다. Mac에선 `NODE_PATH=~/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules`로 돌렸다. `make-images.py`는 Pillow가 필요하다.
 
 ## 1. 새 사진 주소 확인 (가장 먼저)
 

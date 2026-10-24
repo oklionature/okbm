@@ -11,10 +11,17 @@
 //       출처 표시는 terms.html "사용한 공개 자료"에 둔다(CC BY 4.0은 별도 안내 페이지 표시를 인정한다).
 // 켤 때는 기본 지도가 보던 범위를 그대로 이어받고, 끌 때는 사진 지도가 보던 범위를 기본 지도에 돌려준다(둘 다 메르카토르).
 // d3는 CSP 때문에 vendor/에 두고, 사진 모드를 처음 켤 때만 불러온다.
+// 그리기는 캔버스 한 장(아래 "그리기"). 예전 SVG 판은 photo-map-svg.js로 남겨 두고 주소 끝에 ?pm=svg를 붙이면 그걸 쓴다.
 // 사진은 img.romanticroute.kr에서 Cloudflare가 줄여 준 것을 받고, 안 되면 원본을 받아 기기 안에서 줄인다(아래 "사진 줄이기").
 // =========================================================================
 (function () {
   'use strict';
+
+  // 예전 판(SVG)으로 보기: 주소 끝 ?pm=svg (그 파일이 window.okbmPhotoMap을 만든다)
+  if (/[?&]pm=svg\b/.test(location.search)) {
+    var old = document.createElement('script'); old.src = 'photo-map-svg.js?v=12'; document.head.appendChild(old);
+    return;
+  }
 
   var GEO_URL = 'photo-map/korea-sgg-202610.json?v=2';
   var D3_URL = 'vendor/d3-7.9.0.min.js';
@@ -22,24 +29,30 @@
   // LEVEL_SGG: 이보다 확대하면 시·군·구 이름과 '도' 단위 진행도를 보여 준다 / LEVEL_SPOT: 이보다 확대하면 박지 칸
   var LEVEL_SGG = 2.4, LEVEL_SPOT = 6;
   var METRO = { '11': 1, '26': 1, '27': 1, '28': 1, '29': 1, '30': 1, '31': 1, '36': 1 };
-  var THUMB = { sido: 360, sgg: 360, spot: 720 };
 
-  var host = null, svg = null, defs = null, root = null, L = {};
+  var host = null;
   // 화면 크기: 확대 중에 host.clientWidth를 읽으면 강제 레이아웃이 생겨서 열 때·resize 때만 잰다
   var hostW = 0, hostH = 0, OVER = 0.3;
   function measure() { hostW = host.clientWidth || window.innerWidth; hostH = host.clientHeight || window.innerHeight; }
   // 확대 상태는 손가락 받는 판(stage)에 있다. 그림에 실제로 적용된 건 committed.
   var stage = null, committed = null;
   function zt() { return d3.zoomTransform(stage.node()); }
+  // t 상태로 다시 그린다. 같은 순간에 CSS로 옮겨 둔 것을 풀어야 한 장도 튀지 않는다.
   function commit(t) {
     committed = t; k = t.k;
-    root.attr('transform', 'translate(' + (hostW * OVER) + ',' + (hostH * OVER) + ') ' + t.toString());
-    svg.style('transform', null);
+    update();
+    render();
+    canvas.style.transform = '';
+  }
+  // 그린 그림을 통째로 키우고 옮기기만(그래픽 칩이 해서 가볍다): 마지막으로 그린 상태에서 바뀐 만큼
+  function moveCanvas(t) {
+    var c = committed || d3.zoomIdentity, sc = t.k / c.k;
+    canvas.style.transform = 'translate(' + (t.x - sc * c.x) + 'px,' + (t.y - sc * c.y) + 'px) scale(' + sc + ')';
   }
   var proj = null, gpath = null, zoom = null, k = 1;
   var geo = null, feedsAll = null, feedsMine = null;
   var sidos = [], sggs = [], spotList = [], bySpot = {};
-  var mode = 'all', opened = false, uid = 0, freshSpotId = null, busy = null;
+  var mode = 'all', opened = false, freshSpotId = null, busy = null;
   var thumbs = new Map(), thumbQueue = [], thumbActive = 0;
 
   var CSS = [
@@ -48,27 +61,9 @@
     'html[data-theme="light"] .pm-host{--pm-ink:#1d2320;--pm-chip:#fff;--pm-chip-sub:#6b726d;}',
     // 사진 모드에선 검색창·필터·확대 버튼을 숨기고, 진행도와 모두/내 지도를 검색창 자리로 올린다
     'body.pm-on #leftBottomFilterWrap,body.pm-on #rightBottomHudGroup,body.pm-on .floating-top-search-wrap{display:none!important;}',
-    // 손가락 받는 판(pm-stage)은 화면 크기, 그림(pm-svg)은 사방으로 30%씩 더 크게 그려 둔다(움직이는 동안 가장자리가 비지 않게).
-    // 움직이는 동안엔 그림을 CSS transform으로 통째로 키우고 옮기기만 하고(그래픽 칩이 해서 가볍다) 손을 떼면 다시 그린다.
-    '.pm-stage{position:absolute;inset:0;overflow:hidden;touch-action:none;}',
-    '.pm-svg{position:absolute;left:-30%;top:-30%;width:160%;height:160%;transform-origin:18.75% 18.75%;will-change:transform;}',
-    '.pm-region{stroke:var(--pm-line);stroke-width:1;vector-effect:non-scaling-stroke;cursor:pointer;}',
-    '.pm-cellline{fill:none;stroke:var(--pm-line);stroke-width:1;vector-effect:non-scaling-stroke;pointer-events:none;}',
-    '.pm-edge{fill:none;stroke:var(--pm-line);vector-effect:non-scaling-stroke;pointer-events:none;}',
-    '.pm-edge-sido{stroke:#a9a59b;}',
-    '.pm-img{pointer-events:none;opacity:0;transition:opacity .35s;}',
-    // 박지 층은 칸마다 따로 뜨지 않고 사진이 준비되면 통째로 서서히 겹친다(revealSpots)
-    '.pm-l-spot{transition:opacity .3s;}',
-    '.pm-img.pm-in{opacity:1;}',
-    '.pm-img.pm-gray{filter:grayscale(1) contrast(.9);opacity:.55;}',
-    '.pm-img.pm-fresh{transition:filter 1.6s,opacity 1.6s;}',
-    '.pm-dot{r:calc(6.5px / var(--pm-k,1));stroke-width:2.5;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));vector-effect:non-scaling-stroke;cursor:pointer;}',
-    '.pm-lbl{stroke-width:calc(3px / var(--pm-k,1));font-weight:700;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-linejoin:round;text-anchor:middle;pointer-events:none;font-family:var(--font-body,sans-serif);}',
-    '.pm-lp{font-size:calc(13px / var(--pm-k,1));}',
-    '.pm-lc{font-size:calc(11.5px / var(--pm-k,1));}',
-    '.pm-ls{font-size:calc(11px / var(--pm-k,1));}',
-    '.pm-empty-lbl{fill:var(--pm-sub);stroke:#fff;}',
-    '.pm-stamp{font-size:calc(11px / var(--pm-k,1));stroke-width:calc(3px / var(--pm-k,1));font-weight:800;fill:var(--pm-accent);paint-order:stroke;stroke:#fff;stroke-linejoin:round;text-anchor:middle;pointer-events:none;}',
+    // 손가락 받는 판(pm-stage)은 화면 크기, 캔버스는 사방으로 30%씩 더 크게 그려 둔다(움직이는 동안 가장자리가 비지 않게).
+    '.pm-stage{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:pointer;}',
+    '.pm-canvas{position:absolute;left:-30%;top:-30%;width:160%;height:160%;transform-origin:18.75% 18.75%;will-change:transform;}',
     '.pm-top{position:absolute;top:calc(var(--okbm-status-top, env(safe-area-inset-top, 0px)) + 8px);left:10px;right:10px;display:flex;gap:8px;align-items:center;justify-content:space-between;z-index:2;}',
     '.pm-seg{display:flex;background:var(--pm-chip);border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.2);flex:none;}',
     '.pm-seg button{border:0;background:none;padding:6px 11px;border-radius:999px;font-size:12.5px;color:var(--pm-chip-sub);font-weight:600;}',
@@ -166,14 +161,19 @@
     var fc = { type: 'FeatureCollection', features: geo.sido.map(function (s) { return { type: 'Feature', geometry: s.g }; }) };
     proj = d3.geoMercator().fitExtent([[6, 64], [W - 6, H - 64]], fc);
     gpath = d3.geoPath(proj);
-    sidos = geo.sido.map(function (s) { return { code: s.c, name: s.n, geom: s.g, d: gpath(s.g), box: gpath.bounds(s.g), c: gpath.centroid(s.g), sggs: [] }; });
+    sidos = geo.sido.map(function (s) { var d = gpath(s.g) || ''; return { code: s.c, name: s.n, geom: s.g, d: d, p: new Path2D(d), box: gpath.bounds(s.g), c: gpath.centroid(s.g), sggs: [] }; });
     var sidoBy = {}; sidos.forEach(function (s) { sidoBy[s.code] = s; });
     sggs = geo.sgg.map(function (g) {
-      var o = { code: g.c, name: g.n, geom: g.g, d: gpath(g.g), box: gpath.bounds(g.g), c: gpath.centroid(g.g), spots: [], sido: sidoBy[g.c] };
+      var d = gpath(g.g) || '';
+      var o = { code: g.c, name: g.n, geom: g.g, d: d, p: new Path2D(d), box: gpath.bounds(g.g), c: gpath.centroid(g.g), spots: [], sido: sidoBy[g.c] };
+      o.bb = bb(o.box);
       if (o.sido) o.sido.sggs.push(o);
       o.geoBox = d3.geoBounds(g.g);
       return o;
-    });    commit(zt()); // 화면 크기가 정해졌으니 여분(OVER)만큼 밀어 둔다
+    });    allSggPath = new Path2D(sggs.map(function (c) { return c.d; }).join(''));
+    allSidoPath = new Path2D(sidos.map(function (c) { return c.d; }).join(''));
+    sizeCanvas();
+    committed = zt(); k = committed.k;
   }
 
   // 박지가 들어 있는 시군구: 이름이 하나로 맞으면 그것, 아니면 좌표가 들어 있는 곳, 그래도 없으면 가장 가까운 곳.
@@ -277,19 +277,21 @@
     if (cdnDown || !url || url.indexOf(R2_BASE) !== 0) return null;
     return IMG_BASE + 'cdn-cgi/image/width=' + w + ',quality=70,fit=scale-down,format=auto/' + url.slice(R2_BASE.length).split('?')[0];
   }
-  var cdnLoads = new Map();
-  function bestThumb(url, size) {
-    var c = cdnUrl(url, size);
-    if (!c) return thumb(url, size);
-    if (cdnLoads.has(c)) return cdnLoads.get(c);
+  // ------------------------------------------------------------------ 사진 받기(캔버스에 그릴 그림으로)
+  // 같은 사진·크기는 한 번만 받는다. 다 풀린(decode) 그림을 넘겨야 그릴 때 비지 않는다.
+  var imgCache = new Map();
+  function loadImg(url, size) {
+    var key = size + '|' + url;
+    if (imgCache.has(key)) return imgCache.get(key);
     var p = new Promise(function (ok) {
-      var img = new Image();
-      // 다 풀린(decode) 뒤에 넘겨야 바꿔 끼울 때 잠깐 비지 않는다
-      img.onload = function () { if (img.decode) img.decode().then(function () { ok(c); }, function () { ok(c); }); else ok(c); };
-      img.onerror = function () { cdnDown = true; thumb(url, size).then(ok); };
-      img.src = c;
+      function ready(im) { if (im.decode) im.decode().then(function () { ok(im); }, function () { ok(im); }); else ok(im); }
+      function fromUrl(u, onFail) { var im = new Image(); im.decoding = 'async'; im.onload = function () { ready(im); }; im.onerror = onFail; im.src = u; }
+      function fallback() { thumb(url, size).then(function (u) { if (!u) return ok(null); fromUrl(u, function () { ok(null); }); }); }
+      var c = cdnUrl(url, size);
+      if (!c) return fallback();
+      fromUrl(c, function () { cdnDown = true; fallback(); });
     });
-    cdnLoads.set(c, p);
+    imgCache.set(key, p);
     return p;
   }
 
@@ -304,12 +306,13 @@
     function next() {
       while (opened && token === preloadToken && active < 3 && i < urls.length) {
         active++;
-        bestThumb(urls[i++], SPOT_PX).then(function () { active--; next(); });
+        loadImg(urls[i++], SPOT_PX).then(function () { active--; next(); });
       }
     }
     setTimeout(next, 1500);
   }
 
+  // R2가 아니거나 새 주소가 안 될 때: 원본을 받아 기기에서 줄인다
   function thumb(url, size) {
     var key = size + '|' + url;
     if (thumbs.has(key)) return thumbs.get(key);
@@ -341,100 +344,238 @@
     }
   }
 
-  // ------------------------------------------------------------------ 그리기
-  function bboxOfPath(d) {
-    var t = svg.append('path').attr('d', d); var b = t.node().getBBox(); t.remove();
-    return [[b.x, b.y], [b.x + b.width, b.y + b.height]];
-  }
+  // ------------------------------------------------------------------ 그리기 (캔버스)
+  // 지도는 캔버스 한 장에 직접 그린다. SVG(칸마다 사진을 모양대로 오려 붙이기)는 확대가 바뀔 때마다 휴대폰이 전부 다시 그리느라
+  // 다 그리기 전엔 바탕(바다색)이 비쳐 보였다. 캔버스는 새 그림을 다 그릴 때까지 이전 그림이 그대로 남는다.
+  // 예전 판은 photo-map-svg.js(주소 끝 ?pm=svg).
+  // 좌표: 세계 좌표(전국을 화면에 맞춘 메르카토르 px) → 확대 상태 t → 판(stage) 좌표 → +여분(OVER) → 캔버스 좌표
+  var COLOR = { sea: '#aad3ea', empty: '#f1efe9', green: '#cfe6d5', accent: '#2f8a62', line: '#fff', sub: '#3f4642', spot: '#ff6a2b', sido: '#a9a59b' };
+  var canvas = null, ctx = null, hitCtx = null, dpr = 1, fontFamily = 'sans-serif';
+  var allSggPath = null, allSidoPath = null;
+  var slots = [];
 
-  // 모양으로 자른 사진 자리. 실제 사진은 화면에 보일 때 줄여서 넣는다(ensureImages).
-  function photoSlot(g, d, box, url, size, cls) {
-    var id = 'pmc' + (uid++);
-    defs.append('clipPath').attr('id', id).append('path').attr('d', d);
-    return g.append('image')
-      .attr('x', box[0][0]).attr('y', box[0][1]).attr('width', box[1][0] - box[0][0]).attr('height', box[1][1] - box[0][1])
-      .attr('preserveAspectRatio', 'xMidYMid slice').attr('clip-path', 'url(#' + id + ')')
-      .attr('class', 'pm-img ' + (cls || '')).attr('data-src', url).attr('data-size', size)
-      .attr('data-box', [box[0][0], box[0][1], box[1][0], box[1][1]].join(','));
+  function sizeCanvas() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(hostW * (1 + 2 * OVER) * dpr);
+    canvas.height = Math.round(hostH * (1 + 2 * OVER) * dpr);
   }
+  function bb(box) { return [box[0][0], box[0][1], box[1][0], box[1][1]]; }
 
-  function fillShape(g, d, box, look, size, onClick, cls) {
-    g.append('path').attr('d', d).attr('class', 'pm-region').attr('fill', look.green ? 'var(--pm-green)' : 'var(--pm-empty)').on('click', onClick);
-    if (look.url) return photoSlot(g, d, box, look.url, size, (look.gray ? 'pm-gray ' : '') + (cls || ''));
-    return null;
+  // 사진 자리: 화면에 보일 때 크기에 맞춰 받는다(ensureImages)
+  function mkSlot(url, box, lv, gray) {
+    var sl = { url: url, bb: bb(box), lv: lv, gray: !!gray, have: 0, want: 0, img: null, at: 0, fresh: false };
+    slots.push(sl);
+    return sl;
   }
 
   function draw() {
-    defs.selectAll('*').remove();
-    ['sido', 'sgg', 'spot', 'edge', 'dot', 'lbl'].forEach(function (n) { L[n].selectAll('*').remove(); });
-    uid = 0;
-
-    // 시·도는 칸을 채우지 않고 굵은 경계선과 이름만 둔다
-    sidos.forEach(function (s) {
-      // 전국 화면에서 광역시 이름은 도 이름과 겹쳐서 뺀다
-      if (METRO[s.code]) return;
-      L.lbl.append('text').attr('class', 'pm-lbl pm-lp').attr('x', s.c[0]).attr('y', s.c[1]).text(s.name);
-    });
-
+    slots = [];
     // 1단계: 시·군·구
     sggs.forEach(function (c) {
       var look = groupLook(c.spots); c.look = look;
-      var g = L.sgg.append('g').attr('data-sgg', c.code + c.name);
-      fillShape(g, c.d, c.box, look, THUMB.sgg, function () { zoomToBox(c.box, 0.86, LEVEL_SPOT + 0.3); }, 'pm-sggimg');
-      L.lbl.append('text').attr('class', 'pm-lbl pm-lc' + (look.url || look.green ? '' : ' pm-empty-lbl'))
-        .attr('x', c.c[0]).attr('y', c.c[1]).attr('data-w', c.box[1][0] - c.box[0][0]).text(c.name);
+      c.slot = look.url ? mkSlot(look.url, c.box, 1, look.gray) : null;
     });
-
-    sggs.forEach(function (c) { L.edge.append('path').attr('d', c.d).attr('class', 'pm-edge pm-edge-sgg'); });
-    sidos.forEach(function (c) { L.edge.append('path').attr('d', c.d).attr('class', 'pm-edge pm-edge-sido'); });
-    spotDrawn = false; spotShown = false;
+    // 3단계: 박지 칸 (시군구 모양을 가장 가까운 박지 기준으로 나눔)
+    sggs.forEach(function (c) {
+      c.cells = null; c.delaunay = null;
+      if (!c.spots.length) return;
+      var pts = c.spots.map(function (s) { return s.__pmXY; });
+      c.delaunay = d3.Delaunay.from(pts);
+      var vor = c.delaunay.voronoi([c.box[0][0], c.box[0][1], c.box[1][0], c.box[1][1]]);
+      c.cells = c.spots.map(function (s, i) {
+        var poly = vor.cellPolygon(i);
+        var look = spotLook(s);
+        var cell = { s: s, look: look, p: null, bb: null, slot: null };
+        if (!poly) return cell;
+        cell.p = new Path2D('M' + poly.join('L') + 'Z');
+        var box = [[d3.min(poly, function (p) { return p[0]; }), d3.min(poly, function (p) { return p[1]; })], [d3.max(poly, function (p) { return p[0]; }), d3.max(poly, function (p) { return p[1]; })]];
+        cell.bb = bb(box);
+        if (look.url) cell.slot = mkSlot(look.url, box, 2, look.gray);
+        // 방금 올린 내 사진: 흑백에서 컬러로 물든다
+        if (cell.slot && String(s.id) === String(freshSpotId)) { cell.slot.fresh = true; freshSpotId = null; }
+        return cell;
+      });
+    });
+    spotShown = false; spotFadeAt = 0;
     update(true);
-    // 박지 칸은 확대해야 보이니 처음 화면이 뜬 뒤 쉬는 틈에 그린다(그 전에 박지 단계로 들어가면 그때 바로 그린다)
-    var token = ++spotDrawToken;
-    setTimeout(function () {
-      if (token !== spotDrawToken || spotDrawn) return;
-      var go = function () { if (token === spotDrawToken && !spotDrawn) { drawSpotLayer(); update(true); } };
-      if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 2000 }); else go();
-    }, 300);
+    requestRender();
   }
 
-  var spotDrawn = false, spotDrawToken = 0;
-  function ensureSpotLayer() { if (!spotDrawn) drawSpotLayer(); }
+  // 사진을 칸 모양 안에 꽉 차게(가운데 맞춤, 넘치는 건 잘림)
+  function paintSlot(sl, path, now) {
+    if (!sl.img) return false;
+    var anim = false;
+    var a = Math.min(1, (now - sl.at) / 350); if (a < 1) anim = true;
+    // 흑백 정도(1=흑백)와 진하기
+    var g = sl.gray ? 1 : 0, op = sl.gray ? 0.55 : 1;
+    if (sl.fresh) {
+      var f = Math.max(0, Math.min(1, (now - sl.at - 120) / 1600));
+      g = 1 - f; op = 0.55 + 0.45 * f;
+      if (f < 1) anim = true; else sl.fresh = false;
+    }
+    var b = sl.bb, bw = b[2] - b[0], bh = b[3] - b[1];
+    var im = sl.img, iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+    if (!iw || !ih) return anim;
+    var sc = Math.max(bw / iw, bh / ih), dw = iw * sc, dh = ih * sc;
+    var base = ctx.globalAlpha;
+    ctx.save();
+    ctx.clip(path);
+    ctx.globalAlpha = base * a * op;
+    ctx.drawImage(im, b[0] + (bw - dw) / 2, b[1] + (bh - dh) / 2, dw, dh);
+    if (g > 0) {
+      // 채도를 빼서 흑백으로(캔버스 filter는 예전 사파리에 없다)
+      ctx.globalCompositeOperation = 'saturation';
+      ctx.globalAlpha = base * a * g;
+      ctx.fillStyle = '#808080';
+      ctx.fillRect(b[0], b[1], bw, bh);
+    }
+    ctx.restore();
+    return anim;
+  }
 
-  // 3단계: 박지 칸 (시군구 모양을 가장 가까운 박지 기준으로 나눔) + 실제 자리 점
-  function drawSpotLayer() {
-    spotDrawn = true;
+  var renderRaf = 0, lastRenderMs = 0;
+  function requestRender() { if (!renderRaf) renderRaf = requestAnimationFrame(function () { renderRaf = 0; render(); }); }
+  function render() {
+    if (!ctx || !opened || !committed) return;
+    if (renderRaf) { cancelAnimationFrame(renderRaf); renderRaf = 0; }
+    var t0 = performance.now(), now = t0, anim = false;
+    var t = committed, kk = t.k, ox = hostW * OVER, oy = hostH * OVER;
+    var lv = level(), wide = kk < LEVEL_SGG, px = 1 / kk;
+    var view = [t.invertX(-ox), t.invertY(-oy), t.invertX(hostW + ox), t.invertY(hostH + oy)];
+    var vis = function (b) { return b && !(b[2] < view[0] || b[0] > view[2] || b[3] < view[1] || b[1] > view[3]); };
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = COLOR.sea; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(dpr * kk, 0, 0, dpr * kk, dpr * (ox + t.x), dpr * (oy + t.y));
+    ctx.imageSmoothingEnabled = true;
+    if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
+
+    // 박지 단계로 넘어갈 땐 박지 사진이 준비돼 다 덮을 때까지 시·군 사진을 밑에 둔다
+    var spotA = 0;
+    if (lv === 2 && spotShown) { spotA = Math.min(1, (now - spotFadeAt) / 300); if (spotA < 1) anim = true; }
+    var sggPhotos = lv === 1 || spotA < 1;
     sggs.forEach(function (c) {
-      if (!c.spots.length) return;
-      var g = L.spot.append('g').attr('data-sgg', c.code + c.name);
-      var cid = 'pmcc' + (uid++);
-      defs.append('clipPath').attr('id', cid).append('path').attr('d', c.d);
-      var inner = g.append('g').attr('clip-path', 'url(#' + cid + ')');
-      var pts = c.spots.map(function (s) { return s.__pmXY; });
-      var vor = d3.Delaunay.from(pts).voronoi([c.box[0][0], c.box[0][1], c.box[1][0], c.box[1][1]]);
-      c.spots.forEach(function (s, i) {
-        var poly = vor.cellPolygon(i); if (!poly) return;
-        var d = 'M' + poly.join('L') + 'Z';
-        var box = [[d3.min(poly, function (p) { return p[0]; }), d3.min(poly, function (p) { return p[1]; })], [d3.max(poly, function (p) { return p[0]; }), d3.max(poly, function (p) { return p[1]; })]];
-        var cg = inner.append('g');
-        var fresh = String(s.id) === String(freshSpotId);
-        var img = fillShape(cg, d, box, spotLook(s), THUMB.spot, function () { openSheet(s); }, fresh ? 'pm-fresh pm-gray' : '');
-        if (img && fresh) { img.attr('data-fresh', '1'); freshSpotId = null; }
-        cg.append('path').attr('d', d).attr('class', 'pm-cellline');
-      });
-      c.spots.forEach(function (s) {
-        var l = spotLook(s);
-        // 사진 있는 박지: 흰 점·초록 테두리 / 다녀옴: 초록 점 / 아직 빈 박지: 주황 점(눈에 띄게)
-        var filled = mode === 'mine' ? l.mine : !!l.url;
-        var fill = filled ? '#fff' : (mode === 'mine' && l.stamp) ? 'var(--pm-accent)' : 'var(--pm-spot)';
-        L.dot.append('circle').attr('class', 'pm-dot').attr('data-sgg', c.code + c.name).attr('cx', s.__pmXY[0]).attr('cy', s.__pmXY[1])
-          .attr('fill', fill).attr('stroke', filled ? 'var(--pm-accent)' : '#fff')
-          .on('click', function () { openSheet(s); });
-        if (l.stamp) L.lbl.append('text').attr('class', 'pm-stamp').attr('data-sgg', c.code + c.name).attr('x', s.__pmXY[0]).attr('y', s.__pmXY[1]).attr('dy', '-0.818em').text('✓ 다녀옴');
-        L.lbl.append('text').attr('class', 'pm-lbl pm-ls' + (l.url || l.green ? '' : ' pm-empty-lbl')).attr('data-sgg', c.code + c.name)
-          .attr('x', s.__pmXY[0]).attr('y', s.__pmXY[1]).attr('dy', '1.545em').text(String(s.spot_main || s.name || '').trim());
-      });
+      if (!vis(c.bb)) return;
+      var look = c.look || {};
+      ctx.fillStyle = look.green ? COLOR.green : COLOR.empty;
+      ctx.fill(c.p);
+      if (sggPhotos && c.slot && paintSlot(c.slot, c.p, now)) anim = true;
     });
+    if (lv === 2 && spotA > 0) {
+      ctx.globalAlpha = spotA;
+      ctx.lineWidth = px; ctx.strokeStyle = COLOR.line;
+      sggs.forEach(function (c) {
+        if (!c.cells || !vis(c.bb)) return;
+        ctx.save();
+        ctx.clip(c.p);
+        c.cells.forEach(function (cell) {
+          if (!cell.p || !vis(cell.bb)) return;
+          ctx.fillStyle = cell.look.green ? COLOR.green : COLOR.empty;
+          ctx.fill(cell.p);
+          if (cell.slot && paintSlot(cell.slot, cell.p, now)) anim = true;
+        });
+        c.cells.forEach(function (cell) { if (cell.p && vis(cell.bb)) ctx.stroke(cell.p); });
+        ctx.restore();
+      });
+      ctx.globalAlpha = 1;
+    }
+    // 경계선
+    ctx.strokeStyle = COLOR.line; ctx.lineJoin = 'round';
+    ctx.lineWidth = (lv === 2 ? 3 : wide ? 0.5 : 1) * px; ctx.stroke(allSggPath);
+    if (lv !== 2) { ctx.strokeStyle = COLOR.sido; ctx.lineWidth = 2 * px; ctx.stroke(allSidoPath); }
+
+    // 점·글자는 화면 좌표로(또렷하게)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var W2 = hostW + 2 * ox, H2 = hostH + 2 * oy;
+    var X = function (x) { return ox + t.x + kk * x; }, Y = function (y) { return oy + t.y + kk * y; };
+    var onScreen = function (x, y) { return x > -60 && x < W2 + 60 && y > -30 && y < H2 + 30; };
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
+    function label(text, x, y, size, weight, empty) {
+      ctx.font = weight + ' ' + size + 'px ' + fontFamily;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = empty ? '#fff' : 'rgba(0,0,0,.6)';
+      ctx.strokeText(text, x, y);
+      ctx.fillStyle = empty ? COLOR.sub : '#fff';
+      ctx.fillText(text, x, y);
+    }
+    if (lv === 2) {
+      // 사진 있는 박지: 흰 점·초록 테두리 / 다녀옴: 초록 점 / 아직 빈 박지: 주황 점(눈에 띄게)
+      var marks = [];
+      sggs.forEach(function (c) {
+        if (!c.cells || !vis(c.bb)) return;
+        c.cells.forEach(function (cell) {
+          var x = X(cell.s.__pmXY[0]), y = Y(cell.s.__pmXY[1]);
+          if (onScreen(x, y)) marks.push({ x: x, y: y, cell: cell });
+        });
+      });
+      marks.forEach(function (m) {
+        var l = m.cell.look, filled = mode === 'mine' ? l.mine : !!l.url;
+        ctx.beginPath(); ctx.arc(m.x, m.y, 6.5, 0, Math.PI * 2);
+        ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 2 * dpr; ctx.shadowOffsetY = dpr;
+        ctx.fillStyle = filled ? '#fff' : (mode === 'mine' && l.stamp) ? COLOR.accent : COLOR.spot;
+        ctx.fill();
+        ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+        ctx.lineWidth = 2.5; ctx.strokeStyle = filled ? COLOR.accent : '#fff'; ctx.stroke();
+      });
+      marks.forEach(function (m) {
+        var l = m.cell.look, s = m.cell.s;
+        if (l.stamp) {
+          ctx.font = '800 11px ' + fontFamily; ctx.lineWidth = 3; ctx.strokeStyle = '#fff';
+          ctx.strokeText('✓ 다녀옴', m.x, m.y - 9); ctx.fillStyle = COLOR.accent; ctx.fillText('✓ 다녀옴', m.x, m.y - 9);
+        }
+        label(String(s.spot_main || s.name || '').trim(), m.x, m.y + 17, 11, 700, !(l.url || l.green));
+      });
+    } else if (wide) {
+      // 전국: 도 이름(광역시 이름은 도 이름과 겹쳐서 뺀다)
+      sidos.forEach(function (s) {
+        if (METRO[s.code]) return;
+        var x = X(s.c[0]), y = Y(s.c[1]);
+        if (onScreen(x, y)) label(s.name, x, y, 13, 700, false);
+      });
+    } else {
+      // 시군구 이름은 칸이 화면에서 46px보다 넓을 때만
+      sggs.forEach(function (c) {
+        if ((c.box[1][0] - c.box[0][0]) * kk <= 46) return;
+        var x = X(c.c[0]), y = Y(c.c[1]);
+        var look = c.look || {};
+        if (onScreen(x, y)) label(c.name, x, y, 11.5, 700, !(look.url || look.green));
+      });
+    }
+    lastRenderMs = performance.now() - t0;
+    if (window.__pmTrace) window.__pmTrace.push(['render', Math.round(t0), Math.round(lastRenderMs), lv, Math.round(kk * 10) / 10]);
+    if (anim) requestRender();
+  }
+
+  // ------------------------------------------------------------------ 눌렀을 때
+  function sggAt(w) {
+    for (var i = 0; i < sggs.length; i++) {
+      var c = sggs[i], b = c.bb;
+      if (w[0] < b[0] || w[0] > b[2] || w[1] < b[1] || w[1] > b[3]) continue;
+      if (hitCtx.isPointInPath(c.p, w[0], w[1])) return c;
+    }
+    return null;
+  }
+  function onTap(ev) {
+    if (!opened || !committed) return;
+    var p = d3.pointer(ev, stage.node()), t = committed, w = t.invert(p);
+    if (level() === 2) {
+      // 점을 먼저(화면에서 14px 안), 아니면 그 칸의 박지
+      var best = null, bestD = 14 * 14;
+      sggs.forEach(function (c) {
+        if (!c.cells) return;
+        c.cells.forEach(function (cell) {
+          var dx = (cell.s.__pmXY[0] - w[0]) * t.k, dy = (cell.s.__pmXY[1] - w[1]) * t.k, d = dx * dx + dy * dy;
+          if (d < bestD) { bestD = d; best = cell.s; }
+        });
+      });
+      if (best) return openSheet(best);
+      var c = sggAt(w);
+      if (c && c.delaunay) openSheet(c.spots[c.delaunay.find(w[0], w[1])]);
+      return;
+    }
+    var g = sggAt(w);
+    if (g) zoomToBox(g.box, 0.86, LEVEL_SPOT + 0.3);
   }
 
   // ------------------------------------------------------------------ 확대 단계
@@ -449,65 +590,30 @@
     return list.find(function (g) { return d3.geoContains(g.geom, ll); }) || null;
   }
 
-  // 손가락 이벤트가 한 프레임에 여러 번 와도 한 번만 돈다. 첫 번째는 바로 하고(다음 프레임으로 미루면 계산이 두 번 된다)
-  // 같은 프레임에 또 오면 다음 프레임에 몰아서 한 번.
-  var raf = 0, dirty = false;
-  function requestUpdate() {
-    if (raf) { dirty = true; return; }
-    update();
-    raf = requestAnimationFrame(function () { raf = 0; if (dirty) { dirty = false; update(); } });
-  }
-
-  var spotShown = false, revealToken = 0, gesture = false;
+  var spotShown = false, spotFadeAt = 0, revealToken = 0, gesture = false;
+  // 박지 단계로 갈 때: 보이는 박지 사진이 준비되면(최대 0.7초) 박지 칸을 0.3초에 걸쳐 시·군 사진 위로 겹친다
   function revealSpots() {
     var token = revealToken;
     var waits = ensureImages() || [];
     var show = function () {
-      if (token !== revealToken || level() !== 2) return;
-      spotShown = true;
-      L.spot.style('opacity', 1);
-      setTimeout(function () { if (token === revealToken && level() === 2) L.sgg.selectAll('.pm-sggimg').style('opacity', 0); }, 320);
+      if (token !== revealToken || level() !== 2 || spotShown) return;
+      spotShown = true; spotFadeAt = performance.now();
+      requestRender();
     };
-    if (spotShown || !waits.length) return show();
-    // 오래 걸리면 0.7초 뒤엔 그냥 보인다
+    if (!waits.length) return show();
     Promise.race([Promise.all(waits), new Promise(function (r) { setTimeout(r, 700); })]).then(show);
   }
 
-  // 단계(lv·wide)와 보고 있는 시군구가 바뀔 때만 스타일을 다시 쓴다. 글자·점 크기는 CSS 변수 --pm-k 하나로 맞춘다.
+  // 단계(lv·wide)가 바뀌면 박지 칸 보이기를 정하고, 보고 있는 시·도·시군구가 바뀌면 위쪽 숫자를 바꾼다
   var shown = { lv: 0, wide: null, sggKey: null, sidoKey: null };
   function update(force) {
     var lv = level();
     var wide = k < LEVEL_SGG; // 전국을 보는 중
-    // 맨 위(root)에 걸면 사진·칸까지 수천 개 스타일을 다시 계산하므로 글자·점 묶음에만 건다
-    L.lbl.style('--pm-k', k); L.dot.style('--pm-k', k);
     if (force || lv !== shown.lv || wide !== shown.wide) {
-      shown.lv = lv; shown.wide = wide; shown.sggKey = null; shown.sidoKey = null; shown.lcHidden = false;
-      if (lv === 2) ensureSpotLayer();
-      L.sido.style('display', 'none');
-      L.sgg.selectAll('.pm-region').style('pointer-events', lv === 1 ? null : 'none');
-      // 박지 단계로 갈 때 시·군 사진은 박지 사진이 준비될 때까지 그대로 둔다(빈칸이 먼저 깔려 반짝이지 않게)
+      shown.lv = lv; shown.wide = wide; shown.sggKey = null; shown.sidoKey = null;
       revealToken++;
-      if (lv === 2) { L.spot.style('display', null); if (!spotShown) L.spot.style('opacity', 0); revealSpots(); }
-      else { spotShown = false; L.spot.style('display', 'none').style('opacity', 0); L.sgg.selectAll('.pm-sggimg').style('opacity', 1); }
-      L.edge.selectAll('.pm-edge-sgg').attr('stroke-width', lv === 2 ? 3 : wide ? 0.5 : 1);
-      L.edge.selectAll('.pm-edge-sido').attr('stroke-width', lv === 2 ? 0 : 2);
-      L.lbl.selectAll('.pm-lp').style('display', wide ? null : 'none');
-      L.lbl.selectAll('.pm-ls,.pm-stamp').style('display', lv === 2 ? null : 'none');
-      L.dot.style('display', lv === 2 ? null : 'none');
-      // CSS r을 못 쓰는 브라우저도 대강 맞게
-      if (lv === 2) L.dot.selectAll('.pm-dot').attr('r', 6.5 / k);
+      if (lv === 2) revealSpots(); else spotShown = false;
     }
-    // 시군구 이름은 칸이 화면에서 46px보다 넓을 때만(확대 정도에 따라 바뀌므로 시군구 단계에선 매번 본다)
-    if (lv === 1 && !wide) {
-      L.lbl.selectAll('.pm-lc').each(function () {
-        var on = Number(this.getAttribute('data-w')) * k > 46;
-        if (this.__pmOn !== on) { this.__pmOn = on; this.style.display = on ? '' : 'none'; }
-      });
-    } else if (shown.lcHidden !== true) {
-      L.lbl.selectAll('.pm-lc').each(function () { this.__pmOn = false; this.style.display = 'none'; });
-    }
-    shown.lcHidden = !(lv === 1 && !wide);
-
     var ll = centerLL();
     var sido = containing(sidos, ll);
     var sgg = lv === 2 ? containing(sggs, ll) : null;
@@ -552,36 +658,29 @@
   var imgTimer = null;
   function scheduleImages() { clearTimeout(imgTimer); imgTimer = setTimeout(ensureImages, 120); }
   function ensureImages() {
-    if (!opened) return;
-    var t = zt();
+    if (!opened || !committed) return [];
+    var t = committed, lv = level();
     // 사방 여분까지 미리 넣는다
     var x0 = t.invertX(-hostW * OVER), y0 = t.invertY(-hostH * OVER), x1 = t.invertX(hostW * (1 + OVER)), y1 = t.invertY(hostH * (1 + OVER));
-    var lv = level();
-    var layer = lv === 1 ? L.sgg : L.spot;
-    var dpr = Math.min(2, window.devicePixelRatio || 1);
     var waits = [];
-    layer.selectAll('image.pm-img').each(function () {
-      var el = this;
-      if (lv === 2 && el.classList.contains('pm-sggimg')) return;
-      var b = el.getAttribute('data-box').split(',').map(Number);
+    slots.forEach(function (sl) {
+      if (sl.lv !== lv) return;
+      var b = sl.bb;
       if (b[2] < x0 || b[0] > x1 || b[3] < y0 || b[1] > y1) return;
-      // 화면에서 칸이 차지하는 크기만큼만 줄인다(전국에선 작은 칸이 많다). 박지 단계는 640부터.
-      var src = el.getAttribute('data-src');
+      // 화면에서 칸이 차지하는 크기만큼만 받는다(전국에선 작은 칸이 많다). 박지 단계는 640부터.
       var need = Math.max(b[2] - b[0], b[3] - b[1]) * t.k * dpr;
       var size = sizeFor(lv === 2 ? Math.max(SPOT_PX, need * 0.8) : need);
-      if (!cdnUrl(src, size)) size = Math.min(size, THUMB_MAX);
-      var have = Number(el.getAttribute('data-have')) || 0, want = Number(el.getAttribute('data-want')) || 0;
-      if (have >= size || want >= size) return;
-      el.setAttribute('data-want', size);
-      if (!have) el.setAttribute('href', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
-      var p = bestThumb(src, size).then(function (u) {
-        if (!u || (Number(el.getAttribute('data-have')) || 0) >= size) return;
-        el.setAttribute('href', u);
-        el.setAttribute('data-have', size);
-        el.classList.add('pm-in');
-        if (el.getAttribute('data-fresh')) setTimeout(function () { el.classList.remove('pm-gray'); }, 120);
+      if (!cdnUrl(sl.url, size)) size = Math.min(size, THUMB_MAX);
+      if (sl.have >= size || sl.want >= size) return;
+      sl.want = size;
+      var p = loadImg(sl.url, size).then(function (im) {
+        if (!im || sl.have >= size) return;
+        if (window.__pmTrace) window.__pmTrace.push(['img', Math.round(performance.now()), size]);
+        if (!sl.img) sl.at = performance.now();
+        sl.img = im; sl.have = size;
+        requestRender();
       });
-      if (!have) waits.push(p);
+      if (!sl.have) waits.push(p);
     });
     return waits;
   }
@@ -728,7 +827,7 @@
     host = document.createElement('div');
     host.className = 'pm-host';
     host.innerHTML =
-      '<div class="pm-stage"><svg class="pm-svg"></svg></div>' +
+      '<div class="pm-stage"><canvas class="pm-canvas"></canvas></div>' +
       '<div class="pm-top"><div class="pm-stat"></div>' +
       '<div class="pm-seg"><button type="button" data-mode="all">모두</button><button type="button" data-mode="mine">내 지도</button></div></div>' +
       '<div class="pm-loading">사진 지도를 불러오는 중…</div>' +
@@ -736,21 +835,35 @@
     mapEl.appendChild(host);
     host.style.display = 'block'; // 크기를 재야 하므로 먼저 보이게
     host.querySelectorAll('.pm-seg button').forEach(function (b) { b.addEventListener('click', function () { setMode(b.getAttribute('data-mode')); }); });
-    svg = d3.select(host.querySelector('.pm-svg'));
+    canvas = host.querySelector('.pm-canvas');
+    ctx = canvas.getContext('2d');
+    hitCtx = document.createElement('canvas').getContext('2d');
+    fontFamily = (getComputedStyle(host).getPropertyValue('--font-body') || '').trim() || 'sans-serif';
     stage = d3.select(host.querySelector('.pm-stage'));
-    defs = svg.append('defs');
-    root = svg.append('g');
-    ['sido', 'sgg', 'spot', 'edge', 'dot', 'lbl'].forEach(function (n) { L[n] = root.append('g').attr('class', 'pm-l-' + n); });
-    // 움직이는 동안: 마지막으로 그린 상태(committed)에서 지금까지 바뀐 만큼만 CSS로 키우고 옮긴다. 끝나면 그 상태로 다시 그린다.
+    // 움직이는 동안: 그리기가 빠르면 프레임마다 다시 그려 또렷하게, 느리면 그린 그림을 통째로 키우고 옮기고 손을 떼면 다시 그린다.
+    // 느린지는 JS 시간(lastRenderMs)과 실제 장 사이 간격(그래픽 칩 몫까지)으로 본다. 간격이 두 번 30ms를 넘으면 이 기기에선 계속 옮기기만 한다.
+    var pending = null, gestRaf = 0, lastCommitAt = 0, slowHits = 0, slowDevice = false;
     zoom = d3.zoom().scaleExtent([0.3, 120])
+      .on('start', function () { gesture = true; lastCommitAt = 0; })
       .on('zoom', function (e) {
-        var t = e.transform, c = committed || d3.zoomIdentity;
-        if (!e.sourceEvent && !gesture) { commit(t); requestUpdate(); return; } // 코드로 한 번에 옮길 때(열 때·resize)
-        var sc = t.k / c.k;
-        svg.style('transform', 'translate(' + (t.x - sc * c.x) + 'px,' + (t.y - sc * c.y) + 'px) scale(' + sc + ')');
+        if (!gesture) { commit(e.transform); return; }
+        pending = e.transform;
+        if (!slowDevice && lastRenderMs < 12) {
+          if (!gestRaf) gestRaf = requestAnimationFrame(function (now) {
+            gestRaf = 0;
+            if (!pending || !gesture) return;
+            if (lastCommitAt && now - lastCommitAt > 30 && ++slowHits >= 2) slowDevice = true;
+            lastCommitAt = now;
+            commit(pending);
+          });
+        } else moveCanvas(e.transform);
       })
-      .on('start', function () { gesture = true; })
-      .on('end', function (e) { gesture = false; commit(e.transform); update(); });
+      .on('end', function (e) {
+        gesture = false; pending = null;
+        if (gestRaf) { cancelAnimationFrame(gestRaf); gestRaf = 0; }
+        commit(e.transform);
+      });
+    stage.on('click.pm', onTap);
     stage.call(zoom).on('dblclick.zoom', null);
   }
 
@@ -832,11 +945,23 @@
     clearTimeout(window.__pmResize);
     window.__pmResize = setTimeout(function () {
       var w = host.clientWidth;
-      if (Math.abs(w - lastW) < 120) { measure(); return; }
+      if (Math.abs(w - lastW) < 120) { measure(); sizeCanvas(); render(); return; }
       lastW = w;
       buildGeo(); buildSpots(); stage.call(zoom.transform, d3.zoomIdentity); draw();
     }, 250);
   });
 
-  window.okbmPhotoMap = { open: open, close: close, getView: getView, isOpen: function () { return opened; } };
+  // _debug: 측정 도구(scripts/photo-map-bench)가 쓴다
+  window.okbmPhotoMap = {
+    open: open, close: close, getView: getView, isOpen: function () { return opened; },
+    _hit: function (x, y) { var c = committed && sggAt(committed.invert([x, y])); return c ? c.name : null; },
+    _debug: function () {
+      var t = committed || { k: 0 };
+      return { k: t.k, level: level(), renderMs: lastRenderMs, slots: slots.length, loaded: slots.filter(function (x) { return x.img; }).length, spotShown: spotShown,
+        // 화면 좌표: 사진 있는 시군구 가운데, 박지 점
+        sggAt: sggs.filter(function (c) { return c.slot && c.spots.length; }).map(function (c) { return { name: c.name, x: t.applyX ? t.applyX(c.c[0]) : 0, y: t.applyY ? t.applyY(c.c[1]) : 0, w: (c.box[1][0] - c.box[0][0]) * t.k }; }),
+        spotAt: spotList.map(function (x) { return { name: x.spot_main, x: t.applyX ? t.applyX(x.__pmXY[0]) : 0, y: t.applyY ? t.applyY(x.__pmXY[1]) : 0 }; }),
+        visibleSpot: slots.filter(function (x) { return x.lv === 2 && x.have; }).map(function (x) { return { cellPx: Math.round(Math.max(x.bb[2] - x.bb[0], x.bb[3] - x.bb[1]) * t.k * dpr), have: x.have }; }) };
+    }
+  };
 })();
