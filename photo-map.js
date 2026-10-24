@@ -126,13 +126,17 @@
   }
 
   // ------------------------------------------------------------------ 불러오기
+  var scriptJobs = {};
   function loadScript(src) {
-    return new Promise(function (ok, fail) {
+    if (scriptJobs[src]) return scriptJobs[src];
+    var job = scriptJobs[src] = new Promise(function (ok, fail) {
       if (window.d3 && window.d3.geoPath) return ok();
       var s = document.createElement('script');
       s.src = src; s.onload = function () { ok(); }; s.onerror = fail;
       document.head.appendChild(s);
     });
+    job.catch(function () { delete scriptJobs[src]; });
+    return job;
   }
 
   function restHeaders() {
@@ -159,6 +163,31 @@
       return rows;
     }).catch(function () { return []; });
   }
+
+  // 같은 걸 두 번 받지 않게: 미리 받기(prefetch)와 열기(setup)가 겹쳐도 한 번만 받는다
+  var geoJob = null, pubFeedsJob = null;
+  function loadGeo() {
+    if (geo) return Promise.resolve(geo);
+    if (!geoJob) { geoJob = fetch(GEO_URL).then(function (r) { return r.json(); }); geoJob.catch(function () { geoJob = null; }); }
+    return geoJob;
+  }
+  function loadPublicFeeds() {
+    if (!pubFeedsJob) pubFeedsJob = fetchPublicFeeds().then(function (rows) { pubFeedsJob = null; return rows; });
+    return pubFeedsJob;
+  }
+  // 박지 지도에 들어오고 잠시 뒤, 사진 지도에 쓸 경계·d3·피드 목록(약 230KB)을 뒤에서 미리 받아 둔다.
+  // 그러면 사진지도를 누를 때 받는 시간 없이 바로 그린다. 사진은 미리 받지 않는다(데이터 아끼기).
+  function prefetch() {
+    if (geo || opened) return;
+    var c = navigator.connection; if (c && c.saveData) return;
+    loadGeo().catch(function () {}); loadPublicFeeds(); loadScript(D3_URL).catch(function () {});
+  }
+  function schedulePrefetch() {
+    setTimeout(function () {
+      if (window.requestIdleCallback) requestIdleCallback(prefetch, { timeout: 3000 }); else prefetch();
+    }, 4000);
+  }
+  if (document.readyState === 'complete') schedulePrefetch(); else window.addEventListener('load', schedulePrefetch);
 
   // 내 후기는 공개 전 글도 넣는다(올리자마자 내 지도에 색이 들어가게)
   function fetchMyFeeds() {
@@ -1106,8 +1135,8 @@
     if (busy) return busy;
     // 경계·피드는 d3가 필요 없으니 d3와 동시에 받는다
     busy = Promise.all([
-      geo ? geo : fetch(GEO_URL).then(function (r) { return r.json(); }),
-      fetchPublicFeeds(),
+      loadGeo(),
+      loadPublicFeeds(),
       fetchMyFeeds(),
       loadScript(D3_URL)
     ]).then(function (r) {
@@ -1143,8 +1172,7 @@
     opened = true;
     document.body.classList.add('pm-on');
     if (host) host.style.display = 'block';
-    var first = !host;
-    if (first && typeof window.showToast === 'function') window.showToast('사진 지도를 불러오는 중이에요');
+    var first = !host; // 처음 열 때 안내 문구(2.5초 고정)는 띄우지 않는다: 준비는 0.5초 남짓이라 오히려 오래 걸리는 것처럼 보였다
     return setup().then(function () {
       if (!opened) return;
       host.style.display = 'block';
