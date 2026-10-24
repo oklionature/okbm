@@ -285,7 +285,12 @@
     if (imgCache.has(key)) return imgCache.get(key);
     var p = new Promise(function (ok) {
       function ready(im) { if (im.decode) im.decode().then(function () { ok(im); }, function () { ok(im); }); else ok(im); }
-      function fromUrl(u, onFail) { var im = new Image(); im.decoding = 'async'; im.onload = function () { ready(im); }; im.onerror = onFail; im.src = u; }
+      // crossOrigin: 공유 이미지로 꺼낼 수 있게(img.romanticroute.kr·R2 모두 Access-Control-Allow-Origin: * 를 준다)
+      function fromUrl(u, onFail) {
+        var im = new Image(); im.decoding = 'async';
+        if (u.indexOf('blob:') !== 0) { im.crossOrigin = 'anonymous'; if (u.indexOf(R2_BASE) === 0) u += (u.indexOf('?') === -1 ? '?' : '&') + 'pm=1'; }
+        im.onload = function () { ready(im); }; im.onerror = onFail; im.src = u;
+      }
       function fallback() { thumb(url, size).then(function (u) { if (!u) return ok(null); fromUrl(u, function () { ok(null); }); }); }
       var c = cdnUrl(url, size);
       if (!c) return fallback();
@@ -405,7 +410,7 @@
   function paintSlot(sl, path, now) {
     if (!sl.img) return false;
     var anim = false;
-    var a = Math.min(1, (now - sl.at) / 350); if (a < 1) anim = true;
+    var a = exporting ? 1 : Math.min(1, (now - sl.at) / 350); if (a < 1) anim = true;
     // 흑백 정도(1=흑백)와 진하기
     var g = sl.gray ? 1 : 0, op = sl.gray ? 0.55 : 1;
     if (sl.fresh) {
@@ -446,7 +451,8 @@
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = COLOR.sea; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (exportPart !== 'jeju') { ctx.fillStyle = COLOR.sea; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+    var inc = function (c) { return !exportPart || (exportPart === 'jeju') === (c.code === '50'); };
     ctx.setTransform(dpr * kk, 0, 0, dpr * kk, dpr * (ox + t.x), dpr * (oy + t.y));
     ctx.imageSmoothingEnabled = true;
     if ('imageSmoothingQuality' in ctx) ctx.imageSmoothingQuality = 'high';
@@ -456,7 +462,7 @@
     if (lv === 2 && spotShown) { spotA = Math.min(1, (now - spotFadeAt) / 300); if (spotA < 1) anim = true; }
     var sggPhotos = lv === 1 || spotA < 1;
     sggs.forEach(function (c) {
-      if (!vis(c.bb)) return;
+      if (!vis(c.bb) || !inc(c)) return;
       var look = c.look || {};
       ctx.fillStyle = look.green ? COLOR.green : COLOR.empty;
       ctx.fill(c.p);
@@ -482,8 +488,9 @@
     }
     // 경계선
     ctx.strokeStyle = COLOR.line; ctx.lineJoin = 'round';
-    ctx.lineWidth = (lv === 2 ? 3 : wide ? 0.5 : 1) * px; ctx.stroke(allSggPath);
-    if (lv !== 2) { ctx.strokeStyle = COLOR.sido; ctx.lineWidth = 2 * px; ctx.stroke(allSidoPath); }
+    var ep = exportPart ? exportPaths[exportPart] : null;
+    ctx.lineWidth = (lv === 2 ? 3 : wide ? 0.5 : 1) * px; ctx.stroke(ep ? ep.sgg : allSggPath);
+    if (lv !== 2) { ctx.strokeStyle = COLOR.sido; ctx.lineWidth = 2 * px; ctx.stroke(ep ? ep.sido : allSidoPath); }
 
     // 점·글자는 화면 좌표로(또렷하게)
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -493,7 +500,7 @@
     ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round';
     function label(text, x, y, size, weight, empty) {
       ctx.font = weight + ' ' + size + 'px ' + fontFamily;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = Math.min(3, size * 0.3);
       ctx.strokeStyle = empty ? '#fff' : 'rgba(0,0,0,.6)';
       ctx.strokeText(text, x, y);
       ctx.fillStyle = empty ? COLOR.sub : '#fff';
@@ -526,6 +533,23 @@
         }
         label(String(s.spot_main || s.name || '').trim(), m.x, m.y + 17, 11, 700, !(l.url || l.green));
       });
+    } else if (exporting) {
+      // 공유 이미지: 시군구 이름을 칸 크기에 맞춰 다 넣는다(너무 작은 칸은 뺀다)
+      sggs.forEach(function (c) {
+        var w = (c.box[1][0] - c.box[0][0]) * kk;
+        if (w < 16 || !inc(c) || /^(울릉군|옹진군)$/.test(c.name)) return;
+        var look = c.look || {};
+        label(c.name, X(c.c[0]), Y(c.c[1]) + 2, Math.max(5.5, Math.min(8.5, w / 4.2)), 700, !(look.url || look.green));
+      });
+      // 시·도 이름은 크게, 노란 글씨로 시군구 이름 위에
+      sidos.forEach(function (c) {
+        if (!inc(c) || METRO[c.code]) return;
+        // 제주는 섬이 작아 '제주시'와 겹치니 섬 위에 둔다
+        var x = X(c.c[0]), y = c.code === '50' ? Y(c.c[1]) - 24 : Y(c.c[1]) - 10;
+        ctx.font = '900 15px ' + fontFamily; ctx.lineJoin = 'round';
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.75)'; ctx.strokeText(c.name, x, y);
+        ctx.fillStyle = '#ffd84d'; ctx.fillText(c.name, x, y);
+      });
     } else if (wide) {
       // 전국: 도 이름(광역시 이름은 도 이름과 겹쳐서 뺀다)
       sidos.forEach(function (s) {
@@ -545,6 +569,69 @@
     lastRenderMs = performance.now() - t0;
     if (window.__pmTrace) window.__pmTrace.push(['render', Math.round(t0), Math.round(lastRenderMs), lv, Math.round(kk * 10) / 10]);
     if (anim) requestRender();
+  }
+
+  // ------------------------------------------------------------------ 공유 이미지
+  // 전국을 한 장(기본 1080×1350, 인스타 피드)에 꽉 채워 시군구 이름까지 넣어 그린다.
+  // 그리기는 render()를 그대로 쓰고, 그동안만 캔버스·크기·확대 상태를 바꿔 끼운다.
+  var exporting = false, exportPart = null, exportPaths = {};
+  var EXPORT_BG = { sky: { sea: '#aad3ea', ink: '#1d2320', sub: '#2f5d48', foot: 'rgba(29,35,32,.7)' }, white: { sea: '#ffffff', ink: '#1d2320', sub: '#2f8a62', foot: 'rgba(29,35,32,.6)' }, navy: { sea: '#0f1d33', ink: '#ffffff', sub: '#8fe0b5', foot: 'rgba(255,255,255,.7)' } };
+  function exportImage(opt) {
+    opt = opt || {};
+    var OW = opt.width || 1080, OH = opt.height || 1350, bg = EXPORT_BG[opt.bg] || EXPORT_BG.sky;
+    var LW = 400, LH = Math.round(LW * OH / OW), S = OW / LW; // 글자 크기는 휴대폰 화면 기준(400px 폭)으로
+    var M = 6; // 가장자리 여백
+    // 본토(제주·울릉·옹진 빼고) 범위와 제주 범위
+    function boxOf(test) {
+      var b = [Infinity, Infinity, -Infinity, -Infinity];
+      sggs.forEach(function (c) { if (!test(c)) return; b[0] = Math.min(b[0], c.box[0][0]); b[1] = Math.min(b[1], c.box[0][1]); b[2] = Math.max(b[2], c.box[1][0]); b[3] = Math.max(b[3], c.box[1][1]); });
+      return b;
+    }
+    var mb = boxOf(function (c) { return c.code !== '50' && !/^(울릉군|옹진군)$/.test(c.name); });
+    var jb = boxOf(function (c) { return c.code === '50'; });
+    // 본토를 세로로 꽉 채우고 오른쪽에 붙인다(왼쪽 위는 제목, 왼쪽 아래는 제주)
+    var sc = Math.min((LH - 2 * M) / (mb[3] - mb[1]), (LW - 2 * M) / (mb[2] - mb[0]));
+    var tMain = d3.zoomIdentity.translate(LW - M - sc * mb[2], M - sc * mb[1]).scale(sc);
+    var tJeju = d3.zoomIdentity.translate(M + 6 - sc * jb[0], LH - M - 22 - sc * jb[3]).scale(sc);
+    if (!exportPaths.main) {
+      var pick = function (list, jeju) { return new Path2D(list.filter(function (c) { return (c.code === '50') === jeju; }).map(function (c) { return c.d; }).join('')); };
+      exportPaths = { main: { sgg: pick(sggs, false), sido: pick(sidos, false) }, jeju: { sgg: pick(sggs, true), sido: pick(sidos, true) } };
+    }
+    // 칸 크기에 맞는 사진을 받는다(이 크기 이미지에서 선명하게)
+    var jobs = [];
+    slots.forEach(function (sl) {
+      if (sl.lv !== 1) return;
+      var need = Math.max(sl.bb[2] - sl.bb[0], sl.bb[3] - sl.bb[1]) * sc * S;
+      var size = sizeFor(need); if (!cdnUrl(sl.url, size)) size = Math.min(size, THUMB_MAX);
+      if (sl.have >= size) return;
+      jobs.push(loadImg(sl.url, size).then(function (im) { if (im && sl.have < size) { if (!sl.img) sl.at = 0; sl.img = im; sl.have = size; } }));
+    });
+    var wait = Promise.race([Promise.all(jobs), new Promise(function (r) { setTimeout(r, 8000); })]);
+    return wait.then(function () {
+      var out = document.createElement('canvas'); out.width = OW; out.height = OH;
+      var keep = { canvas: canvas, ctx: ctx, dpr: dpr, hostW: hostW, hostH: hostH, OVER: OVER, committed: committed, k: k, sea: COLOR.sea };
+      canvas = out; ctx = out.getContext('2d'); dpr = S; hostW = LW; hostH = LH; OVER = 0; exporting = true; COLOR.sea = bg.sea;
+      try {
+        exportPart = 'main'; committed = tMain; k = sc; render();
+        exportPart = 'jeju'; committed = tJeju; render();
+      } finally {
+        exporting = false; exportPart = null; COLOR.sea = keep.sea;
+        canvas = keep.canvas; ctx = keep.ctx; dpr = keep.dpr; hostW = keep.hostW; hostH = keep.hostH; OVER = keep.OVER; committed = keep.committed; k = keep.k;
+      }
+      // 왼쪽 위 제목·숫자, 오른쪽 아래 주소
+      var c2 = out.getContext('2d');
+      c2.setTransform(S, 0, 0, S, 0, 0);
+      c2.textBaseline = 'alphabetic'; c2.textAlign = 'left';
+      c2.fillStyle = bg.ink; c2.font = '800 21px ' + fontFamily;
+      c2.fillText(mode === 'mine' ? '내 박지 지도' : '낭만루트', 14, 34);
+      c2.fillText(mode === 'mine' ? '' : '사진 지도', 14, 60);
+      var tmp = document.createElement('div'); tmp.innerHTML = countText(spotList);
+      c2.font = '700 12px ' + fontFamily; c2.fillStyle = bg.sub;
+      c2.fillText(tmp.textContent, 14, mode === 'mine' ? 56 : 82);
+      c2.textAlign = 'right'; c2.font = '700 11px ' + fontFamily; c2.fillStyle = bg.foot;
+      c2.fillText('romanticroute.kr', LW - 12, LH - 10);
+      return out;
+    });
   }
 
   // ------------------------------------------------------------------ 눌렀을 때
@@ -932,6 +1019,7 @@
   // _debug: 측정 도구(scripts/photo-map-bench)가 쓴다
   window.okbmPhotoMap = {
     open: open, close: close, getView: getView, isOpen: function () { return opened; },
+    exportImage: function (opt) { return opened ? exportImage(opt) : Promise.reject(new Error('closed')); },
     _hit: function (x, y) { var c = committed && sggAt(committed.invert([x, y])); return c ? c.name : null; },
     _debug: function () {
       var t = committed || { k: 0 };
