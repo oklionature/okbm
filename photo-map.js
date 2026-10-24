@@ -33,9 +33,10 @@
 
   var CSS = [
     // 지도 색은 카카오 일반 지도(테마와 상관없이 밝은 바다·땅)에 맞추고, 위에 뜨는 버튼만 앱 테마를 따른다
-    '.pm-host{position:absolute;inset:0;z-index:50;display:none;background:var(--pm-bg);--pm-bg:#aad3ea;--pm-empty:#f1efe9;--pm-green:#cfe6d5;--pm-accent:#2f8a62;--pm-line:#fff;--pm-sub:#69716b;--pm-ink:#fff;--pm-chip:#151b23;--pm-chip-sub:#94a3b8;}',
+    '.pm-host{position:absolute;inset:0;z-index:50;display:none;background:var(--pm-bg);--pm-bg:#aad3ea;--pm-empty:#f1efe9;--pm-green:#cfe6d5;--pm-accent:#2f8a62;--pm-line:#fff;--pm-sub:#3f4642;--pm-spot:#ff6a2b;--pm-ink:#fff;--pm-chip:#151b23;--pm-chip-sub:#94a3b8;}',
     'html[data-theme="light"] .pm-host{--pm-ink:#1d2320;--pm-chip:#fff;--pm-chip-sub:#6b726d;}',
-    'body.pm-on #leftBottomFilterWrap,body.pm-on #rightBottomHudGroup{display:none!important;}',
+    // 사진 모드에선 검색창·필터·확대 버튼을 숨기고, 진행도와 모두/내 지도를 검색창 자리로 올린다
+    'body.pm-on #leftBottomFilterWrap,body.pm-on #rightBottomHudGroup,body.pm-on .floating-top-search-wrap{display:none!important;}',
     '.pm-svg{position:absolute;inset:0;width:100%;height:100%;touch-action:none;}',
     '.pm-region{stroke:var(--pm-line);stroke-width:1;vector-effect:non-scaling-stroke;cursor:pointer;}',
     '.pm-cellline{fill:none;stroke:var(--pm-line);stroke-width:1;vector-effect:non-scaling-stroke;pointer-events:none;}',
@@ -45,11 +46,11 @@
     '.pm-img.pm-in{opacity:1;}',
     '.pm-img.pm-gray{filter:grayscale(1) contrast(.9);opacity:.55;}',
     '.pm-img.pm-fresh{transition:filter 1.6s,opacity 1.6s;}',
-    '.pm-dot{stroke-width:2;vector-effect:non-scaling-stroke;cursor:pointer;}',
+    '.pm-dot{stroke-width:2.5;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));vector-effect:non-scaling-stroke;cursor:pointer;}',
     '.pm-lbl{font-weight:700;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-linejoin:round;text-anchor:middle;pointer-events:none;font-family:var(--font-body,sans-serif);}',
     '.pm-empty-lbl{fill:var(--pm-sub);stroke:#fff;}',
     '.pm-stamp{font-weight:800;fill:var(--pm-accent);paint-order:stroke;stroke:#fff;stroke-linejoin:round;text-anchor:middle;pointer-events:none;}',
-    '.pm-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);left:10px;right:10px;display:flex;gap:8px;align-items:center;justify-content:space-between;z-index:2;}',
+    '.pm-top{position:absolute;top:calc(var(--okbm-status-top, env(safe-area-inset-top, 0px)) + 8px);left:10px;right:10px;display:flex;gap:8px;align-items:center;justify-content:space-between;z-index:2;}',
     '.pm-seg{display:flex;background:var(--pm-chip);border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.2);flex:none;}',
     '.pm-seg button{border:0;background:none;padding:6px 11px;border-radius:999px;font-size:12.5px;color:var(--pm-chip-sub);font-weight:600;}',
     '.pm-seg button.on{background:var(--pm-accent);color:#fff;}',
@@ -370,9 +371,11 @@
       });
       c.spots.forEach(function (s) {
         var l = spotLook(s);
-        var fill = mode === 'mine' ? (l.mine ? '#fff' : l.stamp ? 'var(--pm-accent)' : '#9aa29c') : (l.url ? '#fff' : '#9aa29c');
+        // 사진 있는 박지: 흰 점·초록 테두리 / 다녀옴: 초록 점 / 아직 빈 박지: 주황 점(눈에 띄게)
+        var filled = mode === 'mine' ? l.mine : !!l.url;
+        var fill = filled ? '#fff' : (mode === 'mine' && l.stamp) ? 'var(--pm-accent)' : 'var(--pm-spot)';
         L.dot.append('circle').attr('class', 'pm-dot').attr('data-sgg', c.code + c.name).attr('cx', s.__pmXY[0]).attr('cy', s.__pmXY[1])
-          .attr('fill', fill).attr('stroke', fill === '#9aa29c' ? '#fff' : 'var(--pm-accent)')
+          .attr('fill', fill).attr('stroke', filled ? 'var(--pm-accent)' : '#fff')
           .on('click', function () { openSheet(s); });
         if (l.stamp) L.lbl.append('text').attr('class', 'pm-stamp').attr('data-sgg', c.code + c.name).attr('x', s.__pmXY[0]).attr('y', s.__pmXY[1]).text('✓ 다녀옴');
         L.lbl.append('text').attr('class', 'pm-lbl pm-ls' + (l.url || l.green ? '' : ' pm-empty-lbl')).attr('data-sgg', c.code + c.name)
@@ -412,7 +415,7 @@
       .attr('font-size', fs(11.5)).attr('stroke-width', fs(3));
     L.lbl.selectAll('.pm-ls').style('display', lv === 2 ? null : 'none').attr('font-size', fs(11)).attr('stroke-width', fs(3)).attr('dy', fs(17));
     L.lbl.selectAll('.pm-stamp').style('display', lv === 2 ? null : 'none').attr('font-size', fs(11)).attr('stroke-width', fs(3)).attr('dy', fs(-9));
-    L.dot.style('display', lv === 2 ? null : 'none').selectAll('.pm-dot').attr('r', fs(5));
+    L.dot.style('display', lv === 2 ? null : 'none').selectAll('.pm-dot').attr('r', fs(6.5));
 
     var ll = centerLL();
     var sido = containing(sidos, ll);
