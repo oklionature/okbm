@@ -1339,7 +1339,7 @@
 
       function mapFilterCount(d) {
         return (spots || []).filter(function(sp) {
-          return sp && sp.lat && sp.lng && !BLOCKED_SPOT_IDS.has(String(sp.id).trim()) && hudFilterMatches(sp, d.diff, d.status, d.terrain);
+          return sp && sp.lat && sp.lng && !BLOCKED_SPOT_IDS.has(String(sp.id).trim()) && hudFilterMatches(sp, d.diff, d.status, d.terrain) && listFilterMatches(sp);
         }).length;
       }
 
@@ -1361,8 +1361,9 @@
           const act = e.target.closest('[data-mf-act]');
           if (!act) return;
           if (act.getAttribute('data-mf-act') === 'reset') {
-            mapFilterDraft = { diff: 'ALL', terrain: 'ALL', status: 'ALL' };
-            renderMapFilterSheet();
+            // 예전 지도의 "초기화"와 같다: 필터·목록 조건·검색을 모두 풀고 전국 화면으로
+            closeMapFilterSheet();
+            resetMapAll();
           } else {
             applyMapFilters(mapFilterDraft);
             closeMapFilterSheet();
@@ -1374,7 +1375,8 @@
       function renderMapFilterSheet() {
         const els = mapFilterEls();
         const d = mapFilterDraft;
-        els.sheet.innerHTML = '<div class="mf-grab"></div>' + MAP_FILTER_GROUPS.map(function(g) {
+        const listLabel = listFilterLabel();
+        els.sheet.innerHTML = '<div class="mf-grab"></div>' + (listLabel ? '<div class="mf-note">목록에서 고른 조건: <b>' + escapeHtml(listLabel) + '</b> · 초기화하면 함께 풀려요</div>' : '') + MAP_FILTER_GROUPS.map(function(g) {
           return '<div class="mf-g"><div class="mf-gt">' + g.title + '</div><div class="mf-opts">' + g.opts.map(function(o) {
             return '<button type="button" class="mf-o' + (d[g.key] === o[0] ? ' on' : '') + '" data-mf-g="' + g.key + '" data-mf-v="' + escapeHtml(o[0]) + '">' + o[1] + '</button>';
           }).join('') + '</div></div>';
@@ -1404,7 +1406,7 @@
       }
 
       function updateMapFilterBtn() {
-        const n = [currentHudFilterDiff, currentHudFilterTerrain, currentHudFilterStatus].filter(function(v) { return v !== 'ALL'; }).length;
+        const n = [currentHudFilterDiff, currentHudFilterTerrain, currentHudFilterStatus].filter(function(v) { return v !== 'ALL'; }).length + (listFilterLabel() ? 1 : 0);
         const btn = document.getElementById('mapFilterBtn'), cnt = document.getElementById('mapFilterCnt');
         if (btn) btn.classList.toggle('act', n > 0);
         if (cnt) { cnt.hidden = n === 0; cnt.textContent = String(n); }
@@ -1751,7 +1753,10 @@ function updateSmartResetButtons() {
           updateSmartResetButtons();
           return;
         }
+        resetMapAll();
+      }
 
+      function resetMapAll() {
         currentHudFilterDiff = 'ALL'; currentHudFilterStatus = 'ALL'; currentHudFilterTerrain = 'ALL';
         cycleDiffIdx = 0; cycleStatusIdx = 0; cycleTerrainIdx = 0;
         updateMapFilterBtn();
@@ -1818,6 +1823,35 @@ function updateSmartResetButtons() {
         if (String(spot.courseType || '').trim() === '종주') return true;
         var hay = [spot.fullName, spot.name, spot.spot_main, spot.spot_sub].filter(Boolean).join(' ');
         return /종주/.test(hay);
+      }
+
+      // 목록 위쪽 탭(지역별·지형별·코스별·마이보관)에서 고른 조건. 지도에도 적용된다.
+      function listFilterMatches(spot) {
+        const sId = String(spot.id).trim();
+        if (currentMasterTab === 'REGION') {
+          const regKey = normalizeTo10Regions(spot.region);
+          if (currentRegionFilter !== 'ALL' && regKey !== (currentRegionFilter === '서울인천' ? '서울/인천' : currentRegionFilter)) return false;
+        } else if (currentMasterTab === 'TERRAIN') {
+          if (currentTerrainFilter !== 'ALL' && !(spot.terrain || []).some(t => t.includes(currentTerrainFilter))) return false;
+        } else if (currentMasterTab === 'COURSE') {
+          if (currentCourseFilter === 'BEGINNER' && !isBeginnerCourseSpot(spot)) return false;
+          if (currentCourseFilter === 'HOT' && getSpotViews(spot) < 5) return false;
+          if (currentCourseFilter === 'NEW' && !spot.isNew) return false;
+        } else if (currentMasterTab === 'MY') {
+          if (currentMyFilter === 'ALL' && (!userBookmarks.has(sId) && !userVisited.has(sId))) return false;
+          if (currentMyFilter === 'BOOKMARK' && !userBookmarks.has(sId)) return false;
+          if (currentMyFilter === 'VISITED' && !userVisited.has(sId)) return false;
+        }
+        return true;
+      }
+
+      // 목록에서 고른 조건을 사람 말로(없으면 ''). 필터 버튼 숫자와 필터 판 안내에 쓴다.
+      function listFilterLabel() {
+        if (currentMasterTab === 'REGION') return currentRegionFilter !== 'ALL' ? currentRegionFilter : '';
+        if (currentMasterTab === 'TERRAIN') return currentTerrainFilter !== 'ALL' ? currentTerrainFilter : '';
+        if (currentMasterTab === 'COURSE') return ({ BEGINNER: '초보 코스', HOT: '인기', NEW: '신규' })[currentCourseFilter] || '';
+        if (currentMasterTab === 'MY') return ({ ALL: '마이보관', BOOKMARK: '찜', VISITED: '클리어' })[currentMyFilter] || '마이보관';
+        return '';
       }
 
       // 지도 필터(난이도·장소·내 기록) 판정. renderSpots와 필터 판의 "N곳 보기" 개수가 같은 규칙을 쓴다.
@@ -5852,6 +5886,7 @@ var liveSearchTimer = null;
       var clustererDebounceTimer = null;
 
       function renderSpots(forceRebuild = false) {
+        if (typeof updateMapFilterBtn === 'function') updateMapFilterBtn();
         const mapReady = isKakaoMapReady();
         if (!mapReady) {
           window.__pendingRenderSpots = forceRebuild ? 'force' : (window.__pendingRenderSpots || true);
@@ -6001,20 +6036,7 @@ var liveSearchTimer = null;
           let match = hudFilterMatches(spot, currentHudFilterDiff, currentHudFilterStatus, currentHudFilterTerrain);
 
           const regKey = normalizeTo10Regions(spot.region);
-
-          if (currentMasterTab === 'REGION') { 
-            if (currentRegionFilter !== 'ALL' && regKey !== (currentRegionFilter === '서울인천' ? '서울/인천' : currentRegionFilter)) match = false; 
-          } else if (currentMasterTab === 'TERRAIN') { 
-            if (currentTerrainFilter !== 'ALL' && !(spot.terrain || []).some(t => t.includes(currentTerrainFilter))) match = false; 
-          } else if (currentMasterTab === 'COURSE') {
-            if (currentCourseFilter === 'BEGINNER' && !isBeginnerCourseSpot(spot)) match = false;
-            else if (currentCourseFilter === 'HOT' && getSpotViews(spot) < 5) match = false;
-            else if (currentCourseFilter === 'NEW' && !spot.isNew) match = false;
-          } else if (currentMasterTab === 'MY') {
-            if (currentMyFilter === 'ALL' && (!userBookmarks.has(sId) && !userVisited.has(sId))) match = false;
-            else if (currentMyFilter === 'BOOKMARK' && !userBookmarks.has(sId)) match = false;
-            else if (currentMyFilter === 'VISITED' && !userVisited.has(sId)) match = false;
-          }
+          if (match && !listFilterMatches(spot)) match = false;
 
           if (match) {
             if (marker) activeMarkers.push(marker);
