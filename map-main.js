@@ -871,6 +871,7 @@
           localStorage.removeItem('okbm_active_spot_id');
           document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
           updateLODLabels();
+          returnToPhotoMapIfNeeded();
         }
       }
       window.closeMobileBottomSheet = closeMobileBottomSheet;
@@ -913,6 +914,7 @@
 
       function closePcSlidingDrawer() {
         var drawer = document.getElementById('pcSlidingDrawer');
+        var wasOpen = !!(drawer && drawer.classList.contains('open'));
         var closeTab = document.getElementById('floatingDrawerCloseTab');
         if (drawer) drawer.classList.remove('open');
         if (typeof window.okbmResetSheetMetrics === 'function') window.okbmResetSheetMetrics();
@@ -923,6 +925,7 @@
         try { localStorage.removeItem('okbm_active_spot_id'); } catch (e) {}
         document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
         updateLODLabels();
+        if (wasOpen) returnToPhotoMapIfNeeded();
       }
       window.closePcSlidingDrawer = closePcSlidingDrawer;
 
@@ -1262,9 +1265,11 @@
       var photoMapOpenedAt = null;
       var mapBaseLayer = 0; // 0 일반 · 1 위성 · 2 지형도 (사진지도를 켜도 그대로 둔다)
       // 0 일반 · 1 위성 · 2 지형도 · 3 사진 지도(photo-map.js, 카카오 지도 위를 덮는 시·군·박지 사진 지도)
-      function setMapLayerState(next) {
+      // view: 사진 지도를 이 범위로 연다(정보창에서 돌아올 때). 없으면 기본 지도가 보던 범위.
+      function setMapLayerState(next, view) {
         if (!map) return;
         const wasPhoto = currentMapLayerState === 3;
+        if (next === 3) photoMapReturnView = null;
         currentMapLayerState = next;
         if (next !== 3) mapBaseLayer = next;
         if (window.okbmPhotoMap && next !== 3) {
@@ -1289,7 +1294,7 @@
           // 기본 지도가 보던 범위 그대로 사진 지도를 연다
           const b = map.getBounds(), sw = b.getSouthWest(), ne = b.getNorthEast();
           photoMapOpenedAt = { level: map.getLevel(), lngSpan: ne.getLng() - sw.getLng() };
-          if (window.okbmPhotoMap) window.okbmPhotoMap.open({ minLat: sw.getLat(), minLng: sw.getLng(), maxLat: ne.getLat(), maxLng: ne.getLng() });
+          if (window.okbmPhotoMap) window.okbmPhotoMap.open(view || { minLat: sw.getLat(), minLng: sw.getLng(), maxLat: ne.getLat(), maxLng: ne.getLng() });
           try { localStorage.setItem('okbm_pm_seen', '1'); } catch (e) {}
         }
         updateMapBottomStrip();
@@ -1412,8 +1417,11 @@
         if (cnt) { cnt.hidden = n === 0; cnt.textContent = String(n); }
       }
 
-      // 사진 지도에서 "박지 정보 보기": 일반 지도로 돌아가 그 박지를 연다
+      // 사진 지도에서 "박지 정보 보기": 일반 지도로 돌아가 그 박지를 연다.
+      // 사진 지도에서 보던 범위를 기억해 두고, 그 정보창을 닫으면(✕·뒤로 가기·지도 빈 곳) 그 자리로 사진 지도를 다시 연다.
+      var photoMapReturnView = null;
       window.okbmPhotoMapGoToSpot = function(spot) {
+        const back = window.okbmPhotoMap && window.okbmPhotoMap.getView ? window.okbmPhotoMap.getView() : null;
         setMapLayerState(0);
         if (!spot) return;
         if (map && spot.lat && spot.lng) {
@@ -1421,7 +1429,13 @@
           map.setCenter(new kakao.maps.LatLng(spot.lat, spot.lng));
         }
         focusSpotOnMap(spot);
+        photoMapReturnView = back;
       };
+      function returnToPhotoMapIfNeeded() {
+        const v = photoMapReturnView;
+        photoMapReturnView = null;
+        if (v && currentMapLayerState !== 3) setMapLayerState(3, v);
+      }
 
       function locateUserPosition(e) {
         if (e) e.stopPropagation();
@@ -1781,6 +1795,7 @@ function updateSmartResetButtons() {
       }
 
       function toggleMobileSidebar() {
+        photoMapReturnView = null; // 목록을 열면 사진 지도로 돌아가지 않는다
         setMobileSidebarCollapsed(!isSidebarCollapsed);
         if (!isSidebarCollapsed) closeMobileBottomSheet();
       }
@@ -2666,6 +2681,7 @@ function updateSmartResetButtons() {
 
       function focusSpotOnMap(spot) {
         if (!spot) return;
+        photoMapReturnView = null;
         if (isPickingLocationMode || window.__adminPinMoveSpotId) return;
         if (isGuestViewer() && String(spot.id).trim() !== guestLinkedSpotId) {
           askGuestLoginForSpot(spot);

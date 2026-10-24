@@ -581,15 +581,6 @@
   // ------------------------------------------------------------------ 확대 단계
   function level() { return k < LEVEL_SPOT ? 1 : 2; }
 
-  function centerLL() {
-    var t = zt();
-    var p = t.invert([hostW / 2, hostH / 2 + 20]);
-    return proj.invert(p);
-  }
-  function containing(list, ll) {
-    return list.find(function (g) { return d3.geoContains(g.geom, ll); }) || null;
-  }
-
   var spotShown = false, spotFadeAt = 0, revealToken = 0, gesture = false;
   // 박지 단계로 갈 때: 보이는 박지 사진이 준비되면(최대 0.7초) 박지 칸을 0.3초에 걸쳐 시·군 사진 위로 겹친다
   function revealSpots() {
@@ -604,22 +595,18 @@
     Promise.race([Promise.all(waits), new Promise(function (r) { setTimeout(r, 700); })]).then(show);
   }
 
-  // 단계(lv·wide)가 바뀌면 박지 칸 보이기를 정하고, 보고 있는 시·도·시군구가 바뀌면 위쪽 숫자를 바꾼다
-  var shown = { lv: 0, wide: null, sggKey: null, sidoKey: null };
+  // 단계(lv·wide)가 바뀌면 박지 칸 보이기를 정한다
+  var shown = { lv: 0, wide: null };
   function update(force) {
     var lv = level();
     var wide = k < LEVEL_SGG; // 전국을 보는 중
     if (force || lv !== shown.lv || wide !== shown.wide) {
-      shown.lv = lv; shown.wide = wide; shown.sggKey = null; shown.sidoKey = null;
+      shown.lv = lv; shown.wide = wide;
       revealToken++;
       if (lv === 2) revealSpots(); else spotShown = false;
     }
-    var ll = centerLL();
-    var sido = containing(sidos, ll);
-    var sgg = lv === 2 ? containing(sggs, ll) : null;
-    var sggKey = sgg ? sgg.code + sgg.name : '', sidoKey = sido ? sido.code : '';
-    if (sggKey !== shown.sggKey || sidoKey !== shown.sidoKey) setHeader(lv, sido, sgg);
-    shown.sggKey = sggKey; shown.sidoKey = sidoKey;
+    // 위쪽 숫자는 늘 전국 기준(움직일 때마다 바뀌지 않게)
+    if (force) setHeader();
     scheduleImages();
   }
 
@@ -633,17 +620,8 @@
     return '피드 등록 박지 <b>' + n + '</b> / ' + spots.length;
   }
 
-  function setHeader(lv, sido, sgg) {
-    var stat;
-    if (k < LEVEL_SGG || !sido) {
-      stat = countText(spotList);
-    } else if (lv === 1 || !sgg) {
-      var all = []; sido.sggs.forEach(function (g) { all = all.concat(g.spots); });
-      stat = countText(all);
-    } else {
-      stat = sgg.spots.length ? countText(sgg.spots) : '아직 등록된 박지가 없어요';
-    }
-    host.querySelector('.pm-stat').innerHTML = stat;
+  function setHeader() {
+    host.querySelector('.pm-stat').innerHTML = countText(spotList);
   }
 
   // 화면에 보이는 칸의 사진만 줄여서 넣는다.
