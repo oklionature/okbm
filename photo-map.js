@@ -972,7 +972,8 @@
     if (card) card.style.display = 'none';
   }
 
-  function openSheet(s) {
+  // justVisited: 방금 '다녀왔어요'를 눌렀으면 후기 남기기로 넘어갈지 묻는다
+  function openSheet(s, justVisited) {
     var e = sheetEls(), card = e.card;
     var look = spotLook(s), b = bySpot[s.id] || { all: [], mine: [] };
     var guest = !loggedIn();
@@ -989,10 +990,13 @@
     else if (st === 'photo') line = '내 사진으로 채운 곳';
     else if (st === 'visited') { line = '✓ 다녀옴 · 아직 내 사진이 없어요'; note = look.url ? '흑백 사진: 다른 회원의 후기' : '이 박지는 아직 아무도 사진을 안 올렸어요. 첫 사진의 주인공이 되어 보세요!'; }
     else line = '아직 안 가 본 곳';
+    var ask = justVisited && st === 'visited';
+    if (ask) { line = '✓ 다녀왔어요!'; note = '이 박지 후기도 남길까요? 사진을 올리면 내 지도에 이 칸이 내 사진으로 채워져요.'; }
 
     var btns = [];
     if (guest) btns.push(['login', '로그인하고 박지 정보 보기', '']);
     else if (st === 'none') { btns.push(['visit', '✓ 다녀왔어요', 'ghost']); btns.push(['write', '📷 후기 올리기', '']); }
+    else if (ask) { btns.push(['later', '나중에', 'ghost']); btns.push(['write', '📷 후기 남기기', '']); }
     else if (st === 'visited') { btns.push(['unvisit', '다녀옴 취소', 'ghost']); btns.push(['write', '📷 사진 올리고 색 입히기', '']); }
     else { btns.push(['info', '박지 정보 보기', 'ghost']); btns.push(['write', '📷 후기 올리기', '']); }
 
@@ -1024,10 +1028,11 @@
       }
       if (act === 'visit' || act === 'unvisit') {
         if (window.RomanticVault && typeof window.RomanticVault.toggleVisited === 'function') window.RomanticVault.toggleVisited(s.id);
-        draw(); openSheet(s);
-        toast(act === 'visit' ? '다녀옴 표시! 사진을 올리면 색이 입혀져요' : '다녀옴을 지웠어요');
+        draw(); openSheet(s, act === 'visit');
+        if (act === 'unvisit') toast('다녀옴을 지웠어요');
         return;
       }
+      if (act === 'later') { closeSheet(); toast('다녀옴 표시했어요. 사진은 언제든 올릴 수 있어요'); return; }
       if (act === 'info') { closeSheet(); if (typeof window.okbmPhotoMapGoToSpot === 'function') window.okbmPhotoMapGoToSpot(s); return; }
       if (act === 'write') { closeSheet(); openWrite(s, ev); }
     };
@@ -1036,7 +1041,9 @@
   // 지도에서 쓰는 "사진과 함께 올리기" 창을 그대로 연다. 창이 닫히면 내 후기를 다시 받아 색을 입힌다.
   function openWrite(s, ev) {
     if (typeof window.openPastTripRegisterModal !== 'function') return;
+    window.__pastTripStayOnClose = true; // 닫거나 다 올리면 마이리포트가 아니라 사진 지도로 돌아온다
     window.openPastTripRegisterModal(ev);
+    window.__pastTripStayOnClose = false; // 로그인 창이 떠서 안 열린 경우를 위해
     if (!document.getElementById('pastTripRegisterModal')) return; // 로그인 창이 뜬 경우
     var pool = typeof window._pastTripBuildSpotSearchPool === 'function' ? window._pastTripBuildSpotSearchPool() : [];
     var item = pool.find(function (p) { return String(p.id) === String(s.id); });

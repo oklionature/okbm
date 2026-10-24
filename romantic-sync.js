@@ -7207,7 +7207,7 @@ window.closePastTripRegisterModal = function(opts) {
   var choice = document.getElementById('pastTripSpotChoiceOverlay');
   if (choice) choice.remove();
   var el = document.getElementById('pastTripRegisterModal');
-  var fromPlan = !!(el && el.dataset.fromPlan === '1');
+  var fromPlan = !!(el && (el.dataset.fromPlan === '1' || el.dataset.stay === '1'));
   if (el) el.remove();
   var search = document.getElementById('pastTripSpotSearchModal');
   if (search) search.remove();
@@ -8985,7 +8985,10 @@ window.openPastTripRegisterModal = function(ev) {
   }
   var fromPlan = !!window.__pastTripOpenedFromPlan;
   window.__pastTripOpenedFromPlan = false;
-  if (!fromPlan && typeof window.recordModalHistoryStep === 'function') {
+  // 사진 지도처럼 마이리포트 밖에서 연 곳은 닫거나 다 올린 뒤 그 자리에 그대로 남는다(마이리포트로 가지 않게)
+  var stay = !!window.__pastTripStayOnClose;
+  window.__pastTripStayOnClose = false;
+  if (!fromPlan && !stay && typeof window.recordModalHistoryStep === 'function') {
     window.recordModalHistoryStep('userProfileModalOverlay', function() {
       if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
     });
@@ -9005,6 +9008,7 @@ window.openPastTripRegisterModal = function(ev) {
   var modal = document.createElement('div');
   modal.id = 'pastTripRegisterModal';
   if (fromPlan) modal.dataset.fromPlan = '1';
+  if (stay) modal.dataset.stay = '1';
   modal.className = 'custom-modal-overlay';
   modal.style.cssText = 'display:flex; position:fixed; inset:0; background:#000000; z-index:2147483642; justify-content:center; align-items:stretch; padding:0;';
   modal.onclick = function(e) { if (e.target === modal) window.closePastTripRegisterModal(); };
@@ -9324,7 +9328,7 @@ window.submitPastTripRegister = async function() {
     if (typeof window.refreshMyReportFullStats === 'function') window.refreshMyReportFullStats();
     window._ptwShowDone(newRecord, function() {
     var el = document.getElementById('pastTripRegisterModal');
-    var fromPlan = !!(el && el.dataset.fromPlan === '1');
+    var fromPlan = !!(el && (el.dataset.fromPlan === '1' || el.dataset.stay === '1'));
     if (el) el.remove();
     if (fromPlan) return;
 
