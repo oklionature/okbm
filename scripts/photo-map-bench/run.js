@@ -14,7 +14,7 @@ const srv=http.createServer((q,r)=>{let u=decodeURIComponent(q.url.split('?')[0]
   const pg=await ctx.newPage();
   let imgReq=0, imgBytes=0;
   await pg.route('https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/**',async rt=>{const m=rt.request().url().match(/p(\d+)_/);const d=fs.readFileSync(IMG+'/p'+m[1]+'.jpg');imgReq++;imgBytes+=d.length;await new Promise(r=>setTimeout(r,150));rt.fulfill({body:d,contentType:'image/jpeg',headers:{'access-control-allow-origin':'*'}});});
-  await pg.route('https://img.romanticroute.kr/**',async rt=>{if(!CDN_OK){await new Promise(r=>setTimeout(r,300));return rt.abort();}const m=rt.request().url().match(/p(\d+)_/);rt.fulfill({body:fs.readFileSync(IMG+'/p'+m[1]+'.jpg'),contentType:'image/jpeg'});});
+  await pg.route('https://img.romanticroute.kr/**',async rt=>{if(!CDN_OK){await new Promise(r=>setTimeout(r,300));return rt.abort();}const u=rt.request().url(),m=u.match(/p(\d+)_/),w=(u.match(/width=(\d+)/)||[])[1];const f=w&&fs.existsSync(IMG+'/p'+m[1]+'_w'+w+'.jpg')?IMG+'/p'+m[1]+'_w'+w+'.jpg':IMG+'/p'+m[1]+'.jpg';rt.fulfill({body:fs.readFileSync(f),contentType:'image/jpeg'});});
   await pg.addInitScript(({spots,feeds})=>{window.spots=spots;window.okbmPublicFetch=u=>new Promise(r=>setTimeout(()=>r(new Response(JSON.stringify(feeds))),400));},{spots,feeds});
   const cdp=await ctx.newCDPSession(pg);await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});
   await pg.goto(`http://localhost:${port}/h.html`);

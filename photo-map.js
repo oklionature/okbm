@@ -11,7 +11,7 @@
 //       출처 표시는 terms.html "사용한 공개 자료"에 둔다(CC BY 4.0은 별도 안내 페이지 표시를 인정한다).
 // 켤 때는 기본 지도가 보던 범위를 그대로 이어받고, 끌 때는 사진 지도가 보던 범위를 기본 지도에 돌려준다(둘 다 메르카토르).
 // d3는 CSP 때문에 vendor/에 두고, 사진 모드를 처음 켤 때만 불러온다.
-// 사진은 원본을 받아 기기 안에서 작게 줄여 쓴다(R2가 Access-Control-Allow-Origin: * 를 준다). 메모리 때문이다.
+// 사진은 img.romanticroute.kr에서 Cloudflare가 줄여 준 것을 받고, 안 되면 원본을 받아 기기 안에서 줄인다(아래 "사진 줄이기").
 // =========================================================================
 (function () {
   'use strict';
@@ -25,6 +25,9 @@
   var THUMB = { sido: 360, sgg: 360, spot: 720 };
 
   var host = null, svg = null, defs = null, root = null, L = {};
+  // 화면 크기: 확대 중에 host.clientWidth를 읽으면 강제 레이아웃이 생겨서 열 때·resize 때만 잰다
+  var hostW = 0, hostH = 0;
+  function measure() { hostW = host.clientWidth || window.innerWidth; hostH = host.clientHeight || window.innerHeight; }
   var proj = null, gpath = null, zoom = null, k = 1;
   var geo = null, feedsAll = null, feedsMine = null;
   var sidos = [], sggs = [], spotList = [], bySpot = {};
@@ -46,10 +49,13 @@
     '.pm-img.pm-in{opacity:1;}',
     '.pm-img.pm-gray{filter:grayscale(1) contrast(.9);opacity:.55;}',
     '.pm-img.pm-fresh{transition:filter 1.6s,opacity 1.6s;}',
-    '.pm-dot{stroke-width:2.5;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));vector-effect:non-scaling-stroke;cursor:pointer;}',
-    '.pm-lbl{font-weight:700;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-linejoin:round;text-anchor:middle;pointer-events:none;font-family:var(--font-body,sans-serif);}',
+    '.pm-dot{r:calc(6.5px / var(--pm-k,1));stroke-width:2.5;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));vector-effect:non-scaling-stroke;cursor:pointer;}',
+    '.pm-lbl{stroke-width:calc(3px / var(--pm-k,1));font-weight:700;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-linejoin:round;text-anchor:middle;pointer-events:none;font-family:var(--font-body,sans-serif);}',
+    '.pm-lp{font-size:calc(13px / var(--pm-k,1));}',
+    '.pm-lc{font-size:calc(11.5px / var(--pm-k,1));}',
+    '.pm-ls{font-size:calc(11px / var(--pm-k,1));}',
     '.pm-empty-lbl{fill:var(--pm-sub);stroke:#fff;}',
-    '.pm-stamp{font-weight:800;fill:var(--pm-accent);paint-order:stroke;stroke:#fff;stroke-linejoin:round;text-anchor:middle;pointer-events:none;}',
+    '.pm-stamp{font-size:calc(11px / var(--pm-k,1));stroke-width:calc(3px / var(--pm-k,1));font-weight:800;fill:var(--pm-accent);paint-order:stroke;stroke:#fff;stroke-linejoin:round;text-anchor:middle;pointer-events:none;}',
     '.pm-top{position:absolute;top:calc(var(--okbm-status-top, env(safe-area-inset-top, 0px)) + 8px);left:10px;right:10px;display:flex;gap:8px;align-items:center;justify-content:space-between;z-index:2;}',
     '.pm-seg{display:flex;background:var(--pm-chip);border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.2);flex:none;}',
     '.pm-seg button{border:0;background:none;padding:6px 11px;border-radius:999px;font-size:12.5px;color:var(--pm-chip-sub);font-weight:600;}',
@@ -141,7 +147,8 @@
   }
 
   function buildGeo() {
-    var W = host.clientWidth || window.innerWidth, H = host.clientHeight || window.innerHeight;
+    measure();
+    var W = hostW, H = hostH;
     lastW = W;
     var fc = { type: 'FeatureCollection', features: geo.sido.map(function (s) { return { type: 'Feature', geometry: s.g }; }) };
     proj = d3.geoMercator().fitExtent([[6, 64], [W - 6, H - 64]], fc);
@@ -364,7 +371,25 @@
         .attr('x', c.c[0]).attr('y', c.c[1]).attr('data-w', c.box[1][0] - c.box[0][0]).text(c.name);
     });
 
-    // 3단계: 박지 칸 (시군구 모양을 가장 가까운 박지 기준으로 나눔) + 실제 자리 점
+    sggs.forEach(function (c) { L.edge.append('path').attr('d', c.d).attr('class', 'pm-edge pm-edge-sgg'); });
+    sidos.forEach(function (c) { L.edge.append('path').attr('d', c.d).attr('class', 'pm-edge pm-edge-sido'); });
+    spotDrawn = false;
+    update(true);
+    // 박지 칸은 확대해야 보이니 처음 화면이 뜬 뒤 쉬는 틈에 그린다(그 전에 박지 단계로 들어가면 그때 바로 그린다)
+    var token = ++spotDrawToken;
+    setTimeout(function () {
+      if (token !== spotDrawToken || spotDrawn) return;
+      var go = function () { if (token === spotDrawToken && !spotDrawn) { drawSpotLayer(); update(true); } };
+      if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 2000 }); else go();
+    }, 300);
+  }
+
+  var spotDrawn = false, spotDrawToken = 0;
+  function ensureSpotLayer() { if (!spotDrawn) drawSpotLayer(); }
+
+  // 3단계: 박지 칸 (시군구 모양을 가장 가까운 박지 기준으로 나눔) + 실제 자리 점
+  function drawSpotLayer() {
+    spotDrawn = true;
     sggs.forEach(function (c) {
       if (!c.spots.length) return;
       var g = L.spot.append('g').attr('data-sgg', c.code + c.name);
@@ -391,14 +416,11 @@
         L.dot.append('circle').attr('class', 'pm-dot').attr('data-sgg', c.code + c.name).attr('cx', s.__pmXY[0]).attr('cy', s.__pmXY[1])
           .attr('fill', fill).attr('stroke', filled ? 'var(--pm-accent)' : '#fff')
           .on('click', function () { openSheet(s); });
-        if (l.stamp) L.lbl.append('text').attr('class', 'pm-stamp').attr('data-sgg', c.code + c.name).attr('x', s.__pmXY[0]).attr('y', s.__pmXY[1]).text('✓ 다녀옴');
+        if (l.stamp) L.lbl.append('text').attr('class', 'pm-stamp').attr('data-sgg', c.code + c.name).attr('x', s.__pmXY[0]).attr('y', s.__pmXY[1]).attr('dy', '-0.818em').text('✓ 다녀옴');
         L.lbl.append('text').attr('class', 'pm-lbl pm-ls' + (l.url || l.green ? '' : ' pm-empty-lbl')).attr('data-sgg', c.code + c.name)
-          .attr('x', s.__pmXY[0]).attr('y', s.__pmXY[1]).text(String(s.spot_main || s.name || '').trim());
+          .attr('x', s.__pmXY[0]).attr('y', s.__pmXY[1]).attr('dy', '1.545em').text(String(s.spot_main || s.name || '').trim());
       });
     });
-    sggs.forEach(function (c) { L.edge.append('path').attr('d', c.d).attr('class', 'pm-edge pm-edge-sgg'); });
-    sidos.forEach(function (c) { L.edge.append('path').attr('d', c.d).attr('class', 'pm-edge pm-edge-sido'); });
-    update();
   }
 
   // ------------------------------------------------------------------ 확대 단계
@@ -406,42 +428,67 @@
 
   function centerLL() {
     var t = d3.zoomTransform(svg.node());
-    var p = t.invert([host.clientWidth / 2, host.clientHeight / 2 + 20]);
+    var p = t.invert([hostW / 2, hostH / 2 + 20]);
     return proj.invert(p);
   }
   function containing(list, ll) {
     return list.find(function (g) { return d3.geoContains(g.geom, ll); }) || null;
   }
 
-  function update() {
+  // 손가락 이벤트가 한 프레임에 여러 번 와도 한 번만 돈다. 첫 번째는 바로 하고(다음 프레임으로 미루면 계산이 두 번 된다)
+  // 같은 프레임에 또 오면 다음 프레임에 몰아서 한 번.
+  var raf = 0, dirty = false;
+  function requestUpdate() {
+    if (raf) { dirty = true; return; }
+    update();
+    raf = requestAnimationFrame(function () { raf = 0; if (dirty) { dirty = false; update(); } });
+  }
+
+  // 단계(lv·wide)와 보고 있는 시군구가 바뀔 때만 스타일을 다시 쓴다. 글자·점 크기는 CSS 변수 --pm-k 하나로 맞춘다.
+  var shown = { lv: 0, wide: null, sggKey: null, sidoKey: null };
+  function update(force) {
     var lv = level();
     var wide = k < LEVEL_SGG; // 전국을 보는 중
-    L.sido.style('display', 'none');
-    L.sgg.selectAll('.pm-sggimg').style('opacity', lv === 2 ? 0 : 1);
-    L.sgg.selectAll('.pm-region').style('pointer-events', lv === 1 ? null : 'none');
-    L.spot.style('display', lv === 2 ? null : 'none');
-    L.edge.selectAll('.pm-edge-sgg').attr('stroke-width', lv === 2 ? 3 : wide ? 0.5 : 1);
-    L.edge.selectAll('.pm-edge-sido').attr('stroke-width', lv === 2 ? 0 : 2);
-    var fs = function (px) { return px / k; };
-    L.lbl.selectAll('.pm-lp').style('display', wide ? null : 'none').attr('font-size', fs(13)).attr('stroke-width', fs(3));
-    // 시군구 이름은 칸이 화면에서 46px보다 넓을 때만
-    L.lbl.selectAll('.pm-lc').style('display', function () { return lv === 1 && !wide && Number(this.getAttribute('data-w')) * k > 46 ? null : 'none'; })
-      .attr('font-size', fs(11.5)).attr('stroke-width', fs(3));
-    L.lbl.selectAll('.pm-ls').style('display', lv === 2 ? null : 'none').attr('font-size', fs(11)).attr('stroke-width', fs(3)).attr('dy', fs(17));
-    L.lbl.selectAll('.pm-stamp').style('display', lv === 2 ? null : 'none').attr('font-size', fs(11)).attr('stroke-width', fs(3)).attr('dy', fs(-9));
-    L.dot.style('display', lv === 2 ? null : 'none').selectAll('.pm-dot').attr('r', fs(6.5));
+    // 맨 위(root)에 걸면 사진·칸까지 수천 개 스타일을 다시 계산하므로 글자·점 묶음에만 건다
+    L.lbl.style('--pm-k', k); L.dot.style('--pm-k', k);
+    if (force || lv !== shown.lv || wide !== shown.wide) {
+      shown.lv = lv; shown.wide = wide; shown.sggKey = null; shown.sidoKey = null; shown.lcHidden = false;
+      if (lv === 2) ensureSpotLayer();
+      L.sido.style('display', 'none');
+      L.sgg.selectAll('.pm-sggimg').style('opacity', lv === 2 ? 0 : 1);
+      L.sgg.selectAll('.pm-region').style('pointer-events', lv === 1 ? null : 'none');
+      L.spot.style('display', lv === 2 ? null : 'none');
+      L.edge.selectAll('.pm-edge-sgg').attr('stroke-width', lv === 2 ? 3 : wide ? 0.5 : 1);
+      L.edge.selectAll('.pm-edge-sido').attr('stroke-width', lv === 2 ? 0 : 2);
+      L.lbl.selectAll('.pm-lp').style('display', wide ? null : 'none');
+      L.lbl.selectAll('.pm-ls,.pm-stamp').style('display', lv === 2 ? null : 'none');
+      L.dot.style('display', lv === 2 ? null : 'none');
+      // CSS r을 못 쓰는 브라우저도 대강 맞게
+      if (lv === 2) L.dot.selectAll('.pm-dot').attr('r', 6.5 / k);
+    }
+    // 시군구 이름은 칸이 화면에서 46px보다 넓을 때만(확대 정도에 따라 바뀌므로 시군구 단계에선 매번 본다)
+    if (lv === 1 && !wide) {
+      L.lbl.selectAll('.pm-lc').each(function () {
+        var on = Number(this.getAttribute('data-w')) * k > 46;
+        if (this.__pmOn !== on) { this.__pmOn = on; this.style.display = on ? '' : 'none'; }
+      });
+    } else if (shown.lcHidden !== true) {
+      L.lbl.selectAll('.pm-lc').each(function () { this.__pmOn = false; this.style.display = 'none'; });
+    }
+    shown.lcHidden = !(lv === 1 && !wide);
 
     var ll = centerLL();
     var sido = containing(sidos, ll);
     var sgg = lv === 2 ? containing(sggs, ll) : null;
-    // 박지 단계: 보고 있는 시군구만 또렷하게
-    if (lv === 2) {
-      var key = sgg ? sgg.code + sgg.name : '';
-      L.spot.selectAll('g[data-sgg]').style('opacity', function () { return this.getAttribute('data-sgg') === key ? 1 : 0.35; });
-      L.dot.selectAll('.pm-dot').style('opacity', function () { return this.getAttribute('data-sgg') === key ? 1 : 0.4; });
-      L.lbl.selectAll('.pm-ls,.pm-stamp').style('opacity', function () { return this.getAttribute('data-sgg') === key ? 1 : 0.4; });
+    var sggKey = sgg ? sgg.code + sgg.name : '', sidoKey = sido ? sido.code : '';
+    // 박지 단계: 보고 있는 시군구만 또렷하게(중심 시군구가 바뀔 때만)
+    if (lv === 2 && sggKey !== shown.sggKey) {
+      L.spot.selectAll('g[data-sgg]').style('opacity', function () { return this.getAttribute('data-sgg') === sggKey ? 1 : 0.35; });
+      L.dot.selectAll('.pm-dot').style('opacity', function () { return this.getAttribute('data-sgg') === sggKey ? 1 : 0.4; });
+      L.lbl.selectAll('.pm-ls,.pm-stamp').style('opacity', function () { return this.getAttribute('data-sgg') === sggKey ? 1 : 0.4; });
     }
-    setHeader(lv, sido, sgg);
+    if (sggKey !== shown.sggKey || sidoKey !== shown.sidoKey) setHeader(lv, sido, sgg);
+    shown.sggKey = sggKey; shown.sidoKey = sidoKey;
     scheduleImages();
   }
 
@@ -468,29 +515,42 @@
     host.querySelector('.pm-stat').innerHTML = stat;
   }
 
-  // 화면에 보이는 칸의 사진만 줄여서 넣는다
+  // 화면에 보이는 칸의 사진만 줄여서 넣는다.
+  // 확대해서 칸이 커지면 한 단계 큰 사진으로 바꿔 끼운다(다 받은 뒤에 바꿔서 깜빡이지 않게).
+  // 크기는 단계로 고정한다: Cloudflare가 사진·크기마다 한 번씩 줄이므로(월 5,000건 무료) 단계가 적어야 건수가 안 는다.
+  // 원본을 받아 기기에서 줄이는 쪽(thumb)은 무거워서 1080까지만.
+  var SIZES = [120, 320, 640, 1080, 1600], THUMB_MAX = 1080;
+  function sizeFor(need) {
+    for (var i = 0; i < SIZES.length; i++) if (SIZES[i] >= need) return SIZES[i];
+    return SIZES[SIZES.length - 1];
+  }
   var imgTimer = null;
   function scheduleImages() { clearTimeout(imgTimer); imgTimer = setTimeout(ensureImages, 120); }
   function ensureImages() {
     if (!opened) return;
     var t = d3.zoomTransform(svg.node());
-    var x0 = t.invertX(0), y0 = t.invertY(0), x1 = t.invertX(host.clientWidth), y1 = t.invertY(host.clientHeight);
+    var x0 = t.invertX(0), y0 = t.invertY(0), x1 = t.invertX(hostW), y1 = t.invertY(hostH);
     var lv = level();
     var layer = lv === 1 ? L.sgg : L.spot;
     var dpr = Math.min(2, window.devicePixelRatio || 1);
     layer.selectAll('image.pm-img').each(function () {
       var el = this;
-      if (el.getAttribute('href')) return;
       if (lv === 2 && el.classList.contains('pm-sggimg')) return;
       var b = el.getAttribute('data-box').split(',').map(Number);
       if (b[2] < x0 || b[0] > x1 || b[3] < y0 || b[1] > y1) return;
-      el.setAttribute('href', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
-      // 화면에서 칸이 차지하는 크기만큼만 줄인다(전국에선 작은 칸이 많다)
+      // 화면에서 칸이 차지하는 크기만큼만 줄인다(전국에선 작은 칸이 많다). 박지 단계는 640부터.
+      var src = el.getAttribute('data-src');
       var need = Math.max(b[2] - b[0], b[3] - b[1]) * t.k * dpr;
-      var size = lv === 2 ? SPOT_PX : (need < 120 ? 120 : need < 320 ? 320 : 640);
-      bestThumb(el.getAttribute('data-src'), size).then(function (u) {
-        if (!u) return;
+      var size = sizeFor(lv === 2 ? Math.max(SPOT_PX, need * 0.8) : need);
+      if (!cdnUrl(src, size)) size = Math.min(size, THUMB_MAX);
+      var have = Number(el.getAttribute('data-have')) || 0, want = Number(el.getAttribute('data-want')) || 0;
+      if (have >= size || want >= size) return;
+      el.setAttribute('data-want', size);
+      if (!have) el.setAttribute('href', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
+      bestThumb(src, size).then(function (u) {
+        if (!u || (Number(el.getAttribute('data-have')) || 0) >= size) return;
         el.setAttribute('href', u);
+        el.setAttribute('data-have', size);
         el.classList.add('pm-in');
         if (el.getAttribute('data-fresh')) setTimeout(function () { el.classList.remove('pm-gray'); }, 120);
       });
@@ -498,7 +558,7 @@
   }
 
   function zoomToBox(box, fit, minK) {
-    var W = host.clientWidth, H = host.clientHeight;
+    var W = hostW, H = hostH;
     var dx = box[1][0] - box[0][0], dy = box[1][1] - box[0][1];
     var s = Math.min(80, fit / Math.max(dx / W, dy / (H - 200)));
     if (minK) s = Math.max(s, minK);
@@ -651,19 +711,19 @@
     defs = svg.append('defs');
     root = svg.append('g');
     ['sido', 'sgg', 'spot', 'edge', 'dot', 'lbl'].forEach(function (n) { L[n] = root.append('g').attr('class', 'pm-l-' + n); });
-    zoom = d3.zoom().scaleExtent([0.3, 120]).on('zoom', function (e) { root.attr('transform', e.transform); k = e.transform.k; update(); });
+    zoom = d3.zoom().scaleExtent([0.3, 120]).on('zoom', function (e) { root.attr('transform', e.transform); k = e.transform.k; requestUpdate(); });
     svg.call(zoom).on('dblclick.zoom', null);
   }
 
   function setup() {
     if (busy) return busy;
-    busy = loadScript(D3_URL).then(function () {
-      return Promise.all([
-        geo ? geo : fetch(GEO_URL).then(function (r) { return r.json(); }),
-        fetchPublicFeeds(),
-        fetchMyFeeds()
-      ]);
-    }).then(function (r) {
+    // 경계·피드는 d3가 필요 없으니 d3와 동시에 받는다
+    busy = Promise.all([
+      geo ? geo : fetch(GEO_URL).then(function (r) { return r.json(); }),
+      fetchPublicFeeds(),
+      fetchMyFeeds(),
+      loadScript(D3_URL)
+    ]).then(function (r) {
       geo = r[0]; feedsAll = r[1]; feedsMine = r[2];
       if (!host) buildHost();
       if (!opened) host.style.display = 'none';
@@ -676,7 +736,7 @@
   // 기본 지도가 보던 범위(위도·경도)를 사진 지도 확대 상태로 바꾼다
   function applyView(v) {
     if (!v || !proj) return;
-    var W = host.clientWidth, H = host.clientHeight;
+    var W = hostW, H = hostH;
     var p0 = proj([v.minLng, v.maxLat]), p1 = proj([v.maxLng, v.minLat]);
     var dx = p1[0] - p0[0], dy = p1[1] - p0[1];
     if (!(dx > 0 && dy > 0)) return;
@@ -687,7 +747,7 @@
   function getView() {
     if (!opened || !host || !proj) return null;
     var t = d3.zoomTransform(svg.node());
-    var a = proj.invert(t.invert([0, 0])), b = proj.invert(t.invert([host.clientWidth, host.clientHeight]));
+    var a = proj.invert(t.invert([0, 0])), b = proj.invert(t.invert([hostW, hostH]));
     if (!a || !b) return null;
     return { minLat: b[1], maxLat: a[1], minLng: a[0], maxLng: b[0] };
   }
@@ -733,7 +793,7 @@
     clearTimeout(window.__pmResize);
     window.__pmResize = setTimeout(function () {
       var w = host.clientWidth;
-      if (Math.abs(w - lastW) < 120) return;
+      if (Math.abs(w - lastW) < 120) { measure(); return; }
       lastW = w;
       buildGeo(); buildSpots(); svg.call(zoom.transform, d3.zoomIdentity); draw();
     }, 250);

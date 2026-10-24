@@ -8,3 +8,6 @@ for i in range(12):
     d = ImageDraw.Draw(im)
     for x in range(0, 3000, 100): d.line([(x, 0), (x, 2000)], fill=(255, 255, 255), width=6)
     im.save(os.path.join(out, 'p%d.jpg' % i), quality=90)
+    # 새 주소(Cloudflare 줄이기)를 흉내 낼 때 쓰는 크기별 사본
+    for w in (120, 320, 640, 1080, 1600):
+        im.resize((w, w * 2 // 3)).save(os.path.join(out, 'p%d_w%d.jpg' % (i, w)), quality=70)
