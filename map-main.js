@@ -1310,6 +1310,8 @@
         if (layerText) layerText.textContent = ['일반', '위성', '지형도'][mapBaseLayer] || '일반';
         const photoBtn = document.getElementById('mbsPhotoBtn');
         if (photoBtn) photoBtn.classList.toggle('on', currentMapLayerState === 3);
+        const photoText = document.getElementById('mbsPhotoText');
+        if (photoText) photoText.textContent = currentMapLayerState === 3 ? '박지지도' : '사진지도';
         const dot = document.getElementById('mbsPhotoNew');
         if (dot) { var seen = false; try { seen = localStorage.getItem('okbm_pm_seen') === '1'; } catch (e) {} dot.hidden = seen; }
       }
