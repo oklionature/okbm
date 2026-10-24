@@ -1587,17 +1587,23 @@
       .okbm-spot-notice-frame { position: relative; width: min(100%, 480px); max-height: 100%; display: flex; }
       .okbm-spot-notice-scroll { width: 100%; max-height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; border-radius: 14px; background: #0c1220; }
       .okbm-spot-notice-scroll img { display: block; width: 100%; height: auto; }
+      /* 버튼은 알림창 바닥에 붙여 늘 보이게(작은 휴대폰에서도) */
+      .okbm-spot-notice-act { position: sticky; bottom: 0; display: block; width: calc(100% - 32px); margin: 0 16px; padding: 15px 10px; box-shadow: 0 -14px 18px 6px #0c1220; border: 0; border-radius: 12px; background: #2f9e6a; color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; }
+      .okbm-spot-notice-act[hidden] { display: none; }
+      .okbm-spot-notice-pad { height: 14px; }
       .okbm-spot-notice-x { position: absolute; top: 10px; right: 10px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.55); color: #fff; font-size: 15px; font-weight: 700; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
     </style>
-    <div id="okbmNewSpotNotice" class="okbm-spot-notice" data-notice-id="20261016-1" hidden>
+    <div id="okbmNewSpotNotice" class="okbm-spot-notice" data-notice-id="20261025-photomap" data-notice-img="/notice/photo-map.jpg" data-notice-action="photomap" hidden>
       <div class="okbm-spot-notice-frame">
         <button type="button" id="okbmNewSpotNoticeClose" class="okbm-spot-notice-x" aria-label="닫기">✕</button>
         <div class="okbm-spot-notice-scroll">
-          <img id="okbmNewSpotNoticeImg" src="/notice/new-spots.jpg" alt="낭만루트 신규 박지">
+          <img id="okbmNewSpotNoticeImg" alt="낭만루트 새 기능: 내가 다녀온 박지가 사진 지도가 돼요">
+          <button type="button" id="okbmNoticeAction" class="okbm-spot-notice-act" hidden>내 포토맵 열어 보기</button>
+          <div class="okbm-spot-notice-pad"></div>
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.47"></script>
+       <script src="map-main.js?v=1.0.48"></script>
     <script src="photo-map.js?v=15" defer></script>
     <script src="spot-tips.js?v=7" defer></script>
     <script src="home-metrics.js?v=3" defer></script>

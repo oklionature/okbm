@@ -8349,18 +8349,31 @@ var overlay = document.getElementById('customModalOverlay');
           var img = document.getElementById('okbmNewSpotNoticeImg');
           if (img && img.getAttribute('data-notice-bound') !== noticeId) {
             img.setAttribute('data-notice-bound', noticeId);
-            img.src = '/notice/new-spots.jpg?v=' + encodeURIComponent(noticeId);
+            img.src = (root.getAttribute('data-notice-img') || '/notice/new-spots.jpg') + '?v=' + encodeURIComponent(noticeId);
             img.addEventListener('error', function() { root.hidden = true; });
           }
           root.hidden = false;
           if (root.parentNode) root.parentNode.appendChild(root);
         }
 
+        function closeNotice() {
+          try { localStorage.setItem(storageKey, noticeId); } catch (e) {}
+          root.hidden = true;
+        }
         var closeBtn = document.getElementById('okbmNewSpotNoticeClose');
-        if (closeBtn) {
-          closeBtn.addEventListener('click', function() {
-            try { localStorage.setItem(storageKey, noticeId); } catch (e) {}
-            root.hidden = true;
+        if (closeBtn) closeBtn.addEventListener('click', closeNotice);
+
+        // 공지 아래 버튼: data-notice-action="photomap"이면 닫고 사진 지도를 연다(지도가 아직 준비 전이면 잠깐 기다린다)
+        var actBtn = document.getElementById('okbmNoticeAction');
+        if (actBtn && root.getAttribute('data-notice-action') === 'photomap') {
+          actBtn.hidden = false;
+          actBtn.addEventListener('click', function() {
+            closeNotice();
+            var tries = 0;
+            (function go() {
+              if (map && window.okbmPhotoMap) { if (currentMapLayerState !== 3) togglePhotoMap(); return; }
+              if (++tries < 40) setTimeout(go, 250);
+            })();
           });
         }
 
