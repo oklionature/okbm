@@ -647,12 +647,12 @@
       c.font = '700 7px ' + EXPORT_EN; c.fillStyle = bg.sub; spacedText(c, 'ROMANTIC ROUTE · BACKPACKING PHOTO MAP', 14, 22, 1.6);
       fitFont(900, 19, EXPORT_SERIF, title, 160); c.fillStyle = bg.ink; c.fillText(title, 14, 46);
       c.fillStyle = bg.sub; c.fillRect(14, 54, 22, 1.5);
-      // 큰 숫자 뒤: 모두는 '곳'(제목과 같은 세리프), 내 지도는 '/ 431'(숫자와 같은 글꼴)
+      // 큰 숫자 뒤: 모두는 'SPOTS', 내 지도는 '/ 431'(둘 다 숫자와 같은 영문 글꼴)
       c.font = '700 30px ' + EXPORT_EN; c.fillStyle = bg.ink;
       var n = String(o.mine ? o.went : o.total); c.fillText(n, 14, 90);
       var nx = 14 + c.measureText(n).width + 3;
       if (o.mine) { c.font = '500 13px ' + EXPORT_EN; c.fillStyle = bg.sub; c.fillText('/ ' + o.total, nx + 1, 90); }
-      else { c.font = '900 13px ' + EXPORT_SERIF; c.fillStyle = bg.ink; c.fillText('곳', nx, 90); }
+      else { c.font = '700 11px ' + EXPORT_EN; c.fillStyle = bg.sub; spacedText(c, 'SPOTS', nx + 1, 90, 1.2); }
     }
     // 오른쪽 아래: 작은 로고 + 주소(로고는 글씨 높이에 맞추고 글씨 가운데 줄에 붙인다)
     var fy = LH - 12, fs = 9.5, d = 11.5;
