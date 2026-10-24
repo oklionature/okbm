@@ -572,6 +572,96 @@
   // 공유 이미지에서 이 칸을 어느 판에 그리나: 본토 / 제주(왼쪽 아래로 옮김) / 울릉도(오른쪽 동해로 옮김)
   function exportPartOf(c) { return c.code === '50' ? 'jeju' : c.name === '울릉군' ? 'ulleung' : 'main'; }
   var EXPORT_BG = { sky: { sea: '#aad3ea', ink: '#1d2320', sub: '#2f5d48', foot: 'rgba(29,35,32,.7)' }, white: { sea: '#ffffff', ink: '#1d2320', sub: '#2f8a62', foot: 'rgba(29,35,32,.6)' }, navy: { sea: '#0f1d33', ink: '#ffffff', sub: '#8fe0b5', foot: 'rgba(255,255,255,.7)' } };
+  // 제목 글꼴(세리프·영문)과 로고를 한 번만 불러 둔다(못 불러도 기본 글꼴로 그린다)
+  var EXPORT_SERIF = "'Noto Serif KR', serif", EXPORT_EN = "'Space Grotesk', sans-serif", exportAssets = null;
+  function loadExportAssets() {
+    if (exportAssets) return exportAssets;
+    if (!document.querySelector('link[data-pm-font]')) {
+      var l = document.createElement('link'); l.rel = 'stylesheet'; l.setAttribute('data-pm-font', '1');
+      l.href = 'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700;900&family=Space+Grotesk:wght@500;700&display=swap';
+      document.head.appendChild(l);
+    }
+    var fonts = document.fonts ? Promise.all([
+      document.fonts.load("900 20px 'Noto Serif KR'", '낭만루트 나의 백패킹 지도'),
+      document.fonts.load("700 20px 'Space Grotesk'", 'ROMANTIC ROUTE 0123456789/'),
+      document.fonts.load("500 20px 'Space Grotesk'", 'ROMANTIC ROUTE 0123456789/')
+    ]).catch(function () {}) : Promise.resolve();
+    var logo = new Promise(function (r) { var im = new Image(); im.onload = function () { r(im); }; im.onerror = function () { r(null); }; im.src = '/logo.png'; });
+    exportAssets = Promise.race([Promise.all([fonts, logo]), new Promise(function (r) { setTimeout(r, 4000); })]).then(function (v) { return { logo: v ? v[1] : null }; });
+    return exportAssets;
+  }
+  // 글자 사이를 벌려 쓴다(캔버스 letterSpacing이 없는 기기도 있어 한 글자씩)
+  function spacedText(c, text, x, y, gap) {
+    for (var i = 0; i < text.length; i++) { c.fillText(text[i], x, y); x += c.measureText(text[i]).width + gap; }
+    return x;
+  }
+  function roundRect(c, x, y, w, h, r) {
+    c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+  }
+  // 남색 동그라미 안에 산·해 로고
+  function logoBadge(c, logo, x, y, d) {
+    c.save();
+    c.beginPath(); c.arc(x + d / 2, y + d / 2, d / 2, 0, Math.PI * 2); c.fillStyle = '#16233a'; c.fill();
+    if (logo) c.drawImage(logo, x + d * 0.14, y + d * 0.1, d * 0.72, d * 0.72);
+    c.restore();
+  }
+  // 공유 이미지의 제목·숫자·주소. 시안 세 가지: a 잡지 표지, b 로고 배지, c 떠 있는 카드
+  function drawExportHeader(c, style, o) {
+    var bg = o.bg, LW = o.LW, LH = o.LH, title = o.mine ? '나의 백패킹 지도' : '낭만루트 백패킹 지도';
+    c.setTransform(o.S, 0, 0, o.S, 0, 0);
+    c.textBaseline = 'alphabetic'; c.textAlign = 'left';
+    // 제목이 지도 글자에 닿지 않게 폭(maxW)을 넘으면 글자를 줄인다
+    function fitFont(weight, size, family, text, maxW) {
+      c.font = weight + ' ' + size + 'px ' + family;
+      var w = c.measureText(text).width;
+      if (w > maxW) { size = Math.floor(size * maxW / w * 10) / 10; c.font = weight + ' ' + size + 'px ' + family; }
+      return size;
+    }
+    // 큰 숫자 + 작은 꼬리말
+    function bigNum(x, y, size, ink, sub) {
+      c.font = '700 ' + size + 'px ' + EXPORT_EN; c.fillStyle = ink;
+      var n = String(o.mine ? o.went : o.total); c.fillText(n, x, y);
+      x += c.measureText(n).width + 4;
+      c.font = '700 ' + Math.round(size * 0.36) + 'px ' + fontFamily; c.fillStyle = sub;
+      c.fillText(o.mine ? '/ ' + o.total + ' 박지' : '박지', x, y);
+    }
+    if (style === 'b') {
+      logoBadge(c, o.logo, 14, 12, 44);
+      c.font = '900 13px ' + fontFamily; c.fillStyle = bg.ink; c.fillText('낭만루트', 64, 32);
+      c.font = '500 7px ' + EXPORT_EN; c.fillStyle = bg.sub; spacedText(c, 'ROMANTIC ROUTE', 64, 44, 1.2);
+      fitFont(900, 18, fontFamily, title, 160); c.fillStyle = bg.ink; c.fillText(title, 14, 80);
+      bigNum(14, 108, 24, bg.sub, bg.sub);
+    } else if (style === 'c') {
+      // 카드 폭은 제목 길이에 맞춘다
+      fitFont(900, 15, fontFamily, title, 140);
+      var cw = Math.max(110, c.measureText(title).width + 22);
+      c.save();
+      c.shadowColor = 'rgba(0,0,0,.18)'; c.shadowBlur = 10; c.shadowOffsetY = 3;
+      roundRect(c, 10, 10, cw, 82, 12); c.fillStyle = 'rgba(255,255,255,.92)'; c.fill();
+      c.restore();
+      logoBadge(c, o.logo, 20, 19, 18);
+      c.font = '700 7px ' + EXPORT_EN; c.fillStyle = '#5b6b62'; spacedText(c, 'ROMANTIC ROUTE', 43, 31, 1.2);
+      fitFont(900, 15, fontFamily, title, 140); c.fillStyle = '#16233a'; c.fillText(title, 21, 56);
+      bigNum(20, 82, 20, '#2f8a62', '#5b6b62');
+    } else {
+      c.font = '700 7px ' + EXPORT_EN; c.fillStyle = bg.sub; spacedText(c, 'ROMANTIC ROUTE · BACKPACKING MAP', 14, 22, 1.6);
+      fitFont(900, 19, EXPORT_SERIF, title, 160); c.fillStyle = bg.ink; c.fillText(title, 14, 46);
+      c.fillStyle = bg.sub; c.fillRect(14, 54, 22, 1.5);
+      // 큰 숫자 뒤: 모두는 '곳'(제목과 같은 세리프), 내 지도는 '/ 431'(숫자와 같은 글꼴)
+      c.font = '700 30px ' + EXPORT_EN; c.fillStyle = bg.ink;
+      var n = String(o.mine ? o.went : o.total); c.fillText(n, 14, 90);
+      var nx = 14 + c.measureText(n).width + 3;
+      if (o.mine) { c.font = '500 13px ' + EXPORT_EN; c.fillStyle = bg.sub; c.fillText('/ ' + o.total, nx + 1, 90); }
+      else { c.font = '900 13px ' + EXPORT_SERIF; c.fillStyle = bg.ink; c.fillText('곳', nx, 90); }
+    }
+    // 오른쪽 아래: 작은 로고 + 주소(로고는 글씨 높이에 맞추고 글씨 가운데 줄에 붙인다)
+    var fy = LH - 12, fs = 9.5, d = 11.5;
+    c.textAlign = 'right'; c.font = '700 ' + fs + 'px ' + EXPORT_EN; c.fillStyle = bg.foot;
+    c.fillText('romanticroute.kr', LW - 12, fy);
+    var w = c.measureText('romanticroute.kr').width;
+    logoBadge(c, o.logo, LW - 12 - w - 4 - d, fy - fs * 0.36 - d / 2, d);
+  }
+
   function exportImage(opt) {
     opt = opt || {};
     var OW = opt.width || 1080, OH = opt.height || 1350, bg = EXPORT_BG[opt.bg] || EXPORT_BG.sky;
@@ -608,7 +698,11 @@
       if (sl.have >= size) return;
       jobs.push(loadImg(sl.url, size).then(function (im) { if (im && sl.have < size) { if (!sl.img) sl.at = 0; sl.img = im; sl.have = size; } }));
     });
-    var wait = Promise.race([Promise.all(jobs), new Promise(function (r) { setTimeout(r, 8000); })]);
+    var assets = {};
+    var wait = Promise.all([
+      Promise.race([Promise.all(jobs), new Promise(function (r) { setTimeout(r, 8000); })]),
+      loadExportAssets().then(function (a) { assets = a; })
+    ]);
     return wait.then(function () {
       var out = document.createElement('canvas'); out.width = OW; out.height = OH;
       var keep = { canvas: canvas, ctx: ctx, dpr: dpr, hostW: hostW, hostH: hostH, OVER: OVER, committed: committed, k: k, sea: COLOR.sea };
@@ -621,23 +715,13 @@
         exporting = false; exportPart = null; COLOR.sea = keep.sea;
         canvas = keep.canvas; ctx = keep.ctx; dpr = keep.dpr; hostW = keep.hostW; hostH = keep.hostH; OVER = keep.OVER; committed = keep.committed; k = keep.k;
       }
-      // 왼쪽 위 제목·숫자, 오른쪽 아래 주소
-      var c2 = out.getContext('2d');
-      c2.setTransform(S, 0, 0, S, 0, 0);
-      c2.textBaseline = 'alphabetic'; c2.textAlign = 'left';
-      c2.fillStyle = bg.ink; c2.font = '800 18px ' + fontFamily;
-      c2.fillText(mode === 'mine' ? '나의 백패킹 지도' : '낭만루트 백패킹 지도', 14, 32);
       // 숫자: 모두는 총 박지 수, 내 지도는 가 본 박지(내 피드 박지 + 다녀옴) / 전체 박지
-      var line = '총 박지 ' + spotList.length + '곳';
+      var total = spotList.length, went = 0;
       if (mode === 'mine') {
-        var went = 0, vs = visitedSet();
+        var vs = visitedSet();
         spotList.forEach(function (s) { var x = bySpot[s.id]; if ((x && x.mine.length) || vs.has(String(s.id).trim())) went++; });
-        line = went + ' / ' + spotList.length;
       }
-      c2.font = '800 15px ' + fontFamily; c2.fillStyle = bg.sub;
-      c2.fillText(line, 14, 54);
-      c2.textAlign = 'right'; c2.font = '700 11px ' + fontFamily; c2.fillStyle = bg.foot;
-      c2.fillText('romanticroute.kr', LW - 12, LH - 10);
+      drawExportHeader(out.getContext('2d'), opt.style || 'a', { S: S, LW: LW, LH: LH, bg: bg, mine: mode === 'mine', went: went, total: total, logo: assets.logo });
       return out;
     });
   }
