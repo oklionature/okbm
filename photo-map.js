@@ -244,7 +244,8 @@
   }
 
   // ------------------------------------------------------------------ 사진 줄이기
-  // R2의 작은 사본: <공개 주소>/thumb/<원본 키> (긴 변 480px). 업로드 Worker가 새 사진마다, scripts/photo-thumbs.py가 예전 사진에 만든다
+  // R2의 작은 사본: <공개 주소>/thumb/<원본 키> (긴 변 480px). 지도엔 피드 대표 사진만 나오므로 그 사진만 사본이 있다.
+  // 없으면 업로드 Worker의 POST /thumb에 만들어 달라고 하고(다음부터 사본을 씀), 이번엔 기기에서 줄여 쓴다.
   var R2_BASE = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
   var premade = new Map();
   function premadeThumb(url, size) {
@@ -254,11 +255,19 @@
     var p = new Promise(function (ok) {
       var img = new Image();
       img.onload = function () { ok(t); };
-      img.onerror = function () { ok(null); };
+      img.onerror = function () { ok(null); requestThumb(url); };
       img.src = t;
     });
     premade.set(t, p);
     return p;
+  }
+  var requested = {};
+  function requestThumb(url) {
+    if (requested[url] || !window.OKBM_CF_UPLOAD_URL) return;
+    requested[url] = 1;
+    try {
+      fetch(window.OKBM_CF_UPLOAD_URL + '/thumb', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: url }) }).catch(function () {});
+    } catch (e) {}
   }
   // 작은 사본이 있으면 그것, 없으면(방금 올라온 피드) 원본을 받아 기기에서 줄인다
   function bestThumb(url, size) {

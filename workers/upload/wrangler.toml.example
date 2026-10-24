@@ -10,7 +10,7 @@ compatibility_date = "2026-09-26"
 binding = "MY_BUCKET"
 bucket_name = "romanticroute"
 
-# 사진 지도용 작은 사본(thumb/<키>, 긴 변 480px)을 만든다
+# 사진 지도용 작은 사본(POST /thumb → thumb/<키>, 긴 변 480px)을 만든다
 [images]
 binding = "IMAGES"
 

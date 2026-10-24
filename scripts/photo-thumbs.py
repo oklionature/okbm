@@ -3,7 +3,8 @@
 
 원본  https://pub-….r2.dev/<key>
 사본  https://pub-….r2.dev/thumb/<key>  (긴 변 480px, 전국·시군·박지 칸 모두. 크게 보는 건 원본으로 연다)
-사본은 확장자와 상관없이 JPEG이다. 업로드 Worker도 새 사진마다 같은 자리에 사본을 만든다. 이미 있는 사본은 건너뛴다(공개 주소로 HEAD).
+지도에는 피드마다 대표 사진(첫 장)만 나오므로 첫 장만 만든다. 사본은 확장자와 상관없이 JPEG이다.
+새 피드는 사진 지도가 사본이 없을 때 업로드 Worker의 POST /thumb로 만든다. 이미 있는 사본은 건너뛴다(공개 주소로 HEAD).
 photo-map.js는 사본을 먼저 쓰고, 없으면 기기에서 원본을 줄여 쓴다.
 
 사용(이 Mac, wrangler 로그인 필요):
@@ -35,9 +36,9 @@ def feed_photo_urls():
     rows = json.load(urllib.request.urlopen(req, timeout=30))
     urls = []
     for r in rows:
-        for u in r.get("photos") or []:
-            if isinstance(u, str) and u.startswith(PUBLIC_BASE + "/") and "/thumb/" not in u:
-                urls.append(u.split("?")[0])
+        first = next((u for u in (r.get("photos") or []) if isinstance(u, str) and u.startswith("https://")), None)
+        if first and first.startswith(PUBLIC_BASE + "/") and "/thumb/" not in first:
+            urls.append(first.split("?")[0])
     return sorted(set(urls))
 
 
@@ -77,7 +78,7 @@ def make(url, work):
 def main():
     dry = "--dry-run" in sys.argv
     urls = feed_photo_urls()
-    print(f"피드 사진 {len(urls)}장")
+    print(f"피드 대표 사진 {len(urls)}장")
     if dry:
         missing = [u for u in urls if not exists(f"{PUBLIC_BASE}/thumb/{urllib.parse.unquote(u[len(PUBLIC_BASE) + 1:])}")]
         print(f"사본 없는 사진 {len(missing)}장")

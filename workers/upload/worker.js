@@ -13,8 +13,9 @@
 //   REQUIRE_AUTH             "false"(전환기: 토큰 있으면 검증, 없으면 통과) / "true"(토큰 필수)
 //   DELETE_SECRET            (secret) delete-account Edge Function이 사진 삭제를 요청할 때 쓰는 비밀값
 //
-// 작은 사본(사진 지도용): 원본을 저장한 뒤 IMAGES 바인딩이 있으면 thumb/<키>(긴 변 480px) JPEG 하나를 만든다(사진 1장에 변환 1번).
-//   응답을 기다리게 하지 않고(waitUntil), 실패해도 업로드는 성공으로 둔다. 예전 사진은 scripts/photo-thumbs.py로 만든다.
+// 작은 사본(사진 지도용): POST /thumb { url } → R2에 있는 그 원본으로 thumb/<키>(긴 변 480px) JPEG 하나를 만든다.
+//   사진 지도가 피드 대표 사진의 사본이 없을 때만 부른다. 그래서 대표 사진만, 사진 1장에 변환 1번(이미 있으면 안 만든다).
+//   사본은 서버가 원본으로 직접 만드니 남이 내용을 바꿔 넣을 수 없다. 예전 사진은 scripts/photo-thumbs.py로 만든다.
 // 사진 삭제: POST /delete  Authorization: Bearer <DELETE_SECRET>  { "urls": ["https://pub-.../key", ...] }
 //   공개 도메인 아래의 키만 지운다. 최대 200개.
 // =========================================================================
@@ -179,29 +180,48 @@ async function handleCspReport(req) {
 
 const THUMB_PX = 480;
 
-async function makeThumb(env, bucket, key, buf) {
-  if (!env.IMAGES) return;
+async function handleThumb(req, env) {
+  if (!env.IMAGES) return fail(req, "thumb_unavailable", 501);
+  const origin = req.headers.get("Origin") || "";
+  if (!origin || !isAllowedOrigin(origin)) return fail(req, "origin_not_allowed", 403);
+  let body = {};
+  try { body = await req.json(); } catch { return fail(req, "invalid_json", 400); }
+  const base = publicBase(env) + "/";
+  const s = String(body.url || "").trim();
+  if (!s.startsWith(base)) return fail(req, "bad_url", 400);
+  const key = decodeURIComponent(s.slice(base.length).split(/[?#]/)[0]);
+  if (!key || key.includes("..") || key.startsWith("/") || !ALLOWED_PREFIXES.has(key.split("/")[0])) return fail(req, "bad_url", 400);
+  const bucket = bucketOf(env);
+  const thumbKey = `thumb/${key}`;
+  const thumbUrl = `${publicBase(env)}/${thumbKey}`;
+  if (await bucket.head(thumbKey)) return reply(req, { status: "SUCCESS", url: thumbUrl, made: false });
+  const obj = await bucket.get(key);
+  if (!obj) return fail(req, "not_found", 404);
+  if (obj.size > MAX_BYTES) return fail(req, "too_large", 413);
   try {
-    const out = await env.IMAGES.input(new Blob([buf]).stream())
+    const out = await env.IMAGES.input(obj.body)
       .transform({ width: THUMB_PX, height: THUMB_PX, fit: "scale-down" })
       .output({ format: "image/jpeg", quality: 72 });
     const thumb = await out.response().arrayBuffer();
-    await bucket.put(`thumb/${key}`, thumb, {
+    await bucket.put(thumbKey, thumb, {
       httpMetadata: { contentType: "image/jpeg", cacheControl: "public, max-age=31536000, immutable" },
     });
   } catch (e) {
     console.log("thumb-fail", key, String(e).slice(0, 160));
+    return fail(req, "thumb_failed", 500);
   }
+  return reply(req, { status: "SUCCESS", url: thumbUrl, made: true });
 }
 
 export default {
-  async fetch(req, env, ctx) {
+  async fetch(req, env) {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
     if (req.method !== "POST") return fail(req, "method_not_allowed", 405);
 
     const url = new URL(req.url);
     if (url.pathname === "/delete") return handleDelete(req, env);
     if (url.pathname === "/csp-report") return handleCspReport(req);
+    if (url.pathname === "/thumb") return handleThumb(req, env);
 
     const origin = req.headers.get("Origin") || "";
     if (origin && !isAllowedOrigin(origin)) return fail(req, "origin_not_allowed", 403);
@@ -233,7 +253,6 @@ export default {
       customMetadata: { owner, uploadedAt: new Date().toISOString() },
     });
 
-    if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(makeThumb(env, bucket, key, buf));
     return reply(req, { status: "SUCCESS", url: `${publicBase(env)}/${key}` });
   },
 };
