@@ -1899,12 +1899,14 @@ function updateSmartResetButtons() {
         return true;
       }
 
+      // 백보킹: 주차하고 5~10분만 걸으면 닿는 곳. 난이도 1~2 + 걷는 거리 0.5km 이하(2026-10-25, 1km는 15~20분이라 너무 넓었다)
+      var BEGINNER_MAX_KM = 0.5;
       function isBeginnerCourseSpot(spot) {
         if (!spot || isTraverseCourseSpot(spot)) return false;
         var diff = parseInt(spot.difficulty, 10);
         if (!diff || diff < 1 || diff > 2) return false;
         var km = parseSpotDistanceKm(spot);
-        return km != null && km <= 1;
+        return km != null && km <= BEGINNER_MAX_KM;
       }
 
       function isCampBanned(spot) {
