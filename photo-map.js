@@ -582,7 +582,7 @@
       document.head.appendChild(l);
     }
     var fonts = document.fonts ? Promise.all([
-      document.fonts.load("900 20px 'Noto Serif KR'", '나의 낭만루트 포토맵'),
+      document.fonts.load("900 20px 'Noto Serif KR'", '낭만루트 나의 백패킹 포토맵'),
       document.fonts.load("700 20px 'Space Grotesk'", 'ROMANTIC ROUTE 0123456789/'),
       document.fonts.load("500 20px 'Space Grotesk'", 'ROMANTIC ROUTE 0123456789/')
     ]).catch(function () {}) : Promise.resolve();
@@ -607,7 +607,7 @@
   }
   // 공유 이미지의 제목·숫자·주소. 시안 세 가지: a 잡지 표지, b 로고 배지, c 떠 있는 카드
   function drawExportHeader(c, style, o) {
-    var bg = o.bg, LW = o.LW, LH = o.LH, title = o.mine ? '나의 낭만루트 포토맵' : '낭만루트 포토맵';
+    var bg = o.bg, LW = o.LW, LH = o.LH, title = o.mine ? '나의 백패킹 포토맵' : '낭만루트 백패킹 포토맵';
     c.setTransform(o.S, 0, 0, o.S, 0, 0);
     c.textBaseline = 'alphabetic'; c.textAlign = 'left';
     // 제목이 지도 글자에 닿지 않게 폭(maxW)을 넘으면 글자를 줄인다
@@ -644,7 +644,7 @@
       fitFont(900, 15, fontFamily, title, 140); c.fillStyle = '#16233a'; c.fillText(title, 21, 56);
       bigNum(20, 82, 20, '#2f8a62', '#5b6b62');
     } else {
-      c.font = '700 7px ' + EXPORT_EN; c.fillStyle = bg.sub; spacedText(c, 'ROMANTIC ROUTE · PHOTO MAP', 14, 22, 1.6);
+      c.font = '700 7px ' + EXPORT_EN; c.fillStyle = bg.sub; spacedText(c, 'ROMANTIC ROUTE · BACKPACKING PHOTO MAP', 14, 22, 1.6);
       fitFont(900, 19, EXPORT_SERIF, title, 160); c.fillStyle = bg.ink; c.fillText(title, 14, 46);
       c.fillStyle = bg.sub; c.fillRect(14, 54, 22, 1.5);
       // 큰 숫자 뒤: 모두는 '곳'(제목과 같은 세리프), 내 지도는 '/ 431'(숫자와 같은 글꼴)
