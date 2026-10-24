@@ -251,8 +251,10 @@
   // R2가 아닌 사진이나 실패하면 원본을 받아 기기에서 줄인다(thumb).
   var R2_BASE = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
   var IMG_BASE = 'https://img.romanticroute.kr/';
+  // 새 주소가 한 번 실패하면(도메인 미연결·이미지 줄이기 꺼짐 등) 이번에 열린 동안은 바로 원본 쪽으로 간다.
+  var cdnDown = false;
   function cdnUrl(url, w) {
-    if (!url || url.indexOf(R2_BASE) !== 0) return null;
+    if (cdnDown || !url || url.indexOf(R2_BASE) !== 0) return null;
     return IMG_BASE + 'cdn-cgi/image/width=' + w + ',quality=70,fit=scale-down,format=auto/' + url.slice(R2_BASE.length).split('?')[0];
   }
   var cdnLoads = new Map();
@@ -263,7 +265,7 @@
     var p = new Promise(function (ok) {
       var img = new Image();
       img.onload = function () { ok(c); };
-      img.onerror = function () { thumb(url, size).then(ok); };
+      img.onerror = function () { cdnDown = true; thumb(url, size).then(ok); };
       img.src = c;
     });
     cdnLoads.set(c, p);
@@ -548,7 +550,7 @@
 
     card.innerHTML =
       '<div class="pm-grab"></div><button type="button" class="pm-x" data-pm="close" aria-label="닫기">×</button>' +
-      (photos.length ? '<div class="pm-gal' + (look.gray ? ' pm-gal-gray' : '') + '">' + photos.map(function (u) { return '<img alt="" loading="lazy" src="' + esc(cdnUrl(u, 1080) || u) + '">'; }).join('') + '</div>' +
+      (photos.length ? '<div class="pm-gal' + (look.gray ? ' pm-gal-gray' : '') + '">' + photos.map(function (u) { return '<img alt="" loading="lazy" data-orig="' + esc(u) + '" src="' + esc(cdnUrl(u, 1080) || u) + '">'; }).join('') + '</div>' +
         (photos.length > 1 ? '<div class="pm-gcount">1 / ' + photos.length + '</div>' : '') : '<div class="pm-nophoto"></div>') +
       '<div class="pm-sheet-t"><b>' + esc(name) + (sub ? ' · ' + esc(sub) : '') + '</b><small>' + esc(place) + ' · ' + esc(line) + '</small>' + (note ? '<i>' + esc(note) + '</i>' : '') + '</div>' +
       '<div class="pm-btns">' + btns.map(function (x) { return '<button type="button" class="' + x[2] + '" data-pm="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>';
@@ -557,6 +559,10 @@
     card.style.animation = 'none'; void card.offsetHeight; card.style.animation = '';
 
     var gal = card.querySelector('.pm-gal'), gc = card.querySelector('.pm-gcount');
+    // 새 주소 사진이 안 뜨면 원본으로 바꿔 끼운다
+    if (gal) Array.prototype.forEach.call(gal.querySelectorAll('img[data-orig]'), function (im) {
+      im.addEventListener('error', function () { var o = im.getAttribute('data-orig'); if (o && im.src !== o) { cdnDown = true; im.src = o; } });
+    });
     if (gal && gc) gal.addEventListener('scroll', function () { gc.textContent = (Math.round(gal.scrollLeft / gal.clientWidth) + 1) + ' / ' + photos.length; });
     card.onclick = function (ev) {
       var btn = ev.target.closest('[data-pm]'); if (!btn) return;
