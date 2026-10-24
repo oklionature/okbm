@@ -626,14 +626,16 @@
       c2.setTransform(S, 0, 0, S, 0, 0);
       c2.textBaseline = 'alphabetic'; c2.textAlign = 'left';
       c2.fillStyle = bg.ink; c2.font = '800 18px ' + fontFamily;
-      c2.fillText('낭만루트 백패킹 지도', 14, 32);
-      // 숫자는 내 지도일 때만: 가 본 박지(내 피드 박지 + 다녀옴) / 전체 박지
+      c2.fillText(mode === 'mine' ? '나의 백패킹 지도' : '낭만루트 백패킹 지도', 14, 32);
+      // 숫자: 모두는 총 박지 수, 내 지도는 가 본 박지(내 피드 박지 + 다녀옴) / 전체 박지
+      var line = '총 박지 ' + spotList.length + '곳';
       if (mode === 'mine') {
         var went = 0, vs = visitedSet();
         spotList.forEach(function (s) { var x = bySpot[s.id]; if ((x && x.mine.length) || vs.has(String(s.id).trim())) went++; });
-        c2.font = '800 15px ' + fontFamily; c2.fillStyle = bg.sub;
-        c2.fillText(went + ' / ' + spotList.length, 14, 54);
+        line = went + ' / ' + spotList.length;
       }
+      c2.font = '800 15px ' + fontFamily; c2.fillStyle = bg.sub;
+      c2.fillText(line, 14, 54);
       c2.textAlign = 'right'; c2.font = '700 11px ' + fontFamily; c2.fillStyle = bg.foot;
       c2.fillText('romanticroute.kr', LW - 12, LH - 10);
       return out;
