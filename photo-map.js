@@ -46,6 +46,8 @@
     '.pm-edge{fill:none;stroke:var(--pm-line);vector-effect:non-scaling-stroke;pointer-events:none;}',
     '.pm-edge-sido{stroke:#a9a59b;}',
     '.pm-img{pointer-events:none;opacity:0;transition:opacity .35s;}',
+    // 박지 층은 칸마다 따로 뜨지 않고 사진이 준비되면 통째로 서서히 겹친다(revealSpots)
+    '.pm-l-spot{transition:opacity .3s;}',
     '.pm-img.pm-in{opacity:1;}',
     '.pm-img.pm-gray{filter:grayscale(1) contrast(.9);opacity:.55;}',
     '.pm-img.pm-fresh{transition:filter 1.6s,opacity 1.6s;}',
@@ -271,7 +273,8 @@
     if (cdnLoads.has(c)) return cdnLoads.get(c);
     var p = new Promise(function (ok) {
       var img = new Image();
-      img.onload = function () { ok(c); };
+      // 다 풀린(decode) 뒤에 넘겨야 바꿔 끼울 때 잠깐 비지 않는다
+      img.onload = function () { if (img.decode) img.decode().then(function () { ok(c); }, function () { ok(c); }); else ok(c); };
       img.onerror = function () { cdnDown = true; thumb(url, size).then(ok); };
       img.src = c;
     });
@@ -373,7 +376,7 @@
 
     sggs.forEach(function (c) { L.edge.append('path').attr('d', c.d).attr('class', 'pm-edge pm-edge-sgg'); });
     sidos.forEach(function (c) { L.edge.append('path').attr('d', c.d).attr('class', 'pm-edge pm-edge-sido'); });
-    spotDrawn = false;
+    spotDrawn = false; spotShown = false;
     update(true);
     // 박지 칸은 확대해야 보이니 처음 화면이 뜬 뒤 쉬는 틈에 그린다(그 전에 박지 단계로 들어가면 그때 바로 그린다)
     var token = ++spotDrawToken;
@@ -444,6 +447,21 @@
     raf = requestAnimationFrame(function () { raf = 0; if (dirty) { dirty = false; update(); } });
   }
 
+  var spotShown = false, revealToken = 0;
+  function revealSpots() {
+    var token = revealToken;
+    var waits = ensureImages() || [];
+    var show = function () {
+      if (token !== revealToken || level() !== 2) return;
+      spotShown = true;
+      L.spot.style('opacity', 1);
+      setTimeout(function () { if (token === revealToken && level() === 2) L.sgg.selectAll('.pm-sggimg').style('opacity', 0); }, 320);
+    };
+    if (spotShown || !waits.length) return show();
+    // 오래 걸리면 0.7초 뒤엔 그냥 보인다
+    Promise.race([Promise.all(waits), new Promise(function (r) { setTimeout(r, 700); })]).then(show);
+  }
+
   // 단계(lv·wide)와 보고 있는 시군구가 바뀔 때만 스타일을 다시 쓴다. 글자·점 크기는 CSS 변수 --pm-k 하나로 맞춘다.
   var shown = { lv: 0, wide: null, sggKey: null, sidoKey: null };
   function update(force) {
@@ -455,9 +473,11 @@
       shown.lv = lv; shown.wide = wide; shown.sggKey = null; shown.sidoKey = null; shown.lcHidden = false;
       if (lv === 2) ensureSpotLayer();
       L.sido.style('display', 'none');
-      L.sgg.selectAll('.pm-sggimg').style('opacity', lv === 2 ? 0 : 1);
       L.sgg.selectAll('.pm-region').style('pointer-events', lv === 1 ? null : 'none');
-      L.spot.style('display', lv === 2 ? null : 'none');
+      // 박지 단계로 갈 때 시·군 사진은 박지 사진이 준비될 때까지 그대로 둔다(빈칸이 먼저 깔려 반짝이지 않게)
+      revealToken++;
+      if (lv === 2) { L.spot.style('display', null); if (!spotShown) L.spot.style('opacity', 0); revealSpots(); }
+      else { spotShown = false; L.spot.style('display', 'none').style('opacity', 0); L.sgg.selectAll('.pm-sggimg').style('opacity', 1); }
       L.edge.selectAll('.pm-edge-sgg').attr('stroke-width', lv === 2 ? 3 : wide ? 0.5 : 1);
       L.edge.selectAll('.pm-edge-sido').attr('stroke-width', lv === 2 ? 0 : 2);
       L.lbl.selectAll('.pm-lp').style('display', wide ? null : 'none');
@@ -533,6 +553,7 @@
     var lv = level();
     var layer = lv === 1 ? L.sgg : L.spot;
     var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var waits = [];
     layer.selectAll('image.pm-img').each(function () {
       var el = this;
       if (lv === 2 && el.classList.contains('pm-sggimg')) return;
@@ -547,14 +568,16 @@
       if (have >= size || want >= size) return;
       el.setAttribute('data-want', size);
       if (!have) el.setAttribute('href', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
-      bestThumb(src, size).then(function (u) {
+      var p = bestThumb(src, size).then(function (u) {
         if (!u || (Number(el.getAttribute('data-have')) || 0) >= size) return;
         el.setAttribute('href', u);
         el.setAttribute('data-have', size);
         el.classList.add('pm-in');
         if (el.getAttribute('data-fresh')) setTimeout(function () { el.classList.remove('pm-gray'); }, 120);
       });
+      if (!have) waits.push(p);
     });
+    return waits;
   }
 
   function zoomToBox(box, fit, minK) {
