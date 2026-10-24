@@ -73,11 +73,10 @@
     '.pm-top{align-items:flex-start;}',
     '.pm-head{min-width:0;color:#1d2320;text-shadow:0 0 3px #aad3ea,0 0 6px #aad3ea;transition:opacity .25s;pointer-events:none;}',
     '.pm-head .e{font:700 9px/1 "Space Grotesk",sans-serif;letter-spacing:.2em;color:#2f5d48;margin-top:4px;white-space:nowrap;}',
-    '.pm-head .t{font-family:"Noto Serif KR",serif;font-weight:900;font-size:20px;line-height:1.2;margin-top:7px;white-space:nowrap;}',
+    '.pm-head .t{font-family:"Noto Serif KR",serif;font-weight:600;font-size:20px;line-height:1.2;margin-top:7px;white-space:nowrap;}',
     '.pm-head .r{width:22px;height:2px;background:#2f5d48;margin:8px 0 6px;}',
     '.pm-head .n{font:700 36px/1 "Space Grotesk",sans-serif;letter-spacing:-.02em;}',
     '.pm-head .n small{font:500 14px/1 "Space Grotesk",sans-serif;color:#2f5d48;letter-spacing:0;margin-left:4px;}',
-    '.pm-head .n small.u{font-weight:700;font-size:12px;letter-spacing:.12em;}',
     // 확대하면 제목은 지도를 가리지 않게 숨긴다
     '.pm-zoomed .pm-head{opacity:0;}',
     // 오른쪽: 모두/내 지도 밑에 한눈에 보기(사이 4px)
@@ -604,7 +603,7 @@
     if (exportAssets) return exportAssets;
     if (!document.querySelector('link[data-pm-font]')) {
       var l = document.createElement('link'); l.rel = 'stylesheet'; l.setAttribute('data-pm-font', '1');
-      l.href = 'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700;900&family=Space+Grotesk:wght@500;700&display=swap';
+      l.href = 'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700;900&family=Space+Grotesk:wght@500;700&display=swap';
       document.head.appendChild(l);
     }
     var fonts = document.fonts ? Promise.all([
@@ -673,12 +672,11 @@
       c.font = '700 7px ' + EXPORT_EN; c.fillStyle = bg.sub; spacedText(c, 'ROMANTIC ROUTE · BACKPACKING PHOTO MAP', 14, 22, 1.6);
       fitFont(900, 19, EXPORT_SERIF, title, 160); c.fillStyle = bg.ink; c.fillText(title, 14, 46);
       c.fillStyle = bg.sub; c.fillRect(14, 54, 22, 1.5);
-      // 큰 숫자 뒤: 모두는 'SPOTS', 내 지도는 '/ 431'(둘 다 숫자와 같은 영문 글꼴)
+      // 큰 숫자 = 채워진 박지, 뒤에 '/ 전체'(숫자와 같은 영문 글꼴)
       c.font = '700 30px ' + EXPORT_EN; c.fillStyle = bg.ink;
-      var n = String(o.mine ? o.went : o.total); c.fillText(n, 14, 90);
+      var n = String(o.went); c.fillText(n, 14, 90);
       var nx = 14 + c.measureText(n).width + 3;
-      if (o.mine) { c.font = '500 13px ' + EXPORT_EN; c.fillStyle = bg.sub; c.fillText('/ ' + o.total, nx + 1, 90); }
-      else { c.font = '700 11px ' + EXPORT_EN; c.fillStyle = bg.sub; spacedText(c, 'SPOTS', nx + 1, 90, 1.2); }
+      c.font = '500 13px ' + EXPORT_EN; c.fillStyle = bg.sub; c.fillText('/ ' + o.total, nx + 1, 90);
     }
     // 오른쪽 아래: 작은 로고 + 주소(로고는 글씨 높이에 맞추고 글씨 가운데 줄에 붙인다)
     var fy = LH - 12, fs = 9.5, d = 11.5;
@@ -812,11 +810,15 @@
   }
 
   // 위쪽 제목·숫자(포토맵 카드와 같은 말): 모두는 전체 박지 수, 내 지도는 가 본 박지(내 피드 박지 + 다녀옴) / 전체 박지
+  // 숫자는 둘 다 '채워진 박지 / 전체': 모두는 누군가 피드 사진을 올린 박지, 내 지도는 내가 가 본 박지(내 피드 + 다녀옴).
+  // 아직 다 안 찼다는 게 보여야 "내가 채워야지"가 된다.
   function headInfo() {
     var total = spotList.length, went = 0;
     if (mode === 'mine') {
       var vs = visitedSet();
       spotList.forEach(function (s) { var x = bySpot[s.id]; if ((x && x.mine.length) || vs.has(String(s.id).trim())) went++; });
+    } else {
+      spotList.forEach(function (s) { var x = bySpot[s.id]; if (x && x.all.length) went++; });
     }
     return { mine: mode === 'mine', went: went, total: total, title: mode === 'mine' ? '나의 백패킹 포토맵' : '낭만루트 백패킹 포토맵' };
   }
@@ -825,7 +827,7 @@
     var h = headInfo();
     host.querySelector('.pm-head').innerHTML =
       '<div class="e">ROMANTIC ROUTE · PHOTO MAP</div><div class="t">' + h.title + '</div><div class="r"></div>' +
-      '<div class="n">' + (h.mine ? h.went + '<small>/ ' + h.total + '</small>' : h.total + '<small class="u">SPOTS</small>') + '</div>';
+      (h.total ? '<div class="n">' + h.went + '<small>/ ' + h.total + '</small></div>' : ''); // 박지를 아직 못 받았으면 숫자는 뺀다
   }
 
   // ------------------------------------------------------------------ 한눈에 보기(공유 이미지 카드)
