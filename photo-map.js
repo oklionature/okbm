@@ -65,11 +65,37 @@
     '.pm-stage{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:pointer;}',
     '.pm-canvas{position:absolute;left:-30%;top:-30%;width:160%;height:160%;transform-origin:18.75% 18.75%;will-change:transform;}',
     '.pm-top{position:absolute;top:calc(var(--okbm-status-top, env(safe-area-inset-top, 0px)) + 8px);left:10px;right:10px;display:flex;gap:8px;align-items:center;justify-content:space-between;z-index:2;}',
-    '.pm-seg{display:flex;background:var(--pm-chip);border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.2);flex:none;}',
-    '.pm-seg button{border:0;background:none;padding:6px 11px;border-radius:999px;font-size:12.5px;color:var(--pm-chip-sub);font-weight:600;}',
+    // 모두/내 지도와 한눈에 보기는 같은 높이(30px)
+    '.pm-seg{display:flex;height:30px;box-sizing:border-box;background:var(--pm-chip);border-radius:999px;padding:2px;box-shadow:0 2px 10px rgba(0,0,0,.2);flex:none;}',
+    '.pm-seg button{border:0;background:none;height:26px;padding:0 11px;border-radius:999px;font-size:12.5px;line-height:26px;color:var(--pm-chip-sub);font-weight:600;}',
     '.pm-seg button.on{background:var(--pm-accent);color:#fff;}',
-    '.pm-stat{min-width:0;font-size:12.5px;color:var(--pm-chip-sub);background:var(--pm-chip);padding:8px 13px;border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-    '.pm-stat b{color:var(--pm-accent);font-size:14px;}',
+    // 위쪽 왼쪽 제목: 공유 이미지(포토맵 카드)와 같은 모양. 바다(밝은 하늘색) 위라 늘 짙은 글씨, 지도에 걸려도 읽히게 흰 테두리
+    '.pm-top{align-items:flex-start;}',
+    '.pm-head{min-width:0;color:#1d2320;text-shadow:0 0 3px #aad3ea,0 0 6px #aad3ea;transition:opacity .25s;pointer-events:none;}',
+    '.pm-head .e{font:700 9px/1 "Space Grotesk",sans-serif;letter-spacing:.2em;color:#2f5d48;margin-top:4px;white-space:nowrap;}',
+    '.pm-head .t{font-family:"Noto Serif KR",serif;font-weight:900;font-size:20px;line-height:1.2;margin-top:7px;white-space:nowrap;}',
+    '.pm-head .r{width:22px;height:2px;background:#2f5d48;margin:8px 0 6px;}',
+    '.pm-head .n{font:700 36px/1 "Space Grotesk",sans-serif;letter-spacing:-.02em;}',
+    '.pm-head .n small{font:500 14px/1 "Space Grotesk",sans-serif;color:#2f5d48;letter-spacing:0;margin-left:4px;}',
+    '.pm-head .n small.u{font-weight:700;font-size:12px;letter-spacing:.12em;}',
+    // 확대하면 제목은 지도를 가리지 않게 숨긴다
+    '.pm-zoomed .pm-head{opacity:0;}',
+    // 오른쪽: 모두/내 지도 밑에 한눈에 보기(사이 4px)
+    '.pm-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none;}',
+    '.pm-cardbtn{border:0;display:flex;align-items:center;gap:6px;height:30px;box-sizing:border-box;background:var(--pm-chip);color:var(--pm-ink);font-size:12.5px;font-weight:700;padding:0 13px 0 11px;border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.2);}',
+    '.pm-cardbtn svg{width:14px;height:14px;}',
+    // 포토맵 카드: 화면 전체에 공유 이미지를 크게, 밑에 저장·보내기
+    '.pm-card{position:fixed;inset:0;z-index:2147483647;background:rgba(12,17,24,.94);display:none;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--okbm-status-top, env(safe-area-inset-top, 0px)) + 52px) 16px calc(env(safe-area-inset-bottom,0px) + 20px);gap:16px;}',
+    '.pm-card.on{display:flex;animation:pmFade .2s ease-out;}',
+    '@keyframes pmFade{from{opacity:0;}}',
+    '.pm-card .x{position:absolute;top:calc(var(--okbm-status-top, env(safe-area-inset-top, 0px)) + 10px);right:12px;border:0;border-radius:50%;width:36px;height:36px;background:rgba(255,255,255,.14);color:#fff;font-size:20px;}',
+    '.pm-card .img{flex:none;width:min(100%, calc((100dvh - var(--okbm-status-top, env(safe-area-inset-top, 0px)) - env(safe-area-inset-bottom,0px) - 160px) * .8));aspect-ratio:4/5;border-radius:10px;overflow:hidden;background:#aad3ea;box-shadow:0 10px 40px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;}',
+    '.pm-card .img img{width:100%;height:100%;object-fit:contain;display:block;}',
+    '.pm-card .wait{font-size:13px;color:#1d2320;font-weight:700;}',
+    '.pm-card .acts{display:flex;gap:10px;width:100%;max-width:420px;flex:none;}',
+    '.pm-card .acts button{flex:1;border:0;border-radius:12px;padding:13px 6px;font-size:14.5px;font-weight:700;background:rgba(255,255,255,.14);color:#fff;}',
+    '.pm-card .acts button.go{background:#2f9e6a;}',
+    '.pm-card .acts button:disabled{opacity:.4;}',
     '.pm-loading,.pm-toast{position:absolute;left:0;right:0;text-align:center;font-size:13px;color:#1d2320;pointer-events:none;}',
     '.pm-loading{top:45%;}',
     '.pm-toast{display:none;bottom:calc(56px + env(safe-area-inset-bottom,0px) + 64px);}',
@@ -715,13 +741,8 @@
         exporting = false; exportPart = null; COLOR.sea = keep.sea;
         canvas = keep.canvas; ctx = keep.ctx; dpr = keep.dpr; hostW = keep.hostW; hostH = keep.hostH; OVER = keep.OVER; committed = keep.committed; k = keep.k;
       }
-      // 숫자: 모두는 총 박지 수, 내 지도는 가 본 박지(내 피드 박지 + 다녀옴) / 전체 박지
-      var total = spotList.length, went = 0;
-      if (mode === 'mine') {
-        var vs = visitedSet();
-        spotList.forEach(function (s) { var x = bySpot[s.id]; if ((x && x.mine.length) || vs.has(String(s.id).trim())) went++; });
-      }
-      drawExportHeader(out.getContext('2d'), opt.style || 'a', { S: S, LW: LW, LH: LH, bg: bg, mine: mode === 'mine', went: went, total: total, logo: assets.logo });
+      var h = headInfo();
+      drawExportHeader(out.getContext('2d'), opt.style || 'a', { S: S, LW: LW, LH: LH, bg: bg, mine: h.mine, went: h.went, total: h.total, logo: assets.logo });
       return out;
     });
   }
@@ -779,6 +800,7 @@
   function update(force) {
     var lv = level();
     var wide = k < LEVEL_SGG; // 전국을 보는 중
+    host.classList.toggle('pm-zoomed', !wide);
     if (force || lv !== shown.lv || wide !== shown.wide) {
       shown.lv = lv; shown.wide = wide;
       revealToken++;
@@ -789,18 +811,68 @@
     scheduleImages();
   }
 
-  function countText(spots) {
+  // 위쪽 제목·숫자(포토맵 카드와 같은 말): 모두는 전체 박지 수, 내 지도는 가 본 박지(내 피드 박지 + 다녀옴) / 전체 박지
+  function headInfo() {
+    var total = spotList.length, went = 0;
     if (mode === 'mine') {
-      var b = 0, v = 0, vs = visitedSet();
-      spots.forEach(function (s) { var x = bySpot[s.id]; if (x && x.mine.length) b++; else if (vs.has(String(s.id).trim())) v++; });
-      return '내 피드 박지 <b>' + b + '</b> / ' + spots.length + (v ? ' · 다녀옴 ' + v : '');
+      var vs = visitedSet();
+      spotList.forEach(function (s) { var x = bySpot[s.id]; if ((x && x.mine.length) || vs.has(String(s.id).trim())) went++; });
     }
-    var n = spots.filter(function (s) { return bySpot[s.id] && bySpot[s.id].all.length; }).length;
-    return '피드 등록 박지 <b>' + n + '</b> / ' + spots.length;
+    return { mine: mode === 'mine', went: went, total: total, title: mode === 'mine' ? '나의 백패킹 포토맵' : '낭만루트 백패킹 포토맵' };
   }
 
   function setHeader() {
-    host.querySelector('.pm-stat').innerHTML = countText(spotList);
+    var h = headInfo();
+    host.querySelector('.pm-head').innerHTML =
+      '<div class="e">ROMANTIC ROUTE · PHOTO MAP</div><div class="t">' + h.title + '</div><div class="r"></div>' +
+      '<div class="n">' + (h.mine ? h.went + '<small>/ ' + h.total + '</small>' : h.total + '<small class="u">SPOTS</small>') + '</div>';
+  }
+
+  // ------------------------------------------------------------------ 한눈에 보기(공유 이미지 카드)
+  // 누르면 화면 전체에 공유 이미지를 띄운다(만드는 데 몇 초). 같은 모드·숫자면 만든 걸 다시 쓴다.
+  var cardEl = null, cardCache = {}, cardBlob = null, cardToken = 0;
+  function openCard() {
+    if (!cardEl) {
+      cardEl = document.createElement('div'); cardEl.className = 'pm-card';
+      cardEl.innerHTML = '<button type="button" class="x" aria-label="닫기">×</button><div class="img"></div>' +
+        '<div class="acts"><button type="button" data-a="save">이미지 저장</button><button type="button" class="go" data-a="send">보내기</button></div>';
+      document.body.appendChild(cardEl); // 아래 탭 줄(z-index 최댓값)보다 나중에 붙여 그 위로 덮는다
+      cardEl.querySelector('.x').addEventListener('click', closeCard);
+      cardEl.querySelector('[data-a="save"]').addEventListener('click', saveCard);
+      cardEl.querySelector('[data-a="send"]').addEventListener('click', sendCard);
+    }
+    var h = headInfo(), key = mode + ':' + h.went + ':' + h.total, token = ++cardToken, box = cardEl.querySelector('.img');
+    cardEl.classList.add('on');
+    cardEl.querySelectorAll('.acts button').forEach(function (b) { b.disabled = true; });
+    box.innerHTML = '<div class="wait">한 장으로 만드는 중…</div>';
+    var made = cardCache[key] ? Promise.resolve(cardCache[key]) : exportImage().then(function (c) {
+      return new Promise(function (r) { c.toBlob(function (b) { r(b); }, 'image/jpeg', 0.92); });
+    }).then(function (b) { if (b) cardCache[key] = b; return b; });
+    made.then(function (b) {
+      if (token !== cardToken || !b) return;
+      cardBlob = b;
+      box.innerHTML = '<img alt="낭만루트 백패킹 포토맵" src="' + URL.createObjectURL(b) + '">';
+      cardEl.querySelectorAll('.acts button').forEach(function (x) { x.disabled = false; });
+      // 파일 보내기가 안 되는 곳(컴퓨터 등)에선 보내기를 숨긴다
+      cardEl.querySelector('[data-a="send"]').style.display = canSendFile() ? '' : 'none';
+    }).catch(function (err) {
+      console.warn('[photo-map] card', err);
+      if (token === cardToken) box.innerHTML = '<div class="wait">카드를 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.</div>';
+    });
+  }
+  function closeCard() { cardToken++; if (cardEl) cardEl.classList.remove('on'); }
+  function cardFile() { return new File([cardBlob], 'romanticroute-photomap.jpg', { type: 'image/jpeg' }); }
+  function canSendFile() {
+    try { return !!(navigator.canShare && cardBlob && navigator.canShare({ files: [cardFile()] })); } catch (e) { return false; }
+  }
+  function saveCard() {
+    if (!cardBlob) return;
+    var a = document.createElement('a'); a.href = URL.createObjectURL(cardBlob); a.download = 'romanticroute-photomap.jpg';
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  function sendCard() {
+    if (!cardBlob) return;
+    navigator.share({ files: [cardFile()], title: '낭만루트 백패킹 포토맵' }).catch(function () {});
   }
 
   // 화면에 보이는 칸의 사진만 줄여서 넣는다.
@@ -985,13 +1057,17 @@
     host.className = 'pm-host';
     host.innerHTML =
       '<div class="pm-stage"><canvas class="pm-canvas"></canvas></div>' +
-      '<div class="pm-top"><div class="pm-stat"></div>' +
-      '<div class="pm-seg"><button type="button" data-mode="all">모두</button><button type="button" data-mode="mine">내 지도</button></div></div>' +
+      '<div class="pm-top"><div class="pm-head"></div><div class="pm-side">' +
+      '<div class="pm-seg"><button type="button" data-mode="all">모두</button><button type="button" data-mode="mine">내 지도</button></div>' +
+      '<button type="button" class="pm-cardbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 15l4.5-4.5L13 15l2.5-2.5L20 17"/><circle cx="15.5" cy="8" r="1.5"/></svg>한눈에 보기</button>' +
+      '</div></div>' +
       '<div class="pm-loading">사진 지도를 불러오는 중…</div>' +
       '<div class="pm-toast"></div>';
     mapEl.appendChild(host);
     host.style.display = 'block'; // 크기를 재야 하므로 먼저 보이게
     host.querySelectorAll('.pm-seg button').forEach(function (b) { b.addEventListener('click', function () { setMode(b.getAttribute('data-mode')); }); });
+    host.querySelector('.pm-cardbtn').addEventListener('click', openCard);
+    loadExportAssets(); // 위쪽 제목 글꼴(세리프·영문)을 미리
     canvas = host.querySelector('.pm-canvas');
     ctx = canvas.getContext('2d');
     hitCtx = document.createElement('canvas').getContext('2d');
@@ -1088,6 +1164,7 @@
 
   function close() {
     opened = false;
+    closeCard();
     document.body.classList.remove('pm-on');
     closeSheet();
     if (host) host.style.display = 'none';
