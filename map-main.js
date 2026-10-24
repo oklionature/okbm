@@ -1257,6 +1257,7 @@
         setMapLayerState((currentMapLayerState + 1) % 4);
       }
 
+      var photoMapOpenedAt = null;
       // 0 일반 · 1 위성 · 2 지형도 · 3 사진 지도(photo-map.js, 카카오 지도 위를 덮는 시·군·박지 사진 지도)
       function setMapLayerState(next) {
         if (!map) return;
@@ -1268,7 +1269,14 @@
           // 사진 지도에서 보던 범위를 기본 지도가 이어받는다
           const v = wasPhoto && window.okbmPhotoMap.getView ? window.okbmPhotoMap.getView() : null;
           window.okbmPhotoMap.close();
-          if (v) map.setBounds(new kakao.maps.LatLngBounds(new kakao.maps.LatLng(v.minLat, v.minLng), new kakao.maps.LatLng(v.maxLat, v.maxLng)), 0, 0, 0, 0);
+          if (v && photoMapOpenedAt) {
+            // 카카오 확대 단계는 한 칸에 두 배씩이라 범위 맞추기(setBounds)는 한 칸 멀어진다.
+            // 열 때 단계에서 사진 지도에서 확대한 만큼만 단계를 바꾸고, 가운데를 옮긴다.
+            const ratio = photoMapOpenedAt.lngSpan / Math.max(1e-6, v.maxLng - v.minLng);
+            const level = Math.max(1, Math.min(14, photoMapOpenedAt.level - Math.round(Math.log2(ratio))));
+            map.setLevel(level, { animate: false });
+            map.setCenter(new kakao.maps.LatLng((v.minLat + v.maxLat) / 2, (v.minLng + v.maxLng) / 2));
+          }
         }
 
         if (currentMapLayerState === 0) {
@@ -1290,6 +1298,7 @@
           if (btnEl) { btnEl.classList.add('highlight'); btnEl.style.color = '#f59e0b'; }
           // 기본 지도가 보던 범위 그대로 사진 지도를 연다
           const b = map.getBounds(), sw = b.getSouthWest(), ne = b.getNorthEast();
+          photoMapOpenedAt = { level: map.getLevel(), lngSpan: ne.getLng() - sw.getLng() };
           if (window.okbmPhotoMap) window.okbmPhotoMap.open({ minLat: sw.getLat(), minLng: sw.getLng(), maxLat: ne.getLat(), maxLng: ne.getLng() });
         }
       }
