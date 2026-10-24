@@ -18,7 +18,10 @@
 
   var GEO_URL = 'photo-map/korea-sgg-202610.json?v=2';
   var D3_URL = 'vendor/d3-7.9.0.min.js';
-  var LEVEL_SGG = 2.4, LEVEL_SPOT = 6;        // 확대 배율이 이 값을 넘으면 시군구 / 박지 단계
+  // 처음부터 시·군·구 칸으로 보여 준다(시·도를 통째로 채우면 사진 한두 장에 도 전체가 차 버려 빈칸이 안 보인다).
+  // LEVEL_SGG: 이보다 확대하면 시·군·구 이름과 '도' 단위 진행도를 보여 준다 / LEVEL_SPOT: 이보다 확대하면 박지 칸
+  var LEVEL_SGG = 2.4, LEVEL_SPOT = 6;
+  var METRO = { '11': 1, '26': 1, '27': 1, '28': 1, '29': 1, '30': 1, '31': 1, '36': 1 };
   var THUMB = { sido: 360, sgg: 360, spot: 720 };
 
   var host = null, svg = null, defs = null, root = null, L = {};
@@ -29,33 +32,34 @@
   var thumbs = new Map(), thumbQueue = [], thumbActive = 0;
 
   var CSS = [
-    '.pm-host{position:absolute;inset:0;z-index:50;display:none;background:var(--pm-bg);--pm-bg:#0b0f14;--pm-empty:#2a3038;--pm-green:#244a36;--pm-accent:#34c38f;--pm-line:#0b0f14;--pm-ink:#fff;--pm-sub:#94a3b8;--pm-chip:#151b23;}',
-    'html[data-theme="light"] .pm-host{--pm-bg:#f3f4f0;--pm-empty:#d8dbd3;--pm-green:#cfe5d6;--pm-accent:#2f7d5b;--pm-line:#fff;--pm-ink:#1d2320;--pm-sub:#6b726d;--pm-chip:#fff;}',
+    // 지도 색은 카카오 일반 지도(테마와 상관없이 밝은 바다·땅)에 맞추고, 위에 뜨는 버튼만 앱 테마를 따른다
+    '.pm-host{position:absolute;inset:0;z-index:50;display:none;background:var(--pm-bg);--pm-bg:#aad3ea;--pm-empty:#f1efe9;--pm-green:#cfe6d5;--pm-accent:#2f8a62;--pm-line:#fff;--pm-sub:#69716b;--pm-ink:#fff;--pm-chip:#151b23;--pm-chip-sub:#94a3b8;}',
+    'html[data-theme="light"] .pm-host{--pm-ink:#1d2320;--pm-chip:#fff;--pm-chip-sub:#6b726d;}',
     'body.pm-on #leftBottomFilterWrap,body.pm-on #rightBottomHudGroup{display:none!important;}',
     '.pm-svg{position:absolute;inset:0;width:100%;height:100%;touch-action:none;}',
     '.pm-region{stroke:var(--pm-line);stroke-width:1;vector-effect:non-scaling-stroke;cursor:pointer;}',
     '.pm-cellline{fill:none;stroke:var(--pm-line);stroke-width:1;vector-effect:non-scaling-stroke;pointer-events:none;}',
     '.pm-edge{fill:none;stroke:var(--pm-line);vector-effect:non-scaling-stroke;pointer-events:none;}',
+    '.pm-edge-sido{stroke:#a9a59b;}',
     '.pm-img{pointer-events:none;opacity:0;transition:opacity .35s;}',
     '.pm-img.pm-in{opacity:1;}',
     '.pm-img.pm-gray{filter:grayscale(1) contrast(.9);opacity:.55;}',
     '.pm-img.pm-fresh{transition:filter 1.6s,opacity 1.6s;}',
     '.pm-dot{stroke-width:2;vector-effect:non-scaling-stroke;cursor:pointer;}',
     '.pm-lbl{font-weight:700;fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.6);stroke-linejoin:round;text-anchor:middle;pointer-events:none;font-family:var(--font-body,sans-serif);}',
-    '.pm-empty-lbl{fill:var(--pm-sub);stroke:var(--pm-bg);}',
-    '.pm-stamp{font-weight:800;fill:var(--pm-accent);paint-order:stroke;stroke:var(--pm-bg);stroke-linejoin:round;text-anchor:middle;pointer-events:none;}',
-    '.pm-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);left:10px;right:10px;display:flex;gap:8px;align-items:center;z-index:2;}',
+    '.pm-empty-lbl{fill:var(--pm-sub);stroke:#fff;}',
+    '.pm-stamp{font-weight:800;fill:var(--pm-accent);paint-order:stroke;stroke:#fff;stroke-linejoin:round;text-anchor:middle;pointer-events:none;}',
+    '.pm-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);left:10px;right:10px;display:flex;gap:8px;align-items:center;justify-content:space-between;z-index:2;}',
     '.pm-back{width:36px;height:36px;border-radius:50%;border:0;background:var(--pm-chip);color:var(--pm-ink);font-size:20px;box-shadow:0 2px 10px rgba(0,0,0,.2);flex:none;}',
-    '.pm-crumb{flex:1;min-width:0;background:var(--pm-chip);color:var(--pm-ink);border-radius:999px;padding:9px 14px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 10px rgba(0,0,0,.2);}',
     '.pm-seg{display:flex;background:var(--pm-chip);border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.2);flex:none;}',
-    '.pm-seg button{border:0;background:none;padding:6px 11px;border-radius:999px;font-size:12.5px;color:var(--pm-sub);font-weight:600;}',
+    '.pm-seg button{border:0;background:none;padding:6px 11px;border-radius:999px;font-size:12.5px;color:var(--pm-chip-sub);font-weight:600;}',
     '.pm-seg button.on{background:var(--pm-accent);color:#fff;}',
-    '.pm-stat{position:absolute;top:calc(env(safe-area-inset-top,0px) + 108px);left:10px;z-index:2;font-size:12px;color:var(--pm-sub);background:var(--pm-chip);padding:6px 11px;border-radius:10px;opacity:.95;}',
+    '.pm-stat{position:absolute;top:calc(env(safe-area-inset-top,0px) + 108px);left:10px;z-index:2;font-size:12px;color:var(--pm-chip-sub);background:var(--pm-chip);padding:6px 11px;border-radius:10px;opacity:.95;}',
     '.pm-stat b{color:var(--pm-accent);font-size:14px;}',
-    '.pm-loading,.pm-toast{position:absolute;left:0;right:0;text-align:center;font-size:13px;color:var(--pm-sub);pointer-events:none;}',
+    '.pm-loading,.pm-toast{position:absolute;left:0;right:0;text-align:center;font-size:13px;color:#1d2320;pointer-events:none;}',
     '.pm-loading{top:45%;}',
     '.pm-toast{display:none;bottom:calc(56px + env(safe-area-inset-bottom,0px) + 64px);}',
-    '.pm-toast{color:var(--pm-ink);font-weight:600;}',
+    '.pm-toast{font-weight:700;text-shadow:0 0 4px #fff,0 0 8px #fff;}',
     '.pm-dim{position:fixed;inset:0;z-index:960;background:rgba(0,0,0,.5);display:none;}',
     '.pm-sheet{position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom,0px));margin:0 auto;max-width:520px;max-height:calc(100vh - 56px - env(safe-area-inset-bottom,0px) - 24px);overflow-y:auto;z-index:961;background:var(--bg-card,#fff);color:var(--text-primary,#111);border-radius:20px 20px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.3);display:none;padding-bottom:10px;animation:pmUp .25s ease-out;}',
     '@keyframes pmUp{from{transform:translateY(40px);opacity:.4;}}',
@@ -286,19 +290,17 @@
 
   function draw() {
     defs.selectAll('*').remove();
-    ['sido', 'sgg', 'spot', 'edge', 'lbl'].forEach(function (n) { L[n].selectAll('*').remove(); });
+    ['sido', 'sgg', 'spot', 'edge', 'dot', 'lbl'].forEach(function (n) { L[n].selectAll('*').remove(); });
     uid = 0;
 
-    // 1단계: 시·도
+    // 시·도는 칸을 채우지 않고 굵은 경계선과 이름만 둔다
     sidos.forEach(function (s) {
-      var all = []; s.sggs.forEach(function (g) { all = all.concat(g.spots); });
-      var look = groupLook(all); s.look = look;
-      var g = L.sido.append('g');
-      fillShape(g, s.d, s.box, look, THUMB.sido, function () { zoomToBox(s.box, 0.86, LEVEL_SGG + 0.2); });
-      L.lbl.append('text').attr('class', 'pm-lbl pm-lp' + (look.url || look.green ? '' : ' pm-empty-lbl')).attr('x', s.c[0]).attr('y', s.c[1]).text(s.name);
+      // 전국 화면에서 광역시 이름은 도 이름과 겹쳐서 뺀다
+      if (METRO[s.code]) return;
+      L.lbl.append('text').attr('class', 'pm-lbl pm-lp').attr('x', s.c[0]).attr('y', s.c[1]).text(s.name);
     });
 
-    // 2단계: 시·군·구
+    // 1단계: 시·군·구
     sggs.forEach(function (c) {
       var look = groupLook(c.spots); c.look = look;
       var g = L.sgg.append('g').attr('data-sgg', c.code + c.name);
@@ -329,7 +331,7 @@
       c.spots.forEach(function (s) {
         var l = spotLook(s);
         var fill = mode === 'mine' ? (l.mine ? '#fff' : l.stamp ? 'var(--pm-accent)' : '#9aa29c') : (l.url ? '#fff' : '#9aa29c');
-        g.append('circle').attr('class', 'pm-dot').attr('cx', s.__pmXY[0]).attr('cy', s.__pmXY[1])
+        L.dot.append('circle').attr('class', 'pm-dot').attr('data-sgg', c.code + c.name).attr('cx', s.__pmXY[0]).attr('cy', s.__pmXY[1])
           .attr('fill', fill).attr('stroke', fill === '#9aa29c' ? '#fff' : 'var(--pm-accent)')
           .on('click', function () { openSheet(s); });
         if (l.stamp) L.lbl.append('text').attr('class', 'pm-stamp').attr('data-sgg', c.code + c.name).attr('x', s.__pmXY[0]).attr('y', s.__pmXY[1]).text('✓ 다녀옴');
@@ -337,12 +339,13 @@
           .attr('x', s.__pmXY[0]).attr('y', s.__pmXY[1]).text(String(s.spot_main || s.name || '').trim());
       });
     });
-    sggs.forEach(function (c) { L.edge.append('path').attr('d', c.d).attr('class', 'pm-edge'); });
+    sggs.forEach(function (c) { L.edge.append('path').attr('d', c.d).attr('class', 'pm-edge pm-edge-sgg'); });
+    sidos.forEach(function (c) { L.edge.append('path').attr('d', c.d).attr('class', 'pm-edge pm-edge-sido'); });
     update();
   }
 
   // ------------------------------------------------------------------ 확대 단계
-  function level() { return k < LEVEL_SGG ? 0 : k < LEVEL_SPOT ? 1 : 2; }
+  function level() { return k < LEVEL_SPOT ? 1 : 2; }
 
   function centerLL() {
     var t = d3.zoomTransform(svg.node());
@@ -355,20 +358,21 @@
 
   function update() {
     var lv = level();
-    L.sido.style('display', lv === 0 ? null : 'none');
-    L.sgg.style('display', lv >= 1 ? null : 'none');
+    var wide = k < LEVEL_SGG; // 전국을 보는 중
+    L.sido.style('display', 'none');
     L.sgg.selectAll('.pm-sggimg').style('opacity', lv === 2 ? 0 : 1);
     L.sgg.selectAll('.pm-region').style('pointer-events', lv === 1 ? null : 'none');
     L.spot.style('display', lv === 2 ? null : 'none');
-    L.edge.style('display', lv >= 1 ? null : 'none').selectAll('path').attr('stroke-width', lv === 2 ? 3 : 1.2);
+    L.edge.selectAll('.pm-edge-sgg').attr('stroke-width', lv === 2 ? 3 : wide ? 0.5 : 1);
+    L.edge.selectAll('.pm-edge-sido').attr('stroke-width', lv === 2 ? 0 : 2);
     var fs = function (px) { return px / k; };
-    L.lbl.selectAll('.pm-lp').style('display', lv === 0 ? null : 'none').attr('font-size', fs(13)).attr('stroke-width', fs(3));
+    L.lbl.selectAll('.pm-lp').style('display', wide ? null : 'none').attr('font-size', fs(13)).attr('stroke-width', fs(3));
     // 시군구 이름은 칸이 화면에서 46px보다 넓을 때만
-    L.lbl.selectAll('.pm-lc').style('display', function () { return lv === 1 && Number(this.getAttribute('data-w')) * k > 46 ? null : 'none'; })
+    L.lbl.selectAll('.pm-lc').style('display', function () { return lv === 1 && !wide && Number(this.getAttribute('data-w')) * k > 46 ? null : 'none'; })
       .attr('font-size', fs(11.5)).attr('stroke-width', fs(3));
     L.lbl.selectAll('.pm-ls').style('display', lv === 2 ? null : 'none').attr('font-size', fs(11)).attr('stroke-width', fs(3)).attr('dy', fs(17));
     L.lbl.selectAll('.pm-stamp').style('display', lv === 2 ? null : 'none').attr('font-size', fs(11)).attr('stroke-width', fs(3)).attr('dy', fs(-9));
-    L.spot.selectAll('.pm-dot').attr('r', fs(5));
+    L.dot.style('display', lv === 2 ? null : 'none').selectAll('.pm-dot').attr('r', fs(5));
 
     var ll = centerLL();
     var sido = containing(sidos, ll);
@@ -377,10 +381,11 @@
     if (lv === 2) {
       var key = sgg ? sgg.code + sgg.name : '';
       L.spot.selectAll('g[data-sgg]').style('opacity', function () { return this.getAttribute('data-sgg') === key ? 1 : 0.35; });
+      L.dot.selectAll('.pm-dot').style('opacity', function () { return this.getAttribute('data-sgg') === key ? 1 : 0.4; });
       L.lbl.selectAll('.pm-ls,.pm-stamp').style('opacity', function () { return this.getAttribute('data-sgg') === key ? 1 : 0.4; });
     }
     setHeader(lv, sido, sgg);
-    host.querySelector('.pm-back').style.visibility = lv === 0 ? 'hidden' : 'visible';
+    host.querySelector('.pm-back').style.visibility = wide ? 'hidden' : 'visible';
     scheduleImages();
   }
 
@@ -395,18 +400,15 @@
   }
 
   function setHeader(lv, sido, sgg) {
-    var crumb = '전국', stat;
-    if (lv === 0 || !sido) {
+    var stat;
+    if (k < LEVEL_SGG || !sido) {
       stat = countText(spotList);
     } else if (lv === 1 || !sgg) {
-      crumb = '전국 › ' + sido.name;
       var all = []; sido.sggs.forEach(function (g) { all = all.concat(g.spots); });
       stat = countText(all);
     } else {
-      crumb = '전국 › ' + sido.name + ' › ' + sgg.name;
       stat = sgg.spots.length ? countText(sgg.spots) : '아직 등록된 박지가 없어요';
     }
-    host.querySelector('.pm-crumb').textContent = crumb;
     host.querySelector('.pm-stat').innerHTML = stat;
   }
 
@@ -418,7 +420,8 @@
     var t = d3.zoomTransform(svg.node());
     var x0 = t.invertX(0), y0 = t.invertY(0), x1 = t.invertX(host.clientWidth), y1 = t.invertY(host.clientHeight);
     var lv = level();
-    var layer = lv === 0 ? L.sido : lv === 1 ? L.sgg : L.spot;
+    var layer = lv === 1 ? L.sgg : L.spot;
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
     layer.selectAll('image.pm-img').each(function () {
       var el = this;
       if (el.getAttribute('href')) return;
@@ -426,7 +429,10 @@
       var b = el.getAttribute('data-box').split(',').map(Number);
       if (b[2] < x0 || b[0] > x1 || b[3] < y0 || b[1] > y1) return;
       el.setAttribute('href', 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==');
-      thumb(el.getAttribute('data-src'), Number(el.getAttribute('data-size'))).then(function (u) {
+      // 화면에서 칸이 차지하는 크기만큼만 줄인다(전국에선 작은 칸이 많다)
+      var need = Math.max(b[2] - b[0], b[3] - b[1]) * t.k * dpr;
+      var size = Math.min(Number(el.getAttribute('data-size')), need < 120 ? 120 : need < 320 ? 320 : 720);
+      thumb(el.getAttribute('data-src'), size).then(function (u) {
         if (!u) return;
         el.setAttribute('href', u);
         el.classList.add('pm-in');
@@ -583,7 +589,7 @@
     host.className = 'pm-host';
     host.innerHTML =
       '<svg class="pm-svg"></svg>' +
-      '<div class="pm-top"><button type="button" class="pm-back" aria-label="한 단계 뒤로">‹</button><div class="pm-crumb">전국</div>' +
+      '<div class="pm-top"><button type="button" class="pm-back" aria-label="한 단계 뒤로">‹</button>' +
       '<div class="pm-seg"><button type="button" data-mode="all">모두</button><button type="button" data-mode="mine">내 지도</button></div></div>' +
       '<div class="pm-stat"></div>' +
       '<div class="pm-loading">사진 지도를 불러오는 중…</div>' +
@@ -595,7 +601,7 @@
     svg = d3.select(host.querySelector('.pm-svg'));
     defs = svg.append('defs');
     root = svg.append('g');
-    ['sido', 'sgg', 'spot', 'edge', 'lbl'].forEach(function (n) { L[n] = root.append('g').attr('class', 'pm-l-' + n); });
+    ['sido', 'sgg', 'spot', 'edge', 'dot', 'lbl'].forEach(function (n) { L[n] = root.append('g').attr('class', 'pm-l-' + n); });
     zoom = d3.zoom().scaleExtent([0.3, 120]).on('zoom', function (e) { root.attr('transform', e.transform); k = e.transform.k; update(); });
     svg.call(zoom).on('dblclick.zoom', null);
   }
