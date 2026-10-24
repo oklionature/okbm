@@ -8,6 +8,8 @@
 //   내 지도: 내 후기 사진은 컬러, 다녀옴만 누른 곳은 남의 사진을 흑백으로(사진이 없으면 연초록), 나머지는 빈칸
 //
 // 경계: admdongkor ver20261001 행정동(CC BY 4.0, 원자료 통계청)을 시군구로 합친 photo-map/korea-sgg-202610.json
+//       출처 표시는 terms.html "사용한 공개 자료"에 둔다(CC BY 4.0은 별도 안내 페이지 표시를 인정한다).
+// 켤 때는 기본 지도가 보던 범위를 그대로 이어받고, 끌 때는 사진 지도가 보던 범위를 기본 지도에 돌려준다(둘 다 메르카토르).
 // d3는 CSP 때문에 vendor/에 두고, 사진 모드를 처음 켤 때만 불러온다.
 // 사진은 원본을 받아 기기 안에서 작게 줄여 쓴다(R2가 Access-Control-Allow-Origin: * 를 준다). 메모리 때문이다.
 // =========================================================================
@@ -54,7 +56,6 @@
     '.pm-loading{top:45%;}',
     '.pm-toast{display:none;bottom:calc(56px + env(safe-area-inset-bottom,0px) + 64px);}',
     '.pm-toast{color:var(--pm-ink);font-weight:600;}',
-    '.pm-credit{position:absolute;right:8px;bottom:calc(56px + env(safe-area-inset-bottom,0px) + 50px);font-size:9.5px;color:var(--pm-sub);opacity:.7;pointer-events:none;}',
     '.pm-dim{position:fixed;inset:0;z-index:960;background:rgba(0,0,0,.5);display:none;}',
     '.pm-sheet{position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom,0px));margin:0 auto;max-width:520px;max-height:calc(100vh - 56px - env(safe-area-inset-bottom,0px) - 24px);overflow-y:auto;z-index:961;background:var(--bg-card,#fff);color:var(--text-primary,#111);border-radius:20px 20px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.3);display:none;padding-bottom:10px;animation:pmUp .25s ease-out;}',
     '@keyframes pmUp{from{transform:translateY(40px);opacity:.4;}}',
@@ -128,7 +129,7 @@
     var W = host.clientWidth || window.innerWidth, H = host.clientHeight || window.innerHeight;
     lastW = W;
     var fc = { type: 'FeatureCollection', features: geo.sido.map(function (s) { return { type: 'Feature', geometry: s.g }; }) };
-    proj = d3.geoMercator().fitExtent([[16, 150], [W - 16, H - 130]], fc);
+    proj = d3.geoMercator().fitExtent([[6, 64], [W - 6, H - 64]], fc);
     gpath = d3.geoPath(proj);
     sidos = geo.sido.map(function (s) { return { code: s.c, name: s.n, geom: s.g, d: gpath(s.g), box: gpath.bounds(s.g), c: gpath.centroid(s.g), sggs: [] }; });
     var sidoBy = {}; sidos.forEach(function (s) { sidoBy[s.code] = s; });
@@ -586,8 +587,7 @@
       '<div class="pm-seg"><button type="button" data-mode="all">모두</button><button type="button" data-mode="mine">내 지도</button></div></div>' +
       '<div class="pm-stat"></div>' +
       '<div class="pm-loading">사진 지도를 불러오는 중…</div>' +
-      '<div class="pm-toast"></div>' +
-      '<div class="pm-credit">경계: 통계청·admdongkor (CC BY 4.0)</div>';
+      '<div class="pm-toast"></div>';
     mapEl.appendChild(host);
     host.style.display = 'block'; // 크기를 재야 하므로 먼저 보이게
     host.querySelector('.pm-back').addEventListener('click', goBack);
@@ -596,7 +596,7 @@
     defs = svg.append('defs');
     root = svg.append('g');
     ['sido', 'sgg', 'spot', 'edge', 'lbl'].forEach(function (n) { L[n] = root.append('g').attr('class', 'pm-l-' + n); });
-    zoom = d3.zoom().scaleExtent([1, 80]).on('zoom', function (e) { root.attr('transform', e.transform); k = e.transform.k; update(); });
+    zoom = d3.zoom().scaleExtent([0.3, 120]).on('zoom', function (e) { root.attr('transform', e.transform); k = e.transform.k; update(); });
     svg.call(zoom).on('dblclick.zoom', null);
   }
 
@@ -618,7 +618,26 @@
     return busy;
   }
 
-  function open() {
+  // 기본 지도가 보던 범위(위도·경도)를 사진 지도 확대 상태로 바꾼다
+  function applyView(v) {
+    if (!v || !proj) return;
+    var W = host.clientWidth, H = host.clientHeight;
+    var p0 = proj([v.minLng, v.maxLat]), p1 = proj([v.maxLng, v.minLat]);
+    var dx = p1[0] - p0[0], dy = p1[1] - p0[1];
+    if (!(dx > 0 && dy > 0)) return;
+    var s = Math.max(0.3, Math.min(120, Math.min(W / dx, H / dy)));
+    svg.call(zoom.transform, d3.zoomIdentity.translate(W / 2, H / 2).scale(s).translate(-(p0[0] + p1[0]) / 2, -(p0[1] + p1[1]) / 2));
+  }
+  // 사진 지도가 지금 보는 범위(위도·경도)
+  function getView() {
+    if (!opened || !host || !proj) return null;
+    var t = d3.zoomTransform(svg.node());
+    var a = proj.invert(t.invert([0, 0])), b = proj.invert(t.invert([host.clientWidth, host.clientHeight]));
+    if (!a || !b) return null;
+    return { minLat: b[1], maxLat: a[1], minLng: a[0], maxLng: b[0] };
+  }
+
+  function open(view) {
     opened = true;
     document.body.classList.add('pm-on');
     if (host) host.style.display = 'block';
@@ -635,6 +654,7 @@
         host.querySelectorAll('.pm-seg button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-mode') === mode); });
       }
       draw();
+      applyView(view);
     }).catch(function (err) {
       console.warn('[photo-map]', err);
       if (typeof window.showToast === 'function') window.showToast('사진 지도를 불러오지 못했어요. 잠시 뒤 다시 눌러 주세요.');
@@ -663,5 +683,5 @@
     }, 250);
   });
 
-  window.okbmPhotoMap = { open: open, close: close, isOpen: function () { return opened; } };
+  window.okbmPhotoMap = { open: open, close: close, getView: getView, isOpen: function () { return opened; } };
 })();

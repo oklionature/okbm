@@ -1261,9 +1261,15 @@
       function setMapLayerState(next) {
         if (!map) return;
         const textEl = document.getElementById('dockMapLayerText'), btnEl = document.getElementById('dockMapLayerBtn');
+        const wasPhoto = currentMapLayerState === 3;
         currentMapLayerState = next;
         map.removeOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
-        if (window.okbmPhotoMap && currentMapLayerState !== 3) window.okbmPhotoMap.close();
+        if (window.okbmPhotoMap && currentMapLayerState !== 3) {
+          // 사진 지도에서 보던 범위를 기본 지도가 이어받는다
+          const v = wasPhoto && window.okbmPhotoMap.getView ? window.okbmPhotoMap.getView() : null;
+          window.okbmPhotoMap.close();
+          if (v) map.setBounds(new kakao.maps.LatLngBounds(new kakao.maps.LatLng(v.minLat, v.minLng), new kakao.maps.LatLng(v.maxLat, v.maxLng)), 0, 0, 0, 0);
+        }
 
         if (currentMapLayerState === 0) {
           map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
@@ -1282,7 +1288,9 @@
           map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
           if (textEl) textEl.innerText = '사 진';
           if (btnEl) { btnEl.classList.add('highlight'); btnEl.style.color = '#f59e0b'; }
-          if (window.okbmPhotoMap) window.okbmPhotoMap.open();
+          // 기본 지도가 보던 범위 그대로 사진 지도를 연다
+          const b = map.getBounds(), sw = b.getSouthWest(), ne = b.getNorthEast();
+          if (window.okbmPhotoMap) window.okbmPhotoMap.open({ minLat: sw.getLat(), minLng: sw.getLng(), maxLat: ne.getLat(), maxLng: ne.getLng() });
         }
       }
 
