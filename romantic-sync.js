@@ -7371,6 +7371,10 @@ window.closePastTripRegisterModal = function(opts) {
   if (choice) choice.remove();
   var el = document.getElementById('pastTripRegisterModal');
   var fromPlan = !!(el && (el.dataset.fromPlan === '1' || el.dataset.stay === '1'));
+  // 쓰던 것이 있으면 저장해 두고 다시 열 때 채운다(아래 _ptwRestoreDraft)
+  if (el && typeof window._ptwSaveDraft === 'function' && window._ptwSaveDraft() && typeof showToast === 'function') {
+    showToast('쓰던 후기는 저장해 뒀어요. 다시 열면 이어서 쓸 수 있어요.', 'info', 2600);
+  }
   if (el) el.remove();
   var search = document.getElementById('pastTripSpotSearchModal');
   if (search) search.remove();
@@ -9489,6 +9493,7 @@ window.submitPastTripRegister = async function() {
     }
 
     triggerHaptic(15);
+    if (typeof window._ptwClearDraft === 'function') window._ptwClearDraft();
     if (typeof window.refreshMyReportFullStats === 'function') window.refreshMyReportFullStats();
     window._ptwShowDone(newRecord, function() {
     var el = document.getElementById('pastTripRegisterModal');
@@ -9790,11 +9795,25 @@ window._ptwInit = function(modal) {
   if (typeof origOpen !== 'function' || origOpen.__ptw) return;
   var wrapped = function() {
     var r = origOpen.apply(this, arguments);
-    window._ptwInit(document.getElementById('pastTripRegisterModal'));
+    var modal = document.getElementById('pastTripRegisterModal');
+    window._ptwInit(modal);
+    if (modal && !modal.__ptwDraft) {
+      modal.__ptwDraft = true;
+      window._ptwRestoreDraft(modal);
+      // 글·장소·링크 입력, 사진 추가·지우기, 장비·날짜 고르기 뒤에 저장한다(사진은 올라간 뒤 칸을 다시 그릴 때)
+      modal.addEventListener('input', window._ptwScheduleDraftSave);
+      modal.addEventListener('change', window._ptwScheduleDraftSave);
+      modal.addEventListener('click', window._ptwScheduleDraftSave);
+      new MutationObserver(window._ptwScheduleDraftSave).observe(modal, { childList: true, subtree: true });
+    }
     return r;
   };
   wrapped.__ptw = true;
   window.openPastTripRegisterModal = wrapped;
+  // 쓰는 중에 다른 앱으로 가거나 브라우저를 닫아도 남게
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden && document.getElementById('pastTripRegisterModal')) window._ptwSaveDraft();
+  });
 })();
 
 // 올린 뒤 완료 화면. "닫기"를 누르면 원래 하던 다음 동작(목록 열기 등)을 이어서 한다
@@ -9825,6 +9844,150 @@ window._ptwShowDone = function(record, next) {
     }
     next();
   };
+};
+
+// 📝 [후기 임시 저장] 쓰다가 ◀·뒤로가기·아래 탭으로 창이 닫히면 확인 없이 다 사라졌다(임시 저장 없음).
+// 사진은 고르는 즉시 R2에 올라가 상태에는 주소만 있으므로, 글·사진 주소·장소·날짜·장비·링크를 이 기기(localStorage)에 두고
+// 다시 열면 채운다. 다른 계정이 쓴 것은 불러오지 않고, 올리기에 성공하면 지운다.
+var PTW_DRAFT_KEY = 'okbm_pasttrip_draft';
+var ptwDraftTimer = 0;
+
+function ptwDraftUid() {
+  var cache = window.__okbmSessionCache || {};
+  var user = cache.session && cache.session.user;
+  if (user && user.id) return String(user.id);
+  var profile = safeGetJSON('user_profile', null);
+  return profile && profile.id ? String(profile.id) : '';
+}
+
+function ptwDraftHasContent(d) {
+  if (!d) return false;
+  var hasMemo = String(d.singleMemo || '').trim() ||
+    (d.photoMemos || []).some(function(m) { return String(m || '').trim(); });
+  return !!((d.photos && d.photos.length) || hasMemo || String(d.spotName || '').trim() ||
+    (d.items && d.items.length) || String(d.yt || '').trim() || String(d.blog || '').trim());
+}
+
+window._ptwCollectDraft = function() {
+  var modal = document.getElementById('pastTripRegisterModal');
+  if (!modal) return null;
+  window._pastTripCommitMemoInput();
+  var st = window.__pastTripRegisterState || {};
+  var val = function(id) { var el = document.getElementById(id); return el ? String(el.value || '') : ''; };
+  return {
+    uid: ptwDraftUid(),
+    savedAt: Date.now(),
+    photos: (st.photos || []).slice(0, 10),
+    photoMemos: (st.photoMemos || []).slice(0, 10),
+    memoMode: st.memoMode === 'per_photo' ? 'per_photo' : 'single',
+    singleMemo: st.singleMemo || '',
+    spotId: st.spotId || '',
+    spotName: val('pastTripSpotInput') || st.spotName || '',
+    spotPath: st.spotPath || '',
+    region: val('pastTripRegionInput') || st.region || '',
+    elev: val('pastTripElevInput'),
+    date: val('pastTripDateInput'),
+    items: st.items || [],
+    presetId: st.presetId || '',
+    yt: val('pastTripYoutubeInput'),
+    blog: val('pastTripNaverInput'),
+    publishOff: !!st.publishOff
+  };
+};
+
+window._ptwSaveDraft = function() {
+  clearTimeout(ptwDraftTimer);
+  var done = document.getElementById('pastTripDone');
+  if (done && !done.hidden) return false; // 이미 올렸다
+  var d = window._ptwCollectDraft();
+  if (!d) return false;
+  try {
+    if (ptwDraftHasContent(d)) localStorage.setItem(PTW_DRAFT_KEY, JSON.stringify(d));
+    else localStorage.removeItem(PTW_DRAFT_KEY);
+  } catch (e) { return false; }
+  return ptwDraftHasContent(d);
+};
+
+window._ptwScheduleDraftSave = function() {
+  clearTimeout(ptwDraftTimer);
+  ptwDraftTimer = setTimeout(window._ptwSaveDraft, 400);
+};
+
+window._ptwClearDraft = function() {
+  clearTimeout(ptwDraftTimer);
+  try { localStorage.removeItem(PTW_DRAFT_KEY); } catch (e) {}
+};
+
+window._ptwRestoreDraft = function(modal) {
+  if (!modal) return;
+  var d = safeGetJSON(PTW_DRAFT_KEY, null);
+  if (!ptwDraftHasContent(d) || !d.uid || d.uid !== ptwDraftUid()) return;
+  // 모드 바꾸기는 지금 입력 칸(빈 칸) 값을 상태에 먼저 옮기므로, 불러온 글을 넣기 전에 한다
+  window.switchPastTripMemoMode(d.memoMode === 'per_photo' ? 'per_photo' : 'single');
+  var st = window.__pastTripRegisterState || {};
+  st.photos = Array.isArray(d.photos) ? d.photos.filter(function(u) { return String(u || '').indexOf('https://') === 0; }).slice(0, 10) : [];
+  st.photoMemos = Array.isArray(d.photoMemos) ? d.photoMemos.slice(0, st.photos.length) : [];
+  st.singleMemo = String(d.singleMemo || '').slice(0, 120);
+  st.photoIndex = 0;
+  st.items = Array.isArray(d.items) ? d.items : [];
+  st.presetId = String(d.presetId || '');
+  st.publishOff = !!d.publishOff;
+  window.__pastTripRegisterState = st;
+
+  var setVal = function(id, v) { var el = document.getElementById(id); if (el) el.value = String(v || ''); };
+  setVal('pastTripYoutubeInput', d.yt);
+  setVal('pastTripNaverInput', d.blog);
+  // 플랜에서 날짜를 정해 열었으면 그 날짜를 쓴다
+  if (d.date && modal.dataset.fromPlan !== '1') {
+    setVal('pastTripDateInput', d.date);
+    window._pastTripSyncDateDisplay();
+  }
+  var spotName = String(d.spotName || '').trim();
+  if (spotName) {
+    st.spotName = spotName;
+    st.region = String(d.region || '');
+    st.elev = d.elev ? String(d.elev).replace(/m$/i, '') + 'm' : '';
+    st.spotId = d.spotPath === 'registered' ? String(d.spotId || '') : '';
+    st.spotPath = st.spotId ? 'registered' : (d.spotPath === 'choice' ? 'choice' : '');
+    setVal('pastTripSpotInput', spotName);
+    setVal('pastTripRegionInput', d.region);
+    setVal('pastTripElevInput', String(d.elev || '').replace(/m$/i, ''));
+    if (st.spotPath === 'registered') {
+      window._pastTripShowSpotChoice(false);
+      window._pastTripShowSpotDetail(true);
+      window._pastTripSetSpotBadge('registered');
+    } else if (st.spotPath === 'choice') {
+      window._pastTripShowSpotDetail(false);
+      window._pastTripSetSpotBadge('unregistered');
+      window._pastTripShowSpotChoice(true);
+    }
+  }
+  window._pastTripSyncMemoInput();
+  window._pastTripRenderPhotoStage();
+  window._pastTripRenderGearList();
+  var sw = document.getElementById('pastTripPublishSwitch');
+  if (sw && !sw.disabled) sw.setAttribute('aria-checked', st.publishOff ? 'false' : 'true');
+  window._pastTripRenderPublishHint();
+
+  // 불러온 걸 알리고, 원하면 빈 칸으로 새로 쓰게 한다
+  var body = document.getElementById('pastTripPhotoStage');
+  var scroller = body ? body.closest('.ptw-step').parentElement : null;
+  if (scroller) {
+    var bar = document.createElement('div');
+    bar.id = 'pastTripDraftBar';
+    bar.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:10px; background:rgba(56,189,248,0.10); border:1px solid rgba(56,189,248,0.35); font-size:0.76rem; font-weight:800; color:#bae6fd;';
+    bar.innerHTML = '<span>쓰던 후기를 불러왔어요</span>' +
+      '<button type="button" data-ptw-draft="new" style="flex:none; height:30px; padding:0 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:#e2e8f0; font-size:0.72rem; font-weight:800; cursor:pointer; font-family:inherit;">새로 쓰기</button>';
+    bar.querySelector('[data-ptw-draft="new"]').addEventListener('click', function() {
+      window._ptwClearDraft();
+      var cur = document.getElementById('pastTripRegisterModal');
+      // 다시 열어도 원래 연 곳(플랜·사진 지도 등)으로 돌아가게 표시를 이어 준다
+      window.__pastTripOpenedFromPlan = !!(cur && cur.dataset.fromPlan === '1');
+      window.__pastTripStayOnClose = !!(cur && cur.dataset.stay === '1');
+      window.openPastTripRegisterModal();
+    });
+    scroller.insertBefore(bar, scroller.firstChild);
+  }
 };
 
 window.openMyPastTripsFromReport = function(ev) {
