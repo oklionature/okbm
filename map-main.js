@@ -8138,16 +8138,30 @@ var overlay = document.getElementById('customModalOverlay');
         const lowerQ = rawQuery.toLowerCase();
 
         // 🎯 1. 산 이름 및 세부 포인트 중심 엄격 매칭 (설명/주소 속 무관한 한 글자 매칭 원천 차단)
+        // 지역(충주시·충주·충북)도 찾고, "충주 고봉"처럼 띄어 쓴 단어는 지역·이름·부제 어디든 모두 들어 있으면 찾는다
+        const tokens = lowerQ.split(/\s+/).filter(Boolean);
+        const compactQ = lowerQ.replace(/\s+/g, '');
         const matchedList = [];
         spots.forEach(spot => {
           const mainName = (spot.spot_main || spot.name || '').toLowerCase();
           const subName = (spot.spot_sub || '').toLowerCase();
+          const city = (spot.cityName || '').toLowerCase();
+          const cityShort = city.length > 2 ? city.replace(/(시|군|구)$/, '') : city;
+          const region = (spot.region || '').toLowerCase();
+          // 한 글자("시", "도")로는 지역을 찾지 않는다
+          const inPlace = t => t.length >= 2 && (city.includes(t) || region.includes(t));
 
           let score = 0;
           if (mainName === lowerQ) score += 100;
           else if (mainName.startsWith(lowerQ)) score += 80;
           else if (mainName.includes(lowerQ)) score += 60;
           else if (subName.includes(lowerQ)) score += 40;
+          else if (tokens.length > 1 && tokens.every(t => mainName.includes(t) || subName.includes(t) || inPlace(t))) {
+            score += tokens.some(t => mainName.includes(t)) ? 70 : 30;
+          } else if (cityShort.length >= 2 && compactQ.length > cityShort.length && compactQ.startsWith(cityShort)
+            && mainName.replace(/\s+/g, '').startsWith(compactQ.slice(cityShort.length))) {
+            score += 70; // 붙여 쓴 "충주고봉"
+          } else if (tokens.length === 1 && inPlace(lowerQ)) score += 20;
 
           if (score > 0) {
             matchedList.push({ spot, score });
