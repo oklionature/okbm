@@ -63,8 +63,6 @@
       '.hh-pick{position:relative;top:15px;font-size:13px;font-weight:800;color:#ffd77a;font-variant-numeric:tabular-nums;white-space:nowrap;transition:opacity .3s ease}',
       '.hh-pick.off{opacity:0;pointer-events:none}',
       '#btnHeroAuthorFeed{display:none !important}',
-      '.insta-memo-actions-row{border-top:0 !important;padding-top:4px !important}',
-      '.insta-memo-actions-row .btn-insta-action svg{display:none}',
       '.hm-stat{color:#ffd77a}',
       // 시안: 테마 칩은 글자만, 카드는 사진·고도·이름만
       '#heroTrailerSectionWrap .n-cat-chip svg{display:none}',

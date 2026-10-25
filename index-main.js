@@ -948,14 +948,13 @@
         ? (matchedFeed.memo || matchedFeed.oneLineMemo)
         : (matchedSpot ? (matchedSpot.desc || matchedSpot.desc_summary || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.') : '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.');
       var author = (matchedFeed && (matchedFeed.author || matchedFeed.nick)) ? (matchedFeed.author || matchedFeed.nick) : '낭만백패커';
-      var feedOrSpotId = escapeHtml(String((matchedFeed && matchedFeed.id) || (matchedSpot && matchedSpot.id) || cleanMapSpotName));
       var heroFeedId = matchedFeed ? String(matchedFeed.id || '').trim() : '';
       var heroUserId = matchedFeed ? String(matchedFeed.userId || matchedFeed.user_id || '').trim() : '';
       var heroSafetyHtml = '';
       var isOwnThemeFeed = heroUserId && typeof window.isCurrentUserId === 'function' && window.isCurrentUserId(heroUserId);
       if (heroFeedId && !isOwnThemeFeed && typeof window.openUgcSafetyMenu === 'function') {
-        heroSafetyHtml = '<button type="button" data-feed-id="' + escapeHtml(heroFeedId) + '" data-user-id="' + escapeHtml(heroUserId) + '" data-author="' + escapeHtml(author) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openUgcSafetyMenu(this.dataset.feedId, this.dataset.userId, this.dataset.author, event);" title="더보기" aria-label="더보기" style="width:31px; height:31px; flex:0 0 31px; border-radius:8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#cbd5e1; display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer;">' +
-          '<svg viewBox="0 0 24 24" style="width:16px; height:16px; pointer-events:none;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
+        heroSafetyHtml = '<button type="button" data-feed-id="' + escapeHtml(heroFeedId) + '" data-user-id="' + escapeHtml(heroUserId) + '" data-author="' + escapeHtml(author) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openUgcSafetyMenu(this.dataset.feedId, this.dataset.userId, this.dataset.author, event);" title="더보기" aria-label="더보기" style="position:absolute; top:10px; right:40px; z-index:30; width:24px; height:24px; border-radius:50%; background:#0c1017; border:1px solid rgba(255,255,255,0.18); color:#cbd5e1; display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer;">' +
+          '<svg viewBox="0 0 24 24" style="width:13px; height:13px; pointer-events:none;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
         '</button>';
       }
 
@@ -1024,6 +1023,7 @@
               <button type="button" onclick="window.closeSecretSpotHeroModal();" style="position:absolute; top:10px; right:10px; z-index:30; width:24px; height:24px; border-radius:50%; background:#0c1017; border:1px solid rgba(255,255,255,0.18); color:#cbd5e1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; transition:all 0.15s ease;">
                 <svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
+              ${heroSafetyHtml}
 
               <!-- 📷 가로 스와이프 트랙 -->
               <div onscroll="window.updateSecretSpotStoryBars(this);" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">
@@ -1038,22 +1038,13 @@
               </div>
             </div>
 
-            <!-- 하단 글래스 메모 (가변 자연스러운 높이 유지) -->
-            <div class="insta-glass-memo">
+            <!-- 하단 글래스 메모: 칸 어디를 눌러도 지도 자세히보기(아래 bindMemoLink). 장비 세팅보기는 장비를 올린 글이 거의 없어 뺐다 -->
+            <div class="insta-glass-memo okbm-memo-link" data-map-id="${escapeHtml(mapSpotId)}" data-spot="${escapeHtml(cleanMapSpotName)}">
               <div class="insta-memo-quote" id="secretSpotQuoteText" style="font-size:0.75rem; line-height:1.45; color:#cbd5e1; display:-webkit-box; -webkit-line-clamp:3; line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">
                 “${escapeHtml(firstMemoText)}”
               </div>
-
-              <div class="insta-memo-actions-row" style="margin-top:2px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.12); display:flex; gap:6px; flex-wrap:nowrap; align-items:center;">
-                <button type="button" class="btn-insta-action btn-action-map" data-map-id="${escapeHtml(mapSpotId)}" data-spot="${escapeHtml(cleanMapSpotName)}" onclick="window.closeSecretSpotHeroModal(); location.href='map.html?' + (this.dataset.mapId ? ('id=' + encodeURIComponent(this.dataset.mapId)) : ('spot=' + encodeURIComponent(this.dataset.spot)));" style="flex:1;">
-                  <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  <span>자세히보기</span>
-                </button>
-                <button type="button" class="btn-insta-action btn-action-template" data-spot-id="${feedOrSpotId}" onclick="window.openSecretSpotTemplateModal(this.dataset.spotId);" style="flex:1;">
-                  <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                  <span>장비 세팅보기</span>
-                </button>
-                ${heroSafetyHtml}
+              <div style="display:flex; justify-content:flex-end;">
+                <button type="button" class="hm-more">자세히 ›</button>
               </div>
             </div>
 
@@ -1063,6 +1054,12 @@
         `;
 
       document.body.appendChild(modalEl);
+      bindMemoLink(modalEl.querySelector('.okbm-memo-link'), function(box) {
+        window.closeSecretSpotHeroModal();
+        location.href = 'map.html?' + (box.dataset.mapId
+          ? ('id=' + encodeURIComponent(box.dataset.mapId))
+          : ('spot=' + encodeURIComponent(box.dataset.spot)));
+      });
       if (typeof window.lockHomeScrollForTripModal === 'function') {
         window.lockHomeScrollForTripModal();
       }
@@ -1078,23 +1075,34 @@
     };
 
 
+    // 설명 칸(사진 아래)을 누르면 자세히보기. 칸 안의 '자세히 ›' 버튼은 키보드로 닿는 자리이고 누르면 칸으로 올라온다.
+    // 칸 안의 다른 버튼(작성자 모아보기·⋯)은 각자 stopPropagation 하므로 여기로 오지 않는다.
+    function bindMemoLink(box, go) {
+      if (!box || box.__okbmMemoLink) return;
+      box.__okbmMemoLink = true;
+      box.addEventListener('click', function(e) {
+        var btn = e.target.closest('button');
+        if (btn && !btn.classList.contains('hm-more')) return;
+        go(box, e);
+      });
+    }
+
+    (function bindHeroMemoLink() {
+      function attach() {
+        bindMemoLink(document.getElementById('heroMemoBox'), function(box, e) { handleHeroNavClick(e); });
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attach);
+      } else {
+        attach();
+      }
+    })();
+
     function handleHeroNavClick(e) {
       if (e) e.stopPropagation();
       var record = window.currentHeroRecord;
       var spotName = (record && (record.spot || record.spotName)) ? (record.spot || record.spotName) : '대관령 선자령';
       location.href = 'map.html?spot=' + encodeURIComponent(spotName.replace(/\s*\(.*?\)/g, ''));
-    }
-
-    function openCurrentTemplateModal(e) {
-      if (e) e.stopPropagation();
-      var record = window.currentHeroRecord;
-      if (!record) return;
-
-      if (typeof window.openPackShareModal === 'function') {
-        window.openPackShareModal(record);
-      } else if (typeof openPackShareModal === 'function') {
-        openPackShareModal(record);
-      }
     }
 
     window.heroTopRecords = [];
