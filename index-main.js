@@ -208,6 +208,78 @@
       return safeGetJSON('okbm_cached_community_feeds', []) || [];
     }
 
+    // 테마 스팟의 테마 칸(전체 말고)은 홈 인기 피드 30개만으로는 모자라 백보킹처럼 한두 장만 나왔다.
+    // 테마 칸을 처음 누를 때 공개 피드를 더 받아 함께 찾는다. 사진은 앞 3장 주소만 받는다
+    // (카드엔 1장, 3장 넘어야 테마 카드로 쓴다). 카드를 누르면 그 글 하나를 통째로 받는다(openSecretSpotHeroViewer).
+    var THEME_EXTRA_FEED_LIMIT = 300;
+    var THEME_EXTRA_FEED_SELECT = 'id,user_id,spot,spot_id,elevation,weight_kg,date,author,likes_count,is_published,feed_type,created_at,p0:photos->0,p1:photos->1,p2:photos->2';
+    window.__okbmThemeExtraFeeds = [];
+    var themeExtraFeedsState = ''; // '' | 'loading' | 'done'
+
+    function loadThemeExtraFeeds() {
+      if (themeExtraFeedsState || !window.SUPABASE_URL) return;
+      themeExtraFeedsState = 'loading';
+      var url = window.SUPABASE_URL + '/rest/v1/feeds?select=' + encodeURIComponent(THEME_EXTRA_FEED_SELECT) +
+        '&is_published=eq.true&order=created_at.desc&limit=' + THEME_EXTRA_FEED_LIMIT;
+      var req = typeof window.okbmPublicFetch === 'function'
+        ? window.okbmPublicFetch(url)
+        : fetch(url, { headers: { 'apikey': window.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY } });
+      Promise.resolve(req).then(function(res) {
+        return res.ok ? res.json() : [];
+      }).then(function(rows) {
+        if (!Array.isArray(rows)) return;
+        window.__okbmThemeExtraFeeds = rows.map(function(r) {
+          var lite = normalizeHomeFeedRow(Object.assign({}, r, { photos: [r.p0, r.p1, r.p2].filter(Boolean) }));
+          lite.__themeLite = true;
+          return lite;
+        });
+      }).catch(function(e) {
+        console.warn('[index-main:loadThemeExtraFeeds]', e);
+      }).then(function() {
+        themeExtraFeedsState = 'done';
+        renderSecretSpotTrailerRail();
+        if (document.getElementById('themeSpotAllGridContainer')) {
+          window.renderThemeSpotAllGrid(window.currentThemeSpotAllTab || 'all');
+        }
+      });
+    }
+
+    // 더 받은 피드 하나를 홈과 같은 항목으로 다시 받아 바꿔 넣는다. 못 받으면 3장만으로 연다
+    function loadThemeFeedFull(lite) {
+      var id = String(lite.id || '').trim();
+      lite.__themeLite = false;
+      if (!id || !window.SUPABASE_URL) return Promise.resolve();
+      var select = window.FEEDS_HOME_SELECT || 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,instagram,likes_count,is_published,feed_type,created_at,items,template_id';
+      var url = window.SUPABASE_URL + '/rest/v1/feeds?select=' + encodeURIComponent(select) +
+        '&id=eq.' + encodeURIComponent(id) + '&is_published=eq.true&limit=1';
+      var req = typeof window.okbmPublicFetch === 'function'
+        ? window.okbmPublicFetch(url)
+        : fetch(url, { headers: { 'apikey': window.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY } });
+      return Promise.resolve(req).then(function(res) {
+        return res.ok ? res.json() : null;
+      }).then(function(rows) {
+        if (!Array.isArray(rows)) return;
+        var list = window.__okbmThemeExtraFeeds;
+        var idx = list.indexOf(lite);
+        if (idx === -1) return;
+        // 받는 사이 비공개·삭제된 글이면 목록에서 뺀다
+        if (rows[0]) list[idx] = normalizeHomeFeedRow(rows[0]);
+        else list.splice(idx, 1);
+      }).catch(function(e) {
+        console.warn('[index-main:loadThemeFeedFull]', e);
+      });
+    }
+
+    // 테마 칸에서 찾을 피드: 홈 피드 + 더 받은 피드(홈에 이미 있는 글은 홈 것을 쓴다)
+    function getThemeFeedPool(themeKey) {
+      var home = getHomeFeedPool();
+      var extra = window.__okbmThemeExtraFeeds;
+      if (!themeKey || themeKey === 'all' || !Array.isArray(extra) || !extra.length) return home;
+      var seen = {};
+      home.forEach(function(f) { if (f && f.id) seen[String(f.id).trim()] = true; });
+      return home.concat(extra.filter(function(f) { return f && f.id && !seen[String(f.id).trim()]; }));
+    }
+
     function getThemeSpotPool() {
       if (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0) {
         return registeredSpots;
@@ -492,6 +564,7 @@
       if (typeof window.registerModalOpen === 'function') {
         window.registerModalOpen('themeSpotAllModal', window.closeThemeSpotAllModal);
       }
+      window.currentThemeSpotAllTab = 'all';
       window.renderThemeSpotAllGrid('all');
     };
 
@@ -510,6 +583,7 @@
     window.filterThemeSpotAllGrid = function(themeKey, btnEl) {
       if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_theme_filter'); // 기능 사용 세기 (H8)
       window.currentThemeSpotAllTab = themeKey;
+      if (themeKey !== 'all') loadThemeExtraFeeds();
       var parent = btnEl ? btnEl.parentElement : null;
       if (parent) {
         parent.querySelectorAll('.n-cat-chip').forEach(function(b) { b.classList.remove('active'); });
@@ -522,7 +596,7 @@
       var grid = document.getElementById('themeSpotAllGridContainer');
       if (!grid) return;
 
-      var feedPool = getHomeFeedPool();
+      var feedPool = getThemeFeedPool(themeKey);
       if (typeof window.filterHiddenUgcFeeds === 'function') {
         feedPool = window.filterHiddenUgcFeeds(feedPool);
       }
@@ -564,7 +638,8 @@
       var filtered = validPhotoFeeds;
 
       if (filtered.length === 0) {
-        grid.innerHTML = '<div style="grid-column:1/-1; padding:60px 10px; text-align:center; font-size:0.75rem; color:#64748b;">해당 테마에 등록된 스팟이 없습니다.</div>';
+        var emptyText = (themeKey !== 'all' && themeExtraFeedsState === 'loading') ? '사진을 더 찾는 중이에요' : '해당 테마에 등록된 스팟이 없습니다.';
+        grid.innerHTML = '<div style="grid-column:1/-1; padding:60px 10px; text-align:center; font-size:0.75rem; color:#64748b;">' + emptyText + '</div>';
         return;
       }
 
@@ -596,6 +671,7 @@
     function filterSecretSpotTheme(themeKey, btnEl) {
       if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_theme_filter'); // 기능 사용 세기 (H8)
       window.currentSecretSpotTheme = themeKey;
+      if (themeKey !== 'all') loadThemeExtraFeeds();
       document.querySelectorAll('#heroTrailerSectionWrap .n-cat-chip').forEach(function(b) { b.classList.remove('active'); });
       if (btnEl) btnEl.classList.add('active');
       renderSecretSpotTrailerRail();
@@ -659,6 +735,10 @@
       var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
       var themeKey = window.currentSecretSpotTheme || 'all';
       var spotPool = getThemeSpotPool();
+      feedPool = getThemeFeedPool(themeKey);
+      if (typeof window.filterHiddenUgcFeeds === 'function') {
+        feedPool = window.filterHiddenUgcFeeds(feedPool);
+      }
 
       // 📷 테마에 맞는 유효 사진 피드만 선별 & 장소 기준 중복 제거
       var validPhotoFeeds = [];
@@ -695,6 +775,10 @@
       // 테마 스팟도 날마다 순서를 바꾼다 (같은 테마 안에서)
       var filteredFeeds = window.okbmDailyOrder(validPhotoFeeds, function(item) { return item.cleanSpotName; }, 'theme_' + themeKey);
       if (filteredFeeds.length === 0) {
+        if (themeKey !== 'all' && themeExtraFeedsState === 'loading') {
+          setRailHtml(themeRailSkeletonHtml());
+          return;
+        }
         setRailHtml(themeRailEmptyHtml(themeKey !== 'all'));
         return;
       }
@@ -813,7 +897,9 @@
       var cleanTargetKey = targetKey.replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
 
       // 테마 스팟 카드는 홈 목록에서 나오므로 홈 목록을 먼저 찾고, 없으면 보관함 목록까지 본다
-      var cachedFeeds = getHomeFeedPool().concat(Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : []);
+      var cachedFeeds = getHomeFeedPool()
+        .concat(Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : [])
+        .concat(Array.isArray(window.__okbmThemeExtraFeeds) ? window.__okbmThemeExtraFeeds : []);
       var visibleFeeds = cachedFeeds;
       if (typeof window.filterHiddenUgcFeeds === 'function') {
         visibleFeeds = window.filterHiddenUgcFeeds(cachedFeeds);
@@ -827,6 +913,13 @@
         });
       }
       var matchedFeed = findThemeFeed(visibleFeeds) || findThemeFeed(cachedFeeds);
+      // 테마 칸에서 더 받은 피드는 사진 3장만 들고 있다. 그 글 하나를 통째로 받아 바꿔 넣고 다시 연다
+      if (matchedFeed && matchedFeed.__themeLite) {
+        loadThemeFeedFull(matchedFeed).then(function() {
+          window.openSecretSpotHeroViewer(spotOrFeedId);
+        });
+        return;
+      }
       var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
         ? registeredSpots : (safeGetJSON('okbm_spots_cache', []) || []);
 
@@ -1607,6 +1700,60 @@
       ]
     };
 
+    // 홈 피드 행(feeds 표)을 홈·테마 스팟이 쓰는 모양으로 바꾼다
+    function normalizeHomeFeedRow(r) {
+      var pArr = [];
+      if (r.photos) {
+        if (Array.isArray(r.photos)) pArr = r.photos;
+        else if (typeof r.photos === 'string' && r.photos.trim().startsWith('[')) {
+          try { pArr = JSON.parse(r.photos); } catch(e) {}
+        } else if (typeof r.photos === 'string' && r.photos.trim().startsWith('https://')) {
+          pArr = [r.photos.trim()];
+        }
+      }
+
+      var itemsArr = [];
+      if (r.items) {
+        if (Array.isArray(r.items)) itemsArr = r.items;
+        else if (typeof r.items === 'string' && r.items.trim().startsWith('[')) {
+          try { itemsArr = JSON.parse(r.items); } catch(e) {}
+        }
+      }
+
+      var parsedMemos = [];
+      var rawMemoData = r.photo_memos_json || r.photo_memos;
+      if (Array.isArray(rawMemoData)) {
+        parsedMemos = rawMemoData;
+      } else if (typeof rawMemoData === 'string' && rawMemoData.trim().startsWith('[')) {
+        try { parsedMemos = JSON.parse(rawMemoData); } catch(e) {}
+      }
+
+      return {
+        id: r.id,
+        userId: r.user_id,
+        spot: r.spot || r.spot_name || '백패킹 필드',
+        spotId: r.spot_id ? String(r.spot_id).trim() : '',
+        spot_id: r.spot_id ? String(r.spot_id).trim() : '',
+        elevation: r.elevation || '',
+        weightKg: r.weight_kg != null ? String(r.weight_kg) : '',
+        date: r.date || '',
+        memo: r.memo || '',
+        oneLineMemo: r.memo || '',
+        templateId: r.template_id || 1,
+        likes: r.likes_count != null ? Number(r.likes_count) : 0,
+        createdAt: r.created_at || '',
+        isPublished: r.is_published !== false,
+        // RLS와 동일 기준(null = 비공개). 홈 공개 노출 판정에 사용.
+        is_published: r.is_published === true,
+        photos: pArr,
+        items: itemsArr,
+        author: r.author || '낭만백패커',
+        nick: r.author || '낭만백패커',
+        photoMemos: parsedMemos,
+        instagram: String(r.instagram || '').trim()
+      };
+    }
+
    async function initDynamicHeroAndFeeds() {
       initHeroGestureEngine();
 
@@ -1760,58 +1907,7 @@
           }
 
           if (Array.isArray(rawRows) && rawRows.length > 0) {
-            var normalizedFeeds = rawRows.map(function(r) {
-              var pArr = [];
-              if (r.photos) {
-                if (Array.isArray(r.photos)) pArr = r.photos;
-                else if (typeof r.photos === 'string' && r.photos.trim().startsWith('[')) {
-                  try { pArr = JSON.parse(r.photos); } catch(e) {}
-                } else if (typeof r.photos === 'string' && r.photos.trim().startsWith('https://')) {
-                  pArr = [r.photos.trim()];
-                }
-              }
-
-              var itemsArr = [];
-              if (r.items) {
-                if (Array.isArray(r.items)) itemsArr = r.items;
-                else if (typeof r.items === 'string' && r.items.trim().startsWith('[')) {
-                  try { itemsArr = JSON.parse(r.items); } catch(e) {}
-                }
-              }
-
-              var parsedMemos = [];
-              var rawMemoData = r.photo_memos_json || r.photo_memos;
-              if (Array.isArray(rawMemoData)) {
-                parsedMemos = rawMemoData;
-              } else if (typeof rawMemoData === 'string' && rawMemoData.trim().startsWith('[')) {
-                try { parsedMemos = JSON.parse(rawMemoData); } catch(e) {}
-              }
-
-              return {
-                id: r.id,
-                userId: r.user_id,
-                spot: r.spot || r.spot_name || '백패킹 필드',
-                spotId: r.spot_id ? String(r.spot_id).trim() : '',
-                spot_id: r.spot_id ? String(r.spot_id).trim() : '',
-                elevation: r.elevation || '',
-                weightKg: r.weight_kg != null ? String(r.weight_kg) : '',
-                date: r.date || '',
-                memo: r.memo || '',
-                oneLineMemo: r.memo || '',
-                templateId: r.template_id || 1,
-                likes: r.likes_count != null ? Number(r.likes_count) : 0,
-                createdAt: r.created_at || '',
-                isPublished: r.is_published !== false,
-                // RLS와 동일 기준(null = 비공개). 홈 공개 노출 판정에 사용.
-                is_published: r.is_published === true,
-                photos: pArr,
-                items: itemsArr,
-                author: r.author || '낭만백패커',
-                nick: r.author || '낭만백패커',
-                photoMemos: parsedMemos,
-                instagram: String(r.instagram || '').trim()
-              };
-            });
+            var normalizedFeeds = rawRows.map(normalizeHomeFeedRow);
 
             try {
               localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(normalizedFeeds.slice(0, 15)));
