@@ -86,9 +86,11 @@
       '#okbmCommentSheet .cm-x{background:none;border:0;color:#94a3b8;font-size:1.1rem;cursor:pointer;padding:4px 6px;}' +
       '#okbmCommentSheet .cm-list{flex:1;min-height:0;overflow-y:auto;padding:10px 16px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch;}' +
       '#okbmCommentSheet .cm-row{display:flex;gap:9px;align-items:flex-start;}' +
-      '#okbmCommentSheet .cm-av{width:28px;height:28px;border-radius:50%;background:rgba(56,189,248,0.16);color:#7dd3fc;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:900;}' +
+      '#okbmCommentSheet .cm-av{width:30px;height:30px;border-radius:50%;background:rgba(56,189,248,0.16);color:#7dd3fc;flex-shrink:0;display:flex;align-items:center;justify-content:center;' +
+        'font-size:0.72rem;font-weight:900;border:0;padding:0;overflow:hidden;cursor:pointer;font-family:inherit;}' +
+      '#okbmCommentSheet .cm-av img{width:100%;height:100%;object-fit:cover;display:block;}' +
       '#okbmCommentSheet .cm-meta{font-size:0.70rem;color:#94a3b8;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}' +
-      '#okbmCommentSheet .cm-meta b{color:#fff;font-weight:900;font-size:0.76rem;}' +
+      '#okbmCommentSheet .cm-nick{color:#fff;font-weight:900;font-size:0.76rem;background:none;border:0;padding:0;cursor:pointer;font-family:inherit;}' +
       '#okbmCommentSheet .cm-tag{color:#38bdf8;font-weight:800;}' +
       '#okbmCommentSheet .cm-del{background:none;border:0;color:#64748b;font-size:0.66rem;cursor:pointer;padding:0;font-family:inherit;}' +
       '#okbmCommentSheet .cm-body{font-size:0.82rem;color:#e2e8f0;line-height:1.5;margin-top:2px;word-break:break-word;white-space:pre-wrap;}' +
@@ -170,10 +172,16 @@
     }
     list.innerHTML = state.rows.map(function (r) {
       var nick = String(r.nickname || '낭만루터');
+      var uid = String(r.user_id || '');
+      var photo = avatarUrl(r.photo_url);
+      // 사진·닉네임을 누르면 그 회원 피드 모아보기를 연다
+      var who = ' data-cmt-user="' + esc(uid) + '" data-cmt-nick="' + esc(nick) + '"';
       return '<div class="cm-row">' +
-        '<div class="cm-av" aria-hidden="true">' + esc(nick.charAt(0)) + '</div>' +
+        '<button type="button" class="cm-av"' + who + ' aria-label="' + esc(nick) + '님 피드 모아보기">' +
+          (photo ? '<img src="' + esc(photo) + '" alt="" decoding="async" data-cmt-fallback="' + esc(nick.charAt(0)) + '">' : esc(nick.charAt(0))) +
+        '</button>' +
         '<div style="min-width:0;flex:1;">' +
-          '<div class="cm-meta"><b>' + esc(nick) + '</b>' +
+          '<div class="cm-meta"><button type="button" class="cm-nick"' + who + '>' + esc(nick) + '</button>' +
             (r.is_author ? '<span class="cm-tag">작성자</span>' : '') +
             '<span>' + esc(whenText(r.created_at)) + '</span>' +
             (r.can_delete ? '<button type="button" class="cm-del" data-cmt-del="' + esc(r.id) + '">삭제</button>' : '') +
@@ -182,6 +190,20 @@
         '</div>' +
       '</div>';
     }).join('');
+  }
+
+  // 프로필 사진은 작게 받는다. R2 사진은 img.romanticroute.kr(Cloudflare 줄이기)로 96px(원본 145KB → 약 1KB),
+  // 카카오·구글 사진은 원래 작아서 그대로 받는다. http 주소는 이 페이지에서 막혀서 https로 바꾼다.
+  var R2_PUBLIC = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
+  function avatarUrl(raw) {
+    var u = String(raw || '').trim();
+    if (!u) return '';
+    if (u.indexOf('http://') === 0) u = 'https://' + u.slice(7);
+    if (u.indexOf('https://') !== 0) return '';
+    if (u.indexOf(R2_PUBLIC) === 0) {
+      return 'https://img.romanticroute.kr/cdn-cgi/image/width=96,quality=70,fit=cover,format=auto/' + u.slice(R2_PUBLIC.length);
+    }
+    return u;
   }
 
   function lastOf(rows) {
@@ -297,6 +319,16 @@
       if (t === sheet) { closeSheet(); return; }
       if (t.closest('[data-cmt-close]')) { closeSheet(); return; }
       if (t.closest('[data-cmt-send]')) { send(); return; }
+      var who = t.closest('[data-cmt-user]');
+      if (who) {
+        var uid = who.getAttribute('data-cmt-user') || '';
+        var nick = who.getAttribute('data-cmt-nick') || '';
+        if (!uid || typeof window.openUserFeedCollectionModal !== 'function') return;
+        closeSheet();
+        if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_user_feed_open'); // 기능 사용 세기 (H8)
+        window.openUserFeedCollectionModal(nick, uid, 'route');
+        return;
+      }
       var del = t.closest('[data-cmt-del]');
       if (del) { removeComment(del.getAttribute('data-cmt-del')); return; }
       if (t.closest('[data-cmt-login]')) {
@@ -311,6 +343,14 @@
     e.stopPropagation();
     if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
     window.okbmOpenFeedComments(opener.getAttribute('data-cmt-feed'));
+  }, true);
+
+  // 프로필 사진을 못 받으면 이름 첫 글자로 바꾼다(error는 올라오지 않아 capture로 받는다, onerror 속성은 CSP가 막는다)
+  document.addEventListener('error', function (e) {
+    var img = e.target;
+    if (!img || img.tagName !== 'IMG' || !img.hasAttribute('data-cmt-fallback')) return;
+    var holder = img.parentNode;
+    if (holder) holder.textContent = img.getAttribute('data-cmt-fallback') || '';
   }, true);
 
   document.addEventListener('keydown', function (e) {

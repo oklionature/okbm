@@ -174,23 +174,26 @@ CREATE TRIGGER trg_okbm_feed_like_notify
 
 -- 5) 앱이 쓰는 함수 ------------------------------------------------------------
 
--- 피드 하나의 댓글(오래된 순, 최대 200개). 비회원도 읽는다. 누가 썼는지는 닉네임만 돌려준다.
+-- 피드 하나의 댓글(오래된 순, 최대 200개). 비회원도 읽는다.
+-- 쓴 사람은 닉네임·회원 번호·프로필 사진 주소만 돌려준다(피드 글쓴이처럼 공개되는 값). 사진은 지금 회원 정보에서 읽는다.
+-- 회원 번호는 댓글 사진·닉네임을 누르면 그 회원 피드 모아보기를 여는 데 쓴다.
 -- can_delete: 쓴 사람·피드 주인·관리자에게만 참(delete_feed_comment와 같은 기준)
 DROP FUNCTION IF EXISTS public.get_feed_comments(text);
 CREATE OR REPLACE FUNCTION public.get_feed_comments(p_feed_id text)
-RETURNS TABLE (id bigint, nickname text, body text, created_at timestamptz, is_author boolean, is_mine boolean, can_delete boolean)
+RETURNS TABLE (id bigint, user_id text, nickname text, photo_url text, body text, created_at timestamptz, is_author boolean, is_mine boolean, can_delete boolean)
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
   WITH me AS (SELECT public.okbm_uid() AS uid, public.okbm_is_admin() AS admin)
-  SELECT c.id, c.nickname, c.body, c.created_at,
+  SELECT c.id, c.user_id, c.nickname, NULLIF(btrim(u.photo_url), '') AS photo_url, c.body, c.created_at,
          (c.user_id = f.user_id) AS is_author,
          (me.uid IS NOT NULL AND c.user_id = me.uid) AS is_mine,
          (me.uid IS NOT NULL AND (c.user_id = me.uid OR f.user_id = me.uid)) OR COALESCE(me.admin, false) AS can_delete
   FROM public.feed_comments c
   JOIN public.feeds f ON f.id = c.feed_id
+  LEFT JOIN public.users u ON u.id = c.user_id
   CROSS JOIN me
   WHERE c.feed_id = btrim(p_feed_id)
     AND (f.is_published OR f.user_id = me.uid)
