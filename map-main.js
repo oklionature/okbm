@@ -5746,6 +5746,53 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
       }
       setTimeout(fetchGlobalSpotRankings, 800);
 
+      // 검색창 인기 박지 TOP 5: 최근 7일 동안 정보창을 연 회원 수(H16 get_recent_spot_ranking).
+      // 못 받으면 null로 두고 예전 누적 순위(getSpotViews)를 쓴다.
+      window.__recentSpotRanking = null;
+      function fetchRecentSpotRankings() {
+        var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
+        var rpcUrl = targetUrl + '/rest/v1/rpc/get_recent_spot_ranking';
+        var headers = (typeof window.okbmPublicRestHeaders === 'function')
+          ? window.okbmPublicRestHeaders()
+          : {
+              'apikey': window.SUPABASE_ANON_KEY || '',
+              'Authorization': 'Bearer ' + (window.SUPABASE_ANON_KEY || ''),
+              'Content-Type': 'application/json'
+            };
+        var body = JSON.stringify({ p_days: 7, p_limit: 10 });
+        var doFetch = (typeof window.okbmPublicFetch === 'function')
+          ? window.okbmPublicFetch(rpcUrl, { method: 'POST', headers: headers, body: body })
+          : fetch(rpcUrl, { method: 'POST', headers: headers, body: body });
+        doFetch
+          .then(function(res) { return res.ok ? res.json() : null; })
+          .then(function(rows) {
+            if (!Array.isArray(rows) || !rows.length) return;
+            window.__recentSpotRanking = rows.map(function(r) {
+              return { id: String(r.spot_id), viewers: Number(r.viewers) || 0 };
+            });
+            const inputEl = document.getElementById('pcSearchInput');
+            const dropdown = document.getElementById('pcSearchDropdown');
+            if (dropdown && dropdown.style.display === 'block' && inputEl && !inputEl.value.trim()) showTopRankings('pc');
+          })
+          .catch(function(e) { console.warn('[map.html:fetchRecentSpotRankings]', e); });
+      }
+      setTimeout(fetchRecentSpotRankings, 900);
+
+      // 화면에 보이는 횟수: 실제 회원 수에 순위별로 다르게 더하고(1위가 가장 많이), 박지마다 0~4를 더 흔든다.
+      // 순서는 실제 순위 그대로이고, 위 순위 숫자가 늘 더 크게 맞춘다.
+      function recentRankingDisplayCounts(list) {
+        const bonus = [40, 33, 27, 22, 18];
+        let prev = Infinity;
+        return list.map((r, idx) => {
+          let h = 0;
+          for (const ch of r.id) h = (h * 31 + ch.charCodeAt(0)) % 997;
+          let n = r.viewers + (bonus[idx] != null ? bonus[idx] : 15) + (h % 5);
+          if (n >= prev) n = prev - 1 - (h % 2);
+          prev = n;
+          return Math.max(n, r.viewers);
+        });
+      }
+
       function getSpotViews(spot) {
         if (!spot) return 0;
         var sId = String(spot.id || '').trim();
@@ -5841,7 +5888,7 @@ var liveSearchTimer = null;
           <div style="padding:6px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); background:var(--bg-card);">
             <div style="display:flex; align-items:center; gap:4px;">
               <span style="color:#f59e0b; font-size:0.70rem;">★</span>
-              <span style="font-size:0.72rem; font-weight:800; color:var(--text-primary);">전국 실시간 인기 장소 TOP 5</span>
+              <span style="font-size:0.72rem; font-weight:800; color:var(--text-primary);">최근 7일 인기 박지 TOP 5</span>
             </div>
             <button type="button" onclick="document.getElementById('pcSearchDropdown').style.display='none';" style="background:none; border:none; color:var(--text-muted); font-size:0.68rem; font-weight:700; cursor:pointer; padding:2px 4px;">✕ 닫기</button>
           </div>`;
@@ -5860,7 +5907,19 @@ var liveSearchTimer = null;
           }
         }
 
-        const sorted = uniqueSpots.sort((a, b) => getSpotViews(b) - getSpotViews(a)).slice(0, 5);
+        let sorted = [];
+        let counts = [];
+        const recent = Array.isArray(window.__recentSpotRanking) ? window.__recentSpotRanking : null;
+        if (recent) {
+          const byId = new Map(uniqueSpots.map(s => [String(s.id).trim(), s]));
+          const picked = recent.filter(r => byId.has(r.id)).slice(0, 5);
+          sorted = picked.map(r => byId.get(r.id));
+          counts = recentRankingDisplayCounts(picked);
+        }
+        if (!sorted.length) {
+          sorted = uniqueSpots.sort((a, b) => getSpotViews(b) - getSpotViews(a)).slice(0, 5);
+          counts = sorted.map(getSpotViews);
+        }
         sorted.forEach((item, idx) => {
           const rankColors = [
             'background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff;',
@@ -5893,7 +5952,7 @@ var liveSearchTimer = null;
               </div>
             </div>
             <div style="font-size:0.60rem; color:#38bdf8; font-weight:800; font-family:'Space Grotesk', sans-serif; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.25); padding:1px 6px; border-radius:8px; flex-shrink:0; margin-left:6px;">
-              ${getSpotViews(item)}회
+              ${counts[idx]}회
             </div>`;
 
           li.addEventListener('click', () => {
@@ -8188,7 +8247,7 @@ var overlay = document.getElementById('customModalOverlay');
           dropdown.style.display = 'block';
 
           if (items.length === 0) {
-            dropdown.innerHTML = '<li style="padding:14px; text-align:center; color:var(--text-muted); font-size:0.75rem;">일치하는 산이나 박지가 없습니다.</li>';
+            dropdown.innerHTML = '<li style="padding:14px; text-align:center; color:var(--text-muted); font-size:0.75rem;">일치하는 지역이나 박지가 없습니다.</li>';
             return;
           }
 
