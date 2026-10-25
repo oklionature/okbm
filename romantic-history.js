@@ -4723,6 +4723,16 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var spotTitleHtml = sCanMap
       ? okbmFeedSpotPillHtml(sSpotName, sSpotId)
       : ('<div style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">' + spotLabelHtml + '</div>');
+    // 남의 글은 박지 이름 왼쪽(같은 줄)에 작성자 아이디. 누르면 그 회원 피드 모아보기(내 글은 뺀다)
+    var sIsOwner = typeof window.isRecordOwner === 'function' && window.isRecordOwner(log);
+    var sAuthor = String(log.author || log.nick || log.nickname || '').trim();
+    var sAuthorUserId = String(log.userId || log.user_id || '').trim();
+    var authorLineHtml = (!sIsOwner && (sAuthor || sAuthorUserId))
+      ? '<button type="button" data-author="' + escapeHtml(sAuthor) + '" data-user-id="' + escapeHtml(sAuthorUserId) + '" data-metric-click="feat_user_feed_open" onclick="window.okbmOpenFeedAuthor(this);" style="flex:0 1 auto; min-width:0; max-width:42%; background:none; border:0; padding:2px 0; display:inline-flex; align-items:center; gap:4px; color:#e2e8f0; font-size:0.8rem; font-weight:800; cursor:pointer;" title="' + escapeHtml(sAuthor || '작성자') + '님의 피드 모아보기">' +
+          '<svg viewBox="0 0 24 24" style="width:12px; height:12px; flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+          '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(sAuthor || '낭만백패커') + '</span>' +
+        '</button>'
+      : '';
 
     var interactiveBarHtml =
       '<div style="padding:10px 16px 14px 16px; background:#000000; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.06);">' +
@@ -4744,8 +4754,8 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       '</div>';
 
     return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:2px solid rgba(255,255,255,0.12); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:28px; box-sizing:border-box;">' +
-      '<div style="padding:14px 16px 10px 16px; background:#000000; display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid rgba(255,255,255,0.06);">' +
-        spotTitleHtml +
+      '<div style="padding:14px 16px 10px 16px; background:#000000; display:flex; justify-content:space-between; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.06);">' +
+        '<div style="display:flex; align-items:center; gap:8px; min-width:0;">' + authorLineHtml + spotTitleHtml + '</div>' +
         '<div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">' +
           '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(log.date || '') + '</span>' +
           window.okbmFeedInstagramBadgeHtml(log.instagram || log.insta || '') +
@@ -5884,6 +5894,29 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
   
 // 📖 [백패킹/캠핑 피드 상세 듀얼 뷰 - 현재 스크롤 피드 실시간 추적 & 수정 100% 바인딩]
+  // 후기 카드의 작성자 아이디를 누르면: 지금 보던 후기 창은 뒤로가기로 돌아올 수 있게 남기고 그 회원 피드 모아보기를 연다
+  window.okbmOpenFeedAuthor = function(btn) {
+    if (!btn || typeof window.openUserFeedCollectionModal !== 'function') return;
+    var author = btn.dataset.author || '';
+    var userId = btn.dataset.userId || '';
+    if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
+      window.openUserFeedCollectionModal(author, userId); // 로그인 안내를 띄운다
+      return;
+    }
+    var feedModal = document.getElementById('singleTripFeedModal');
+    var state = window.__dualFeedWindow;
+    if (feedModal && state && Array.isArray(state.logs)) {
+      var curId = window.__currentActiveDualFeedId;
+      var logs = state.logs.slice();
+      var ctx = state.singleOnly ? '최근 다녀온 후기' : undefined;
+      window.recordModalHistoryStep('singleTripFeedModal', function() {
+        window.openSingleTripDualFeedModal(curId, logs, ctx);
+      });
+      feedModal.remove();
+    }
+    window.openUserFeedCollectionModal(author, userId);
+  };
+
   window.openSingleTripDualFeedModal = function(recordId, scopedFeedList, contextTitle) {
     var pastTripsEl = document.getElementById('pastTripsListModal');
     var userCollEl = document.getElementById('userFeedCollectionModal');
@@ -5996,7 +6029,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         </div>
       </div>
 
-      <div id="dualFeedScrollContainer" onscroll="window.__onDualFeedContainerScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; contain:content; padding:calc(48px + max(47px, env(safe-area-inset-top, 0px))) 0 16px 0; display:flex; flex-direction:column; box-sizing:border-box;">
+      <div id="dualFeedScrollContainer" onscroll="window.__onDualFeedContainerScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; contain:content; padding:calc(48px + max(47px, env(safe-area-inset-top, 0px))) 0 16px 0; scroll-padding-top:calc(48px + max(47px, env(safe-area-inset-top, 0px))); display:flex; flex-direction:column; box-sizing:border-box;">
         <div id="dualFeedCardsWrapper">
           ${allCardsHtml}
         </div>
