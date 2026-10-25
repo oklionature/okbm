@@ -3417,6 +3417,32 @@ window.okbmRefreshUserDataFromServer = async function(opts) {
   }
 };
 
+// 안 읽은 알림 개수만 받는다(H17 get_unread_notification_count, 숫자 하나).
+// 1분마다 알림 50줄을 통째로 받으면 별·댓글 알림이 쌓일수록 다운로드 양이 커진다. 목록은 알림함을 열 때만 받는다.
+// 함수가 없거나 실패하면 예전처럼 목록으로 센다.
+window.okbmPollUnreadNotifCount = async function() {
+  var client = window.supabaseClient;
+  if (!client || typeof client.rpc !== 'function' || !okbmGetCurrentUserId()) {
+    return window.pollUserNotifications(true);
+  }
+  try {
+    var res = await client.rpc('get_unread_notification_count');
+    if (res.error || typeof res.data !== 'number') throw res.error || new Error('bad count');
+    window.__okbmUnreadNotifOnly = res.data;
+    if (typeof window.okbmApplyUnreadBadge === 'function') {
+      window.okbmApplyUnreadBadge();
+    } else {
+      var totalUnread = res.data + Number(window.__okbmUnreadNoteCount || 0);
+      window.__okbmUnreadNotifCount = totalUnread;
+      window.okbmPaintNotifBadge(totalUnread);
+    }
+    return res.data;
+  } catch (e) {
+    console.warn('[romantic-sync.js:okbmPollUnreadNotifCount]', e);
+    return window.pollUserNotifications(true);
+  }
+};
+
 window.okbmStopNotifPoll = function() {
   if (window.__okbmNotifPollTimer) {
     clearInterval(window.__okbmNotifPollTimer);
@@ -3432,7 +3458,7 @@ window.okbmStartNotifPoll = function() {
   window.__okbmNotifPollTimer = setInterval(function() {
     if (document.visibilityState && document.visibilityState !== 'visible') return;
     if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
-      window.pollUserNotifications(true).catch(function() {});
+      window.okbmPollUnreadNotifCount().catch(function() {});
     }
   }, 60000);
 };
@@ -9943,7 +9969,7 @@ function openUserProfileModal() {
         }).catch(function() {});
       }
       if (typeof window.pollUserNotifications === 'function') {
-        window.pollUserNotifications(true).catch(function() {});
+        window.okbmPollUnreadNotifCount().catch(function() {});
       }
       if (typeof window.okbmRefreshNoteBadge === 'function') {
         window.okbmRefreshNoteBadge().catch(function() {});
@@ -13619,9 +13645,14 @@ window.okbmPaintNotifInboxList = async function() {
     // 백패커 라운지 댓글·건의 답변 알림은 누르면 그 글을 연다 (related_id = 글 id)
     var kind = String(r.kind || '').toLowerCase();
     var loungePostId = (kind === 'lounge_comment' || kind === 'lounge_reply') ? String(r.related_id || '').trim() : '';
+    // 내 피드에 달린 별·댓글 알림(H17)은 누르면 그 피드를 연다 (related_id = 피드 id). 댓글이면 댓글 창도 펼친다.
+    var feedOpenId = (kind === 'feed_comment' || kind === 'feed_like') ? String(r.related_id || '').trim() : '';
     var openAttrs = loungePostId
       ? ' class="okbm-notif-row" role="button" tabindex="0" data-lounge-post="' + _escapeReportPropHtml(loungePostId) + '"'
-      : '';
+      : (feedOpenId
+        ? ' class="okbm-notif-row" role="button" tabindex="0" data-feed-open="' + _escapeReportPropHtml(feedOpenId) + '" data-feed-comments="' + (kind === 'feed_comment' ? '1' : '0') + '"'
+        : '');
+    var canOpen = Boolean(loungePostId || feedOpenId);
     // 쪽지 줄과 같은 밀어서 삭제 구조 (okbmBindNoteSwipeRows가 함께 묶는다)
     var safeNotifId = _escapeReportPropHtml(String(r.id || ''));
     return '<div class="okbm-note-swipe" data-notif-id="' + safeNotifId + '" style="position:relative; overflow:hidden; border-bottom:1px solid rgba(255,255,255,0.06);">' +
@@ -13629,12 +13660,12 @@ window.okbmPaintNotifInboxList = async function() {
         '<button type="button" data-notif-id="' + safeNotifId + '" onclick="window.deleteUserNotification(this.dataset.notifId, event);" style="width:76px; border:none; background:#f43f5e; color:#ffffff; font-size:0.78rem; font-weight:900; cursor:pointer;">삭제</button>' +
       '</div>' +
       '<div class="okbm-note-swipe-front" data-open="0" style="position:relative; background:#0c1017; transform:translateX(0); will-change:transform; touch-action:pan-y;">' +
-        '<div' + openAttrs + ' style="padding:12px 0; display:flex; gap:8px; align-items:flex-start;' + (loungePostId ? ' cursor:pointer;' : '') + '">' +
+        '<div' + openAttrs + ' style="padding:12px 0; display:flex; gap:8px; align-items:flex-start;' + (canOpen ? ' cursor:pointer;' : '') + '">' +
           unreadDot +
           '<div style="min-width:0; flex:1;">' +
             '<div style="font-size:0.80rem; font-weight:800; color:#e2e8f0;">' + _escapeReportPropHtml(r.title || '알림') + '</div>' +
             '<div style="font-size:0.68rem; color:#94a3b8; margin-top:4px; line-height:1.45;">' + _escapeReportPropHtml(r.body || '') + '</div>' +
-            (when ? '<div style="font-size:0.58rem; color:#64748b; margin-top:6px;">' + when + (loungePostId ? ' · 글 보기 ›' : '') + '</div>' : '') +
+            (when ? '<div style="font-size:0.58rem; color:#64748b; margin-top:6px;">' + when + (loungePostId ? ' · 글 보기 ›' : (feedOpenId ? ' · 피드 보기 ›' : '')) + '</div>' : '') +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -13645,7 +13676,7 @@ window.okbmPaintNotifInboxList = async function() {
   if (unreadIds.length) {
     await window.markUserNotificationsRead(unreadIds);
     if (typeof window.pollUserNotifications === 'function') {
-      window.pollUserNotifications(true).catch(function() {});
+      window.okbmPollUnreadNotifCount().catch(function() {});
     }
   }
 };
@@ -13683,7 +13714,7 @@ window.deleteUserNotification = async function(notifId, ev) {
   }
   if (typeof showToast === 'function') showToast('알림을 삭제했습니다.', 'success', 1600);
   if (typeof window.pollUserNotifications === 'function') {
-    window.pollUserNotifications(true).catch(function() {});
+    window.okbmPollUnreadNotifCount().catch(function() {});
   }
   return true;
 };
@@ -13697,7 +13728,8 @@ function okbmBindNotifRowOpen(listEl) {
     var row = e.target && e.target.closest ? e.target.closest('.okbm-notif-row') : null;
     if (!row || !listEl.contains(row)) return;
     var postId = String(row.getAttribute('data-lounge-post') || '').trim();
-    if (!postId) return;
+    var feedId = String(row.getAttribute('data-feed-open') || '').trim();
+    if (!postId && !feedId) return;
     if (e.type === 'keydown') {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       e.preventDefault();
@@ -13705,6 +13737,22 @@ function okbmBindNotifRowOpen(listEl) {
     var inbox = document.getElementById('userNotificationInboxModal');
     if (inbox) inbox.remove();
     if (typeof window.unregisterModalClose === 'function') window.unregisterModalClose('userNotificationInboxModal');
+    if (feedId) {
+      var withComments = row.getAttribute('data-feed-comments') === '1';
+      if (typeof window.okbmOpenDirectFeed === 'function') {
+        Promise.resolve(window.okbmOpenDirectFeed(feedId)).then(function(opened) {
+          if (opened && withComments && typeof window.okbmOpenFeedComments === 'function') {
+            window.okbmOpenFeedComments(feedId);
+          }
+        }).catch(function() {});
+      } else {
+        // 피드 창이 없는 페이지(지도 등): 홈에서 연다. comments=1이면 feed-comments.js가 댓글 창을 펼친다.
+        var feedUrl = 'index.html?feed=' + encodeURIComponent(feedId) + (withComments ? '&comments=1' : '');
+        if (typeof window.smoothNavigate === 'function') window.smoothNavigate(feedUrl);
+        else window.location.assign(feedUrl);
+      }
+      return;
+    }
     if (typeof window.openLoungeWindow === 'function') {
       window.openLoungeWindow(2, postId);
     } else {

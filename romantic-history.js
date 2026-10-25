@@ -2308,6 +2308,9 @@ window.normalizeHistoryRecord = function(r, idx) {
       isPublished: resolvedPublished,
       likes: finalLikes,
       likes_count: finalLikes,
+      // H17 댓글 수·최근 댓글 한 줄(트리거가 채운다). 댓글 전체는 feed-comments.js가 창을 열 때 받는다.
+      commentsCount: (r && !isNaN(Number(r.comments_count !== undefined ? r.comments_count : r.commentsCount))) ? Number(r.comments_count !== undefined ? r.comments_count : r.commentsCount) : 0,
+      lastComment: (r && (r.last_comment || r.lastComment)) || null,
       instagram: (r && r.instagram) ? r.instagram : '',
       youtube: (r && r.youtube) ? r.youtube : '',
       blog: (r && (r.blog || r.blog_url || r.naverBlog)) ? String(r.blog || r.blog_url || r.naverBlog) : '',
@@ -4728,6 +4731,9 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
             '<svg class="js-feed-star-icon" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (sIsStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + ';" fill="' + (sIsStarred ? '#fde047' : 'none') + '" stroke="' + (sIsStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
             '<span class="js-feed-star-count" style="font-size:0.78rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + sStarCount + '</span>' +
           '</button>' +
+          (typeof window.okbmFeedCommentBtnHtml === 'function'
+            ? window.okbmFeedCommentBtnHtml(sCleanId, log.commentsCount !== undefined ? log.commentsCount : log.comments_count)
+            : '') +
           '<button type="button" data-share-feed="1" data-feed-id="' + sFeedId + '" data-spot="' + escapeHtml(sSpot) + '" data-memo="' + escapeHtml(sMemo) + '" style="background:none; border:none; padding:4px 0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
             '<svg viewBox="0 0 24 24" style="width:17px; height:17px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
           '</button>' +
@@ -5029,7 +5035,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (window.__okbmSavedFeedResolveInflight) return;
     window.__okbmSavedFeedResolveInflight = true;
 
-    var projection = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+    var projection = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,comments_count,last_comment,is_published,feed_type,created_at';
     var foundIds = {};
     var allOk = true;
     try {
@@ -7330,7 +7336,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         };
 
         var fetchTableRows = function(tableName) {
-          var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+          var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,comments_count,last_comment,is_published,feed_type,created_at';
           var filterParam = currentUserId
             ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
             : '&is_published=eq.true';
@@ -7462,7 +7468,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           };
         var profile = safeGetJSON('user_profile', null);
         var currentUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
-        var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+        var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,comments_count,last_comment,is_published,feed_type,created_at';
         var filterParam = currentUserId
           ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
           : '&is_published=eq.true';
@@ -8345,6 +8351,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
               '<svg class="js-feed-star-icon" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease; pointer-events:none;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
               '<span class="js-feed-star-count" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif; pointer-events:none;">' + starCount + '</span>' +
             '</button>' +
+            (typeof window.okbmFeedCommentBtnHtml === 'function'
+              ? window.okbmFeedCommentBtnHtml(cleanCardId, record.commentsCount)
+              : '') +
             '<button type="button" data-share-feed="1" data-feed-id="' + cardId + '" data-spot="' + escapeHtml(spotName) + '" data-memo="' + escapeHtml(memo120) + '" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
               '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
             '</button>' +
@@ -8363,6 +8372,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           '<div id="feedPhotoMemoText_' + cardId + '" class="reel-memo-fixed-box" data-strip-credit="' + (showFeedCredit ? '1' : '0') + '">' +
             cleanMemoContentHtml +
           '</div>' +
+          (typeof window.okbmFeedCommentPreviewHtml === 'function'
+            ? window.okbmFeedCommentPreviewHtml(cleanCardId, record.lastComment, record.commentsCount)
+            : '') +
         '</div>' +
       '</div>' +
     '</div>';

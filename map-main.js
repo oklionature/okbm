@@ -1145,7 +1145,7 @@
             var targetKey = window.SUPABASE_ANON_KEY || '';
             var spotMainName = (spot.spot_main || spot.name || '').trim();
             if (!sId && !spotMainName) return [];
-            var selectCols = 'id,user_id,spot,spot_id,photos,photo_memos_json,author,instagram,memo,weight_kg,likes_count,date,created_at,feed_type';
+            var selectCols = 'id,user_id,spot,spot_id,photos,photo_memos_json,author,instagram,memo,weight_kg,likes_count,comments_count,last_comment,date,created_at,feed_type';
             var headers = {
               'apikey': targetKey,
               'Authorization': 'Bearer ' + targetKey,
@@ -4933,8 +4933,11 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
               </div>
               <div style="padding:6px 7px; display:flex; flex-direction:column; gap:3px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-size:0.58rem; color:#fde047; font-weight:800; font-family:'Space Grotesk', sans-serif; display:inline-flex; align-items:center; gap:2px;">
-                    ${starSvg} <span>${likesCount}</span>
+                  <span style="display:inline-flex; align-items:center; gap:8px;">
+                    <span style="font-size:0.58rem; color:#fde047; font-weight:800; font-family:'Space Grotesk', sans-serif; display:inline-flex; align-items:center; gap:2px;">
+                      ${starSvg} <span>${likesCount}</span>
+                    </span>
+                    ${typeof window.okbmFeedCommentBtnHtml === 'function' ? window.okbmFeedCommentBtnHtml(f.id, f.comments_count, 'sm') : ''}
                   </span>
                   ${weightStr ? `
                     <span style="font-size:0.56rem; color:#cbd5e1; font-weight:800; font-family:'Space Grotesk',sans-serif; display:inline-flex; align-items:center; gap:2px;">
@@ -5601,6 +5604,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
                     <svg class="js-feed-star-icon" viewBox="0 0 24 24" style="width:17px; height:17px; filter:${isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none'};" fill="${isStarred ? '#fde047' : 'none'}" stroke="${isStarred ? '#fde047' : '#ffffff'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                     <span class="js-feed-star-count" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:'Space Grotesk', sans-serif;">${likesCount}</span>
                   </button>
+                  ${typeof window.okbmFeedCommentBtnHtml === 'function' ? window.okbmFeedCommentBtnHtml(rawCardId, targetFeed.comments_count) : ''}
                   <button type="button" data-share-feed="1" data-feed-id="${cardId}" data-spot="${escapeHtml(spotTitle)}" data-memo="${escapeHtml(memoText)}" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">
                     <svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                   </button>

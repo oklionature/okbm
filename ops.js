@@ -148,6 +148,8 @@
     ['feat_feed_delete', '낭만피드', '내 글 지우기'],
     ['feat_feed_publish_toggle', '낭만피드', '공개·비공개 바꾸기'],
     ['feat_feed_report', '낭만피드', '신고'],
+    ['feat_feed_comment_open', '낭만피드', '댓글 창 열기'],
+    ['feat_feed_comment_send', '낭만피드', '댓글 쓰기'],
     ['feat_trip_list_open', '낭만피드', '지난 여행 목록 열기'],
     ['feat_trip_batch_delete', '낭만피드', '지난 여행 골라 지우기'],
     ['feat_user_feed_open', '낭만피드', '다른 회원 피드 모음 보기'],
