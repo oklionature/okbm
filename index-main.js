@@ -405,8 +405,15 @@
 
       var isValley = /계곡/.test(terrainStr) || /계곡/.test(rawName) || /계곡/.test(masterName);
 
+      // 백보킹: 백 걸음이면 닿는 박지. 지도 필터 '백보킹'(map-main.js isBeginnerCourseSpot)과 같은 기준
+      // — 종주 코스 제외, 난이도 1~2, 걷는 거리 0.5km 이하
+      var rawDiff = mSpot ? parseInt(mSpot.difficulty, 10) : NaN;
+      var isTraverse = !!mSpot && (String(mSpot.course_type || mSpot.courseType || '').trim() === '종주' || /종주/.test(hay));
+      var isBaekbo = !isTraverse && rawDiff >= 1 && rawDiff <= 2 && km != null && km <= 0.5;
+
       return {
         mSpot: mSpot,
+        isBaekbo: isBaekbo,
         isBeginner: isBeginner,
         isAfterwork: isAfterwork,
         isIsland: isIsland,
@@ -421,6 +428,7 @@
     function feedMatchesSecretSpotTheme(feed, themeKey, spotPool) {
       if (!themeKey || themeKey === 'all') return true;
       var flags = getSecretSpotThemeFlags(feed, spotPool);
+      if (themeKey === 'baekbo') return flags.isBaekbo;
       if (themeKey === 'beginner') return flags.isBeginner;
       if (themeKey === 'afterwork') return flags.isAfterwork;
       if (themeKey === 'island') return flags.isIsland;
@@ -458,6 +466,7 @@
         <div style="flex-shrink:0; background:#07090e; padding:6px 14px 8px 14px; border-bottom:1px solid rgba(255,255,255,0.06); box-sizing:border-box;">
           <nav class="netflix-category-bar" style="padding:0; gap:6px;">
             <button type="button" class="n-cat-chip active" onclick="window.filterThemeSpotAllGrid('all', this)">전체</button>
+            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('baekbo', this)">백보킹</button>
             <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('beginner', this)">초보</button>
             <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('afterwork', this)">퇴근박</button>
             <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('island', this)">섬</button>
@@ -618,7 +627,7 @@
       return '<div class="okbm-empty" role="status">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20l6-11 4 7 3-4 5 8z"/><circle cx="17" cy="6" r="2"/></svg>' +
         '<p class="okbm-empty-t">' + (canReset ? '이 테마에 올라온 사진이 아직 없어요' : '아직 올라온 사진이 없어요') + '</p>' +
-        (canReset ? '<button type="button" class="okbm-empty-btn" onclick="filterSecretSpotTheme(\'all\', document.querySelector(\'#heroTrailerSectionWrap .n-cat-chip\'))">전체 테마 보기</button>' : '') +
+        (canReset ? '<button type="button" class="okbm-empty-btn" onclick="filterSecretSpotTheme(\'all\', document.querySelector(\'#heroTrailerSectionWrap .n-cat-chip[data-theme-all]\'))">전체 테마 보기</button>' : '') +
         '</div>';
     }
 
