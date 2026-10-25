@@ -652,15 +652,7 @@ function okbmWriteSessionCache(session) {
       } catch (e) {}
     }
     // 떠날 때 누른 탭(예: 지도)에 불이 남아 있으니, 지금 실제로 보이는 창 기준으로 다시 켠다
-    if (!window.location.pathname.includes('map.html') && typeof window.ensureMasterBottomDock === 'function') {
-      var shown = function(id) {
-        var el = document.getElementById(id);
-        return !!el && window.getComputedStyle(el).display !== 'none';
-      };
-      window.ensureMasterBottomDock(shown('romanticPlanModal') ? 'plan'
-        : shown('romanticHistoryModal') ? 'history'
-        : shown('userProfileModalOverlay') ? 'report' : 'router');
-    }
+    if (typeof window.ensureMasterBottomDock === 'function') window.ensureMasterBottomDock();
     // 보관된 사이 다른 페이지가 로그인·로그아웃·토큰 갱신을 했을 수 있어 저장소 기준으로 다시 맞춘다
     if (typeof a.getSession === 'function') {
       a.getSession().then(function(res) {
@@ -7043,13 +7035,20 @@ window.ensureMasterBottomDock = function(activeTabId) {
   var isMap = curPage.includes('map.html');
   var s = (typeof window.location !== 'undefined') ? window.location.search : '';
 
-  // URL 파라미터 및 현재 상태를 완벽히 반영하여 기본 탭 결정
+  // 지금 화면에 보이는 창으로 기본 탭을 정한다. 예전엔 창이 '있는지'로 봐서, 숨겨 둔 피드 창이나 주소에 남은 open=plan
+  // 때문에 엉뚱한 탭에 불이 켜졌다. 주소 값은 창이 아직 만들어지기 전(첫 화면 띄울 때)에만 쓴다
+  var shownEl = function(id) {
+    var el = document.getElementById(id);
+    return !!el && window.getComputedStyle(el).display !== 'none';
+  };
+  var planEl = document.getElementById('romanticPlanModal');
+  var historyEl = document.getElementById('romanticHistoryModal');
   var autoTab = isMap ? 'map' : 'router';
-  if (s.includes('open=plan') || s.includes('tab=plan') || s.includes('open=basecamp') || document.getElementById('romanticPlanModal')) {
+  if (shownEl('romanticPlanModal') || (!planEl && (s.includes('open=plan') || s.includes('tab=plan') || s.includes('open=basecamp')))) {
     autoTab = 'plan';
-  } else if (s.includes('open=history') || s.includes('tab=history') || document.getElementById('romanticHistoryModal')) {
+  } else if (shownEl('romanticHistoryModal') || shownEl('pastTripRegisterModal') || (!historyEl && (s.includes('open=history') || s.includes('tab=history')))) {
     autoTab = 'history';
-  } else if (document.getElementById('userProfileModalOverlay') && document.getElementById('userProfileModalOverlay').style.display === 'flex') {
+  } else if (shownEl('userProfileModalOverlay')) {
     autoTab = 'report';
   }
 
@@ -7426,6 +7425,8 @@ window.closePastTripRegisterModal = function(opts) {
     showToast('쓰던 후기는 저장해 뒀어요. 다시 열면 이어서 쓸 수 있어요.', 'info', 2600);
   }
   if (el) el.remove();
+  // 열 때 '낭만피드'에 불을 켰으니, 닫으면 지금 보이는 창 기준으로 되돌린다
+  if (el && typeof window.ensureMasterBottomDock === 'function') window.ensureMasterBottomDock();
   var search = document.getElementById('pastTripSpotSearchModal');
   if (search) search.remove();
   var picker = document.getElementById('pastTripDatePickerModal');
@@ -9297,7 +9298,7 @@ window.openPastTripRegisterModal = function(ev) {
             '<button type="button" id="pastTripMemoModePerPhoto" onclick="window.switchPastTripMemoMode(\'per_photo\');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:transparent; color:#94a3b8; font-weight:700;">사진별 쓰기</button>' +
           '</div>' +
           '<div id="pastTripMemoModeHelper" style="font-size:0.68rem; color:#64748b;">한 줄이면 충분해요. 최대 120자</div>' +
-          '<textarea id="pastTripMemoInput" maxlength="120" placeholder="어땠는지 한 줄이면 충분해요. 길게 써도 좋아요." oninput="window.updatePastTripMemoCount();" style="min-height:96px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:10px 12px; font-size:0.88rem; line-height:1.45; outline:none; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>' +
+          '<textarea id="pastTripMemoInput" maxlength="120" placeholder="어땠는지 한 줄이면 충분해요." oninput="window.updatePastTripMemoCount();" style="min-height:96px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:10px 12px; font-size:0.88rem; line-height:1.45; outline:none; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>' +
         '</div>' +
         '<details class="ptw-fold"><summary>장비도 기록하기 <span>선택 ▾</span></summary><div class="ptw-fb">' +
           '<div style="font-size:0.68rem; color:#64748b; line-height:1.5;">내 장비나 장비 세트에서 고르면 무게가 함께 기록돼요. 안 넣어도 피드에 올라가요.</div>' +
@@ -10224,8 +10225,8 @@ function closeUserProfileModal() {
     var shieldStyle = document.getElementById('romanticModalShieldCss');
     if (shieldStyle) shieldStyle.remove();
 
-    var isMap = (typeof window.location !== 'undefined') && window.location.pathname.includes('map.html');
-    window.ensureMasterBottomDock(isMap ? 'map' : 'router');
+    // 닫힌 뒤 실제로 보이는 창 기준으로 불을 켠다(다른 탭 창이 열려 있으면 그 탭)
+    window.ensureMasterBottomDock();
   } catch (e) { console.warn('[romantic-sync.js:closeUserProfileModal]', e); }
 }
 window.closeUserProfileModal = closeUserProfileModal;

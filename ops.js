@@ -349,7 +349,8 @@
           var v = get(s, 'view').visitors;
           var c = get(s, 'click');
           var vp = pct(v, homeViews);
-          var viewCell = (s === 'hero_detail' || s === 'hero_gear' || s.indexOf('quick_') === 0) ? '<span class="dim">-</span>'
+          // 바로가기 줄은 '본 사람'을 따로 세지 않는다(박지 랭킹만 기록 이름이 feat_quick_rank라 0으로 찍혔다)
+          var viewCell = (s === 'hero_detail' || s === 'hero_gear' || s.indexOf('quick_') === 0 || s === 'feat_quick_rank') ? '<span class="dim">-</span>'
             : num(v) + ' <span class="dim">(' + vp + '%)</span><span class="bar" style="width:' + vp + '%"></span>';
           return '<tr><td>' + esc(SECTION_LABELS[s] || s) + '</td><td>' + viewCell + '</td><td>' + num(c.visitors) +
             ' <span class="dim">(' + pct(c.visitors, homeViews) + '%)</span></td><td>' + num(c.hits) + '</td></tr>';

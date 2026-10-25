@@ -6783,9 +6783,9 @@ window.commitPlanDestination = async function(dateKey) {
     // 🛡️ 제스처 플래그 리셋
     window.__ribbonSwipeBound = false;
     window.__calSwipeBound = false;
-    var isMap = (typeof window.location !== 'undefined') && window.location.pathname.includes('map.html');
+    // 닫힌 뒤 실제로 보이는 창 기준으로 불을 켠다. 피드 탭으로 옮길 때 0.2초 늦게 끝난 이 닫기가 '홈'으로 덮어쓰던 것을 막는다
     if (typeof window.ensureMasterBottomDock === 'function') {
-      window.ensureMasterBottomDock(isMap ? 'map' : 'router');
+      window.ensureMasterBottomDock();
     }
     var histStillOpen = document.getElementById('romanticHistoryModal');
     if (window.__okbmHistoryModalOpen && histStillOpen && histStillOpen.style.display !== 'none') {

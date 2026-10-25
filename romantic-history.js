@@ -9281,9 +9281,9 @@ window.renderHistoryStage = function(isLoading, opts) {
       document.body.style.overflow = '';
     }
     document.body.classList.remove('history-modal-open');
-    var isMap = (typeof window.location !== 'undefined') && window.location.pathname.includes('map.html');
+    // 닫힌 뒤 실제로 보이는 창 기준으로 불을 켠다(다른 탭 창이 열려 있으면 그 탭)
     if (typeof window.ensureMasterBottomDock === 'function') {
-      window.ensureMasterBottomDock(isMap ? 'map' : 'router');
+      window.ensureMasterBottomDock();
     }
     var planStillOpen = document.getElementById('romanticPlanModal');
     if (planStillOpen && planStillOpen.style.display !== 'none' && typeof window.okbmStartNotifPoll === 'function') {

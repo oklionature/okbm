@@ -1725,6 +1725,9 @@
         }
         applyAdminPermissions(false);
         applyAdminMarkerDragState();
+        // 목록 위 판 번호 표시는 관리자 모드를 켜는 버튼이라 관리자로 확인된 계정에만 보인다(일반 회원에겐 뜻 없는 글자)
+        var verTag = document.getElementById('versionTagBtn');
+        if (verTag) verTag.hidden = !isAdmin;
         var params = new URLSearchParams(window.location.search);
         if (isAdmin && params.get('open') === 'admin_inbox' && typeof window.openAdminSpotInbox === 'function') {
           setTimeout(function() { window.openAdminSpotInbox(); }, 350);
@@ -1833,6 +1836,16 @@ function updateSmartResetButtons() {
         spotList.forEach(s => s.isNew = top30Ids.has(String(s.id).trim()));
       }
       
+
+      // 목록·상세에 숫자만 저장된 거리·고도는 단위가 없어 '↗ 2.2', '(⛰ 120)'처럼 무슨 숫자인지 몰랐다. 숫자만이면 km·m를 붙인다
+      function okbmSpotDistLabel(v) {
+        var t = String(v == null ? '' : v).trim();
+        return /^\d+(\.\d+)?$/.test(t) ? t + 'km' : t;
+      }
+      function okbmSpotElevLabel(v) {
+        var t = String(v == null ? '' : v).trim();
+        return /^\d+(\.\d+)?$/.test(t) ? t + 'm' : t;
+      }
 
       function parseSpotDistanceKm(spot) {
         var raw = spot && (spot.distance != null && String(spot.distance).trim() !== '' ? spot.distance : spot.distance_km);
@@ -3386,7 +3399,7 @@ function updateSmartResetButtons() {
               <div class="compact-title">
                 ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
                 <span class="${diffClass}">${escapeHtml(cleanMainName)}</span>
-                ${spot.elevation ? '<span style="font-size:0.76rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">(' + ICONS.MOUNTAIN + escapeHtml(spot.elevation) + ')</span>' : ''}
+                ${spot.elevation ? '<span style="font-size:0.76rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">' + ICONS.MOUNTAIN + escapeHtml(okbmSpotElevLabel(spot.elevation)) + '</span>' : ''}
                 ${getSpotStatusBadges(spot)}
               </div>
               <div class="js-spot-title-actions" style="display:flex; align-items:center; gap:6px; flex-shrink:0;" onclick="event.stopPropagation();">${closeBtn}</div>
@@ -3402,7 +3415,7 @@ function updateSmartResetButtons() {
               <div class="compact-title">
                 ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
                 <span class="${diffClass}">${escapeHtml(cleanMainName)}</span>
-                ${spot.elevation ? '<span style="font-size:0.76rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">(' + ICONS.MOUNTAIN + escapeHtml(spot.elevation) + ')</span>' : ''}
+                ${spot.elevation ? '<span style="font-size:0.76rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">' + ICONS.MOUNTAIN + escapeHtml(okbmSpotElevLabel(spot.elevation)) + '</span>' : ''}
                 ${getSpotStatusBadges(spot)}
               </div>
               <div class="js-spot-title-actions" style="display:flex; align-items:center; gap:6px; flex-shrink:0;" onclick="event.stopPropagation();">${closeBtn}</div>
@@ -4809,7 +4822,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           else if (t.includes('동굴')) html += `<span class="meta-tag tag-terrain-rock">${ICONS.CAVE}동굴</span>`;
         });
         html += `<span class="meta-tag tag-diff">난이도 ${'★'.repeat(Math.min(5, Math.max(1, parseInt(spot.difficulty, 10) || 3)))}</span>`;
-        if (spot.distance && spot.distance.trim()) html += `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(spot.distance.trim())}</span>`;
+        if (spot.distance && spot.distance.trim()) html += `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(okbmSpotDistLabel(spot.distance))}</span>`;
         html += '</div>';
         return html;
       }
@@ -6326,7 +6339,7 @@ var liveSearchTimer = null;
             ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
             <span class="spot-name-colored ${diffClass}" style="font-size:0.88rem; font-weight:900; letter-spacing:-0.01em;">${escapeHtml(rawName)}</span>
             ${spot.spot_sub ? `<span class="badge-sub-point">${escapeHtml(spot.spot_sub)}</span>` : ''}
-            ${spot.elevation ? `<span style="font-size:0.68rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">(${ICONS.MOUNTAIN}${escapeHtml(spot.elevation)})</span>` : ''}
+            ${spot.elevation ? `<span style="font-size:0.68rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">${ICONS.MOUNTAIN}${escapeHtml(okbmSpotElevLabel(spot.elevation))}</span>` : ''}
           </div>
 
           <div style="display:flex; align-items:center; justify-content:space-between; gap:5px; margin-top:3px; width:100%;">
@@ -6347,7 +6360,7 @@ var liveSearchTimer = null;
           <div style="display:flex; align-items:center; gap:3px; flex-wrap:wrap; width:100%;">
             ${subTerrainsHtml}
             <span class="meta-tag tag-diff">난이도 ${'★'.repeat(Math.min(5, Math.max(1, parseInt(spot.difficulty, 10) || 3)))}</span>
-            ${spot.distance?.trim() ? `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(spot.distance.trim())}</span>` : ''}
+            ${spot.distance?.trim() ? `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(okbmSpotDistLabel(spot.distance))}</span>` : ''}
           </div>
 
           ${isCampBanned(spot)
