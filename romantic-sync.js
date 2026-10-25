@@ -14426,6 +14426,12 @@ if (typeof window !== 'undefined') {
     return true;
   }
 
+  function isPlanSubView() {
+    var mode = window.activePlanSubMode;
+    return !!(mode && mode !== 'calendar' && typeof window.renderPlanStage === 'function' &&
+      isOverlayVisible(document.getElementById('romanticPlanModal')));
+  }
+
   function closeNestedReportLayer(el) {
     if (el && el.id === 'userAccountSettingsModal') {
       el.style.display = 'none';
@@ -14531,7 +14537,15 @@ if (typeof window !== 'undefined') {
       { id: 'romanticTripPhotosModal', close: function(el) { if (!callWin('closeTripPhotosModal')) hideOrRemove(el); } },
       { id: 'romanticGearBoxModal', close: function(el) { if (!callWin('closeGearBoxModal')) hideOrRemove(el); } },
       { id: 'romanticMyListModal', close: function(el) { if (!callWin('closeMyListModal')) hideOrRemove(el); } },
-      { id: 'romanticPlanModal', close: function() { if (!callWin('closePlanModal')) hideOrRemove(document.getElementById('romanticPlanModal')); } },
+      // 플랜 아래 화면에서 뒤로가기면 플랜을 닫지 않고 달력으로 간다(아래 '낭만플랜' 탭을 다시 누른 것과 같은 곳)
+      { id: 'romanticPlanModal', close: function() {
+        if (isPlanSubView()) {
+          window.activePlanSubMode = 'calendar';
+          window.renderPlanStage();
+          return;
+        }
+        if (!callWin('closePlanModal')) hideOrRemove(document.getElementById('romanticPlanModal'));
+      } },
       { id: 'romanticHistoryModal', close: function() { if (!callWin('closeHistoryModal')) hideOrRemove(document.getElementById('romanticHistoryModal')); } },
       { id: 'userProfileModalOverlay', close: function() { if (!callWin('closeUserProfileModal')) hideOrRemove(document.getElementById('userProfileModalOverlay')); } }
     ];
@@ -14689,6 +14703,8 @@ if (typeof window !== 'undefined') {
       if (outer && seen.indexOf(outer) !== -1) continue;
       seen.push(ov);
     }
+    // 플랜 아래 화면(패킹 계획·체크리스트·찜 목록·장비관리)은 같은 창이지만 달력 위 한 칸으로 센다
+    if (isPlanSubView()) seen.push(null);
     return seen.length;
   }
   window.okbmHasOpenOverlay = function() { return countOpenOverlays() > 0; };
