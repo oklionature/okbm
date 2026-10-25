@@ -4470,8 +4470,9 @@ var adBannersHtml = `
             if (typeof renderSecretSpotTrailerRail === 'function') {
               renderSecretSpotTrailerRail();
             }
-            return;
           }
+          // 실패해도 아래에서 같은 목록(100KB)을 또 받지 않는다. 1분 뒤 다시 들어오면 그때 다시 받는다.
+          return;
         }
 
         if (typeof window.okbmFetchSpotRows === 'function') {
@@ -4538,6 +4539,13 @@ var adBannersHtml = `
         console.warn('[loadPortalSpotData]', e);
       }
     }
+    // 저장해 둔 목록으로 먼저 그린 뒤, 박지가 바뀌어 새로 받았으면(romantic-sync.js) 다시 그린다.
+    window.addEventListener('okbm:spots-updated', function(e) {
+      var list = e && e.detail && e.detail.spots;
+      if (!Array.isArray(list) || !list.length) return;
+      registeredSpots = list;
+      if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
+    });
     document.addEventListener('DOMContentLoaded', function() {
       if (typeof updateHeaderAuthUI === 'function') {
         updateHeaderAuthUI();

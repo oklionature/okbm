@@ -220,11 +220,16 @@
         try {
           // romantic-sync.js(defer)가 실행된 뒤라야 로그인 여부와 회원 토큰을 안다.
           // 회원은 좌표까지 받고, 비회원은 좌표 없는 목록 + 대략 핀을 받는다(H9). 핀은 확대하면 refineGuestPins가 정확히 바꾼다.
-          if (typeof window.okbmFetchSpotRows !== 'function' && document.readyState === 'loading') {
+          if (typeof window.fetchMasterSpotsFromSupabase !== 'function' && document.readyState === 'loading') {
             await new Promise(function(resolve) { document.addEventListener('DOMContentLoaded', resolve, { once: true }); });
           }
           var rows;
-          if (typeof window.okbmFetchSpotRows === 'function') {
+          if (typeof window.fetchMasterSpotsFromSupabase === 'function') {
+            // 기기에 저장해 둔 목록을 쓰고, 서버 판 번호(H14)가 바뀌었을 때만 새로 받는다.
+            rows = await window.fetchMasterSpotsFromSupabase();
+            // 받기에 실패해 비회원 때 대략 좌표 목록만 남았으면 회원 지도에는 쓰지 않는다.
+            if (typeof window.okbmSpotListFitsViewer === 'function' && !window.okbmSpotListFitsViewer(rows)) return;
+          } else if (typeof window.okbmFetchSpotRows === 'function') {
             rows = await window.okbmFetchSpotRows();
           } else {
             var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';

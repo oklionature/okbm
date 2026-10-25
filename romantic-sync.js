@@ -3868,11 +3868,11 @@ window.okbmFetchSpotRows = async function(opts) {
   opts = opts || {};
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var anonKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
-  var getRows = async function(select, token) {
+  var getRows = async function(select, token, signal) {
     var res = await fetch(targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(select) + '&order=id.asc', {
       method: 'GET',
       headers: { 'apikey': anonKey, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      signal: opts.signal
+      signal: signal || opts.signal
     });
     if (!res.ok) throw new Error('spots ' + res.status);
     var rows = await res.json();
@@ -3892,8 +3892,24 @@ window.okbmFetchSpotRows = async function(opts) {
     }
   }
 
-  var pinsJob = window.okbmFetchSpotPins(window.OKBM_KOREA_BOUNDS).catch(function(e) { return e; });
-  var rows = await getRows(window.SPOTS_GUEST_SELECT, anonKey);
+  // 핀이 하루 한도(rate)에 걸리면 목록을 다 받아도 못 쓰니, 받던 목록을 바로 끊는다.
+  var rowsCtl = new AbortController();
+  if (opts.signal) {
+    if (opts.signal.aborted) rowsCtl.abort();
+    else opts.signal.addEventListener('abort', function() { rowsCtl.abort(); }, { once: true });
+  }
+  var pinsJob = window.okbmFetchSpotPins(window.OKBM_KOREA_BOUNDS).catch(function(e) {
+    if (e && e.code === 'rate') rowsCtl.abort();
+    return e;
+  });
+  var rows;
+  try {
+    rows = await getRows(window.SPOTS_GUEST_SELECT, anonKey, rowsCtl.signal);
+  } catch (e) {
+    var pinsErr = await pinsJob;
+    if (pinsErr instanceof Error && pinsErr.code === 'rate') throw pinsErr;
+    throw e;
+  }
   var pins = await pinsJob;
   if (pins instanceof Error) {
     // H9A를 아직 실행하지 않은 서버: 예전처럼 목록으로 좌표까지 받는다(H9B 전에는 비회원도 읽힌다).
@@ -3921,6 +3937,38 @@ window.okbmSpotListFitsViewer = function(list) {
   return !list.some(function(s) { return s && s.__pinCell; });
 };
 
+// H14 박지 목록 판 번호('바뀐 시각:박지 수'). 박지가 바뀌었는지만 수십 바이트로 묻는다.
+// 돌려주는 값: 판 번호 글자 | ''(모름: H14 전 서버·오류 → 새로 받는다) | null(연결 안 됨 → 저장해 둔 목록을 쓴다)
+window.okbmFetchSpotsVersion = async function() {
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var anonKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!targetUrl || !anonKey) return '';
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/rpc/get_spots_version', {
+      method: 'POST',
+      headers: { 'apikey': anonKey, 'Authorization': 'Bearer ' + anonKey, 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    if (!res.ok) return '';
+    var ver = await res.json();
+    return typeof ver === 'string' ? ver : '';
+  } catch (e) {
+    return null;
+  }
+};
+window.OKBM_SPOTS_VER_KEY = 'okbm_spots_ver';
+function okbmStoredSpotsVersion() {
+  try { return localStorage.getItem(window.OKBM_SPOTS_VER_KEY) || ''; } catch (e) { return ''; }
+}
+function okbmStoreSpotsVersion(ver) {
+  try {
+    if (ver) localStorage.setItem(window.OKBM_SPOTS_VER_KEY, ver);
+    else localStorage.removeItem(window.OKBM_SPOTS_VER_KEY);
+  } catch (e) {}
+}
+
+// 박지 목록. 기기에 저장해 둔 목록이 서버 판 번호와 같으면 그대로 쓰고, 바뀌었을 때만 새로 받는다.
+// 새로 받으면 'okbm:spots-updated' 이벤트로 알린다(홈은 저장해 둔 목록을 먼저 그렸다가 바꾼다).
 window.fetchMasterSpotsFromSupabase = async function(isForce) {
   var TTL_MS = 5 * 60 * 1000;
   var now = Date.now();
@@ -3939,8 +3987,9 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
   if (!(Array.isArray(cached) && cached.length > 0) && window.__okbmSpotsIdbReady) {
     try { cached = await window.__okbmSpotsIdbReady; } catch (e) { cached = cached || []; }
   }
-  if (!isForce && Array.isArray(cached) && cached.length > 0 && !window.spotCacheHasFullEssay(cached) &&
-      window.okbmSpotListFitsViewer(cached)) {
+  var cacheUsable = Array.isArray(cached) && cached.length > 0 && !window.spotCacheHasFullEssay(cached) &&
+    window.okbmSpotListFitsViewer(cached);
+  var useCached = function() {
     var lightCached = cached.map(function(s) { return window.stripSpotDetailFields(s); });
     window.__memoryStore = window.__memoryStore || {};
     window.__memoryStore['okbm_master_spots'] = lightCached;
@@ -3948,15 +3997,26 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
     window.__okbmSpotsMemoryCache = lightCached;
     window.__okbmSpotsFetchedAt = Date.now();
     return lightCached;
+  };
+  // 방금(1분 안) 받다가 실패했으면 또 받지 않는다. 비회원 핀 한도(rate) 때 100KB를 되풀이해 받던 것을 막는다.
+  if (!isForce && window.__okbmSpotsFailedAt && (Date.now() - window.__okbmSpotsFailedAt) < 60 * 1000) {
+    return cacheUsable ? useCached() : cached;
   }
 
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
   if (!targetUrl || !targetKey) return cached;
 
+  // 판 번호는 목록보다 먼저 받아 둔다. 받는 사이에 박지가 바뀌면 다음에 한 번 더 받을 뿐 놓치지 않는다.
+  var serverVer = await window.okbmFetchSpotsVersion();
+  if (!isForce && cacheUsable && (serverVer === null || (serverVer && serverVer === okbmStoredSpotsVersion()))) {
+    return useCached();
+  }
+
   try {
     var controller = new AbortController();
-    var timeoutId = setTimeout(function() { controller.abort(); }, 6000);
+    // 저장해 둔 목록이 있으면 오래 기다리지 않고 그걸 쓴다. 없으면 느린 연결에서도 끝까지 받는다.
+    var timeoutId = setTimeout(function() { controller.abort(); }, cacheUsable ? 6000 : 20000);
     var rows = await window.okbmFetchSpotRows({ signal: controller.signal });
     clearTimeout(timeoutId);
 
@@ -3966,17 +4026,21 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
       });
       if (spots.length > 0) {
         window.persistLightweightSpotsCache(spots);
+        okbmStoreSpotsVersion(serverVer || '');
         window.__okbmSpotsMemoryCache = spots;
         window.__okbmSpotsFetchedAt = Date.now();
+        window.__okbmSpotsFailedAt = 0;
         if (typeof window.renderSpots === 'function') {
           window.renderSpots();
         }
+        try { window.dispatchEvent(new CustomEvent('okbm:spots-updated', { detail: { spots: spots } })); } catch (e) {}
         return spots;
       }
     }
   } catch (e) { console.warn('[romantic-sync.js:fetchMasterSpotsFromSupabase]', e); }
 
-  return cached;
+  window.__okbmSpotsFailedAt = Date.now();
+  return cacheUsable ? useCached() : cached;
   })();
 
   window.__okbmSpotsInflight = run;
