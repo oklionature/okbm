@@ -5947,7 +5947,12 @@ var liveSearchTimer = null;
                   ${isCampBanned(item) ? '<span style="font-size:0.58rem; color:#fda4af; font-weight:900; flex-shrink:0;">🚫 야영금지</span>' : ''}
                 </div>
                 <span style="font-size:0.60rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                  ${escapeHtml(item.region || '')} ${escapeHtml(item.cityName || '')} · ${escapeHtml(item.elevation || '')}
+                  ${escapeHtml(item.region || '')} ${escapeHtml(item.cityName || '')}${(() => {
+                    // 높이는 숫자만 저장돼 있어 "146"이 무슨 숫자인지 모른다: 끝에 m를 붙이고, 0·빈 값이면 뺀다
+                    const ev = String(item.elevation == null ? '' : item.elevation).trim().replace(/\.0+$/, '');
+                    if (!ev || /^0+$/.test(ev)) return '';
+                    return ' · ' + escapeHtml(/m$/i.test(ev) ? ev : ev + 'm');
+                  })()}
                 </span>
               </div>
             </div>
