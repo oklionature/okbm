@@ -1,0 +1,41 @@
+/* 낭만루트 공용 색·글꼴·글자 크기 (홈·지도·라운지가 같이 쓴다)
+   화면마다 따로 있던 :root 값은 이 이름을 가리키게 이어 둔다. 새 코드는 여기 이름만 쓴다. */
+:root {
+  /* 바탕 4단계 */
+  --bg-0: #000000;
+  --bg-1: #0f0f11;
+  --bg-2: #17171b;
+  --bg-3: #2a2a30;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+
+  /* 글자 3단계 (검은 바탕 대비 18.8 / 13.8 / 6.2). tx-4는 선·꺼진 아이콘에만, 글자 금지 */
+  --tx-1: #f2f2f3;
+  --tx-2: #d1d1d6;
+  --tx-3: #8b8b93;
+  --tx-4: #55555d;
+
+  /* 강조 1색: 글자·선은 accent, 채운 버튼은 accent-fill + 흰 글자(대비 4.8) */
+  --accent: #4c94f8;
+  --accent-fill: #2b6fd6;
+  --accent-soft: rgba(76, 148, 248, 0.16);
+  --on-accent: #ffffff;
+
+  /* 상태색: 쉬움·완료 / 보통·최단·주의 / 어려움·초기화 / 찜·좋아요 */
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --danger: #f43f5e;
+  --like: #ff4d6d;
+  --like-fill: #e11d48;
+
+  /* 글꼴: 전부 Pretendard, 숫자는 font-variant-numeric: tabular-nums */
+  --font-body: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* 글자 크기: 가장 작은 단계 11px */
+  --fs-caption: 11px;   /* 배지·고도·닉네임·도크 */
+  --fs-meta: 12px;      /* 날짜·보조 문구·전체보기 링크 */
+  --fs-body: 13px;      /* 본문·버튼·칩·카드 제목 */
+  --fs-title: 14px;     /* 목록 항목 제목 */
+  --fs-section: 16px;   /* 섹션 제목·대표 스팟 이름 */
+  --fs-display: 20px;   /* 로고·큰 숫자 */
+}

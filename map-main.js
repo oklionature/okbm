@@ -6335,19 +6335,11 @@ var liveSearchTimer = null;
         li.className = 'spot-item'; 
         li.id = `spotItem_${spot.id}`;
         li.innerHTML = `
-          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; width:100%;">
+          <div class="spot-card-row1">
             ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
-            <span class="spot-name-colored ${diffClass}" style="font-size:0.88rem; font-weight:900; letter-spacing:-0.01em;">${escapeHtml(rawName)}</span>
-            ${spot.spot_sub ? `<span class="badge-sub-point">${escapeHtml(spot.spot_sub)}</span>` : ''}
-            ${spot.elevation ? `<span style="font-size:0.68rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">${ICONS.MOUNTAIN}${escapeHtml(okbmSpotElevLabel(spot.elevation))}</span>` : ''}
-          </div>
-
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:5px; margin-top:3px; width:100%;">
-            <div style="display:flex; align-items:center; gap:3px; flex-wrap:nowrap; overflow:hidden;">
-              ${getSpotStatusBadges(spot)}
-              ${mainTerrainHtml}
-            </div>
-            <div class="spot-card-quick-actions" style="display:flex; align-items:center; gap:3px; flex-shrink:0; margin-left:auto;" onclick="event.stopPropagation();">
+            <span class="spot-name-colored ${diffClass}">${escapeHtml(rawName)}</span>
+            ${spot.spot_sub ? `<span class="spot-card-sub">${escapeHtml(spot.spot_sub)}</span>` : ''}
+            <div class="spot-card-quick-actions" onclick="event.stopPropagation();">
               <button data-metric-click="feat_spot_fav" type="button" class="btn-card-quick ${isFav ? 'active-fav' : ''}" data-id="${sId}" onclick="toggleUserBookmark(this.dataset.id, event)">${ICONS.HEART} 찜</button>
               <button data-metric-click="feat_spot_visited" type="button" class="btn-card-quick ${isDone ? 'active-done' : ''}" data-id="${sId}" onclick="toggleUserVisited(this.dataset.id, event)">${ICONS.FLAG} 클리어</button>
               <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'};" data-id="${sId}" onclick="editSpotById(event, this.dataset.id)">수정</button>
@@ -6357,10 +6349,13 @@ var liveSearchTimer = null;
             </div>
           </div>
 
-          <div style="display:flex; align-items:center; gap:3px; flex-wrap:wrap; width:100%;">
-            ${subTerrainsHtml}
-            <span class="meta-tag tag-diff">난이도 ${'★'.repeat(Math.min(5, Math.max(1, parseInt(spot.difficulty, 10) || 3)))}</span>
+          <div class="spot-card-row2">
+            ${spot.elevation ? `<span class="spot-card-elev">${ICONS.MOUNTAIN}${escapeHtml(okbmSpotElevLabel(spot.elevation))}</span>` : ''}
+            ${getSpotStatusBadges(spot)}
+            ${mainTerrainHtml}
             ${spot.distance?.trim() ? `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(okbmSpotDistLabel(spot.distance))}</span>` : ''}
+            <span class="meta-tag tag-diff">난이도 ${'★'.repeat(Math.min(5, Math.max(1, parseInt(spot.difficulty, 10) || 3)))}</span>
+            ${subTerrainsHtml}
           </div>
 
           ${isCampBanned(spot)
