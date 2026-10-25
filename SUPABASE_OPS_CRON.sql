@@ -48,5 +48,12 @@ SELECT cron.schedule(
   $$DELETE FROM public.visit_seen WHERE visit_date::text < to_char(timezone('Asia/Seoul', now()) - interval '90 days', 'YYYY-MM-DD')$$
 );
 
+-- 기능 사용 기록(okbm_home_metrics, G1·H8) 정리: 180일 지난 줄 삭제 (매일 04:30 UTC). H13에서 추가
+SELECT cron.schedule(
+  'okbm_home_metrics_gc',
+  '30 4 * * *',
+  $$DELETE FROM public.okbm_home_metrics WHERE day < current_date - 180$$
+);
+
 -- 확인
 SELECT jobname, schedule, command, active FROM cron.job WHERE jobname LIKE 'okbm_%' ORDER BY jobname;

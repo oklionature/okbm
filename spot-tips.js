@@ -274,7 +274,10 @@
     var b = e.target.closest('[data-stp]');
     if (!b) return;
     if (b.getAttribute('data-stp') === 'skip') { closeSheet(); return; }
-    if (b.getAttribute('data-stp') === 'save') save(b);
+    if (b.getAttribute('data-stp') === 'save') {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_spot_tips_save'); // 기능 사용 세기 (H8)
+      save(b);
+    }
   }
   // 별점 후기(comments): 있으면 고치고 없으면 새로 (lounge.js saveReview와 같은 방식)
   function saveReview(id, star, text) {
@@ -364,6 +367,8 @@
       return;
     }
     var act = b.getAttribute('data-stp');
+    // 기능 사용 세기 (H8): open 남기기 창 · all 후기 전부 보기 · write 사진과 함께 후기 올리기
+    if (/^(open|all|write)$/.test(act) && typeof window.okbmMetric === 'function') window.okbmMetric('feat_spot_tips_' + act);
     if (act === 'open') {
       load(id, false).then(function () { openSheet(id, false); });
     } else if (act === 'all') {

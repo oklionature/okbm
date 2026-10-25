@@ -395,6 +395,7 @@ window.resetStudioPhotoFraming = function() {
 };
 
 window.openPhotoStudio = function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_studio_open'); // 기능 사용 세기 (H8)
   var photo = window.currentSharePhotoRaw || window.currentSharePhoto;
   if (!photo || String(photo).indexOf('https://') !== 0) {
     if (typeof showToast === 'function') showToast('먼저 사진을 넣어주세요.', 'warn');
@@ -473,6 +474,7 @@ window.closePhotoStudio = function() {
 };
 
 window.applyStudioCardToTemplate = async function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_studio_apply'); // 기능 사용 세기 (H8)
   var card = document.getElementById('photoStudioCardTarget');
   if (!card) return;
 
@@ -544,6 +546,7 @@ window.applyStudioCardToTemplate = async function() {
 };
 
 window.setStudioRatio = function(ratio) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_studio_ratio'); // 기능 사용 세기 (H8)
   window.currentCardRatio = '3/4';
   var sliderContainer = document.getElementById('studioFreeRatioSliderContainer');
   if (sliderContainer) sliderContainer.style.display = 'none';
@@ -596,6 +599,7 @@ function syncStudioModeButtons(mode) {
 }
 
 window.switchStudioMode = function(mode) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_studio_mode'); // 기능 사용 세기 (H8)
   if (mode === 'nrc') mode = 'overlay';
   if (mode === 'packing') mode = 'magazine';
   window.currentStudioCardMode = mode;
@@ -1362,6 +1366,7 @@ window.handleReadyShotShareAction = async function(act) {
 };
 
 window.saveStudioCardToPhone = async function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_studio_save'); // 기능 사용 세기 (H8)
   var card = document.getElementById('photoStudioCardTarget');
   var h2c = card ? await okbmResolveHtml2canvas() : null;
   if (!card || typeof h2c !== 'function') {
@@ -3398,6 +3403,7 @@ function renderAdaptiveGearList(items, options) {
 }
 
 window.saveCurrentPackingRecord = function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_pack_save'); // 기능 사용 세기 (H8)
   var allItems = [];
   if (typeof CATEGORIES !== 'undefined' && typeof selectedGearMap !== 'undefined') {
     CATEGORIES.forEach(function(c) {
@@ -3933,6 +3939,7 @@ window.sharePackCardDirect = async function() {
 };
 
 window.saveCardToVaultAndOpenBasecamp = async function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_studio_vault'); // 기능 사용 세기 (H8)
   if (window.__isSavingCardLock) return;
 
   window.__isSavingCardLock = true;
@@ -4583,6 +4590,7 @@ window.openPackShareModal = function(record, items, forceStudio) {
 
 // 🏷️ 3. 템플릿 전환 & 상단 칩/이름 실시간 동기화
 function switchShareCardTemplate(tmplId, isSwipe) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_studio_template'); // 기능 사용 세기 (H8)
   var targetId = Number(tmplId);
   if (TEMPLATE_ORDER.indexOf(targetId) === -1) {
     targetId = TEMPLATE_ORDER[0];

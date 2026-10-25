@@ -859,10 +859,14 @@
       (h.total ? '<div class="n">' + h.went + '<small>/ ' + h.total + '</small></div>' : ''); // 박지를 아직 못 받았으면 숫자는 뺀다
   }
 
+  // 기능 사용 세기 (H8). 손가락으로 움직이는 동작은 세지 않고 버튼·칸 누름만 센다.
+  function metric(name) { if (typeof window.okbmMetric === 'function') window.okbmMetric(name); }
+
   // ------------------------------------------------------------------ 한눈에 보기(공유 이미지 카드)
   // 누르면 화면 전체에 공유 이미지를 띄운다(만드는 데 몇 초). 같은 모드·숫자면 만든 걸 다시 쓴다.
   var cardEl = null, cardCache = {}, cardBlob = null, cardToken = 0;
   function openCard() {
+    metric('feat_pm_card');
     if (!cardEl) {
       cardEl = document.createElement('div'); cardEl.className = 'pm-card';
       cardEl.innerHTML = '<button type="button" class="x" aria-label="닫기">×</button><div class="img"></div>' +
@@ -898,11 +902,13 @@
   }
   function saveCard() {
     if (!cardBlob) return;
+    metric('feat_pm_card_save');
     var a = document.createElement('a'); a.href = URL.createObjectURL(cardBlob); a.download = 'romanticroute-photomap.jpg';
     document.body.appendChild(a); a.click(); a.remove();
   }
   function sendCard() {
     if (!cardBlob) return;
+    metric('feat_pm_card_send');
     navigator.share({ files: [cardFile()], title: '낭만루트 백패킹 포토맵' }).catch(function () {});
   }
 
@@ -974,6 +980,7 @@
 
   // justVisited: 방금 '다녀왔어요'를 눌렀으면 후기 남기기로 넘어갈지 묻는다
   function openSheet(s, justVisited) {
+    if (justVisited === undefined) metric('feat_pm_spot'); // 칸·점을 눌러 연 것만(다녀옴 뒤 다시 그리는 건 빼고)
     var e = sheetEls(), card = e.card;
     var look = spotLook(s), b = bySpot[s.id] || { all: [], mine: [] };
     var guest = !loggedIn();
@@ -1020,6 +1027,7 @@
       var btn = ev.target.closest('[data-pm]'); if (!btn) return;
       var act = btn.getAttribute('data-pm');
       if (act === 'close') return closeSheet();
+      metric('feat_pm_' + act); // visit · unvisit · later · info · write · login
       if (act === 'login') {
         try { sessionStorage.setItem('okbm_login_return_spot', String(s.id).trim()); } catch (er) {}
         closeSheet();
@@ -1078,6 +1086,7 @@
       return;
     }
     mode = m;
+    if (!silent) metric(m === 'mine' ? 'feat_pm_mine' : 'feat_pm_all');
     if (m === 'mine' && myId() !== attachedFor) {
       // 사진 지도를 연 뒤 로그인했으면 내 후기를 새로 받는다
       fetchMyFeeds().then(function (mine) { feedsMine = mine; attachFeeds(); draw(); });

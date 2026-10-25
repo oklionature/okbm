@@ -1741,6 +1741,7 @@ window.okbmSyncUgcSafetyFromServer = async function() {
 };
 
 window.blockCommunityUser = async function(userId, nickname) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_user_block'); // 기능 사용 세기 (H8)
   var targetId = String(userId || '').trim();
   if (!targetId) {
     if (typeof showToast === 'function') showToast('차단할 사용자를 확인할 수 없습니다.', 'warn');
@@ -1810,6 +1811,7 @@ window.blockCommunityUser = async function(userId, nickname) {
 };
 
 window.unblockCommunityUser = async function(userId) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_user_unblock'); // 기능 사용 세기 (H8)
   var targetId = String(userId || '').trim();
   if (!targetId) return false;
   if (!confirm('이 사용자의 차단을 해제할까요?')) return false;
@@ -1958,6 +1960,7 @@ window.syncMyFeedReportsFromServer = async function() {
 };
 
 window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId, targetType) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_feed_report'); // 기능 사용 세기 (H8)
   var sFeedId = String(feedId || '').trim();
   if (!sFeedId) return;
   var tType = okbmReportType(targetType);
@@ -2642,6 +2645,7 @@ window.openBlockedUserProfile = function(userId) {
 };
 
 window.openBlockedUsersModal = function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_block_list'); // 기능 사용 세기 (H8)
   var old = document.getElementById('blockedUsersManageModal');
   if (old) old.remove();
 
@@ -4578,6 +4582,7 @@ window.selectVisitorYear = function(yearStr, e) {
 };
 
 window.toggleVisitorActivity = function(mode, e) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_report_visitor'); // 기능 사용 세기 (H8)
   if (e) e.stopPropagation();
   var yearBox = document.getElementById('visitorYearActivityContainer');
   var totalBox = document.getElementById('visitorTotalActivityContainer');
@@ -4663,6 +4668,7 @@ window.okbmRememberProfileInstagram = function(raw) {
 };
 
 window.openSnsEditorModal = function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_sns_edit'); // 기능 사용 세기 (H8)
   var curInsta = localStorage.getItem('okbm_user_instagram') || '';
   var curYt = localStorage.getItem('okbm_user_youtube') || '';
   var curBlog = localStorage.getItem('okbm_user_blog') || '';
@@ -4844,6 +4850,7 @@ window.toggleReportYearDropdown = function(e) {
 
 // [선택 연도 활동 메모 인라인 인출 & 토글 엔진]
 window.toggleReportYearActivities = function(e) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_report_activity'); // 기능 사용 세기 (H8)
   if (e) e.stopPropagation();
   var container = document.getElementById('reportYearActivityContainer');
   var arrow = document.getElementById('reportYearListArrow');
@@ -4867,6 +4874,7 @@ window.toggleReportYearActivities = function(e) {
 };
 
 window.toggleReportTotalActivities = function(e) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_report_activity'); // 기능 사용 세기 (H8)
   if (e) e.stopPropagation();
   var container = document.getElementById('reportTotalActivityContainer');
   var arrow = document.getElementById('reportTotalListArrow');
@@ -5142,6 +5150,7 @@ window.toggleReportActivityPublic = function(kind, e) {
 };
 
 window.selectReportYear = function(yearStr, e) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_report_year'); // 기능 사용 세기 (H8)
   if (e) e.stopPropagation();
   window._selectedReportYear = yearStr;
 
@@ -5525,6 +5534,7 @@ window.handleReportSecClick = function(secKey) {
   if (!body) return;
 
   var isCurrentlyOpen = (body.style.display === 'flex');
+  if (!isCurrentlyOpen && typeof window.okbmMetric === 'function') window.okbmMetric('feat_report_sec_' + String(secKey).replace(/[^a-z0-9_]/g, '')); // 기능 사용 세기 (H8): 칸 펼치기
 
   if (isCurrentlyOpen) {
     body.style.display = 'none';
@@ -5663,6 +5673,7 @@ window._renderMyPropsModule = function(el) {
 };
 
 window.triggerEditProposalFromReport = function(propId) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_my_proposal_edit'); // 기능 사용 세기 (H8)
   var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
     ? window.RomanticVault.read('okbm_my_proposals', [])
     : (typeof window.safeGetStorage === 'function' ? window.safeGetStorage('okbm_my_proposals', []) : safeGetJSON('okbm_my_proposals', []));
@@ -5681,6 +5692,7 @@ window.triggerEditProposalFromReport = function(propId) {
 };
 
 window.triggerCorrectionFromMyProposal = function(propId) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_my_proposal_fix'); // 기능 사용 세기 (H8)
   var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
     ? window.RomanticVault.read('okbm_my_proposals', [])
     : (typeof window.safeGetStorage === 'function' ? window.safeGetStorage('okbm_my_proposals', []) : safeGetJSON('okbm_my_proposals', []));
@@ -5703,6 +5715,7 @@ window.triggerCorrectionFromMyProposal = function(propId) {
 };
 
 window.triggerDeleteProposalFromReport = function(propId) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_my_proposal_delete'); // 기능 사용 세기 (H8)
   if (!propId) return;
   var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
     ? window.RomanticVault.read('okbm_my_proposals', [])
@@ -5777,6 +5790,7 @@ window._setGearDietMode = function(modeKey) {
 };
 
 window._toggleGearSlotTop5 = function(slotName) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_report_detail'); // 기능 사용 세기 (H8)
   window._gearModuleState.activeSlot = (window._gearModuleState.activeSlot === slotName) ? null : slotName;
   var body = document.getElementById('accBody_gear');
   var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
@@ -6140,6 +6154,7 @@ window._setTerrainYearSelect = function(yearVal) {
 };
 
 window._toggleTerrainElevDetail = function(mode) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_report_detail'); // 기능 사용 세기 (H8)
   var st = window._terrainModuleState;
   st.elevDetailMode = (st.elevDetailMode === mode) ? null : mode;
   var body = document.getElementById('accBody_terrain');
@@ -6150,6 +6165,7 @@ window._toggleTerrainElevDetail = function(mode) {
 };
 
 window._toggleTerrainThemeTop5 = function(themeKey) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_report_detail'); // 기능 사용 세기 (H8)
   var st = window._terrainModuleState;
   st.expandedTheme = (st.expandedTheme === themeKey) ? null : themeKey;
   var body = document.getElementById('accBody_terrain');
@@ -6160,6 +6176,7 @@ window._toggleTerrainThemeTop5 = function(themeKey) {
 };
 
 window._toggleTopElevationRank = function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_report_detail'); // 기능 사용 세기 (H8)
   var st = window._terrainModuleState;
   st.showTopElevation = !st.showTopElevation;
   var body = document.getElementById('accBody_terrain');
@@ -6499,6 +6516,7 @@ window._setSeasonYearSelect = function(yearVal) {
 };
 
 window._toggleSeasonDetail = function(seasonKey) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_report_detail'); // 기능 사용 세기 (H8)
   var st = window._seasonModuleState;
   st.expandedSeason = (st.expandedSeason === seasonKey) ? null : seasonKey;
   var body = document.getElementById('accBody_season');
@@ -6637,6 +6655,7 @@ window._setRegionYearSelect = function(yearVal) {
 };
 
 window._toggleRegionDetail = function(regionKey) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_report_detail'); // 기능 사용 세기 (H8)
   var st = window._regionModuleState;
   st.expandedRegion = (st.expandedRegion === regionKey) ? null : regionKey;
   var body = document.getElementById('accBody_region');
@@ -7097,6 +7116,7 @@ if (typeof window !== 'undefined') {
 }
 
 window.editReportUserBio = function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_bio_edit'); // 기능 사용 세기 (H8)
   var currentBio = okbmNormalizeUserBio(localStorage.getItem('okbm_user_bio') || '');
   var oldModal = document.getElementById('reportBioEditorModalOverlay');
   if (oldModal) oldModal.remove();
@@ -9167,6 +9187,7 @@ window.updatePastTripMemoCount = function() {
 };
 
 window.submitPastTripRegister = async function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_pasttrip_register'); // 기능 사용 세기 (H8)
   window._pastTripCommitMemoInput();
   var dateInput = document.getElementById('pastTripDateInput');
   var spotInput = document.getElementById('pastTripSpotInput');
@@ -9935,6 +9956,7 @@ window.previewMasterUserCoverPhotoLarge = function() {
 
 // [메인 대표 사진 초기화]
 window.resetMasterUserCoverPhoto = function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_cover_photo_reset'); // 기능 사용 세기 (H8)
   localStorage.removeItem('okbm_hero_cover_url');
   var profile = safeGetJSON('user_profile', null);
   if (profile) {
@@ -9951,6 +9973,7 @@ window.resetMasterUserCoverPhoto = function() {
 
 // [메인 대표 사진 인터랙티브 크로퍼 & Cloudflare R2 직통 전송 엔진]
 window.uploadMasterUserCoverPhoto = function(event) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_cover_photo'); // 기능 사용 세기 (H8)
   var file = event.target.files && event.target.files[0];
   if (!file) return;
 
@@ -10173,6 +10196,7 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
 
 // 계정 설정 모달 제어 (가입날짜 완전 보존 & 14일 쿨다운 정밀 잠금)
 window.openAccountSettingsModal = function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_account_open'); // 기능 사용 세기 (H8)
   ensureMyReportAndAuthModalsInDOM();
   var modal = document.getElementById('userAccountSettingsModal');
   if (!modal) return;
@@ -10294,6 +10318,7 @@ window.closeAccountSettingsModal = function() {
 };
 
 window.saveNicknameFromSettingsModal = async function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_nick_save'); // 기능 사용 세기 (H8)
   var input = document.getElementById('settingsModalNicknameInput');
   if (!input || !input.value.trim()) {
     showToast('새 닉네임을 입력해주세요.', 'warn');
@@ -11622,6 +11647,7 @@ function loginWithKakao(options) {
 }
 window.loginWithKakao = loginWithKakao;
 window.okbmLinkKakaoAccount = function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_link_kakao'); // 기능 사용 세기 (H8)
   loginWithKakao({ link: true });
 };
 
@@ -11931,6 +11957,7 @@ function loginWithNaver(options) {
 }
 window.loginWithNaver = loginWithNaver;
 window.okbmLinkNaverAccount = function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_link_naver'); // 기능 사용 세기 (H8)
   loginWithNaver({ link: true });
 };
 
@@ -13039,6 +13066,7 @@ window.okbmCountUnreadNotes = async function() {
 };
 
 window.deleteDirectMessageThread = async function(threadId, theirId, ev, skipConfirm) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_dm_delete'); // 기능 사용 세기 (H8)
   if (ev) {
     ev.preventDefault();
     ev.stopPropagation();
@@ -13195,6 +13223,7 @@ window.okbmPaintNoteThreadMessages = async function(silent, fromRealtime) {
 };
 
 window.sendDirectMessage = async function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_dm_send'); // 기능 사용 세기 (H8)
   var modal = document.getElementById('directMessageThreadModal');
   var input = document.getElementById('directMessageInput');
   if (!modal || !input) return;
@@ -13259,6 +13288,7 @@ window.sendDirectMessage = async function() {
 };
 
 window.openDirectMessageThread = async function(userId, nickname) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_dm_open'); // 기능 사용 세기 (H8)
   if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
     if (typeof showToast === 'function') showToast('쪽지는 로그인 후 이용할 수 있습니다.', 'info', 2000);
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
@@ -13505,6 +13535,7 @@ window.okbmPaintNotifInboxList = async function() {
 
 // 알림 한 건 삭제. 서버 삭제가 확인된 뒤에만 목록과 배지에서 뺀다.
 window.deleteUserNotification = async function(notifId, ev) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_noti_delete'); // 기능 사용 세기 (H8)
   if (ev) {
     ev.preventDefault();
     ev.stopPropagation();
@@ -13645,6 +13676,7 @@ window.okbmSwitchInboxTab = function(tab, ev) {
 };
 
 window.openUserNotificationInbox = async function(initialTab, ev) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_noti_open'); // 기능 사용 세기 (H8)
   if (ev) {
     if (typeof ev.preventDefault === 'function') ev.preventDefault();
     if (typeof ev.stopPropagation === 'function') ev.stopPropagation();

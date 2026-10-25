@@ -33,28 +33,158 @@
   var DEVICE = [['device_ios', '아이폰 사파리'], ['device_ios_home', '아이폰 홈 화면'], ['device_android', '안드로이드 웹'], ['device_app', '낭만루트 앱'], ['device_other', 'PC·기타']];
   var PUBLISH = [['publish_ok', '피드에 공개됨', 'ok'], ['publish_private', '직접 비공개 선택', ''], ['publish_unregistered', '등록 안 된 장소라 비공개', 'warn'], ['publish_nophoto', '현장 사진 없어 비공개', 'warn']];
 
-  // 기능 사용 (SUPABASE_H8_FEATURE_METRICS.sql). [이름, 화면, 보이는 이름]
+  // 기능 사용 (SUPABASE_H8_FEATURE_METRICS.sql, 한도·보관 기간은 H13). [이름, 화면, 보이는 이름]
+  // 같은 버튼이 여러 곳에 있으면(찜하기·다녀왔음 등) 한 이름으로 합쳐 세고, 포토맵처럼 따로 봐야 하는 곳은 이름을 나눈다.
   var FEATURES = [
     ['feat_quick_rank', '홈', '바로가기: 박지 랭킹'],
-    ['feat_readyshot_make', '낭만플랜', '레디샷 만들기'],
-    ['feat_readyshot_save', '낭만플랜', '레디샷 저장·공유'],
-    ['feat_pack_share_open', '낭만플랜', '패킹 공유 창 열기'],
-    ['feat_gear_register', '낭만플랜', '내 장비 등록'],
-    ['feat_gear_add', '낭만플랜', '장비 직접 추가'],
-    ['feat_gear_info_save', '낭만플랜', '장비 정보 저장'],
-    ['feat_gear_set_save', '낭만플랜', '장비 세트 저장'],
-    ['feat_checklist_add', '낭만플랜', '체크리스트 추가'],
-    ['feat_plan_destination', '낭만플랜', '일정 목적지 등록'],
-    ['feat_plan_memo', '낭만플랜', '일정 메모 저장'],
-    ['feat_feed_share', '낭만피드', '피드 공유'],
+    ['feat_hero_photo', '홈', '인기 스팟 사진 크게 보기'],
+    ['feat_hero_author', '홈', '인기 스팟 작성자 모음'],
+    ['feat_theme_all', '홈', '테마 스팟 전체 보기'],
+    ['feat_theme_filter', '홈', '테마 고르기'],
+    ['feat_video_open', '홈', '영상 속 그 장소: 영상 열기'],
+    ['feat_trip_list', '홈', '원정대 목록 열기'],
+    ['feat_trip_detail', '홈', '원정대 글 자세히 보기'],
+    ['feat_trip_submit', '홈', '원정대 글 올리기·고치기'],
+    ['feat_trip_chat', '홈', '원정대 참여·채팅'],
+    ['feat_trip_close', '홈', '원정대 마감 바꾸기'],
+    ['feat_lounge_open', '라운지', '라운지 창 열기'],
+    ['feat_lounge_tab_events', '라운지', '탭: 이번 달 행사'],
+    ['feat_lounge_tab_guide', '라운지', '탭: 초보 가이드'],
+    ['feat_lounge_tab_board', '라운지', '탭: 자유게시판'],
+    ['feat_lounge_tab_reviews', '라운지', '탭: 박지 후기'],
+    ['feat_lounge_tab_deals', '라운지', '탭: 장비 세일 소식'],
+    ['feat_lounge_item_open', '라운지', '행사·세일·가이드·글 펼치기'],
+    ['feat_lounge_insta', '라운지', '인스타 게시물 펼치기'],
+    ['feat_lounge_video', '라운지', '가이드 영상 보기'],
+    ['feat_lounge_past', '라운지', '지난 행사 보기'],
+    ['feat_lounge_more', '라운지', '더 보기'],
+    ['feat_lounge_cal', '라운지', '행사 달력 열기'],
+    ['feat_lounge_cal_mark', '라운지', '달력에 표시'],
+    ['feat_lounge_cal_plan', '라운지', '행사를 내 일정에 넣기'],
+    ['feat_board_cat', '라운지', '자유게시판 분류 고르기'],
+    ['feat_board_write', '라운지', '자유게시판 글쓰기'],
+    ['feat_board_edit', '라운지', '내 글 고치기'],
+    ['feat_board_delete', '라운지', '내 글 지우기'],
+    ['feat_board_comment', '라운지', '댓글 달기'],
+    ['feat_board_like', '라운지', '좋아요'],
+    ['feat_lounge_review_write', '라운지', '별점 후기 쓰기'],
+    ['feat_lounge_spot_reviews', '라운지', '박지별 후기 보기'],
+    ['feat_lounge_spot_map', '라운지', '박지 지도에서 보기'],
+    ['feat_lounge_user', '라운지', '글쓴이 프로필 보기'],
+    ['feat_lounge_ugc', '라운지', '신고·차단 메뉴'],
+    ['feat_map_search', '지도', '검색창'],
+    ['feat_map_filter', '지도', '필터'],
+    ['feat_map_cycle_filter', '지도', '난이도·상태·지형 바꾸기(PC)'],
+    ['feat_map_tab_region', '지도', '목록 탭: 지역별'],
+    ['feat_map_tab_terrain', '지도', '목록 탭: 지형별'],
+    ['feat_map_tab_course', '지도', '목록 탭: 코스별'],
+    ['feat_map_tab_my', '지도', '목록 탭: 마이보관'],
+    ['feat_map_list', '지도', '목록 보기'],
+    ['feat_map_backmap', '지도', '목록에서 지도 보기'],
+    ['feat_map_top', '지도', '목록 맨 위로'],
+    ['feat_map_layer', '지도', '지도 종류 바꾸기(일반·위성·지형도)'],
+    ['feat_map_locate', '지도', '내 위치'],
+    ['feat_map_fold', '지도', '모두 닫기'],
+    ['feat_map_zoom', '지도', '확대·축소 버튼(PC)'],
+    ['feat_spot_propose', '지도', '박지 제보'],
+    ['feat_notice_go', '지도', '공지 버튼 누름'],
+    ['feat_notice_close', '지도', '공지 닫기'],
     ['feat_spot_fav', '정보창', '찜하기'],
     ['feat_spot_visited', '정보창', '다녀왔음'],
     ['feat_spot_share', '정보창', '박지 공유'],
     ['feat_spot_gpx', '정보창', 'GPX 경로 보기'],
     ['feat_spot_media', '정보창', '유튜브·블로그·인스타 탭'],
+    ['feat_spot_insta_view', '정보창', '인스타 게시물 크게 보기'],
+    ['feat_spot_creator_link', '정보창', '영상·글 링크 알려 주기'],
     ['feat_spot_correction', '정보창', '수정건의'],
-    ['feat_spot_unlock', '정보창', '들머리 정보 열기']
+    ['feat_spot_unlock', '정보창', '들머리 정보 열기'],
+    ['feat_spot_lnt_ok', '정보창', '들머리: 7원칙 동의'],
+    ['feat_spot_tips_open', '정보창', '박지 후기: 남기기 창'],
+    ['feat_spot_tips_save', '정보창', '박지 후기: 저장'],
+    ['feat_spot_tips_all', '정보창', '박지 후기: 전부 보기'],
+    ['feat_spot_tips_write', '정보창', '박지 후기: 사진과 함께 올리기'],
+    ['feat_pm_open', '포토맵', '포토맵 열기'],
+    ['feat_pm_all', '포토맵', '모두로 바꾸기'],
+    ['feat_pm_mine', '포토맵', '내 지도로 바꾸기'],
+    ['feat_pm_spot', '포토맵', '칸 눌러 박지 카드 열기'],
+    ['feat_pm_visit', '포토맵', '다녀왔어요'],
+    ['feat_pm_unvisit', '포토맵', '다녀옴 취소'],
+    ['feat_pm_later', '포토맵', '후기는 나중에'],
+    ['feat_pm_write', '포토맵', '후기 올리기·남기기'],
+    ['feat_pm_info', '포토맵', '박지 정보 보기'],
+    ['feat_pm_login', '포토맵', '로그인하고 보기(비회원)'],
+    ['feat_pm_card', '포토맵', '한눈에 보기'],
+    ['feat_pm_card_save', '포토맵', '한눈에 보기: 이미지 저장'],
+    ['feat_pm_card_send', '포토맵', '한눈에 보기: 보내기'],
+    ['feat_readyshot_make', '낭만플랜', '레디샷 만들기'],
+    ['feat_readyshot_save', '낭만플랜', '레디샷 저장·공유'],
+    ['feat_pack_share_open', '낭만플랜', '패킹 공유 창 열기'],
+    ['feat_pack_calc', '낭만플랜', '패킹 계산기 열기'],
+    ['feat_pack_spot_search', '낭만플랜', '패킹: 박지 찾기'],
+    ['feat_pack_save', '낭만플랜', '패킹 기록 저장'],
+    ['feat_gear_register', '낭만플랜', '내 장비 등록'],
+    ['feat_gear_add', '낭만플랜', '장비 직접 추가'],
+    ['feat_gear_info_save', '낭만플랜', '장비 정보 저장'],
+    ['feat_gear_set_save', '낭만플랜', '장비 세트 저장'],
+    ['feat_gear_preset', '낭만플랜', '장비 세트 고르기'],
+    ['feat_gear_fav', '낭만플랜', '장비 찜하기'],
+    ['feat_gear_cat_filter', '낭만플랜', '장비 분류 고르기'],
+    ['feat_checklist_add', '낭만플랜', '체크리스트 추가'],
+    ['feat_plan_destination', '낭만플랜', '일정 목적지 등록'],
+    ['feat_plan_memo', '낭만플랜', '일정 메모 저장'],
+    ['feat_plan_month', '낭만플랜', '달력 달 넘기기'],
+    ['feat_plan_today', '낭만플랜', '달력 오늘로'],
+    ['feat_plan_date_pick', '낭만플랜', '날짜 고르기 창'],
+    ['feat_studio_open', '포토 카드', '포토 카드 스튜디오 열기'],
+    ['feat_studio_mode', '포토 카드', '카드 모양 바꾸기'],
+    ['feat_studio_template', '포토 카드', '공유 카드 템플릿 바꾸기'],
+    ['feat_studio_ratio', '포토 카드', '비율 바꾸기'],
+    ['feat_studio_apply', '포토 카드', '카드를 템플릿에 넣기'],
+    ['feat_studio_save', '포토 카드', '폰에 저장'],
+    ['feat_studio_vault', '포토 카드', '보관함에 넣기'],
+    ['feat_feed_share', '낭만피드', '피드 공유'],
+    ['feat_feed_save', '낭만피드', '피드 저장(북마크)'],
+    ['feat_feed_edit', '낭만피드', '내 글 고치기'],
+    ['feat_feed_delete', '낭만피드', '내 글 지우기'],
+    ['feat_feed_publish_toggle', '낭만피드', '공개·비공개 바꾸기'],
+    ['feat_feed_report', '낭만피드', '신고'],
+    ['feat_trip_list_open', '낭만피드', '지난 여행 목록 열기'],
+    ['feat_trip_batch_delete', '낭만피드', '지난 여행 골라 지우기'],
+    ['feat_user_feed_open', '낭만피드', '다른 회원 피드 모음 보기'],
+    ['feat_user_follow', '회원', '팔로우·팔로우 끊기'],
+    ['feat_user_block', '회원', '차단'],
+    ['feat_user_unblock', '회원', '차단 풀기'],
+    ['feat_block_list', '회원', '차단 목록 열기'],
+    ['feat_dm_open', '회원', '쪽지 창 열기'],
+    ['feat_dm_send', '회원', '쪽지 보내기'],
+    ['feat_dm_delete', '회원', '쪽지 지우기'],
+    ['feat_noti_open', '회원', '알림 열기'],
+    ['feat_noti_delete', '회원', '알림 지우기'],
+    ['feat_report_sec_region', '마이리포트', '칸 펼치기: 지역'],
+    ['feat_report_sec_terrain', '마이리포트', '칸 펼치기: 지형'],
+    ['feat_report_sec_season', '마이리포트', '칸 펼치기: 계절'],
+    ['feat_report_sec_gear', '마이리포트', '칸 펼치기: 장비'],
+    ['feat_report_sec_myprops', '마이리포트', '칸 펼치기: 내 제보'],
+    ['feat_report_detail', '마이리포트', '통계 자세히 보기'],
+    ['feat_report_year', '마이리포트', '연도 고르기'],
+    ['feat_report_activity', '마이리포트', '활동 기록 펼치기'],
+    ['feat_report_visitor', '마이리포트', '방문자 활동 보기'],
+    ['feat_pasttrip_register', '마이리포트', '지난 여행 직접 등록'],
+    ['feat_my_proposal_edit', '마이리포트', '내 제보 고치기'],
+    ['feat_my_proposal_delete', '마이리포트', '내 제보 지우기'],
+    ['feat_my_proposal_fix', '마이리포트', '내 제보로 수정건의'],
+    ['feat_nick_save', '마이리포트', '닉네임 바꾸기'],
+    ['feat_bio_edit', '마이리포트', '자기소개 바꾸기'],
+    ['feat_sns_edit', '마이리포트', 'SNS 주소 바꾸기'],
+    ['feat_cover_photo', '마이리포트', '커버 사진 바꾸기'],
+    ['feat_cover_photo_reset', '마이리포트', '커버 사진 되돌리기'],
+    ['feat_account_open', '마이리포트', '계정 설정 열기'],
+    ['feat_link_kakao', '마이리포트', '카카오 계정 연결'],
+    ['feat_link_naver', '마이리포트', '네이버 계정 연결']
   ];
+  var FEATURE_SCREENS = [];
+  FEATURES.forEach(function (f) { if (FEATURE_SCREENS.indexOf(f[1]) === -1) FEATURE_SCREENS.push(f[1]); });
+  var featScreen = '';
 
   var out = document.getElementById('out');
   var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, detectSessionInUrl: false } });
@@ -228,10 +358,11 @@
     // 하단 탭
     mark = html.length;
     var dockTotal = DOCK.reduce(function (a, d) { return a + get(d[0], 'click').visitors; }, 0);
-    html += '<section><h2>하단 탭 누름 (홈에서)</h2><table><thead><tr><th>탭</th><th>누른 사람</th><th>누른 횟수</th></tr></thead><tbody>' +
+    html += '<section><h2>하단 탭 누름</h2><p class="h">홈(낭만플랜·피드·마이리포트 포함)에서 누른 것과 지도에서 누른 것을 나눠 셉니다. 숫자는 누른 사람 · 횟수예요.</p>' +
+      '<table><thead><tr><th>탭</th><th>홈에서</th><th>지도에서</th></tr></thead><tbody>' +
       DOCK.map(function (d) {
-        var c = get(d[0], 'click');
-        return '<tr><td>' + esc(d[1]) + '</td><td>' + num(c.visitors) + '</td><td>' + num(c.hits) + '</td></tr>';
+        var c = get(d[0], 'click'), mc = get('feat_map' + d[0], 'click');
+        return '<tr><td>' + esc(d[1]) + '</td><td>' + num(c.visitors) + ' <span class="dim">· ' + num(c.hits) + '</span></td><td>' + num(mc.visitors) + ' <span class="dim">· ' + num(mc.hits) + '</span></td></tr>';
       }).join('') + '</tbody></table></section>';
     foldFrom(mark, '하단 탭 누름', '누른 사람 ' + num(dockTotal));
 
@@ -273,18 +404,26 @@
     var featRows = FEATURES.map(function (f) { var c = get(f[0], 'click'); return { f: f, v: c.visitors, h: c.hits }; });
     Object.keys(sum).forEach(function (k) {
       var key = k.split('|')[0];
-      if (key.indexOf('feat_') === 0 && !FEATURES.some(function (f) { return f[0] === key; })) {
+      if (key.indexOf('feat_') === 0 && key.indexOf('feat_mapdock_') !== 0 && !FEATURES.some(function (f) { return f[0] === key; }) && !featRows.some(function (r) { return r.f[0] === key; })) {
         var c = get(key, 'click'); featRows.push({ f: [key, '기타', key], v: c.visitors, h: c.hits });
       }
     });
     featRows.sort(function (a, b) { return a.v - b.v || a.h - b.h; });
     var unused = featRows.filter(function (r) { return !r.v; }).length;
     var featAny = featRows.some(function (r) { return r.v; });
-    var featBody = '<section><p class="h">기능을 쓴 사람(하루 기준 합)과 횟수예요. 적게 쓴 것부터 보여요. 기록은 이 기능을 올린 뒤부터 쌓여요.</p>' +
+    var screens = FEATURE_SCREENS.concat(featRows.some(function (r) { return r.f[1] === '기타'; }) ? ['기타'] : []);
+    var chip = 'padding:6px 11px;border-radius:999px;border:1px solid var(--line,#2a2f37);background:transparent;color:inherit;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer';
+    var featBody = '<section><p class="h">기능을 쓴 사람(하루 기준 합)과 횟수예요. 적게 쓴 것부터 보여요. 기록은 이 기능을 올린 뒤부터 쌓여요(2026-10-25부터 대부분의 기능).</p>' +
       (featAny ? '' : '<p class="h warn">아직 기록이 없어요. SUPABASE_H8_FEATURE_METRICS.sql을 실행했는지 확인해 주세요.</p>') +
-      '<table><thead><tr><th>기능</th><th>화면</th><th>쓴 사람</th><th>횟수</th></tr></thead><tbody>' +
+      '<div id="featScreens" style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px">' +
+      [''].concat(screens).map(function (sc) {
+        var rs = featRows.filter(function (r) { return !sc || r.f[1] === sc; });
+        var un = rs.filter(function (r) { return !r.v; }).length;
+        return '<button type="button" data-screen="' + esc(sc) + '" style="' + chip + '">' + esc(sc || '전체') + ' <span class="dim">' + rs.length + (un ? ' · 안 씀 ' + un : '') + '</span></button>';
+      }).join('') + '</div>' +
+      '<table id="featTable"><thead><tr><th>기능</th><th>화면</th><th>쓴 사람</th><th>횟수</th></tr></thead><tbody>' +
       featRows.map(function (r) {
-        return '<tr><td>' + esc(r.f[2]) + (r.v ? '' : ' <span class="warn" style="font-size:11px;font-weight:800">안 씀</span>') + '</td><td class="dim">' + esc(r.f[1]) + '</td><td>' + num(r.v) + '</td><td>' + num(r.h) + '</td></tr>';
+        return '<tr data-screen="' + esc(r.f[1]) + '"><td>' + esc(r.f[2]) + (r.v ? '' : ' <span class="warn" style="font-size:11px;font-weight:800">안 씀</span>') + '</td><td class="dim">' + esc(r.f[1]) + '</td><td>' + num(r.v) + '</td><td>' + num(r.h) + '</td></tr>';
       }).join('') + '</tbody></table></section>';
     html += fold('기능 사용', featAny ? ('안 쓴 기능 ' + num(unused) + '개') : '기록 없음', featBody, true);
 
@@ -293,7 +432,26 @@
     html += fold('박지별 찜', bmList.length ? '찜 ' + num(bmTotal) + '개 · ' + num(bmList.length) + '곳' : '', bookmarkSection(bmRes, spots || []), false);
 
     out.innerHTML = html;
+    paintFeatScreen();
   }
+
+  // 기능 사용: 화면별로 걸러 보기 (기간을 바꿔도 고른 화면은 그대로)
+  function paintFeatScreen() {
+    Array.prototype.forEach.call(out.querySelectorAll('#featScreens button'), function (b) {
+      var on = b.getAttribute('data-screen') === featScreen;
+      b.style.background = on ? 'var(--accent)' : 'transparent';
+      b.style.color = on ? '#15171b' : 'inherit';
+    });
+    Array.prototype.forEach.call(out.querySelectorAll('#featTable tbody tr'), function (tr) {
+      tr.style.display = !featScreen || tr.getAttribute('data-screen') === featScreen ? '' : 'none';
+    });
+  }
+  out.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#featScreens button');
+    if (!b) return;
+    featScreen = b.getAttribute('data-screen') || '';
+    paintFeatScreen();
+  });
 
   out.addEventListener('input', function (e) {
     if (!e.target || e.target.id !== 'bmFilter') return;

@@ -2729,6 +2729,7 @@
 
   // ----- 댓글 -----
   async function saveComment(f) {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_board_comment'); // 기능 사용 세기 (H8)
     const pid = f.dataset.post;
     const input = f.elements.body;
     const body = String(input.value || '').trim();
@@ -2990,6 +2991,22 @@
   // =====================================================================
   // 누르기·입력 (인라인 onclick 없이 위임만 사용)
   // =====================================================================
+  // 기능 사용 세기 (H8): data-a → 기록 이름. 관리자 등록·수정 버튼은 세지 않는다.
+  const TAB_METRIC = ['events', 'guide', 'board', 'reviews', 'deals']; // TABS 순서
+  const A_METRIC = {
+    lounge: 'feat_lounge_open', 'deal-ig': 'feat_lounge_insta', 'body-yt': 'feat_lounge_video', 'tip-play': 'feat_lounge_video',
+    past: 'feat_lounge_past', cat: 'feat_board_cat', 'more-posts': 'feat_lounge_more', 'more-reviews': 'feat_lounge_more', 'more-spot-reviews': 'feat_lounge_more',
+    'new-post': 'feat_board_write', 'edit-post': 'feat_board_edit', 'del-post': 'feat_board_delete', like: 'feat_board_like',
+    ugc: 'feat_lounge_ugc', user: 'feat_lounge_user', 'rev-spot': 'feat_lounge_spot_reviews', 'rev-all': 'feat_lounge_spot_reviews', review: 'feat_lounge_review_write',
+    spot: 'feat_lounge_spot_map', 'cal-open': 'feat_lounge_cal', 'open-cal': 'feat_lounge_cal', 'cal-mark': 'feat_lounge_cal_mark', 'cal-plan': 'feat_lounge_cal_plan'
+  };
+  function loungeMetric(a, v, item) {
+    let name = A_METRIC[a];
+    if (a === 'tab') name = TAB_METRIC[Number(v)] ? 'feat_lounge_tab_' + TAB_METRIC[Number(v)] : '';
+    if (a === 'x') name = item && !item.classList.contains('open') ? 'feat_lounge_item_open' : '';
+    if (name && typeof window.okbmMetric === 'function') window.okbmMetric(name);
+  }
+
   function onClick(e) {
     const t = e.target.closest('[data-a]');
     if (!t || t.disabled) return;
@@ -3000,6 +3017,7 @@
     const item = t.closest('.lmx');
     if (e.target.closest('a.lm-out')) return;
     if (t.tagName === 'A' && a !== 'deal-ig' && a !== 'body-yt') return;
+    loungeMetric(a, v, item);
     switch (a) {
       case 'x': toggleItem(item); break;
       case 'deal-ig': e.preventDefault(); openDealInsta(t.dataset.kind, t.dataset.code); break;

@@ -439,6 +439,7 @@
     window.currentThemeSpotAllTab = 'all';
 
     window.openThemeSpotAllModal = function() {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_theme_all'); // 기능 사용 세기 (H8)
       var old = document.getElementById('themeSpotAllModal');
       if (old) old.remove();
 
@@ -496,6 +497,7 @@
     };
 
     window.filterThemeSpotAllGrid = function(themeKey, btnEl) {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_theme_filter'); // 기능 사용 세기 (H8)
       window.currentThemeSpotAllTab = themeKey;
       var parent = btnEl ? btnEl.parentElement : null;
       if (parent) {
@@ -581,6 +583,7 @@
     };
 
     function filterSecretSpotTheme(themeKey, btnEl) {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_theme_filter'); // 기능 사용 세기 (H8)
       window.currentSecretSpotTheme = themeKey;
       document.querySelectorAll('#heroTrailerSectionWrap .n-cat-chip').forEach(function(b) { b.classList.remove('active'); });
       if (btnEl) btnEl.classList.add('active');
@@ -791,6 +794,7 @@
 
     // 🖼️ [3:4 대형 화보 뷰어: 풀커버 + 사진 속 닷 + 하단 5대 메인독 탑재]
     window.openSecretSpotHeroViewer = function(spotOrFeedId) {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_hero_photo'); // 기능 사용 세기 (H8)
       var old = document.getElementById('secretSpotHeroModal');
       if (old) old.remove();
 
@@ -997,6 +1001,7 @@
 
  // 👤 [1위 등록자 피드 모아보기 직통 연동]
     window.openHeroAuthorCollection = function(e) {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_hero_author'); // 기능 사용 세기 (H8)
       if (e) { e.preventDefault(); e.stopPropagation(); }
 
       var rec = window.currentHeroRecord;
@@ -1852,6 +1857,7 @@
     }
 
     async function openVideoDetailModal(idxOrUrl) {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_video_open'); // 기능 사용 세기 (H8)
       var db = window.VIDEO_DATABASE || [];
       var item = (typeof idxOrUrl === 'number') ? (db[idxOrUrl] || db[0]) : (db.find(function(v) { return v.videoUrl === idxOrUrl || v.videoId === idxOrUrl; }) || db[0]);
 
@@ -2529,6 +2535,7 @@ var adBannersHtml = `
 
 
     window.toggleTripClosedStatus = async function(tripId, e) {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_trip_close'); // 기능 사용 세기 (H8)
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       var targetIdStr = String(tripId).trim();
       var trip = (window.TRIP_JOINS_DATABASE || []).find(function(t) { return String(t.tripId).trim() === targetIdStr; });
@@ -2609,6 +2616,7 @@ var adBannersHtml = `
     };
 
     window.openTripDetailModal = function(tripId) {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_trip_detail'); // 기능 사용 세기 (H8)
       window.__currentActiveTripId = String(tripId);
       if (typeof window.lockHomeScrollForTripModal === 'function') {
         window.lockHomeScrollForTripModal();
@@ -2922,6 +2930,7 @@ var adBannersHtml = `
     };
 
     window.handleTripChatJoinClick = function(chatUrl) {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_trip_chat'); // 기능 사용 세기 (H8)
       if (!(typeof isUserLoggedIn === 'function' && isUserLoggedIn())) {
         showToast('원정대 동행 문의는 로그인 후 이용하실 수 있습니다.', 2200);
         if (typeof openLoginModal === 'function') {
@@ -3765,6 +3774,7 @@ var adBannersHtml = `
     };
 
     async function submitNewTripJoin() {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_trip_submit'); // 기능 사용 세기 (H8)
       var spotInput = document.getElementById('tripInputSpot');
       var dateInput = document.getElementById('tripInputDate');
       var chatInput = document.getElementById('tripInputChatUrl');
@@ -3911,6 +3921,7 @@ var adBannersHtml = `
   
 
     function openTripJoinListModal() {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_trip_list'); // 기능 사용 세기 (H8)
       var old = document.getElementById('tripJoinListModal');
       if (old) old.remove();
 

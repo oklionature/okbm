@@ -1294,6 +1294,7 @@
           // 기본 지도가 보던 범위 그대로 사진 지도를 연다
           const b = map.getBounds(), sw = b.getSouthWest(), ne = b.getNorthEast();
           photoMapOpenedAt = { level: map.getLevel(), lngSpan: ne.getLng() - sw.getLng() };
+          if (!view && typeof window.okbmMetric === 'function') window.okbmMetric('feat_pm_open'); // 포토맵 열기 (정보창에서 돌아오는 건 빼고)
           if (window.okbmPhotoMap) window.okbmPhotoMap.open(view || { minLat: sw.getLat(), minLng: sw.getLng(), maxLat: ne.getLat(), maxLng: ne.getLng() });
           try { localStorage.setItem('okbm_pm_seen', '1'); } catch (e) {}
         }
@@ -5049,6 +5050,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
       // 인스타 게시물 보기 창: 화면 전체를 덮고, 게시물 높이에 맞춰 늘어난다(길면 창 안에서 스크롤).
       // 높이는 인스타 embed가 보내는 MEASURE 신호(공식 embed.js와 같은 방식)로 맞추고, 신호가 없으면 기본 높이를 쓴다.
       window.okbmOpenInstaViewer = function(btn) {
+        if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_spot_insta_view'); // 기능 사용 세기 (H8)
         if (!btn || !btn.dataset) return;
         var kind = /^(p|reel|tv)$/.test(btn.dataset.kind) ? btn.dataset.kind : 'p';
         var code = String(btn.dataset.code || '').replace(/[^A-Za-z0-9_-]/g, '');
@@ -5391,6 +5393,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           if (a === 'login') {
             if (typeof openLoginModal === 'function') openLoginModal();
           } else if (a === 'open') {
+            if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_spot_creator_link'); // 기능 사용 세기 (H8): 영상·글 링크 알려 주기 창
             st.form = true;
             paint(sId);
             var u = boxes(sId)[0] && boxes(sId)[0].querySelector('[data-creator-field]');

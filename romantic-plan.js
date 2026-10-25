@@ -2460,6 +2460,7 @@ window.openQuickGearRegisterModal = function(opts) {
   };
 
   window.toggleFavoriteGear = function(gearName, e) {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_gear_fav'); // 기능 사용 세기 (H8)
     if (e) { e.preventDefault(); e.stopPropagation(); }
     if (!gearName) return;
 
@@ -2481,6 +2482,7 @@ window.openQuickGearRegisterModal = function(opts) {
   };
 
 window.saveCurrentPackingRecord = function() {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_pack_save'); // 기능 사용 세기 (H8)
 
     var gearMap = window.selectedGearMap || safeGetJSON('okbm_selected_gears_multi', {}) || {};
     var packedItems = [];
@@ -4220,6 +4222,7 @@ window.saveCurrentPackingRecord = function() {
       : '';
 
  window.openCalcSpotSearchModal = function(e) {
+   if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_pack_spot_search'); // 기능 사용 세기 (H8)
     if (e) { e.preventDefault(); e.stopPropagation(); }
     var old = document.getElementById('calcSpotSearchModal');
     if (old) old.remove();
@@ -4480,7 +4483,7 @@ window.saveCurrentPackingRecord = function() {
             ${PLAN_SVG.reset}
             <span>초기화</span>
           </button>
-          <button type="button" onclick="window.openQuickPresetPicker();" style="height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; font-size:0.72rem; font-weight:800; border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; white-space:nowrap; padding:0 2px;">
+          <button type="button" data-metric-click="feat_gear_preset" onclick="window.openQuickPresetPicker();" style="height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; font-size:0.72rem; font-weight:800; border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; white-space:nowrap; padding:0 2px;">
             ${PLAN_SVG.backpack}
             <span>내 장비 세트</span>
           </button>
@@ -5011,6 +5014,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.openRomanticDatePickerModal = function(targetInputId) {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_plan_date_pick'); // 기능 사용 세기 (H8)
     var old = document.getElementById('romanticDatePickerModal');
     if (old) old.remove();
 
@@ -5104,6 +5108,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.setGearCategoryFilter = function(catId) {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_gear_cat_filter'); // 기능 사용 세기 (H8)
     window.__activeGearCategoryFilter = catId;
     window.renderPlanStage();
   };
@@ -5619,6 +5624,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.changePlanMonth = function(delta) {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_plan_month'); // 기능 사용 세기 (H8)
     var now = new Date();
     var curYear = window.calViewYear || now.getFullYear();
     var curMonth = window.calViewMonth || (now.getMonth() + 1);
@@ -5641,6 +5647,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.jumpToPlanToday = function() {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_plan_today'); // 기능 사용 세기 (H8)
     var now = new Date();
     window.calViewYear = now.getFullYear();
     window.calViewMonth = now.getMonth() + 1;
@@ -5737,6 +5744,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.openPlanPackingCalculator = async function() {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_pack_calc'); // 기능 사용 세기 (H8)
     var now = new Date();
     var dateStr = window.activeSelectedDateKey || (
       now.getFullYear() + '.' +

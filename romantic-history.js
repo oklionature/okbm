@@ -2720,6 +2720,7 @@ window.normalizeHistoryRecord = function(r, idx) {
   };
 
   window.executeBatchDeletePastTrips = async function() {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_trip_batch_delete'); // 기능 사용 세기 (H8)
     var selectedCount = window.__selectedPastTripIds.size;
     if (selectedCount === 0) return;
 
@@ -3935,6 +3936,7 @@ window.toggleFeedStar = async function(cardId, e) {
   window.__publishDebounceTimers = window.__publishDebounceTimers || {};
 
   window.toggleFeedPublishStatus = function(recordId, e) {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_feed_publish_toggle'); // 기능 사용 세기 (H8)
     if (e) { e.preventDefault(); e.stopPropagation(); }
     if (!recordId) return;
 
@@ -4158,6 +4160,7 @@ window.toggleFeedStar = async function(cardId, e) {
   };
 
   window.openTripEditFromMenu = function(recordId, e) {
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_feed_edit'); // 기능 사용 세기 (H8)
     if (e) { e.preventDefault(); e.stopPropagation(); }
     var sheet = document.getElementById('tripActionActionSheet');
     if (sheet) sheet.remove();
@@ -4178,6 +4181,7 @@ window.toggleFeedStar = async function(cardId, e) {
   };
 
 window.deleteTripRecord = async function(recordId, e, skipConfirm) {
+  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_feed_delete'); // 기능 사용 세기 (H8)
     if (e) { e.preventDefault(); e.stopPropagation(); }
     var sId = String(recordId || '').trim();
     if (!sId) return;
@@ -4753,6 +4757,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
  window.__saveFeedDebounceTimers = window.__saveFeedDebounceTimers || {};
 
  window.toggleSaveFeed = function(feedId, e) {
+   if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_feed_save'); // 기능 사용 세기 (H8)
     if (e) { e.preventDefault(); e.stopPropagation(); }
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
@@ -4916,7 +4921,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         var safeRawKey = escapeHtml(item.rawKey);
 
         return '<div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">' +
-          '<div data-author="' + safeNick + '" data-user-id="' + safeUser + '" onclick="window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="display:flex; align-items:center; gap:10px; cursor:pointer; min-width:0; flex:1;">' +
+          '<div data-author="' + safeNick + '" data-user-id="' + safeUser + '" data-metric-click="feat_user_feed_open" onclick="window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="display:flex; align-items:center; gap:10px; cursor:pointer; min-width:0; flex:1;">' +
             '<div style="width:44px; height:44px; border-radius:10px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.15);">' +
               '<img src="' + escapeHtml(okbmSafeImageUrl(item.thumbPhoto)) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
             '</div>' +
@@ -5209,6 +5214,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
  // 👥 [단방향 관심루터/크루 팔로우 토글 엔진]
  window.toggleFollowUser = function(targetUserId, targetAuthor, e) {
+   if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_user_follow'); // 기능 사용 세기 (H8)
     if (e) { e.preventDefault(); e.stopPropagation(); }
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
@@ -7712,7 +7718,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     return '<div class="reel-header-row" style="position:absolute !important; top:var(--okbm-status-top) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:400 !important; isolation:isolate !important; transform:none !important; -webkit-transform:none !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important; border-bottom:none !important; pointer-events:none !important;">' +
       '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
-        '<button type="button" data-author="' + safeAuthor + '" data-user-id="' + safeUserId + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.7); pointer-events:auto; position:relative; z-index:401;" title="' + safeAuthor + '님의 피드 모아보기">' +
+        '<button type="button" data-author="' + safeAuthor + '" data-user-id="' + safeUserId + '" data-metric-click="feat_user_feed_open" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.7); pointer-events:auto; position:relative; z-index:401;" title="' + safeAuthor + '님의 피드 모아보기">' +
           avatarMarkup +
         '</button>' +
         '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1;">' +
@@ -8186,7 +8192,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     if (isMyRecord) {
       bottomToolsHtml = '<div style="display:flex; align-items:center; justify-content:flex-end; position:relative; flex-shrink:0;">' +
         '<div id="bottomToolsDrawer_' + cardId + '" data-opened="false" style="display:flex; align-items:center; gap:6px; max-width:0px; opacity:0; transform:scale(0.85) translateX(12px); transform-origin:right center; overflow:hidden; transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1); pointer-events:none; margin-right:6px; box-sizing:border-box;">' +
-          '<button type="button" onclick="window.openPastTripsListModal();" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8; flex-shrink:0;" title="보관함 모아보기">' +
+          '<button type="button" data-metric-click="feat_trip_list_open" onclick="window.openPastTripsListModal();" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8; flex-shrink:0;" title="보관함 모아보기">' +
             '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
           '</button>' +
           '<button type="button" data-record-id="' + cardId + '" data-lock-btn-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:' + (isPub ? '#34d399' : '#38bdf8') + '; flex-shrink:0;" title="' + (isPub ? '전체 공개 중' : (!isRegisteredSpot ? '비공개 (등록 박지만 함께보기 가능)' : (hasRealFieldPhotos ? '비공개 (나만보기)' : '비공개 (디데이 이후 사진 등록 시 함께보기 가능)'))) + '">' +

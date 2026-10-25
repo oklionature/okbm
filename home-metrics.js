@@ -19,7 +19,7 @@
     '마이리포트': 'dock_report'
   };
 
-  // 지도(map.html)에서도 기능 사용(feat_*)을 센다. 홈 노출·하단 탭은 홈에서만 센다.
+  // 지도(map.html)에서도 기능 사용(feat_*)을 센다. 홈 노출은 홈에서만, 지도에서 누른 하단 탭은 feat_mapdock_*로 센다.
   var onHome = !/map\.html/i.test(location.pathname || '');
   var queue = [];
   var seenViews = {};
@@ -129,9 +129,11 @@
   function onClick(e) {
     var t = e.target;
     if (!t || typeof t.closest !== 'function') return;
-    var dock = onHome ? t.closest('#romanticMasterBottomDock .dock-item') : null;
+    var dock = t.closest('#romanticMasterBottomDock .dock-item');
     if (dock) {
-      log(DOCK_SECTIONS[dock.getAttribute('title') || ''], 'click');
+      // 지도에서 누른 하단 탭은 홈 것과 섞이지 않게 feat_mapdock_*로 센다
+      var d = DOCK_SECTIONS[dock.getAttribute('title') || ''];
+      if (d) log(onHome ? d : 'feat_map' + d, 'click');
       return;
     }
     var btn = t.closest('[data-metric-click]');
