@@ -2337,12 +2337,48 @@ window.normalizeHistoryRecord = function(r, idx) {
     return okbmSafeImageUrl(s) || '';
   }
 
+  // 작은 동그라미용 프로필 사진(feed-comments.js avatarUrl과 같은 규칙): R2 사진은 img.romanticroute.kr에서 96px로 줄여 받는다
+  // (원본 145KB → 약 1KB). 카카오·구글 사진은 원래 작아서 그대로. http는 https로.
+  var OKBM_R2_PUBLIC = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
+  function okbmSmallAvatarUrl(raw) {
+    var u = okbmAvatarDisplayUrl(raw);
+    if (u.indexOf('http://') === 0) u = 'https://' + u.slice(7);
+    if (u.indexOf('https://') !== 0) return '';
+    if (u.indexOf(OKBM_R2_PUBLIC) === 0) {
+      return 'https://img.romanticroute.kr/cdn-cgi/image/width=96,quality=70,fit=cover,format=auto/' + u.slice(OKBM_R2_PUBLIC.length);
+    }
+    return u;
+  }
+  window.okbmSmallAvatarUrl = okbmSmallAvatarUrl;
+
+  // 작은 동그라미(img[data-user-avatar-small]): 사진이 오면 보이고 사람 아이콘은 숨긴다. 못 받으면 아이콘으로 돌아간다
+  function okbmPaintSmallAvatars(uid, url) {
+    var small = okbmSmallAvatarUrl(url);
+    if (!small) return;
+    var imgs = document.querySelectorAll('img[data-user-avatar-small]');
+    for (var i = 0; i < imgs.length; i++) {
+      var imgEl = imgs[i];
+      if (String(imgEl.getAttribute('data-user-avatar-small') || '') !== uid) continue;
+      var icon = imgEl.parentElement && imgEl.parentElement.querySelector('.avatar-placeholder-svg');
+      imgEl.onerror = function() {
+        this.onerror = null;
+        this.style.display = 'none';
+        var ic = this.parentElement && this.parentElement.querySelector('.avatar-placeholder-svg');
+        if (ic) ic.style.display = 'block';
+      };
+      if (imgEl.getAttribute('src') !== small) imgEl.setAttribute('src', small);
+      imgEl.style.display = 'block';
+      if (icon) icon.style.display = 'none';
+    }
+  }
+
   window.okbmPaintUserAvatarNodes = function(userId, url) {
     var uid = String(userId || '').trim();
     var src = okbmAvatarDisplayUrl(url);
     if (!uid || !src) return;
     window.__userProfilePhotoMap = window.__userProfilePhotoMap || {};
     window.__userProfilePhotoMap[uid] = src;
+    okbmPaintSmallAvatars(uid, src);
     var imgs = document.querySelectorAll('img[data-user-avatar-id]');
     for (var i = 0; i < imgs.length; i++) {
       if (String(imgs[i].getAttribute('data-user-avatar-id') || '') !== uid) continue;
@@ -4727,9 +4763,19 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var sIsOwner = typeof window.isRecordOwner === 'function' && window.isRecordOwner(log);
     var sAuthor = String(log.author || log.nick || log.nickname || '').trim();
     var sAuthorUserId = String(log.userId || log.user_id || '').trim();
+    // 프로필 사진이 등록돼 있으면 동그라미 사진, 없으면 동그라미 안 사람 아이콘(사진은 받는 대로 okbmPaintUserAvatarNodes가 채운다)
+    var sAvatarSmall = '';
+    if (!sIsOwner && sAuthorUserId && typeof window.resolveUserMasterPhoto === 'function') {
+      sAvatarSmall = okbmSmallAvatarUrl(window.resolveUserMasterPhoto(sAuthorUserId, sAuthor, ''));
+    }
+    var authorAvatarHtml =
+      '<span style="position:relative; width:22px; height:22px; border-radius:50%; overflow:hidden; background:#1e293b; border:1px solid rgba(255,255,255,0.18); flex-shrink:0; box-sizing:border-box;">' +
+        '<svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="position:absolute; left:50%; top:50%; width:12px; height:12px; transform:translate(-50%,-50%); display:' + (sAvatarSmall ? 'none' : 'block') + ';" fill="none" stroke="#94a3b8" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+        '<img data-user-avatar-small="' + escapeHtml(sAuthorUserId) + '" src="' + escapeHtml(sAvatarSmall) + '" alt="" decoding="async" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:' + (sAvatarSmall ? 'block' : 'none') + ';" />' +
+      '</span>';
     var authorLineHtml = (!sIsOwner && (sAuthor || sAuthorUserId))
-      ? '<button type="button" data-author="' + escapeHtml(sAuthor) + '" data-user-id="' + escapeHtml(sAuthorUserId) + '" data-metric-click="feat_user_feed_open" onclick="window.okbmOpenFeedAuthor(this);" style="flex:0 1 auto; min-width:0; max-width:42%; background:none; border:0; padding:2px 0; display:inline-flex; align-items:center; gap:4px; color:#e2e8f0; font-size:0.8rem; font-weight:800; cursor:pointer;" title="' + escapeHtml(sAuthor || '작성자') + '님의 피드 모아보기">' +
-          '<svg viewBox="0 0 24 24" style="width:12px; height:12px; flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+      ? '<button type="button" data-author="' + escapeHtml(sAuthor) + '" data-user-id="' + escapeHtml(sAuthorUserId) + '" data-metric-click="feat_user_feed_open" onclick="window.okbmOpenFeedAuthor(this);" style="flex:0 1 auto; min-width:0; max-width:42%; background:none; border:0; padding:2px 0; display:inline-flex; align-items:center; gap:6px; color:#e2e8f0; font-size:0.8rem; font-weight:800; cursor:pointer;" title="' + escapeHtml(sAuthor || '작성자') + '님의 피드 모아보기">' +
+          authorAvatarHtml +
           '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(sAuthor || '낭만백패커') + '</span>' +
         '</button>'
       : '';
