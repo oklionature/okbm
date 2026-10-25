@@ -651,6 +651,9 @@
       }
       var ratio = w / h;
       var inReel = !!(img.closest && (img.closest('.reel-horizontal-track') || img.closest('#mapHeroPhotoTrack')));
+      // 후기 창(#singleTripFeedModal): 세로 사진도 다 보이게 하고 높이는 화면에 맞춘다(가로폭의 4:5까지, 머리글·아래 탭 빼고)
+      var inFeedModal = !!(img.closest && img.closest('#singleTripFeedModal'));
+      var FEED_MODAL_MAX_H = 'min(calc(min(100vw, 440px) * 1.25), calc(var(--okbm-vvh, 100dvh) - 170px))';
       img.classList.remove('is-landscape', 'is-square', 'is-portrait', 'is-portrait-crop', 'is-keep-ratio');
       img.style.setProperty('border-radius', '0', 'important');
       img.style.setProperty('box-shadow', 'none', 'important');
@@ -658,7 +661,7 @@
       img.style.setProperty('background-color', '#000000', 'important');
       img.style.setProperty('min-width', '0', 'important');
       img.style.setProperty('min-height', '0', 'important');
-      if (ratio < 0.98) {
+      if (ratio < 0.98 && !inFeedModal) {
         // 📱 [세로사진]: 상단 안전바까지 100% 화면 꽉차게 (width: 100%, height: 100%, object-fit: cover)
         img.classList.add('is-portrait', 'is-portrait-crop');
         img.style.setProperty('width', '100%', 'important');
@@ -672,10 +675,12 @@
         img.style.setProperty('width', inReel ? 'auto' : '100%', 'important');
         img.style.setProperty('height', 'auto', 'important');
         img.style.setProperty('max-width', '100%', 'important');
-        img.style.setProperty('max-height', inReel ? '100%' : 'none', 'important');
+        img.style.setProperty('max-height', inReel ? '100%' : (inFeedModal ? FEED_MODAL_MAX_H : 'none'), 'important');
         img.style.setProperty('aspect-ratio', w + ' / ' + h, 'important');
         img.style.setProperty('object-fit', 'contain', 'important');
-        if (ratio > 1.02) {
+        if (ratio < 0.98) {
+          img.classList.add('is-keep-ratio');
+        } else if (ratio > 1.02) {
           img.classList.add('is-landscape', 'is-keep-ratio');
         } else {
           img.classList.add('is-square', 'is-keep-ratio');
@@ -4799,13 +4804,31 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         '</div>' +
       '</div>';
 
-    return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:2px solid rgba(255,255,255,0.12); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:28px; box-sizing:border-box;">' +
-      '<div style="padding:14px 16px 10px 16px; background:#000000; display:flex; justify-content:space-between; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.06);">' +
-        '<div style="display:flex; align-items:center; gap:8px; min-width:0;">' + authorLineHtml + spotTitleHtml + '</div>' +
-        '<div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">' +
-          '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(log.date || '') + '</span>' +
+    // 머리글 한 줄: ◀ · 작성자 · 박지 · 날짜 · ⋯. 스크롤해도 지금 보는 카드의 머리글이 위에 붙는다(sticky).
+    // ⋯는 하나만: 내 글이면 수정·삭제, 남의 글이면 신고·차단(위쪽에 따로 있던 ⋯·◀ 줄은 없앴다)
+    var sMoreHtml = sIsOwner
+      ? (typeof window.openTripActionMenu === 'function'
+        ? '<button type="button" data-feed-id="' + sFeedId + '" onclick="event.preventDefault(); event.stopPropagation(); window.openTripActionMenu(this.dataset.feedId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#94a3b8; flex-shrink:0;" title="수정·삭제">' +
+            '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
+          '</button>'
+        : '')
+      : okbmBuildFeedOthersMoreBtnHtml(log.id, log.userId || log.user_id, log.author || log.nick || log.nickname, 'inline');
+    // 날짜는 짧게: 올해면 10.23, 아니면 25.10.23
+    var sDateParts = String(log.date || '').match(/\d+/g);
+    var sShortDate = String(log.date || '');
+    if (sDateParts && sDateParts.length >= 3 && String(sDateParts[0]).length === 4) {
+      var sMd = String(sDateParts[1]).padStart(2, '0') + '.' + String(sDateParts[2]).padStart(2, '0');
+      sShortDate = Number(sDateParts[0]) === new Date().getFullYear() ? sMd : (String(sDateParts[0]).slice(2) + '.' + sMd);
+    }
+
+    return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:2px solid rgba(255,255,255,0.12); overflow:clip; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:28px; box-sizing:border-box;">' +
+      '<div class="okbm-feed-head" style="position:sticky; top:0; z-index:20; padding:8px 12px; background:#000000; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.08);">' +
+        '<button type="button" onclick="window.goBackModal(event);" aria-label="뒤로" style="background:#0c1017; border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>' +
+        '<div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">' + authorLineHtml + spotTitleHtml + '</div>' +
+        '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
+          '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;" title="' + escapeHtml(log.date || '') + '">' + escapeHtml(sShortDate) + '</span>' +
           window.okbmFeedInstagramBadgeHtml(log.instagram || log.insta || '') +
-          ((typeof window.isRecordOwner === 'function' && window.isRecordOwner(log)) ? '' : okbmBuildFeedOthersMoreBtnHtml(log.id, log.userId || log.user_id, log.author || log.nick || log.nickname, 'inline')) +
+          sMoreHtml +
         '</div>' +
       '</div>' +
       '<div style="display:flex; flex-direction:column; width:100%;">' +
@@ -6061,21 +6084,11 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     feedModal.id = 'singleTripFeedModal';
     var feedZ = adminInspect ? '2147483646' : '2147483643';
     var chromeZ = adminInspect ? '2147483647' : '2147483644';
-    feedModal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + feedZ + ' !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    // 위쪽은 상태 표시줄만큼만 비운다(--okbm-status-top: 앱은 상태 표시줄, 웹은 안전 영역). 예전엔 최소 47px을 비워 사진이 처져 보였다
+    feedModal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + feedZ + ' !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; padding-top:var(--okbm-status-top, env(safe-area-inset-top, 0px)); overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     feedModal.innerHTML = `
-      <div id="dualFeedChromeBar" style="position:absolute; top:max(47px, env(safe-area-inset-top, 0px)); left:0; right:0; max-width:440px; margin:0 auto; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; z-index:` + chromeZ + `; pointer-events:none; box-sizing:border-box;">
-        <button type="button" onclick="window.goBackModal(event);" style="pointer-events:auto; background:#0c1017; border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;">◀</button>
-        
-        <div style="pointer-events:auto; display:flex; align-items:center; gap:6px;">
-          <div id="btnFloatUgcSafety" style="display:none; align-items:center; gap:6px;"></div>
-          <button type="button" id="btnFloatFeedMore" onclick="window.__triggerCurrentFeedMoreMenu(event);" style="background:#0c1017; border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;" title="더보기">
-            <svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <div id="dualFeedScrollContainer" onscroll="window.__onDualFeedContainerScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; contain:content; padding:calc(48px + max(47px, env(safe-area-inset-top, 0px))) 0 16px 0; scroll-padding-top:calc(48px + max(47px, env(safe-area-inset-top, 0px))); display:flex; flex-direction:column; box-sizing:border-box;">
+      <div id="dualFeedScrollContainer" onscroll="window.__onDualFeedContainerScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; contain:content; padding:0 0 16px 0; display:flex; flex-direction:column; box-sizing:border-box;">
         <div id="dualFeedCardsWrapper">
           ${allCardsHtml}
         </div>
