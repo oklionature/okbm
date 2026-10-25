@@ -3562,11 +3562,64 @@ function syncUserDataToCloud(isPackHistoryUpdated, immediate) {
 window.syncUserDataToCloud = syncUserDataToCloud;
 
 // 홈/지도 핀용 공개 컬럼. 들머리 주소(trailhead_addr)·author_sns_url은 제외.
-window.SPOTS_MAP_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief,camp_status,camp_status_note,camp_status_at';
+// 소개는 앞 80자만(H15 view_brief_short를 view_brief라는 이름으로 받는다). 전체 글은 정보창 상세·okbmFetchSpotBrief로 따로 받는다.
+window.SPOTS_MAP_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at';
 // H9: 비회원 목록에는 좌표·들머리 이름이 없다(서버도 막는다). 핀 좌표는 get_spot_pins로 지도 범위만큼만 받는다.
-window.SPOTS_GUEST_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,terrain,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief,camp_status,camp_status_note,camp_status_at';
+window.SPOTS_GUEST_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,terrain,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at';
 window.OKBM_KOREA_BOUNDS = { minLat: 32.8, minLng: 124.3, maxLat: 38.9, maxLng: 132.0 };
 window.FEEDS_HOME_SELECT = 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,instagram,likes_count,is_published,feed_type,created_at,items,template_id';
+
+// 목록의 소개가 80자에서 잘렸는지('…'로 끝남). 잘렸으면 전체 글이 필요한 화면에서 따로 받는다.
+window.okbmSpotBriefAttr = function(spot) {
+  if (!spot || !spot.id) return '';
+  var brief = String(spot.view_brief || '').trim();
+  if (brief.slice(-1) !== '…') return '';
+  return ' data-spot-brief-id="' + String(spot.id).replace(/[^A-Za-z0-9_-]/g, '') + '"';
+};
+
+// 박지 하나의 전체 소개(view_brief). 비회원도 읽는 칸이고 한 줄이라 수백 바이트다.
+window.__spotBriefCache = window.__spotBriefCache || {};
+window.okbmFetchSpotBrief = function(spotId) {
+  var id = String(spotId || '').trim();
+  if (!id) return Promise.resolve('');
+  if (window.__spotBriefCache[id]) return window.__spotBriefCache[id];
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var anonKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  var job = fetch(targetUrl + '/rest/v1/spots?select=view_brief&id=eq.' + encodeURIComponent(id), {
+    headers: { 'apikey': anonKey, 'Authorization': 'Bearer ' + anonKey }
+  }).then(function(res) {
+    if (!res.ok) throw new Error('spot brief ' + res.status);
+    return res.json();
+  }).then(function(rows) {
+    return (Array.isArray(rows) && rows[0] && rows[0].view_brief) ? String(rows[0].view_brief) : '';
+  }).catch(function(e) {
+    delete window.__spotBriefCache[id];
+    console.warn('[romantic-sync.js:okbmFetchSpotBrief]', e);
+    return '';
+  });
+  window.__spotBriefCache[id] = job;
+  return job;
+};
+
+// 홈 화면과 같은 규칙으로 [뷰/특징] 부분(없으면 첫 문단)만 꺼낸다.
+window.okbmSpotViewOnly = function(raw) {
+  var clean = String(raw || '').replace(/\\n/g, '\n');
+  var m = clean.match(/\[(?:뷰\/특징|뷰|특징)\]\s*([\s\S]*?)(?=\[(?:접근\/코스|접근|코스|박지\/피칭|박지|장소\/피칭|장소|피칭|주의\/팁|주의|팁)\]|$)/i);
+  return m ? m[1].trim() : (clean.split(/\n\s*\n|\n(?=\[)/)[0] || '').replace(/^\[.*?\]\s*/, '').trim();
+};
+
+// root 안에서 okbmSpotBriefAttr를 붙인 칸을 찾아 잘린 소개를 전체 글로 바꾼다.
+window.okbmHydrateSpotBriefs = function(root) {
+  if (!root || typeof root.querySelectorAll !== 'function') return;
+  root.querySelectorAll('[data-spot-brief-id]').forEach(function(el) {
+    var id = el.getAttribute('data-spot-brief-id');
+    el.removeAttribute('data-spot-brief-id');
+    window.okbmFetchSpotBrief(id).then(function(full) {
+      var text = window.okbmSpotViewOnly(full);
+      if (text && el.isConnected) el.textContent = text;
+    });
+  });
+};
 
 window.stripSpotDetailFields = function(spot) {
   if (!spot || typeof spot !== 'object') return spot;

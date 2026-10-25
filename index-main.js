@@ -1990,7 +1990,7 @@ var adBannersHtml = `
                 <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:#34d399; stroke-width:2.2; flex-shrink:0;"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
                 <span>[영상 속 스팟 뷰 & 특징]</span>
               </div>
-              <div>${escapeHtml(onlyViewText)}</div>
+              <div${window.okbmSpotBriefAttr ? window.okbmSpotBriefAttr(matched) : ''}>${escapeHtml(onlyViewText)}</div>
             </div>` : ''}
 
           ${adBannersHtml}
@@ -2001,6 +2001,8 @@ var adBannersHtml = `
           </div>
         `;
       }
+
+      if (bodySlot && typeof window.okbmHydrateSpotBriefs === 'function') window.okbmHydrateSpotBriefs(bodySlot);
 
       var rawId = item.videoId || extractYouTubeVideoId(item.videoUrl);
       var embedUrl = rawId ? ('https://www.youtube-nocookie.com/embed/' + rawId + '?playsinline=1&rel=0&autoplay=0') : '';
@@ -2755,7 +2757,7 @@ var adBannersHtml = `
                 </div>
                 ${totalTrips > 1 ? '<span style="font-size:0.56rem; color:#64748b;">(좌우 스와이프로 다른 공고 이동)</span>' : ''}
               </div>
-              <div>${escapeHtml(onlyViewText || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.')}</div>
+              <div${window.okbmSpotBriefAttr ? window.okbmSpotBriefAttr(matched) : ''}>${escapeHtml(onlyViewText || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.')}</div>
             </div>
 
             <!-- Expedition Leader Info -->
@@ -2851,6 +2853,7 @@ var adBannersHtml = `
         </div>
       `;
       document.body.appendChild(modal);
+      if (typeof window.okbmHydrateSpotBriefs === 'function') window.okbmHydrateSpotBriefs(modal);
 
       if (photoList.length === 0 && trip.spotName) {
         var tripIdForPhotos = String(trip.tripId || '');
@@ -3760,12 +3763,11 @@ var adBannersHtml = `
                 <span>등록된 장소 연동됨 (${escapeHtml(regionStr)}${elevStr ? ' · ' + escapeHtml(elevStr) : ''})</span>
               </span>
             </div>
-            <div style="font-size:0.70rem; color:#cbd5e1; line-height:1.4;">
-              ${escapeHtml(onlyViewText || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.')}
-            </div>
+            <div style="font-size:0.70rem; color:#cbd5e1; line-height:1.4;"${window.okbmSpotBriefAttr ? window.okbmSpotBriefAttr(matched) : ''}>${escapeHtml(onlyViewText || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.')}</div>
           </div>
         `;
         previewSlot.style.display = 'block';
+        if (typeof window.okbmHydrateSpotBriefs === 'function') window.okbmHydrateSpotBriefs(previewSlot);
       } else if (previewSlot) {
         previewSlot.style.display = 'none';
         previewSlot.innerHTML = '';
@@ -4461,7 +4463,7 @@ var adBannersHtml = `
 
       try {
         var supaSpots = null;
-        var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief,camp_status,camp_status_note,camp_status_at';
+        var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at';
 
         if (typeof window.fetchMasterSpotsFromSupabase === 'function') {
           var fetched = await window.fetchMasterSpotsFromSupabase(!!isForce);

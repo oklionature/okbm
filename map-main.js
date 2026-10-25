@@ -234,7 +234,7 @@
           } else {
             var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
             var targetKey = window.SUPABASE_ANON_KEY || '';
-            var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief,camp_status,camp_status_note,camp_status_at';
+            var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at';
             var res = await fetch(targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
               headers: { 'apikey': targetKey, 'Authorization': 'Bearer ' + targetKey, 'Content-Type': 'application/json' }
             });
@@ -6852,7 +6852,19 @@ var overlay = document.getElementById('customModalOverlay');
         if (!target) return;
         applySpotPositionLocally(target, lat, lng);
         persistSpotsCache();
-        await persistSpotToSupabase(target, false);
+        // 목록 카드에서 옮기면 상세(전체 소개·들머리 주소·영상)가 아직 없다. 목록에는 짧은 소개(80자)만 있어
+        // 그대로 저장하면 원래 글·주소·영상이 지워지니 먼저 상세를 받고, 못 받으면 저장하지 않는다.
+        await ensureSpotDetailLoaded(target);
+        if (target.__detailLoaded && target.__detailTier !== 'guest' && !target.__detailLimited) {
+          await persistSpotToSupabase(target, false);
+        } else {
+          var origPos = window.__adminPinMoveOrig;
+          if (origPos && origPos.lat && origPos.lng) {
+            applySpotPositionLocally(target, origPos.lat, origPos.lng);
+            persistSpotsCache();
+          }
+          showToast('상세 정보를 받지 못해 핀 위치를 저장하지 않았어요. 잠시 뒤 다시 해 주세요.');
+        }
         clearTempPickedMarker();
         window.__adminPinMoveSpotId = null;
         window.__adminPinMoveOrig = null;

@@ -38,15 +38,24 @@
   - 홈 카드 설명: `index-main.js` 약 845·1922·2667·3750줄 (`desc_summary || desc`)
   - 정보창: `map-main.js` 약 650~665줄에서 박지 하나의 상세를 따로 받아 `desc_summary`를 덮는다 → 목록의 view_brief가 없어도 정보창은 괜찮다.
 
+## 진행 상황 (2026-10-25)
+- **1번 끝, 배포함** (`c5f525b`, H14 SQL 실행함). 서버에 `get_spots_version()`(바뀐 시각:박지 수)이 있고, `fetchMasterSpotsFromSupabase`가 판 번호를 먼저 물어 같으면 저장 목록을 쓴다. 지도도 이 함수를 쓴다. 판 번호는 localStorage `okbm_spots_ver`.
+  - 같이 고친 것: 비회원 핀 rate 실패 때 목록 받기를 끊고, 실패 뒤 1분은 다시 받지 않고, 홈이 목록을 두 번 받던 것을 없앴다.
+  - 아직 못 본 것: 실제 사이트에서 지도를 두 번 열 때 두 번째에 `spots` 요청이 없는지(작업 PC가 그날 비회원 핀 한도에 걸려 있었다).
+- **2번 코드 준비됨, H15 SQL 실행 뒤 배포**. `SUPABASE_H15_SPOTS_VIEW_BRIEF_SHORT.sql`이 `view_brief_short`(앞 80자 + '…')를 만들고, 목록은 `view_brief:view_brief_short`로 받는다.
+  - 홈에서 소개를 전부 보여 주는 세 곳(영상 창·동행 공고·장소 미리보기)은 `okbmSpotBriefAttr`/`okbmHydrateSpotBriefs`로 그 박지 하나의 `view_brief`만 따로 받는다.
+  - 관리자가 목록 카드에서 '핀'으로 위치만 옮기면 상세 없이 저장돼 소개·들머리 주소·영상이 지워질 수 있었다. `commitAdminPinMove`가 먼저 상세를 받고, 못 받으면 저장하지 않는다.
+  - 잰 크기(비회원 목록, gzip): 80KB → 54KB. 처음 적은 예상(35KB)보다 덜 준다. 더 줄이려면 80자를 줄이면 되지만 지도 목록 카드(세 줄)가 짧아진다.
+
 ## 할 일
-### 1. 지도도 박지 목록 캐시를 쓰고, 바뀌었을 때만 새로 받기 (효과 가장 큼)
+### 1. 지도도 박지 목록 캐시를 쓰고, 바뀌었을 때만 새로 받기 (효과 가장 큼) — 끝
 - `loadSpotsMasterEngine()`이 `fetchMasterSpotsFromSupabase()` 캐시를 함께 쓰게 한다. 비회원 대략 좌표 캐시를 회원 화면에 쓰지 않는 `okbmSpotListFitsViewer` 규칙은 지킨다.
 - 새로 받을지 판단하는 작은 요청을 둔다. 예: `spots`에 `updated_at` 열 + 트리거를 더하고(SQL), `select=updated_at&order=updated_at.desc&limit=1`(수십 바이트)만 먼저 묻는다. 캐시 때와 다르면 전체를 다시 받는다. 지운 박지까지 잡으려면 개수(`count`)도 같이 비교한다.
 - 홈 캐시도 같은 판단을 쓰게 해서, 지금처럼 "한 번 받으면 영영 안 바뀌는" 문제도 같이 고친다.
 - 관리자가 박지를 고치거나 지우면 바로 반영되는지 확인한다(관리자 기기는 저장 뒤 캐시를 비우거나 강제로 새로 받기).
 - 예상: 지도를 다시 열 때 100KB → 거의 0.
 
-### 2. 목록에서 긴 소개 글 빼기
+### 2. 목록에서 긴 소개 글 빼기 — 코드 준비됨(H15 실행 뒤 배포)
 - 목록에는 짧은 소개만 넣는다. 방법은 둘 중 하나:
   - SQL로 `view_brief_short`(앞 60~80자) 생성 열을 만들고, `SPOTS_MAP_SELECT`·`SPOTS_GUEST_SELECT`에서 `view_brief` 대신 쓴다.
   - 또는 목록에서 빼고, 홈 카드처럼 꼭 필요한 곳만 따로 받는다.
