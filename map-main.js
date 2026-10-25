@@ -6732,7 +6732,12 @@ var overlay = document.getElementById('customModalOverlay');
           trailhead_name: spot.trailhead_name || '',
           trailhead_addr: spot.trailhead_addr || spot.entryPoint || '',
           difficulty: String(spot.difficulty || '3'),
-          distance_km: parseNumericField(spot.distance || spot.distance_km),
+          // 거리를 비워 낸 제보는 0이 아니라 빈 값으로 둔다(0km로 저장되면 '아주 가까운 박지'로 읽혀 백보킹 등에 섞였다)
+          distance_km: (function(raw) {
+            var s = String(raw == null ? '' : raw).replace(/[^\d.-]/g, '');
+            var num = parseFloat(s);
+            return s && !isNaN(num) ? num : null;
+          })(spot.distance || spot.distance_km),
           desc_summary: spot.desc_summary || spot.desc || '',
           mediaUrls: media.join('\n'),
           course_type: spot.courseType || '일반',
