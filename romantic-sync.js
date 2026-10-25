@@ -620,6 +620,56 @@ function okbmWriteSessionCache(session) {
   };
 }
 
+// 🗃 [뒤로가기 즉시 복원(bfcache)] 홈↔지도는 서로 다른 페이지라 오갈 때마다 처음부터 다시 실행했다.
+// 브라우저는 떠난 페이지를 잠깐 보관했다가 뒤로가기면 그대로 꺼내 주는데(bfcache), 로그인 라이브러리가 탭끼리
+// 연락하는 통로(BroadcastChannel)를 열어 두어 새 페이지가 보낸 '로그인됨' 신호를 보관 중인 페이지가 받는 순간
+// 보관함에서 버려졌다(Chrome: BroadcastChannelOnMessage). 보관될 때 통로를 닫고, 돌아오면 같은 이름으로 다시 연다.
+(function okbmBfcacheAuthChannel() {
+  function auth() {
+    return window.supabaseClient && window.supabaseClient.auth ? window.supabaseClient.auth : null;
+  }
+  window.addEventListener('pagehide', function(ev) {
+    var a = auth();
+    if (!ev.persisted || !a || !a.broadcastChannel) return;
+    try { a.broadcastChannel.close(); } catch (e) {}
+    a.broadcastChannel = null;
+  });
+  window.addEventListener('pageshow', function(ev) {
+    var a = auth();
+    if (!ev.persisted || !a) return;
+    if (!a.broadcastChannel && a.storageKey && typeof window.BroadcastChannel === 'function') {
+      try {
+        // supabase auth-js 생성자가 붙이는 것과 같은 받기 처리
+        var ch = new window.BroadcastChannel(a.storageKey);
+        ch.addEventListener('message', function(e) {
+          var d = (e && e.data) || {};
+          if (d.event === 'TOKEN_REFRESHED' || d.event === 'SIGNED_IN') a.lastRefreshFailure = null;
+          if (typeof a._notifyAllSubscribers === 'function') {
+            Promise.resolve(a._notifyAllSubscribers(d.event, d.session, false)).catch(function() {});
+          }
+        });
+        a.broadcastChannel = ch;
+      } catch (e) {}
+    }
+    // 떠날 때 누른 탭(예: 지도)에 불이 남아 있으니, 지금 실제로 보이는 창 기준으로 다시 켠다
+    if (!window.location.pathname.includes('map.html') && typeof window.ensureMasterBottomDock === 'function') {
+      var shown = function(id) {
+        var el = document.getElementById(id);
+        return !!el && window.getComputedStyle(el).display !== 'none';
+      };
+      window.ensureMasterBottomDock(shown('romanticPlanModal') ? 'plan'
+        : shown('romanticHistoryModal') ? 'history'
+        : shown('userProfileModalOverlay') ? 'report' : 'router');
+    }
+    // 보관된 사이 다른 페이지가 로그인·로그아웃·토큰 갱신을 했을 수 있어 저장소 기준으로 다시 맞춘다
+    if (typeof a.getSession === 'function') {
+      a.getSession().then(function(res) {
+        okbmWriteSessionCache(res && res.data ? res.data.session : null);
+      }).catch(function() {});
+    }
+  });
+})();
+
 window.SVG_ICONS = window.SVG_ICONS || {
   brandLogo: function(color, stroke) {
     var isDarkBg = (!color || color === '#ffffff' || color === '#fff' || color === 'white');
