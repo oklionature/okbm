@@ -406,10 +406,12 @@
       var isValley = /계곡/.test(terrainStr) || /계곡/.test(rawName) || /계곡/.test(masterName);
 
       // 백보킹: 백 걸음이면 닿는 박지. 지도 필터 '백보킹'(map-main.js isBeginnerCourseSpot)과 같은 기준
-      // — 종주 코스 제외, 난이도 1~2, 걷는 거리 0.5km 이하
+      // — 종주 코스 제외, 난이도 1, 걷는 거리 0.5km 이하 또는 코스가 '차량접근'(거리 0은 모르는 값이라 뺀다)
       var rawDiff = mSpot ? parseInt(mSpot.difficulty, 10) : NaN;
-      var isTraverse = !!mSpot && (String(mSpot.course_type || mSpot.courseType || '').trim() === '종주' || /종주/.test(hay));
-      var isBaekbo = !isTraverse && rawDiff >= 1 && rawDiff <= 2 && km != null && km <= 0.5;
+      var courseType = mSpot ? String(mSpot.course_type || mSpot.courseType || '').trim() : '';
+      var isTraverse = !!mSpot && (courseType === '종주' || /종주/.test(hay));
+      var isBaekbo = !isTraverse && rawDiff === 1
+        && (courseType === '차량접근' || (km != null && km > 0 && km <= 0.5));
 
       return {
         mSpot: mSpot,

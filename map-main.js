@@ -1905,14 +1905,16 @@ function updateSmartResetButtons() {
         return true;
       }
 
-      // 백보킹: 주차하고 5~10분만 걸으면 닿는 곳. 난이도 1~2 + 걷는 거리 0.5km 이하(2026-10-25, 1km는 15~20분이라 너무 넓었다)
+      // 백보킹: 주차하고 5~10분만 걸으면 닿는 곳. 난이도 1 + (걷는 거리 0.5km 이하 또는 코스가 '차량접근')
+      // (2026-10-25: 난이도 2까지 넣으니 가거도 독실산처럼 힘든 곳이 섞였다. 거리 0은 모르는 값이라 차량접근일 때만 넣는다)
+      // index-main.js getSecretSpotThemeFlags의 isBaekbo(테마 스팟 백보킹)와 같은 기준
       var BEGINNER_MAX_KM = 0.5;
       function isBeginnerCourseSpot(spot) {
         if (!spot || isTraverseCourseSpot(spot)) return false;
-        var diff = parseInt(spot.difficulty, 10);
-        if (!diff || diff < 1 || diff > 2) return false;
+        if (parseInt(spot.difficulty, 10) !== 1) return false;
+        if (String(spot.courseType || spot.course_type || '').trim() === '차량접근') return true;
         var km = parseSpotDistanceKm(spot);
-        return km != null && km <= BEGINNER_MAX_KM;
+        return km != null && km > 0 && km <= BEGINNER_MAX_KM;
       }
 
       function isCampBanned(spot) {
