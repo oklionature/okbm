@@ -12,6 +12,7 @@
 --   3) 댓글이 달리거나 별이 눌리면 트리거가 피드 올린 사람의 user_notifications에 한 줄 넣는다.
 --      자기 피드에 자기가 한 것과 공식 계정(official_romanticroute) 피드는 알리지 않는다.
 --      별은 같은 사람이 껐다 켜도 알림이 한 번만 간다(알림 id를 피드·사람으로 고정).
+--      앞서 그 피드에 댓글 단 사람들에게도 'feed_reply' 알림이 간다. 사람·피드마다 한 줄로 묶어 "새 댓글 N개"로 고친다.
 --   4) get_unread_notification_count: 1분마다 알림 목록 50줄 대신 안 읽은 개수 숫자 하나만 묻는다.
 -- 차단: 피드 올린 사람이 차단한 회원은 그 피드에 댓글을 못 달고, 보는 사람이 차단한 회원의 댓글은 안 보인다.
 -- 탈퇴: 회원 줄(users)이 지워지면 그 회원 댓글도 같이 지워진다(FK). 피드가 지워지면 그 피드 댓글도 지워진다.
@@ -117,6 +118,36 @@ BEGIN
       left(NEW.body, 80), v_feed_id, COALESCE(v_spot_id, ''), COALESCE(v_spot, ''), false
     )
     ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  -- 앞서 이 피드에 댓글 단 사람들에게도 알린다(피드 주인은 위에서 따로 받고, 새 댓글 쓴 사람은 뺀다).
+  -- 사람·피드마다 알림 한 줄로 묶는다: 내 마지막 댓글 뒤로 달린 남의 댓글 수를 세어 제목을 고치고, 안 읽음으로 다시 위에 올린다.
+  -- 새 댓글 쓴 사람을 차단한 사람에게는 보내지 않는다.
+  IF TG_OP = 'INSERT' AND v_owner IS NOT NULL THEN
+    INSERT INTO public.user_notifications (
+      id, user_id, kind, title, body, related_id, related_spot_id, related_spot_name, is_read, created_at
+    )
+    SELECT
+      'pn_feed_reply_' || md5(v_feed_id || ':' || p.user_id), p.user_id, 'feed_reply',
+      CASE WHEN p.newer > 1
+        THEN '내가 댓글 단 피드에 새 댓글 ' || p.newer || '개'
+        ELSE NEW.nickname || '님이 내가 댓글 단 피드에 댓글을 남겼어요'
+      END,
+      left(NEW.nickname || ': ' || NEW.body, 80), v_feed_id, COALESCE(v_spot_id, ''), COALESCE(v_spot, ''), false, now()
+    FROM (
+      SELECT c.user_id,
+        (SELECT count(*) FROM public.feed_comments x
+          WHERE x.feed_id = v_feed_id AND x.user_id <> c.user_id AND x.created_at > max(c.created_at)) AS newer
+      FROM public.feed_comments c
+      WHERE c.feed_id = v_feed_id
+        AND c.user_id <> NEW.user_id
+        AND c.user_id <> v_owner
+        AND NOT EXISTS (SELECT 1 FROM public.user_blocks b WHERE b.blocker_id = c.user_id AND b.blocked_id = NEW.user_id)
+      GROUP BY c.user_id
+      LIMIT 50
+    ) p
+    ON CONFLICT (id) DO UPDATE SET
+      title = EXCLUDED.title, body = EXCLUDED.body, is_read = false, created_at = now();
   END IF;
 
   IF TG_OP = 'DELETE' THEN

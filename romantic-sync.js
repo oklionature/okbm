@@ -13645,12 +13645,14 @@ window.okbmPaintNotifInboxList = async function() {
     // 백패커 라운지 댓글·건의 답변 알림은 누르면 그 글을 연다 (related_id = 글 id)
     var kind = String(r.kind || '').toLowerCase();
     var loungePostId = (kind === 'lounge_comment' || kind === 'lounge_reply') ? String(r.related_id || '').trim() : '';
-    // 내 피드에 달린 별·댓글 알림(H17)은 누르면 그 피드를 연다 (related_id = 피드 id). 댓글이면 댓글 창도 펼친다.
-    var feedOpenId = (kind === 'feed_comment' || kind === 'feed_like') ? String(r.related_id || '').trim() : '';
+    // 내 피드에 달린 별·댓글, 내가 댓글 단 피드의 새 댓글 알림(H17)은 누르면 그 피드를 연다 (related_id = 피드 id).
+    // 댓글 알림이면 댓글 창도 펼친다.
+    var isFeedCommentKind = kind === 'feed_comment' || kind === 'feed_reply';
+    var feedOpenId = (isFeedCommentKind || kind === 'feed_like') ? String(r.related_id || '').trim() : '';
     var openAttrs = loungePostId
       ? ' class="okbm-notif-row" role="button" tabindex="0" data-lounge-post="' + _escapeReportPropHtml(loungePostId) + '"'
       : (feedOpenId
-        ? ' class="okbm-notif-row" role="button" tabindex="0" data-feed-open="' + _escapeReportPropHtml(feedOpenId) + '" data-feed-comments="' + (kind === 'feed_comment' ? '1' : '0') + '"'
+        ? ' class="okbm-notif-row" role="button" tabindex="0" data-feed-open="' + _escapeReportPropHtml(feedOpenId) + '" data-feed-comments="' + (isFeedCommentKind ? '1' : '0') + '"'
         : '');
     var canOpen = Boolean(loungePostId || feedOpenId);
     // 쪽지 줄과 같은 밀어서 삭제 구조 (okbmBindNoteSwipeRows가 함께 묶는다)
