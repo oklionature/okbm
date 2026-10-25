@@ -14209,6 +14209,9 @@ if (typeof window !== 'undefined') {
     photoStudioOverlay: 1
   };
 
+  // 목록에 없는 창도 이 모양이면 열린 창으로 본다(닫기·뒤로가기 칸 세기 공통)
+  var OVERLAY_EXTRA_SELECTOR = '.custom-modal-overlay, .modal-fullscreen-container, .modal-overlay, .modal-backdrop, .calc-slide-sheet.active, .mobile-bottom-sheet.open, .pc-sliding-drawer.open, [role="dialog"]';
+
   var NESTED_REPORT_IDS = {
     feedCustomShareModal: 1,
     modalRichAfterTrip: 1,
@@ -14276,7 +14279,17 @@ if (typeof window !== 'undefined') {
 
   function getKnownModalClosers() {
     function removeEl(el) { if (el) el.remove(); }
+    // 자기 닫기 버튼을 눌러야 '닫음'이 저장돼 다음에 다시 안 뜨는 안내 창
+    function clickOwnClose(selector) {
+      return function(el) {
+        var btn = el.querySelector(selector);
+        if (btn) btn.click();
+        else hideOrRemove(el);
+      };
+    }
     return [
+      { id: 'okbmNewSpotNotice', close: clickOwnClose('#okbmNewSpotNoticeClose') },
+      { id: 'okbmHomeGuide', close: clickOwnClose('.hg-x') },
       { id: 'romanticConfirmModal', close: removeEl },
       { id: 'romanticDatePickerModal', close: removeEl },
       { id: 'pastTripDatePickerModal', close: removeEl },
@@ -14384,9 +14397,57 @@ if (typeof window !== 'undefined') {
     }
   }
 
+  // 목록 순서와 실제 위아래가 다를 때가 있다(댓글 창이 피드 위에 뜨는데 목록에는 피드만 있어 피드가 먼저 닫혔다).
+  // 화면 가운데·아래·위에서 실제로 손에 닿는 요소를 집고, 그걸 감싼 창 중 가장 안쪽 것을 맨 위 창으로 보고 닫는다.
+  function closeOverlayOnTop(known) {
+    var candidates = [];
+    var closers = [];
+    function add(el, close) {
+      if (!el || candidates.indexOf(el) !== -1 || !isOverlayVisible(el)) return;
+      candidates.push(el);
+      closers.push(close);
+    }
+    var i;
+    for (i = 0; i < known.length; i++) {
+      add(document.getElementById(known[i].id), known[i].close);
+    }
+    var stack = window.modalCloseStack || [];
+    for (i = stack.length - 1; i >= 0; i--) {
+      if (stack[i] && stack[i].id && typeof stack[i].close === 'function') {
+        add(document.getElementById(stack[i].id), stack[i].close);
+      }
+    }
+    var extras = document.querySelectorAll(OVERLAY_EXTRA_SELECTOR);
+    for (i = 0; i < extras.length; i++) {
+      if (!(extras[i].id && SKIP_OVERLAY_IDS[extras[i].id])) add(extras[i], null);
+    }
+    if (!candidates.length) return false;
+
+    var points = [[0.5, 0.5], [0.5, 0.8], [0.5, 0.25]];
+    for (var p = 0; p < points.length; p++) {
+      var hit = document.elementFromPoint(window.innerWidth * points[p][0], window.innerHeight * points[p][1]);
+      if (!hit) continue;
+      var best = -1;
+      for (i = 0; i < candidates.length; i++) {
+        if (candidates[i].contains(hit) && (best === -1 || candidates[best].contains(candidates[i]))) best = i;
+      }
+      if (best === -1) continue;
+      var top = candidates[best];
+      try {
+        if (closers[best]) closers[best](top);
+        else if (!dismissGenericOverlay(top)) continue;
+        unregisterClosed(top.id);
+        return true;
+      } catch (e) {}
+    }
+    return false;
+  }
+
   function tryCloseTopmostModal() {
     var known = getKnownModalClosers();
     var i;
+    if (closeOverlayOnTop(known)) return true;
+
     for (i = 0; i < known.length; i++) {
       var item = known[i];
       var el = document.getElementById(item.id);
@@ -14398,7 +14459,7 @@ if (typeof window !== 'undefined') {
       } catch (e) {}
     }
 
-    var extras = document.querySelectorAll('.custom-modal-overlay, .modal-fullscreen-container, .modal-overlay, .modal-backdrop, .calc-slide-sheet.active, .mobile-bottom-sheet.open, .pc-sliding-drawer.open, [role="dialog"]');
+    var extras = document.querySelectorAll(OVERLAY_EXTRA_SELECTOR);
     for (i = extras.length - 1; i >= 0; i--) {
       var ov = extras[i];
       if (!isOverlayVisible(ov)) continue;
@@ -14434,6 +14495,129 @@ if (typeof window !== 'undefined') {
   window.tryCloseAnyVisibleModal = tryCloseTopmostModal;
   window.tryCloseTopmostModal = tryCloseTopmostModal;
   window.NESTED_REPORT_IDS = NESTED_REPORT_IDS;
+
+  // 🔙 [웹 뒤로가기 = 맨 위 창 하나 닫기]
+  // 창(모달·시트·라운지·피드 등)은 같은 페이지 위에 덮어 띄우므로 열어도 방문 기록이 남지 않았다. 그래서 웹에서
+  // 밀어서 뒤로가기(아이폰 사파리)나 뒤로 버튼(안드로이드 웹)을 누르면 창이 아니라 사이트를 나가 버렸다(방문자 87%가 웹).
+  // 열린 창 수만큼 같은 주소로 기록 칸을 쌓아 두고(state.okbmModalGuard = 몇 번째 칸), 뒤로가기가 오면 맨 위 창만 닫는다.
+  // 버튼으로 닫아 창이 줄면 쌓아 둔 칸을 history.go(-n)으로 되돌린다. 창을 여닫는 함수가 수십 곳이라 하나하나 고치지 않고,
+  // 화면이 바뀔 때(MutationObserver) tryCloseTopmostModal과 같은 목록으로 열린 창을 센다.
+  var historyGuardDepth = 0;      // 지금 쌓여 있는 우리 기록 칸 수
+  var historyGuardSkipPop = false; // 우리가 history.go로 되돌리는 중이라 다음 popstate 한 번은 무시
+  var historyGuardSkipTimer = 0;
+  var historyGuardStuckAt = -1;   // 뒤로가기로 닫으려던 순간의 창 수. 닫히는 중이거나 못 닫은 창에 칸을 다시 쌓지 않는다
+  var historyGuardTimer = 0;
+  var historyGuardSettleTimer = 0;
+
+  function countOpenOverlays() {
+    var seen = [];
+    var known = getKnownModalClosers();
+    var i;
+    for (i = 0; i < known.length; i++) {
+      var el = document.getElementById(known[i].id);
+      if (el && seen.indexOf(el) === -1 && isOverlayVisible(el)) seen.push(el);
+    }
+    var extras = document.querySelectorAll(OVERLAY_EXTRA_SELECTOR);
+    for (i = 0; i < extras.length; i++) {
+      var ov = extras[i];
+      if (seen.indexOf(ov) !== -1 || (ov.id && SKIP_OVERLAY_IDS[ov.id]) || !isOverlayVisible(ov)) continue;
+      // 같은 창의 바깥 막과 안쪽 상자가 둘 다 걸리면 한 칸으로 센다
+      var outer = ov.parentElement ? ov.parentElement.closest(OVERLAY_EXTRA_SELECTOR) : null;
+      if (outer && seen.indexOf(outer) !== -1) continue;
+      seen.push(ov);
+    }
+    return seen.length;
+  }
+  window.okbmHasOpenOverlay = function() { return countOpenOverlays() > 0; };
+
+  function readGuardDepth(state) {
+    var n = state && state.okbmModalGuard;
+    return (typeof n === 'number' && n > 0) ? n : 0;
+  }
+
+  function goHistoryQuietly(steps) {
+    historyGuardSkipPop = true;
+    clearTimeout(historyGuardSkipTimer);
+    historyGuardSkipTimer = setTimeout(function() { historyGuardSkipPop = false; }, 700);
+    history.go(steps);
+  }
+
+  function syncHistoryGuard() {
+    if (historyGuardSkipPop || window.__okbmPageLeaving) return;
+    var open = countOpenOverlays();
+    if (historyGuardStuckAt >= 0 && open < historyGuardStuckAt) historyGuardStuckAt = -1;
+    if (open > historyGuardDepth) {
+      if (historyGuardStuckAt >= 0) return;
+      try {
+        while (historyGuardDepth < open) {
+          historyGuardDepth += 1;
+          history.pushState({ okbmModalGuard: historyGuardDepth }, '', window.location.href);
+        }
+      } catch (e) {}
+    } else if (open < historyGuardDepth) {
+      var steps = historyGuardDepth - open;
+      historyGuardDepth = open;
+      goHistoryQuietly(-steps);
+    }
+  }
+
+  // 창은 누른 직후가 아니라 데이터를 받은 뒤나 애니메이션 뒤에 뜨기도 해서, 곧바로 한 번 + 잠잠해진 뒤 한 번 센다
+  function scheduleHistoryGuardSync() {
+    if (!historyGuardTimer) {
+      historyGuardTimer = setTimeout(function() {
+        historyGuardTimer = 0;
+        syncHistoryGuard();
+      }, 120);
+    }
+    clearTimeout(historyGuardSettleTimer);
+    historyGuardSettleTimer = setTimeout(syncHistoryGuard, 600);
+  }
+
+  function onHistoryGuardPop(e) {
+    if (historyGuardSkipPop) {
+      historyGuardSkipPop = false;
+      clearTimeout(historyGuardSkipTimer);
+      return;
+    }
+    var target = readGuardDepth(e.state);
+    if (target > historyGuardDepth) {
+      // 앞으로 가기로 이미 닫은 창의 칸에 들어왔다. 창은 다시 열 수 없으니 제자리 칸으로 되돌린다
+      goHistoryQuietly(historyGuardDepth - target);
+      return;
+    }
+    if (historyGuardDepth <= 0) return;
+    historyGuardDepth -= 1;
+    historyGuardStuckAt = countOpenOverlays();
+    tryCloseTopmostModal();
+    scheduleHistoryGuardSync();
+  }
+
+  // 창을 띄운 채 다른 페이지(지도↔홈)로 갈 때는 쌓아 둔 칸 자리에 새 페이지를 넣는다.
+  // 그래야 새 페이지에서 뒤로가기 한 번이면 원래 페이지로 오고, 빈 칸에서 한 번 더 눌러야 하는 일이 없다.
+  window.okbmLeavePage = function(url) {
+    if (historyGuardDepth > 0) window.location.replace(url);
+    else window.location.assign(url);
+  };
+
+  function bootHistoryGuard() {
+    if (window.__okbmHistoryGuardOn || !window.history || typeof history.pushState !== 'function') return;
+    window.__okbmHistoryGuardOn = true;
+    // 창을 띄운 채 새로고침했으면 지금 칸에 남은 표시만 지운다(새 페이지에는 열린 창이 없다)
+    if (readGuardDepth(history.state)) {
+      try { history.replaceState(null, '', window.location.href); } catch (e) {}
+    }
+    window.addEventListener('popstate', onHistoryGuardPop);
+    // 사용자가 다시 누르면 '못 닫은 창' 표시를 풀어, 그 위에 새로 연 창도 칸을 쌓게 한다
+    document.addEventListener('pointerdown', function() { historyGuardStuckAt = -1; }, true);
+    window.addEventListener('pageshow', function(ev) { if (ev.persisted) scheduleHistoryGuardSync(); });
+    new MutationObserver(scheduleHistoryGuardSync).observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class', 'hidden', 'open']
+    });
+    scheduleHistoryGuardSync();
+  }
 
   function showExitNotice(msg) {
     if (typeof showToast === 'function') {
@@ -14611,11 +14795,13 @@ if (typeof window !== 'undefined') {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
       bootBackHandler();
+      bootHistoryGuard();
       configureCapacitorStatusBar();
       bootNativePush();
     });
   } else {
     bootBackHandler();
+    bootHistoryGuard();
     configureCapacitorStatusBar();
     bootNativePush();
   }

@@ -90,7 +90,9 @@
         window.__okbmPageLeaving = true;
         document.documentElement.classList.add('okbm-page-leaving');
         setTimeout(function() {
-          window.location.assign(url);
+          // 창을 띄운 채 떠나면 쌓아 둔 뒤로가기 칸 자리에 새 페이지를 넣는다(romantic-sync.js okbmLeavePage)
+          if (typeof window.okbmLeavePage === 'function') window.okbmLeavePage(url);
+          else window.location.assign(url);
         }, 180);
       };
 
