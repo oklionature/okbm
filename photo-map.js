@@ -77,6 +77,10 @@
     '.pm-head .r{width:22px;height:2px;background:#2f5d48;margin:8px 0 6px;}',
     '.pm-head .n{font:700 36px/1 "Space Grotesk",sans-serif;letter-spacing:-.02em;}',
     '.pm-head .n small{font:500 14px/1 "Space Grotesk",sans-serif;color:#2f5d48;letter-spacing:0;margin-left:4px;}',
+    // 숫자를 누르면 시·군 ↔ 박지. 단위 글씨 옆 ⇄로 바뀐다는 걸 보인다
+    '.pm-head button.n{pointer-events:auto;display:block;border:0;background:none;padding:2px 0;margin:0;color:inherit;text-shadow:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;}',
+    '.pm-head button.n:active{opacity:.6;}',
+    '.pm-head .n .sw{display:inline-block;margin-left:4px;font-size:12px;color:#2f5d48;}',
     // 확대하면 제목은 지도를 가리지 않게 숨긴다
     '.pm-zoomed .pm-head{opacity:0;}',
     // 오른쪽: 모두/내 지도 밑에 한눈에 보기(사이 4px)
@@ -408,7 +412,8 @@
   // 다 그리기 전엔 바탕(바다색)이 비쳐 보였다. 캔버스는 새 그림을 다 그릴 때까지 이전 그림이 그대로 남는다.
   // 예전 판은 photo-map-svg.js(주소 끝 ?pm=svg).
   // 좌표: 세계 좌표(전국을 화면에 맞춘 메르카토르 px) → 확대 상태 t → 판(stage) 좌표 → +여분(OVER) → 캔버스 좌표
-  var COLOR = { sea: '#aad3ea', empty: '#f1efe9', green: '#cfe6d5', accent: '#2f8a62', line: '#fff', sub: '#3f4642', spot: '#ff6a2b', sido: '#a9a59b' };
+  // none: 박지가 하나도 없는 시·군(채울 수 없는 곳). 아직 비어 있는 칸(empty)과 구분되게 회색
+  var COLOR = { sea: '#aad3ea', empty: '#f1efe9', none: '#d6d3cc', green: '#cfe6d5', accent: '#2f8a62', line: '#fff', sub: '#3f4642', spot: '#ff6a2b', sido: '#a9a59b' };
   var canvas = null, ctx = null, hitCtx = null, dpr = 1, fontFamily = 'sans-serif';
   var allSggPath = null, allSidoPath = null;
   var slots = [];
@@ -518,7 +523,7 @@
     sggs.forEach(function (c) {
       if (!vis(c.bb) || !inc(c)) return;
       var look = c.look || {};
-      ctx.fillStyle = look.green ? COLOR.green : COLOR.empty;
+      ctx.fillStyle = !c.spots.length ? COLOR.none : look.green ? COLOR.green : COLOR.empty;
       ctx.fill(c.p);
       if (sggPhotos && c.slot && paintSlot(c.slot, c.p, now)) anim = true;
     });
@@ -674,10 +679,10 @@
     // 큰 숫자 + 작은 꼬리말
     function bigNum(x, y, size, ink, sub) {
       c.font = '700 ' + size + 'px ' + EXPORT_EN; c.fillStyle = ink;
-      var n = String(o.mine ? o.went : o.total); c.fillText(n, x, y);
+      var n = String(o.went); c.fillText(n, x, y);
       x += c.measureText(n).width + 4;
       c.font = '700 ' + Math.round(size * 0.36) + 'px ' + fontFamily; c.fillStyle = sub;
-      c.fillText(o.mine ? '/ ' + o.total + ' 박지' : '박지', x, y);
+      c.fillText('/ ' + o.total + ' ' + o.unit, x, y);
     }
     if (style === 'b') {
       logoBadge(c, o.logo, 14, 12, 44);
@@ -701,11 +706,13 @@
       c.font = '700 7px ' + EXPORT_EN; c.fillStyle = bg.sub; spacedText(c, 'ROMANTIC ROUTE · BACKPACKING PHOTO MAP', 14, 22, 1.6);
       fitFont(900, 19, EXPORT_SERIF, title, 160); c.fillStyle = bg.ink; c.fillText(title, 14, 46);
       c.fillStyle = bg.sub; c.fillRect(14, 54, 22, 1.5);
-      // 큰 숫자 = 채워진 박지, 뒤에 '/ 전체'(숫자와 같은 영문 글꼴)
+      // 큰 숫자 = 채운 시·군(또는 박지), 뒤에 '/ 전체'(숫자와 같은 영문 글꼴) + 단위
       c.font = '700 30px ' + EXPORT_EN; c.fillStyle = bg.ink;
       var n = String(o.went); c.fillText(n, 14, 90);
       var nx = 14 + c.measureText(n).width + 3;
       c.font = '500 13px ' + EXPORT_EN; c.fillStyle = bg.sub; c.fillText('/ ' + o.total, nx + 1, 90);
+      var ux = nx + 1 + c.measureText('/ ' + o.total).width + 3;
+      c.font = '700 11px ' + fontFamily; c.fillText(o.unit, ux, 90);
     }
     // 오른쪽 아래: 작은 로고 + 주소(로고는 글씨 높이에 맞추고 글씨 가운데 줄에 붙인다)
     var fy = LH - 12, fs = 9.5, d = 11.5;
@@ -769,7 +776,7 @@
         canvas = keep.canvas; ctx = keep.ctx; dpr = keep.dpr; hostW = keep.hostW; hostH = keep.hostH; OVER = keep.OVER; committed = keep.committed; k = keep.k;
       }
       var h = headInfo();
-      drawExportHeader(out.getContext('2d'), opt.style || 'a', { S: S, LW: LW, LH: LH, bg: bg, mine: h.mine, went: h.went, total: h.total, logo: assets.logo });
+      drawExportHeader(out.getContext('2d'), opt.style || 'a', { S: S, LW: LW, LH: LH, bg: bg, mine: h.mine, went: h.went, total: h.total, unit: h.unit, logo: assets.logo });
       return out;
     });
   }
@@ -841,22 +848,44 @@
   // 위쪽 제목·숫자(포토맵 카드와 같은 말): 모두는 전체 박지 수, 내 지도는 가 본 박지(내 피드 박지 + 다녀옴) / 전체 박지
   // 숫자는 둘 다 '채워진 박지 / 전체': 모두는 누군가 피드 사진을 올린 박지, 내 지도는 내가 가 본 박지(내 피드 + 다녀옴).
   // 아직 다 안 찼다는 게 보여야 "내가 채워야지"가 된다.
+  // 시·군 단위(전국 지도에서 보이는 칸과 같다): 박지가 있는 시·군 중 박지 하나라도 채운 곳. 박지가 없는 시·군은 채울 수 없으니 뺀다.
+  // 박지 단위: 채운 박지 / 전체 박지
+  // 세는 단위: 'sgg'(시·군) | 'spot'(박지). 위쪽 숫자를 누르면 바뀌고 이 기기에 기억한다
+  var UNIT_KEY = 'okbm_pm_unit';
+  var unit = 'sgg';
+  try { if (localStorage.getItem(UNIT_KEY) === 'spot') unit = 'spot'; } catch (e) {}
+  function toggleUnit() {
+    unit = unit === 'sgg' ? 'spot' : 'sgg';
+    try { localStorage.setItem(UNIT_KEY, unit); } catch (e) {}
+    metric('feat_pm_unit');
+    setHeader();
+  }
+  function unitLabel() { return unit === 'spot' ? '박지' : '시·군'; }
+
   function headInfo() {
-    var total = spotList.length, went = 0;
-    if (mode === 'mine') {
-      var vs = visitedSet();
-      spotList.forEach(function (s) { var x = bySpot[s.id]; if ((x && x.mine.length) || vs.has(String(s.id).trim())) went++; });
-    } else {
-      spotList.forEach(function (s) { var x = bySpot[s.id]; if (x && x.all.length) went++; });
+    var vs = mode === 'mine' ? visitedSet() : null;
+    function filled(s) {
+      var x = bySpot[s.id];
+      return vs ? ((x && x.mine.length) || vs.has(String(s.id).trim())) : !!(x && x.all.length);
     }
-    return { mine: mode === 'mine', went: went, total: total, title: mode === 'mine' ? '나의 백패킹 포토맵' : '낭만루트 백패킹 포토맵' };
+    var total = 0, went = 0, spotWent = 0;
+    spotList.forEach(function (s) { if (filled(s)) spotWent++; });
+    sggs.forEach(function (c) {
+      if (!c.spots.length) return;
+      total++;
+      if (c.spots.some(filled)) went++;
+    });
+    if (unit === 'spot') { went = spotWent; total = spotList.length; }
+    return { mine: mode === 'mine', went: went, total: total, unit: unitLabel(),
+      title: mode === 'mine' ? '나의 백패킹 포토맵' : '낭만루트 백패킹 포토맵' };
   }
 
   function setHeader() {
     var h = headInfo();
     host.querySelector('.pm-head').innerHTML =
       '<div class="e">ROMANTIC ROUTE · PHOTO MAP</div><div class="t">' + h.title + '</div><div class="r"></div>' +
-      (h.total ? '<div class="n">' + h.went + '<small>/ ' + h.total + '</small></div>' : ''); // 박지를 아직 못 받았으면 숫자는 뺀다
+      (h.total ? '<button type="button" class="n" aria-label="' + h.went + ' / ' + h.total + ' ' + h.unit + ', 누르면 ' + (unit === 'sgg' ? '박지' : '시·군') + '로 세기">' +
+        h.went + '<small>/ ' + h.total + ' ' + h.unit + '</small><span class="sw" aria-hidden="true">⇄</span></button>' : ''); // 박지를 아직 못 받았으면 숫자는 뺀다
   }
 
   // 기능 사용 세기 (H8). 손가락으로 움직이는 동작은 세지 않고 버튼·칸 누름만 센다.
@@ -876,7 +905,7 @@
       cardEl.querySelector('[data-a="save"]').addEventListener('click', saveCard);
       cardEl.querySelector('[data-a="send"]').addEventListener('click', sendCard);
     }
-    var h = headInfo(), key = mode + ':' + h.went + ':' + h.total, token = ++cardToken, box = cardEl.querySelector('.img');
+    var h = headInfo(), key = mode + ':' + unit + ':' + h.went + ':' + h.total, token = ++cardToken, box = cardEl.querySelector('.img');
     cardEl.classList.add('on');
     cardEl.querySelectorAll('.acts button').forEach(function (b) { b.disabled = true; });
     box.innerHTML = '<div class="wait">한 장으로 만드는 중…</div>';
@@ -1114,6 +1143,7 @@
     host.style.display = 'block'; // 크기를 재야 하므로 먼저 보이게
     host.querySelectorAll('.pm-seg button').forEach(function (b) { b.addEventListener('click', function () { setMode(b.getAttribute('data-mode')); }); });
     host.querySelector('.pm-cardbtn').addEventListener('click', openCard);
+    host.querySelector('.pm-head').addEventListener('click', function (e) { if (e.target.closest('button.n')) toggleUnit(); });
     loadExportAssets(); // 위쪽 제목 글꼴(세리프·영문)을 미리
     canvas = host.querySelector('.pm-canvas');
     ctx = canvas.getContext('2d');
