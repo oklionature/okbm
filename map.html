@@ -671,16 +671,17 @@
       .spot-desc-multi {
         font-size: 0.8125rem;
         color: var(--tx-3);
-        line-height: 1.45;
+        line-height: 1.5;
         margin-top: 2px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        word-break: keep-all;
+        overflow-wrap: anywhere;
       }
-      /* 지도 목록 카드: 이름 줄(찜·클리어 오른쪽) · 정보 줄 · 설명, 세 줄 모두 한 줄로 */
+      /* 지도 목록 카드: 이름 줄(찜·클리어 오른쪽)은 한 줄, 정보 칩과 설명은 잘리지 않고 다 보인다 */
+      .spot-desc-more { background: none; border: 0; padding: 6px 4px; margin: -6px 0; font: inherit; font-size: 0.75rem; font-weight: 700; color: var(--accent); cursor: pointer; white-space: nowrap; }
+      .spot-desc-more:disabled { color: var(--tx-3); cursor: default; }
       .spot-card-row1, .spot-card-row2 { display: flex; align-items: center; flex-wrap: nowrap; width: 100%; min-width: 0; white-space: nowrap; }
       .spot-card-row1 { gap: 6px; }
-      .spot-card-row2 { gap: 4px; overflow: hidden; }
+      .spot-card-row2 { gap: 4px; flex-wrap: wrap; white-space: normal; }
       .spot-card-row1 .city-badge-colored { flex: none; }
       .spot-card-row1 .spot-name-colored { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 0.9375rem; font-weight: 800; }
       .spot-card-sub { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem; font-weight: 600; color: var(--tx-3); }
@@ -1610,7 +1611,7 @@
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.61"></script>
+       <script src="map-main.js?v=1.0.62"></script>
     <script src="photo-map.js?v=23" defer></script>
     <script src="spot-tips.js?v=8" defer></script>
     <script src="home-metrics.js?v=4" defer></script>

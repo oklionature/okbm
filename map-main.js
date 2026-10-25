@@ -6296,6 +6296,7 @@ var liveSearchTimer = null;
         const summary = parseStructuredSummary(spot.desc_summary || spot.desc);
         
         const descText = summary.view || spot.desc_summary || spot.desc || '탁 트인 자연 경관을 즐길 수 있는 추천 장소.';
+        const descIsShort = /…$/.test(String(descText).trim());
         const rawName = (spot.spot_main || spot.name || '').trim();
         const cityName = spot.cityName ? String(spot.cityName).trim() : '';
 
@@ -6360,7 +6361,29 @@ var liveSearchTimer = null;
 
           ${isCampBanned(spot)
             ? '<div class="spot-desc-multi" style="color:#fda4af; font-weight:800;">🚫 야영이 금지되었습니다</div>'
-            : `<div class="spot-desc-multi" title="${escapeHtml(descText)}">${ICONS.VIEW_CARD} ${escapeHtml(descText)}</div>`}`;
+            : `<div class="spot-desc-multi">${ICONS.VIEW_CARD} <span class="spot-desc-text">${escapeHtml(descText)}</span>${descIsShort ? ' <button type="button" class="spot-desc-more">더보기</button>' : ''}</div>`}`;
+
+        // 목록은 소개 앞 80자만 받는다(H15). '더보기'를 누르면 이 박지 하나의 전체 소개를 받아 카드 안에서 펼친다.
+        const moreBtn = li.querySelector('.spot-desc-more');
+        if (moreBtn) {
+          moreBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (moreBtn.disabled) return;
+            moreBtn.disabled = true;
+            moreBtn.textContent = '불러오는 중';
+            const latest = (Array.isArray(spots) && spots.find(function(s) { return String(s.id).trim() === sId; })) || spot;
+            try { await ensureSpotDetailLoaded(latest); } catch (err) {}
+            const full = parseStructuredSummary(latest.desc_summary || latest.desc).view || '';
+            const textEl = li.querySelector('.spot-desc-text');
+            if (textEl && full && full.length > descText.length - 1) {
+              textEl.textContent = full;
+              moreBtn.remove();
+            } else {
+              moreBtn.disabled = false;
+              moreBtn.textContent = '다시 시도';
+            }
+          });
+        }
 
         li.addEventListener('click', () => {
           var latest = (Array.isArray(spots) && spots.find(function(s) { return String(s.id).trim() === sId; })) || spot;
