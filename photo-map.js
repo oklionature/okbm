@@ -93,7 +93,9 @@
     '@keyframes pmFade{from{opacity:0;}}',
     '.pm-card .x{position:absolute;top:calc(var(--okbm-status-top, env(safe-area-inset-top, 0px)) + 10px);right:12px;border:0;border-radius:50%;width:36px;height:36px;background:rgba(255,255,255,.14);color:#fff;font-size:20px;}',
     '.pm-card .img{flex:none;width:min(100%, calc((100dvh - var(--okbm-status-top, env(safe-area-inset-top, 0px)) - env(safe-area-inset-bottom,0px) - 160px) * .8));aspect-ratio:4/5;border-radius:10px;overflow:hidden;background:#aad3ea;box-shadow:0 10px 40px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;}',
-    '.pm-card .img img{width:100%;height:100%;object-fit:contain;display:block;}',
+    // 아이폰은 그림을 길게 눌러 사진 앱에 저장할 수 있게 둔다(지도 쪽은 길게 누르기 메뉴를 막아 두었다)
+    '.pm-card .img img{width:100%;height:100%;object-fit:contain;display:block;-webkit-touch-callout:default;-webkit-user-select:auto;}',
+    '.pm-card .hint{flex:none;margin:-6px 0 -4px;font-size:13px;line-height:1.4;color:#d9e2ea;text-align:center;}',
     '.pm-card .wait{font-size:13px;color:#1d2320;font-weight:700;}',
     '.pm-card .acts{display:flex;gap:10px;width:100%;max-width:420px;flex:none;}',
     '.pm-card .acts button{flex:1;border:0;border-radius:12px;padding:13px 6px;font-size:14.5px;font-weight:700;background:rgba(255,255,255,.14);color:#fff;}',
@@ -355,21 +357,27 @@
       fromUrl(c, function () { cdnDown = true; fallback(); });
     });
     imgCache.set(key, p);
+    p.then(function (im) { p.img = im; }); // 메모리 정리(trimImages)에서 바로 꺼내 보려고
     return p;
   }
 
-  // 전국 화면이 뜬 뒤, 박지 칸 사진을 뒤에서 조용히 미리 받아 둔다(확대하면 바로 뜨게)
+  // 전국 화면이 뜬 뒤, 박지 칸 사진을 뒤에서 조용히 미리 받아 둔다(확대하면 바로 뜨게).
+  // 파일만 받아 브라우저 캐시에 넣고 그림으로 풀지는 않는다: 다 풀어 두면 640px 사진 100여 장이 메모리 230MB를 차지해
+  // 아이폰(한 페이지가 쓸 수 있는 메모리가 빡빡하다)이 버벅이거나 페이지를 새로 불러왔다. 풀기는 화면에 보일 때만(ensureImages).
   var SPOT_PX = 640, preloadToken = 0;
   function preloadSpotPhotos() {
     var token = ++preloadToken;
+    var c = navigator.connection; if (c && c.saveData) return;
     var urls = [];
-    spotList.forEach(function (s) { var l = spotLook(s); if (l.url) urls.push(l.url); });
+    spotList.forEach(function (s) { var l = spotLook(s); var u = l.url && cdnUrl(l.url, SPOT_PX); if (u) urls.push(u); });
     urls = urls.filter(function (u, i) { return urls.indexOf(u) === i; });
     var i = 0, active = 0;
+    // <img crossorigin="anonymous">와 같은 요청(CORS, 쿠키 없음)이라 나중에 그림으로 받을 때 캐시에서 꺼낸다
     function next() {
-      while (opened && token === preloadToken && active < 3 && i < urls.length) {
+      while (opened && token === preloadToken && !cdnDown && active < 3 && i < urls.length) {
         active++;
-        loadImg(urls[i++], SPOT_PX).then(function () { active--; next(); });
+        fetch(urls[i++], { mode: 'cors', credentials: 'same-origin' }).then(function (r) { return r.ok ? r.arrayBuffer() : null; })
+          .catch(function () {}).then(function () { active--; next(); });
       }
     }
     setTimeout(next, 1500);
@@ -898,7 +906,7 @@
     metric('feat_pm_card');
     if (!cardEl) {
       cardEl = document.createElement('div'); cardEl.className = 'pm-card';
-      cardEl.innerHTML = '<button type="button" class="x" aria-label="닫기">×</button><div class="img"></div>' +
+      cardEl.innerHTML = '<button type="button" class="x" aria-label="닫기">×</button><div class="img"></div><div class="hint" hidden></div>' +
         '<div class="acts"><button type="button" data-a="save">이미지 저장</button><button type="button" class="go" data-a="send">보내기</button></div>';
       document.body.appendChild(cardEl); // 아래 탭 줄(z-index 최댓값)보다 나중에 붙여 그 위로 덮는다
       cardEl.querySelector('.x').addEventListener('click', closeCard);
@@ -908,6 +916,7 @@
     var h = headInfo(), key = mode + ':' + unit + ':' + h.went + ':' + h.total, token = ++cardToken, box = cardEl.querySelector('.img');
     cardEl.classList.add('on');
     cardEl.querySelectorAll('.acts button').forEach(function (b) { b.disabled = true; });
+    cardEl.querySelector('.hint').hidden = true;
     box.innerHTML = '<div class="wait">한 장으로 만드는 중…</div>';
     var made = cardCache[key] ? Promise.resolve(cardCache[key]) : exportImage().then(function (c) {
       return new Promise(function (r) { c.toBlob(function (b) { r(b); }, 'image/jpeg', 0.92); });
@@ -929,9 +938,27 @@
   function canSendFile() {
     try { return !!(navigator.canShare && cardBlob && navigator.canShare({ files: [cardFile()] })); } catch (e) { return false; }
   }
+  // 아이폰·아이패드(아이패드는 컴퓨터인 척하는 경우도 있다)
+  function isIOS() {
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent || '') || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
   function saveCard() {
     if (!cardBlob) return;
     metric('feat_pm_card_save');
+    // 아이폰에서 내려받기는 사진 앱이 아니라 파일 앱(다운로드)으로 가서 "저장이 안 된다"로 보인다.
+    // 공유 창을 열면 맨 위 줄에 '이미지 저장'(사진 앱)이 있다. 공유 창이 없는 앱 안 브라우저는 길게 눌러 저장하라고 알려 준다.
+    if (isIOS()) {
+      var hint = cardEl.querySelector('.hint');
+      if (canSendFile()) {
+        hint.textContent = "열린 창에서 '이미지 저장'을 누르면 사진 앱에 들어가요";
+        hint.hidden = false;
+        navigator.share({ files: [cardFile()] }).catch(function () {});
+      } else {
+        hint.textContent = "그림을 길게 누른 뒤 '사진 앱에 저장'을 눌러 주세요";
+        hint.hidden = false;
+      }
+      return;
+    }
     var a = document.createElement('a'); a.href = URL.createObjectURL(cardBlob); a.download = 'romanticroute-photomap.jpg';
     document.body.appendChild(a); a.click(); a.remove();
   }
@@ -972,12 +999,51 @@
         if (!im || sl.have >= size) return;
         if (window.__pmTrace) window.__pmTrace.push(['img', Math.round(performance.now()), size]);
         if (!sl.img) sl.at = performance.now();
+        // 작은 판은 더 안 쓰니 캐시에서 뺀다(다른 칸이 아직 쥐고 있으면 그 칸이 놓을 때 풀린다)
+        if (sl.have) imgCache.delete(sl.have + '|' + sl.url);
         sl.img = im; sl.have = size;
         requestRender();
+        trimImages();
       });
       if (!sl.have) waits.push(p);
     });
+    trimImages();
     return waits;
+  }
+
+  // 풀린 사진(가로×세로×4바이트)이 이만큼 넘으면 화면에서 먼 칸부터 놓는다. 다시 보이면 브라우저 캐시에서 금방 다시 뜬다.
+  // 아이폰 사파리는 한 페이지 메모리 한도가 빡빡해 넘으면 버벅이거나 페이지를 새로 불러온다.
+  var IMG_BUDGET = 120e6;
+  function trimImages() {
+    if (!opened || !committed || exporting) return;
+    var t = committed, lv = level();
+    var x0 = t.invertX(-hostW * OVER), y0 = t.invertY(-hostH * OVER), x1 = t.invertX(hostW * (1 + OVER)), y1 = t.invertY(hostH * (1 + OVER));
+    var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    var refs = new Map(), total = 0, far = [];
+    slots.forEach(function (sl) {
+      if (!sl.img) return;
+      var n = refs.get(sl.img) || 0;
+      if (!n) total += (sl.img.naturalWidth || sl.img.width || 0) * (sl.img.naturalHeight || sl.img.height || 0) * 4;
+      refs.set(sl.img, n + 1);
+      var b = sl.bb, off = b[2] < x0 || b[0] > x1 || b[3] < y0 || b[1] > y1;
+      // 시·군 사진은 박지 칸이 다 덮은 뒤에만(그 전엔 밑에 깔려 보인다), 박지 사진은 시·군 단계에선 안 보인다
+      var unused = sl.lv !== lv && (lv === 1 || spotShown);
+      if (off || unused) far.push({ sl: sl, d: Math.hypot((b[0] + b[2]) / 2 - cx, (b[1] + b[3]) / 2 - cy) + (unused ? 1e9 : 0) });
+    });
+    // 어느 칸도 안 쓰는 캐시 사진(모두↔내 지도를 바꾸기 전 칸 등)도 센다
+    var loose = [];
+    imgCache.forEach(function (p, key) {
+      if (p.img && !refs.has(p.img)) { loose.push(key); total += (p.img.naturalWidth || p.img.width || 0) * (p.img.naturalHeight || p.img.height || 0) * 4; }
+    });
+    if (total <= IMG_BUDGET) return;
+    loose.forEach(function (key) { var im = imgCache.get(key).img; total -= (im.naturalWidth || im.width || 0) * (im.naturalHeight || im.height || 0) * 4; imgCache.delete(key); });
+    far.sort(function (a, b) { return b.d - a.d; });
+    for (var i = 0; i < far.length && total > IMG_BUDGET; i++) {
+      var sl = far[i].sl, im = sl.img, n = refs.get(im) - 1;
+      refs.set(im, n);
+      if (!n) { total -= (im.naturalWidth || im.width || 0) * (im.naturalHeight || im.height || 0) * 4; imgCache.delete(sl.have + '|' + sl.url); }
+      sl.img = null; sl.have = 0; sl.want = 0;
+    }
   }
 
   function zoomToBox(box, fit, minK) {

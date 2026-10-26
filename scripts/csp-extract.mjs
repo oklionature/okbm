@@ -165,6 +165,7 @@ const CONNECT_BY_PAGE = {
     "https://noembed.com", "https://api.microlink.io",     // 링크 미리보기
     "https://api.piped.private.coffee", "https://r.jina.ai", // 영상·블로그 검색 폴백
     "https://drive.google.com", "https://lh3.googleusercontent.com", // 관리자 GPX(구글 드라이브)
+    "https://img.romanticroute.kr",                        // 포토맵 박지 사진 미리 받기(Cloudflare가 줄인 사진)
   ],
 };
 // img-src는 https: 전체: 라운지 행사 포스터·블로그 썸네일이 임의의 외부 https 주소다. http:·기타 스킴만 막는다.
