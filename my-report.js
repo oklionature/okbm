@@ -30,6 +30,8 @@
     '.mr-stats-slot{flex:1;min-width:0}',
     '.mr-av{flex:none;position:relative;width:80px;height:80px;border-radius:50%;padding:2px;background:rgba(255,255,255,.12);box-sizing:border-box;cursor:pointer}',
     '.mr-pinfo{margin-top:12px;display:flex;flex-direction:column;gap:3px}',
+    '#mrTopTitle.mr-title{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.mr-pinfo .mr-nick{display:none}',
     '.mr-nick{font-size:17px;font-weight:800;letter-spacing:-.02em;color:#f2f2f3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     '.mr-bio{cursor:pointer}',
     '.mr-bio span{font-size:15px;line-height:1.5;word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}',
@@ -473,6 +475,13 @@
       var st = document.createElement('style'); st.id = 'okbmMyReportCss'; st.textContent = CSS; document.head.appendChild(st);
     }
     placeLegacy();
+    // 인스타처럼 맨 위 제목 자리에 닉네임('낭만루트' 대신). 아래 프로필의 닉네임 줄은 숨긴다(CSS)
+    var nickEl = document.querySelector('#userProfileModalOverlay .mr-nick'), title = $('mrTopTitle'), logo = $('mrTopLogo');
+    if (title && nickEl && nickEl.textContent.trim()) {
+      title.textContent = nickEl.textContent.trim();
+      title.classList.add('mr-title');
+      if (logo) logo.style.setProperty('display', 'none', 'important');
+    }
     // 숫자 줄을 사진 오른쪽으로 (프로필은 열 때마다 새로 그려진다)
     var slot = document.querySelector('#userProfileModalOverlay .mr-stats-slot'), stats = document.querySelector('#userProfileModalOverlay .mr-stats');
     if (slot && stats && stats.parentNode !== slot) slot.appendChild(stats);
