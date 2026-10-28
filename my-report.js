@@ -380,21 +380,22 @@
         }).join('') + '</div>' +
         '<div class="mr-4 two"><div><b>' + uniq + '</b><small>새로 간 박지</small></div><div><b>' + again + '</b><small>다시 간 횟수</small></div></div>' +
         (fav ? '<div class="mr-note">가장 자주 간 곳 · <b>' + esc(fav.name) + '</b> ' + fav.n + '번</div>' : '') + '</div>';
-      // 높이 (예전 '총 누적 획득 고도': 이번 달 · 올해 · 역대 셋으로 나눠 보여 줬다). 셋은 해 고르기와 상관없이 늘 같은 기준,
-      // 가장 높은 곳 3은 고른 해 기준
+      // 높이 (예전 '총 누적 획득 고도': 이번 달 · 올해 · 역대 셋으로 나눠 보여 줬다).
+      // 가운데 칸과 높이 TOP 3은 위에서 고른 해를 따른다('전체'를 고르면 가운데는 올해). 이번 달·전체는 늘 같다
       tops.sort(function (a, b) { return b.e - a.e; });
-      var now = new Date(), hMonth = 0, hYear = 0, hAll = 0;
+      // 같은 곳을 여러 번 갔으면 TOP 3에는 한 번만
+      var seenTop = {};
+      tops = tops.filter(function (t) { var k = String(t.name || ''); if (seenTop[k]) return false; seenTop[k] = 1; return true; });
+      var now = new Date(), midY = y === 'all' ? curYear() : y, hMonth = 0, hYear = 0, hAll = 0;
       feeds.forEach(function (f) {
         var sp = spotOfFeed(f), e = elevOf(f) || (sp ? elevOf({ elevation: sp.elevation }) : 0), d = feedDate(f);
         hAll += e;
-        if (d && d.getFullYear() === now.getFullYear()) {
-          hYear += e;
-          if (d.getMonth() === now.getMonth()) hMonth += e;
-        }
+        if (d && String(d.getFullYear()) === midY) hYear += e;
+        if (d && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) hMonth += e;
       });
       h += '<div class="mr-card"><div class="mr-h"><span class="mr-k">' + ICON.mount + '다녀온 높이</span><span class="mr-k">박지 높이를 더한 값</span></div>' +
-        '<div class="mr-4 three"><div><b>+' + num(hMonth) + '</b><small>이번 달</small></div><div><b>+' + num(hYear) + '</b><small>올해</small></div><div class="on"><b>+' + num(hAll) + '</b><small>전체</small></div></div>' +
-        (tops.length ? '<div class="mr-cap2">' + esc(y === 'all' ? '전체' : y + '년') + ' 가장 높은 곳</div><div class="mr-top">' + tops.slice(0, 3).map(function (t, i) {
+        '<div class="mr-4 three"><div><b>+' + num(hMonth) + '</b><small>이번 달</small></div><div><b>+' + num(hYear) + '</b><small>' + (midY === curYear() ? '올해' : midY + '년') + '</small></div><div class="on"><b>+' + num(hAll) + '</b><small>전체</small></div></div>' +
+        (tops.length ? '<div class="mr-cap2">높이 TOP 3</div><div class="mr-top">' + tops.slice(0, 3).map(function (t, i) {
           return '<div><i>' + (i + 1) + '</i><span>' + esc(t.name) + '</span><b>' + num(t.e) + 'm</b></div>';
         }).join('') + '</div>' : '') + '</div>';
     }
