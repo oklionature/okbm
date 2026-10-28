@@ -390,7 +390,8 @@ window.purgeIfStale = purgeIfStale;
   ], {
     customPurge: function() {
       Object.keys(localStorage).forEach(function(k) {
-        if (!keepKeys.includes(k) && !k.startsWith('user_profile_')) {
+        // 배지 소개·본 배지 기록(계정별 열쇠)은 로그아웃 뒤 청소에도 남긴다(다시 로그인하면 소개가 또 뜨지 않게)
+        if (!keepKeys.includes(k) && !k.startsWith('user_profile_') && !k.startsWith('okbm_badge')) {
           localStorage.removeItem(k);
         }
       });
@@ -706,7 +707,7 @@ window.autoPurgeLegacyClientCache = window.autoPurgeLegacyClientCache || functio
       ], {
         customPurge: function() {
           Object.keys(localStorage).forEach(function(k) {
-            if (keepKeys.indexOf(k) === -1 && k.indexOf('user_profile_') !== 0) {
+            if (keepKeys.indexOf(k) === -1 && k.indexOf('user_profile_') !== 0 && k.indexOf('okbm_badge') !== 0) {
               localStorage.removeItem(k);
             }
           });
@@ -716,7 +717,7 @@ window.autoPurgeLegacyClientCache = window.autoPurgeLegacyClientCache || functio
     }
     if (localStorage.getItem('okbm_client_epoch') !== CLEAN_EPOCH) {
       Object.keys(localStorage).forEach(function(k) {
-        if (keepKeys.indexOf(k) === -1 && k.indexOf('user_profile_') !== 0) {
+        if (keepKeys.indexOf(k) === -1 && k.indexOf('user_profile_') !== 0 && k.indexOf('okbm_badge') !== 0) {
           localStorage.removeItem(k);
         }
       });
