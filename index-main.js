@@ -1662,6 +1662,55 @@
 
     function initHeroGestureEngine() {}
 
+    // 히어로 카드 자동 넘김: 카드 안에 표시를 더하지 않고 다음 박지가 있다는 걸 알린다(6초마다 다음 박지).
+    // 카드가 화면에 반 넘게 보이고, 다른 창에 가리지 않고, 10초 안에 손대지 않았을 때만 넘긴다.
+    // 기기에서 '동작 줄이기'를 켰으면 넘기지 않는다
+    (function initHeroAutoAdvance() {
+      var INTERVAL = 6000, IDLE_AFTER_TOUCH = 10000;
+      try { if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
+      var card = document.getElementById('instaMainCard');
+      if (!card) return;
+      var memo = document.getElementById('heroMemoBox');
+      var track = document.getElementById('heroPhotoSwipeTrack');
+      var lastTouch = 0, shownAt = Date.now(), lastIdx = -1, inView = false;
+      var touched = function() { lastTouch = Date.now(); };
+      [card, memo].forEach(function(el) {
+        if (!el) return;
+        el.addEventListener('touchstart', touched, { passive: true });
+        el.addEventListener('pointerdown', touched, { passive: true });
+      });
+      if (track) track.addEventListener('scroll', touched, { passive: true });
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function(entries) {
+          entries.forEach(function(en) { inView = en.isIntersecting && en.intersectionRatio >= 0.5; });
+        }, { threshold: [0, 0.5, 1] }).observe(card);
+      } else {
+        inView = true;
+      }
+      function canAdvance() {
+        if (document.visibilityState !== 'visible' || !inView) return false;
+        if ((window.heroTopRecords || []).length <= 1) return false;
+        if (Date.now() - lastTouch < IDLE_AFTER_TOUCH) return false;
+        // 모달·시작 화면이 카드를 덮고 있으면 넘기지 않는다
+        var r = card.getBoundingClientRect();
+        var hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return !!(hit && card.contains(hit));
+      }
+      setInterval(function() {
+        // 손으로 넘겼거나 카드가 바뀌면 그때부터 다시 센다
+        if (window.currentHeroCardIndex !== lastIdx) { lastIdx = window.currentHeroCardIndex; shownAt = Date.now(); }
+        if (!canAdvance()) {
+          // 안 보이던 동안은 세지 않는다(다시 보이자마자 넘어가지 않게)
+          if (!inView || document.visibilityState !== 'visible') shownAt = Date.now();
+          return;
+        }
+        if (Date.now() - shownAt >= INTERVAL && typeof window.navigateHeroFeed === 'function') {
+          shownAt = Date.now();
+          window.navigateHeroFeed(1);
+        }
+      }, 500);
+    })();
+
     function initSmartHeaderScrollEngine() {
       var header = document.querySelector('.netflix-integrated-header');
       if (!header || header._scrollEngineBound) return;
