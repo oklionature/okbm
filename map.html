@@ -141,10 +141,14 @@
             'okbm_my_proposals',
             'okbm_naver_force_login',
             'okbm_vault_intro_dismissed',
+            // 한 번만 뜨는 안내는 로그아웃 뒤에도 남긴다(romantic-sync.js autoPurgeLegacyClientCache와 같은 목록)
+            'okbm_map_notice_id',
+            'okbm_app_notice',
+            'okbm_pm_seen',
             'okbm_dirty_user_keys'
           ];
           Object.keys(localStorage).forEach(function(k) {
-            if (!keepKeys.includes(k) && !k.startsWith('user_profile_')) {
+            if (!keepKeys.includes(k) && !k.startsWith('user_profile_') && !k.startsWith('okbm_badge')) {
               localStorage.removeItem(k);
             }
           });
@@ -311,8 +315,8 @@
         bindLazy('openSpotReviewSheet', window.okbmEnsureLounge);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.9.86" defer></script>
-    <script src="romantic-history.js?v=2.8.25" defer></script>
+    <script src="romantic-sync.js?v=2.9.87" defer></script>
+    <script src="romantic-history.js?v=2.8.26" defer></script>
     <script src="my-badges.js?v=9" defer></script>
     <script src="my-report.js?v=19" defer></script>
     <script src="feed-extras.js?v=5" defer></script>

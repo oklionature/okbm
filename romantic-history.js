@@ -8549,6 +8549,28 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     }
     if (!intro) return;
     if (reel.firstElementChild !== intro) reel.insertBefore(intro, reel.firstElementChild);
+    okbmWatchVaultIntroSeen(reel);
+  }
+
+  // 첫 안내를 넘겨 다음 피드까지 봤으면 '봤다'로 적는다. 지금 화면에서는 그대로 두고 다음에 열 때부터 빠진다
+  function okbmWatchVaultIntroSeen(reel) {
+    if (!reel || reel.__okbmIntroWatch) return;
+    reel.__okbmIntroWatch = true;
+    var onScroll = function() {
+      var intro = reel.querySelector('[data-vault-intro="1"]');
+      if (!intro) return;
+      if (reel.scrollTop >= intro.offsetHeight * 0.6) {
+        try { localStorage.setItem('okbm_vault_intro_dismissed', '1'); } catch (e) {}
+        reel.removeEventListener('scroll', onScroll);
+        reel.__okbmIntroWatch = false;
+      }
+    };
+    reel.addEventListener('scroll', onScroll, { passive: true });
+    reel.addEventListener('click', function(e) {
+      if (e.target && e.target.closest && e.target.closest('[data-vault-intro="1"] [data-feed-write]')) {
+        try { localStorage.setItem('okbm_vault_intro_dismissed', '1'); } catch (e2) {}
+      }
+    });
   }
 
   window.okbmDismissVaultIntro = function(ev) {
@@ -8860,6 +8882,7 @@ window.renderHistoryStage = function(isLoading, opts) {
       var snapScroller = document.getElementById('reelsVerticalContainer');
       if (snapScroller) snapScroller.scrollTop = 0;
     }
+    okbmWatchVaultIntroSeen(document.getElementById('reelsVerticalContainer'));
 
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('history');
