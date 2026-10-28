@@ -74,8 +74,8 @@
       '#okbmAppNotice.off{opacity:0;transform:translateY(12px);transition-duration:.18s}' +
       '#okbmAppNotice .an-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}' +
       '#okbmAppNotice .an-icon{width:44px;height:44px;border-radius:11px;flex:none;background:#000 center/cover no-repeat}' +
-      '#okbmAppNotice .an-sub{font-size:.76rem;color:#9AA0A6;font-weight:700}' +
-      '#okbmAppNotice .an-title{font-size:.98rem;font-weight:800;line-height:1.35;margin-top:2px;word-break:keep-all}' +
+      '#okbmAppNotice .an-sub{font-size:1.08rem;color:#FFB547;font-weight:800;letter-spacing:-.01em}' +
+      '#okbmAppNotice .an-title{font-size:.9rem;font-weight:600;color:#D7DADF;line-height:1.4;margin-top:3px;word-break:keep-all}' +
       '#okbmAppNotice .an-x{margin-left:auto;align-self:flex-start;background:none;border:0;color:#9AA0A6;font-size:20px;line-height:1;padding:2px 4px;cursor:pointer}' +
       '#okbmAppNotice .an-go{display:block;text-align:center;text-decoration:none;padding:14px 10px;border-radius:12px;background:#2f9e6a;color:#fff;font-size:1rem;font-weight:800}';
     document.head.appendChild(st);
@@ -100,7 +100,7 @@
     box.innerHTML =
       '<div class="an-head">' +
         '<div class="an-icon" style="background-image:url(/apple-touch-icon.png)"></div>' +
-        '<div><div class="an-sub">낭만루트 아이폰 앱</div>' +
+        '<div><div class="an-sub">낭만루트 아이폰 앱 출시</div>' +
         '<div class="an-title">앱스토어에서 다운받아<br>더 편하게 써 보세요</div></div>' +
         '<button type="button" class="an-x" aria-label="닫기">×</button>' +
       '</div>' +
