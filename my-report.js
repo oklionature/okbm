@@ -268,7 +268,9 @@
         if (!next || c.spots.length > next.spots.length) next = c;
       });
     }
-    return { total: total, filled: filled, rows: rows, next: next, mineIds: mine };
+    var filledKeys = {};
+    Object.keys(sgg).forEach(function (k) { if (sgg[k].filled) filledKeys[k] = 1; });
+    return { total: total, filled: filled, rows: rows, next: next, mineIds: mine, filledKeys: filledKeys };
   }
 
   // ---------------------------------------------------------------- 그리기
@@ -304,6 +306,110 @@
     return Object.keys(ys).sort(function (a, b) { return b - a; });
   }
 
+  // ---------------------------------------------------------------- 배지 (모양·창은 my-badges.js)
+  // 받은 날은 피드 날짜로 계산한다: n번째 피드, 높이 합이 넘은 피드, 그 시·군을 처음 채운 피드.
+  // 클리어(다녀옴)만 누른 박지는 시·군 수에는 들어가지만 날짜가 없다.
+  var EVEREST = 8849;
+  var DO_ROMAN = [['경기', 'GYEONGGI'], ['강원', 'GANGWON'], ['충북', 'CHUNGBUK'], ['충남', 'CHUNGNAM'], ['전북', 'JEONBUK'], ['전남', 'JEONNAM'], ['경북', 'GYEONGBUK'], ['경남', 'GYEONGNAM'], ['제주', 'JEJU']];
+  function buildBadges(feeds) {
+    var asc = feeds.map(function (f) { return { f: f, d: feedDate(f), s: spotOfFeed(f) }; })
+      .sort(function (a, b) { return (a.d ? a.d.getTime() : 9e15) - (b.d ? b.d.getTime() : 9e15); });
+    var nameOf = function (x) { return x ? String((x.s && (x.s.fullName || x.s.spot_main)) || x.f.spot || '').replace(/^\[[^\]]*\]\s*/, '') : ''; };
+    var list = [];
+    var add = function (o) { list.push(o); };
+    // 기록
+    [[1, 'i'], [10, 'b'], [50, 's'], [100, 'g']].forEach(function (t) {
+      var x = asc[t[0] - 1];
+      add({ id: 'trips' + t[0], group: 'trips', ladder: 'trips', shape: 'circle', fill: '#24473a', metal: t[1], icon: 'tent', num: t[0], ribbon: 'BACKPACKING',
+        ko: t[0] === 1 ? '첫 백패킹' : '백패킹 ' + t[0] + '회', title: t[0] + ' BACKPACKING', desc: t[0] === 1 ? '첫 백패킹 피드를 올렸어요' : '백패킹 피드를 ' + t[0] + '번 올렸어요',
+        got: !!x, date: x && x.d, spot: nameOf(x), cur: Math.min(feeds.length, t[0]), goal: t[0], unit: '회' });
+    });
+    // 누적 높이
+    var sum = 0, cross = {};
+    asc.forEach(function (x) {
+      var e = elevOf(x.f) || (x.s ? elevOf({ elevation: x.s.elevation }) : 0);
+      sum += e;
+      [1, 3, 5].forEach(function (n) { if (!cross[n] && sum >= EVEREST * n) cross[n] = x; });
+    });
+    [[1, 'b'], [3, 's'], [5, 'g']].forEach(function (t) {
+      var x = cross[t[0]];
+      add({ id: 'ever' + t[0], group: 'ever', ladder: 'ever', shape: 'peak', fill: '#2a323d', metal: t[1], icon: 'peak', num: t[0], ribbon: 'EVEREST',
+        ko: '에베레스트 ' + t[0] + '번', title: t[0] + ' EVEREST', desc: '다녀온 박지 높이를 더해 ' + num(EVEREST * t[0]) + 'm를 넘었어요',
+        got: !!x, date: x && x.d, spot: nameOf(x), cur: Math.min(sum, EVEREST * t[0]), goal: EVEREST * t[0], unit: 'm' });
+    });
+    // 포토맵: 시·군을 처음 채운 피드 (클리어만 한 곳은 날짜 없이 수에 더한다)
+    var pm = photoMapStats(feeds), firstAt = {}, order = [];
+    asc.forEach(function (x) {
+      if (!x.s) return;
+      var k = sggKey(x.s);
+      if (firstAt[k]) return;
+      firstAt[k] = x; order.push(k);
+    });
+    var filledN = pm.filled;
+    [[30, 'b', 30], [70, 's', 70], ['ALL', 'g', pm.total]].forEach(function (t) {
+      var goal = t[2], x = order.length >= goal ? firstAt[order[goal - 1]] : null;
+      add({ id: 'reg' + t[0], group: 'reg', ladder: 'reg', shape: 'hex', fill: '#5a4120', metal: t[1], icon: 'pin', num: t[0], ribbon: t[0] === 'ALL' ? 'KOREA' : 'REGIONS',
+        ko: t[0] === 'ALL' ? '전국 완주' : '시·군 ' + t[0] + '곳', title: t[0] === 'ALL' ? 'ALL KOREA' : t[0] + ' REGIONS',
+        desc: t[0] === 'ALL' ? '박지가 있는 시·군을 모두 채웠어요' : '포토맵에서 시·군 ' + t[0] + '곳을 채웠어요',
+        got: goal > 0 && filledN >= goal, date: x && x.d, spot: nameOf(x), cur: Math.min(filledN, goal), goal: goal, unit: '곳' });
+    });
+    // 도 완주
+    var byDo = {};
+    spotList().forEach(function (sp) {
+      var r = String(sp.region || '').trim(), k = sggKey(sp);
+      var o = byDo[r] || (byDo[r] = { keys: {} });
+      o.keys[k] = 1;
+    });
+    DO_ROMAN.forEach(function (dr) {
+      var keys = Object.keys((byDo[dr[0]] || { keys: {} }).keys), done = 0, last = null, allDated = true;
+      keys.forEach(function (k) {
+        var hit = !!firstAt[k] || pm.filledKeys[k];
+        if (hit) done++;
+        if (firstAt[k]) { if (!last || (firstAt[k].d && last.d && firstAt[k].d > last.d)) last = firstAt[k]; } else allDated = false;
+      });
+      var got = keys.length > 0 && done === keys.length;
+      add({ id: 'do' + dr[1], group: 'do', shape: 'shield', fill: '#1b2f4d', metal: 'g', sil: dr[0], ribbon: dr[1],
+        ko: dr[0] + ' 완주', title: dr[1] + ' COMPLETE', desc: dr[0] + '에서 박지가 있는 시·군 ' + keys.length + '곳을 모두 채웠어요',
+        got: got, date: got && allDated && last ? last.d : null, spot: got && allDated ? nameOf(last) : '', cur: done, goal: keys.length, unit: '곳' });
+    });
+    // 제보 채택(새 박지 제보만)
+    var props = vault('okbm_my_proposals', []);
+    var acc = (Array.isArray(props) ? props : []).filter(function (p) {
+      if (!p || p.is_correction || p.isCorrection || p.type === 'correction') return false;
+      return typeof window.okbmProposalStatusKind === 'function' && window.okbmProposalStatusKind(p) === 'accepted';
+    }).length;
+    [[1, 'b', 'FIRST SPOT', '첫 제보 채택'], [10, 'g', 'SPOTS', '제보 채택 10개']].forEach(function (t) {
+      add({ id: 'spot' + t[0], group: 'etc', ladder: 'spot', shape: 'circle', fill: '#5e2a22', metal: t[1], icon: 'flag', num: t[0], ribbon: t[2],
+        ko: t[3], title: t[0] === 1 ? 'FIRST SPOT' : '10 SPOTS', desc: '제보한 박지가 ' + t[0] + '곳 채택됐어요',
+        got: acc >= t[0], date: null, spot: '', cur: Math.min(acc, t[0]), goal: t[0], unit: '개' });
+    });
+    // 한 해 사계절
+    var bySeason = {}, seasonAt = null;
+    asc.forEach(function (x) {
+      if (!x.d || seasonAt) return;
+      var y = x.d.getFullYear(), o = bySeason[y] || (bySeason[y] = {});
+      o[season(x.d.getMonth())] = 1;
+      if (Object.keys(o).length === 4) seasonAt = x;
+    });
+    var bestSeason = Object.keys(bySeason).reduce(function (m, y) { return Math.max(m, Object.keys(bySeason[y]).length); }, 0);
+    add({ id: 'season4', group: 'etc', shape: 'circle', fill: '#2d4466', metal: 'g', icon: 'season', num: 4, ribbon: 'SEASONS',
+      ko: '한 해 사계절', title: '4 SEASONS', desc: '한 해에 봄·여름·가을·겨울을 모두 다녀왔어요',
+      got: !!seasonAt, date: seasonAt && seasonAt.d, spot: nameOf(seasonAt), cur: bestSeason, goal: 4, unit: '계절' });
+    // 섬 10곳
+    var isl = {}, islN = 0, islAt = null;
+    asc.forEach(function (x) {
+      if (!x.s || themeOf(x.s) !== 'island') return;
+      var k = String(x.s.id);
+      if (isl[k]) return;
+      isl[k] = 1; islN++;
+      if (islN === 10) islAt = x;
+    });
+    add({ id: 'island10', group: 'etc', shape: 'circle', fill: '#16545b', metal: 'g', icon: 'island', num: 10, ribbon: 'ISLANDS',
+      ko: '섬 10곳', title: '10 ISLANDS', desc: '섬 박지 10곳을 다녀왔어요',
+      got: islN >= 10, date: islAt && islAt.d, spot: nameOf(islAt), cur: Math.min(islN, 10), goal: 10, unit: '곳' });
+    return list;
+  }
+
   function renderReport() {
     var box = $('mrReport');
     if (!box) return;
@@ -332,6 +438,8 @@
       h += '<div class="mr-empty">박지 정보를 받는 중이에요</div>';
     }
     h += '</div>';
+    // 배지 칸 (my-badges.js가 채운다)
+    h += '<div class="mr-card" id="mrBadges"></div>';
     // 카드 2개
     h += '<div class="mr-grid">' +
       '<div class="mr-card mr-c"><span class="mr-k">' + ICON.check + '클리어한 박지</span><span class="v">' + num(Object.keys(vset).length) + '<em>곳</em></span><span class="s">찜만 한 곳 ' + num(wish) + '곳</span></div>' +
@@ -400,6 +508,15 @@
         }).join('') + '</div>' : '') + '</div>';
     }
     box.innerHTML = h;
+    if (window.okbmBadges && S.feeds) {
+      window.okbmBadges.set(buildBadges(feeds));
+      window.okbmBadges.card($('mrBadges'));
+      // 새 배지는 낭만리포트를 열 때마다 한 번 본다
+      if (!S.badgeChecked) { S.badgeChecked = true; window.okbmBadges.checkNew(S.uid); }
+    } else {
+      var bb = $('mrBadges');
+      if (bb) bb.style.display = 'none';
+    }
   }
 
   // 내 기록: 연도 칩 + 피드 줄
@@ -485,6 +602,7 @@
     setTab('rep'); // 열 때는 늘 리포트부터
     if (myId() !== S.uid) { S.feeds = null; S.year = null; S.ryear = null; }
     S.shown = PAGE;
+    S.badgeChecked = false;
     refresh(false);
   };
 
