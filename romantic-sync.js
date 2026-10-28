@@ -4372,7 +4372,7 @@ window.refreshMyReportFullStats = function() {
     if (badgeText) badgeText.innerText = curYear;
 
     var labelText = document.getElementById('reportYearCardLabel');
-    if (labelText) labelText.innerText = (curYear === actualCurYear) ? '올해 활동' : curYear + '년 활동';
+    if (labelText) labelText.innerText = (curYear === actualCurYear) ? '올해' : curYear + '년';
 
     return { validLogs: validLogs, curYear: curYear, yEl: yEl, tEl: tEl };
   };
@@ -4433,6 +4433,8 @@ window.refreshMyReportFullStats = function() {
   if (!Array.isArray(myProps)) myProps = [];
   var hStat = document.getElementById('reportHeaderMyPropsStat');
   if (hStat) hStat.innerText = myProps.length + '곳';
+  var propCountEl = document.getElementById('mrPropCount');
+  if (propCountEl) propCountEl.innerText = String(myProps.length);
 
   var bioVal = (profile && profile.bio) ? profile.bio : (localStorage.getItem('okbm_user_bio') || '');
   var bioEl = document.getElementById('reportProfileBioText');
@@ -4545,28 +4547,23 @@ window.renderUserProfileHeaderSection = function(config) {
     '<svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="position:absolute; left:50%; top:50%; width:34px; height:34px; transform:translate(-50%,-50%); display:' + (photoUrl ? 'none' : 'block') + ';" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
   '</div>';
 
-  var actionGridHtml = '';
+  // 마이리포트(내 프로필): 사진 왼쪽, 이름·소개·SNS 오른쪽, 아래 편집 버튼 둘. 쪽지·알림·설정은 맨 위 아이콘, 모아보기·관심은 탭(my-report.js)
   if (isOwner) {
-    actionGridHtml = '<div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:6px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">' +
-      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openMyPastTripsFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
-        '<span>모아보기</span>' +
-      '</button>' +
-      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openRoutersInterestFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
-        '<span>관심루터</span>' +
-      '</button>' +
-      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openFeedsInterestFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
-        '<span>관심피드</span>' +
-      '</button>' +
-      '<button type="button" onclick="event.preventDefault(); event.stopPropagation();  window.openUserNotificationInbox(\'note\', event);" style="position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
-        '<span>쪽지</span>' +
-        '<span id="reportNoteCountBadge" style="display:none; position:absolute; top:3px; right:8px; min-width:14px; height:14px; padding:0 4px; border-radius:8px; background:#f43f5e; color:#fff; font-size:0.62rem; font-weight:900; align-items:center; justify-content:center;"></span>' +
-      '</button>' +
-      '<button type="button" onclick="event.preventDefault(); event.stopPropagation();  window.openUserNotificationInbox(\'notif\', event);" style="position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
-        '<span>알림</span>' +
-        '<span id="reportNotifCountBadge" style="display:none; position:absolute; top:3px; right:8px; min-width:14px; height:14px; padding:0 4px; border-radius:8px; background:#f43f5e; color:#fff; font-size:0.62rem; font-weight:900; align-items:center; justify-content:center;"></span>' +
-      '</button>' +
+    return '<div class="unified-user-profile-header-card mr-prof-card">' +
+      '<div class="mr-prof">' +
+        '<div ' + avatarClickAttr + ' class="mr-av">' + avatarImgHtml + '</div>' +
+        '<div class="mr-pinfo">' +
+          '<span class="user-profile-nick-span mr-nick">' + _escapeReportPropHtml(nick) + '</span>' +
+          '<div ' + bioClickAttr + ' class="mr-bio"><span class="user-profile-bio-span" style="color:' + bioColor + ';">' + _escapeReportPropHtml(bioText) + '</span></div>' +
+          '<div class="user-profile-sns-wrap mr-sns">' + snsHtml + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="mr-edit"><button type="button" data-mr-act="bio">소개 편집</button><button type="button" data-mr-act="sns">SNS 편집</button></div>' +
     '</div>';
-  } else if (uid) {
+  }
+
+  var actionGridHtml = '';
+  if (uid) {
     var chipBase = 'min-width:0; flex:1; height:36px; padding:0 8px; border-radius:8px; display:inline-flex; flex-direction:row; align-items:center; justify-content:center; gap:4px; box-sizing:border-box; font-size:0.74rem; font-weight:800; white-space:nowrap;';
     var chipIdle = 'background:#000000; border:1px solid rgba(255,255,255,0.35); color:#ffffff;';
     var yearCount = (config && typeof config.yearCount === 'number') ? config.yearCount : 0;
@@ -5466,55 +5463,52 @@ function ensureMyReportAndAuthModalsInDOM() {
               </div>
               <span style="font-size:1.2rem !important; font-weight:900 !important; letter-spacing:-0.035em !important; line-height:1 !important; color:#ffffff !important; display:inline-block !important;">낭만루트</span>
             </div>
+            <!-- 쪽지·알림·설정 (my-report.js가 data-mr-act로 받는다). 새 소식 숫자는 okbmPaintCountBadgeEl이 채운다 -->
+            <div class="mr-icons">
+              <button type="button" class="mr-ib" data-mr-act="note" aria-label="쪽지"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span id="reportNoteCountBadge" class="mr-badge" style="display:none;"></span></button>
+              <button type="button" class="mr-ib" data-mr-act="notif" aria-label="알림"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="reportNotifCountBadge" class="mr-badge" style="display:none;"></span></button>
+              <button type="button" class="mr-ib" data-mr-act="settings" aria-label="설정"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+            </div>
           </div>
         </header>
 
-        <div id="reportProfileHeaderContainer" style="flex-shrink:0; width:100%; box-sizing:border-box;"></div>
-
-        <!-- 2단 본문 (헤더와 독 사이를 정확히 꽉 채우는 안전 스크롤 바디) -->
-        <div id="userProfileScrollBody" style="flex:1 1 0%; min-height:0; width:100%; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior-y:contain; padding:12px 12px 20px 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box; z-index:10;">
-          
-          <!-- 올해 vs 누적 활동 듀얼 카운터 -->
-          <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px; flex-shrink:0;">
-            <div role="button" onclick="window.toggleReportYearActivities(event)" style="cursor:pointer; position:relative; min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none; box-sizing:border-box;">
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:4px; min-width:0;">
-                <span id="reportYearCardLabel" style="font-size:0.77rem; color:#64748b; font-weight:700; letter-spacing:-0.06em; white-space:nowrap; line-height:1;">올해 활동</span>
-                <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
-                  <button type="button" id="reportYearPublicBtn" onclick="event.preventDefault(); event.stopPropagation(); window.toggleReportActivityPublic('year', event);" style="font-size:0.60rem; font-weight:800; padding:2px 6px; border-radius:5px; cursor:pointer; outline:none; border:1px solid rgba(186,230,253,0.25); background:rgba(186,230,253,0.08); color:#bae6fd;">루터 공개</button>
-                  <button type="button" id="reportYearBadgeBtn" onclick="event.stopPropagation(); window.toggleReportYearDropdown(event);" style="font-size:0.70rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; background:rgba(186,230,253,0.08); border:1px solid rgba(186,230,253,0.25); padding:2px 7px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; outline:none;">
-                    <span id="reportYearBadge">2026</span>
-                    <svg viewBox="0 0 24 24" style="width:9px; height:9px; stroke:#bae6fd; fill:none; stroke-width:2.5;"><path d="m6 9 6 6 6-6"/></svg>
-                  </button>
-                </div>
-              </div>
-              <div style="margin-top:4px; display:flex; justify-content:space-between; align-items:flex-end; gap:6px; min-width:0;">
-                <div>
-                  <span id="reportYearCountNumber" style="font-size:1.72rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); line-height:1;">0</span>
-                  <span style="font-size:0.87rem; font-weight:700; color:#7dd3fc; margin-left:2px;">회</span>
-                </div>
-                <span id="reportYearListArrow" style="font-size:0.64rem; color:#64748b; font-weight:800; margin-bottom:2px; flex-shrink:0;">기록보기 ▼</span>
-              </div>
-              <div id="reportYearDropdownMenu" style="display:none; position:absolute; top:36px; right:10px; min-width:86px; max-height:180px; overflow-y:auto; background:#0d121d; border:1px solid rgba(186,230,253,0.25); border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.85); z-index:100; padding:4px; box-sizing:border-box; flex-direction:column; gap:2px;"></div>
-            </div>
-
-            <div role="button" onclick="window.toggleReportTotalActivities(event)" style="cursor:pointer; min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none; box-sizing:border-box;">
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
-                <span style="font-size:0.77rem; color:#64748b; font-weight:700; white-space:nowrap; line-height:1;">누적 총 활동</span>
-                <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
-                  <button type="button" id="reportTotalPublicBtn" onclick="event.preventDefault(); event.stopPropagation(); window.toggleReportActivityPublic('total', event);" style="font-size:0.60rem; font-weight:800; padding:2px 6px; border-radius:5px; cursor:pointer; outline:none; border:1px solid rgba(253,230,138,0.25); background:rgba(253,230,138,0.08); color:#fde68a;">루터 공개</button>
-                  <span style="font-size:0.68rem; color:#fde68a; font-weight:700; background:rgba(253,230,138,0.08); border:1px solid rgba(253,230,138,0.2); padding:1px 5px; border-radius:4px;">전체</span>
-                </div>
-              </div>
-              <div style="margin-top:4px; display:flex; justify-content:space-between; align-items:flex-end; gap:6px; min-width:0;">
-                <div>
-                  <span id="reportTotalCountNumber" style="font-size:1.72rem; font-weight:900; color:#fde68a; font-family:var(--font-en); line-height:1;">0</span>
-                  <span style="font-size:0.87rem; font-weight:700; color:#fef08a; margin-left:2px;">회</span>
-                </div>
-                <span id="reportTotalListArrow" style="font-size:0.64rem; color:#64748b; font-weight:800; margin-bottom:2px; flex-shrink:0;">기록보기 ▼</span>
-              </div>
-            </div>
+        <!-- 본문: 프로필 → 숫자 한 줄 → 탭(내 기록·저장·리포트). 탭 동작과 리포트 카드는 my-report.js -->
+        <div id="userProfileScrollBody" style="flex:1 1 0%; min-height:0; width:100%; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior-y:contain; padding:0 0 20px; display:flex; flex-direction:column; box-sizing:border-box; z-index:10;">
+          <div id="reportProfileHeaderContainer" style="flex-shrink:0; width:100%; box-sizing:border-box;"></div>
+          <div class="mr-stats">
+            <button type="button" class="mr-st" data-mr-tab="rec" data-mr-year="all"><b id="reportTotalCountNumber">0</b><small>전체 기록</small></button>
+            <button type="button" class="mr-st" data-mr-tab="rec" data-mr-year="cur"><b id="reportYearCountNumber">0</b><small id="reportYearCardLabel">올해</small></button>
+            <button type="button" class="mr-st" data-mr-act="routers"><b id="mrFollowCount">0</b><small>관심루터</small></button>
+            <button type="button" class="mr-st" data-mr-tab="rec" data-mr-go="myprops"><b id="mrPropCount">0</b><small>제보</small></button>
+          </div>
+          <div class="mr-tabs" role="tablist">
+            <button type="button" role="tab" class="mr-tab" data-mr-tab="rec">내 기록</button>
+            <button type="button" role="tab" class="mr-tab" data-mr-tab="save">저장</button>
+            <button type="button" role="tab" class="mr-tab" data-mr-tab="rep">리포트</button>
           </div>
 
+          <section class="mr-pane" data-mr-pane="rec">
+            <div class="mr-chips" id="mrYearChips"></div>
+            <div id="mrRecList"></div>
+            <button type="button" class="mr-row" data-mr-act="trips">사진으로 모아보기<span class="mr-r">›</span></button>
+          </section>
+
+          <section class="mr-pane" data-mr-pane="save">
+            <button type="button" class="mr-row" data-mr-act="feeds">관심 피드<span class="mr-r">›</span></button>
+            <button type="button" class="mr-row" data-mr-act="routers">관심 루터<span class="mr-r"><span id="mrFollowCount2"></span> ›</span></button>
+          </section>
+
+          <section class="mr-pane" data-mr-pane="rep">
+            <div id="mrReport"></div>
+            <div class="mr-cap">자세히 보기</div>
+          </section>
+
+          <!-- 예전 연도·누적 목록(toggleReport*Activities). 화면에선 '내 기록' 탭이 대신하고, 함수들이 찾는 칸만 숨겨 둔다 -->
+          <div hidden>
+            <span id="reportYearListArrow"></span><span id="reportTotalListArrow"></span><span id="reportYearBadge"></span>
+            <div id="reportYearDropdownMenu" style="display:none;"></div>
+          </div>
+          
           <!-- 선택 연도 활동 인라인 아코디언 패널 -->
           <div id="reportYearActivityContainer" style="display:none; flex-direction:column; gap:4px; background:#080b11; border:1px solid rgba(186,230,253,0.15); border-radius:10px; padding:8px 10px; box-sizing:border-box; flex-shrink:0; min-width:0; overflow:hidden;">
             <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.06);">
@@ -5666,6 +5660,19 @@ function ensureMyReportAndAuthModalsInDOM() {
           <div style="background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.12); border-radius:12px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;">
             <span style="color:#94a3b8; font-size:0.75rem; font-weight:700;">가입날짜</span>
             <span id="settingsModalJoinDate" style="color:#e2e8f0; font-family:var(--font-mono); font-size:0.80rem; font-weight:800;">2026.01.01</span>
+          </div>
+
+          <!-- 다른 루터가 내 프로필을 볼 때 활동 숫자를 보일지 (예전엔 마이리포트 숫자 카드 안에 있었다) -->
+          <div style="display:flex; flex-direction:column; gap:10px; background:#0a0e14; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; box-sizing:border-box;">
+            <span style="color:#ffffff; font-size:0.78rem; font-weight:900;">활동 공개</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <span style="color:#cbd5e1; font-size:0.75rem; font-weight:700;">올해 활동 숫자</span>
+              <button type="button" id="reportYearPublicBtn" onclick="event.preventDefault(); event.stopPropagation(); window.toggleReportActivityPublic('year', event);" style="min-width:84px; font-size:0.72rem; font-weight:800; padding:6px 10px; border-radius:8px; cursor:pointer; outline:none; border:1px solid rgba(186,230,253,0.25); background:rgba(186,230,253,0.08); color:#bae6fd;">루터 공개</button>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <span style="color:#cbd5e1; font-size:0.75rem; font-weight:700;">누적 활동 숫자</span>
+              <button type="button" id="reportTotalPublicBtn" onclick="event.preventDefault(); event.stopPropagation(); window.toggleReportActivityPublic('total', event);" style="min-width:84px; font-size:0.72rem; font-weight:800; padding:6px 10px; border-radius:8px; cursor:pointer; outline:none; border:1px solid rgba(253,230,138,0.25); background:rgba(253,230,138,0.08); color:#fde68a;">루터 공개</button>
+            </div>
           </div>
 
           <button type="button" onclick="window.openBlockedUsersModal();" style="width:100%; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; text-align:left; box-sizing:border-box;">
@@ -10210,6 +10217,8 @@ function openUserProfileModal() {
     }
 
     window.ensureMasterBottomDock('report');
+    // 탭(내 기록·저장·리포트)과 리포트 카드 (my-report.js)
+    if (typeof window.okbmMyReportOpened === 'function') window.okbmMyReportOpened();
   } catch (e) { console.warn('[romantic-sync.js:openUserProfileModal]', e); }
 }
 window.openUserProfileModal = openUserProfileModal;

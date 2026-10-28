@@ -1,0 +1,523 @@
+// =========================================================================
+// 마이리포트 탭과 리포트 카드 (2026-10-28)
+//
+// 화면 뼈대는 romantic-sync.js(userProfileModalOverlay)에 있고, 여기서는
+//   · 맨 위 쪽지·알림·설정 아이콘, 소개·SNS 편집, 숫자 한 줄, 탭(내 기록·저장·리포트) 누름을 받는다(data-mr-act / data-mr-tab).
+//   · 내 기록: 서버의 내 피드를 연도별로 보여 준다. 예전 '올해 활동' 목록은 이 기기 기록만 보여 줘서
+//     숫자(서버 17회)와 목록(1건)이 어긋났다.
+//   · 리포트: 내 포토맵(박지가 있는 시·군 중 채운 곳), 클리어한 박지·받은 별·대표 사진·오른 고도,
+//     다음 백패킹(낭만플랜), 달마다 다녀온 횟수. 그 아래 예전 지형·시즌·지역·장비 펼침 칸을 옮겨 둔다.
+// 마이리포트를 열 때 romantic-sync.js openUserProfileModal이 window.okbmMyReportOpened()를 부른다.
+// 인라인 onclick을 쓰지 않는다(CSP 해시가 필요 없게).
+// =========================================================================
+(function () {
+  'use strict';
+
+  var TAB_KEY = 'okbm_mr_tab';
+  var R2_PUBLIC = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
+  var WD = ['일', '월', '화', '수', '목', '금', '토'];
+  var PAGE = 30;
+
+  var CSS = [
+    '#userProfileModalOverlay{--mr-line:var(--line,rgba(255,255,255,.08));--mr-card:var(--bg-1,#0f0f11);--mr-tx2:var(--tx-2,#d1d1d6);--mr-tx3:var(--tx-3,#8b8b93);--mr-acc:var(--accent,#4c94f8)}',
+    '.mr-icons{display:flex;gap:2px;margin-right:-8px}',
+    '.mr-ib{position:relative;width:40px;height:40px;border:0;border-radius:12px;background:none;color:#f2f2f3;display:grid;place-items:center;cursor:pointer}',
+    '.mr-ib:active{opacity:.6}',
+    '.mr-ib svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}',
+    '.mr-badge{position:absolute;top:4px;right:3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#e11d48;color:#fff;font-size:11px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 0 2px #000;box-sizing:border-box}',
+    // 프로필
+    '.mr-prof-card{flex-shrink:0;padding:10px 16px 0;box-sizing:border-box}',
+    '.mr-prof{display:flex;gap:14px;align-items:center}',
+    '.mr-av{flex:none;position:relative;width:76px;height:76px;border-radius:50%;padding:2px;background:rgba(255,255,255,.12);box-sizing:border-box;cursor:pointer}',
+    '.mr-pinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}',
+    '.mr-nick{font-size:18px;font-weight:800;letter-spacing:-.02em;color:#f2f2f3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.mr-bio{cursor:pointer}',
+    '.mr-bio span{font-size:13.5px;line-height:1.45;word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}',
+    '.mr-sns{display:flex;align-items:center;gap:6px;min-height:26px;margin-top:3px}',
+    '.mr-edit{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}',
+    '.mr-edit button{height:36px;border-radius:10px;border:1px solid var(--mr-line);background:var(--bg-2,#17171b);color:#f2f2f3;font:inherit;font-size:13px;font-weight:700;cursor:pointer}',
+    '.mr-edit button:active,.mr-row:active,.mr-st:active,.mr-tr:active{opacity:.6}',
+    // 숫자 한 줄
+    '.mr-stats{flex-shrink:0;display:grid;grid-template-columns:repeat(4,1fr);margin:16px 16px 0;padding:12px 0;border-top:1px solid var(--mr-line);border-bottom:1px solid var(--mr-line)}',
+    '.mr-st{background:none;border:0;color:#f2f2f3;font:inherit;padding:0;cursor:pointer;min-width:0}',
+    '.mr-st+.mr-st{border-left:1px solid var(--mr-line)}',
+    '.mr-st b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}',
+    '.mr-st small{display:block;margin-top:2px;font-size:12px;color:var(--mr-tx3);font-weight:600}',
+    // 탭
+    '.mr-tabs{position:sticky;top:0;z-index:5;flex-shrink:0;display:flex;background:#000;border-bottom:1px solid var(--mr-line);margin-top:6px}',
+    '.mr-tab{flex:1;height:46px;background:none;border:0;color:var(--mr-tx3);font:inherit;font-size:14px;font-weight:700;position:relative;cursor:pointer}',
+    '.mr-tab.on{color:#f2f2f3}',
+    '.mr-tab.on::after{content:"";position:absolute;left:28%;right:28%;bottom:-1px;height:2px;border-radius:2px;background:#f2f2f3}',
+    '.mr-pane{display:none;flex-direction:column;gap:8px;padding:14px 12px 8px}',
+    '.mr-pane.on{display:flex}',
+    // 줄·칩
+    '.mr-row{display:flex;align-items:center;gap:10px;width:100%;min-height:50px;padding:0 14px;border-radius:14px;background:var(--mr-card);border:1px solid var(--mr-line);color:#f2f2f3;font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer;box-sizing:border-box}',
+    '.mr-r{margin-left:auto;color:var(--mr-tx3);font-size:13px;font-weight:600}',
+    '.mr-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 2px}',
+    '.mr-chips::-webkit-scrollbar{display:none}',
+    '.mr-chip{flex:none;height:32px;padding:0 13px;border-radius:999px;border:1px solid var(--line-strong,rgba(255,255,255,.16));background:none;color:var(--mr-tx2);font:inherit;font-size:13px;font-weight:700;cursor:pointer}',
+    '.mr-chip.on{background:#f2f2f3;color:#000;border-color:#f2f2f3}',
+    '.mr-cap{margin:10px 4px 0;font-size:13px;font-weight:800;color:var(--mr-tx2)}',
+    '.mr-empty{padding:26px 8px;text-align:center;font-size:13px;color:var(--mr-tx3);line-height:1.6}',
+    // 내 기록 줄
+    '.mr-tr{display:flex;gap:12px;align-items:center;width:100%;padding:9px 4px;border:0;border-bottom:1px solid var(--mr-line);background:none;color:#f2f2f3;font:inherit;text-align:left;cursor:pointer}',
+    '.mr-th{flex:none;width:52px;height:52px;border-radius:10px;background:var(--bg-3,#2a2a30) center/cover no-repeat}',
+    '.mr-tt{flex:1;min-width:0}',
+    '.mr-tt b{display:block;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.mr-tt small{display:block;margin-top:3px;font-size:12px;color:var(--mr-tx3);font-variant-numeric:tabular-nums}',
+    '.mr-more{height:40px;border-radius:12px;border:1px solid var(--mr-line);background:none;color:var(--mr-tx2);font:inherit;font-size:13px;font-weight:700;cursor:pointer}',
+    // 리포트
+    '.mr-card{background:var(--mr-card);border:1px solid var(--mr-line);border-radius:14px;padding:14px;box-sizing:border-box}',
+    '.mr-h{display:flex;justify-content:space-between;align-items:center;gap:8px}',
+    '.mr-k{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mr-tx3);font-weight:600}',
+    '.mr-k svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}',
+    '.mr-go{border:0;background:none;padding:4px 0;font:inherit;font-size:12px;font-weight:700;color:var(--mr-acc);cursor:pointer}',
+    '.mr-pmn{display:flex;align-items:baseline;gap:6px;margin-top:6px}',
+    '.mr-pmn b{font-size:30px;font-weight:800;letter-spacing:-.03em;color:#f2f2f3;font-variant-numeric:tabular-nums}',
+    '.mr-pmn em{font-style:normal;font-size:14px;color:var(--mr-tx2);font-weight:600}',
+    '.mr-pmn i{margin-left:auto;font-style:normal;font-size:15px;font-weight:800;color:#fbbf24}',
+    '.mr-bar{height:8px;border-radius:4px;background:var(--bg-3,#2a2a30);margin-top:8px;overflow:hidden}',
+    '.mr-bar i,.mr-mini i{display:block;height:100%;background:#fbbf24;border-radius:4px}',
+    '.mr-pr{margin-top:12px;display:flex;flex-direction:column;gap:7px}',
+    '.mr-pr div{display:grid;grid-template-columns:38px 1fr 46px;gap:8px;align-items:center;font-size:12.5px;color:var(--mr-tx2)}',
+    '.mr-pr b{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}',
+    '.mr-mini{height:5px;border-radius:3px;background:var(--bg-3,#2a2a30);overflow:hidden}',
+    '.mr-next{display:block;width:100%;margin-top:12px;padding:11px 0 0;border:0;border-top:1px solid var(--mr-line);background:none;color:var(--mr-tx2);font:inherit;font-size:12.5px;text-align:left;cursor:pointer;line-height:1.5}',
+    '.mr-next b{color:#f2f2f3}',
+    '.mr-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}',
+    '.mr-c{display:flex;flex-direction:column;min-height:104px;text-align:left;color:#f2f2f3;font:inherit}',
+    'button.mr-c{cursor:pointer}',
+    '.mr-c .v{margin-top:auto;padding-top:10px;font-size:24px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}',
+    '.mr-c .v em{font-style:normal;font-size:14px;font-weight:700;color:var(--mr-tx2);margin-left:2px}',
+    '.mr-c .s{margin-top:2px;font-size:12px;color:var(--mr-tx3)}',
+    '.mr-plan{display:flex;align-items:center;gap:10px;width:100%;text-align:left;color:#f2f2f3;font:inherit;cursor:pointer}',
+    '.mr-plan b{display:block;margin-top:3px;font-size:15px;font-weight:800}',
+    '.mr-plan small{display:block;margin-top:2px;font-size:12px;color:var(--mr-tx3)}',
+    '.mr-dd{margin-left:auto;flex:none;padding:6px 10px;border-radius:10px;background:var(--accent-soft,rgba(76,148,248,.16));color:var(--mr-acc);font-size:15px;font-weight:800}',
+    '.mr-bars{display:grid;grid-template-columns:repeat(12,1fr);gap:5px;align-items:end;height:64px;margin-top:12px}',
+    '.mr-bars span{background:var(--bg-3,#2a2a30);border-radius:3px;min-height:3px}',
+    '.mr-bars span.now{background:var(--mr-acc)}',
+    '.mr-ml{display:grid;grid-template-columns:repeat(12,1fr);gap:5px;margin-top:5px;text-align:center;font-size:11px;color:var(--mr-tx3)}',
+    // 옮겨 온 예전 펼침 칸: 탭 안에서는 위아래 간격만 맞춘다
+    '.mr-pane .report-minimal-card{margin:0!important}'
+  ].join('');
+
+  // ---------------------------------------------------------------- 도구
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+  }
+  function $(id) { return document.getElementById(id); }
+  function metric(name) { if (typeof window.okbmMetric === 'function') window.okbmMetric(name); }
+  function myId() {
+    try { return typeof window.okbmGetCurrentUserId === 'function' ? String(window.okbmGetCurrentUserId() || '').trim() : ''; } catch (e) { return ''; }
+  }
+  function vault(key, dflt) {
+    try {
+      if (window.RomanticVault && typeof window.RomanticVault.read === 'function') return window.RomanticVault.read(key, dflt);
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : dflt;
+    } catch (e) { return dflt; }
+  }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function curYear() { return String(new Date().getFullYear()); }
+  // 피드 날짜 '2026.05.09' · '2026-05-09' → Date
+  function feedDate(f) {
+    var m = String((f && f.date) || '').match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+    return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+  }
+  function spotList() {
+    if (Array.isArray(window.registeredSpots) && window.registeredSpots.length) return window.registeredSpots;
+    return Array.isArray(window.spots) ? window.spots : [];
+  }
+  // R2 사진은 img.romanticroute.kr에서 작게 받는다(romantic-history.js okbmSmallAvatarUrl과 같은 규칙)
+  function thumb(u) {
+    u = String(u || '');
+    if (u.indexOf('http://') === 0) u = 'https://' + u.slice(7);
+    if (u.indexOf('https://') !== 0) return '';
+    if (u.indexOf(R2_PUBLIC) === 0) return 'https://img.romanticroute.kr/cdn-cgi/image/width=120,quality=70,fit=cover,format=auto/' + u.slice(R2_PUBLIC.length);
+    return u;
+  }
+  function photosOf(f) {
+    var p = f && f.photos;
+    if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { p = []; } }
+    return (Array.isArray(p) ? p : []).filter(function (u) { return typeof u === 'string' && u.indexOf('http') === 0; });
+  }
+  function api() {
+    var url = window.SUPABASE_URL || (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '');
+    var key = window.SUPABASE_ANON_KEY || (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '');
+    if (!url || !key) return null;
+    var tok = (typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || key;
+    return { url: url, headers: { apikey: key, Authorization: 'Bearer ' + tok } };
+  }
+  function ownerFilter(uid) {
+    return typeof window.okbmFeedOwnerFilter === 'function' ? window.okbmFeedOwnerFilter(uid) : 'user_id=eq.' + encodeURIComponent(uid);
+  }
+  function myIdVariants(uid) {
+    var v = typeof window.okbmFeedOwnerIdVariants === 'function' ? window.okbmFeedOwnerIdVariants(uid) : [uid];
+    var set = {};
+    (v || []).forEach(function (x) { set[String(x)] = 1; });
+    return set;
+  }
+
+  // ---------------------------------------------------------------- 데이터
+  // 내 피드: 마이리포트를 열 때 한 번 받고 1분 안에 다시 열면 그대로 쓴다
+  var S = { uid: '', feeds: null, at: 0, loading: null, year: null, shown: PAGE, rep: null, repFor: '' };
+  function loadFeeds(force) {
+    var uid = myId(), a = api();
+    if (!uid || !a) return Promise.resolve([]);
+    if (!force && S.uid === uid && S.feeds && Date.now() - S.at < 60000) return Promise.resolve(S.feeds);
+    if (S.loading && S.uid === uid) return S.loading;
+    S.uid = uid;
+    var q = a.url + '/rest/v1/feeds?' + ownerFilter(uid) +
+      '&select=id,spot,spot_id,date,photos,likes_count,comments_count,elevation,created_at&order=date.desc&limit=1000';
+    S.loading = fetch(q, { headers: a.headers }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
+      if (S.uid !== uid) return S.feeds || [];
+      S.feeds = Array.isArray(rows) ? rows : [];
+      S.at = Date.now();
+      return S.feeds;
+    }).catch(function () { return S.feeds || []; }).then(function (v) { S.loading = null; return v; });
+    return S.loading;
+  }
+
+  // 박지 찾기: spot_id, 없으면 '[시군] 이름 (부제)' 글자, 지도 페이지면 지도의 맞추기 함수
+  var spotIdx = null, spotIdxFor = null;
+  function spotIndex() {
+    var list = spotList();
+    if (spotIdx && spotIdxFor === list && list.length) return spotIdx;
+    var byId = {}, byName = {};
+    list.forEach(function (s) {
+      if (!s || s.id == null) return;
+      byId[String(s.id).trim()] = s;
+      var city = String(s.cityName || s.city_name || '').trim();
+      var main = String(s.spot_main || s.name || '').trim();
+      var sub = String(s.spot_sub || '').trim();
+      byName[('[' + city + '] ' + main + (sub ? ' (' + sub + ')' : '')).replace(/\s+/g, ' ')] = s;
+    });
+    spotIdx = { byId: byId, byName: byName, list: list };
+    spotIdxFor = list;
+    return spotIdx;
+  }
+  function spotOfFeed(f) {
+    var ix = spotIndex();
+    var sid = String((f && f.spot_id) || '').trim();
+    if (sid && ix.byId[sid]) return ix.byId[sid];
+    var name = String((f && f.spot) || '').replace(/\s+/g, ' ').trim();
+    if (name && ix.byName[name]) return ix.byName[name];
+    if (name && typeof window.okbmFeedBelongsToMapSpot === 'function') {
+      for (var i = 0; i < ix.list.length; i++) if (window.okbmFeedBelongsToMapSpot(name, ix.list[i], '')) return ix.list[i];
+    }
+    return null;
+  }
+  function sggKey(s) { return String(s.region || '').trim() + '|' + String(s.cityName || s.city_name || '').trim(); }
+
+  // 내 포토맵: 박지가 있는 시·군 중 내 피드 박지나 클리어(다녀옴)한 박지가 하나라도 있는 곳(photo-map.js '내 지도'와 같은 기준)
+  function photoMapStats(feeds) {
+    var ix = spotIndex();
+    var visited = vault('okbm_visited', []);
+    var mine = {};
+    (Array.isArray(visited) ? visited : []).forEach(function (id) { mine[String(id).trim()] = 1; });
+    feeds.forEach(function (f) { var s = spotOfFeed(f); if (s) mine[String(s.id).trim()] = 1; });
+    var sgg = {}, sido = {};
+    ix.list.forEach(function (s) {
+      var k = sggKey(s);
+      if (!k || k === '|') return;
+      var c = sgg[k] || (sgg[k] = { key: k, region: String(s.region || '').trim(), city: String(s.cityName || s.city_name || '').trim(), spots: [], filled: false });
+      c.spots.push(s);
+      if (mine[String(s.id).trim()]) c.filled = true;
+    });
+    var total = 0, filled = 0;
+    Object.keys(sgg).forEach(function (k) {
+      var c = sgg[k], r = c.region || '기타';
+      var d = sido[r] || (sido[r] = { name: r, total: 0, filled: 0 });
+      d.total++; total++;
+      if (c.filled) { d.filled++; filled++; }
+    });
+    var rows = Object.keys(sido).map(function (k) { return sido[k]; })
+      .sort(function (a, b) { return (b.filled - a.filled) || (b.filled / b.total - a.filled / a.total) || (b.total - a.total); });
+    // 다음 빈칸: 가장 많이 채운 도에서 박지가 가장 많은 빈 시·군
+    var next = null;
+    for (var i = 0; i < rows.length && !next; i++) {
+      Object.keys(sgg).forEach(function (k) {
+        var c = sgg[k];
+        if (c.filled || c.region !== rows[i].name) return;
+        if (!next || c.spots.length > next.spots.length) next = c;
+      });
+    }
+    return { total: total, filled: filled, rows: rows, next: next, mineIds: mine };
+  }
+
+  // 대표 사진: 내가 피드를 올린 박지 중 좋아요가 가장 많은 사진이 내 것인 곳(포토맵 '모두'의 박지 칸과 같은 규칙)
+  function loadCoverCount(feeds) {
+    var a = api(), uid = myId();
+    if (!a || !uid) return Promise.resolve(null);
+    var ids = {};
+    feeds.forEach(function (f) { var s = spotOfFeed(f); if (s && photosOf(f).length) ids[String(s.id).trim()] = 1; });
+    var list = Object.keys(ids);
+    if (!list.length) return Promise.resolve(0);
+    var q = a.url + '/rest/v1/feeds?spot_id=in.(' + list.map(encodeURIComponent).join(',') + ')' +
+      '&is_published=eq.true&select=spot_id,user_id,likes_count,created_at,photos&limit=3000';
+    var me = myIdVariants(uid);
+    return fetch(q, { headers: a.headers }).then(function (r) { return r.ok ? r.json() : null; }).then(function (rows) {
+      if (!Array.isArray(rows)) return null;
+      var best = {};
+      rows.forEach(function (f) {
+        if (!photosOf(f).length) return;
+        var k = String(f.spot_id).trim(), b = best[k], lk = Number(f.likes_count) || 0;
+        if (!b || lk > b.lk || (lk === b.lk && String(f.created_at) > String(b.at))) best[k] = { lk: lk, at: String(f.created_at), mine: !!me[String(f.user_id)] };
+      });
+      return Object.keys(best).filter(function (k) { return best[k].mine; }).length;
+    }).catch(function () { return null; });
+  }
+
+  // 다음 백패킹: 낭만플랜(okbm_plan_spots)에서 오늘 이후 가장 가까운 날
+  function nextPlan() {
+    var obj = vault('okbm_plan_spots', {}) || {};
+    var t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    var best = null;
+    Object.keys(obj).forEach(function (k) {
+      var m = String(k).match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+      if (!m) return;
+      var d = new Date(+m[1], +m[2] - 1, +m[3]);
+      if (d < t0) return;
+      var arr = Array.isArray(obj[k]) ? obj[k] : (obj[k] && obj[k].name ? [obj[k]] : []);
+      var sp = arr.filter(function (x) { return x && x.name; })[0];
+      if (!sp) return;
+      if (!best || d < best.d) best = { d: d, name: String(sp.name).replace(/^\[[^\]]*\]\s*/, '').replace(/\s*\(.*\)\s*$/, '') };
+    });
+    if (!best) return null;
+    best.dd = Math.round((best.d - t0) / 86400000);
+    return best;
+  }
+
+  // ---------------------------------------------------------------- 그리기
+  var ICON = {
+    check: '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+    star: '<svg viewBox="0 0 24 24"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>',
+    photo: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>',
+    mount: '<svg viewBox="0 0 24 24"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>',
+    map: '<svg viewBox="0 0 24 24"><path d="M15 5.1 9 3 3 5v16l6-2 6 2 6-2V3z"/><path d="M9 3v16M15 5v16"/></svg>',
+    cal: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
+  };
+  function elevOf(f) { var n = parseInt(String((f && f.elevation) || '').replace(/[^\d]/g, ''), 10); return isNaN(n) ? 0 : n; }
+  function num(n) { return Number(n || 0).toLocaleString('ko-KR'); }
+
+  function renderReport() {
+    var box = $('mrReport');
+    if (!box) return;
+    var feeds = S.feeds || [];
+    var pm = photoMapStats(feeds);
+    var visited = vault('okbm_visited', []), marks = vault('okbm_bookmarks', []);
+    var vset = {};
+    (Array.isArray(visited) ? visited : []).forEach(function (id) { vset[String(id).trim()] = 1; });
+    var wish = (Array.isArray(marks) ? marks : []).filter(function (id) { return !vset[String(id).trim()]; }).length;
+    var stars = 0, comments = 0, elevAll = 0, elevYear = 0, y = S.year && S.year !== 'all' ? S.year : curYear();
+    var months = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    feeds.forEach(function (f) {
+      stars += Number(f.likes_count) || 0;
+      comments += Number(f.comments_count) || 0;
+      var e = elevOf(f), d = feedDate(f);
+      elevAll += e;
+      if (d && String(d.getFullYear()) === curYear()) elevYear += e;
+      if (d && String(d.getFullYear()) === y) months[d.getMonth()]++;
+    });
+    var pc = pm.total ? Math.round(pm.filled / pm.total * 100) : 0;
+    var h = '';
+    // 내 포토맵
+    h += '<div class="mr-card"><div class="mr-h"><span class="mr-k">' + ICON.map + '내 포토맵</span><button type="button" class="mr-go" data-mr-act="photomap">포토맵 열기 ›</button></div>';
+    if (pm.total) {
+      h += '<div class="mr-pmn"><b>' + pm.filled + '</b><em>/ ' + pm.total + ' 시·군</em><i>' + pc + '%</i></div>' +
+        '<div class="mr-bar"><i style="width:' + Math.max(pm.filled ? 2 : 0, pc) + '%"></i></div>';
+      var rows = pm.rows.filter(function (r) { return r.filled; }).slice(0, 3);
+      if (!rows.length) rows = pm.rows.slice(0, 3);
+      h += '<div class="mr-pr">' + rows.map(function (r) {
+        return '<div><span>' + esc(r.name) + '</span><span class="mr-mini"><i style="width:' + Math.round(r.filled / r.total * 100) + '%"></i></span><b>' + r.filled + '/' + r.total + '</b></div>';
+      }).join('') + '</div>';
+      if (pm.next) {
+        h += '<button type="button" class="mr-next" data-mr-act="spot" data-v="' + esc(pm.next.spots[0].id) + '">다음 빈칸 추천 · <b>' + esc(pm.next.region + ' ' + pm.next.city) + '</b> 박지 ' + pm.next.spots.length + '곳 ›</button>';
+      }
+    } else {
+      h += '<div class="mr-empty">박지 정보를 받는 중이에요</div>';
+    }
+    h += '</div>';
+    // 카드 4개
+    h += '<div class="mr-grid">' +
+      '<div class="mr-card mr-c"><span class="mr-k">' + ICON.check + '클리어한 박지</span><span class="v">' + num(Object.keys(vset).length) + '<em>곳</em></span><span class="s">찜만 한 곳 ' + num(wish) + '곳</span></div>' +
+      '<div class="mr-card mr-c"><span class="mr-k">' + ICON.star + '받은 별</span><span class="v">' + num(stars) + '<em>개</em></span><span class="s">댓글 ' + num(comments) + ' · 피드 ' + num(feeds.length) + '개</span></div>' +
+      '<div class="mr-card mr-c"><span class="mr-k">' + ICON.photo + '대표 사진</span><span class="v" id="mrCoverN">…</span><span class="s">포토맵 \'모두\'에 걸린 내 사진</span></div>' +
+      '<div class="mr-card mr-c"><span class="mr-k">' + ICON.mount + '다녀온 높이 합</span><span class="v">+' + num(elevAll) + '<em>m</em></span><span class="s">' + (elevYear ? '올해 +' + num(elevYear) + 'm' : '다녀온 박지 높이를 더했어요') + '</span></div>' +
+      '</div>';
+    // 다음 백패킹
+    var np = nextPlan();
+    h += '<button type="button" class="mr-card mr-plan" data-mr-act="plan">' + (np
+      ? '<span><span class="mr-k">' + ICON.cal + '다음 백패킹</span><b>' + (np.d.getMonth() + 1) + '/' + np.d.getDate() + '(' + WD[np.d.getDay()] + ') ' + esc(np.name) + '</b><small>낭만플랜에서 패킹 리스트 보기</small></span><span class="mr-dd">' + (np.dd === 0 ? '오늘' : 'D-' + np.dd) + '</span>'
+      : '<span><span class="mr-k">' + ICON.cal + '다음 백패킹</span><b>아직 잡힌 일정이 없어요</b><small>낭만플랜에서 날짜와 박지를 넣어 보세요</small></span><span class="mr-r">›</span>') + '</button>';
+    // 달마다
+    var maxM = Math.max.apply(null, months) || 1, nowM = String(new Date().getFullYear()) === y ? new Date().getMonth() : -1;
+    var yearN = months.reduce(function (a, b) { return a + b; }, 0);
+    h += '<div class="mr-card"><div class="mr-h"><span class="mr-k">' + esc(y === curYear() ? '올해' : y + '년') + ' 달마다 다녀온 횟수</span><span class="mr-k">' + yearN + '회</span></div>' +
+      '<div class="mr-bars">' + months.map(function (n, i) { return '<span' + (i === nowM ? ' class="now"' : '') + ' style="height:' + Math.round(n / maxM * 100) + '%" title="' + (i + 1) + '월 ' + n + '회"></span>'; }).join('') + '</div>' +
+      '<div class="mr-ml">' + months.map(function (n, i) { return '<span>' + (i + 1) + '</span>'; }).join('') + '</div></div>';
+    box.innerHTML = h;
+    // 대표 사진 수는 따로 받는다
+    var key = S.uid + ':' + S.at;
+    if (S.rep && S.repFor === key) { paintCover(S.rep); return; }
+    S.repFor = key;
+    loadCoverCount(feeds).then(function (n) { if (S.repFor !== key) return; S.rep = n; paintCover(n); });
+  }
+  function paintCover(n) {
+    var el = $('mrCoverN');
+    if (el) el.innerHTML = n == null ? '-' : num(n) + '<em>곳</em>';
+  }
+
+  // 내 기록: 연도 칩 + 피드 줄
+  function renderRecords() {
+    var chips = $('mrYearChips'), list = $('mrRecList');
+    if (!chips || !list) return;
+    var feeds = S.feeds;
+    if (!feeds) { list.innerHTML = '<div class="mr-empty">기록을 불러오는 중이에요</div>'; return; }
+    var years = {};
+    feeds.forEach(function (f) { var d = feedDate(f); if (d) years[d.getFullYear()] = (years[d.getFullYear()] || 0) + 1; });
+    var ys = Object.keys(years).sort(function (a, b) { return b - a; });
+    if (!S.year) S.year = years[curYear()] ? curYear() : (ys[0] || 'all');
+    chips.innerHTML = ys.map(function (yy) {
+      return '<button type="button" class="mr-chip' + (S.year === yy ? ' on' : '') + '" data-mr-year="' + yy + '">' + yy + ' · ' + years[yy] + '</button>';
+    }).join('') + '<button type="button" class="mr-chip' + (S.year === 'all' ? ' on' : '') + '" data-mr-year="all">전체 · ' + feeds.length + '</button>';
+    var rows = S.year === 'all' ? feeds : feeds.filter(function (f) { var d = feedDate(f); return d && String(d.getFullYear()) === S.year; });
+    if (!rows.length) { list.innerHTML = '<div class="mr-empty">' + (feeds.length ? '이 해에는 기록이 없어요' : '아직 올린 기록이 없어요.<br>다녀온 백패킹을 피드로 남겨 보세요.') + '</div>'; return; }
+    list.innerHTML = rows.slice(0, S.shown).map(function (f) {
+      var d = feedDate(f), ph = photosOf(f)[0];
+      var name = String(f.spot || '').trim() || '이름 없는 기록';
+      var meta = (d ? d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate()) : '') +
+        (Number(f.likes_count) ? ' · ★ ' + num(f.likes_count) : '') + (Number(f.comments_count) ? ' · 댓글 ' + num(f.comments_count) : '');
+      var t = thumb(ph);
+      return '<button type="button" class="mr-tr" data-mr-act="feed" data-v="' + esc(f.id) + '"><span class="mr-th"' + (t ? ' style="background-image:url(&quot;' + esc(t) + '&quot;)"' : '') + '></span>' +
+        '<span class="mr-tt"><b>' + esc(name) + '</b><small>' + esc(meta) + '</small></span></button>';
+    }).join('') + (rows.length > S.shown ? '<button type="button" class="mr-more" data-mr-act="more">' + (rows.length - S.shown) + '개 더 보기</button>' : '');
+  }
+
+  function renderCounts() {
+    var follow = vault('okbm_following_users', []);
+    var n = Array.isArray(follow) ? follow.length : 0;
+    var a = $('mrFollowCount'), b = $('mrFollowCount2');
+    if (a) a.textContent = String(n);
+    if (b) b.textContent = n ? n + '명' : '';
+  }
+
+  // ---------------------------------------------------------------- 탭
+  function setTab(t, keep) {
+    var root = $('userProfileModalOverlay');
+    if (!root) return;
+    if (['rec', 'save', 'rep'].indexOf(t) < 0) t = 'rep';
+    root.querySelectorAll('.mr-tab').forEach(function (b) { var on = b.getAttribute('data-mr-tab') === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+    root.querySelectorAll('.mr-pane').forEach(function (p) { p.classList.toggle('on', p.getAttribute('data-mr-pane') === t); });
+    if (!keep) { try { localStorage.setItem(TAB_KEY, t); } catch (e) {} }
+  }
+  // 예전 펼침 칸(지형·시즌·지역·장비·제보)을 탭 안으로 옮긴다(한 번만)
+  function placeLegacy() {
+    var rep = document.querySelector('#userProfileModalOverlay [data-mr-pane="rep"]');
+    var rec = document.querySelector('#userProfileModalOverlay [data-mr-pane="rec"]');
+    if (!rep || !rec || rep.getAttribute('data-mr-placed')) return;
+    rep.setAttribute('data-mr-placed', '1');
+    ['terrain', 'season', 'region', 'gear'].forEach(function (k) {
+      var h = document.querySelector('#userProfileModalOverlay [data-sec="' + k + '"]');
+      var card = h && h.closest('.report-minimal-card');
+      if (card) rep.appendChild(card);
+    });
+    var mp = document.querySelector('#userProfileModalOverlay [data-sec="myprops"]');
+    var mpc = mp && mp.closest('.report-minimal-card');
+    if (mpc) rec.insertBefore(mpc, rec.querySelector('[data-mr-act="trips"]'));
+  }
+
+  function refresh(force) {
+    renderCounts();
+    renderRecords();
+    renderReport();
+    loadFeeds(force).then(function () { renderRecords(); renderReport(); });
+  }
+
+  window.okbmMyReportOpened = function () {
+    if (!document.getElementById('okbmMyReportCss')) {
+      var st = document.createElement('style'); st.id = 'okbmMyReportCss'; st.textContent = CSS; document.head.appendChild(st);
+    }
+    placeLegacy();
+    var t = 'rep';
+    try { t = localStorage.getItem(TAB_KEY) || 'rep'; } catch (e) {}
+    setTab(t, true);
+    if (myId() !== S.uid) { S.feeds = null; S.year = null; S.rep = null; }
+    S.shown = PAGE;
+    refresh(false);
+  };
+
+  // ---------------------------------------------------------------- 누름
+  function closeReportThen(fn) {
+    var el = $('userProfileModalOverlay');
+    if (el) el.style.setProperty('display', 'none', 'important');
+    fn();
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest && e.target.closest('#userProfileModalOverlay [data-mr-act], #userProfileModalOverlay [data-mr-tab], #userProfileModalOverlay [data-mr-year]');
+    if (!el) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var act = el.getAttribute('data-mr-act'), tab = el.getAttribute('data-mr-tab'), yr = el.getAttribute('data-mr-year'), v = el.getAttribute('data-v');
+    if (tab) {
+      metric('feat_report_tab');
+      setTab(tab);
+      if (yr) { S.year = yr === 'cur' ? curYear() : yr; S.shown = PAGE; renderRecords(); }
+      if (el.getAttribute('data-mr-go') === 'myprops') {
+        var body = $('accBody_myprops');
+        if (body && body.style.display !== 'flex' && typeof window.handleReportSecClick === 'function') window.handleReportSecClick('myprops');
+        var h = document.querySelector('#userProfileModalOverlay [data-sec="myprops"]');
+        if (h) h.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+      return;
+    }
+    if (yr) {
+      S.year = yr; S.shown = PAGE;
+      renderRecords();
+      // 리포트의 달마다 막대와 예전 펼침 칸도 같은 해로
+      if (yr !== 'all' && typeof window.selectReportYear === 'function') window.selectReportYear(yr);
+      renderReport();
+      return;
+    }
+    switch (act) {
+      case 'note': if (typeof window.openUserNotificationInbox === 'function') window.openUserNotificationInbox('note', e); break;
+      case 'notif': if (typeof window.openUserNotificationInbox === 'function') window.openUserNotificationInbox('notif', e); break;
+      case 'settings':
+        if (typeof window.openAccountSettingsModal === 'function') window.openAccountSettingsModal();
+        if (typeof window.okbmApplyActivityPrivacyButtons === 'function') window.okbmApplyActivityPrivacyButtons();
+        break;
+      case 'bio': if (typeof window.editReportUserBio === 'function') window.editReportUserBio(); break;
+      case 'sns': if (typeof window.openSnsEditorModal === 'function') window.openSnsEditorModal(); break;
+      case 'routers': if (typeof window.openRoutersInterestFromReport === 'function') window.openRoutersInterestFromReport(e); break;
+      case 'feeds': if (typeof window.openFeedsInterestFromReport === 'function') window.openFeedsInterestFromReport(e); break;
+      case 'trips': if (typeof window.openMyPastTripsFromReport === 'function') window.openMyPastTripsFromReport(e); break;
+      case 'feed': if (v && typeof window.openReportActivityFeed === 'function') window.openReportActivityFeed(v); break;
+      case 'more': S.shown += PAGE; renderRecords(); break;
+      case 'plan':
+        metric('feat_report_plan');
+        if (typeof window.navigateToDockTab === 'function') window.navigateToDockTab('plan');
+        break;
+      case 'photomap':
+        metric('feat_report_photomap');
+        if (typeof window.okbmOpenPhotoMap === 'function') {
+          closeReportThen(function () { if (typeof window.closeUserProfileModal === 'function') window.closeUserProfileModal(); window.okbmOpenPhotoMap(); });
+        } else {
+          window.location.assign('map.html?pm=open');
+        }
+        break;
+      case 'spot':
+        metric('feat_report_next_spot');
+        if (typeof window.focusSpotOnMap === 'function') {
+          var s = spotIndex().byId[String(v)];
+          if (s) {
+            closeReportThen(function () { if (typeof window.closeUserProfileModal === 'function') window.closeUserProfileModal(); window.focusSpotOnMap(s); });
+            break;
+          }
+        }
+        try { sessionStorage.setItem('okbm_entered_via_index', '1'); } catch (err) {}
+        window.location.assign('map.html?id=' + encodeURIComponent(String(v || '')));
+        break;
+    }
+  }, true);
+})();

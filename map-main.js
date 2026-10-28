@@ -1274,6 +1274,22 @@
         setMapLayerState((mapBaseLayer + 1) % 3);
       }
 
+      // 마이리포트 '포토맵 열기'(my-report.js): 지도 페이지에서는 그 자리에서 사진 지도를 연다. 열었으면 true
+      window.okbmOpenPhotoMap = function() {
+        if (!map || !window.okbmPhotoMap) return false;
+        if (currentMapLayerState !== 3) togglePhotoMap();
+        return true;
+      };
+      // 홈에서 넘어온 map.html?pm=open: 지도가 준비되면 사진 지도를 연다
+      (function() {
+        try { if (new URLSearchParams(window.location.search).get('pm') !== 'open') return; } catch (e) { return; }
+        var tries = 0;
+        (function go() {
+          if (window.okbmOpenPhotoMap()) return;
+          if (++tries < 60) setTimeout(go, 250);
+        })();
+      })();
+
       var photoMapOpenedAt = null;
       var mapBaseLayer = 0; // 0 일반 · 1 위성 · 2 지형도 (사진지도를 켜도 그대로 둔다)
       // 0 일반 · 1 위성 · 2 지형도 · 3 사진 지도(photo-map.js, 카카오 지도 위를 덮는 시·군·박지 사진 지도)
