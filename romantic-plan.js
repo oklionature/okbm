@@ -4361,9 +4361,8 @@ window.saveCurrentPackingRecord = function() {
       return window.okbmPlanUpcomingRowHtml(t, viewYear, viewMonth);
     }).join('');
 
-    var calendarMemoViewHtml = `
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:8px; padding:2px 0 4px 0; overflow:hidden; box-sizing:border-box;">
-
+    // 달력 카드는 기본 화면과 찜 목록이 같은 것을 쓴다(크기·위치가 달라 화면을 바꿀 때 달력이 미묘하게 움직였다)
+    var planCalendarCardHtml = `
         <!-- 1. 달력 (제목 없이 연월부터). 날짜 누르기: 앞으로 날짜는 일정 만들기·보기, 지난 날짜는 후기 올리기 -->
         <div id="planCalendarCardWrap" style="height:33% !important; min-height:262px !important; flex-shrink:0 !important; padding:2px 2px 0; display:flex; flex-direction:column; box-sizing:border-box;">
           <div style="display:flex; justify-content:space-between; align-items:center; height:34px; flex-shrink:0;">
@@ -4391,6 +4390,12 @@ window.saveCurrentPackingRecord = function() {
             ${monthHasPlanEvents ? '<span style="display:inline-flex; align-items:center; gap:4px;"><i style="width:10px; height:1.5px; background:#a78bfa; display:inline-block;"></i>행사</span>' : ''}
           </div>
         </div>
+`;
+
+    var calendarMemoViewHtml = `
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:8px; padding:2px 0 4px 0; overflow:hidden; box-sizing:border-box;">
+
+        ${planCalendarCardHtml}
 
         <!-- 2. 다가오는 일정 -->
         <div id="planUpcomingWrap" style="flex:1 1 0% !important; min-height:0 !important; display:flex; flex-direction:column; gap:7px; padding:12px 12px 10px; border-radius:18px; background:#0c0d10; border:1px solid rgba(255,255,255,0.08); box-sizing:border-box; overflow:hidden;">
@@ -4882,35 +4887,8 @@ window.saveCurrentPackingRecord = function() {
     var bookmarksViewHtml = `
       <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:6px; padding:2px 0 4px 0; overflow:hidden; box-sizing:border-box;">
         
-        <!-- 1. 상단 달력 카드 (전체 뷰포트 31% 정밀 적응형) -->
-        <div id="planCalendarCardWrap" style="height:31% !important; min-height:236px !important; flex-shrink:0 !important; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:6px 10px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
-      <div style="display:flex; justify-content:space-between; align-items:center; height:34px; flex-shrink:0;">
-            <div style="display:flex; align-items:center; gap:5px;">
-              <button type="button" onclick="window.changePlanMonth(-1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); color:#ffffff; width:28px; height:28px; border-radius:7px; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">◀</button>
-              <button type="button" onclick="window.openPlanYearPicker(event)" style="height:28px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#ffffff; padding:0 10px; border-radius:7px; font-size:0.92rem; font-weight:900; cursor:pointer; font-family:'Space Grotesk', sans-serif; display:flex; align-items:center;">
-                <span>${viewYear}년</span>
-              </button>
-              <span style="font-size:0.95rem; font-weight:900; color:#ffffff; margin:0 3px; font-family:'Space Grotesk', sans-serif;">${viewMonth}월</span>
-              <button type="button" onclick="window.changePlanMonth(1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); color:#ffffff; width:28px; height:28px; border-radius:7px; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">▶</button>
-            </div>
-            
-           <div style="display:flex; align-items:center; gap:8px; white-space:nowrap; flex-shrink:0;">
-              <button type="button" onclick="window.jumpToPlanToday()" style="height:24px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.70rem; font-weight:800; padding:0 8px; border-radius:5px; cursor:pointer;">오늘</button>
-              <span style="font-size:0.70rem; color:#f59e0b; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:rgba(245,158,11,0.25); border:1.2px solid #f59e0b; border-radius:50%; display:inline-block;"></span><span>완료</span></span>
-              <span style="font-size:0.70rem; color:#34d399; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:rgba(52,211,153,0.3); border:1px solid #34d399; border-radius:50%; display:inline-block;"></span><span>계획</span></span>
-              <span style="font-size:0.70rem; color:#34d399; font-weight:800; display:flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" style="width:9px; height:9px; fill:none; stroke:#34d399; stroke-width:4; stroke-linecap:round; stroke-linejoin:round;"><polyline points="20 6 9 17 4 12"/></svg><span>패킹</span></span>
-              ${monthHasPlanEvents ? '<span style="font-size:0.70rem; color:#c4b5fd; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:1.5px; background:#a78bfa; border-radius:1px; display:inline-block;"></span><span>행사</span></span>' : ''}
-            </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.72rem; font-weight:900; color:#94a3b8; height:20px; line-height:20px; flex-shrink:0; letter-spacing:0.5px; margin-top:8px; margin-bottom:4px;">
-            <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#cbd5e1;">토</span>
-          </div>
-          
-          <div style="flex:1 1 0%; min-height:0; display:grid; grid-template-columns:repeat(7, 1fr); grid-template-rows:repeat(6, 1fr); gap:2px; text-align:center;">
-            ${calendarDaysHtml}
-          </div>
-        </div>
+        <!-- 1. 상단 달력 카드 (기본 달력과 같은 것) -->
+        ${planCalendarCardHtml}
 
         <!-- 2. 하단 찜 목록 박스 -->
         <div style="flex:1 1 0% !important; min-height:0 !important; display:flex; flex-direction:column; gap:5px; overflow:hidden; box-sizing:border-box;">
