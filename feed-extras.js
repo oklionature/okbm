@@ -26,12 +26,15 @@
     var st = document.createElement('style');
     st.id = 'okbmFeedExtrasStyle';
     st.textContent =
-      '.okbm-feed-write{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;z-index:40;height:34px;padding:0 13px 0 11px;border-radius:17px;' +
-        'background:rgba(12,16,23,0.82);border:1px solid rgba(255,255,255,0.22);color:#fff;font-size:0.76rem;font-weight:900;font-family:inherit;' +
-        'display:inline-flex;align-items:center;gap:5px;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);' +
-        'box-shadow:0 4px 14px rgba(0,0,0,0.45);transition:opacity .25s ease,transform .25s ease;}' +
-      // 긴 장소 이름은 버튼 앞에서 말줄임 (글쓴이 사진 72px + 버튼 111px + 여백 8px)
-      '#romanticHistoryModal .js-feed-spot-map{max-width:calc(100vw - 191px) !important;}' +
+      // 피드를 보는 동안 눈에 덜 띄게 글자 없이 + 동그라미로 (글자는 aria-label로만). 높이는 피드 위쪽 줄(글쓴이 사진)과 같은 기준
+      '.okbm-feed-write{position:absolute;top:calc(var(--okbm-status-top, env(safe-area-inset-top,0px)) + 6px);right:14px;z-index:40;width:36px;height:36px;padding:0;border-radius:50%;' +
+        'background:rgba(0,0,0,0.38);border:1px solid rgba(255,255,255,0.32);color:#fff;font-family:inherit;' +
+        'display:inline-flex;align-items:center;justify-content:center;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);' +
+        'transition:opacity .25s ease,transform .25s ease;}' +
+      '.okbm-feed-write span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}' +
+      '.okbm-feed-write svg{width:18px;height:18px;}' +
+      // 긴 장소 이름은 버튼 앞에서 말줄임 (글쓴이 사진 60px + 버튼 52px + 여백 18px)
+      '#romanticHistoryModal .js-feed-spot-map{max-width:calc(100vw - 130px) !important;}' +
       '.okbm-feed-write.is-off{opacity:0;transform:translateY(-6px);pointer-events:none;}' +
       '.okbm-feed-write-intro{margin-top:6px;height:44px;padding:0 22px;border-radius:22px;border:0;background:#ffffff;color:#000;font-size:0.86rem;font-weight:900;' +
         'font-family:inherit;display:inline-flex;align-items:center;gap:6px;cursor:pointer;}' +

@@ -112,11 +112,11 @@
         padding-top: 6px !important;
         padding-left: 14px !important;
         padding-right: 14px !important;
-        padding-bottom: 12px !important;
+        padding-bottom: 28px !important;
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.28) 60%, transparent 100%) !important;
         z-index: 400 !important;
         isolation: isolate !important;
         transform: none !important;
@@ -455,13 +455,13 @@
         padding-top: 6px !important;
         padding-left: 14px !important;
         padding-right: 14px !important;
-        padding-bottom: 12px !important;
+        padding-bottom: 28px !important;
         z-index: 400 !important;
         isolation: isolate !important;
         transform: none !important;
         -webkit-transform: none !important;
         content-visibility: visible !important;
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.28) 60%, transparent 100%) !important;
         border-bottom: none !important;
         pointer-events: none !important;
       }
@@ -499,6 +499,27 @@
         background: linear-gradient(to top, rgba(0,0,0,0.82), rgba(0,0,0,0.35) 62%, rgba(0,0,0,0)) !important;
         border-top: none !important;
       }
+      /* 낭만피드 아래쪽 줄: 위쪽 줄과 무게를 맞춘다(아이콘 22px, 숫자 0.86rem, 글 0.94rem, 댓글 0.8rem) */
+      .history-tab-route .reel-bottom-interactive-bar > div:first-of-type > div:first-child svg,
+      .history-tab-route .reel-bottom-interactive-bar [data-save-feed] svg,
+      .history-tab-route .reel-bottom-interactive-bar button[title="더보기"] svg { width: 22px !important; height: 22px !important; }
+      .history-tab-route .reel-bottom-interactive-bar > div:first-of-type > div:first-child { gap: 14px !important; }
+      .history-tab-route .reel-bottom-interactive-bar > div:first-of-type > div:first-child > button { margin: 0 !important; padding: 4px 0 !important; gap: 5px !important; }
+      .history-tab-route .reel-bottom-interactive-bar > div:first-of-type > div:last-child { gap: 10px !important; }
+      .history-tab-route .reel-bottom-interactive-bar .js-feed-star-count,
+      .history-tab-route .reel-bottom-interactive-bar .okbm-cmt-count { font-size: 0.86rem !important; font-family: inherit !important; }
+      .history-tab-route .reel-bottom-interactive-bar [data-share-feed],
+      .history-tab-route .reel-bottom-interactive-bar [data-save-feed] { min-width: 30px !important; min-height: 32px !important; justify-content: center !important; }
+      .history-tab-route .reel-bottom-interactive-bar [data-save-feed]:not([style*="c084fc"]) { color: #ffffff !important; }
+      .history-tab-route .reel-bottom-interactive-bar [data-share-feed]:not([style*="c084fc"]) { color: #ffffff !important; }
+      .history-tab-route .reel-bottom-interactive-bar .okbm-cmt-btn { color: #ffffff !important; }
+      .history-tab-route .reel-bottom-interactive-bar .okbm-cmt-btn .okbm-cmt-count { color: #ffffff !important; }
+      .history-tab-route .reel-bottom-interactive-bar button[title="더보기"] { background: none !important; border: 0 !important; color: #ffffff !important; width: 30px !important; }
+      .history-tab-route .reel-memo-fixed-slot,
+      .history-tab-route .reel-memo-fixed-box { font-size: 0.94rem !important; }
+      .history-tab-route .reel-memo-fixed-box { color: #ffffff !important; text-shadow: 0 1px 3px rgba(0,0,0,0.7) !important; }
+      .history-tab-route .okbm-cmt-preview { font-size: 0.8rem !important; }
+
       .ready-shot-memory-prompt {
         position: absolute !important;
         left: 14px !important;
@@ -7799,30 +7820,40 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var safeSpot = escapeHtml(name || '');
     var safeSpotId = escapeHtml(spotId || '');
     var safeLabel = escapeHtml(okbmFeedSpotPillLabel(name, spotId));
-    return '<button type="button" class="js-feed-spot-map" data-spot="' + safeSpot + '" data-spot-id="' + safeSpotId + '" onclick="event.preventDefault(); event.stopPropagation(); window.navigateToSpotMap(this.dataset.spot, event, this.dataset.spotId);" aria-label="' + safeLabel + ' 위치 보기" style="display:inline-flex; align-items:center; align-self:flex-start; width:fit-content; max-width:100%; flex:0 1 auto; box-sizing:border-box; min-height:26px; margin:0; padding:0 10px; border-radius:999px; border:1px solid rgba(125,211,252,0.55); background:#083044; color:#e0f2fe; font:inherit; font-size:0.74rem; font-weight:800; letter-spacing:-0.02em; line-height:1; cursor:pointer; text-align:left; white-space:nowrap; pointer-events:auto; position:relative; z-index:401; touch-action:manipulation;">' +
+    return '<button type="button" class="js-feed-spot-map" data-spot="' + safeSpot + '" data-spot-id="' + safeSpotId + '" onclick="event.preventDefault(); event.stopPropagation(); window.navigateToSpotMap(this.dataset.spot, event, this.dataset.spotId);" aria-label="' + safeLabel + ' 위치 보기" style="display:inline-flex; align-items:center; align-self:flex-start; width:fit-content; max-width:100%; flex:0 1 auto; box-sizing:border-box; min-height:16px; gap:3px; margin:0; padding:0; border:0; background:none; color:#ffffff; font:inherit; font-size:0.78rem; font-weight:700; letter-spacing:-0.02em; line-height:1; cursor:pointer; text-align:left; white-space:nowrap; text-shadow:0 1px 4px rgba(0,0,0,0.85); pointer-events:auto; position:relative; z-index:401; touch-action:manipulation;">' +
+      '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.8));"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>' +
       '<span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + safeLabel + '</span>' +
+      '<span aria-hidden="true" style="flex-shrink:0; opacity:0.7; margin-left:1px;">›</span>' +
     '</button>';
+  }
+
+  // 피드 위쪽 날짜: '2026.10.23' → '10월 23일', 올해가 아니면 '2025년 10월 23일'
+  function okbmFeedHeaderDate(raw) {
+    var m = String(raw || '').match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+    if (!m) return String(raw || '');
+    var md = Number(m[2]) + '월 ' + Number(m[3]) + '일';
+    return String(new Date().getFullYear()) === m[1] ? md : (m[1] + '년 ' + md);
   }
 
   function okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, canNavigateSpot, extraRightHtml, spotId) {
     var safeAuthor = escapeHtml(authorName || '낭만백패커');
     var safeUserId = escapeHtml(recordUserId || '');
     var safeSpot = escapeHtml(spotName || '나의 힐링 스팟');
-    var safeDate = escapeHtml(tripDate || '');
+    var safeDate = escapeHtml(okbmFeedHeaderDate(tripDate));
     var textShadowStyle = 'text-shadow:0 1px 4px rgba(0,0,0,0.95), 0 2px 8px rgba(0,0,0,0.7);';
     var spotRow = canNavigateSpot
       ? okbmFeedSpotPillHtml(spotName, spotId)
       : ('<span style="font-size:0.74rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3; ' + textShadowStyle + '">' + safeSpot + '</span>');
 
-    return '<div class="reel-header-row" style="position:absolute !important; top:var(--okbm-status-top) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:400 !important; isolation:isolate !important; transform:none !important; -webkit-transform:none !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important; border-bottom:none !important; pointer-events:none !important;">' +
+    return '<div class="reel-header-row" style="position:absolute !important; top:var(--okbm-status-top) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:400 !important; isolation:isolate !important; transform:none !important; -webkit-transform:none !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.28) 60%, transparent 100%) !important; padding-bottom:28px !important; border-bottom:none !important; pointer-events:none !important;">' +
       '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
         '<button type="button" data-author="' + safeAuthor + '" data-user-id="' + safeUserId + '" data-metric-click="feat_user_feed_open" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.7); pointer-events:auto; position:relative; z-index:401;" title="' + safeAuthor + '님의 피드 모아보기">' +
           avatarMarkup +
         '</button>' +
         '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1;">' +
-          '<div style="display:flex; align-items:center; gap:6px; min-width:0; line-height:1.2;">' +
-            '<span style="font-size:0.82rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; ' + textShadowStyle + '">' + safeAuthor + '</span>' +
-            (safeDate ? '<span style="font-size:0.62rem; color:#cbd5e1; font-family:\'JetBrains Mono\', monospace; flex-shrink:0; text-shadow:0 1px 3px rgba(0,0,0,0.9);">' + safeDate + '</span>' : '') +
+          '<div style="display:flex; align-items:center; gap:5px; min-width:0; line-height:1.2; margin-bottom:2px;">' +
+            '<span style="font-size:0.9rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; ' + textShadowStyle + '">' + safeAuthor + '</span>' +
+            (safeDate ? '<span style="font-size:0.74rem; font-weight:600; color:rgba(255,255,255,0.78); flex-shrink:0; ' + textShadowStyle + '">· ' + safeDate + '</span>' : '') +
           '</div>' +
           spotRow +
         '</div>' +
@@ -8449,13 +8480,13 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
             '<button type="button" data-share-feed="1" data-feed-id="' + cardId + '" data-spot="' + escapeHtml(spotName) + '" data-memo="' + escapeHtml(memo120) + '" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
               '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
             '</button>' +
-            '<button type="button" data-save-feed="1" data-feed-id="' + cardId + '" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:' + (isSavedFeed ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 즐겨찾기 저장">' +
-              '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="' + (isSavedFeed ? '#c084fc' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
-            '</button>' +
           '</div>' +
 
           '<div style="display:flex; align-items:center; gap:8px;">' +
             feedCreditHtml +
+            '<button type="button" data-save-feed="1" data-feed-id="' + cardId + '" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:' + (isSavedFeed ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 즐겨찾기 저장">' +
+              '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="' + (isSavedFeed ? '#c084fc' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+            '</button>' +
             bottomToolsHtml +
           '</div>' +
         '</div>' +
