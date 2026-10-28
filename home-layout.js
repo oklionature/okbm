@@ -50,7 +50,9 @@
       '.hd-row{width:100%;display:flex;gap:7px;align-items:flex-start;padding:8px 2px;border:0;border-top:1px solid rgba(255,255,255,.07);background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}',
       '.hd-row:first-of-type{border-top:0}',
       '.hd-row:active{opacity:.6}',
-      '.hd-k{flex:none;width:40px;text-align:center}',
+      // 날짜 칸: '~11/20'(52px)이 40px 칸을 넘어 행사 이름과 겹쳤다. 칸을 50px로, '~'는 작게
+      '.hd-k{flex:none;width:50px;text-align:center}',
+      '.hd-tl{font-style:normal;font-size:10.5px;font-weight:800;margin-right:1px;color:#8b8b93}',
       '.hd-k b{display:block;font-size:14.5px;font-weight:900;letter-spacing:-.04em;line-height:1.1;white-space:nowrap;font-variant-numeric:tabular-nums}',
       '.hd-ev .hd-k b{color:#8fc1ff}',
       '.hd-deal .hd-k b{color:#ffb08f}',

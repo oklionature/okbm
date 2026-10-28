@@ -2023,6 +2023,10 @@
     if (!line) return '<span class="hd-x">' + esc(title) + '</span>';
     return '<span class="hd-xw"><span class="hd-x">' + esc(title) + '</span><em class="hd-ap' + (hot ? ' hot' : '') + '">' + esc(line) + '</em></span>';
   }
+  // 왼쪽 날짜 칸: '~'(까지)는 작게 앞에 붙여 '~11/20'도 칸 안에 들어가게 한다
+  function hdDate(d, until) {
+    return '<b>' + (until ? '<i class="hd-tl">~</i>' : '') + (d.getMonth() + 1) + '/' + d.getDate() + '</b>';
+  }
   function hdEvRow(e) {
     const v = evView(e);
     // 신청이 곧 열리거나 신청 중이면: 왼쪽에 신청 날, 꼬리표에 남은 때(1시간 안은 'N분 뒤'), 제목 밑에 시각
@@ -2030,17 +2034,15 @@
     if (ap && ap.hot) {
       const at = ap.phase === 'open' ? new Date(ap.close - 1) : ap.open;
       const chip = ap.phase === 'open' ? applyChip(ap, true).replace(' 마감', '') : leftChip(ap.open, true);
-      const k = ap.phase === 'open' ? '~' + (at.getMonth() + 1) + '/' + at.getDate() : (at.getMonth() + 1) + '/' + at.getDate();
       const hot = isHotChip(chip);
-      return '<button type="button" class="hd-row" data-a="lounge" data-v="0" data-id="' + esc(e.id) + '"><span class="hd-k"><b>' + esc(k) + '</b><small' + (hot ? ' class="hot"' : '') + '>' + esc(chip) + '</small></span>' + hdText(e.title, applyLine(ap, false), hot) + '</button>';
+      return '<button type="button" class="hd-row" data-a="lounge" data-v="0" data-id="' + esc(e.id) + '"><span class="hd-k">' + hdDate(at, ap.phase === 'open') + '<small' + (hot ? ' class="hot"' : '') + '>' + esc(chip) + '</small></span>' + hdText(e.title, applyLine(ap, false), hot) + '</button>';
     }
     // 이미 시작한 행사는 끝나는 날(~10/31)과 남은 날, 아니면 시작일과 D-n. 오늘·내일이면 빨갛게
     const going = v.start < parseD(todayKey());
-    const k = going ? '~' + (v.end.getMonth() + 1) + '/' + v.end.getDate() : (v.start.getMonth() + 1) + '/' + v.start.getDate();
     let chip = v.ddText.replace('종료 ', '');
     if (chip === 'D-1') chip = '내일';
     const hot = chip === '오늘' || chip === '오늘 종료' || chip === '내일';
-    return '<button type="button" class="hd-row" data-a="lounge" data-v="0" data-id="' + esc(e.id) + '"><span class="hd-k"><b>' + esc(k) + '</b><small' + (hot ? ' class="hot"' : '') + '>' + esc(chip) + '</small></span><span class="hd-x">' + esc(e.title) + '</span></button>';
+    return '<button type="button" class="hd-row" data-a="lounge" data-v="0" data-id="' + esc(e.id) + '"><span class="hd-k">' + hdDate(going ? v.end : v.start, going) + '<small' + (hot ? ' class="hot"' : '') + '>' + esc(chip) + '</small></span><span class="hd-x">' + esc(e.title) + '</span></button>';
   }
   function hdDealRow(d) {
     const t = todayKey();
