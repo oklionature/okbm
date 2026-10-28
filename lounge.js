@@ -81,7 +81,8 @@
     tipsRecent: null, // 최근 팁(칩·한 줄) — 박지 후기 탭에서 별점 후기와 섞는다 (SUPABASE_G4)
   };
   // 화면 상태. tab = 홈 탭, wtab = 라운지 창 탭 (서로 따로 기억), revSpot = 후기 탭을 한 박지로 좁힘
-  const S = { tab: 0, wtab: 0, cat: 'all', revSpot: null };
+  // revView: 박지 후기 창의 작은 탭 'recent'(최근 후기, 처음) | 'top'(평점 높은 박지)
+  const S = { tab: 0, wtab: 0, cat: 'all', revSpot: null, revView: 'recent' };
   let timeSig = ''; // 신청·오픈 상태 요약 (renderAll·timeTick)
 
   // ---------- 날짜 ----------
@@ -412,6 +413,10 @@
       '.lmh-pane.in{animation:lmhIn .38s var(--ease) both}',
       '.lmh-pane.out{position:absolute;top:0;left:0;right:0;animation:lmhOut .22s ease forwards;pointer-events:none}',
       '.lmh-cap{margin:20px 0 2px;font-size:11.5px;font-weight:700;color:var(--sub)}',
+      // 박지 후기 창의 작은 탭 (최근 후기 | 평점 높은 박지)
+      '.lm-seg{display:flex;gap:2px;margin:14px 0 6px;padding:3px;border-radius:12px;background:#1a1a1e}',
+      '.lm-seg button{flex:1;display:flex;align-items:center;justify-content:center;height:34px;border-radius:9px;font-size:13px;font-weight:700;color:var(--faint);transition:background .2s,color .2s}',
+      '.lm-seg button.on{background:#2c2c32;color:var(--tx)}',
       '.lmh-pane>.lmh-cap:first-child,.lmw-pane>.lmh-cap:first-child{margin-top:14px}',
       '.lmh-more{width:100%;display:flex;align-items:center;justify-content:center;gap:2px;height:44px;padding:6px 0 0;font-size:12px;font-weight:700;color:var(--sub)}',
       '.lmh-more:active{color:var(--tx)}',
@@ -789,7 +794,10 @@
     const c = sb();
     if (!c) throw new Error('no_client');
     const rows = await q(c.rpc('get_top_reviewed_spots', { p_min_count: 1, p_limit: 10 }));
-    D.top = Array.isArray(rows) ? rows : [];
+    // 점수가 같으면 후기가 많은 박지를 앞에 (후기 1개짜리 5.0이 1등이 되지 않게)
+    D.top = (Array.isArray(rows) ? rows : []).slice().sort(function (a, b) {
+      return (Number(b.avg_rating) || 0) - (Number(a.avg_rating) || 0) || (Number(b.review_count) || 0) - (Number(a.review_count) || 0);
+    });
   }
   async function loadRecentReviews(more) {
     const c = sb();
@@ -1770,12 +1778,17 @@
       if (!top.length) return homeEmpty('아직 박지 후기가 없어요', 3, '라운지 열기');
       return top.slice(0, HOME_N).map(function (r) { return bestRow(r, false); }).join('') + moreBtn(3, '최근 후기까지 전체 보기');
     }
-    // 받침이 있으면 "이에요", 없으면 "예요" (한글이 아니면 "이에요")
-    const bestName = top.length ? spotName(spotById(top[0].spot_id)) : '';
-    let h = top.length ? `<div class="lm-head">평점이 가장 높은 박지는<br><em>${esc(bestName)}</em>${josa(bestName, '이에요', '예요')}</div>` : '<div class="lm-head">박지 후기</div>';
-    h += '<div class="lmh-cap">평점 높은 박지</div>' + (top.length ? top.map(bestRowFull).join('') : '<div class="lm-empty">아직 박지 후기가 없어요</div>');
-    h += '<div class="lmh-cap">최근 후기</div>';
-    if (D.recent === null) {
+    // 작은 탭 두 개: 처음엔 최근 후기. 평점 높은 박지 10곳이 화면을 다 채워 최근 후기가 묻혔다
+    const view = S.revView === 'top' ? 'top' : 'recent';
+    let h = '<div class="lm-seg" role="tablist">' +
+      '<button type="button" role="tab" data-a="rev-view" data-v="recent" class="' + (view === 'recent' ? 'on' : '') + '" aria-selected="' + (view === 'recent') + '">최근 후기</button>' +
+      '<button type="button" role="tab" data-a="rev-view" data-v="top" class="' + (view === 'top' ? 'on' : '') + '" aria-selected="' + (view === 'top') + '">평점 높은 박지</button></div>';
+    if (view === 'top') {
+      // 받침이 있으면 "이에요", 없으면 "예요" (한글이 아니면 "이에요")
+      const bestName = top.length ? spotName(spotById(top[0].spot_id)) : '';
+      if (top.length) h += `<div class="lm-head">평점이 가장 높은 박지는<br><em>${esc(bestName)}</em>${josa(bestName, '이에요', '예요')}</div>`;
+      h += top.length ? top.map(bestRowFull).join('') : '<div class="lm-empty">아직 박지 후기가 없어요</div>';
+    } else if (D.recent === null) {
       h += '<div class="lm-empty" data-recent>불러오는 중…</div>';
     } else if (D.recentTier !== 'member') {
       h += '<div class="lm-empty">후기는 로그인하면 볼 수 있어요<br><button type="button" class="lm-btn sm main" style="margin:14px auto 0;width:100%;max-width:220px" data-a="login">로그인</button></div>';
@@ -1784,7 +1797,7 @@
       h += items || '<div class="lm-empty">아직 후기가 없어요</div>';
       if (!D.recentDone && D.recent.length) h += '<button type="button" class="lmh-more" data-a="more-reviews">더 보기' + ico(P.chevR, 16) + '</button>';
     }
-    h += '<p class="lm-hint" style="margin-top:20px">후기는 박지마다 한 사람에 하나예요. 별점 없이 팁만 남겨도 돼요. 지도에서 박지를 열거나 위 박지를 눌러 남길 수 있어요.</p>';
+    h += '<p class="lm-hint" style="margin-top:20px">후기는 박지마다 한 사람에 하나예요. 별점 없이 팁만 남겨도 돼요. 지도에서 박지를 열거나 「평점 높은 박지」에서 박지를 눌러 남길 수 있어요.</p>';
     return h;
   }
   const PANES = [paneEvents, paneGuide, paneBoard, paneReviews, paneDeals];
@@ -3230,7 +3243,7 @@
     lounge: 'feat_lounge_open', 'deal-ig': 'feat_lounge_insta', 'body-yt': 'feat_lounge_video', 'tip-play': 'feat_lounge_video',
     past: 'feat_lounge_past', cat: 'feat_board_cat', 'more-posts': 'feat_lounge_more', 'more-reviews': 'feat_lounge_more', 'more-spot-reviews': 'feat_lounge_more',
     'new-post': 'feat_board_write', 'edit-post': 'feat_board_edit', 'del-post': 'feat_board_delete', like: 'feat_board_like',
-    ugc: 'feat_lounge_ugc', user: 'feat_lounge_user', 'rev-spot': 'feat_lounge_spot_reviews', 'rev-all': 'feat_lounge_spot_reviews', review: 'feat_lounge_review_write',
+    ugc: 'feat_lounge_ugc', user: 'feat_lounge_user', 'rev-spot': 'feat_lounge_spot_reviews', 'rev-all': 'feat_lounge_spot_reviews', 'rev-view': 'feat_lounge_spot_reviews', review: 'feat_lounge_review_write',
     spot: 'feat_lounge_spot_map', 'cal-open': 'feat_lounge_cal', 'open-cal': 'feat_lounge_cal', 'cal-mark': 'feat_lounge_cal_mark', 'cal-plan': 'feat_lounge_cal_plan'
   };
   function loungeMetric(a, v, item) {
@@ -3357,6 +3370,11 @@
         if (typeof window.openUserFeedCollectionModal === 'function') window.openUserFeedCollectionModal(t.dataset.n || '', v);
         break;
       case 'rev-spot': showSpotReviews(v); break;
+      case 'rev-view':
+        S.revView = v === 'top' ? 'top' : 'recent';
+        rerenderPane(3);
+        if (S.revView === 'recent') ensureRecent();
+        break;
       case 'rev-all':
         S.revSpot = null;
         rerenderPane(3);
