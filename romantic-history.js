@@ -499,15 +499,15 @@
         background: linear-gradient(to top, rgba(0,0,0,0.82), rgba(0,0,0,0.35) 62%, rgba(0,0,0,0)) !important;
         border-top: none !important;
       }
-      /* 낭만피드 아래쪽 줄: 위쪽 줄과 무게를 맞춘다(아이콘 22px, 숫자 0.86rem, 글 0.94rem, 댓글 0.8rem) */
+      /* 낭만피드 아래쪽 줄: 위쪽 줄과 무게를 맞춘다(아이콘 20px, 숫자 0.8rem, 글 0.88rem, 댓글 0.76rem). 폰에서 본문이 잘려 한 단계씩 줄였다 */
       .history-tab-route .reel-bottom-interactive-bar > div:first-of-type > div:first-child svg,
       .history-tab-route .reel-bottom-interactive-bar [data-save-feed] svg,
-      .history-tab-route .reel-bottom-interactive-bar button[title="더보기"] svg { width: 22px !important; height: 22px !important; }
+      .history-tab-route .reel-bottom-interactive-bar button[title="더보기"] svg { width: 20px !important; height: 20px !important; }
       .history-tab-route .reel-bottom-interactive-bar > div:first-of-type > div:first-child { gap: 14px !important; }
       .history-tab-route .reel-bottom-interactive-bar > div:first-of-type > div:first-child > button { margin: 0 !important; padding: 4px 0 !important; gap: 5px !important; }
       .history-tab-route .reel-bottom-interactive-bar > div:first-of-type > div:last-child { gap: 10px !important; }
       .history-tab-route .reel-bottom-interactive-bar .js-feed-star-count,
-      .history-tab-route .reel-bottom-interactive-bar .okbm-cmt-count { font-size: 0.86rem !important; font-family: inherit !important; }
+      .history-tab-route .reel-bottom-interactive-bar .okbm-cmt-count { font-size: 0.8rem !important; font-family: inherit !important; }
       .history-tab-route .reel-bottom-interactive-bar [data-share-feed],
       .history-tab-route .reel-bottom-interactive-bar [data-save-feed] { min-width: 30px !important; min-height: 32px !important; justify-content: center !important; }
       .history-tab-route .reel-bottom-interactive-bar [data-save-feed]:not([style*="c084fc"]) { color: #ffffff !important; }
@@ -516,9 +516,15 @@
       .history-tab-route .reel-bottom-interactive-bar .okbm-cmt-btn .okbm-cmt-count { color: #ffffff !important; }
       .history-tab-route .reel-bottom-interactive-bar button[title="더보기"] { background: none !important; border: 0 !important; color: #ffffff !important; width: 30px !important; }
       .history-tab-route .reel-memo-fixed-slot,
-      .history-tab-route .reel-memo-fixed-box { font-size: 0.94rem !important; }
+      .history-tab-route .reel-memo-fixed-box { font-size: 0.88rem !important; }
       .history-tab-route .reel-memo-fixed-box { color: #ffffff !important; text-shadow: 0 1px 3px rgba(0,0,0,0.7) !important; }
-      .history-tab-route .okbm-cmt-preview { font-size: 0.8rem !important; }
+      .history-tab-route .okbm-cmt-preview { font-size: 0.76rem !important; }
+      /* 글 칸을 4줄 높이로: 댓글 한 줄이 있어도 글이 3줄까지 보이고(feed-comments.js는 2줄로 줄였다), 없으면 4줄. 칸 높이는 같아 카드마다 아이콘 줄 높이가 같다 */
+      .history-tab-route .reel-memo-fixed-slot { height: calc(1.4em * 4 + 8px) !important; min-height: calc(1.4em * 4 + 8px) !important; max-height: calc(1.4em * 4 + 8px) !important; flex: 0 0 calc(1.4em * 4 + 8px) !important; }
+      .history-tab-route .reel-memo-fixed-slot .reel-memo-fixed-box { -webkit-line-clamp: 4 !important; line-clamp: 4 !important; }
+      /* 글 칸이 4줄이 되며 댓글 줄이 사진 넘김 점(아래 가운데)에 닿아, 아래 여백을 넓힌다 */
+      .history-tab-route .reel-bottom-interactive-bar { padding-bottom: 24px !important; }
+      .history-tab-route .reel-memo-fixed-slot:has(.okbm-cmt-preview:not([hidden])) .reel-memo-fixed-box { -webkit-line-clamp: 3 !important; line-clamp: 3 !important; }
 
       .ready-shot-memory-prompt {
         position: absolute !important;
