@@ -3405,6 +3405,332 @@ window.saveCurrentPackingRecord = function() {
       mode === 'essay' || mode === 'sage' || mode === 'editorial';
   };
 
+  // ---- 낭만플랜 달력 화면: 공휴일 · 다가오는 일정 줄 · 일정 만들기/보기 창 · 전체 일정 ----
+  // 일정(날짜+박지+메모)과 배낭 꾸리기(장비·무게·체크리스트)를 나눈다. 배낭은 일정 보기 창에서 원할 때만 꾸린다.
+  // 공휴일(대체공휴일 포함). 해마다 인사혁신처 공고·월력요항을 보고 한 해씩 더한다
+  var OKBM_KR_HOLIDAYS = {
+    '2025.01.01': '신정', '2025.01.27': '임시공휴일', '2025.01.28': '설날 연휴', '2025.01.29': '설날', '2025.01.30': '설날 연휴',
+    '2025.03.01': '삼일절', '2025.03.03': '대체공휴일', '2025.05.05': '어린이날', '2025.05.06': '대체공휴일', '2025.06.03': '대통령 선거',
+    '2025.06.06': '현충일', '2025.08.15': '광복절', '2025.10.03': '개천절', '2025.10.05': '추석 연휴', '2025.10.06': '추석',
+    '2025.10.07': '추석 연휴', '2025.10.08': '대체공휴일', '2025.10.09': '한글날', '2025.12.25': '성탄절',
+    '2026.01.01': '신정', '2026.02.16': '설날 연휴', '2026.02.17': '설날', '2026.02.18': '설날 연휴', '2026.03.01': '삼일절',
+    '2026.03.02': '대체공휴일', '2026.05.05': '어린이날', '2026.05.24': '부처님오신날', '2026.05.25': '대체공휴일', '2026.06.03': '지방선거',
+    '2026.06.06': '현충일', '2026.08.15': '광복절', '2026.08.17': '대체공휴일', '2026.09.24': '추석 연휴', '2026.09.25': '추석',
+    '2026.09.26': '추석 연휴', '2026.10.03': '개천절', '2026.10.05': '대체공휴일', '2026.10.09': '한글날', '2026.12.25': '성탄절',
+    '2027.01.01': '신정', '2027.02.06': '설날 연휴', '2027.02.07': '설날', '2027.02.08': '설날 연휴', '2027.02.09': '대체공휴일',
+    '2027.03.01': '삼일절', '2027.05.01': '노동절', '2027.05.03': '대체공휴일', '2027.05.05': '어린이날', '2027.05.13': '부처님오신날',
+    '2027.06.06': '현충일', '2027.07.17': '제헌절', '2027.07.19': '대체공휴일', '2027.08.15': '광복절', '2027.08.16': '대체공휴일',
+    '2027.09.14': '추석 연휴', '2027.09.15': '추석', '2027.09.16': '추석 연휴', '2027.10.03': '개천절', '2027.10.04': '대체공휴일',
+    '2027.10.09': '한글날', '2027.10.11': '대체공휴일', '2027.12.25': '성탄절', '2027.12.27': '대체공휴일'
+  };
+  var OKBM_PLAN_WD = ['일', '월', '화', '수', '목', '금', '토'];
+  window.okbmPlanHolidayName = function(dateKey) {
+    return OKBM_KR_HOLIDAYS[String(dateKey || '').replace(/[-/]/g, '.')] || '';
+  };
+  function okbmPlanDateParts(k) {
+    var p = String(k || '').match(/\d+/g);
+    return (p && p.length >= 3) ? { y: parseInt(p[0], 10), m: parseInt(p[1], 10), d: parseInt(p[2], 10) } : null;
+  }
+  function okbmPlanDLabel(k) {
+    var p = okbmPlanDateParts(k);
+    if (!p) return '';
+    var t = new Date(); t.setHours(0, 0, 0, 0);
+    var diff = Math.round((new Date(p.y, p.m - 1, p.d) - t) / 86400000);
+    return diff === 0 ? 'D-DAY' : (diff > 0 ? 'D-' + diff : 'D+' + (-diff));
+  }
+  function okbmPlanDateTitle(k) {
+    var p = okbmPlanDateParts(k);
+    if (!p) return escapeHtml(k);
+    return p.m + '월 ' + p.d + '일 ' + OKBM_PLAN_WD[new Date(p.y, p.m - 1, p.d).getDay()] + '요일';
+  }
+  function okbmPlanRead(key, dflt) {
+    var v = (window.RomanticVault && typeof window.RomanticVault.read === 'function') ? window.RomanticVault.read(key, dflt) : safeGetJSON(key, dflt);
+    return (v && typeof v === 'object') ? v : dflt;
+  }
+  function okbmPlanDKey(k) {
+    return (typeof window.okbmNormalizePlanDateKey === 'function') ? window.okbmNormalizePlanDateKey(k) : String(k || '').replace(/[-/]/g, '.');
+  }
+
+  // 다가오는 일정 한 줄 (달력 아래·전체 일정 공용)
+  window.okbmPlanUpcomingRowHtml = function(t, viewYear, viewMonth) {
+    var p = okbmPlanDateParts(t && t.dateKey);
+    if (!p) return '';
+    var wd = OKBM_PLAN_WD[new Date(p.y, p.m - 1, p.d).getDay()];
+    var sameMonth = p.y === Number(viewYear) && p.m === Number(viewMonth);
+    var memoLine = String(t.memo || '').split('\n')[0].slice(0, 24);
+    var titleHtml = t.spotName ? planSpotLabel(t.spotName) : escapeHtml(memoLine || '메모');
+    var sub = t.spotName ? (t.weightKg ? ('배낭 ' + t.weightKg + 'kg') : '배낭 꾸리기 전') : '메모';
+    if (t.spotName && memoLine) sub += ' · ' + memoLine;
+    return '<button type="button" class="js-plan-day-open" data-date="' + escapeHtml(t.dateKey) + '" style="display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; border-radius:14px; background:#14161b; border:1px solid rgba(255,255,255,0.06); cursor:pointer; text-align:left; box-sizing:border-box; flex-shrink:0;">' +
+      '<span style="width:40px; flex-shrink:0; text-align:center;"><b style="display:block; font-size:1.05rem; font-weight:900; color:#ffffff; line-height:1.15;">' + p.d + '</b><small style="display:block; font-size:0.66rem; color:#8a919e; font-weight:700; margin-top:1px;">' + (sameMonth ? wd : (p.m + '월')) + '</small></span>' +
+      '<span style="min-width:0; flex:1;"><b style="display:block; font-size:0.86rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + titleHtml + '</b>' +
+      '<small style="display:block; font-size:0.72rem; color:#a1a8b5; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(sub) + '</small></span>' +
+      '<span style="flex-shrink:0; font-size:0.72rem; font-weight:900; color:#ffffff; background:rgba(255,255,255,0.1); padding:6px 10px; border-radius:999px;">' + okbmPlanDLabel(t.dateKey) + '</span></button>';
+  };
+
+  // 그날 일정: 박지(okbm_plan_spots) · 메모(okbm_plan_memos) · 꾸린 배낭 무게 · 라운지 행사(okbm_plan_events)
+  function okbmPlanDayInfo(k) {
+    var nk = okbmPlanDKey(k);
+    var spots = okbmPlanRead('okbm_plan_spots', {});
+    var sp = null;
+    Object.keys(spots).forEach(function(key) {
+      if (sp || okbmPlanDKey(key) !== nk) return;
+      var raw = spots[key];
+      var arr = Array.isArray(raw) ? raw : (raw && raw.name ? [raw] : []);
+      if (arr[0] && arr[0].name) sp = arr[0];
+    });
+    var memos = okbmPlanRead('okbm_plan_memos', {});
+    var up = (window.__okbmPlanUpcoming || []).find(function(t) { return okbmPlanDKey(t.dateKey) === nk; }) || null;
+    var evs = okbmPlanRead('okbm_plan_events', {});
+    var dayEvents = Object.keys(evs).map(function(id) { return evs[id]; }).filter(function(ev) {
+      if (!ev || !ev.start) return false;
+      var st = okbmPlanDKey(ev.start), en = okbmPlanDKey(ev.end || ev.start);
+      return st <= nk && nk <= en;
+    });
+    return {
+      name: sp ? unescapePlanText(sp.name) : ((up && up.spotName) || ''),
+      elevation: sp ? unescapePlanText(sp.elevation || '') : ((up && up.elevation) || ''),
+      memo: String(memos[k] || memos[nk] || ''),
+      weightKg: up ? up.weightKg : '',
+      events: dayEvents
+    };
+  }
+  function okbmPlanWriteMemo(k, val) {
+    var memos = okbmPlanRead('okbm_plan_memos', {});
+    if (String(val || '').trim()) memos[k] = String(val); else delete memos[k];
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') window.RomanticVault.write('okbm_plan_memos', memos, true);
+    else { try { localStorage.setItem('okbm_plan_memos', JSON.stringify(memos)); } catch (e) {} if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(); }
+  }
+
+  function okbmPlanCloseSheet() {
+    var el = document.getElementById('okbmPlanDaySheet');
+    if (el) el.remove();
+  }
+  function okbmPlanSheetShell(inner) {
+    okbmPlanCloseSheet();
+    var wrap = document.createElement('div');
+    wrap.id = 'okbmPlanDaySheet';
+    wrap.style.cssText = 'position:fixed; inset:0; z-index:2147483647; display:flex; flex-direction:column; justify-content:flex-end;';
+    wrap.innerHTML = '<div class="js-pds-close" style="position:absolute; inset:0; background:rgba(0,0,0,0.6);"></div>' +
+      '<div role="dialog" aria-modal="true" style="position:relative; width:100%; max-width:520px; margin:0 auto; max-height:86vh; max-height:86dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; background:#111318; border-top-left-radius:22px; border-top-right-radius:22px; border-top:1px solid rgba(255,255,255,0.08); padding:10px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display:flex; flex-direction:column; gap:12px; box-sizing:border-box;">' +
+      '<div style="width:38px; height:4px; border-radius:2px; background:#3a3d44; margin:0 auto 2px; flex-shrink:0;"></div>' + inner + '</div>';
+    document.body.appendChild(wrap);
+    return wrap;
+  }
+  function okbmPlanHeadHtml(k, sub, right, suffix) {
+    var hol = window.okbmPlanHolidayName(k);
+    return '<div style="display:flex; align-items:flex-start; gap:8px;"><div style="min-width:0; flex:1;"><div style="font-size:1.05rem; font-weight:900; color:#ffffff;">' + okbmPlanDateTitle(k) + (suffix || '') +
+      (hol ? '<span style="font-size:0.78rem; font-weight:800; color:#f87171; margin-left:6px;">' + escapeHtml(hol) + '</span>' : '') + '</div>' +
+      (sub ? '<div style="font-size:0.78rem; font-weight:700; color:#8a919e; margin-top:3px;">' + sub + '</div>' : '') + '</div>' + (right || '') + '</div>';
+  }
+  function okbmPlanEventsHtml(evs) {
+    if (!evs || !evs.length) return '';
+    return evs.slice(0, 3).map(function(ev) {
+      return '<button type="button" class="js-plan-event-open" data-event-id="' + escapeHtml(ev.id || '') + '" style="display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:12px; background:rgba(167,139,250,0.08); border:1px solid rgba(167,139,250,0.3); color:#ffffff; text-align:left; cursor:pointer; width:100%; box-sizing:border-box;">' +
+        '<span style="font-size:0.72rem; font-weight:900; color:#c4b5fd; flex-shrink:0;">행사</span><span style="font-size:0.82rem; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(ev.title || '') + '</span></button>';
+    }).join('');
+  }
+
+  // 일정 만들기: 박지 고르기(찜한 박지, 이름 찾기) + 메모 한 줄
+  function okbmPlanSpotPool() {
+    if (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length) return registeredSpots;
+    if (Array.isArray(window.SPOTS_MASTER) && window.SPOTS_MASTER.length) return window.SPOTS_MASTER;
+    return safeGetJSON('okbm_spots_cache', []) || [];
+  }
+  function okbmPlanRenderPickList(wrap, q) {
+    var list = wrap.querySelector('#pdsList'), cap = wrap.querySelector('#pdsListCap');
+    if (!list) return;
+    var pool = okbmPlanSpotPool();
+    var lq = String(q || '').replace(/\s+/g, '');
+    var rows;
+    if (lq) {
+      rows = pool.filter(function(s) {
+        return s && String([s.fullName, s.name, s.spot_main, s.spot_sub].join(' ')).replace(/\s+/g, '').indexOf(lq) >= 0;
+      }).slice(0, 20);
+      if (cap) cap.textContent = '찾은 박지';
+    } else {
+      var bm = safeGetJSON('okbm_bookmarks', []) || [];
+      rows = bm.map(function(id) { return pool.find(function(s) { return s && String(s.id).trim() === String(id).trim(); }); }).filter(Boolean).slice(0, 30);
+      if (cap) cap.textContent = '찜한 박지';
+    }
+    var cur = wrap.__pick;
+    if (!rows.length) {
+      list.innerHTML = '<div style="padding:8px 2px; font-size:0.8rem; color:#8a919e;">' + (lq ? '찾는 박지가 없어요' : '찜한 박지가 없어요. 위에서 이름으로 찾아보세요') + '</div>';
+      return;
+    }
+    list.innerHTML = rows.map(function(s) {
+      var nm = s.fullName || s.name || '';
+      var el = s.elevation ? String(s.elevation).replace(/m$/i, '').trim() + 'm' : '';
+      var meta = [s.cityName || s.city_name || s.region || '', el ? '해발 ' + el : ''].filter(Boolean).join(' · ');
+      var on = !!(cur && cur.name === nm);
+      return '<button type="button" class="js-pds-pick" data-name="' + escapeHtml(nm) + '" data-elev="' + escapeHtml(el) + '" aria-pressed="' + on + '" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; background:#1a1c22; border:1px solid ' + (on ? '#ffffff' : 'rgba(255,255,255,0.08)') + '; color:#ffffff; text-align:left; cursor:pointer; width:100%; box-sizing:border-box;">' +
+        '<span style="min-width:0; flex:1;"><b style="display:block; font-size:0.86rem; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + planSpotLabel(nm) + '</b>' +
+        '<small style="display:block; font-size:0.7rem; color:#8a919e; margin-top:2px;">' + escapeHtml(meta) + '</small></span>' +
+        '<span style="width:20px; height:20px; border-radius:50%; flex-shrink:0; box-sizing:border-box; border:2px solid ' + (on ? '#ffffff' : '#4b4f57') + ';' + (on ? ' background:radial-gradient(#ffffff 40%, transparent 45%);' : '') + '"></span></button>';
+    }).join('');
+  }
+  window.okbmOpenPlanCreateSheet = function(k) {
+    var info = okbmPlanDayInfo(k);
+    var html = okbmPlanHeadHtml(k, info.name ? '박지를 바꾸거나 메모를 고쳐요' : '어디로 갈까요?', '', ' 일정') +
+      okbmPlanEventsHtml(info.events) +
+      '<input id="pdsSearch" type="search" placeholder="박지 이름으로 찾기" autocomplete="off" style="height:44px; border-radius:12px; background:#1a1c22; border:1px solid rgba(255,255,255,0.08); color:#ffffff; padding:0 12px; font-size:0.9rem; outline:none; width:100%; box-sizing:border-box; font-family:inherit;">' +
+      '<div id="pdsListCap" style="font-size:0.78rem; font-weight:800; color:#a1a8b5; margin-bottom:-4px;">찜한 박지</div>' +
+      '<div id="pdsList" style="display:flex; flex-direction:column; gap:6px;"></div>' +
+      '<textarea id="pdsMemo" rows="2" maxlength="200" placeholder="메모 (선택) · 배 시간, 같이 가는 사람" style="border-radius:12px; background:#1a1c22; border:1px solid rgba(255,255,255,0.08); color:#ffffff; padding:11px 12px; font-size:0.88rem; font-family:inherit; line-height:1.5; outline:none; resize:none; width:100%; box-sizing:border-box;">' + escapeHtml(info.memo) + '</textarea>' +
+      '<button type="button" class="js-pds-save" data-date="' + escapeHtml(k) + '" style="height:50px; border-radius:14px; background:#5bb8f0; color:#00131f; border:none; font-size:0.95rem; font-weight:900; cursor:pointer; flex-shrink:0;">일정 저장</button>';
+    var wrap = okbmPlanSheetShell(html);
+    wrap.__pick = info.name ? { name: info.name, elevation: info.elevation } : null;
+    okbmPlanRenderPickList(wrap, '');
+    var inp = wrap.querySelector('#pdsSearch');
+    if (inp) inp.addEventListener('input', function() { okbmPlanRenderPickList(wrap, inp.value); });
+  };
+
+  // 일정 보기: 박지 · 메모 · 배낭(원할 때만) · 삭제
+  window.okbmOpenPlanDaySheet = function(k) {
+    var info = okbmPlanDayInfo(k);
+    if (!info.name && !info.memo.trim()) { window.okbmOpenPlanCreateSheet(k); return; }
+    var dd = '<span style="flex-shrink:0; font-size:0.76rem; font-weight:900; color:#ffffff; background:rgba(255,255,255,0.1); padding:6px 10px; border-radius:999px;">' + okbmPlanDLabel(k) + '</span>';
+    var linkCss = 'background:none; border:none; padding:0; color:#a1a8b5; font-size:0.78rem; font-weight:800; cursor:pointer;';
+    var html = okbmPlanHeadHtml(k, '', dd) + okbmPlanEventsHtml(info.events);
+    if (info.name) {
+      html += '<div style="padding:14px; border-radius:16px; background:#1a1c22;"><b style="display:block; font-size:1rem; font-weight:900; color:#ffffff;">' + planSpotLabel(info.name) + '</b>' +
+        (info.elevation ? '<small style="display:block; font-size:0.76rem; color:#a1a8b5; margin-top:3px;">해발 ' + escapeHtml(String(info.elevation).replace(/m$/i, '')) + 'm</small>' : '') +
+        '<div style="display:flex; gap:16px; margin-top:10px;"><button type="button" class="js-open-spot-map" data-spot="' + escapeHtml(info.name) + '" style="' + linkCss + '">지도에서 보기 ›</button>' +
+        '<button type="button" class="js-pds-change" data-date="' + escapeHtml(k) + '" style="' + linkCss + '">박지 바꾸기 ›</button></div></div>';
+    } else {
+      html += '<button type="button" class="js-pds-change" data-date="' + escapeHtml(k) + '" style="height:46px; border-radius:14px; background:none; border:1px dashed rgba(255,255,255,0.18); color:#ffffff; font-size:0.86rem; font-weight:800; cursor:pointer;">+ 박지 정하기</button>';
+    }
+    html += '<div style="padding:12px 14px; border-radius:16px; background:#1a1c22; display:flex; flex-direction:column; gap:8px;">' +
+      '<div style="display:flex; align-items:center; font-size:0.74rem; font-weight:800; color:#8a919e;">메모<button type="button" class="js-pds-memo-save" data-date="' + escapeHtml(k) + '" style="margin-left:auto; background:none; border:none; color:#a1a8b5; font-size:0.76rem; font-weight:800; cursor:pointer; padding:2px 0;">저장</button></div>' +
+      '<textarea id="pdsMemo" rows="2" maxlength="200" placeholder="배 시간, 챙길 것" style="border:none; background:none; color:#ffffff; padding:0; font-size:0.88rem; font-family:inherit; line-height:1.55; outline:none; resize:none; width:100%;">' + escapeHtml(info.memo) + '</textarea></div>';
+    var packAttrs = ' data-date="' + escapeHtml(k) + '" data-title="' + escapeHtml(info.name || '') + '" data-elevation="' + escapeHtml(info.elevation || '') + '"';
+    if (info.weightKg) {
+      html += '<div style="padding:14px; border-radius:16px; background:#1a1c22; display:flex; align-items:center; gap:12px;"><span style="min-width:0; flex:1;"><b style="display:block; font-size:0.95rem; font-weight:900; color:#ffffff;">배낭 ' + escapeHtml(String(info.weightKg)) + 'kg</b><small style="display:block; font-size:0.74rem; color:#a1a8b5; margin-top:2px;">꾸린 배낭이 있어요</small></span>' +
+        '<button type="button" class="js-pds-pack"' + packAttrs + ' style="height:40px; padding:0 16px; border-radius:12px; background:rgba(255,255,255,0.08); color:#ffffff; border:none; font-size:0.84rem; font-weight:900; cursor:pointer;">배낭 보기</button></div>';
+    } else {
+      html += '<div style="padding:16px 14px; border-radius:16px; border:1px dashed rgba(255,255,255,0.16); text-align:center;"><b style="display:block; font-size:0.92rem; font-weight:900; color:#ffffff;">아직 배낭을 안 꾸렸어요</b>' +
+        '<small style="display:block; font-size:0.76rem; color:#a1a8b5; margin-top:4px;">장비를 고르면 무게와 체크리스트가 채워져요</small>' +
+        '<button type="button" class="js-pds-pack"' + packAttrs + ' style="margin-top:12px; width:100%; height:48px; border-radius:14px; background:#5bb8f0; color:#00131f; border:none; font-size:0.95rem; font-weight:900; cursor:pointer;">배낭 꾸리기</button></div>';
+    }
+    html += '<button type="button" class="js-pds-del" data-date="' + escapeHtml(k) + '" style="background:none; border:none; color:#8a919e; font-size:0.78rem; font-weight:800; cursor:pointer; padding:6px 0 2px;">일정 삭제</button>';
+    okbmPlanSheetShell(html);
+  };
+
+  // 전체 일정: 다가오는 일정 / 지난 기록
+  window.okbmOpenPlanAllSheet = function(tab) {
+    tab = tab === 'past' ? 'past' : 'up';
+    var up = window.__okbmPlanUpcoming || [], past = window.__okbmPlanPast || [];
+    var segBtn = function(key, label) {
+      var on = key === tab;
+      return '<button type="button" class="js-pas-tab" data-tab="' + key + '" style="flex:1; height:36px; border-radius:10px; border:none; cursor:pointer; font-size:0.84rem; font-weight:800; background:' + (on ? '#2a2d34' : 'transparent') + '; color:' + (on ? '#ffffff' : '#8a919e') + ';">' + label + '</button>';
+    };
+    var body = '';
+    if (tab === 'up') {
+      var lastMonth = '';
+      up.forEach(function(t) {
+        var p = okbmPlanDateParts(t.dateKey);
+        if (!p) return;
+        var mk = p.y + '.' + p.m;
+        if (mk !== lastMonth) { lastMonth = mk; body += '<div style="font-size:0.78rem; font-weight:800; color:#a1a8b5; margin:4px 2px -2px;">' + p.m + '월</div>'; }
+        body += window.okbmPlanUpcomingRowHtml(t, p.y, p.m);
+      });
+      if (!body) body = '<div style="padding:16px 4px; font-size:0.82rem; color:#8a919e;">다가오는 일정이 없어요</div>';
+    } else {
+      body = past.map(function(r) {
+        var p = okbmPlanDateParts(r.date);
+        return '<button type="button" class="js-pds-past" data-id="' + escapeHtml(r.id || '') + '" style="display:flex; align-items:center; gap:12px; width:100%; padding:10px 12px; border-radius:14px; background:#14161b; border:1px solid rgba(255,255,255,0.06); cursor:pointer; text-align:left; box-sizing:border-box;">' +
+          '<span style="width:52px; flex-shrink:0; text-align:center; font-size:0.74rem; color:#a1a8b5; font-weight:800; line-height:1.3;">' + (p ? (p.y + '<br>' + p.m + '.' + p.d) : '') + '</span>' +
+          '<span style="min-width:0; flex:1; font-size:0.86rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + planSpotLabel(r.spot || r.spotName || '') + '</span><span style="color:#8a919e;">›</span></button>';
+      }).join('') || '<div style="padding:16px 4px; font-size:0.82rem; color:#8a919e;">지난 기록이 없어요</div>';
+    }
+    okbmPlanSheetShell('<div style="display:flex; align-items:center;"><b style="font-size:1.05rem; font-weight:900; color:#ffffff;">전체 일정</b><span style="margin-left:auto; font-size:0.78rem; font-weight:700; color:#8a919e;">' + (tab === 'up' ? up.length : past.length) + '개</span></div>' +
+      '<div style="display:flex; gap:2px; padding:3px; border-radius:12px; background:#1a1c22;">' + segBtn('up', '다가오는 일정') + segBtn('past', '지난 기록') + '</div>' +
+      '<div style="display:flex; flex-direction:column; gap:7px;">' + body + '</div>');
+  };
+
+  async function okbmPlanSaveCreate(btn) {
+    var wrap = document.getElementById('okbmPlanDaySheet');
+    if (!wrap) return;
+    var k = btn.dataset.date || '';
+    var pick = wrap.__pick;
+    var memoEl = wrap.querySelector('#pdsMemo');
+    var memo = memoEl ? memoEl.value : '';
+    if (!pick && !String(memo).trim()) {
+      if (typeof showToast === 'function') showToast('박지를 고르거나 메모를 남겨 주세요.', 'info', 1800);
+      return;
+    }
+    btn.disabled = true;
+    if (pick) {
+      var ok = await window.okbmSetSinglePlanSpotForDate(k, { name: pick.name, elevation: pick.elevation || '' });
+      if (!ok) { btn.disabled = false; return; }
+    }
+    okbmPlanWriteMemo(k, memo);
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_plan_destination');
+    okbmPlanCloseSheet();
+    window.activeSelectedDateKey = k;
+    window.activePlanSubMode = 'calendar';
+    window.renderPlanStage();
+    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+    triggerHaptic(15);
+    if (typeof showToast === 'function') showToast('일정을 저장했어요.', 'success', 1600);
+  }
+
+  // 달력 화면·일정 창 버튼 (인라인 핸들러 대신 한곳에서 받는다)
+  if (!window.__okbmPlanSheetClickBound) {
+    window.__okbmPlanSheetClickBound = true;
+    document.addEventListener('click', function(e) {
+      var t = e.target && e.target.closest ? e.target : null;
+      if (!t) return;
+      var el;
+      if ((el = t.closest('[data-plan-nav]'))) {
+        var nav = el.getAttribute('data-plan-nav');
+        if (nav === 'pack') { if (typeof window.openPlanPackingCalculator === 'function') window.openPlanPackingCalculator(); return; }
+        window.activePlanSubMode = nav;
+        window.renderPlanStage();
+        return;
+      }
+      if ((el = t.closest('.js-plan-day-open'))) { e.preventDefault(); window.okbmOpenPlanDaySheet(el.dataset.date || ''); return; }
+      if ((el = t.closest('.js-plan-all'))) { e.preventDefault(); window.okbmOpenPlanAllSheet('up'); return; }
+      if ((el = t.closest('.js-pas-tab'))) { window.okbmOpenPlanAllSheet(el.dataset.tab); return; }
+      if (!t.closest('#okbmPlanDaySheet')) return;
+      if ((el = t.closest('.js-pds-close'))) { okbmPlanCloseSheet(); return; }
+      if ((el = t.closest('.js-pds-pick'))) {
+        var wrap = document.getElementById('okbmPlanDaySheet');
+        var nm = el.dataset.name || '';
+        wrap.__pick = (wrap.__pick && wrap.__pick.name === nm) ? null : { name: nm, elevation: el.dataset.elev || '' };
+        var q = wrap.querySelector('#pdsSearch');
+        okbmPlanRenderPickList(wrap, q ? q.value : '');
+        return;
+      }
+      if ((el = t.closest('.js-pds-save'))) { okbmPlanSaveCreate(el); return; }
+      if ((el = t.closest('.js-pds-change'))) { window.okbmOpenPlanCreateSheet(el.dataset.date || ''); return; }
+      if ((el = t.closest('.js-pds-memo-save'))) {
+        var mk = el.dataset.date || '';
+        var ta = document.getElementById('pdsMemo');
+        okbmPlanWriteMemo(mk, ta ? ta.value : '');
+        window.renderPlanStage();
+        if (typeof showToast === 'function') showToast('메모를 저장했어요.', 'success', 1400);
+        window.okbmOpenPlanDaySheet(mk);
+        return;
+      }
+      if ((el = t.closest('.js-pds-pack'))) {
+        okbmPlanCloseSheet();
+        if (typeof window.startPackingForDate === 'function') window.startPackingForDate(el.dataset.date || '', el.dataset.title || '', el.dataset.elevation || '');
+        return;
+      }
+      if ((el = t.closest('.js-pds-del'))) {
+        okbmPlanCloseSheet();
+        if (typeof window.clearEntireDaySchedule === 'function') window.clearEntireDaySchedule(el.dataset.date || '');
+        return;
+      }
+      if ((el = t.closest('.js-pds-past'))) {
+        okbmPlanCloseSheet();
+        if (el.dataset.id && typeof window.okbmOpenDirectFeed === 'function') window.okbmOpenDirectFeed(el.dataset.id);
+        return;
+      }
+    }, true);
+  }
+
   // [달력] 다른 기기에서 저장한 내 기록도 달력에 보이게 한다.
   // 달력은 이 기기의 로컬 보관함만 읽어서, 폰에서 만든 기록이 PC 달력에 안 뜨는 문제가 있었다.
   // 보고 있는 달의 내 기록을 서버에서 받아 "화면 표시"에만 합친다(로컬 저장소는 바꾸지 않음).
@@ -3916,6 +4242,9 @@ window.saveCurrentPackingRecord = function() {
       var isCompleted = Boolean(isPastDay && dayRecord && hasFieldPhoto);
       var isRecorded = !!dayRecord;
       var hasPlan = (isSavedPlan || !!planSpotDays[d]) && !isCompleted;
+      // 일요일·공휴일은 빨간 숫자 (OKBM_KR_HOLIDAYS)
+      var isRedDay = ((firstDayIndex + d - 1) % 7 === 0) || !!window.okbmPlanHolidayName(thisDateKey);
+      var hasMemoOnly = !!String((planMemosObj && planMemosObj[thisDateKey]) || '').trim();
       var packCheck = (hasPlan && isSavedPlan)
         ? '<span aria-label="패킹 완료" style="position:absolute; top:-3px; right:-3px; width:11px; height:11px; border-radius:50%; background:#34d399; border:1px solid #0c1017; display:flex; align-items:center; justify-content:center; pointer-events:none;"><svg viewBox="0 0 24 24" style="width:8px; height:8px; fill:none; stroke:#052e16; stroke-width:4; stroke-linecap:round; stroke-linejoin:round;"><polyline points="20 6 9 17 4 12"/></svg></span>'
         : '';
@@ -3938,11 +4267,14 @@ window.saveCurrentPackingRecord = function() {
       } else if (hasPlan) {
         circleStyle += 'background:rgba(52,211,153,0.18); border:1px solid rgba(52,211,153,0.45); color:#ffffff; font-weight:900;';
       } else if (isToday) {
-        circleStyle += 'border:1px solid rgba(255,255,255,0.35); color:#ffffff; font-weight:800; background:rgba(255,255,255,0.04);';
+        circleStyle += 'border:1px solid rgba(255,255,255,0.35); color:' + (isRedDay ? '#f87171' : '#ffffff') + '; font-weight:800; background:rgba(255,255,255,0.04);';
       } else if (isRecorded) {
-        circleStyle += 'color:#f8fafc; font-weight:800;';
+        circleStyle += 'color:' + (isRedDay ? '#f87171' : '#f8fafc') + '; font-weight:800;';
       } else {
-        circleStyle += 'color:#94a3b8;';
+        circleStyle += 'color:' + (isRedDay ? '#f87171' : '#d6dae1') + ';';
+      }
+      if (!isSelected && !isCompleted && !hasPlan && hasMemoOnly) {
+        indicatorDot = '<span style="position:absolute; bottom:0px; left:50%; transform:translateX(-50%); width:4px; height:4px; background:#9ca3af; border-radius:50%;"></span>';
       }
 
       // 행사 띠(얇은 선 1.5px): 이어지는 날끼리는 칸 사이(2px)까지 이어 붙이고, 주의 처음·끝과 행사 처음·끝은 둥글게
@@ -3999,89 +4331,75 @@ window.saveCurrentPackingRecord = function() {
       '</div>';
     }
 
+    // 다가오는 일정 목록(달력 아래). 날짜를 누르면 일정 만들기·보기 창이 열리고(okbmOpenPlanDaySheet), 배낭은 그 안에서 따로 꾸린다
+    var packRecByDate = {};
+    historyList.forEach(function(h) {
+      if (!h || !window.okbmRecordIsSavedPlanFeed(h)) return;
+      var hk = String(h.date || '').replace(/[-/]/g, '.');
+      if (hk) packRecByDate[hk] = h;
+    });
+    window.__okbmPlanUpcoming = allFutureDates.map(function(t) {
+      var pr = packRecByDate[t.dateKey] || null;
+      return { dateKey: t.dateKey, spotName: t.spotName || '', elevation: t.elevation || '', memo: t.memo || '', weightKg: pr ? (pr.weightKg || pr.weight_kg || '') : '' };
+    });
+    window.__okbmPlanPast = historyList.filter(function(h) {
+      var hk = String((h && h.date) || '').replace(/[-/]/g, '.');
+      return hk && window.isPastPlanDate(hk) && String(h.spot || h.spotName || '').trim();
+    }).sort(function(a, b) { return String(b.date).localeCompare(String(a.date)); }).slice(0, 40);
+    var upcomingRowsHtml = window.__okbmPlanUpcoming.slice(0, 3).map(function(t) {
+      return window.okbmPlanUpcomingRowHtml(t, viewYear, viewMonth);
+    }).join('');
+
     var calendarMemoViewHtml = `
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:6px; padding:2px 0 4px 0; overflow:hidden; box-sizing:border-box;">
-        
-       <!-- 1. 달력 카드 (전체 뷰포트 대비 31% 정밀 적응형 뷰) -->
-        <div id="planCalendarCardWrap" style="height:31% !important; min-height:236px !important; flex-shrink:0 !important; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:6px 10px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
-      <div style="display:flex; justify-content:space-between; align-items:center; height:34px; flex-shrink:0;">
-            <div style="display:flex; align-items:center; gap:5px;">
-              <button type="button" onclick="window.changePlanMonth(-1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); color:#ffffff; width:28px; height:28px; border-radius:7px; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">◀</button>
-              <button type="button" onclick="window.openPlanYearPicker(event)" style="height:28px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#ffffff; padding:0 10px; border-radius:7px; font-size:0.92rem; font-weight:900; cursor:pointer; font-family:'Space Grotesk', sans-serif; display:flex; align-items:center;">
-                <span>${viewYear}년</span>
-              </button>
-              <span style="font-size:0.95rem; font-weight:900; color:#ffffff; margin:0 3px; font-family:'Space Grotesk', sans-serif;">${viewMonth}월</span>
-              <button type="button" onclick="window.changePlanMonth(1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); color:#ffffff; width:28px; height:28px; border-radius:7px; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">▶</button>
-            </div>
-            
-           <div style="display:flex; align-items:center; gap:8px; white-space:nowrap; flex-shrink:0;">
-              <button type="button" onclick="window.jumpToPlanToday()" style="height:24px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.70rem; font-weight:800; padding:0 8px; border-radius:5px; cursor:pointer;">오늘</button>
-              <span style="font-size:0.70rem; color:#f59e0b; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:rgba(245,158,11,0.25); border:1.2px solid #f59e0b; border-radius:50%; display:inline-block;"></span><span>완료</span></span>
-              <span style="font-size:0.70rem; color:#34d399; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:rgba(52,211,153,0.3); border:1px solid #34d399; border-radius:50%; display:inline-block;"></span><span>계획</span></span>
-              <span style="font-size:0.70rem; color:#34d399; font-weight:800; display:flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" style="width:9px; height:9px; fill:none; stroke:#34d399; stroke-width:4; stroke-linecap:round; stroke-linejoin:round;"><polyline points="20 6 9 17 4 12"/></svg><span>패킹</span></span>
-              ${monthHasPlanEvents ? '<span style="font-size:0.70rem; color:#c4b5fd; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:10px; height:1.5px; background:#a78bfa; border-radius:1px; display:inline-block;"></span><span>행사</span></span>' : ''}
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:8px; padding:2px 0 4px 0; overflow:hidden; box-sizing:border-box;">
+
+        <!-- 1. 달력 (제목 없이 연월부터). 날짜 누르기: 앞으로 날짜는 일정 만들기·보기, 지난 날짜는 후기 올리기 -->
+        <div id="planCalendarCardWrap" style="height:33% !important; min-height:262px !important; flex-shrink:0 !important; padding:2px 2px 0; display:flex; flex-direction:column; box-sizing:border-box;">
+          <div style="display:flex; justify-content:space-between; align-items:center; height:34px; flex-shrink:0;">
+            <button type="button" onclick="window.openPlanYearPicker(event)" style="height:32px; background:none; border:none; color:#ffffff; padding:0 2px; font-size:1.05rem; font-weight:900; cursor:pointer; display:flex; align-items:center; letter-spacing:-0.3px;">
+              <span>${viewYear}년 ${viewMonth}월</span>
+            </button>
+            <div style="display:flex; align-items:center; gap:2px;">
+              <button type="button" onclick="window.jumpToPlanToday()" style="height:28px; background:rgba(255,255,255,0.07); border:none; color:#cbd5e1; font-size:0.72rem; font-weight:800; padding:0 10px; border-radius:999px; cursor:pointer; margin-right:4px;">오늘</button>
+              <button type="button" onclick="window.changePlanMonth(-1)" aria-label="이전 달" style="background:none; border:none; color:#a1a8b5; width:32px; height:32px; border-radius:10px; font-size:1.1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;">‹</button>
+              <button type="button" onclick="window.changePlanMonth(1)" aria-label="다음 달" style="background:none; border:none; color:#a1a8b5; width:32px; height:32px; border-radius:10px; font-size:1.1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;">›</button>
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.72rem; font-weight:900; color:#94a3b8; height:20px; line-height:20px; flex-shrink:0; letter-spacing:0.5px; margin-top:8px; margin-bottom:4px;">
-            <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#cbd5e1;">토</span>
+          <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.72rem; font-weight:800; color:#8a919e; height:20px; line-height:20px; flex-shrink:0; margin-top:4px; margin-bottom:2px;">
+            <span style="color:#f87171;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
           </div>
-          
+
           <div style="flex:1 1 0%; min-height:0; display:grid; grid-template-columns:repeat(7, 1fr); grid-template-rows:repeat(6, 1fr); gap:2px; text-align:center;">
             ${calendarDaysHtml}
           </div>
-        </div>
-
-        <!-- 2. 최단 일정 D-Day 스마트 배너 -->
-        ${dDayBadgeHtml}
-
-        <!-- 2.5 선택한 날의 라운지 행사 (행사로 표시한 것) -->
-        ${activeEventsHtml}
-
-       <!-- 3. 메모장 카드 (22%) -->
-        <div id="planMemoCardWrap" style="flex:22 1 0% !important; min-height:0 !important; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:6px 12px; display:flex; flex-direction:column; gap:4px; box-sizing:border-box;">
-          <div style="display:flex; justify-content:space-between; align-items:center; height:24px; flex-shrink:0;">
-            <div style="font-size:0.78rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
-              ${activeSpotInfo.isCompleted ? UI_ICONS.starGold : UI_ICONS.memoEdit}
-              <span>[${activeDateStr}]</span>
-            </div>
-            <div style="display:flex; gap:6px;">
-              ${(function() {
-                var hasAnyData = Boolean((planMemosObj[activeDateStr] && String(planMemosObj[activeDateStr]).trim().length > 0) ||
-                  (planSpotsObj[activeDateStr] && (Array.isArray(planSpotsObj[activeDateStr]) ? planSpotsObj[activeDateStr].length > 0 : planSpotsObj[activeDateStr].name)) ||
-                  activeSpotInfo.name || activeSpotInfo.isCompleted);
-                if (!hasAnyData) return '';
-                return '<button type="button" class="js-clear-day-schedule" data-date="' + escapeHtml(activeDateStr) + '" style="height:24px; padding:0 8px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); color:#f43f5e; font-size:0.68rem; font-weight:800; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:3px;">' + UI_ICONS.trash + '<span>삭제</span></button>';
-              })()}
-              <button type="button" class="js-save-plan-memo" data-date="${escapeHtml(activeDateStr)}" style="height:24px; padding:0 9px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#f8fafc; font-size:0.68rem; font-weight:800; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:3px;">
-                ${UI_ICONS.check}
-                <span>저장</span>
-              </button>
-            </div>
-          </div>
-        <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 8px; display:flex; flex-direction:column; gap:5px; box-sizing:border-box;">
-            <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." data-okbm-date="${escapeHtml(activeDateStr)}" oninput="window.autoSavePlanMemo(this.dataset.okbmDate, this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:none; border:none; color:#ffffff; font-size:0.90rem; line-height:1.45; outline:none; resize:none; font-family:\'Pretendard Variable\', -apple-system, sans-serif; padding:0; margin:0; box-sizing:border-box;">${escapeHtml(currentDayMemo)}</textarea>
+          <div style="display:flex; justify-content:center; gap:12px; font-size:0.68rem; color:#8a919e; font-weight:700; height:18px; align-items:center; flex-shrink:0;">
+            <span style="display:inline-flex; align-items:center; gap:4px;"><i style="width:7px; height:7px; border-radius:50%; border:1.2px solid #f59e0b; background:rgba(245,158,11,0.25); display:inline-block;"></i>다녀옴</span>
+            <span style="display:inline-flex; align-items:center; gap:4px;"><i style="width:7px; height:7px; border-radius:50%; border:1px solid #34d399; background:rgba(52,211,153,0.3); display:inline-block;"></i>계획</span>
+            <span style="display:inline-flex; align-items:center; gap:4px;"><i style="width:5px; height:5px; border-radius:50%; background:#9ca3af; display:inline-block;"></i>메모</span>
+            ${monthHasPlanEvents ? '<span style="display:inline-flex; align-items:center; gap:4px;"><i style="width:10px; height:1.5px; background:#a78bfa; display:inline-block;"></i>행사</span>' : ''}
           </div>
         </div>
 
-     <!-- 4. 하단 2x2. 가운데 추억등록 버튼은 뺐다(후기 올리기는 홈·낭만피드·지도에서). 지난 날짜를 고르면 후기 올리기가 열린다 -->
-        <div id="planCubeGrid" style="position:relative; flex:26 1 0% !important; min-height:0 !important; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:6px; box-sizing:border-box;">
-          <div onclick="window.openPlanPackingCalculator();" style="position:relative; z-index:1; min-height:0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; padding:0 8px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; box-sizing:border-box;">
-            ${VECTOR_ICONS.calculator}
-            <span style="font-size:0.78rem; font-weight:900; color:#ffffff; white-space:nowrap;">패킹 계획하기</span>
+        <!-- 2. 다가오는 일정 -->
+        <div id="planUpcomingWrap" style="flex:1 1 0% !important; min-height:0 !important; display:flex; flex-direction:column; gap:7px; padding:12px 12px 10px; border-radius:18px; background:#0c0d10; border:1px solid rgba(255,255,255,0.08); box-sizing:border-box; overflow:hidden;">
+          <div style="display:flex; align-items:center; flex-shrink:0;">
+            <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">다가오는 일정</span>
+            <button type="button" class="js-plan-all" style="margin-left:auto; background:none; border:none; color:#a1a8b5; font-size:0.76rem; font-weight:800; cursor:pointer; padding:4px 0;">전체 일정 ›</button>
           </div>
-          <div onclick="window.activePlanSubMode='checklist'; window.renderPlanStage();" style="position:relative; z-index:1; min-height:0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; padding:0 8px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; box-sizing:border-box;">
-            ${VECTOR_ICONS.checklist}
-            <span style="font-size:0.78rem; font-weight:900; color:#ffffff; white-space:nowrap;">체크리스트</span>
+          <div style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; display:flex; flex-direction:column; gap:7px;">
+            ${upcomingRowsHtml || '<div style="padding:14px 4px; font-size:0.8rem; color:#8a919e;">다가오는 일정이 없어요</div>'}
           </div>
-          <div onclick="window.activePlanSubMode='bookmarks'; window.renderPlanStage();" style="position:relative; z-index:1; min-height:0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; padding:0 8px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; box-sizing:border-box;">
-            ${VECTOR_ICONS.bookmarks}
-            <span style="font-size:0.78rem; font-weight:900; color:#ffffff; white-space:nowrap;">찜 목록</span>
-          </div>
-          <div onclick="window.activePlanSubMode='gears'; window.renderPlanStage();" style="position:relative; z-index:1; min-height:0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; padding:0 8px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; box-sizing:border-box;">
-            ${VECTOR_ICONS.gears}
-            <span style="font-size:0.78rem; font-weight:900; color:#ffffff; white-space:nowrap;">장비관리</span>
-          </div>
+        </div>
+
+        <!-- 3. 바로가기 (아래 고정): 배낭 꾸리기만 파란색 -->
+        <div id="planCubeGrid" style="flex-shrink:0 !important; display:grid; grid-template-columns:repeat(4, 1fr); gap:7px; box-sizing:border-box;">
+          ${[['pack', '배낭 꾸리기', VECTOR_ICONS.calculator], ['checklist', '체크리스트', VECTOR_ICONS.checklist], ['bookmarks', '찜 목록', VECTOR_ICONS.bookmarks], ['gears', '장비관리', VECTOR_ICONS.gears]].map(function(t) {
+            var main = t[0] === 'pack';
+            return '<button type="button" data-plan-nav="' + t[0] + '" style="height:62px; border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; cursor:pointer; font-size:0.76rem; font-weight:900; ' +
+              (main ? 'background:#5bb8f0; color:#00131f; border:none;' : 'background:#14161b; color:#e5e9ef; border:1px solid rgba(255,255,255,0.08);') + '">' +
+              '<span style="display:inline-flex;' + (main ? ' filter:brightness(0);' : '') + '">' + t[2] + '</span><span>' + t[1] + '</span></button>';
+          }).join('')}
         </div>
 
  <div id="planBookmarkBackdrop" onclick="window.closeBookmarksBottomSheet();" style="display:none !important; pointer-events:none !important;"></div>
@@ -6408,6 +6726,8 @@ window.saveCurrentPackingRecord = function() {
 
     window.activePlanSubMode = 'calendar';
     window.renderPlanStage();
+    // 앞으로 날짜: 일정이 있으면 일정 보기, 없으면 일정 만들기 창
+    if (typeof window.okbmOpenPlanDaySheet === 'function') window.okbmOpenPlanDaySheet(dateKey);
   };
 
  // 📍 [눈높이 '가보고 싶은 곳' 경계선 플로팅 HUD 캡슐 바 엔진]
