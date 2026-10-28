@@ -4547,16 +4547,18 @@ window.renderUserProfileHeaderSection = function(config) {
     '<svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="position:absolute; left:50%; top:50%; width:34px; height:34px; transform:translate(-50%,-50%); display:' + (photoUrl ? 'none' : 'block') + ';" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
   '</div>';
 
-  // 마이리포트(내 프로필): 사진 왼쪽, 이름·소개·SNS 오른쪽, 아래 편집 버튼 둘. 쪽지·알림·설정은 맨 위 아이콘, 모아보기·관심은 탭(my-report.js)
+  // 마이리포트(내 프로필): 사진과 숫자 한 줄, 그 아래 이름·소개·SNS, 꽉 찬 '프로필 편집'. 쪽지·알림·설정은 맨 위 아이콘, 모아보기·관심은 탭(my-report.js)
   if (isOwner) {
+    // 사진 오른쪽 칸(mr-stats-slot)에는 my-report.js가 숫자 줄(.mr-stats)을 옮겨 넣는다
     return '<div class="unified-user-profile-header-card mr-prof-card">' +
       '<div class="mr-prof">' +
         '<div ' + avatarClickAttr + ' class="mr-av" data-mr-act="settings">' + avatarImgHtml + '</div>' +
-        '<div class="mr-pinfo">' +
-          '<span class="user-profile-nick-span mr-nick">' + _escapeReportPropHtml(nick) + '</span>' +
-          '<div ' + bioClickAttr + ' class="mr-bio" data-mr-act="profile"><span class="user-profile-bio-span" style="color:' + bioColor + ';">' + _escapeReportPropHtml(bioText) + '</span></div>' +
-          '<div class="user-profile-sns-wrap mr-sns">' + snsHtml + '</div>' +
-        '</div>' +
+        '<div class="mr-stats-slot"></div>' +
+      '</div>' +
+      '<div class="mr-pinfo">' +
+        '<span class="user-profile-nick-span mr-nick">' + _escapeReportPropHtml(nick) + '</span>' +
+        '<div ' + bioClickAttr + ' class="mr-bio" data-mr-act="profile"><span class="user-profile-bio-span" style="color:' + bioColor + ';">' + _escapeReportPropHtml(bioText) + '</span></div>' +
+        '<div class="user-profile-sns-wrap mr-sns">' + snsHtml + '</div>' +
       '</div>' +
       '<div class="mr-edit"><button type="button" data-mr-act="profile">프로필 편집</button></div>' +
     '</div>';

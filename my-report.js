@@ -26,27 +26,31 @@
     '.mr-badge{position:absolute;top:4px;right:3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#e11d48;color:#fff;font-size:11px;font-weight:800;align-items:center;justify-content:center;box-shadow:0 0 0 2px #000;box-sizing:border-box}',
     // 프로필
     '.mr-prof-card{flex-shrink:0;padding:10px 16px 0;box-sizing:border-box}',
-    '.mr-prof{display:flex;gap:14px;align-items:center}',
-    '.mr-av{flex:none;position:relative;width:76px;height:76px;border-radius:50%;padding:2px;background:rgba(255,255,255,.12);box-sizing:border-box;cursor:pointer}',
-    '.mr-pinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}',
+    '.mr-prof{display:flex;gap:18px;align-items:center}',
+    '.mr-stats-slot{flex:1;min-width:0}',
+    '.mr-av{flex:none;position:relative;width:80px;height:80px;border-radius:50%;padding:2px;background:rgba(255,255,255,.12);box-sizing:border-box;cursor:pointer}',
+    '.mr-pinfo{margin-top:12px;display:flex;flex-direction:column;gap:3px}',
     '.mr-nick{font-size:17px;font-weight:800;letter-spacing:-.02em;color:#f2f2f3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     '.mr-bio{cursor:pointer}',
     '.mr-bio span{font-size:15px;line-height:1.5;word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}',
-    '.mr-sns{display:flex;align-items:center;gap:6px;margin-top:4px}',
+    '.mr-sns{display:flex;align-items:center;gap:6px;margin-top:6px}',
     '.mr-sns:empty{display:none}',
     // SNS 고치기는 아래 'SNS 편집' 버튼 하나로: 배지 옆 연필은 숨긴다(renderUserSnsBadgesHtml가 붙인다)
     '.mr-sns button[onclick*="openSnsEditorModal"]{display:none!important}',
-    '.mr-edit{display:flex;gap:6px;margin-top:12px}',
-    '.mr-edit button{height:30px;padding:0 12px;border-radius:8px;border:1px solid var(--mr-line);background:var(--bg-2,#17171b);color:var(--mr-tx2);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}',
+    '.mr-edit{margin-top:14px}',
+    '.mr-edit button{width:100%;height:36px;border-radius:10px;border:1px solid var(--mr-line);background:var(--bg-2,#17171b);color:#f2f2f3;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}',
     '.mr-edit button:active,.mr-row:active,.mr-st:active,.mr-tr:active{opacity:.6}',
     // 숫자 한 줄
     '.mr-stats{flex-shrink:0;display:grid;grid-template-columns:repeat(3,1fr);margin:16px 16px 0;padding:12px 0;border-top:1px solid var(--mr-line);border-bottom:1px solid var(--mr-line)}',
     '.mr-st{background:none;border:0;color:#f2f2f3;font:inherit;padding:0;cursor:pointer;min-width:0}',
     '.mr-st+.mr-st{border-left:1px solid var(--mr-line)}',
+    '.mr-stats-slot .mr-stats{margin:0;padding:0;border:0}',
+    '.mr-stats-slot .mr-st+.mr-st{border-left:0}',
+    '.mr-stats-slot .mr-st b{font-size:19px}',
     '.mr-st b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}',
     '.mr-st small{display:block;margin-top:2px;font-size:12px;color:var(--mr-tx3);font-weight:600}',
     // 탭
-    '.mr-tabs{position:sticky;top:0;z-index:5;flex-shrink:0;display:flex;background:#000;border-bottom:1px solid var(--mr-line);margin-top:6px}',
+    '.mr-tabs{position:sticky;top:0;z-index:5;flex-shrink:0;display:flex;background:#000;border-bottom:1px solid var(--mr-line);margin-top:8px}',
     '.mr-tab{flex:1;height:46px;background:none;border:0;color:var(--mr-tx3);font:inherit;font-size:14px;font-weight:700;position:relative;cursor:pointer}',
     '.mr-tab.on{color:#f2f2f3}',
     '.mr-tab.on::after{content:"";position:absolute;left:28%;right:28%;bottom:-1px;height:2px;border-radius:2px;background:#f2f2f3}',
@@ -469,6 +473,9 @@
       var st = document.createElement('style'); st.id = 'okbmMyReportCss'; st.textContent = CSS; document.head.appendChild(st);
     }
     placeLegacy();
+    // 숫자 줄을 사진 오른쪽으로 (프로필은 열 때마다 새로 그려진다)
+    var slot = document.querySelector('#userProfileModalOverlay .mr-stats-slot'), stats = document.querySelector('#userProfileModalOverlay .mr-stats');
+    if (slot && stats && stats.parentNode !== slot) slot.appendChild(stats);
     setTab('rep'); // 열 때는 늘 리포트부터
     if (myId() !== S.uid) { S.feeds = null; S.year = null; S.ryear = null; }
     S.shown = PAGE;
