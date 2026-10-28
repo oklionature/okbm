@@ -4554,11 +4554,11 @@ window.renderUserProfileHeaderSection = function(config) {
         '<div ' + avatarClickAttr + ' class="mr-av" data-mr-act="settings">' + avatarImgHtml + '</div>' +
         '<div class="mr-pinfo">' +
           '<span class="user-profile-nick-span mr-nick">' + _escapeReportPropHtml(nick) + '</span>' +
-          '<div ' + bioClickAttr + ' class="mr-bio"><span class="user-profile-bio-span" style="color:' + bioColor + ';">' + _escapeReportPropHtml(bioText) + '</span></div>' +
+          '<div ' + bioClickAttr + ' class="mr-bio" data-mr-act="profile"><span class="user-profile-bio-span" style="color:' + bioColor + ';">' + _escapeReportPropHtml(bioText) + '</span></div>' +
           '<div class="user-profile-sns-wrap mr-sns">' + snsHtml + '</div>' +
         '</div>' +
       '</div>' +
-      '<div class="mr-edit"><button type="button" data-mr-act="bio">소개 편집</button><button type="button" data-mr-act="sns">SNS 편집</button></div>' +
+      '<div class="mr-edit"><button type="button" data-mr-act="profile">프로필 편집</button></div>' +
     '</div>';
   }
 
@@ -5481,9 +5481,9 @@ function ensureMyReportAndAuthModalsInDOM() {
             <button type="button" class="mr-st" data-mr-act="routers"><b id="mrFollowCount">0</b><small>관심루터</small></button>
           </div>
           <div class="mr-tabs" role="tablist">
+            <button type="button" role="tab" class="mr-tab" data-mr-tab="rep">리포트</button>
             <button type="button" role="tab" class="mr-tab" data-mr-tab="rec">내 기록</button>
             <button type="button" role="tab" class="mr-tab" data-mr-tab="save">저장</button>
-            <button type="button" role="tab" class="mr-tab" data-mr-tab="rep">리포트</button>
           </div>
 
           <section class="mr-pane" data-mr-pane="rec">

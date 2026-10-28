@@ -13,7 +13,6 @@
 (function () {
   'use strict';
 
-  var TAB_KEY = 'okbm_mr_tab';
   var R2_PUBLIC = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
   var WD = ['일', '월', '화', '수', '목', '금', '토'];
   var PAGE = 4; // 내 기록은 처음 4개, '더 보기'를 누르면 전부
@@ -85,18 +84,12 @@
     '.mr-pr div{display:grid;grid-template-columns:60px 1fr 46px;gap:8px;align-items:center;font-size:12.5px;color:var(--mr-tx2)}',
     '.mr-pr b{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}',
     '.mr-mini{height:5px;border-radius:3px;background:var(--bg-3,#2a2a30);overflow:hidden}',
-    '.mr-next{display:block;width:100%;margin-top:12px;padding:11px 0 0;border:0;border-top:1px solid var(--mr-line);background:none;color:var(--mr-tx2);font:inherit;font-size:12.5px;text-align:left;cursor:pointer;line-height:1.5}',
-    '.mr-next b{color:#f2f2f3}',
     '.mr-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}',
     '.mr-c{display:flex;flex-direction:column;min-height:104px;text-align:left;color:#f2f2f3;font:inherit}',
     'button.mr-c{cursor:pointer}',
     '.mr-c .v{margin-top:auto;padding-top:10px;font-size:24px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}',
     '.mr-c .v em{font-style:normal;font-size:14px;font-weight:700;color:var(--mr-tx2);margin-left:2px}',
     '.mr-c .s{margin-top:2px;font-size:12px;color:var(--mr-tx3)}',
-    '.mr-plan{display:flex;align-items:center;gap:10px;width:100%;text-align:left;color:#f2f2f3;font:inherit;cursor:pointer}',
-    '.mr-plan b{display:block;margin-top:3px;font-size:15px;font-weight:800}',
-    '.mr-plan small{display:block;margin-top:2px;font-size:12px;color:var(--mr-tx3)}',
-    '.mr-dd{margin-left:auto;flex:none;padding:6px 10px;border-radius:10px;background:var(--accent-soft,rgba(76,148,248,.16));color:var(--mr-acc);font-size:15px;font-weight:800}',
     '.mr-bars{display:grid;grid-template-columns:repeat(12,1fr);gap:5px;align-items:end;height:64px;margin-top:12px}',
     '.mr-bars span{background:var(--bg-3,#2a2a30);border-radius:3px;min-height:3px}',
     '.mr-bars span.now{background:var(--mr-acc)}',
@@ -107,6 +100,9 @@
     '.mr-sel select{height:32px;padding:0 28px 0 12px;border-radius:8px;border:1px solid var(--line-strong,rgba(255,255,255,.16));background:var(--bg-2,#17171b) url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23d1d1d6%27 stroke-width=%273%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E") no-repeat right 10px center;color:#f2f2f3;font:inherit;font-size:13px;font-weight:700;-webkit-appearance:none;appearance:none}',
     '.mr-4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}',
     '.mr-4.two{grid-template-columns:1fr 1fr}',
+    '.mr-4.three{grid-template-columns:repeat(3,1fr)}',
+    '.mr-4.three b{font-size:15px}',
+    '.mr-cap2{margin-top:12px;font-size:12px;font-weight:700;color:var(--mr-tx3)}',
     '.mr-4 div{padding:9px 0;border-radius:10px;background:var(--bg-2,#17171b);text-align:center}',
     '.mr-4 div.on{background:var(--accent-soft,rgba(76,148,248,.16))}',
     '.mr-4 b{display:block;font-size:17px;font-weight:800;color:#f2f2f3;font-variant-numeric:tabular-nums}',
@@ -269,26 +265,6 @@
     return { total: total, filled: filled, rows: rows, next: next, mineIds: mine };
   }
 
-  // 다음 백패킹: 낭만플랜(okbm_plan_spots)에서 오늘 이후 가장 가까운 날
-  function nextPlan() {
-    var obj = vault('okbm_plan_spots', {}) || {};
-    var t0 = new Date(); t0.setHours(0, 0, 0, 0);
-    var best = null;
-    Object.keys(obj).forEach(function (k) {
-      var m = String(k).match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/);
-      if (!m) return;
-      var d = new Date(+m[1], +m[2] - 1, +m[3]);
-      if (d < t0) return;
-      var arr = Array.isArray(obj[k]) ? obj[k] : (obj[k] && obj[k].name ? [obj[k]] : []);
-      var sp = arr.filter(function (x) { return x && x.name; })[0];
-      if (!sp) return;
-      if (!best || d < best.d) best = { d: d, name: String(sp.name).replace(/^\[[^\]]*\]\s*/, '').replace(/\s*\(.*\)\s*$/, '') };
-    });
-    if (!best) return null;
-    best.dd = Math.round((best.d - t0) / 86400000);
-    return best;
-  }
-
   // ---------------------------------------------------------------- 그리기
   var ICON = {
     check: '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
@@ -346,9 +322,6 @@
         return '<div><span>' + esc(r.name) + '</span><span class="mr-mini"><i style="width:' + Math.round(r.filled / r.total * 100) + '%"></i></span><b>' + r.filled + '/' + r.total + '</b></div>';
       }).join('') + '</div>';
       if (pm.rows.length > 3) h += '<button type="button" class="mr-go mr-more2" data-mr-act="sido">' + (S.allSido ? '접기' : '모든 도 보기 (' + pm.rows.length + ')') + '</button>';
-      if (pm.next) {
-        h += '<button type="button" class="mr-next" data-mr-act="spot" data-v="' + esc(pm.next.spots[0].id) + '">다음 빈칸 추천 · <b>' + esc(pm.next.region + ' ' + pm.next.city) + '</b> 박지 ' + pm.next.spots.length + '곳 ›</button>';
-      }
     } else {
       h += '<div class="mr-empty">박지 정보를 받는 중이에요</div>';
     }
@@ -358,12 +331,6 @@
       '<div class="mr-card mr-c"><span class="mr-k">' + ICON.check + '클리어한 박지</span><span class="v">' + num(Object.keys(vset).length) + '<em>곳</em></span><span class="s">찜만 한 곳 ' + num(wish) + '곳</span></div>' +
       '<div class="mr-card mr-c"><span class="mr-k">' + ICON.star + '받은 별</span><span class="v">' + num(stars) + '<em>개</em></span><span class="s">댓글 ' + num(comments) + ' · 피드 ' + num(feeds.length) + '개</span></div>' +
       '</div>';
-    // 다음 백패킹
-    var np = nextPlan();
-    h += '<button type="button" class="mr-card mr-plan" data-mr-act="plan">' + (np
-      ? '<span><span class="mr-k">' + ICON.cal + '다음 백패킹</span><b>' + (np.d.getMonth() + 1) + '/' + np.d.getDate() + '(' + WD[np.d.getDay()] + ') ' + esc(np.name) + '</b><small>낭만플랜에서 패킹 리스트 보기</small></span><span class="mr-dd">' + (np.dd === 0 ? '오늘' : 'D-' + np.dd) + '</span>'
-      : '<span><span class="mr-k">' + ICON.cal + '다음 백패킹</span><b>아직 잡힌 일정이 없어요</b><small>낭만플랜에서 날짜와 박지를 넣어 보세요</small></span><span class="mr-r">›</span>') + '</button>';
-
     // ----- 기록 분석: 예전 시즌·지형 칸을 서버 기록으로 다시 그린다. 해를 고를 수 있다
     var ys = yearOptions(feeds);
     // 기록이 오기 전에는 해를 정하지 않는다(빈 목록으로 '전체'가 굳지 않게)
@@ -407,12 +374,21 @@
         }).join('') + '</div>' +
         '<div class="mr-4 two"><div><b>' + uniq + '</b><small>새로 간 박지</small></div><div><b>' + again + '</b><small>다시 간 횟수</small></div></div>' +
         (fav ? '<div class="mr-note">가장 자주 간 곳 · <b>' + esc(fav.name) + '</b> ' + fav.n + '번</div>' : '') + '</div>';
-      // 높이 (예전 '총 누적 획득 고도'·'가장 높은 곳 Top 5')
+      // 높이 (예전 '총 누적 획득 고도': 이번 달 · 올해 · 역대 셋으로 나눠 보여 줬다). 셋은 해 고르기와 상관없이 늘 같은 기준,
+      // 가장 높은 곳 3은 고른 해 기준
       tops.sort(function (a, b) { return b.e - a.e; });
-      var sum = tops.reduce(function (a, b) { return a + b.e; }, 0);
-      h += '<div class="mr-card"><div class="mr-h"><span class="mr-k">' + ICON.mount + '다녀온 높이</span></div>' +
-        '<div class="mr-pmn"><b>+' + num(sum) + '</b><em>m · 다녀온 박지 높이를 더한 값</em></div>' +
-        (tops.length ? '<div class="mr-top">' + tops.slice(0, 3).map(function (t, i) {
+      var now = new Date(), hMonth = 0, hYear = 0, hAll = 0;
+      feeds.forEach(function (f) {
+        var sp = spotOfFeed(f), e = elevOf(f) || (sp ? elevOf({ elevation: sp.elevation }) : 0), d = feedDate(f);
+        hAll += e;
+        if (d && d.getFullYear() === now.getFullYear()) {
+          hYear += e;
+          if (d.getMonth() === now.getMonth()) hMonth += e;
+        }
+      });
+      h += '<div class="mr-card"><div class="mr-h"><span class="mr-k">' + ICON.mount + '다녀온 높이</span><span class="mr-k">박지 높이를 더한 값</span></div>' +
+        '<div class="mr-4 three"><div><b>+' + num(hMonth) + '</b><small>이번 달</small></div><div><b>+' + num(hYear) + '</b><small>올해</small></div><div class="on"><b>+' + num(hAll) + '</b><small>전체</small></div></div>' +
+        (tops.length ? '<div class="mr-cap2">' + esc(y === 'all' ? '전체' : y + '년') + ' 가장 높은 곳</div><div class="mr-top">' + tops.slice(0, 3).map(function (t, i) {
           return '<div><i>' + (i + 1) + '</i><span>' + esc(t.name) + '</span><b>' + num(t.e) + 'm</b></div>';
         }).join('') + '</div>' : '') + '</div>';
     }
@@ -454,13 +430,12 @@
   }
 
   // ---------------------------------------------------------------- 탭
-  function setTab(t, keep) {
+  function setTab(t) {
     var root = $('userProfileModalOverlay');
     if (!root) return;
     if (['rec', 'save', 'rep'].indexOf(t) < 0) t = 'rep';
     root.querySelectorAll('.mr-tab').forEach(function (b) { var on = b.getAttribute('data-mr-tab') === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
     root.querySelectorAll('.mr-pane').forEach(function (p) { p.classList.toggle('on', p.getAttribute('data-mr-pane') === t); });
-    if (!keep) { try { localStorage.setItem(TAB_KEY, t); } catch (e) {} }
   }
   // 예전 펼침 칸(지형·시즌·지역·장비·제보)을 탭 안으로 옮긴다(한 번만)
   function placeLegacy() {
@@ -494,13 +469,111 @@
       var st = document.createElement('style'); st.id = 'okbmMyReportCss'; st.textContent = CSS; document.head.appendChild(st);
     }
     placeLegacy();
-    var t = 'rep';
-    try { t = localStorage.getItem(TAB_KEY) || 'rep'; } catch (e) {}
-    setTab(t, true);
+    setTab('rep'); // 열 때는 늘 리포트부터
     if (myId() !== S.uid) { S.feeds = null; S.year = null; S.ryear = null; }
     S.shown = PAGE;
     refresh(false);
   };
+
+
+  // ---------------------------------------------------------------- 프로필 편집 (소개 + SNS 한 화면)
+  // 예전엔 소개(editReportUserBio)와 SNS(openSnsEditorModal)를 따로 열었다. 저장하는 곳·방법은 그 둘과 같다.
+  var PE_CSS = [
+    '.mr-pe{position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center}',
+    '.mr-pe-box{width:100%;max-width:480px;max-height:92vh;overflow-y:auto;background:var(--bg-1,#0f0f11);border-top:1px solid var(--line,rgba(255,255,255,.08));border-radius:18px 18px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom,0px));box-sizing:border-box;color:#f2f2f3}',
+    '.mr-pe-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}',
+    '.mr-pe-h b{font-size:17px;font-weight:800}',
+    '.mr-pe-x{width:36px;height:36px;border:0;border-radius:10px;background:none;color:var(--tx-2,#d1d1d6);font-size:20px;cursor:pointer}',
+    '.mr-pe label{display:flex;justify-content:space-between;margin:14px 2px 6px;font-size:13px;font-weight:700;color:var(--tx-2,#d1d1d6)}',
+    '.mr-pe label small{font-weight:600;color:var(--tx-3,#8b8b93);font-variant-numeric:tabular-nums}',
+    '.mr-pe textarea,.mr-pe input{width:100%;box-sizing:border-box;border-radius:10px;border:1px solid var(--line-strong,rgba(255,255,255,.16));background:var(--bg-2,#17171b);color:#f2f2f3;font:inherit;font-size:15px;padding:10px 12px;outline:none}',
+    '.mr-pe textarea{height:92px;resize:none;line-height:1.5}',
+    '.mr-pe input{height:44px}',
+    '.mr-pe textarea:focus,.mr-pe input:focus{border-color:var(--accent,#4c94f8)}',
+    '.mr-pe-sub{margin:18px 2px 0;font-size:12px;color:var(--tx-3,#8b8b93)}',
+    '.mr-pe-sub button{border:0;background:none;padding:0;font:inherit;color:var(--accent,#4c94f8);font-weight:700;cursor:pointer}',
+    '.mr-pe-btns{display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:18px}',
+    '.mr-pe-btns button{height:46px;border-radius:12px;border:0;font:inherit;font-size:15px;font-weight:800;cursor:pointer}',
+    '.mr-pe-btns .c{background:var(--bg-2,#17171b);color:var(--tx-2,#d1d1d6)}',
+    '.mr-pe-btns .s{background:var(--accent-fill,#2b6fd6);color:#fff}'
+  ].join('');
+  function bioMax() { return typeof OKBM_USER_BIO_MAX === 'number' ? OKBM_USER_BIO_MAX : 100; }
+  function normBio(t) { return typeof okbmNormalizeUserBio === 'function' ? okbmNormalizeUserBio(t) : String(t || '').trim(); }
+  function openProfileEditor() {
+    metric('feat_profile_edit');
+    if (!document.getElementById('okbmMyReportPeCss')) {
+      var st = document.createElement('style'); st.id = 'okbmMyReportPeCss'; st.textContent = PE_CSS; document.head.appendChild(st);
+    }
+    var old = document.getElementById('mrProfileEditor');
+    if (old) old.remove();
+    var ls = function (k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+    var bio = normBio(ls('okbm_user_bio'));
+    var wrap = document.createElement('div');
+    wrap.id = 'mrProfileEditor';
+    wrap.className = 'mr-pe';
+    wrap.innerHTML = '<div class="mr-pe-box" role="dialog" aria-modal="true" aria-label="프로필 편집">' +
+      '<div class="mr-pe-h"><b>프로필 편집</b><button type="button" class="mr-pe-x" data-pe="close" aria-label="닫기">✕</button></div>' +
+      '<label for="mrPeBio">소개<small id="mrPeCount">' + bio.length + '/' + bioMax() + '</small></label>' +
+      '<textarea id="mrPeBio" maxlength="' + bioMax() + '" placeholder="어떤 백패킹을 다니는지 소개해 보세요">' + esc(bio) + '</textarea>' +
+      '<label for="mrPeInsta">인스타그램</label><input id="mrPeInsta" type="text" autocomplete="off" placeholder="@아이디" value="' + esc(ls('okbm_user_instagram')) + '">' +
+      '<label for="mrPeYt">유튜브 채널</label><input id="mrPeYt" type="text" autocomplete="off" inputmode="url" placeholder="youtube.com/@채널" value="' + esc(ls('okbm_user_youtube')) + '">' +
+      '<label for="mrPeBlog">네이버 블로그</label><input id="mrPeBlog" type="text" autocomplete="off" inputmode="url" placeholder="blog.naver.com/아이디" value="' + esc(ls('okbm_user_blog')) + '">' +
+      '<p class="mr-pe-sub">사진·닉네임은 <button type="button" data-pe="settings">설정</button>에서 바꿔요.</p>' +
+      '<div class="mr-pe-btns"><button type="button" class="c" data-pe="close">취소</button><button type="button" class="s" data-pe="save">저장</button></div>' +
+      '</div>';
+    document.body.appendChild(wrap);
+    var ta = wrap.querySelector('#mrPeBio');
+    ta.addEventListener('input', function () { wrap.querySelector('#mrPeCount').textContent = ta.value.length + '/' + bioMax(); });
+    wrap.addEventListener('click', function (e) {
+      if (e.target === wrap) { wrap.remove(); return; }
+      var b = e.target.closest('[data-pe]');
+      if (!b) return;
+      var a = b.getAttribute('data-pe');
+      if (a === 'close') wrap.remove();
+      else if (a === 'save') saveProfile(wrap);
+      else if (a === 'settings') { wrap.remove(); openSettings(); }
+    });
+  }
+  function saveProfile(wrap) {
+    var val = function (id) { var el = wrap.querySelector('#' + id); return el ? el.value.trim() : ''; };
+    var bio = normBio(val('mrPeBio'));
+    var insta = val('mrPeInsta'), yt = val('mrPeYt'), blog = val('mrPeBlog');
+    var put = function (k, v) { try { if (v) localStorage.setItem(k, v); else localStorage.removeItem(k); } catch (e) {} };
+    try { localStorage.setItem('okbm_user_bio', bio); } catch (e) {}
+    put('okbm_user_instagram', insta); put('okbm_user_youtube', yt); put('okbm_user_blog', blog);
+    var profile = (typeof safeGetJSON === 'function' ? safeGetJSON('user_profile', null) : null) || {};
+    profile.bio = bio; profile.instagram = insta; profile.youtube = yt; profile.blog = blog;
+    try {
+      localStorage.setItem('user_profile', JSON.stringify(profile));
+      if (profile.id) localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
+    } catch (e) {}
+    // 화면 곳곳의 소개·SNS를 바로 바꾼다
+    document.querySelectorAll('.user-profile-bio-span').forEach(function (span) {
+      span.innerText = bio || '소개글을 작성해보세요.';
+      span.style.color = bio ? '' : '#64748b';
+    });
+    if (typeof window.renderUserSnsBadgesHtml === 'function') {
+      var badges = window.renderUserSnsBadgesHtml(insta, yt, blog, true);
+      document.querySelectorAll('.user-profile-sns-wrap').forEach(function (w) { w.innerHTML = badges; });
+      var coll = document.getElementById('userCollectionSnsWrap');
+      if (coll) coll.innerHTML = badges;
+    }
+    if (typeof okbmMarkUserDataDirty === 'function') okbmMarkUserDataDirty(['__profile_bio', '__profile_sns']);
+    if (typeof window.saveUserToSupabase === 'function') {
+      window.saveUserToSupabase(profile).catch(function (e) { console.warn('[my-report.js:saveProfile]', e); });
+    }
+    if (typeof triggerHaptic === 'function') triggerHaptic(15);
+    wrap.remove();
+    if (typeof showToast === 'function') showToast('프로필을 저장했어요.', 'success', 1500);
+  }
+  function openSettings() {
+    // 계정 관리의 뒤로(◀)가 마이리포트로 돌아오게: 계정 관리를 열면 마이리포트 창을 새로 만들므로 다시 여는 길을 남긴다
+    if (typeof window.recordModalHistoryStep === 'function') {
+      window.recordModalHistoryStep('userProfileModalOverlay', function () { if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal(); });
+    }
+    if (typeof window.openAccountSettingsModal === 'function') window.openAccountSettingsModal();
+    if (typeof window.okbmApplyActivityPrivacyButtons === 'function') window.okbmApplyActivityPrivacyButtons();
+  }
 
   // ---------------------------------------------------------------- 누름
   document.addEventListener('change', function (e) {
@@ -541,14 +614,8 @@
     switch (act) {
       case 'note': if (typeof window.openUserNotificationInbox === 'function') window.openUserNotificationInbox('note', e); break;
       case 'notif': if (typeof window.openUserNotificationInbox === 'function') window.openUserNotificationInbox('notif', e); break;
-      case 'settings':
-        // 계정 관리의 뒤로(◀)가 마이리포트로 돌아오게: 계정 관리를 열면 마이리포트 창을 새로 만들므로 다시 여는 길을 남긴다
-        if (typeof window.recordModalHistoryStep === 'function') {
-          window.recordModalHistoryStep('userProfileModalOverlay', function () { if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal(); });
-        }
-        if (typeof window.openAccountSettingsModal === 'function') window.openAccountSettingsModal();
-        if (typeof window.okbmApplyActivityPrivacyButtons === 'function') window.okbmApplyActivityPrivacyButtons();
-        break;
+      case 'settings': openSettings(); break;
+      case 'profile': openProfileEditor(); break;
       case 'bio': if (typeof window.editReportUserBio === 'function') window.editReportUserBio(); break;
       case 'sns': if (typeof window.openSnsEditorModal === 'function') window.openSnsEditorModal(); break;
       case 'routers': if (typeof window.openRoutersInterestFromReport === 'function') window.openRoutersInterestFromReport(e); break;
@@ -557,10 +624,6 @@
       case 'feed': if (v && typeof window.openReportActivityFeed === 'function') window.openReportActivityFeed(v); break;
       case 'more': S.shown = 1e9; renderRecords(); break;
       case 'sido': S.allSido = !S.allSido; renderReport(); break;
-      case 'plan':
-        metric('feat_report_plan');
-        if (typeof window.navigateToDockTab === 'function') window.navigateToDockTab('plan');
-        break;
       case 'photomap':
         metric('feat_report_photomap');
         if (typeof window.okbmOpenPhotoMap === 'function') {
@@ -568,18 +631,6 @@
         } else {
           window.location.assign('map.html?pm=open');
         }
-        break;
-      case 'spot':
-        metric('feat_report_next_spot');
-        if (typeof window.focusSpotOnMap === 'function') {
-          var s = spotIndex().byId[String(v)];
-          if (s) {
-            closeReportThen(function () { if (typeof window.closeUserProfileModal === 'function') window.closeUserProfileModal(); window.focusSpotOnMap(s); });
-            break;
-          }
-        }
-        try { sessionStorage.setItem('okbm_entered_via_index', '1'); } catch (err) {}
-        window.location.assign('map.html?id=' + encodeURIComponent(String(v || '')));
         break;
     }
   }, true);
