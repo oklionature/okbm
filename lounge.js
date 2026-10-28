@@ -82,6 +82,7 @@
   };
   // 화면 상태. tab = 홈 탭, wtab = 라운지 창 탭 (서로 따로 기억), revSpot = 후기 탭을 한 박지로 좁힘
   const S = { tab: 0, wtab: 0, cat: 'all', revSpot: null };
+  let timeSig = ''; // 신청·오픈 상태 요약 (renderAll·timeTick)
 
   // ---------- 날짜 ----------
   const WD = ['일', '월', '화', '수', '목', '금', '토'];
@@ -118,6 +119,66 @@
       start: s, end: en, past: past
     };
   }
+  // ---------- 신청·오픈 일시 (SUPABASE_H18) ----------
+  // 행사는 신청 시작 7일 전부터 마감까지 맨 위로 올리고, 할인은 시작 7일 전부터 '곧 오픈'으로 올린다.
+  const HOT_MS = 7 * 86400000;
+  function parseTs(s) { if (!s) return null; const d = new Date(s); return isNaN(d) ? null : d; }
+  function hourText(d) {
+    const h = d.getHours(), m = d.getMinutes();
+    const t = h === 0 ? '밤 12시' : (h < 12 ? '오전 ' + h + '시' : (h === 12 ? '낮 12시' : '오후 ' + (h - 12) + '시'));
+    return t + (m ? ' ' + m + '분' : '');
+  }
+  // 오늘 0시부터 그날 0시까지 날 수
+  function dayDiff(d) {
+    return Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - parseD(todayKey())) / 86400000);
+  }
+  function dayText(d, long) {
+    const n = dayDiff(d);
+    if (n === 0) return '오늘';
+    if (n === 1) return '내일';
+    return (long ? (d.getMonth() + 1) + '월 ' + d.getDate() + '일' : (d.getMonth() + 1) + '/' + d.getDate()) + '(' + WD[d.getDay()] + ')';
+  }
+  // '10월 30일(목) 오후 2시' (long) · '10/30(목) 오후 2시' · '오늘 오후 2시'
+  function whenText(d, long) { return dayText(d, long) + ' ' + hourText(d); }
+  // 마감: 0시 정각이면 전날 밤까지라 시간 없이 '11/14(금)까지'
+  function untilText(d, long) {
+    if (!d.getHours() && !d.getMinutes()) return dayText(new Date(d - 1), long) + '까지';
+    return whenText(d, long) + '까지';
+  }
+  // 남은 때 꼬리표: 1시간 안이면 '37분 뒤'(minutes일 때만), 아니면 '오늘'·'내일'·'D-3'
+  function leftChip(at, minutes) {
+    const ms = at - Date.now();
+    if (minutes && ms > 0 && ms < 3600000) return Math.max(1, Math.ceil(ms / 60000)) + '분 뒤';
+    const n = dayDiff(at);
+    return n <= 0 ? '오늘' : (n === 1 ? '내일' : 'D-' + n);
+  }
+  const isHotChip = function (c) { return c === '오늘' || c === '내일' || /분 뒤$/.test(c); };
+  // 행사 신청 상태. 신청 일시가 없으면 null. 마감을 비우면 행사 시작일 0시(전날 밤)까지.
+  // phase: later(7일 넘게 남음) · soon(7일 안) · open(신청 중) · closed(마감). hot이면 맨 위.
+  function applyView(e) {
+    const open = parseTs(e.apply_open_at);
+    const close = parseTs(e.apply_close_at) || parseD(e.start_date);
+    if (!open && !parseTs(e.apply_close_at)) return null;
+    const now = Date.now();
+    let phase = 'closed';
+    if (open && now < open) phase = open - now <= HOT_MS ? 'soon' : 'later';
+    else if (close && now < close) phase = 'open';
+    return { open: open, close: close, phase: phase, hot: phase === 'soon' || phase === 'open', at: phase === 'open' ? close : open };
+  }
+  // 큰 글씨 한 줄과 오른쪽 꼬리표. open의 마감이 오늘·내일이면 꼬리표를 '오늘 마감'으로.
+  function applyLine(a, long) {
+    if (a.phase === 'open') return '신청 중 · ' + untilText(a.close, long);
+    if (a.phase === 'closed') return '신청 마감';
+    return whenText(a.open, long) + ' 신청 오픈';
+  }
+  function applyChip(a, minutes) {
+    if (a.phase === 'open') {
+      const c = leftChip(new Date(a.close - 1), minutes);
+      return isHotChip(c) ? c + ' 마감' : '신청 중';
+    }
+    if (a.phase === 'closed') return '';
+    return leftChip(a.open, minutes) + (minutes ? '' : ' 오픈');
+  }
   function ago(iso) {
     const t = new Date(iso).getTime();
     if (!t) return '';
@@ -137,10 +198,13 @@
     const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     return D.events.filter(function (e) { const v = evView(e); return v.start <= monthEnd && v.end >= today; });
   }
-  // 참가 가능(시작일 오늘 이후)이 먼저, 그중 고정이 위. 이미 시작된 일정은 끝나는 날이 가까운 순.
+  // 신청이 7일 안에 열리거나 신청 중인 행사가 맨 위(다음 시각이 가까운 순).
+  // 그다음 참가 가능(시작일 오늘 이후), 그중 고정이 위. 이미 시작된 일정은 끝나는 날이 가까운 순.
   function compareEvents(a, b) {
     const t = todayKey();
     const rank = function (e) {
+      const ap = applyView(e);
+      if (ap && ap.hot) return { group: -1, pin: 0, key: ap.at.toISOString() };
       const start = String(e.start_date || '').slice(0, 10);
       const end = String(e.end_date || e.start_date || '').slice(0, 10);
       const joinable = start >= t;
@@ -327,6 +391,11 @@
       '.lm-dd{flex:none;font-size:11.5px;font-weight:800;color:var(--blue);padding-top:2px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}',
       '.lm-dd .dd-s{display:block;margin-bottom:2px;font-size:10.5px;font-weight:700;color:var(--sub)}',
       '.lm-dd .dd-e{display:block}',
+      '.lm-dd.hot{color:#ff6b6b}',
+      // 신청·오픈 일시 한 줄: 금색, 오늘·내일이면 빨강, 마감은 회색
+      '.lm-ap{margin-top:5px;font-size:13px;font-weight:800;line-height:1.35;color:var(--star);font-variant-numeric:tabular-nums}',
+      '.lm-ap.hot{color:#ff6b6b}',
+      '.lm-ap.off{font-size:11.5px;font-weight:700;color:var(--sub)}',
       '.lm-tag{display:inline-block;margin-left:5px;padding:0 5px;border-radius:4px;font-size:9.5px;font-weight:800;vertical-align:1px;color:var(--star);border:1px solid rgba(255,195,66,.4)}',
       '.lm-tag.new{color:#6fa8ff;border-color:rgba(49,130,246,.5)}',
       '.lm-tag.soon{color:#ff8a3d;border-color:rgba(255,138,61,.55)}',
@@ -842,8 +911,12 @@
     const v = evView(e);
     const spot = e.spot_id ? spotById(e.spot_id) : null;
     const place = String(e.place || '').trim() || spotName(spot);
+    // 신청 일시가 있으면 제목 밑에 '10월 30일(목) 오후 2시 신청 오픈'을 크게, 오른쪽엔 행사 D-day 대신 신청 꼬리표
+    const ap = v.past ? null : applyView(e);
+    const apChip = ap && ap.hot ? applyChip(ap, false) : '';
+    const apHtml = ap ? '<div class="lm-ap' + (ap.phase === 'closed' ? ' off' : (isHotChip(apChip.split(' ')[0]) ? ' hot' : '')) + '">' + esc(applyLine(ap, true)) + '</div>' : '';
     const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="false"><div class="lm-date"><b>${v.d}</b><small>${esc(v.mon)} ${esc(v.wd)}</small></div>
-      <div class="lm-rb"><div class="lm-rt">${esc(e.title)}${evTags(e)}</div><div class="lm-rs">${esc([place, v.days].filter(Boolean).join(' · '))}</div></div><span class="lm-dd">${esc(v.ddText)}</span></button>`;
+      <div class="lm-rb"><div class="lm-rt">${esc(e.title)}${evTags(e)}</div><div class="lm-rs">${esc([place, v.days].filter(Boolean).join(' · '))}</div>${apHtml}</div><span class="lm-dd${apChip && isHotChip(apChip.split(' ')[0]) ? ' hot' : ''}">${esc(apChip || v.ddText)}</span></button>`;
     const ig = eventIg(e);
     // 인스타 게시물이 펼쳐지면 같은 포스터가 두 번 보이므로 포스터는 게시물이 없을 때만
     const poster = ig ? '' : okbmSafeImageUrl(e.poster_url);
@@ -851,7 +924,7 @@
     const body = `<div class="lmx-in">
       ${poster ? `<img class="lm-poster" src="${escapeHtml(okbmSafeImageUrl(e.poster_url))}" alt="" loading="lazy" decoding="async">` : ''}
       ${e.subtitle ? `<div class="lm-rs" style="margin:0 0 6px">${esc(e.subtitle)}</div>` : ''}
-      ${kv('일정', v.dateText + ' (' + v.weekday + ')')}${kv('장소', place)}${kv('주최', e.host)}${kv('참가', e.fee)}
+      ${kv('일정', v.dateText + ' (' + v.weekday + ')')}${ap ? kv('신청', [ap.open ? whenText(ap.open, false) + ' 오픈' : '', untilText(ap.close, false)].filter(Boolean).join(' ~ ')) : ''}${kv('장소', place)}${kv('주최', e.host)}${kv('참가', e.fee)}
       ${e.description ? `<p class="lm-desc">${esc(e.description)}</p>` : ''}
       ${ig ? `<div class="lm-ig" data-kind="${esc(ig.kind)}" data-code="${esc(ig.code)}"></div>` : ''}
       ${(eventApplyUrl(e) || e.spot_id) ? `<div class="lmx-btns">
@@ -874,11 +947,16 @@
       return list.map(evItem).join('') + moreBtn(0, '행사 ' + D.events.length + '개 전체 보기');
     }
     const t = todayKey();
-    const open = D.events.filter(function (e) { return String(e.start_date || '').slice(0, 10) >= t; }).sort(compareEvents);
-    const going = D.events.filter(function (e) { return String(e.start_date || '').slice(0, 10) < t; }).sort(compareEvents);
+    // 신청이 곧 열리거나 신청 중인 행사는 따로 맨 위에 모은다. 마감되면 아래 날짜순 목록으로 돌아간다.
+    const isHot = function (e) { const ap = applyView(e); return !!(ap && ap.hot); };
+    const hot = D.events.filter(isHot).sort(compareEvents);
+    const rest = D.events.filter(function (e) { return !isHot(e); });
+    const open = rest.filter(function (e) { return String(e.start_date || '').slice(0, 10) >= t; }).sort(compareEvents);
+    const going = rest.filter(function (e) { return String(e.start_date || '').slice(0, 10) < t; }).sort(compareEvents);
     const now = thisMonthEvents();
     let h = `<div class="lm-head">이번 달 행사<br><em>${now.length}</em>개가 있어요</div>`;
-    if (!open.length && !going.length) h += '<div class="lm-empty">이번 달 행사가 없어요</div>';
+    if (hot.length) h += '<div class="lmh-cap">신청 일정</div>' + hot.map(evItem).join('') + (open.length ? '<div class="lmh-cap">다가오는 행사</div>' : '');
+    if (!hot.length && !open.length && !going.length) h += '<div class="lm-empty">이번 달 행사가 없어요</div>';
     else h += open.map(evItem).join('');
     if (going.length) h += '<div class="lmh-cap">이미 시작된 일정</div>' + going.map(evItem).join('');
     if (D.pastEvents === null) {
@@ -901,16 +979,40 @@
     const d = parseD(key);
     return d ? (d.getMonth() + 1) + '/' + d.getDate() : '';
   }
+  // 시작·끝 시각: 날짜 + 시간(H18). 시간이 없으면 시작은 그날 0시, 끝은 그날 밤(다음 날 0시).
+  function dealAt(date, time, endOfDay) {
+    const d = parseD(date);
+    if (!d) return null;
+    const m = String(time || '').match(/^(\d{1,2}):(\d{2})/);
+    if (m) d.setHours(+m[1], +m[2], 0, 0);
+    else if (endOfDay) d.setDate(d.getDate() + 1);
+    return d;
+  }
+  function dealStartAt(d) { return dealAt(d.start_date, d.start_time, false); }
+  function dealEndAt(d) { return dealAt(d.end_date, d.end_time, true); }
   function dealPhase(d) {
-    const t = todayKey();
-    if (d.start_date && String(d.start_date) > t) return 'upcoming';
+    const s = dealStartAt(d);
+    if (s && s > Date.now()) return 'upcoming';
     if (!d.start_date && d.phase === 'upcoming') return 'upcoming';
     return 'ongoing';
+  }
+  // 시작이 7일 안에 다가온 예정 할인: 진행중보다 위에 둔다
+  function dealSoon(d) {
+    const s = dealStartAt(d);
+    return !!s && dealPhase(d) === 'upcoming' && s - Date.now() <= HOT_MS;
+  }
+  // 큰 글씨 한 줄: 곧 오픈은 '11월 1일(토) 오전 10시 오픈', 끝 시간이 있고 오늘·내일 끝나면 '오늘 오후 6시 마감'
+  function dealLine(d, long) {
+    if (dealSoon(d)) return (d.start_time ? whenText(dealStartAt(d), long) : dayText(dealStartAt(d), long)) + ' 오픈';
+    const e = d.end_time ? dealEndAt(d) : null;
+    if (e && dealPhase(d) === 'ongoing' && dayDiff(e) <= 1) return whenText(e, long) + ' 마감';
+    return '';
   }
   function dealAlive(d) {
     if (!d || (d.is_active === false && !D.admin)) return false;
     const t = todayKey();
-    if (d.end_date && String(d.end_date) < t) return false;
+    const e = dealEndAt(d);
+    if (e && e <= Date.now()) return false;
     if (dealPhase(d) === 'ongoing' && !d.end_date && d.posted_on && addDaysKey(d.posted_on, 14) < t) return false;
     return true;
   }
@@ -928,6 +1030,10 @@
   }
   function upcomingDeals() {
     return sortDeals((D.deals || []).filter(function (d) { return dealAlive(d) && dealPhase(d) === 'upcoming'; }), 'start_date');
+  }
+  // 곧 오픈(7일 안)은 시작 시각이 가까운 순
+  function soonDeals() {
+    return upcomingDeals().filter(dealSoon).sort(function (a, b) { return dealStartAt(a) - dealStartAt(b); });
   }
   function dealMark(d) {
     const s = String(d.summary || '');
@@ -1102,8 +1208,9 @@
     const web = dealWebUrl(d);
     const postText = String(d.body || '').trim();
     const shown = postText || String(d.summary || '').trim();
-    const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="false"><div class="lm-date"><b>${esc(dealMark(d))}</b></div>
-      <div class="lm-rb"><div class="lm-rt">${esc(d.title)}${D.admin && !d.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc(d.summary)}</div></div><span class="lm-dd">${dealMetaHtml(d)}</span></button>`;
+    const line = dealLine(d, true);
+    const head =`<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="false"><div class="lm-date"><b>${esc(dealMark(d))}</b></div>
+      <div class="lm-rb"><div class="lm-rt">${esc(d.title)}${D.admin && !d.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc(d.summary)}</div>${line ? '<div class="lm-ap' + (dayDiff(dealSoon(d) ? dealStartAt(d) : dealEndAt(d)) <= 1 ? ' hot' : '') + '">' + esc(line) + '</div>' : ''}</div><span class="lm-dd">${dealMetaHtml(d)}</span></button>`;
     const body = `<div class="lmx-in">
       ${shown ? `<p class="lm-desc" style="margin:0">${esc(shown)}</p>` : ''}
       ${ig ? `<div class="lm-ig" data-kind="${esc(ig.kind)}" data-code="${esc(ig.code)}"></div>` : ''}
@@ -1114,13 +1221,15 @@
   }
   function paneDeals(full) {
     const now = ongoingDeals();
-    const later = upcomingDeals();
+    const soon = soonDeals();
+    const later = upcomingDeals().filter(function (d) { return !dealSoon(d); });
     if (!full) {
-      const list = now.slice(0, HOME_N);
+      const list = soon.concat(now).slice(0, HOME_N);
       if (!list.length && !later.length) return homeEmpty('진행중인 할인이 없어요', TAB_DEAL, '라운지 열기');
-      return (list.length ? list : later.slice(0, HOME_N)).map(dealItem).join('') + moreBtn(TAB_DEAL, '할인 ' + (now.length + later.length) + '개 전체 보기');
+      return (list.length ? list : later.slice(0, HOME_N)).map(dealItem).join('') + moreBtn(TAB_DEAL, '할인 ' + (now.length + soon.length + later.length) + '개 전체 보기');
     }
     let h = `<div class="lm-head">진행중<br><em>${now.length}</em>개가 있어요</div>`;
+    if (soon.length) h += '<div class="lmh-cap">곧 오픈</div>' + soon.map(dealItem).join('') + '<div class="lmh-cap">진행중</div>';
     h += now.length ? now.map(dealItem).join('') : '<div class="lm-empty">진행중인 할인이 없어요</div>';
     if (later.length) h += '<div class="lmh-cap">예정</div>' + later.map(dealItem).join('');
     if (D.admin) h += '<button type="button" class="lmh-cta adm" data-a="new-deal">' + ico(P.plus, 18) + '할인 등록</button>';
@@ -1849,8 +1958,22 @@
   }
   // 바로가기 밑 두 칸 (2026-10-21): 왼쪽 이달의 행사, 오른쪽 할인 소식. 칸마다 3줄, 제목 옆 '전체 ›'.
   // 행사는 참가할 수 있는 가까운 날부터(homeEventList), 할인은 진행중을 마감이 가까운 순(ongoingDeals).
+  // 제목 밑 금색 한 줄(신청·오픈 일시). 제목 두 줄 자르기가 깨지지 않게 감싸서 따로 둔다
+  function hdText(title, line, hot) {
+    if (!line) return '<span class="hd-x">' + esc(title) + '</span>';
+    return '<span class="hd-xw"><span class="hd-x">' + esc(title) + '</span><em class="hd-ap' + (hot ? ' hot' : '') + '">' + esc(line) + '</em></span>';
+  }
   function hdEvRow(e) {
     const v = evView(e);
+    // 신청이 곧 열리거나 신청 중이면: 왼쪽에 신청 날, 꼬리표에 남은 때(1시간 안은 'N분 뒤'), 제목 밑에 시각
+    const ap = applyView(e);
+    if (ap && ap.hot) {
+      const at = ap.phase === 'open' ? new Date(ap.close - 1) : ap.open;
+      const chip = ap.phase === 'open' ? applyChip(ap, true).replace(' 마감', '') : leftChip(ap.open, true);
+      const k = ap.phase === 'open' ? '~' + (at.getMonth() + 1) + '/' + at.getDate() : (at.getMonth() + 1) + '/' + at.getDate();
+      const hot = isHotChip(chip);
+      return '<button type="button" class="hd-row" data-a="lounge" data-v="0" data-id="' + esc(e.id) + '"><span class="hd-k"><b>' + esc(k) + '</b><small' + (hot ? ' class="hot"' : '') + '>' + esc(chip) + '</small></span>' + hdText(e.title, applyLine(ap, false), hot) + '</button>';
+    }
     // 이미 시작한 행사는 끝나는 날(~10/31)과 남은 날, 아니면 시작일과 D-n. 오늘·내일이면 빨갛게
     const going = v.start < parseD(todayKey());
     const k = going ? '~' + (v.end.getMonth() + 1) + '/' + v.end.getDate() : (v.start.getMonth() + 1) + '/' + v.start.getDate();
@@ -1862,19 +1985,23 @@
   function hdDealRow(d) {
     const t = todayKey();
     let chip = '진행중', hot = false;
-    if (d.end_date) {
+    if (dealSoon(d)) {
+      chip = leftChip(dealStartAt(d), true);
+      hot = isHotChip(chip);
+    } else if (d.end_date) {
       const left = Math.round((parseD(d.end_date) - parseD(t)) / 86400000);
       chip = left <= 0 ? '오늘' : (left === 1 ? '내일' : 'D-' + left);
       hot = left <= 1;
     }
-    return '<button type="button" class="hd-row" data-a="lounge" data-v="' + TAB_DEAL + '" data-id="' + esc(d.id) + '"><span class="hd-k"><b>' + esc(dealMark(d)) + '</b><small' + (hot ? ' class="hot"' : '') + '>' + esc(chip) + '</small></span><span class="hd-x">' + esc(d.title) + '</span></button>';
+    return '<button type="button" class="hd-row" data-a="lounge" data-v="' + TAB_DEAL + '" data-id="' + esc(d.id) + '"><span class="hd-k"><b>' + esc(dealMark(d)) + '</b><small' + (hot ? ' class="hot"' : '') + '>' + esc(chip) + '</small></span>' + hdText(d.title, dealLine(d, false), hot) + '</button>';
   }
   function paintDealSurfaces() {
     const strip = document.getElementById('homeDealStrip');
     if (!strip) return;
     if (D.status !== 'ready') { strip.hidden = true; strip.innerHTML = ''; return; }
     const evs = D.fail[0] ? [] : homeEventList();
-    const now = D.fail[TAB_DEAL] ? [] : ongoingDeals();
+    // 곧 오픈하는 할인이 진행중보다 위
+    const now = D.fail[TAB_DEAL] ? [] : soonDeals().concat(ongoingDeals());
     const dealN = now.length;
     if (!evs.length && !dealN) { strip.hidden = true; strip.innerHTML = ''; return; }
     strip.hidden = false;
@@ -1983,7 +2110,19 @@
     if (adm) adm.textContent = D.admin ? '관리자' : '';
     for (let i = 0; i < wpanes.length; i++) rerenderPane(i);
   }
-  function renderAll() { renderHome(); paintDealSurfaces(); rerenderWindow(); }
+  function renderAll() { timeSig = timeSigNow(); renderHome(); paintDealSurfaces(); rerenderWindow(); }
+  // 신청·오픈 시각이 지나면 순서와 글씨가 바뀐다. 1분마다 상태(맨 위로·제자리)가 바뀌었으면 전부 다시 그리고,
+  // 아니면 홈 두 칸('37분 뒤' 같은 꼬리표)만 다시 그린다. 펼친 글·인스타 게시물은 상태가 바뀔 때만 다시 그려진다.
+  function timeSigNow() {
+    return todayKey() + '|' + D.events.map(function (e) { const ap = applyView(e); return ap ? ap.phase : ''; }).join() + '|'
+      + (D.deals || []).map(function (d) { return dealAlive(d) ? dealPhase(d) + (dealSoon(d) ? 's' : '') + dealLine(d, true) : 'x'; }).join();
+  }
+  function timeTick() {
+    if (D.status !== 'ready' || document.hidden) return;
+    if (timeSigNow() !== timeSig) renderAll(); else paintDealSurfaces();
+  }
+  setInterval(timeTick, 60000);
+  document.addEventListener('visibilitychange', timeTick);
   // 자유게시판만 바뀐 경우(댓글·글 쓰기/삭제): 홈은 게시판 탭일 때만, 창은 게시판 칸만 다시 그린다
   const BOARD_TAB = 2;
   function renderBoard() {
@@ -2216,6 +2355,16 @@
   };
 
   // ----- 행사 -----
+  // 일시 칸(datetime-local) ↔ 서버 timestamptz. 칸은 이 기기 시각(한국)으로 보이고 쓴다
+  function localDT(iso) {
+    const d = parseTs(iso);
+    return d ? d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) : '';
+  }
+  function dtToIso(v) {
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v)) return null;
+    const d = new Date(v);
+    return isNaN(d) ? null : d.toISOString();
+  }
   function eventFormHtml(e) {
     const spot = e && e.spot_id ? spotById(e.spot_id) : null;
     return `<h3 id="loungeSheetTitle">${e ? '행사 수정' : '행사 등록'}</h3><p class="lm-ssub">관리자에게만 보이는 화면이에요.</p>
@@ -2229,6 +2378,9 @@
         <div class="lm-picked" data-picked ${spot ? '' : 'hidden'}><span>${spot ? '지도 연결: ' + esc(spotName(spot)) : ''}</span><button type="button" data-a="unpick-spot">연결 해제</button></div>
         <div class="lm-two"><div>${field('lmEvHost', '주최', inp('lmEvHost', 'host', e && e.host, 'maxlength="60"'))}</div>
           <div>${field('lmEvFee', '참가', inp('lmEvFee', 'fee', e && e.fee, 'maxlength="60" placeholder="무료 · 선착순 80팀"'))}</div></div>
+        <div class="lm-two"><div>${field('lmEvOpen', '신청 시작', inp('lmEvOpen', 'apply_open_at', e && localDT(e.apply_open_at), 'type="datetime-local"'))}</div>
+          <div>${field('lmEvClose', '신청 마감', inp('lmEvClose', 'apply_close_at', e && localDT(e.apply_close_at), 'type="datetime-local"'))}</div></div>
+        <p class="lm-hint">신청 시작 7일 전부터 마감까지 행사 목록 맨 위에 '몇 월 며칠 몇 시 신청 오픈'으로 크게 떠요. 마감을 비우면 행사 전날 밤까지예요.</p>
         ${field('lmEvUrl', '신청 링크', inp('lmEvUrl', 'apply_url', e && eventApplyUrl(e), 'type="url" inputmode="url" placeholder="https://"'))}
         ${field('lmEvIg', '인스타 게시물 링크', inp('lmEvIg', 'instagram_url', e && eventIgUrl(e), 'type="url" inputmode="url" maxlength="300" placeholder="https://www.instagram.com/p/…"'))}
         <p class="lm-hint">신청 페이지와 인스타 게시물은 같이 넣을 수 있어요. 인스타는 앱 안에서 열려요.</p>
@@ -2304,12 +2456,17 @@
     const row = {
       title: val('title'), subtitle: val('subtitle'), start_date: val('start_date'), end_date: val('end_date') || null,
       place: val('place'), spot_id: st.spot_id || null, host: val('host'), fee: val('fee'), apply_url: apply, instagram_url: ig,
-      poster_url: st.poster_url || '', description: val('description'), is_pinned: !!st.sw.is_pinned, is_active: !!st.sw.is_active
+      poster_url: st.poster_url || '', description: val('description'), is_pinned: !!st.sw.is_pinned, is_active: !!st.sw.is_active,
+      apply_open_at: dtToIso(val('apply_open_at')), apply_close_at: dtToIso(val('apply_close_at'))
     };
     const bad = function (name, msg) { toast(msg, true); if (f.elements[name]) f.elements[name].focus(); };
     if (!row.title) return bad('title', '행사 이름을 적어 주세요');
     if (!/^\d{4}-\d{2}-\d{2}$/.test(row.start_date)) return bad('start_date', '시작일을 골라 주세요');
     if (row.end_date && row.end_date < row.start_date) return bad('end_date', '끝나는 날이 시작일보다 빨라요');
+    if (val('apply_open_at') && !row.apply_open_at) return bad('apply_open_at', '신청 시작 날짜와 시간을 다시 골라 주세요');
+    if (val('apply_close_at') && !row.apply_close_at) return bad('apply_close_at', '신청 마감 날짜와 시간을 다시 골라 주세요');
+    if (row.apply_open_at && row.apply_close_at && row.apply_close_at <= row.apply_open_at) return bad('apply_close_at', '신청 마감이 신청 시작보다 빨라요');
+    if (row.apply_open_at && !row.apply_close_at && new Date(row.apply_open_at) >= parseD(row.start_date)) return bad('apply_open_at', '신청 시작이 행사 날보다 늦어요. 신청 마감도 같이 적어 주세요');
     if (row.apply_url && !HTTPS_RE.test(row.apply_url)) return bad('apply_url', '신청 링크는 https://로 시작해야 해요');
     if (row.apply_url && instaPost(row.apply_url)) return bad('apply_url', '인스타 게시물 주소는 인스타 칸에 넣어 주세요');
     if (row.instagram_url && !(HTTPS_RE.test(row.instagram_url) && instaPost(row.instagram_url))) return bad('instagram_url', '인스타 게시물 주소만 넣을 수 있어요');
@@ -2328,7 +2485,9 @@
         ${field('lmDlSum', '한 줄 요약', inp('lmDlSum', 'summary', d && d.summary, 'maxlength="400" placeholder="목록에 보이는 한 줄"'))}
         <div class="lm-two"><div>${field('lmDlStart', '시작일', inp('lmDlStart', 'start_date', d && d.start_date, 'type="date"'))}</div>
           <div>${field('lmDlEnd', '끝나는 날', inp('lmDlEnd', 'end_date', d && d.end_date, 'type="date"'))}</div></div>
-        <p class="lm-hint">끝나는 날이 없으면, 올린 날부터 14일 뒤에 목록에서 빠져요.</p>
+        <div class="lm-two"><div>${field('lmDlStartT', '시작 시간', inp('lmDlStartT', 'start_time', d && d.start_time ? String(d.start_time).slice(0, 5) : '', 'type="time"'))}</div>
+          <div>${field('lmDlEndT', '끝나는 시간', inp('lmDlEndT', 'end_time', d && d.end_time ? String(d.end_time).slice(0, 5) : '', 'type="time"'))}</div></div>
+        <p class="lm-hint">끝나는 날이 없으면, 올린 날부터 14일 뒤에 목록에서 빠져요. 시작 7일 전부터 '곧 오픈'으로 맨 위에 떠요. 시간은 비워도 돼요.</p>
         ${field('lmDlIg', '인스타 게시물 링크', inp('lmDlIg', 'source_url', d && dealIgUrl(d), 'type="url" inputmode="url" maxlength="300" placeholder="https://www.instagram.com/p/…"'))}
         ${field('lmDlLink', '글 링크', inp('lmDlLink', 'link_url', d && dealWebUrl(d), 'type="url" inputmode="url" maxlength="500" placeholder="https:// 블로그·안내 글"'))}
         ${field('lmDlBody', '내용', '<textarea class="lm-ta" id="lmDlBody" name="body" maxlength="2000" placeholder="펼치면 보이는 안내. 비워 두면 한 줄 요약만 보여요.">' + esc(d && d.body) + '</textarea>')}
@@ -2354,12 +2513,15 @@
     if (link && source && link === source) link = '';
     const start = val('start_date') || null;
     const end = val('end_date') || null;
+    const startT = /^\d{2}:\d{2}/.test(val('start_time')) ? val('start_time').slice(0, 5) : null;
+    const endT = /^\d{2}:\d{2}/.test(val('end_time')) ? val('end_time').slice(0, 5) : null;
     const prev = st.id ? findDeal(st.id) : null;
+    const startAt = start ? dealAt(start, startT, false) : null;
     const row = {
       title: val('title'), summary: val('summary'), body: val('body'),
       source_url: source, link_url: link,
-      phase: start && start > todayKey() ? 'upcoming' : 'ongoing',
-      start_date: start, end_date: end,
+      phase: startAt && startAt > Date.now() ? 'upcoming' : 'ongoing',
+      start_date: start, end_date: end, start_time: start ? startT : null, end_time: end ? endT : null,
       posted_on: end ? null : ((prev && prev.posted_on) || st.posted_on || todayKey()),
       sort: Math.max(-999, Math.min(999, parseInt(val('sort'), 10) || 0)),
       is_active: !!st.sw.is_active
@@ -2369,6 +2531,9 @@
     if (start && !/^\d{4}-\d{2}-\d{2}$/.test(start)) return bad('start_date', '시작일을 다시 골라 주세요');
     if (end && !/^\d{4}-\d{2}-\d{2}$/.test(end)) return bad('end_date', '끝나는 날을 다시 골라 주세요');
     if (start && end && end < start) return bad('end_date', '끝나는 날이 시작일보다 빨라요');
+    if (startT && !start) return bad('start_date', '시작 시간을 쓰려면 시작일도 골라 주세요');
+    if (endT && !end) return bad('end_date', '끝나는 시간을 쓰려면 끝나는 날도 골라 주세요');
+    if (start && end && start === end && startT && endT && endT <= startT) return bad('end_time', '끝나는 시간이 시작 시간보다 빨라요');
     if (row.source_url && !(HTTPS_RE.test(row.source_url) && instaPost(row.source_url))) return bad('source_url', '인스타 게시물 주소만 넣을 수 있어요');
     if (row.link_url && !HTTPS_RE.test(row.link_url)) return bad('link_url', '글 링크는 https://로 시작해야 해요');
     if (row.link_url && instaPost(row.link_url)) return bad('link_url', '인스타 주소는 인스타 칸에 넣어 주세요');

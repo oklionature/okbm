@@ -57,6 +57,11 @@
       '.hd-k small{display:inline-block;margin-top:3px;padding:1px 4px;border-radius:4px;font-size:9.5px;font-weight:900;white-space:nowrap;background:rgba(255,255,255,.08);color:#cfd3da}',
       '.hd-k small.hot{background:#ff4d4f;color:#fff}',
       '.hd-x{flex:1;min-width:0;padding-top:1px;font-size:12px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere}',
+      // 신청·오픈 일시 한 줄(lounge.js hdText): 제목 밑 금색, 오늘·내일이면 빨강
+      '.hd-xw{flex:1;min-width:0;padding-top:1px}',
+      '.hd-xw .hd-x{padding-top:0}',
+      '.hd-ap{display:block;margin-top:3px;font-size:11px;font-weight:800;font-style:normal;line-height:1.3;color:#ffc342;word-break:keep-all;font-variant-numeric:tabular-nums}',
+      '.hd-ap.hot{color:#ff6b6b}',
       '.hd-empty{padding:14px 2px 12px;font-size:11.5px;color:#8b8b93}',
       // 시안: 인기 스팟 제목은 로고 줄 오른쪽(사진 쪽으로 15px 내림), 카드는 이름·숫자·설명·버튼만
       '.header-top-row{display:flex;align-items:center;justify-content:space-between}',
