@@ -16,7 +16,7 @@
   var TAB_KEY = 'okbm_mr_tab';
   var R2_PUBLIC = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
   var WD = ['일', '월', '화', '수', '목', '금', '토'];
-  var PAGE = 30;
+  var PAGE = 4; // 내 기록은 처음 4개, '더 보기'를 누르면 전부
 
   var CSS = [
     '#userProfileModalOverlay{--mr-line:var(--line,rgba(255,255,255,.08));--mr-card:var(--bg-1,#0f0f11);--mr-tx2:var(--tx-2,#d1d1d6);--mr-tx3:var(--tx-3,#8b8b93);--mr-acc:var(--accent,#4c94f8)}',
@@ -30,15 +30,18 @@
     '.mr-prof{display:flex;gap:14px;align-items:center}',
     '.mr-av{flex:none;position:relative;width:76px;height:76px;border-radius:50%;padding:2px;background:rgba(255,255,255,.12);box-sizing:border-box;cursor:pointer}',
     '.mr-pinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}',
-    '.mr-nick{font-size:18px;font-weight:800;letter-spacing:-.02em;color:#f2f2f3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.mr-nick{font-size:17px;font-weight:800;letter-spacing:-.02em;color:#f2f2f3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     '.mr-bio{cursor:pointer}',
-    '.mr-bio span{font-size:13.5px;line-height:1.45;word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}',
-    '.mr-sns{display:flex;align-items:center;gap:6px;min-height:26px;margin-top:3px}',
-    '.mr-edit{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}',
-    '.mr-edit button{height:36px;border-radius:10px;border:1px solid var(--mr-line);background:var(--bg-2,#17171b);color:#f2f2f3;font:inherit;font-size:13px;font-weight:700;cursor:pointer}',
+    '.mr-bio span{font-size:15px;line-height:1.5;word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}',
+    '.mr-sns{display:flex;align-items:center;gap:6px;margin-top:4px}',
+    '.mr-sns:empty{display:none}',
+    // SNS 고치기는 아래 'SNS 편집' 버튼 하나로: 배지 옆 연필은 숨긴다(renderUserSnsBadgesHtml가 붙인다)
+    '.mr-sns button[onclick*="openSnsEditorModal"]{display:none!important}',
+    '.mr-edit{display:flex;gap:6px;margin-top:12px}',
+    '.mr-edit button{height:30px;padding:0 12px;border-radius:8px;border:1px solid var(--mr-line);background:var(--bg-2,#17171b);color:var(--mr-tx2);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}',
     '.mr-edit button:active,.mr-row:active,.mr-st:active,.mr-tr:active{opacity:.6}',
     // 숫자 한 줄
-    '.mr-stats{flex-shrink:0;display:grid;grid-template-columns:repeat(4,1fr);margin:16px 16px 0;padding:12px 0;border-top:1px solid var(--mr-line);border-bottom:1px solid var(--mr-line)}',
+    '.mr-stats{flex-shrink:0;display:grid;grid-template-columns:repeat(3,1fr);margin:16px 16px 0;padding:12px 0;border-top:1px solid var(--mr-line);border-bottom:1px solid var(--mr-line)}',
     '.mr-st{background:none;border:0;color:#f2f2f3;font:inherit;padding:0;cursor:pointer;min-width:0}',
     '.mr-st+.mr-st{border-left:1px solid var(--mr-line)}',
     '.mr-st b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}',
@@ -79,7 +82,7 @@
     '.mr-bar{height:8px;border-radius:4px;background:var(--bg-3,#2a2a30);margin-top:8px;overflow:hidden}',
     '.mr-bar i,.mr-mini i{display:block;height:100%;background:#fbbf24;border-radius:4px}',
     '.mr-pr{margin-top:12px;display:flex;flex-direction:column;gap:7px}',
-    '.mr-pr div{display:grid;grid-template-columns:38px 1fr 46px;gap:8px;align-items:center;font-size:12.5px;color:var(--mr-tx2)}',
+    '.mr-pr div{display:grid;grid-template-columns:60px 1fr 46px;gap:8px;align-items:center;font-size:12.5px;color:var(--mr-tx2)}',
     '.mr-pr b{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}',
     '.mr-mini{height:5px;border-radius:3px;background:var(--bg-3,#2a2a30);overflow:hidden}',
     '.mr-next{display:block;width:100%;margin-top:12px;padding:11px 0 0;border:0;border-top:1px solid var(--mr-line);background:none;color:var(--mr-tx2);font:inherit;font-size:12.5px;text-align:left;cursor:pointer;line-height:1.5}',
@@ -99,7 +102,27 @@
     '.mr-bars span.now{background:var(--mr-acc)}',
     '.mr-ml{display:grid;grid-template-columns:repeat(12,1fr);gap:5px;margin-top:5px;text-align:center;font-size:11px;color:var(--mr-tx3)}',
     // 옮겨 온 예전 펼침 칸: 탭 안에서는 위아래 간격만 맞춘다
-    '.mr-pane .report-minimal-card{margin:0!important}'
+    '.mr-more2{display:block;margin-top:8px}',
+    '.mr-sec{display:flex;justify-content:space-between;align-items:center;margin:14px 4px 0;font-size:15px;font-weight:800;color:#f2f2f3}',
+    '.mr-sel select{height:32px;padding:0 28px 0 12px;border-radius:8px;border:1px solid var(--line-strong,rgba(255,255,255,.16));background:var(--bg-2,#17171b) url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23d1d1d6%27 stroke-width=%273%27%3E%3Cpath d=%27m6 9 6 6 6-6%27/%3E%3C/svg%3E") no-repeat right 10px center;color:#f2f2f3;font:inherit;font-size:13px;font-weight:700;-webkit-appearance:none;appearance:none}',
+    '.mr-4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}',
+    '.mr-4.two{grid-template-columns:1fr 1fr}',
+    '.mr-4 div{padding:9px 0;border-radius:10px;background:var(--bg-2,#17171b);text-align:center}',
+    '.mr-4 div.on{background:var(--accent-soft,rgba(76,148,248,.16))}',
+    '.mr-4 b{display:block;font-size:17px;font-weight:800;color:#f2f2f3;font-variant-numeric:tabular-nums}',
+    '.mr-4 small{display:block;margin-top:2px;font-size:12px;color:var(--mr-tx3);font-weight:600}',
+    '.mr-4 div.on small{color:var(--mr-acc)}',
+    '.mr-note{margin-top:10px;font-size:12.5px;color:var(--mr-tx2);line-height:1.5}',
+    '.mr-note b{color:#f2f2f3}',
+    '.mr-top{margin-top:10px;display:flex;flex-direction:column}',
+    '.mr-top div{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--mr-line);font-size:13px;color:var(--mr-tx2)}',
+    '.mr-top i{flex:none;width:20px;height:20px;border-radius:6px;background:var(--bg-2,#17171b);display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:800;color:#f2f2f3}',
+    '.mr-top span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.mr-top b{flex:none;color:#f2f2f3;font-weight:700;font-variant-numeric:tabular-nums}',
+    // 남겨 둔 예전 '장비 & 세팅 무게' 칸: 새 카드와 같은 겉모양
+    '.mr-pane .report-minimal-card{margin:0!important;background:var(--mr-card)!important;border:1px solid var(--mr-line)!important;border-radius:14px!important;box-shadow:none!important}',
+    '.mr-pane .report-minimal-card>[data-sec]{min-height:50px;padding:0 14px!important;box-sizing:border-box}',
+    '.mr-pane .report-minimal-card>[data-sec] span{font-size:14px!important}'
   ].join('');
 
   // ---------------------------------------------------------------- 도구
@@ -246,29 +269,6 @@
     return { total: total, filled: filled, rows: rows, next: next, mineIds: mine };
   }
 
-  // 대표 사진: 내가 피드를 올린 박지 중 좋아요가 가장 많은 사진이 내 것인 곳(포토맵 '모두'의 박지 칸과 같은 규칙)
-  function loadCoverCount(feeds) {
-    var a = api(), uid = myId();
-    if (!a || !uid) return Promise.resolve(null);
-    var ids = {};
-    feeds.forEach(function (f) { var s = spotOfFeed(f); if (s && photosOf(f).length) ids[String(s.id).trim()] = 1; });
-    var list = Object.keys(ids);
-    if (!list.length) return Promise.resolve(0);
-    var q = a.url + '/rest/v1/feeds?spot_id=in.(' + list.map(encodeURIComponent).join(',') + ')' +
-      '&is_published=eq.true&select=spot_id,user_id,likes_count,created_at,photos&limit=3000';
-    var me = myIdVariants(uid);
-    return fetch(q, { headers: a.headers }).then(function (r) { return r.ok ? r.json() : null; }).then(function (rows) {
-      if (!Array.isArray(rows)) return null;
-      var best = {};
-      rows.forEach(function (f) {
-        if (!photosOf(f).length) return;
-        var k = String(f.spot_id).trim(), b = best[k], lk = Number(f.likes_count) || 0;
-        if (!b || lk > b.lk || (lk === b.lk && String(f.created_at) > String(b.at))) best[k] = { lk: lk, at: String(f.created_at), mine: !!me[String(f.user_id)] };
-      });
-      return Object.keys(best).filter(function (k) { return best[k].mine; }).length;
-    }).catch(function () { return null; });
-  }
-
   // 다음 백패킹: 낭만플랜(okbm_plan_spots)에서 오늘 이후 가장 가까운 날
   function nextPlan() {
     var obj = vault('okbm_plan_spots', {}) || {};
@@ -298,8 +298,29 @@
     map: '<svg viewBox="0 0 24 24"><path d="M15 5.1 9 3 3 5v16l6-2 6 2 6-2V3z"/><path d="M9 3v16M15 5v16"/></svg>',
     cal: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
   };
-  function elevOf(f) { var n = parseInt(String((f && f.elevation) || '').replace(/[^\d]/g, ''), 10); return isNaN(n) ? 0 : n; }
+  // 높이 '480.8m' · '1,466m' → 정수 m. 소수점 아래는 버린다(예전엔 숫자만 이어 붙여 480.8m가 4,808m가 됐다)
+  function elevOf(f) {
+    var m = String((f && f.elevation) || '').replace(/,/g, '').match(/\d+(?:\.\d+)?/);
+    var n = m ? Math.round(parseFloat(m[0])) : 0;
+    return n > 0 && n < 2000 ? n : 0; // 남한에서 가장 높은 한라산이 1,947m
+  }
   function num(n) { return Number(n || 0).toLocaleString('ko-KR'); }
+
+  // 지형 묶음(예전 '필드 지형 테마'와 같은 넷): 박지 terrain 글자로 가른다
+  function themeOf(s) {
+    var t = String((s && s.terrain) || '');
+    if (/섬/.test(t)) return 'island';
+    if (/해변|바다/.test(t)) return 'sea';
+    if (/계곡|숲|솔밭|수변/.test(t)) return 'forest';
+    return 'mount';
+  }
+  var THEMES = [['mount', '산·능선'], ['island', '섬'], ['sea', '바다·해변'], ['forest', '숲·계곡']];
+  function season(m) { return m >= 2 && m <= 4 ? 0 : m >= 5 && m <= 7 ? 1 : m >= 8 && m <= 10 ? 2 : 3; }
+  function yearOptions(feeds) {
+    var ys = {};
+    feeds.forEach(function (f) { var d = feedDate(f); if (d) ys[d.getFullYear()] = 1; });
+    return Object.keys(ys).sort(function (a, b) { return b - a; });
+  }
 
   function renderReport() {
     var box = $('mrReport');
@@ -310,28 +331,21 @@
     var vset = {};
     (Array.isArray(visited) ? visited : []).forEach(function (id) { vset[String(id).trim()] = 1; });
     var wish = (Array.isArray(marks) ? marks : []).filter(function (id) { return !vset[String(id).trim()]; }).length;
-    var stars = 0, comments = 0, elevAll = 0, elevYear = 0, y = S.year && S.year !== 'all' ? S.year : curYear();
-    var months = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    feeds.forEach(function (f) {
-      stars += Number(f.likes_count) || 0;
-      comments += Number(f.comments_count) || 0;
-      var e = elevOf(f), d = feedDate(f);
-      elevAll += e;
-      if (d && String(d.getFullYear()) === curYear()) elevYear += e;
-      if (d && String(d.getFullYear()) === y) months[d.getMonth()]++;
-    });
+    var stars = 0, comments = 0;
+    feeds.forEach(function (f) { stars += Number(f.likes_count) || 0; comments += Number(f.comments_count) || 0; });
     var pc = pm.total ? Math.round(pm.filled / pm.total * 100) : 0;
     var h = '';
-    // 내 포토맵
+    // 내 포토맵 (예전 '지역 분포'를 대신한다: 도별 진행을 다 펼쳐 볼 수 있다)
     h += '<div class="mr-card"><div class="mr-h"><span class="mr-k">' + ICON.map + '내 포토맵</span><button type="button" class="mr-go" data-mr-act="photomap">포토맵 열기 ›</button></div>';
     if (pm.total) {
       h += '<div class="mr-pmn"><b>' + pm.filled + '</b><em>/ ' + pm.total + ' 시·군</em><i>' + pc + '%</i></div>' +
         '<div class="mr-bar"><i style="width:' + Math.max(pm.filled ? 2 : 0, pc) + '%"></i></div>';
-      var rows = pm.rows.filter(function (r) { return r.filled; }).slice(0, 3);
+      var rows = S.allSido ? pm.rows : pm.rows.filter(function (r) { return r.filled; }).slice(0, 3);
       if (!rows.length) rows = pm.rows.slice(0, 3);
       h += '<div class="mr-pr">' + rows.map(function (r) {
         return '<div><span>' + esc(r.name) + '</span><span class="mr-mini"><i style="width:' + Math.round(r.filled / r.total * 100) + '%"></i></span><b>' + r.filled + '/' + r.total + '</b></div>';
       }).join('') + '</div>';
+      if (pm.rows.length > 3) h += '<button type="button" class="mr-go mr-more2" data-mr-act="sido">' + (S.allSido ? '접기' : '모든 도 보기 (' + pm.rows.length + ')') + '</button>';
       if (pm.next) {
         h += '<button type="button" class="mr-next" data-mr-act="spot" data-v="' + esc(pm.next.spots[0].id) + '">다음 빈칸 추천 · <b>' + esc(pm.next.region + ' ' + pm.next.city) + '</b> 박지 ' + pm.next.spots.length + '곳 ›</button>';
       }
@@ -339,34 +353,70 @@
       h += '<div class="mr-empty">박지 정보를 받는 중이에요</div>';
     }
     h += '</div>';
-    // 카드 4개
+    // 카드 2개
     h += '<div class="mr-grid">' +
       '<div class="mr-card mr-c"><span class="mr-k">' + ICON.check + '클리어한 박지</span><span class="v">' + num(Object.keys(vset).length) + '<em>곳</em></span><span class="s">찜만 한 곳 ' + num(wish) + '곳</span></div>' +
       '<div class="mr-card mr-c"><span class="mr-k">' + ICON.star + '받은 별</span><span class="v">' + num(stars) + '<em>개</em></span><span class="s">댓글 ' + num(comments) + ' · 피드 ' + num(feeds.length) + '개</span></div>' +
-      '<div class="mr-card mr-c"><span class="mr-k">' + ICON.photo + '대표 사진</span><span class="v" id="mrCoverN">…</span><span class="s">포토맵 \'모두\'에 걸린 내 사진</span></div>' +
-      '<div class="mr-card mr-c"><span class="mr-k">' + ICON.mount + '다녀온 높이 합</span><span class="v">+' + num(elevAll) + '<em>m</em></span><span class="s">' + (elevYear ? '올해 +' + num(elevYear) + 'm' : '다녀온 박지 높이를 더했어요') + '</span></div>' +
       '</div>';
     // 다음 백패킹
     var np = nextPlan();
     h += '<button type="button" class="mr-card mr-plan" data-mr-act="plan">' + (np
       ? '<span><span class="mr-k">' + ICON.cal + '다음 백패킹</span><b>' + (np.d.getMonth() + 1) + '/' + np.d.getDate() + '(' + WD[np.d.getDay()] + ') ' + esc(np.name) + '</b><small>낭만플랜에서 패킹 리스트 보기</small></span><span class="mr-dd">' + (np.dd === 0 ? '오늘' : 'D-' + np.dd) + '</span>'
       : '<span><span class="mr-k">' + ICON.cal + '다음 백패킹</span><b>아직 잡힌 일정이 없어요</b><small>낭만플랜에서 날짜와 박지를 넣어 보세요</small></span><span class="mr-r">›</span>') + '</button>';
-    // 달마다
-    var maxM = Math.max.apply(null, months) || 1, nowM = String(new Date().getFullYear()) === y ? new Date().getMonth() : -1;
-    var yearN = months.reduce(function (a, b) { return a + b; }, 0);
-    h += '<div class="mr-card"><div class="mr-h"><span class="mr-k">' + esc(y === curYear() ? '올해' : y + '년') + ' 달마다 다녀온 횟수</span><span class="mr-k">' + yearN + '회</span></div>' +
-      '<div class="mr-bars">' + months.map(function (n, i) { return '<span' + (i === nowM ? ' class="now"' : '') + ' style="height:' + Math.round(n / maxM * 100) + '%" title="' + (i + 1) + '월 ' + n + '회"></span>'; }).join('') + '</div>' +
-      '<div class="mr-ml">' + months.map(function (n, i) { return '<span>' + (i + 1) + '</span>'; }).join('') + '</div></div>';
+
+    // ----- 기록 분석: 예전 시즌·지형 칸을 서버 기록으로 다시 그린다. 해를 고를 수 있다
+    var ys = yearOptions(feeds);
+    // 기록이 오기 전에는 해를 정하지 않는다(빈 목록으로 '전체'가 굳지 않게)
+    if (!S.ryear && ys.length) S.ryear = ys.indexOf(curYear()) >= 0 ? curYear() : ys[0];
+    if (!ys.length && S.feeds === null) { box.innerHTML = h; return; }
+    var y = S.ryear || 'all';
+    var list = y === 'all' ? feeds : feeds.filter(function (f) { var d = feedDate(f); return d && String(d.getFullYear()) === y; });
+    h += '<div class="mr-sec"><span>기록 분석</span><span class="mr-sel"><select data-mr-ryear aria-label="분석할 해">' +
+      ys.map(function (yy) { return '<option value="' + yy + '"' + (yy === y ? ' selected' : '') + '>' + yy + '년</option>'; }).join('') +
+      '<option value="all"' + (y === 'all' ? ' selected' : '') + '>전체</option></select></span></div>';
+    if (!list.length) {
+      h += '<div class="mr-card"><div class="mr-empty">' + (feeds.length ? '이 해에는 기록이 없어요' : '피드를 올리면 계절·지형·높이 분석이 생겨요') + '</div></div>';
+    } else {
+      // 계절과 달마다 (예전 '시즌 밸런스')
+      var months = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], seasons = [0, 0, 0, 0];
+      list.forEach(function (f) { var d = feedDate(f); if (d) { months[d.getMonth()]++; seasons[season(d.getMonth())]++; } });
+      var maxM = Math.max.apply(null, months) || 1, nowM = y === curYear() ? new Date().getMonth() : -1;
+      var sName = ['봄', '여름', '가을', '겨울'], topS = seasons.indexOf(Math.max.apply(null, seasons));
+      h += '<div class="mr-card"><div class="mr-h"><span class="mr-k">' + ICON.cal + '계절과 달마다 다녀온 횟수</span><span class="mr-k">' + list.length + '회</span></div>' +
+        '<div class="mr-bars">' + months.map(function (n, i) { return '<span' + (i === nowM ? ' class="now"' : '') + ' style="height:' + Math.round(n / maxM * 100) + '%" title="' + (i + 1) + '월 ' + n + '회"></span>'; }).join('') + '</div>' +
+        '<div class="mr-ml">' + months.map(function (n, i) { return '<span>' + (i + 1) + '</span>'; }).join('') + '</div>' +
+        '<div class="mr-4">' + seasons.map(function (n, i) { return '<div' + (i === topS && n ? ' class="on"' : '') + '><b>' + n + '</b><small>' + sName[i] + '</small></div>'; }).join('') + '</div></div>';
+      // 어떤 곳에 갔나 (예전 '필드 지형 테마'·'장소 개척 성향'·'단골 랭킹')
+      var th = { mount: 0, island: 0, sea: 0, forest: 0 }, per = {}, uniq = 0, again = 0;
+      var tops = [];
+      list.forEach(function (f) {
+        var sp = spotOfFeed(f);
+        th[themeOf(sp)]++;
+        var k = sp ? 's' + sp.id : 'n' + String(f.spot || '');
+        per[k] = per[k] || { n: 0, name: sp ? (sp.fullName || sp.spot_main || f.spot) : f.spot };
+        per[k].n++;
+        var e = elevOf(f) || (sp ? elevOf({ elevation: sp.elevation }) : 0);
+        if (e) tops.push({ name: sp ? (sp.fullName || f.spot) : f.spot, e: e, d: feedDate(f) });
+      });
+      Object.keys(per).forEach(function (k) { uniq++; again += per[k].n - 1; });
+      var fav = Object.keys(per).map(function (k) { return per[k]; }).filter(function (x) { return x.n > 1; }).sort(function (a, b) { return b.n - a.n; })[0];
+      h += '<div class="mr-card"><div class="mr-h"><span class="mr-k">' + ICON.mount + '어떤 곳에 다녀왔나</span></div><div class="mr-pr">' +
+        THEMES.map(function (t) {
+          var n = th[t[0]];
+          return '<div><span>' + t[1] + '</span><span class="mr-mini"><i style="width:' + Math.round(n / list.length * 100) + '%"></i></span><b>' + n + '회</b></div>';
+        }).join('') + '</div>' +
+        '<div class="mr-4 two"><div><b>' + uniq + '</b><small>새로 간 박지</small></div><div><b>' + again + '</b><small>다시 간 횟수</small></div></div>' +
+        (fav ? '<div class="mr-note">가장 자주 간 곳 · <b>' + esc(fav.name) + '</b> ' + fav.n + '번</div>' : '') + '</div>';
+      // 높이 (예전 '총 누적 획득 고도'·'가장 높은 곳 Top 5')
+      tops.sort(function (a, b) { return b.e - a.e; });
+      var sum = tops.reduce(function (a, b) { return a + b.e; }, 0);
+      h += '<div class="mr-card"><div class="mr-h"><span class="mr-k">' + ICON.mount + '다녀온 높이</span></div>' +
+        '<div class="mr-pmn"><b>+' + num(sum) + '</b><em>m · 다녀온 박지 높이를 더한 값</em></div>' +
+        (tops.length ? '<div class="mr-top">' + tops.slice(0, 3).map(function (t, i) {
+          return '<div><i>' + (i + 1) + '</i><span>' + esc(t.name) + '</span><b>' + num(t.e) + 'm</b></div>';
+        }).join('') + '</div>' : '') + '</div>';
+    }
     box.innerHTML = h;
-    // 대표 사진 수는 따로 받는다
-    var key = S.uid + ':' + S.at;
-    if (S.rep && S.repFor === key) { paintCover(S.rep); return; }
-    S.repFor = key;
-    loadCoverCount(feeds).then(function (n) { if (S.repFor !== key) return; S.rep = n; paintCover(n); });
-  }
-  function paintCover(n) {
-    var el = $('mrCoverN');
-    if (el) el.innerHTML = n == null ? '-' : num(n) + '<em>곳</em>';
   }
 
   // 내 기록: 연도 칩 + 피드 줄
@@ -418,10 +468,14 @@
     var rec = document.querySelector('#userProfileModalOverlay [data-mr-pane="rec"]');
     if (!rep || !rec || rep.getAttribute('data-mr-placed')) return;
     rep.setAttribute('data-mr-placed', '1');
+    // 지형·시즌·지역은 '기록 분석' 카드가 서버 기록으로 대신 보여 준다. 예전 칸은 숨겨 두고(함수들이 찾는 칸), 장비만 맨 아래로
+    var hold = document.createElement('div');
+    hold.hidden = true;
+    rep.appendChild(hold);
     ['terrain', 'season', 'region', 'gear'].forEach(function (k) {
       var h = document.querySelector('#userProfileModalOverlay [data-sec="' + k + '"]');
       var card = h && h.closest('.report-minimal-card');
-      if (card) rep.appendChild(card);
+      if (card) (k === 'gear' ? rep : hold).appendChild(card);
     });
     var mp = document.querySelector('#userProfileModalOverlay [data-sec="myprops"]');
     var mpc = mp && mp.closest('.report-minimal-card');
@@ -443,12 +497,19 @@
     var t = 'rep';
     try { t = localStorage.getItem(TAB_KEY) || 'rep'; } catch (e) {}
     setTab(t, true);
-    if (myId() !== S.uid) { S.feeds = null; S.year = null; S.rep = null; }
+    if (myId() !== S.uid) { S.feeds = null; S.year = null; S.ryear = null; }
     S.shown = PAGE;
     refresh(false);
   };
 
   // ---------------------------------------------------------------- 누름
+  document.addEventListener('change', function (e) {
+    var sel = e.target && e.target.closest && e.target.closest('#userProfileModalOverlay [data-mr-ryear]');
+    if (!sel) return;
+    metric('feat_report_year');
+    S.ryear = sel.value;
+    renderReport();
+  });
   function closeReportThen(fn) {
     var el = $('userProfileModalOverlay');
     if (el) el.style.setProperty('display', 'none', 'important');
@@ -475,15 +536,16 @@
     if (yr) {
       S.year = yr; S.shown = PAGE;
       renderRecords();
-      // 리포트의 달마다 막대와 예전 펼침 칸도 같은 해로
-      if (yr !== 'all' && typeof window.selectReportYear === 'function') window.selectReportYear(yr);
-      renderReport();
       return;
     }
     switch (act) {
       case 'note': if (typeof window.openUserNotificationInbox === 'function') window.openUserNotificationInbox('note', e); break;
       case 'notif': if (typeof window.openUserNotificationInbox === 'function') window.openUserNotificationInbox('notif', e); break;
       case 'settings':
+        // 계정 관리의 뒤로(◀)가 마이리포트로 돌아오게: 계정 관리를 열면 마이리포트 창을 새로 만들므로 다시 여는 길을 남긴다
+        if (typeof window.recordModalHistoryStep === 'function') {
+          window.recordModalHistoryStep('userProfileModalOverlay', function () { if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal(); });
+        }
         if (typeof window.openAccountSettingsModal === 'function') window.openAccountSettingsModal();
         if (typeof window.okbmApplyActivityPrivacyButtons === 'function') window.okbmApplyActivityPrivacyButtons();
         break;
@@ -493,7 +555,8 @@
       case 'feeds': if (typeof window.openFeedsInterestFromReport === 'function') window.openFeedsInterestFromReport(e); break;
       case 'trips': if (typeof window.openMyPastTripsFromReport === 'function') window.openMyPastTripsFromReport(e); break;
       case 'feed': if (v && typeof window.openReportActivityFeed === 'function') window.openReportActivityFeed(v); break;
-      case 'more': S.shown += PAGE; renderRecords(); break;
+      case 'more': S.shown = 1e9; renderRecords(); break;
+      case 'sido': S.allSido = !S.allSido; renderReport(); break;
       case 'plan':
         metric('feat_report_plan');
         if (typeof window.navigateToDockTab === 'function') window.navigateToDockTab('plan');

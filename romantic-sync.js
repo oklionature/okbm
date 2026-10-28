@@ -4551,7 +4551,7 @@ window.renderUserProfileHeaderSection = function(config) {
   if (isOwner) {
     return '<div class="unified-user-profile-header-card mr-prof-card">' +
       '<div class="mr-prof">' +
-        '<div ' + avatarClickAttr + ' class="mr-av">' + avatarImgHtml + '</div>' +
+        '<div ' + avatarClickAttr + ' class="mr-av" data-mr-act="settings">' + avatarImgHtml + '</div>' +
         '<div class="mr-pinfo">' +
           '<span class="user-profile-nick-span mr-nick">' + _escapeReportPropHtml(nick) + '</span>' +
           '<div ' + bioClickAttr + ' class="mr-bio"><span class="user-profile-bio-span" style="color:' + bioColor + ';">' + _escapeReportPropHtml(bioText) + '</span></div>' +
@@ -5479,7 +5479,6 @@ function ensureMyReportAndAuthModalsInDOM() {
             <button type="button" class="mr-st" data-mr-tab="rec" data-mr-year="all"><b id="reportTotalCountNumber">0</b><small>전체 기록</small></button>
             <button type="button" class="mr-st" data-mr-tab="rec" data-mr-year="cur"><b id="reportYearCountNumber">0</b><small id="reportYearCardLabel">올해</small></button>
             <button type="button" class="mr-st" data-mr-act="routers"><b id="mrFollowCount">0</b><small>관심루터</small></button>
-            <button type="button" class="mr-st" data-mr-tab="rec" data-mr-go="myprops"><b id="mrPropCount">0</b><small>제보</small></button>
           </div>
           <div class="mr-tabs" role="tablist">
             <button type="button" role="tab" class="mr-tab" data-mr-tab="rec">내 기록</button>
@@ -5500,7 +5499,6 @@ function ensureMyReportAndAuthModalsInDOM() {
 
           <section class="mr-pane" data-mr-pane="rep">
             <div id="mrReport"></div>
-            <div class="mr-cap">자세히 보기</div>
           </section>
 
           <!-- 예전 연도·누적 목록(toggleReport*Activities). 화면에선 '내 기록' 탭이 대신하고, 함수들이 찾는 칸만 숨겨 둔다 -->
