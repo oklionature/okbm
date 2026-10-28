@@ -1148,6 +1148,11 @@
             var spotMainName = (spot.spot_main || spot.name || '').trim();
             if (!sId && !spotMainName) return [];
             var selectCols = 'id,user_id,spot,spot_id,photos,photo_memos_json,author,instagram,memo,weight_kg,likes_count,comments_count,last_comment,date,created_at,feed_type';
+            // 공개 글과 내 글만 받는다. 서버 규칙은 관리자에게 남의 나만보기 글도 내주므로 여기서 거른다
+            var myUid = (typeof window.okbmGetCurrentUserId === 'function') ? String(window.okbmGetCurrentUserId() || '').trim() : '';
+            var visibleParam = myUid
+              ? '&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(myUid) + ')'
+              : '&is_published=eq.true';
             var headers = {
               'apikey': targetKey,
               'Authorization': 'Bearer ' + targetKey,
@@ -1168,14 +1173,14 @@
                   ? fetchFeeds(
                     targetUrl + '/rest/v1/feeds?select=' + selectCols +
                     '&spot_id=eq.' + encodeURIComponent(sId) +
-                    '&feed_type=neq.snap&order=created_at.desc&limit=40'
+                    '&feed_type=neq.snap' + visibleParam + '&order=created_at.desc&limit=40'
                   )
                   : Promise.resolve([]),
                 spotMainName
                   ? fetchFeeds(
                     targetUrl + '/rest/v1/feeds?select=' + selectCols +
                     '&spot_id=is.null&spot=ilike.*' + encodeURIComponent(spotMainName) +
-                    '*&feed_type=neq.snap&order=created_at.desc&limit=40'
+                    '*&feed_type=neq.snap' + visibleParam + '&order=created_at.desc&limit=40'
                   )
                   : Promise.resolve([])
               ]);
