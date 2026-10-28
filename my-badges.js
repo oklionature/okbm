@@ -286,14 +286,48 @@
     img.src = url;
   }
 
+  // 배지 기록(소개를 봤는지·이미 본 배지)은 계정 데이터 okbm_badge_state { intro, seen }로 서버에 저장한다(romantic-sync.js).
+  // 기기를 바꿔도 한 번만 뜨게. 서버에 아직 없으면 이 기기의 예전 기록(계정별 열쇠)을 이어 쓰고, 그것도 함께 적어 둔다.
+  function vaultOk(userId) {
+    return !!(userId && window.RomanticVault && typeof window.RomanticVault.read === 'function' && userId === currentUid());
+  }
+  function readState(userId) {
+    var st = null;
+    if (vaultOk(userId)) { try { st = window.RomanticVault.read('okbm_badge_state', null); } catch (e) { st = null; } }
+    return (st && typeof st === 'object' && !Array.isArray(st)) ? st : {};
+  }
+  function writeState(userId, patch) {
+    if (!vaultOk(userId)) return;
+    var st = readState(userId);
+    var next = { intro: !!(patch.intro || st.intro), seen: Array.isArray(patch.seen) ? patch.seen : (Array.isArray(st.seen) ? st.seen : null) };
+    if (JSON.stringify(next) === JSON.stringify({ intro: !!st.intro, seen: Array.isArray(st.seen) ? st.seen : null })) return;
+    try { window.RomanticVault.write('okbm_badge_state', next, true); } catch (e) {}
+  }
+  // 서버 계정 데이터를 다 받은 뒤에 판단한다(먼저 판단하면 새 기기에서 소개가 또 뜬다). 늦어지면 6초 뒤 이 기기 기록으로
+  var readyQ = [];
+  function whenReady(fn) {
+    readyQ.push(fn);
+    if (readyQ.length > 1) return;
+    var t0 = Date.now();
+    (function tick() {
+      var v = window.RomanticVault;
+      if (!v || v.isHydrated || Date.now() - t0 > 6000) {
+        var q = readyQ; readyQ = [];
+        q.forEach(function (f) { try { f(); } catch (e) {} });
+        return;
+      }
+      setTimeout(tick, 300);
+    })();
+  }
+
   // 지난번 본 배지와 비교해 새로 받은 것을 띄운다. 처음 여는 계정은 띄우지 않고 지금 것을 기억만 한다
   function checkNew(userId) {
     if (!userId) return;
-    // v2: 기록 배지를 12단계로 늘리며 새로 기억한다(예전 목록을 쓰면 지난 배지가 '새 배지'로 줄줄이 뜬다)
-    var key = 'okbm_badges_seen_v2:' + userId, seen = null;
-    try { seen = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { seen = null; }
-    var got = LIST.filter(function (b) { return b.got; }).map(function (b) { return b.id; });
-    try { localStorage.setItem(key, JSON.stringify(got)); } catch (e) {}
+    whenReady(function () { checkNowNew(userId); });
+  }
+  function checkNowNew(userId) {
+    var seen = readSeen(userId);
+    writeSeen(userId);
     if (!Array.isArray(seen)) return;
     var fresh = LIST.filter(function (b) { return b.got && seen.indexOf(b.id) < 0; });
     if (!fresh.length) return;
@@ -302,10 +336,20 @@
     nextInQueue();
   }
 
+  // v2: 기록 배지를 12단계로 늘리며 새로 기억한다(예전 목록을 쓰면 지난 배지가 '새 배지'로 줄줄이 뜬다)
   function seenKey(userId) { return 'okbm_badges_seen_v2:' + userId; }
-  function readSeen(userId) { try { return JSON.parse(localStorage.getItem(seenKey(userId)) || 'null'); } catch (e) { return null; } }
+  function readSeen(userId) {
+    var st = readState(userId);
+    if (Array.isArray(st.seen)) return st.seen;
+    try { return JSON.parse(localStorage.getItem(seenKey(userId)) || 'null'); } catch (e) { return null; }
+  }
   function writeSeen(userId) {
-    try { localStorage.setItem(seenKey(userId), JSON.stringify(LIST.filter(function (b) { return b.got; }).map(function (b) { return b.id; }))); } catch (e) {}
+    var got = LIST.filter(function (b) { return b.got; }).map(function (b) { return b.id; });
+    // 다른 기기에서 본 배지(지금 목록에 없는 것)도 지우지 않고 남긴다
+    var prev = readSeen(userId);
+    if (Array.isArray(prev)) prev.forEach(function (id) { if (got.indexOf(id) < 0) got.push(id); });
+    try { localStorage.setItem(seenKey(userId), JSON.stringify(got)); } catch (e) {}
+    writeState(userId, { seen: got });
   }
   function currentUid() {
     try { return typeof window.okbmGetCurrentUserId === 'function' ? String(window.okbmGetCurrentUserId() || '').trim() : ''; } catch (e) { return ''; }
@@ -355,10 +399,20 @@
 
   // 처음 한 번 배지 소개 (계정마다 한 번, 낭만리포트를 열 때)
   function intro(userId) {
-    if (!userId) return false;
+    if (!userId) return;
+    whenReady(function () { introNow(userId); });
+  }
+  function introNow(userId) {
     var key = 'okbm_badge_intro_v1:' + userId;
     if (document.getElementById('okbmBadgePop')) return false; // 새 배지 창이 떠 있으면 다음에
-    try { if (localStorage.getItem(key)) return false; localStorage.setItem(key, '1'); } catch (e) { return false; }
+    var seenHere = false;
+    try { seenHere = !!localStorage.getItem(key); } catch (e) { return false; }
+    if (readState(userId).intro || seenHere) {
+      writeState(userId, { intro: true }); // 이 기기에서만 봤던 기록도 계정에 올린다
+      return false;
+    }
+    try { localStorage.setItem(key, '1'); } catch (e) { return false; }
+    writeState(userId, { intro: true });
     ensureCss();
     var got = LIST.filter(function (b) { return b.got; });
     var RANK = { r: 5, g: 4, s: 3, b: 2, i: 1 };

@@ -3004,6 +3004,8 @@ var OKBM_USER_DATA_KEYS = {
   okbm_plan_spots: { gear: 'planSpots' },
   // 백패커 라운지 행사를 달력에 "행사로 표시" { 행사id: {id,title,start,end,place,spotId} }
   okbm_plan_events: { gear: 'planEvents' },
+  // 낭만리포트 배지: 소개를 봤는지·이미 본 배지 { intro: true, seen: [배지id] } (my-badges.js). 기기를 바꿔도 한 번만 뜨게
+  okbm_badge_state: { gear: 'badgeState' },
   // 프로필 값은 localStorage에 흩어져 있어 부분별로 나눈다(한 부분 편집이 다른 부분을 덮지 않도록).
   __profile_bio: { profile: 'bio' },
   __profile_cover: { profile: 'cover' },
@@ -3275,6 +3277,21 @@ window.RomanticVault = window.RomanticVault || {
           var serverPlanEvents = mg.planEvents || mg.plan_events;
           if (serverPlanEvents && typeof serverPlanEvents === 'object' && !Array.isArray(serverPlanEvents)) {
             applyServer('okbm_plan_events', serverPlanEvents);
+          }
+
+          var serverBadge = mg.badgeState || mg.badge_state;
+          if (serverBadge && typeof serverBadge === 'object' && !Array.isArray(serverBadge)) {
+            var localBadge = self.read('okbm_badge_state', null) || {};
+            var seenUnion = [];
+            [serverBadge.seen, localBadge.seen].forEach(function(arr) {
+              (Array.isArray(arr) ? arr : []).forEach(function(id) { if (seenUnion.indexOf(id) < 0) seenUnion.push(id); });
+            });
+            var mergedBadge = { intro: !!(serverBadge.intro || localBadge.intro), seen: (Array.isArray(serverBadge.seen) || Array.isArray(localBadge.seen)) ? seenUnion : null };
+            applyServer('okbm_badge_state', mergedBadge);
+            // 이 기기에만 있던 기록을 합쳤으면 서버에도 올린다(다른 기기에서 또 뜨지 않게)
+            if (!!serverBadge.intro !== mergedBadge.intro || (Array.isArray(serverBadge.seen) ? serverBadge.seen.length : -1) !== (mergedBadge.seen ? mergedBadge.seen.length : -1)) {
+              okbmMarkUserDataDirty('okbm_badge_state');
+            }
           }
 
           var serverPlanSpots = mg.planSpots || mg.plan_spots;
@@ -10863,7 +10880,7 @@ function logoutUser() {
     'okbm_trip_consumables', 'okbm_packed_checks', 'okbm_phone_photos_map',
     'okbm_trip_photos_map', 'okbm_user_instagram', 'okbm_cached_community_feeds',
     'okbm_hero_cover_url', 'okbm_my_proposals',
-    'okbm_feed_stars_map', 'okbm_feed_stars_counts', 'okbm_saved_feeds', 'okbm_dirty_user_keys'
+    'okbm_feed_stars_map', 'okbm_feed_stars_counts', 'okbm_saved_feeds', 'okbm_dirty_user_keys', 'okbm_badge_state'
   ];
   userPersonalKeys.forEach(function(k) {
     try { localStorage.removeItem(k); } catch(e) { console.warn('[romantic-sync.js:logoutUser removeItem]', e); }
@@ -11222,7 +11239,7 @@ function okbmPurgeLocalSessionData() {
     'okbm_trip_photos_map', 'okbm_user_instagram', 'okbm_cached_community_feeds',
     'okbm_hero_cover_url', 'okbm_my_proposals', 'okbm_saved_feeds', 'okbm_following_users',
     'okbm_blocked_users', 'okbm_blocked_users_meta', 'okbm_user_blocks_bootstrapped', 'okbm_reported_feeds',
-    'okbm_dirty_user_keys'
+    'okbm_dirty_user_keys', 'okbm_badge_state'
   ];
   purgeKeys.forEach(function(k) {
     try { localStorage.removeItem(k); } catch (e) {}
@@ -14113,7 +14130,7 @@ window.openUserNotificationInbox = async function(initialTab, ev) {
 
 // [D3] 바뀐 항목만 okbm_patch_user_data RPC로 저장한다.
 // 반환: 'ok'(저장 완료 또는 올릴 게 없음) | 'failed' | 'no_row'(행 없음 → 전체 저장 필요) | 'no_rpc'(DB 함수 미적용 → 전체 저장)
-var OKBM_OBJECT_USER_KEYS = { okbm_memos: true, okbm_selected_gears_multi: true, okbm_gear_meta: true, okbm_plan_memos: true, okbm_plan_spots: true, okbm_plan_events: true };
+var OKBM_OBJECT_USER_KEYS = { okbm_memos: true, okbm_selected_gears_multi: true, okbm_gear_meta: true, okbm_plan_memos: true, okbm_plan_spots: true, okbm_plan_events: true, okbm_badge_state: true };
 async function okbmSaveDirtyUserData(snapshot, ctx) {
   var keys = Object.keys(snapshot || {});
   if (!keys.length) return 'ok';
@@ -14222,6 +14239,7 @@ window.saveUserToSupabase = async function(profileData, opts) {
 
   var rawPlanEvents = (vault && typeof vault.read === 'function') ? vault.read('okbm_plan_events', {}) : safeGetJSON('okbm_plan_events', {});
   var planEvents = (rawPlanEvents && typeof rawPlanEvents === 'object' && !Array.isArray(rawPlanEvents)) ? rawPlanEvents : {};
+  var rawBadgeState = (vault && typeof vault.read === 'function') ? vault.read('okbm_badge_state', null) : safeGetJSON('okbm_badge_state', null);
 
   // [헌법 제1조: SSOT 원칙] 글/피드 데이터는 feeds 테이블에서만 관리합니다.
   // users 테이블에 pack_history를 통째로 중복 저장하면, feeds 테이블에서 지운
@@ -14291,6 +14309,7 @@ window.saveUserToSupabase = async function(profileData, opts) {
       planMemos: planMemos || {},
       planSpots: planSpots || {},
       planEvents: planEvents,
+      badgeState: (rawBadgeState && typeof rawBadgeState === 'object' && !Array.isArray(rawBadgeState)) ? rawBadgeState : {},
       hide_year_activity: localStorage.getItem('okbm_hide_year_activity') === '1',
       hide_total_activity: localStorage.getItem('okbm_hide_total_activity') === '1',
       sns: {
