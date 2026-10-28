@@ -349,11 +349,11 @@
     [[30, 'b', 30], [70, 's', 70], ['ALL', 'g', pm.total]].forEach(function (t) {
       var goal = t[2], x = order.length >= goal ? firstAt[order[goal - 1]] : null;
       add({ id: 'reg' + t[0], group: 'reg', ladder: 'reg', shape: 'hex', fill: '#5a4120', metal: t[1], icon: 'pin', num: t[0], ribbon: t[0] === 'ALL' ? 'KOREA' : 'REGIONS',
-        ko: t[0] === 'ALL' ? '전국 완주' : '시·군 ' + t[0] + '곳', title: t[0] === 'ALL' ? 'ALL KOREA' : t[0] + ' REGIONS',
+        ko: t[0] === 'ALL' ? '전국 클리어' : '시·군 ' + t[0] + '곳', title: t[0] === 'ALL' ? 'ALL KOREA' : t[0] + ' REGIONS',
         desc: t[0] === 'ALL' ? '박지가 있는 시·군을 모두 채웠어요' : '포토맵에서 시·군 ' + t[0] + '곳을 채웠어요',
         got: goal > 0 && filledN >= goal, date: x && x.d, spot: nameOf(x), cur: Math.min(filledN, goal), goal: goal, unit: '곳' });
     });
-    // 도 완주
+    // 도 클리어
     var byDo = {};
     spotList().forEach(function (sp) {
       var r = String(sp.region || '').trim(), k = sggKey(sp);
@@ -369,7 +369,7 @@
       });
       var got = keys.length > 0 && done === keys.length;
       add({ id: 'do' + dr[1], group: 'do', shape: 'shield', fill: '#1b2f4d', metal: 'g', sil: dr[0], ribbon: dr[1],
-        ko: dr[0] + ' 완주', title: dr[1] + ' COMPLETE', desc: dr[0] + '에서 박지가 있는 시·군 ' + keys.length + '곳을 모두 채웠어요',
+        ko: dr[0] + ' 클리어', title: dr[1] + ' CLEAR', desc: dr[0] + '에서 박지가 있는 시·군 ' + keys.length + '곳을 모두 채웠어요',
         got: got, date: got && allDated && last ? last.d : null, spot: got && allDated ? nameOf(last) : '', cur: done, goal: keys.length, unit: '곳' });
     });
     // 제보 채택(새 박지 제보만)
