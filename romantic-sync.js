@@ -5517,9 +5517,9 @@ function ensureMyReportAndAuthModalsInDOM() {
             <button type="button" class="mr-row" data-mr-act="trips">사진으로 모아보기<span class="mr-r">›</span></button>
           </section>
 
+          <!-- 저장: 관심 피드를 바로 펼쳐 보인다(my-report.js renderSaved). 관심 루터는 위 숫자 줄에 있어 여기서는 뺀다 -->
           <section class="mr-pane" data-mr-pane="save">
-            <button type="button" class="mr-row" data-mr-act="feeds">관심 피드<span class="mr-r">›</span></button>
-            <button type="button" class="mr-row" data-mr-act="routers">관심 루터<span class="mr-r"><span id="mrFollowCount2"></span> ›</span></button>
+            <div id="mrSaveList"></div>
           </section>
 
           <section class="mr-pane" data-mr-pane="rep">

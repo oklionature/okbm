@@ -555,6 +555,47 @@
     }).join('') + (rows.length > S.shown ? '<button type="button" class="mr-more" data-mr-act="more">' + (rows.length - S.shown) + '개 더 보기</button>' : '');
   }
 
+  // 저장 탭: 관심 피드를 바로 보인다. 받아 둔 피드에 없는 것은 서버에서 찾아 채운 뒤 다시 그린다(romantic-history.js okbmResolveMissingSavedFeeds)
+  function savedFeeds() {
+    var ids = vault('okbm_saved_feeds', []);
+    ids = Array.isArray(ids) ? ids.map(function (x) { return String(x).trim(); }).filter(Boolean) : [];
+    var pool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length) ? window.__allLoadedFeeds.slice() : (vault('okbm_cached_community_feeds', []) || []).slice();
+    var cache = window.__okbmSavedFeedRowCache || {};
+    var byId = {};
+    pool.forEach(function (f) { if (f && f.id != null) byId[String(f.id).trim()] = f; });
+    Object.keys(cache).forEach(function (k) { if (!byId[k] && cache[k]) byId[k] = cache[k]; });
+    var found = [], missing = [];
+    ids.forEach(function (id) {
+      var f = byId[id];
+      if (!f) { missing.push(id); return; }
+      if (!window.okbmIsPublicFeedItem || window.okbmIsPublicFeedItem(f)) found.push(f);
+    });
+    if (typeof window.okbmApplyUgcSafetyFilter === 'function') found = window.okbmApplyUgcSafetyFilter(found);
+    return { ids: ids, list: found, missing: missing };
+  }
+  function renderSaved() {
+    var box = $('mrSaveList');
+    if (!box) return;
+    var r = savedFeeds();
+    window.__currentScopedSavedFeeds = r.list.slice();
+    if (r.missing.length && !S.savedResolving && typeof window.okbmResolveMissingSavedFeeds === 'function') {
+      S.savedResolving = true;
+      Promise.resolve(window.okbmResolveMissingSavedFeeds(r.missing)).then(function () { S.savedResolving = false; renderSaved(); }, function () { S.savedResolving = false; });
+    }
+    if (!r.list.length) {
+      box.innerHTML = '<div class="mr-empty">' + (r.missing.length ? '관심 피드를 불러오는 중이에요' : '저장한 관심 피드가 없어요.<br>피드 아래 책갈피를 누르면 여기에 모여요.') + '</div>';
+      return;
+    }
+    box.innerHTML = '<div class="mr-cap2">관심 피드 ' + num(r.list.length) + '</div>' + r.list.map(function (f) {
+      var d = feedDate(f), t = thumb(photosOf(f)[0] || f.readyShotPhoto || f.ready_shot_photo || '');
+      var name = String(f.spot || '').trim() || '이름 없는 기록';
+      var who = String(f.author || f.nickname || '').trim();
+      var meta = (who ? who + ' · ' : '') + (d ? d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate()) : '');
+      return '<button type="button" class="mr-tr" data-mr-act="sfeed" data-v="' + esc(f.id) + '"><span class="mr-th"' + (t ? ' style="background-image:url(&quot;' + esc(t) + '&quot;)"' : '') + '></span>' +
+        '<span class="mr-tt"><b>' + esc(name) + '</b><small>' + esc(meta) + '</small></span></button>';
+    }).join('');
+  }
+
   function renderCounts() {
     var follow = vault('okbm_following_users', []);
     var n = Array.isArray(follow) ? follow.length : 0;
@@ -593,6 +634,7 @@
 
   function refresh(force) {
     renderCounts();
+    renderSaved();
     renderRecords();
     renderReport();
     loadFeeds(force).then(function () { renderRecords(); renderReport(); });
@@ -745,6 +787,7 @@
     if (tab) {
       metric('feat_report_tab');
       setTab(tab);
+      if (tab === 'save') renderSaved();
       if (yr) { S.year = yr === 'cur' ? curYear() : yr; S.shown = PAGE; renderRecords(); }
       if (el.getAttribute('data-mr-go') === 'myprops') {
         var body = $('accBody_myprops');
@@ -770,6 +813,10 @@
       case 'feeds': if (typeof window.openFeedsInterestFromReport === 'function') window.openFeedsInterestFromReport(e); break;
       case 'trips': if (typeof window.openMyPastTripsFromReport === 'function') window.openMyPastTripsFromReport(e); break;
       case 'feed': if (v && typeof window.openReportActivityFeed === 'function') window.openReportActivityFeed(v); break;
+      case 'sfeed':
+        // 관심 피드끼리 위아래로 넘겨 볼 수 있게 저장 목록을 함께 넘긴다. 제목('관심피드')을 주면 닫을 때 예전 관심피드 창으로 가서 빼고, 닫으면 리포트로 돌아온다
+        if (v && typeof window.openSingleTripDualFeedModal === 'function') window.openSingleTripDualFeedModal(v, window.__currentScopedSavedFeeds || []);
+        break;
       case 'more': S.shown = 1e9; renderRecords(); break;
       case 'sido': S.allSido = !S.allSido; renderReport(); break;
       case 'photomap':
