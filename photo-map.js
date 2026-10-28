@@ -1144,7 +1144,7 @@
   // 지도에서 쓰는 "사진과 함께 올리기" 창을 그대로 연다. 창이 닫히면 내 후기를 다시 받아 색을 입힌다.
   function openWrite(s, ev) {
     if (typeof window.openPastTripRegisterModal !== 'function') return;
-    window.__pastTripStayOnClose = true; // 닫거나 다 올리면 마이리포트가 아니라 사진 지도로 돌아온다
+    window.__pastTripStayOnClose = true; // 닫거나 다 올리면 낭만리포트가 아니라 사진 지도로 돌아온다
     window.openPastTripRegisterModal(ev);
     window.__pastTripStayOnClose = false; // 로그인 창이 떠서 안 열린 경우를 위해
     if (!document.getElementById('pastTripRegisterModal')) return; // 로그인 창이 뜬 경우

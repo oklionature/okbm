@@ -1274,7 +1274,7 @@
         setMapLayerState((mapBaseLayer + 1) % 3);
       }
 
-      // 마이리포트 '포토맵 열기'(my-report.js): 지도 페이지에서는 그 자리에서 사진 지도를 연다. 열었으면 true
+      // 낭만리포트 '포토맵 열기'(my-report.js): 지도 페이지에서는 그 자리에서 사진 지도를 연다. 열었으면 true
       window.okbmOpenPhotoMap = function() {
         if (!map || !window.okbmPhotoMap) return false;
         if (currentMapLayerState !== 3) togglePhotoMap();
@@ -7489,7 +7489,7 @@ var overlay = document.getElementById('customModalOverlay');
               triggerHaptic(15);
               alert(isCorrection 
                 ? '소중한 정보 수정 건의가 접수되었습니다!\n관리자 검토 후 지도에 신속히 반영하겠습니다. 감사합니다!' 
-                : '소중한 장소 제보가 접수되었습니다!\n관리자 검토 전까지 [마이리포트]에서 언제든 수정할 수 있습니다.');
+                : '소중한 장소 제보가 접수되었습니다!\n관리자 검토 전까지 [낭만리포트]에서 언제든 수정할 수 있습니다.');
             } catch (e) { alert('제보 접수 중 통신 오류가 발생했습니다.'); }
           } else if (modalMode === 'ADD' || modalMode === 'EDIT' || modalMode === 'ADMIN_APPLY') {
             if (!checkAdminAuthorization()) {
@@ -8223,7 +8223,7 @@ var overlay = document.getElementById('customModalOverlay');
       window.rejectAdminInboxItem = async function(id, type) {
         var item = findAdminInboxItem(id, type);
         if (!item) return;
-        var rejectReason = window.prompt('반려 사유를 입력하세요. 제보자 알림과 마이리포트에 표시됩니다. (선택, 300자 이내)', '');
+        var rejectReason = window.prompt('반려 사유를 입력하세요. 제보자 알림과 낭만리포트에 표시됩니다. (선택, 300자 이내)', '');
         if (rejectReason === null) return;
         rejectReason = String(rejectReason).trim().slice(0, 300);
         var ok = true;

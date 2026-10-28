@@ -29,7 +29,7 @@
   };
   var HOME_ORDER = ['hero', 'hero_detail', 'hero_gear', 'quick_guide', 'feat_quick_rank', 'quick_board', 'quick_join', 'quick_write', 'quick_event',
     'recent_reviews', 'theme', 'events', 'video', 'guides', 'tripjoin', 'together', 'lounge', 'ready'];
-  var DOCK = [['dock_home', '낭만루터'], ['dock_map', '낭만루트'], ['dock_plan', '낭만플랜'], ['dock_history', '낭만피드'], ['dock_report', '마이리포트']];
+  var DOCK = [['dock_home', '낭만루터'], ['dock_map', '낭만루트'], ['dock_plan', '낭만플랜'], ['dock_history', '낭만피드'], ['dock_report', '낭만리포트']];
   var DEVICE = [['device_ios', '아이폰 사파리'], ['device_ios_home', '아이폰 홈 화면'], ['device_android', '안드로이드 웹'], ['device_app', '낭만루트 앱'], ['device_other', 'PC·기타']];
   var PUBLISH = [['publish_ok', '피드에 공개됨', 'ok'], ['publish_private', '직접 비공개 선택', ''], ['publish_unregistered', '등록 안 된 장소라 비공개', 'warn'], ['publish_nophoto', '현장 사진 없어 비공개', 'warn']];
 
@@ -163,27 +163,27 @@
     ['feat_dm_delete', '회원', '쪽지 지우기'],
     ['feat_noti_open', '회원', '알림 열기'],
     ['feat_noti_delete', '회원', '알림 지우기'],
-    ['feat_report_sec_region', '마이리포트', '칸 펼치기: 지역'],
-    ['feat_report_sec_terrain', '마이리포트', '칸 펼치기: 지형'],
-    ['feat_report_sec_season', '마이리포트', '칸 펼치기: 계절'],
-    ['feat_report_sec_gear', '마이리포트', '칸 펼치기: 장비'],
-    ['feat_report_sec_myprops', '마이리포트', '칸 펼치기: 내 제보'],
-    ['feat_report_detail', '마이리포트', '통계 자세히 보기'],
-    ['feat_report_year', '마이리포트', '연도 고르기'],
-    ['feat_report_activity', '마이리포트', '활동 기록 펼치기'],
-    ['feat_report_visitor', '마이리포트', '방문자 활동 보기'],
-    ['feat_pasttrip_register', '마이리포트', '지난 여행 직접 등록'],
-    ['feat_my_proposal_edit', '마이리포트', '내 제보 고치기'],
-    ['feat_my_proposal_delete', '마이리포트', '내 제보 지우기'],
-    ['feat_my_proposal_fix', '마이리포트', '내 제보로 수정건의'],
-    ['feat_nick_save', '마이리포트', '닉네임 바꾸기'],
-    ['feat_bio_edit', '마이리포트', '자기소개 바꾸기'],
-    ['feat_sns_edit', '마이리포트', 'SNS 주소 바꾸기'],
-    ['feat_cover_photo', '마이리포트', '커버 사진 바꾸기'],
-    ['feat_cover_photo_reset', '마이리포트', '커버 사진 되돌리기'],
-    ['feat_account_open', '마이리포트', '계정 설정 열기'],
-    ['feat_link_kakao', '마이리포트', '카카오 계정 연결'],
-    ['feat_link_naver', '마이리포트', '네이버 계정 연결']
+    ['feat_report_sec_region', '낭만리포트', '칸 펼치기: 지역'],
+    ['feat_report_sec_terrain', '낭만리포트', '칸 펼치기: 지형'],
+    ['feat_report_sec_season', '낭만리포트', '칸 펼치기: 계절'],
+    ['feat_report_sec_gear', '낭만리포트', '칸 펼치기: 장비'],
+    ['feat_report_sec_myprops', '낭만리포트', '칸 펼치기: 내 제보'],
+    ['feat_report_detail', '낭만리포트', '통계 자세히 보기'],
+    ['feat_report_year', '낭만리포트', '연도 고르기'],
+    ['feat_report_activity', '낭만리포트', '활동 기록 펼치기'],
+    ['feat_report_visitor', '낭만리포트', '방문자 활동 보기'],
+    ['feat_pasttrip_register', '낭만리포트', '지난 여행 직접 등록'],
+    ['feat_my_proposal_edit', '낭만리포트', '내 제보 고치기'],
+    ['feat_my_proposal_delete', '낭만리포트', '내 제보 지우기'],
+    ['feat_my_proposal_fix', '낭만리포트', '내 제보로 수정건의'],
+    ['feat_nick_save', '낭만리포트', '닉네임 바꾸기'],
+    ['feat_bio_edit', '낭만리포트', '자기소개 바꾸기'],
+    ['feat_sns_edit', '낭만리포트', 'SNS 주소 바꾸기'],
+    ['feat_cover_photo', '낭만리포트', '커버 사진 바꾸기'],
+    ['feat_cover_photo_reset', '낭만리포트', '커버 사진 되돌리기'],
+    ['feat_account_open', '낭만리포트', '계정 설정 열기'],
+    ['feat_link_kakao', '낭만리포트', '카카오 계정 연결'],
+    ['feat_link_naver', '낭만리포트', '네이버 계정 연결']
   ];
   var FEATURE_SCREENS = [];
   FEATURES.forEach(function (f) { if (FEATURE_SCREENS.indexOf(f[1]) === -1) FEATURE_SCREENS.push(f[1]); });
@@ -362,7 +362,7 @@
     // 하단 탭
     mark = html.length;
     var dockTotal = DOCK.reduce(function (a, d) { return a + get(d[0], 'click').visitors; }, 0);
-    html += '<section><h2>하단 탭 누름</h2><p class="h">홈(낭만플랜·피드·마이리포트 포함)에서 누른 것과 지도에서 누른 것을 나눠 셉니다. 숫자는 누른 사람 · 횟수예요.</p>' +
+    html += '<section><h2>하단 탭 누름</h2><p class="h">홈(낭만플랜·피드·낭만리포트 포함)에서 누른 것과 지도에서 누른 것을 나눠 셉니다. 숫자는 누른 사람 · 횟수예요.</p>' +
       '<table><thead><tr><th>탭</th><th>홈에서</th><th>지도에서</th></tr></thead><tbody>' +
       DOCK.map(function (d) {
         var c = get(d[0], 'click'), mc = get('feat_map' + d[0], 'click');

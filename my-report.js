@@ -1,5 +1,5 @@
 // =========================================================================
-// 마이리포트 탭과 리포트 카드 (2026-10-28)
+// 낭만리포트 탭과 리포트 카드 (2026-10-28)
 //
 // 화면 뼈대는 romantic-sync.js(userProfileModalOverlay)에 있고, 여기서는
 //   · 맨 위 쪽지·알림·설정 아이콘, 소개·SNS 편집, 숫자 한 줄, 탭(내 기록·저장·리포트) 누름을 받는다(data-mr-act / data-mr-tab).
@@ -7,7 +7,7 @@
 //     숫자(서버 17회)와 목록(1건)이 어긋났다.
 //   · 리포트: 내 포토맵(박지가 있는 시·군 중 채운 곳), 클리어한 박지·받은 별·대표 사진·오른 고도,
 //     다음 백패킹(낭만플랜), 달마다 다녀온 횟수. 그 아래 예전 지형·시즌·지역·장비 펼침 칸을 옮겨 둔다.
-// 마이리포트를 열 때 romantic-sync.js openUserProfileModal이 window.okbmMyReportOpened()를 부른다.
+// 낭만리포트를 열 때 romantic-sync.js openUserProfileModal이 window.okbmMyReportOpened()를 부른다.
 // 인라인 onclick을 쓰지 않는다(CSP 해시가 필요 없게).
 // =========================================================================
 (function () {
@@ -185,7 +185,7 @@
   }
 
   // ---------------------------------------------------------------- 데이터
-  // 내 피드: 마이리포트를 열 때 한 번 받고 1분 안에 다시 열면 그대로 쓴다
+  // 내 피드: 낭만리포트를 열 때 한 번 받고 1분 안에 다시 열면 그대로 쓴다
   var S = { uid: '', feeds: null, at: 0, loading: null, year: null, shown: PAGE, rep: null, repFor: '' };
   function loadFeeds(force) {
     var uid = myId(), a = api();
@@ -580,7 +580,7 @@
     if (typeof showToast === 'function') showToast('프로필을 저장했어요.', 'success', 1500);
   }
   function openSettings() {
-    // 계정 관리의 뒤로(◀)가 마이리포트로 돌아오게: 계정 관리를 열면 마이리포트 창을 새로 만들므로 다시 여는 길을 남긴다
+    // 계정 관리의 뒤로(◀)가 낭만리포트로 돌아오게: 계정 관리를 열면 낭만리포트 창을 새로 만들므로 다시 여는 길을 남긴다
     if (typeof window.recordModalHistoryStep === 'function') {
       window.recordModalHistoryStep('userProfileModalOverlay', function () { if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal(); });
     }

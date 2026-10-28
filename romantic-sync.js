@@ -4347,7 +4347,7 @@ window.okbmFeedOwnerFilter = function(userId) {
   }).join(',') + ')';
 };
 
-// [마이리포트 오픈 시 가벼운 핵심 카운터 즉시 갱신 엔진 (상세 아코디언은 온디맨드 계산 유지)]
+// [낭만리포트 오픈 시 가벼운 핵심 카운터 즉시 갱신 엔진 (상세 아코디언은 온디맨드 계산 유지)]
 window.refreshMyReportFullStats = function() {
   window.__reportRenderCache = {};
 
@@ -4547,7 +4547,7 @@ window.renderUserProfileHeaderSection = function(config) {
     '<svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="position:absolute; left:50%; top:50%; width:34px; height:34px; transform:translate(-50%,-50%); display:' + (photoUrl ? 'none' : 'block') + ';" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
   '</div>';
 
-  // 마이리포트(내 프로필): 사진과 숫자 한 줄, 그 아래 이름·소개·SNS, 꽉 찬 '프로필 편집'. 쪽지·알림·설정은 맨 위 아이콘, 모아보기·관심은 탭(my-report.js)
+  // 낭만리포트(내 프로필): 사진과 숫자 한 줄, 그 아래 이름·소개·SNS, 꽉 찬 '프로필 편집'. 쪽지·알림·설정은 맨 위 아이콘, 모아보기·관심은 탭(my-report.js)
   if (isOwner) {
     // 사진 오른쪽 칸(mr-stats-slot)에는 my-report.js가 숫자 줄(.mr-stats)을 옮겨 넣는다
     return '<div class="unified-user-profile-header-card mr-prof-card">' +
@@ -5444,7 +5444,7 @@ function ensureMyReportAndAuthModalsInDOM() {
       </div>
     </div>
 
-  <!-- 2. 마이데이터(마이리포트) 대시보드 모달 (인스타그램 프로필 스타일 개편) -->
+  <!-- 2. 마이데이터(낭만리포트) 대시보드 모달 (인스타그램 프로필 스타일 개편) -->
     <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; width:100%; height:100%; background:#000000; z-index:3000000; margin:0; padding:0; overflow:hidden;">
       <div style="position:relative; width:100%; max-width:480px; height:100%; margin:0 auto; background:#000000; overflow:hidden; display:flex; flex-direction:column; box-sizing:border-box;">
         
@@ -5624,12 +5624,12 @@ function ensureMyReportAndAuthModalsInDOM() {
         </div>
 
        <div style="flex:1 1 0%; min-height:0; overflow-y:auto; padding:20px 16px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box;">
-          <!-- 메인 대표 사진 설정 카드 (SSOT: 마이리포트 아바타 & 낭만보관함 배경 연동) -->
+          <!-- 메인 대표 사진 설정 카드 (SSOT: 낭만리포트 아바타 & 낭만보관함 배경 연동) -->
           <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
                 <span style="color:#ffffff; font-size:0.78rem; font-weight:900;">메인 대표 사진</span>
-                <p style="color:#64748b; font-size:0.62rem; margin-top:2px;">마이리포트 아바타 및 낭만피드 배경에 즉시 반영됩니다.</p>
+                <p style="color:#64748b; font-size:0.62rem; margin-top:2px;">낭만리포트 아바타 및 낭만피드 배경에 즉시 반영됩니다.</p>
               </div>
               <div id="settingsModalCoverPreviewWrap" onclick="window.previewMasterUserCoverPhotoLarge();" title="터치하여 사진 크게 보기" style="width:48px; height:48px; border-radius:50%; border:1.5px solid rgba(186,230,253,0.4); background:#090d14; background-size:cover; background-position:center; background-repeat:no-repeat; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.6);">
                 <svg id="settingsModalCoverDefaultSvg" viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="#64748b" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -5662,7 +5662,7 @@ function ensureMyReportAndAuthModalsInDOM() {
             <span id="settingsModalJoinDate" style="color:#e2e8f0; font-family:var(--font-mono); font-size:0.80rem; font-weight:800;">2026.01.01</span>
           </div>
 
-          <!-- 다른 루터가 내 프로필을 볼 때 활동 숫자를 보일지 (예전엔 마이리포트 숫자 카드 안에 있었다) -->
+          <!-- 다른 루터가 내 프로필을 볼 때 활동 숫자를 보일지 (예전엔 낭만리포트 숫자 카드 안에 있었다) -->
           <div style="display:flex; flex-direction:column; gap:10px; background:#0a0e14; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; box-sizing:border-box;">
             <span style="color:#ffffff; font-size:0.78rem; font-weight:900;">활동 공개</span>
             <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
@@ -6976,7 +6976,7 @@ window._renderRegionModule = function(validLogs, el) {
   `;
 };
 
-// 6. 마이데이터(마이리포트) & 로그인 모달 제어
+// 6. 마이데이터(낭만리포트) & 로그인 모달 제어
 function handleAuthBtnClick() {
   ensureMyReportAndAuthModalsInDOM();
   if (isUserLoggedIn()) {
@@ -7088,7 +7088,7 @@ window.ensureMasterBottomDock = function(activeTabId) {
     { id: 'map', name: '낭만루트', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>', action: "window.navigateToDockTab('map')" },
     { id: 'plan', name: '낭만플랜', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>', action: "window.navigateToDockTab('plan')" },
     { id: 'history', name: '낭만피드', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>', action: "window.navigateToDockTab('history')" },
-    { id: 'report', name: '마이리포트', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>', action: "window.navigateToDockTab('report')" }
+    { id: 'report', name: '낭만리포트', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>', action: "window.navigateToDockTab('report')" }
   ];
 
   // ⚡ innerHTML 파괴 없이 오직 색상 및 폰트 두께만 0ms로 스위칭하여 깜빡임 원천 차단
@@ -9210,7 +9210,7 @@ window.openPastTripRegisterModal = function(ev) {
   }
   var fromPlan = !!window.__pastTripOpenedFromPlan;
   window.__pastTripOpenedFromPlan = false;
-  // 사진 지도처럼 마이리포트 밖에서 연 곳은 닫거나 다 올린 뒤 그 자리에 그대로 남는다(마이리포트로 가지 않게)
+  // 사진 지도처럼 낭만리포트 밖에서 연 곳은 닫거나 다 올린 뒤 그 자리에 그대로 남는다(낭만리포트로 가지 않게)
   var stay = !!window.__pastTripStayOnClose;
   window.__pastTripStayOnClose = false;
   if (!fromPlan && !stay && typeof window.recordModalHistoryStep === 'function') {
@@ -10240,7 +10240,7 @@ function closeUserProfileModal() {
 }
 window.closeUserProfileModal = closeUserProfileModal;
 
-// [메인 대표 사진 엔진] 앱 전역(마이리포트 아바타 & 계정 관리 썸네일 & 낭만보관함 히어로 배경) 즉시 반영
+// [메인 대표 사진 엔진] 앱 전역(낭만리포트 아바타 & 계정 관리 썸네일 & 낭만보관함 히어로 배경) 즉시 반영
 window.applyMasterCoverPhotoToAllUI = function(photoUrl) {
   var cleanUrl = okbmSafeImageUrl(photoUrl);
 
@@ -12791,7 +12791,7 @@ window.okbmPaintNotifBadge = function(count) {
   window.__okbmUnreadNotifCount = unread;
   var dock = document.getElementById('romanticMasterBottomDock');
   if (dock) {
-    var btn = dock.querySelector('button[title="마이리포트"]');
+    var btn = dock.querySelector('button[title="낭만리포트"]');
     if (btn) {
       var badge = btn.querySelector('.okbm-notif-badge');
       if (unread <= 0) {
@@ -13945,7 +13945,7 @@ window.deleteUserNotification = async function(notifId, ev) {
 };
 
 // 알림 줄 누르기(위임, 인라인 핸들러 없음). 목록 칸은 알림함을 열 때마다 새로 만들어진다.
-// 라운지 창(z 2147483640)은 알림함(2147483644)보다 아래라서 알림함을 닫고 연다. 마이리포트(3000000)보다는 위.
+// 라운지 창(z 2147483640)은 알림함(2147483644)보다 아래라서 알림함을 닫고 연다. 낭만리포트(3000000)보다는 위.
 function okbmBindNotifRowOpen(listEl) {
   if (!listEl || listEl.__okbmNotifOpenBound) return;
   listEl.__okbmNotifOpenBound = true;

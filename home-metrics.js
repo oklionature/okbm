@@ -16,7 +16,7 @@
     '낭만플랜': 'dock_plan',
     '낭만피드': 'dock_history',
     '낭만보관함': 'dock_history',
-    '마이리포트': 'dock_report'
+    '낭만리포트': 'dock_report'
   };
 
   // 지도(map.html)에서도 기능 사용(feat_*)을 센다. 홈 노출은 홈에서만, 지도에서 누른 하단 탭은 feat_mapdock_*로 센다.
