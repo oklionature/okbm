@@ -347,7 +347,11 @@
       firstAt[k] = x; order.push(k);
     });
     var filledN = pm.filled;
-    [[30, 'b', 30], [70, 's', 70], ['ALL', 'g', pm.total]].forEach(function (t) {
+    // 10곳 단위(10 · 20 … 전체보다 작은 데까지) + 전국 클리어. 테두리 10~30 동, 40~70 은, 80~ 금, 전국은 무지개
+    var regSteps = [];
+    for (var rn = 10; rn < pm.total; rn += 10) regSteps.push([rn, rn <= 30 ? 'b' : (rn <= 70 ? 's' : 'g'), rn]);
+    regSteps.push(['ALL', 'r', pm.total]);
+    regSteps.forEach(function (t) {
       var goal = t[2], x = order.length >= goal ? firstAt[order[goal - 1]] : null;
       add({ id: 'reg' + t[0], group: 'reg', ladder: 'reg', shape: 'hex', fill: '#5a4120', metal: t[1], icon: 'pin', num: t[0], ribbon: t[0] === 'ALL' ? 'KOREA' : 'REGIONS',
         ko: t[0] === 'ALL' ? '전국 클리어' : '시·군 ' + t[0] + '곳', title: t[0] === 'ALL' ? 'ALL KOREA' : t[0] + ' REGIONS',
@@ -384,18 +388,21 @@
         ko: t[3], title: t[0] === 1 ? 'FIRST SPOT' : '10 SPOTS', desc: '제보한 박지가 ' + t[0] + '곳 채택됐어요',
         got: acc >= t[0], date: null, spot: '', cur: Math.min(acc, t[0]), goal: t[0], unit: '개' });
     });
-    // 한 해 사계절
-    var bySeason = {}, seasonAt = null;
+    // 연도별 사계절: 그해에 봄(3~5월)·여름(6~8월)·가을(9~11월)·겨울(12·1·2월)을 모두 다녀오면 그 해 배지. 첫 기록 해부터 올해까지
+    var bySeason = {}, seasonAt = {};
     asc.forEach(function (x) {
-      if (!x.d || seasonAt) return;
+      if (!x.d) return;
       var y = x.d.getFullYear(), o = bySeason[y] || (bySeason[y] = {});
       o[season(x.d.getMonth())] = 1;
-      if (Object.keys(o).length === 4) seasonAt = x;
+      if (!seasonAt[y] && Object.keys(o).length === 4) seasonAt[y] = x;
     });
-    var bestSeason = Object.keys(bySeason).reduce(function (m, y) { return Math.max(m, Object.keys(bySeason[y]).length); }, 0);
-    add({ id: 'season4', group: 'etc', shape: 'circle', fill: '#2d4466', metal: 'g', icon: 'season', num: 4, ribbon: 'SEASONS',
-      ko: '한 해 사계절', title: '4 SEASONS', desc: '한 해에 봄·여름·가을·겨울을 모두 다녀왔어요',
-      got: !!seasonAt, date: seasonAt && seasonAt.d, spot: nameOf(seasonAt), cur: bestSeason, goal: 4, unit: '계절' });
+    var firstY = asc.length && asc[0].d ? asc[0].d.getFullYear() : new Date().getFullYear();
+    for (var sy = new Date().getFullYear(); sy >= firstY; sy--) {
+      var sx = seasonAt[sy], sn = Object.keys(bySeason[sy] || {}).length;
+      add({ id: 'season' + sy, group: 'season', shape: 'circle', fill: '#2d4466', metal: 'g', icon: 'season', num: String(sy), ribbon: '4 SEASONS',
+        ko: sy + ' 사계절', title: sy + ' 4 SEASONS', desc: sy + '년에 봄·여름·가을·겨울을 모두 다녀왔어요',
+        got: !!sx, date: sx && sx.d, spot: nameOf(sx), cur: sn, goal: 4, unit: '계절' });
+    }
     // 섬: 섬 박지에 다녀온 횟수(같은 섬을 다시 가도 센다) 10 · 20 … 70회. 테두리 10·20 동, 30~50 은, 60·70 금
     var islN = 0, islAt = {};
     asc.forEach(function (x) {
