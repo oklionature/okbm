@@ -9251,7 +9251,8 @@ window.openPastTripRegisterModal = function(ev) {
       '.ptw-pubcard{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}.ptw-pub{display:flex;justify-content:space-between;align-items:center;gap:10px}.ptw-pub b{font-size:0.80rem;color:#fff;font-weight:900}' +
       '.ptw-sw{flex:none;width:44px;height:26px;border-radius:13px;border:0;background:#334155;position:relative;cursor:pointer;padding:0;transition:background .2s}.ptw-sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}' +
       '.ptw-sw[aria-checked="true"]{background:#5bb8f0}.ptw-sw[aria-checked="true"]:after{transform:translateX(18px)}.ptw-sw:disabled{opacity:.45;cursor:default}' +
-      '.ptw-done{position:absolute;inset:0;z-index:30;background:#07090e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}.ptw-done[hidden]{display:none}.ptw-done .ck{width:56px;height:56px;border-radius:50%;background:#5bb8f0;color:#001521;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center}' +
+      '.ptw-done{position:absolute;inset:0;z-index:30;background:#07090e;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;gap:12px;padding:24px;text-align:center}.ptw-done[hidden]{display:none}.ptw-done .ck{width:56px;height:56px;border-radius:50%;background:#5bb8f0;color:#001521;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center}' +
+      '.ptw-done>:first-child{margin-top:auto}.ptw-done>:last-child{margin-bottom:auto}.ptw-done>*{flex-shrink:0}' +
       '.ptw-done h6{margin:0;font-size:1.05rem;font-weight:900;color:#fff}.ptw-done p{margin:0;font-size:0.78rem;color:#94a3b8;line-height:1.55}.ptw-card{width:220px;height:150px;border-radius:14px;background:#141824;position:relative;overflow:hidden}.ptw-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}' +
       '.ptw-card div{position:absolute;left:0;right:0;bottom:0;padding:24px 10px 8px;background:linear-gradient(transparent,rgba(0,0,0,.85));text-align:left;font-size:0.66rem;color:#cbd5e1}.ptw-card b{display:block;font-size:0.82rem;color:#fff}' +
       '.ptw-row2{display:flex;gap:8px;width:100%;max-width:300px}.ptw-row2 button{flex:1;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e2e8f0;font-size:0.84rem;font-weight:900;cursor:pointer;font-family:inherit}.ptw-row2 button.p{background:#5bb8f0;border-color:#5bb8f0;color:#001521}' +
@@ -9890,9 +9891,12 @@ window._ptwShowDone = function(record, next) {
     '<h6>' + (pub ? '피드에 올라갔어요' : '나만 보기로 저장했어요') + '</h6>' +
     '<p>' + (pub ? '다른 낭만루터들이 피드와 박지 후기에서 볼 수 있어요.' : esc(why)) + '</p>' +
     (photo ? '<div class="ptw-card"><img src="' + escapeHtml(okbmSafeImageUrl(photo)) + '" alt="" referrerpolicy="no-referrer"><div><b>' + esc(spotShort) + '</b>' + esc(record.date || '') + '</div></div>' : '') +
+    '<div id="ptwBadge" class="ptw-badge"></div>' +
     '<div class="ptw-row2"><button type="button" data-ptw-done="close">닫기</button>' +
     (pub ? '<button type="button" class="p" data-ptw-done="share">공유하기</button>' : '') + '</div>';
   box.hidden = false;
+  // 배지: 새로 받았으면 크게, 아니면 다음 배지까지 한 줄 (my-badges.js)
+  if (window.okbmBadges && typeof window.okbmBadges.done === 'function') window.okbmBadges.done(document.getElementById('ptwBadge'), record);
   box.onclick = function(e) {
     var b = e.target && e.target.closest ? e.target.closest('[data-ptw-done]') : null;
     if (!b) return;

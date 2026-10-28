@@ -1,9 +1,9 @@
 // =========================================================================
 // 낭만리포트 배지 (2026-10-28): 모양 그리기 · 리포트 배지 칸 · 전체 보기 · 새 배지 창 · 이미지 저장
 //
-// 배지 31개(받는 조건 계산은 my-report.js buildBadges):
+// 배지 37개(받는 조건 계산은 my-report.js buildBadges):
 //   기록 1·5·10·20·30·40·50·60·70·80·90·100회(BACKPACKING, 공개 피드만) · 누적 높이 1·3·5 EVEREST · 포토맵 30·70 REGIONS·ALL KOREA
-//   도 클리어 9개(그 도 모양 방패) · 제보 채택 1·10 · 한 해 사계절 · 섬 10곳
+//   도 클리어 9개(그 도 모양 방패) · 섬 10·20…70회 · 제보 채택 1·10 · 한 해 사계절
 // 단계형은 같은 모양에 테두리만 철 → 동 → 은 → 금. 도 클리어 모양은 photo-map/korea-sgg-202610.json의 시도 경계를
 // 방패 안(40×42)에 맞춰 줄인 것(가장 큰 덩어리만, 0.8 단위로 점을 솎음).
 // 새 배지 창은 낭만리포트를 열 때 지난번 본 뒤 새로 받은 배지가 있으면 띄운다. 처음 여는 계정은 띄우지 않고 지금 것을 '본 것'으로 둔다.
@@ -57,9 +57,18 @@
         '<animateTransform attributeName="gradientTransform" type="rotate" from="0 .5 .5" to="360 .5 .5" dur="6s" repeatCount="indefinite"/></linearGradient>'
       : '<linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + m[1] + '"/><stop offset=".5" stop-color="' + m[0] + '"/><stop offset="1" stop-color="' + m[1] + '"/></linearGradient>';
     if (rainbow) m = ['url(#' + id + ')', '#fff'];
+    // 금속 빛줄기: 받은 동·은·금 테두리에 빛이 비스듬히 지나간다. 동은 은은하고 느리게, 은은 차갑고 또렷하게, 금은 밝고 빠르게(+반짝이 둘)
+    var GLINT = { b: [0.32, 5.2, '#ffe2c4'], s: [0.55, 3.8, '#ffffff'], g: [0.75, 3, '#fff6d6'] };
+    var gl = !locked && GLINT[b.metal];
+    if (gl) {
+      grad += '<linearGradient id="' + id + 'g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="34" y2="34">' +
+        '<stop offset="0" stop-color="' + gl[2] + '" stop-opacity="0"/><stop offset=".5" stop-color="' + gl[2] + '" stop-opacity="' + gl[0] + '"/><stop offset="1" stop-color="' + gl[2] + '" stop-opacity="0"/>' +
+        '<animateTransform attributeName="gradientTransform" type="translate" values="-60 -60;110 110;110 110" keyTimes="0;.55;1" dur="' + gl[1] + 's" repeatCount="indefinite"/></linearGradient>';
+    }
     var s = '<svg viewBox="0 0 100 114" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + esc(b.ko) + '" style="color:' + ink + '">' +
       '<defs>' + grad + '</defs>' +
       '<path d="' + d + '" fill="url(#' + id + ')"/>' +
+      (gl ? '<path d="' + d + '" fill="url(#' + id + 'g)"/>' : '') +
       '<path d="' + d + '" fill="' + fill + '" transform="translate(50 50) scale(.86) translate(-50 -50)"/>' +
       '<path d="' + d + '" fill="none" stroke="' + ink + '" stroke-opacity=".35" stroke-width="1.2" stroke-dasharray="2.4 2.2" transform="translate(50 50) scale(.78) translate(-50 -50)"/>';
     if (b.sil && SIL[b.sil]) s += '<path d="' + SIL[b.sil] + '" fill="' + ink + '" fill-opacity="' + (locked ? '.4' : '.92') + '"/>';
@@ -67,9 +76,10 @@
     if (b.num != null) s += '<text x="50" y="76" text-anchor="middle" font-family="' + NUMFONT + '" font-weight="700" font-size="' + (String(b.num).length > 3 ? 15 : 22) + '" fill="' + ink + '">' + esc(b.num) + '</text>';
     s += '<path d="M4 92 H96 L91 101 L96 110 H4 L9 101 Z" fill="' + (locked ? '#2a2a30' : m[0]) + '"/>' +
       '<text x="50" y="104.6" text-anchor="middle" font-family="' + NUMFONT + '" font-weight="600" font-size="13" letter-spacing=".3" fill="' + (locked ? '#a1a1a9' : '#fff') + '"' + (rainbow ? ' stroke="#000" stroke-opacity=".35" stroke-width=".6" paint-order="stroke"' : '') + '>' + esc(b.ribbon) + '</text>';
-    if (rainbow) {
-      // 테두리 위 반짝이 넷: 차례로 커졌다 사라진다
-      [[18, 20, 0], [84, 26, 0.7], [90, 66, 1.4], [12, 70, 2.1]].forEach(function (p) {
+    // 반짝이: 무지개는 넷, 금은 둘
+    var sparks = rainbow ? [[18, 20, 0], [84, 26, 0.7], [90, 66, 1.4], [12, 70, 2.1]] : (!locked && b.metal === 'g' ? [[82, 22, 0.4], [16, 68, 1.8]] : []);
+    if (sparks.length) {
+      sparks.forEach(function (p) {
         s += '<path d="M' + p[0] + ' ' + (p[1] - 5) + ' L' + (p[0] + 1.3) + ' ' + (p[1] - 1.3) + ' L' + (p[0] + 5) + ' ' + p[1] + ' L' + (p[0] + 1.3) + ' ' + (p[1] + 1.3) + ' L' + p[0] + ' ' + (p[1] + 5) + ' L' + (p[0] - 1.3) + ' ' + (p[1] + 1.3) + ' L' + (p[0] - 5) + ' ' + p[1] + ' L' + (p[0] - 1.3) + ' ' + (p[1] - 1.3) + ' Z" fill="#fff" opacity="0">' +
           '<animate attributeName="opacity" values="0;1;0" dur="2.8s" begin="' + p[2] + 's" repeatCount="indefinite"/></path>';
       });
@@ -91,7 +101,7 @@
     '.bdg-nx i u{display:block;height:100%;border-radius:3px;background:#c88b57}',
     '.bdg-empty{margin-top:10px;font-size:13px;color:var(--tx-3,#8b8b93);line-height:1.5}',
     // 전체 보기
-    '.bdg-all{position:fixed;inset:0 0 calc(56px + env(safe-area-inset-bottom,8px)) 0;z-index:2147483645;background:#000;color:#f2f2f3;display:flex;flex-direction:column}',
+    '.bdg-all{position:fixed;inset:0 0 calc(56px + env(safe-area-inset-bottom,8px)) 0;z-index:2147483647;background:#000;color:#f2f2f3;display:flex;flex-direction:column}',
     '.bdg-all-h{flex:none;display:flex;align-items:center;gap:6px;height:calc(52px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 12px 0 4px;border-bottom:1px solid var(--line,rgba(255,255,255,.08))}',
     '.bdg-all-h button{width:44px;height:44px;border:0;background:none;color:#fff;display:grid;place-items:center;cursor:pointer}',
     '.bdg-all-h button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2}',
@@ -102,7 +112,7 @@
     '.bdg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px 4px;justify-items:center}',
     '.bdg-grid .bdg-it{width:112px}.bdg-grid .bdg-it svg{width:104px;height:118px}.bdg-grid .bdg-it span{font-size:13px}.bdg-grid .bdg-it span small{font-size:12px}',
     // 배지 창(새 배지·자세히)
-    '.bdg-pop{position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px}',
+    '.bdg-pop{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px}',
     '.bdg-box{width:100%;max-width:330px;background:var(--bg-1,#0f0f11);border:1px solid var(--line,rgba(255,255,255,.08));border-radius:22px;padding:26px 20px 18px;display:flex;flex-direction:column;align-items:center;text-align:center;color:#f2f2f3}',
     '.bdg-box .eb{font-size:12px;font-weight:700;color:#fbbf24;letter-spacing:.04em}',
     '.bdg-box h2{margin:6px 0 14px;font-size:19px;font-weight:800}',
@@ -114,7 +124,34 @@
     '.bdg-box .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;margin-top:14px}',
     '.bdg-box .btns button{height:46px;border-radius:12px;border:0;font:inherit;font-size:15px;font-weight:800;cursor:pointer}',
     '.bdg-box .btns .c{background:var(--bg-2,#17171b);color:var(--tx-2,#d1d1d6)}.bdg-box .btns .s{background:var(--accent-fill,#2b6fd6);color:#fff}',
-    '.bdg-box .btns.one{grid-template-columns:1fr}'
+    '.bdg-box .btns.one{grid-template-columns:1fr}',
+    // 피드 완료 화면
+    '.ptw-badge{width:100%;max-width:300px}',
+    '.ptw-badge:empty{display:none}',
+    '.bdg-dn-note{margin:0;font-size:12.5px;color:#8b8b93}',
+    '.bdg-dn-prog{display:flex;gap:12px;align-items:center;width:100%;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#f2f2f3;font:inherit;text-align:left;cursor:pointer}',
+    '.bdg-dn-prog svg{width:46px;height:52px;flex:none}',
+    '.bdg-dn-prog span{flex:1;min-width:0}.bdg-dn-prog b{display:block;font-size:13.5px}.bdg-dn-prog small{display:block;margin-top:2px;font-size:12px;color:#8b8b93}',
+    '.bdg-dn-prog i{display:block;height:6px;border-radius:3px;background:#2a2a30;margin-top:8px;overflow:hidden}.bdg-dn-prog i u{display:block;height:100%;border-radius:3px;background:#c88b57}',
+    '.bdg-dn-got{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}',
+    '.bdg-dn-got::-webkit-scrollbar{display:none}',
+    '.bdg-dn-one{flex:0 0 100%;scroll-snap-align:center;box-sizing:border-box;padding:16px 14px 14px;border-radius:16px;background:linear-gradient(180deg,rgba(241,207,106,.10),rgba(241,207,106,0) 70%);border:1px solid rgba(241,207,106,.35);display:flex;flex-direction:column;align-items:center;text-align:center}',
+    '.bdg-dn-got.many .bdg-dn-one{flex-basis:88%}',
+    '.bdg-dn-one .eb{font-size:12px;font-weight:700;color:#fbbf24;letter-spacing:.04em}',
+    '.bdg-dn-one svg{width:120px;height:137px;margin-top:8px}',
+    '.bdg-dn-one b{margin-top:8px;font-size:16px;font-weight:800;color:#f2f2f3}',
+    '.bdg-dn-one small{margin-top:3px;font-size:12.5px;color:#8b8b93;line-height:1.45}',
+    '.bdg-dn-one button{margin-top:10px;height:34px;padding:0 14px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:none;color:#d1d1d6;font:inherit;font-size:13px;font-weight:700;cursor:pointer}',
+    // 처음 한 번 소개
+    '.bdg-intro{position:relative}',
+    '.bdg-intro .lead{margin:6px 0 0;font-size:14px;color:var(--tx-2,#d1d1d6);line-height:1.55}',
+    '.bdg-intro .irow{display:flex;justify-content:space-between;width:100%;margin:16px 0 4px}',
+    '.bdg-intro .irow div{width:72px;display:flex;flex-direction:column;align-items:center;gap:4px}',
+    '.bdg-intro .irow svg{width:68px;height:78px}.bdg-intro .irow span{font-size:11.5px;color:var(--tx-3,#8b8b93);line-height:1.3}',
+    '.bdg-intro ul{width:100%;margin:12px 0 0;padding:0;list-style:none;text-align:left;font-size:13.5px;color:var(--tx-2,#d1d1d6);line-height:1.5}',
+    '.bdg-intro li{display:flex;gap:8px;padding:8px 0;border-top:1px solid var(--line,rgba(255,255,255,.08))}.bdg-intro li b{flex:none;width:64px;color:#f2f2f3}',
+    '.bdg-intro .have{margin:10px 0 0;font-size:13px;color:var(--tx-3,#8b8b93)}.bdg-intro .have b{color:#f2f2f3}',
+    '.bdg-x{position:absolute;top:8px;right:8px;width:36px;height:36px;border:0;border-radius:10px;background:none;color:#8b8b93;font-size:18px;cursor:pointer}'
   ].join('');
   function ensureCss() {
     loadFont();
@@ -161,7 +198,7 @@
 
   // 전체 보기
   var GROUPS = [['trips', '기록', '다녀온 백패킹 횟수'], ['ever', '누적 높이', '다녀온 박지 높이를 더해 에베레스트(8,849m)를 넘을 때마다'], ['reg', '포토맵', '채운 시·군'],
-    ['do', '도 클리어', '그 도에서 박지가 있는 시·군을 모두 채우면'], ['etc', '그 밖에', '제보 채택 · 한 해 사계절 · 섬']];
+    ['do', '도 클리어', '그 도에서 박지가 있는 시·군을 모두 채우면'], ['island', '섬', '섬 박지에 다녀온 횟수'], ['etc', '그 밖에', '제보 채택 · 한 해 사계절']];
   function openAll() {
     ensureCss();
     metric('feat_badge_all');
@@ -265,10 +302,94 @@
     nextInQueue();
   }
 
+  function seenKey(userId) { return 'okbm_badges_seen_v2:' + userId; }
+  function readSeen(userId) { try { return JSON.parse(localStorage.getItem(seenKey(userId)) || 'null'); } catch (e) { return null; } }
+  function writeSeen(userId) {
+    try { localStorage.setItem(seenKey(userId), JSON.stringify(LIST.filter(function (b) { return b.got; }).map(function (b) { return b.id; }))); } catch (e) {}
+  }
+  function currentUid() {
+    try { return typeof window.okbmGetCurrentUserId === 'function' ? String(window.okbmGetCurrentUserId() || '').trim() : ''; } catch (e) { return ''; }
+  }
+  function leftText(b) {
+    var n = Math.max(0, (b.goal || 0) - (b.cur || 0));
+    return num(n) + (b.unit || '') + ' 남았어요';
+  }
+
+  // 피드 완료 화면(romantic-sync.js _ptwShowDone의 #ptwBadge): 새로 받은 배지는 크게, 없으면 가장 가까운 다음 배지 한 줄
+  function done(el, record) {
+    if (!el || typeof window.okbmComputeBadges !== 'function') return;
+    ensureCss();
+    if (!record || record.isPublished !== true) {
+      el.innerHTML = '<p class="bdg-dn-note">나만 보기 피드는 배지에 세지 않아요.</p>';
+      return;
+    }
+    var userId = currentUid();
+    el.innerHTML = '<p class="bdg-dn-note">배지를 확인하는 중…</p>';
+    window.okbmComputeBadges().then(function (list) {
+      LIST = Array.isArray(list) ? list : [];
+      var seen = readSeen(userId);
+      var day = String(record.date || '').replace(/\D/g, '').slice(0, 8);
+      // 기억한 목록이 없으면(처음) 이 피드 날짜에 받은 배지만 새 배지로 본다
+      var fresh = LIST.filter(function (b) {
+        if (!b.got) return false;
+        if (Array.isArray(seen)) return seen.indexOf(b.id) < 0;
+        return !!(b.date && fmtDate(b.date).replace(/\D/g, '') === day);
+      });
+      if (userId) writeSeen(userId);
+      if (fresh.length) {
+        metric('feat_badge_new');
+        el.innerHTML = '<div class="bdg-dn-got' + (fresh.length > 1 ? ' many' : '') + '">' + fresh.map(function (b) {
+          return '<div class="bdg-dn-one"><span class="eb">NEW BADGE</span>' + svg(b) + '<b>' + esc(b.ko) + '</b><small>' + esc(b.desc) + '</small>' +
+            '<button type="button" data-bdg-save="' + esc(b.id) + '">이미지 저장</button></div>';
+        }).join('') + '</div>' + (fresh.length > 1 ? '<p class="bdg-dn-note">배지 ' + fresh.length + '개를 받았어요 · 옆으로 넘겨 보세요</p>' : '');
+        return;
+      }
+      var nx = nextOnes(1)[0];
+      if (!nx) { el.innerHTML = ''; return; }
+      var p = Math.min(100, Math.round(nx.cur / nx.goal * 100));
+      el.innerHTML = '<button type="button" class="bdg-dn-prog" data-bdg-all="1">' + svg(nx) +
+        '<span><b>다음 배지 · ' + esc(nx.title) + '</b><small>' + esc(leftText(nx)) + ' · ' + num(nx.cur) + ' / ' + num(nx.goal) + esc(nx.unit || '') + '</small>' +
+        '<i><u style="width:' + p + '%"></u></i></span></button>';
+    }).catch(function () { el.innerHTML = ''; });
+  }
+
+  // 처음 한 번 배지 소개 (계정마다 한 번, 낭만리포트를 열 때)
+  function intro(userId) {
+    if (!userId) return false;
+    var key = 'okbm_badge_intro_v1:' + userId;
+    if (document.getElementById('okbmBadgePop')) return false; // 새 배지 창이 떠 있으면 다음에
+    try { if (localStorage.getItem(key)) return false; localStorage.setItem(key, '1'); } catch (e) { return false; }
+    ensureCss();
+    var got = LIST.filter(function (b) { return b.got; });
+    var RANK = { r: 5, g: 4, s: 3, b: 2, i: 1 };
+    var pick = got.slice().sort(function (a, b) { return (RANK[b.metal] || 0) - (RANK[a.metal] || 0); });
+    // 묶음마다 하나씩, 모자라면 못 받은 배지로 채운다
+    var shown = [], groups = {};
+    pick.concat(LIST.filter(function (b) { return !b.got; })).forEach(function (b) {
+      if (shown.length < 4 && !groups[b.group]) { groups[b.group] = 1; shown.push(b); }
+    });
+    var el = document.createElement('div');
+    el.id = 'okbmBadgePop';
+    el.className = 'bdg-pop';
+    el.innerHTML = '<div class="bdg-box bdg-intro" role="dialog" aria-modal="true" aria-label="배지 소개">' +
+      '<h2 style="margin-top:0">낭만리포트에 배지가 생겼어요</h2>' +
+      '<p class="lead">다녀온 백패킹을 공개 피드로 남기면<br>쌓인 기록만큼 배지를 받아요.</p>' +
+      '<div class="irow">' + shown.map(function (b) { return '<div>' + svg(b) + '<span>' + esc(b.ko) + '</span></div>'; }).join('') + '</div>' +
+      '<ul><li><b>기록</b><span>공개 피드 1 · 5 · 10 · 20 … 100회</span></li><li><b>누적 높이</b><span>다녀온 박지 높이를 더해 에베레스트만큼</span></li><li><b>포토맵</b><span>시·군을 채우고, 도를 클리어하면</span></li></ul>' +
+      (got.length ? '<p class="have">이미 다녀온 기록으로 받은 배지가 <b>' + got.length + '개</b> 있어요.</p>' : '') +
+      '<div class="btns one"><button type="button" class="s" data-bdg-intro="all">내 배지 보기</button></div>' +
+      '<button type="button" class="bdg-x" data-bdg-ok="1" aria-label="닫기">✕</button>' +
+      '</div>';
+    document.body.appendChild(el);
+    metric('feat_badge_intro');
+    return true;
+  }
+
   document.addEventListener('click', function (e) {
     var t = e.target && e.target.closest ? e.target : null;
     if (!t) return;
     var x;
+    if ((x = t.closest('[data-bdg-intro]'))) { var ip = document.getElementById('okbmBadgePop'); if (ip) ip.remove(); openAll(); return; }
     if ((x = t.closest('[data-bdg-all]'))) { e.preventDefault(); openAll(); return; }
     if ((x = t.closest('[data-bdg-close]'))) { var a = document.getElementById('okbmBadgeAll'); if (a) a.remove(); return; }
     if ((x = t.closest('[data-bdg-save]'))) { var bs = find(x.getAttribute('data-bdg-save')); if (bs) saveImage(bs); return; }
@@ -281,6 +402,8 @@
     card: card,
     openAll: openAll,
     checkNew: checkNew,
+    done: done,
+    intro: intro,
     svg: svg
   };
 })();

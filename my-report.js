@@ -396,18 +396,19 @@
     add({ id: 'season4', group: 'etc', shape: 'circle', fill: '#2d4466', metal: 'g', icon: 'season', num: 4, ribbon: 'SEASONS',
       ko: '한 해 사계절', title: '4 SEASONS', desc: '한 해에 봄·여름·가을·겨울을 모두 다녀왔어요',
       got: !!seasonAt, date: seasonAt && seasonAt.d, spot: nameOf(seasonAt), cur: bestSeason, goal: 4, unit: '계절' });
-    // 섬 10곳
-    var isl = {}, islN = 0, islAt = null;
+    // 섬: 섬 박지에 다녀온 횟수(같은 섬을 다시 가도 센다) 10 · 20 … 70회. 테두리 10·20 동, 30~50 은, 60·70 금
+    var islN = 0, islAt = {};
     asc.forEach(function (x) {
       if (!x.s || themeOf(x.s) !== 'island') return;
-      var k = String(x.s.id);
-      if (isl[k]) return;
-      isl[k] = 1; islN++;
-      if (islN === 10) islAt = x;
+      islN++;
+      if (islN % 10 === 0) islAt[islN] = x;
     });
-    add({ id: 'island10', group: 'etc', shape: 'circle', fill: '#16545b', metal: 'g', icon: 'island', num: 10, ribbon: 'ISLANDS',
-      ko: '섬 10곳', title: '10 ISLANDS', desc: '섬 박지 10곳을 다녀왔어요',
-      got: islN >= 10, date: islAt && islAt.d, spot: nameOf(islAt), cur: Math.min(islN, 10), goal: 10, unit: '곳' });
+    [[10, 'b'], [20, 'b'], [30, 's'], [40, 's'], [50, 's'], [60, 'g'], [70, 'g']].forEach(function (t) {
+      var x = islAt[t[0]];
+      add({ id: 'island' + t[0], group: 'island', ladder: 'island', shape: 'circle', fill: '#16545b', metal: t[1], icon: 'island', num: t[0], ribbon: 'ISLANDS',
+        ko: '섬 ' + t[0] + '회', title: t[0] + ' ISLANDS', desc: '섬 박지에 ' + t[0] + '번 다녀왔어요',
+        got: islN >= t[0], date: x && x.d, spot: nameOf(x), cur: Math.min(islN, t[0]), goal: t[0], unit: '회' });
+    });
     return list;
   }
 
@@ -514,7 +515,7 @@
       window.okbmBadges.set(buildBadges(feeds.filter(function (f) { return f.is_published !== false; })));
       window.okbmBadges.card($('mrBadges'));
       // 새 배지는 낭만리포트를 열 때마다 한 번 본다
-      if (!S.badgeChecked) { S.badgeChecked = true; window.okbmBadges.checkNew(S.uid); }
+      if (!S.badgeChecked) { S.badgeChecked = true; window.okbmBadges.checkNew(S.uid); window.okbmBadges.intro(S.uid); }
     } else {
       var bb = $('mrBadges');
       if (bb) bb.style.display = 'none';
@@ -589,6 +590,13 @@
     renderReport();
     loadFeeds(force).then(function () { renderRecords(); renderReport(); });
   }
+
+  // 피드 완료 화면(my-badges.js okbmBadges.done)에서 쓴다: 내 피드를 새로 받아 배지를 다시 계산한다
+  window.okbmComputeBadges = function () {
+    return loadFeeds(true).then(function (feeds) {
+      return buildBadges((feeds || []).filter(function (f) { return f.is_published !== false; }));
+    });
+  };
 
   window.okbmMyReportOpened = function () {
     if (!document.getElementById('okbmMyReportCss')) {
