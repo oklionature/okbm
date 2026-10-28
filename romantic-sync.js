@@ -5460,10 +5460,10 @@ function ensureMyReportAndAuthModalsInDOM() {
           </div>
           <div style="height:47px !important; display:flex !important; align-items:center !important; justify-content:space-between !important; max-width:480px !important; margin:0 auto !important; position:relative !important; z-index:2 !important;">
             <div style="height:47px !important; display:inline-flex !important; align-items:center !important; gap:8px !important; text-decoration:none !important; cursor:default !important;">
-              <div id="mrTopLogo" style="width:30px !important; height:30px !important; min-width:30px !important; min-height:30px !important; max-width:30px !important; max-height:30px !important; display:flex !important; align-items:center !important; justify-content:center !important; flex-shrink:0 !important; overflow:hidden !important;">
+              <div style="width:30px !important; height:30px !important; min-width:30px !important; min-height:30px !important; max-width:30px !important; max-height:30px !important; display:flex !important; align-items:center !important; justify-content:center !important; flex-shrink:0 !important; overflow:hidden !important;">
                 <img src="logo.png" alt="낭만루트 로고" style="width:28px !important; height:28px !important; object-fit:contain !important; display:block !important;" />
               </div>
-              <span id="mrTopTitle" style="font-size:1.2rem !important; font-weight:900 !important; letter-spacing:-0.035em !important; line-height:1 !important; color:#ffffff !important; display:inline-block !important;">낭만루트</span>
+              <span style="font-size:1.2rem !important; font-weight:900 !important; letter-spacing:-0.035em !important; line-height:1 !important; color:#ffffff !important; display:inline-block !important;">낭만루트</span>
             </div>
             <!-- 쪽지·알림·설정 (my-report.js가 data-mr-act로 받는다). 새 소식 숫자는 okbmPaintCountBadgeEl이 채운다 -->
             <div class="mr-icons">
