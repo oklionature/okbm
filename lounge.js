@@ -155,15 +155,75 @@
   const isHotChip = function (c) { return c === '오늘' || c === '내일' || /분 뒤$/.test(c); };
   // 행사 신청 상태. 신청 일시가 없으면 null. 마감을 비우면 행사 시작일 0시(전날 밤)까지.
   // phase: later(7일 넘게 남음) · soon(7일 안) · open(신청 중) · closed(마감). hot이면 맨 위.
+  // 신청 일시 칸이 비어 있으면 설명·한 줄 소개·참가 글에서 읽는다.
+  // 읽는 말투: '티켓은 10월 26일 월요일 저녁 8시에 오픈' · '일반 신청은 10월 19일 19시부터' · '티켓 오픈 9/11 12:00'
+  //           · '신청은 10월 21일부터 27일까지' · '쿠폰 등록은 10월 28일 자정까지' · '10/29까지 사전예매'
+  // 신청 말(티켓·신청·접수·예약·예매·모집·등록·응모)이 있는 문장에서만 찾는다. '17시에 공개'처럼 오픈·부터·까지가 안 붙은 날짜는 넘긴다.
+  const AP_KEY = /티켓|신청|접수|예약|예매|모집|등록|응모/;
+  const AP_DT = /(?:(\d{4})\s*[./년]\s*)?(\d{1,2})\s*(?:월\s*|[./])\s*(\d{1,2})\s*일?(?:\s*\([^)]{1,3}\))?(?:\s*[월화수목금토일]요일)?(?:\s*(오전|오후|저녁|밤|낮|새벽|아침)?\s*(\d{1,2})\s*(?:시(?:\s*(\d{1,2})\s*분)?|:(\d{2}))|\s*(자정|정오))?/g;
+  function applyFromText(e) {
+    const base = parseD(e.start_date);
+    if (!base) return null;
+    const text = [e.subtitle, e.fee, e.description].filter(Boolean).join('\n');
+    // 연도가 없으면 행사 시작일 해의 그날로 보고, 행사보다 뒤면 한 해 앞으로
+    const mk = function (y, mo, d, ap, h, mi, mi2, word) {
+      mo = +mo; d = +d;
+      if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+      let hh = 0, mm = 0, timed = false;
+      if (h != null) {
+        hh = +h; mm = +(mi || mi2 || 0); timed = true;
+        if (/오후|저녁|밤/.test(ap || '') && hh < 12) hh += 12;
+        else if (/오전|새벽|아침/.test(ap || '') && hh === 12) hh = 0;
+        else if (ap === '낮' && hh < 6) hh += 12;
+        if (hh > 23 || mm > 59) return null;
+      } else if (word === '정오') { hh = 12; timed = true; }
+      const dt = new Date(y ? +y : base.getFullYear(), mo - 1, d, hh, mm);
+      if (!y && dt - base > 86400000) dt.setFullYear(dt.getFullYear() - 1);
+      return { d: dt, timed: timed, midnight: word === '자정' };
+    };
+    // 그날 밤까지: 시간이 없거나 '자정'이면 다음 날 0시
+    const endOf = function (t) { return t.timed ? t.d : new Date(t.d.getFullYear(), t.d.getMonth(), t.d.getDate() + 1); };
+    const parts = text.split(/[.!?]\s+|\n+/);
+    for (let i = 0; i < parts.length; i++) {
+      const s = parts[i];
+      if (!AP_KEY.test(s)) continue;
+      let open = null, close = null, m;
+      AP_DT.lastIndex = 0;
+      while ((m = AP_DT.exec(s))) {
+        const t = mk(m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8]);
+        if (!t) continue;
+        const before = s.slice(Math.max(0, m.index - 6), m.index);
+        const after = s.slice(AP_DT.lastIndex, AP_DT.lastIndex + 10);
+        if (!open && (/^\s*(에\s*)?(오픈|부터|시작|open)/i.test(after) || /(오픈|시작)\s*$/.test(before))) {
+          open = t.d;
+          // '10월 21일부터 27일까지': 같은 달 날짜만 적은 마감
+          const r = after.match(/^\s*부터\s*~?\s*(\d{1,2})\s*일\s*까지/);
+          if (r) close = endOf(mk(null, t.d.getMonth() + 1, r[1]) || t);
+        } else if (!close && /^\s*까지/.test(after)) {
+          close = endOf(t);
+        }
+      }
+      if (open || close) return { open: open, close: close };
+    }
+    return null;
+  }
   function applyView(e) {
-    const open = parseTs(e.apply_open_at);
-    const close = parseTs(e.apply_close_at) || parseD(e.start_date);
-    if (!open && !parseTs(e.apply_close_at)) return null;
+    let open = parseTs(e.apply_open_at);
+    let closeSet = parseTs(e.apply_close_at);
+    const fromText = !open && !closeSet;
+    if (fromText) {
+      const t = applyFromText(e);
+      if (!t) return null;
+      open = t.open; closeSet = t.close;
+    }
+    const close = closeSet || parseD(e.start_date);
     const now = Date.now();
     let phase = 'closed';
     if (open && now < open) phase = open - now <= HOT_MS ? 'soon' : 'later';
     else if (close && now < close) phase = 'open';
-    return { open: open, close: close, phase: phase, hot: phase === 'soon' || phase === 'open', at: phase === 'open' ? close : open };
+    // 글에서 읽은 신청이 이미 끝났으면 아무것도 안 보인다(대피소 예약처럼 계속 받는 것을 '마감'으로 잘못 보이지 않게)
+    if (fromText && phase === 'closed') return null;
+    return { open: open, close: close, phase: phase, hot: phase === 'soon' || phase === 'open', at: phase === 'open' ? close : open, fromText: fromText };
   }
   // 큰 글씨 한 줄과 오른쪽 꼬리표. open의 마감이 오늘·내일이면 꼬리표를 '오늘 마감'으로.
   function applyLine(a, long) {
@@ -2367,6 +2427,12 @@
   }
   function eventFormHtml(e) {
     const spot = e && e.spot_id ? spotById(e.spot_id) : null;
+    // 신청 일시 칸이 비어 있으면 설명 글에서 읽은 값을 미리 채운다(저장하면 그 값이 칸에 들어간다)
+    const guess = e && !e.apply_open_at && !e.apply_close_at ? applyFromText(e) : null;
+    if (guess) e = Object.assign({}, e, {
+      apply_open_at: guess.open ? guess.open.toISOString() : null,
+      apply_close_at: guess.close ? guess.close.toISOString() : null
+    });
     return `<h3 id="loungeSheetTitle">${e ? '행사 수정' : '행사 등록'}</h3><p class="lm-ssub">관리자에게만 보이는 화면이에요.</p>
       <form data-form="event" novalidate autocomplete="off">
         ${field('lmEvTitle', '행사 이름', inp('lmEvTitle', 'title', e && e.title, 'maxlength="80" required data-autofocus placeholder="예: 클린 백패킹 페스티벌"'), true)}
@@ -2380,7 +2446,7 @@
           <div>${field('lmEvFee', '참가', inp('lmEvFee', 'fee', e && e.fee, 'maxlength="60" placeholder="무료 · 선착순 80팀"'))}</div></div>
         <div class="lm-two"><div>${field('lmEvOpen', '신청 시작', inp('lmEvOpen', 'apply_open_at', e && localDT(e.apply_open_at), 'type="datetime-local"'))}</div>
           <div>${field('lmEvClose', '신청 마감', inp('lmEvClose', 'apply_close_at', e && localDT(e.apply_close_at), 'type="datetime-local"'))}</div></div>
-        <p class="lm-hint">신청 시작 7일 전부터 마감까지 행사 목록 맨 위에 '몇 월 며칠 몇 시 신청 오픈'으로 크게 떠요. 마감을 비우면 행사 전날 밤까지예요.</p>
+        <p class="lm-hint">${guess ? '설명 글에서 읽어 채웠어요. 틀리면 고쳐 주세요. ' : ''}신청 시작 7일 전부터 마감까지 행사 목록 맨 위에 '몇 월 며칠 몇 시 신청 오픈'으로 크게 떠요. 비워 두면 설명 글('10월 26일 저녁 8시에 오픈')에서 읽고, 마감을 비우면 행사 전날 밤까지예요.</p>
         ${field('lmEvUrl', '신청 링크', inp('lmEvUrl', 'apply_url', e && eventApplyUrl(e), 'type="url" inputmode="url" placeholder="https://"'))}
         ${field('lmEvIg', '인스타 게시물 링크', inp('lmEvIg', 'instagram_url', e && eventIgUrl(e), 'type="url" inputmode="url" maxlength="300" placeholder="https://www.instagram.com/p/…"'))}
         <p class="lm-hint">신청 페이지와 인스타 게시물은 같이 넣을 수 있어요. 인스타는 앱 안에서 열려요.</p>
