@@ -3515,6 +3515,14 @@ window.saveCurrentPackingRecord = function() {
       '<div role="dialog" aria-modal="true" style="position:relative; width:100%; max-width:520px; margin:0 auto; max-height:86vh; max-height:86dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; background:#111318; border-top-left-radius:22px; border-top-right-radius:22px; border-top:1px solid rgba(255,255,255,0.08); padding:10px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display:flex; flex-direction:column; gap:12px; box-sizing:border-box;">' +
       '<div style="width:38px; height:4px; border-radius:2px; background:#3a3d44; margin:0 auto 2px; flex-shrink:0;"></div>' + inner + '</div>';
     document.body.appendChild(wrap);
+    // 달력이 가려지지 않게 '다가오는 일정' 칸 윗선까지만 올라온다
+    // (작은 폰에서는 찾기·목록·메모·저장이 한눈에 들어가도록 460px까지는 더 올라온다)
+    var anchor = document.getElementById('planUpcomingWrap');
+    var top = anchor ? anchor.getBoundingClientRect().top : 0;
+    if (top > 0 && top < window.innerHeight) {
+      var dlg = wrap.querySelector('[role="dialog"]');
+      if (dlg) dlg.style.maxHeight = Math.round(Math.max(window.innerHeight - top, Math.min(460, window.innerHeight * 0.86))) + 'px';
+    }
     return wrap;
   }
   function okbmPlanHeadHtml(k, sub, right, suffix) {
@@ -3569,14 +3577,17 @@ window.saveCurrentPackingRecord = function() {
         '<span style="width:20px; height:20px; border-radius:50%; flex-shrink:0; box-sizing:border-box; border:2px solid ' + (on ? '#ffffff' : '#4b4f57') + ';' + (on ? ' background:radial-gradient(#ffffff 40%, transparent 45%);' : '') + '"></span></button>';
     }).join('');
   }
+  // 박지 목록만 창 안에서 넘기고, 찾기 칸·메모 칸·저장 버튼은 눌려 줄지 않게 고정한다
+  // (찜한 박지가 많으면 찾기 칸 19px·메모 칸 24px로 쪼그라들어 저장 버튼 위에 묻혔다)
+  // 글자 16px: 아이폰은 그보다 작은 입력 칸을 누르면 화면을 확대한다
   window.okbmOpenPlanCreateSheet = function(k) {
     var info = okbmPlanDayInfo(k);
     var html = okbmPlanHeadHtml(k, info.name ? '박지를 바꾸거나 메모를 고쳐요' : '어디로 갈까요?', '', ' 일정') +
       okbmPlanEventsHtml(info.events) +
-      '<input id="pdsSearch" type="search" placeholder="박지 이름으로 찾기" autocomplete="off" style="height:44px; border-radius:12px; background:#1a1c22; border:1px solid rgba(255,255,255,0.08); color:#ffffff; padding:0 12px; font-size:0.9rem; outline:none; width:100%; box-sizing:border-box; font-family:inherit;">' +
-      '<div id="pdsListCap" style="font-size:0.78rem; font-weight:800; color:#a1a8b5; margin-bottom:-4px;">찜한 박지</div>' +
-      '<div id="pdsList" style="display:flex; flex-direction:column; gap:6px;"></div>' +
-      '<textarea id="pdsMemo" rows="2" maxlength="200" placeholder="메모 (선택) · 배 시간, 같이 가는 사람" style="border-radius:12px; background:#1a1c22; border:1px solid rgba(255,255,255,0.08); color:#ffffff; padding:11px 12px; font-size:0.88rem; font-family:inherit; line-height:1.5; outline:none; resize:none; width:100%; box-sizing:border-box;">' + escapeHtml(info.memo) + '</textarea>' +
+      '<input id="pdsSearch" type="search" placeholder="박지 이름으로 찾기" autocomplete="off" style="height:50px; flex-shrink:0; border-radius:12px; background:#1a1c22; border:1px solid rgba(255,255,255,0.14); color:#ffffff; padding:0 14px; font-size:16px; outline:none; width:100%; box-sizing:border-box; font-family:inherit;">' +
+      '<div id="pdsListCap" style="flex-shrink:0; font-size:0.78rem; font-weight:800; color:#a1a8b5; margin-bottom:-4px;">찜한 박지</div>' +
+      '<div id="pdsList" style="flex:1 1 auto; min-height:120px; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; display:flex; flex-direction:column; gap:6px;"></div>' +
+      '<textarea id="pdsMemo" rows="2" maxlength="200" placeholder="메모 (선택) · 배 시간, 같이 가는 사람" style="flex-shrink:0; min-height:72px; border-radius:12px; background:#1a1c22; border:1px solid rgba(255,255,255,0.14); color:#ffffff; padding:11px 12px; font-size:16px; font-family:inherit; line-height:1.5; outline:none; resize:none; width:100%; box-sizing:border-box;">' + escapeHtml(info.memo) + '</textarea>' +
       '<button type="button" class="js-pds-save" data-date="' + escapeHtml(k) + '" style="height:50px; border-radius:14px; background:#5bb8f0; color:#00131f; border:none; font-size:0.95rem; font-weight:900; cursor:pointer; flex-shrink:0;">일정 저장</button>';
     var wrap = okbmPlanSheetShell(html);
     wrap.__pick = info.name ? { name: info.name, elevation: info.elevation } : null;
