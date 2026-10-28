@@ -194,7 +194,7 @@
     if (S.loading && S.uid === uid) return S.loading;
     S.uid = uid;
     var q = a.url + '/rest/v1/feeds?' + ownerFilter(uid) +
-      '&select=id,spot,spot_id,date,photos,likes_count,comments_count,elevation,created_at&order=date.desc&limit=1000';
+      '&select=id,spot,spot_id,date,photos,likes_count,comments_count,elevation,created_at,is_published&order=date.desc&limit=1000';
     S.loading = fetch(q, { headers: a.headers }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
       if (S.uid !== uid) return S.feeds || [];
       S.feeds = Array.isArray(rows) ? rows : [];
@@ -318,7 +318,8 @@
     var list = [];
     var add = function (o) { list.push(o); };
     // 기록
-    [[1, 'i'], [10, 'b'], [50, 's'], [100, 'g']].forEach(function (t) {
+    // 1 · 5 · 10 · 20 … 100회. 테두리는 1·5 철, 10~30 동, 40~70 은, 80·90 금, 100은 반짝이는 무지개
+    [[1, 'i'], [5, 'i'], [10, 'b'], [20, 'b'], [30, 'b'], [40, 's'], [50, 's'], [60, 's'], [70, 's'], [80, 'g'], [90, 'g'], [100, 'r']].forEach(function (t) {
       var x = asc[t[0] - 1];
       add({ id: 'trips' + t[0], group: 'trips', ladder: 'trips', shape: 'circle', fill: '#24473a', metal: t[1], icon: 'tent', num: t[0], ribbon: 'BACKPACKING',
         ko: t[0] === 1 ? '첫 백패킹' : '백패킹 ' + t[0] + '회', title: t[0] + ' BACKPACKING', desc: t[0] === 1 ? '첫 백패킹 피드를 올렸어요' : '백패킹 피드를 ' + t[0] + '번 올렸어요',
@@ -509,7 +510,8 @@
     }
     box.innerHTML = h;
     if (window.okbmBadges && S.feeds) {
-      window.okbmBadges.set(buildBadges(feeds));
+      // 배지는 공개 피드만 센다(나만 보기로 올린 것은 빼고)
+      window.okbmBadges.set(buildBadges(feeds.filter(function (f) { return f.is_published !== false; })));
       window.okbmBadges.card($('mrBadges'));
       // 새 배지는 낭만리포트를 열 때마다 한 번 본다
       if (!S.badgeChecked) { S.badgeChecked = true; window.okbmBadges.checkNew(S.uid); }

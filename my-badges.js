@@ -1,8 +1,8 @@
 // =========================================================================
 // 낭만리포트 배지 (2026-10-28): 모양 그리기 · 리포트 배지 칸 · 전체 보기 · 새 배지 창 · 이미지 저장
 //
-// 배지 23개(받는 조건 계산은 my-report.js buildBadges):
-//   기록 1·10·50·100회(BACKPACKING) · 누적 높이 1·3·5 EVEREST · 포토맵 30·70 REGIONS·ALL KOREA
+// 배지 31개(받는 조건 계산은 my-report.js buildBadges):
+//   기록 1·5·10·20·30·40·50·60·70·80·90·100회(BACKPACKING, 공개 피드만) · 누적 높이 1·3·5 EVEREST · 포토맵 30·70 REGIONS·ALL KOREA
 //   도 클리어 9개(그 도 모양 방패) · 제보 채택 1·10 · 한 해 사계절 · 섬 10곳
 // 단계형은 같은 모양에 테두리만 철 → 동 → 은 → 금. 도 클리어 모양은 photo-map/korea-sgg-202610.json의 시도 경계를
 // 방패 안(40×42)에 맞춰 줄인 것(가장 큰 덩어리만, 0.8 단위로 점을 솎음).
@@ -49,8 +49,16 @@
     var m = locked ? ['#2a2a30', '#3a3a42'] : METAL[b.metal || 'g'];
     var fill = locked ? '#121215' : b.fill;
     var ink = locked ? '#8b8b93' : '#f4efe2';
+    // 무지개(metal 'r', 백패킹 100회): 테두리·리본이 무지개색으로 천천히 돌고 테두리에 별이 반짝인다
+    var rainbow = !locked && b.metal === 'r';
+    var grad = rainbow
+      ? '<linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1">' +
+        ['#ff5e7a', '#ffb347', '#ffe66d', '#7ee081', '#5ec8ff', '#8f7bff', '#ff7ad9', '#ff5e7a'].map(function (c, i) { return '<stop offset="' + (i / 7).toFixed(3) + '" stop-color="' + c + '"/>'; }).join('') +
+        '<animateTransform attributeName="gradientTransform" type="rotate" from="0 .5 .5" to="360 .5 .5" dur="6s" repeatCount="indefinite"/></linearGradient>'
+      : '<linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + m[1] + '"/><stop offset=".5" stop-color="' + m[0] + '"/><stop offset="1" stop-color="' + m[1] + '"/></linearGradient>';
+    if (rainbow) m = ['url(#' + id + ')', '#fff'];
     var s = '<svg viewBox="0 0 100 114" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + esc(b.ko) + '" style="color:' + ink + '">' +
-      '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + m[1] + '"/><stop offset=".5" stop-color="' + m[0] + '"/><stop offset="1" stop-color="' + m[1] + '"/></linearGradient></defs>' +
+      '<defs>' + grad + '</defs>' +
       '<path d="' + d + '" fill="url(#' + id + ')"/>' +
       '<path d="' + d + '" fill="' + fill + '" transform="translate(50 50) scale(.86) translate(-50 -50)"/>' +
       '<path d="' + d + '" fill="none" stroke="' + ink + '" stroke-opacity=".35" stroke-width="1.2" stroke-dasharray="2.4 2.2" transform="translate(50 50) scale(.78) translate(-50 -50)"/>';
@@ -58,7 +66,14 @@
     else if (b.icon) s += ICON[b.icon];
     if (b.num != null) s += '<text x="50" y="76" text-anchor="middle" font-family="' + NUMFONT + '" font-weight="700" font-size="' + (String(b.num).length > 3 ? 15 : 22) + '" fill="' + ink + '">' + esc(b.num) + '</text>';
     s += '<path d="M4 92 H96 L91 101 L96 110 H4 L9 101 Z" fill="' + (locked ? '#2a2a30' : m[0]) + '"/>' +
-      '<text x="50" y="104.6" text-anchor="middle" font-family="' + NUMFONT + '" font-weight="600" font-size="13" letter-spacing=".3" fill="' + (locked ? '#a1a1a9' : '#fff') + '">' + esc(b.ribbon) + '</text>';
+      '<text x="50" y="104.6" text-anchor="middle" font-family="' + NUMFONT + '" font-weight="600" font-size="13" letter-spacing=".3" fill="' + (locked ? '#a1a1a9' : '#fff') + '"' + (rainbow ? ' stroke="#000" stroke-opacity=".35" stroke-width=".6" paint-order="stroke"' : '') + '>' + esc(b.ribbon) + '</text>';
+    if (rainbow) {
+      // 테두리 위 반짝이 넷: 차례로 커졌다 사라진다
+      [[18, 20, 0], [84, 26, 0.7], [90, 66, 1.4], [12, 70, 2.1]].forEach(function (p) {
+        s += '<path d="M' + p[0] + ' ' + (p[1] - 5) + ' L' + (p[0] + 1.3) + ' ' + (p[1] - 1.3) + ' L' + (p[0] + 5) + ' ' + p[1] + ' L' + (p[0] + 1.3) + ' ' + (p[1] + 1.3) + ' L' + p[0] + ' ' + (p[1] + 5) + ' L' + (p[0] - 1.3) + ' ' + (p[1] + 1.3) + ' L' + (p[0] - 5) + ' ' + p[1] + ' L' + (p[0] - 1.3) + ' ' + (p[1] - 1.3) + ' Z" fill="#fff" opacity="0">' +
+          '<animate attributeName="opacity" values="0;1;0" dur="2.8s" begin="' + p[2] + 's" repeatCount="indefinite"/></path>';
+      });
+    }
     return s + '</svg>';
   }
 
@@ -237,7 +252,8 @@
   // 지난번 본 배지와 비교해 새로 받은 것을 띄운다. 처음 여는 계정은 띄우지 않고 지금 것을 기억만 한다
   function checkNew(userId) {
     if (!userId) return;
-    var key = 'okbm_badges_seen:' + userId, seen = null;
+    // v2: 기록 배지를 12단계로 늘리며 새로 기억한다(예전 목록을 쓰면 지난 배지가 '새 배지'로 줄줄이 뜬다)
+    var key = 'okbm_badges_seen_v2:' + userId, seen = null;
     try { seen = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { seen = null; }
     var got = LIST.filter(function (b) { return b.got; }).map(function (b) { return b.id; });
     try { localStorage.setItem(key, JSON.stringify(got)); } catch (e) {}

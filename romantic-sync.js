@@ -9888,7 +9888,7 @@ window._ptwShowDone = function(record, next) {
   var spotShort = String(record.spot || '').replace(/\s*\(.*?\)/g, '').trim();
   box.innerHTML = '<div class="ck">✓</div>' +
     '<h6>' + (pub ? '피드에 올라갔어요' : '나만 보기로 저장했어요') + '</h6>' +
-    '<p>' + (pub ? '다른 낭만루터들이 피드와 박지 후기에서 볼 수 있어요.<br>좋은 후기는 낭만루트 인스타에 소개돼요.' : esc(why)) + '</p>' +
+    '<p>' + (pub ? '다른 낭만루터들이 피드와 박지 후기에서 볼 수 있어요.' : esc(why)) + '</p>' +
     (photo ? '<div class="ptw-card"><img src="' + escapeHtml(okbmSafeImageUrl(photo)) + '" alt="" referrerpolicy="no-referrer"><div><b>' + esc(spotShort) + '</b>' + esc(record.date || '') + '</div></div>' : '') +
     '<div class="ptw-row2"><button type="button" data-ptw-done="close">닫기</button>' +
     (pub ? '<button type="button" class="p" data-ptw-done="share">공유하기</button>' : '') + '</div>';
