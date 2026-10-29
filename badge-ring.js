@@ -358,5 +358,5 @@
   // 앞서 실린 파일이 늦게 함수를 만들 수도 있어 한 번 더 감싼다
   window.addEventListener('load', wrapFetchers, { once: true });
 
-  window.okbmBadgeRing = { parse: parse, svg: ringSvg, badgeOf: badgeOf, mine: readMine, equip: equip, syncMine: syncMine, paint: paint };
+  window.okbmBadgeRing = { icon: function (cat, c, id) { var k = KIND[cat]; return k ? k.ic(c || k.bg[1], id || 'okbmIc' + (++uid), null) : ''; }, parse: parse, svg: ringSvg, badgeOf: badgeOf, mine: readMine, equip: equip, syncMine: syncMine, paint: paint };
 })();

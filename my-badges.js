@@ -43,6 +43,12 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
   var uid = 0;
+  // 배지 가운데 그림은 장착 링 칩(badge-ring.js)과 같은 그림을 쓴다(머스타드 돔 텐트·잎·눈 봉우리·지도·깃발·사계절·섬). 못 받은 배지는 흑백으로 흐리게
+  var ART = { tent: 'trips', bag: 'plog', peak: 'ever', pin: 'reg', flag: 'spot', season: 'season', island: 'island' };
+  function art(b, id, locked) {
+    var r = window.okbmBadgeRing, g = r && typeof r.icon === 'function' ? r.icon(ART[b.icon], locked ? '#2a2a30' : b.fill, id + 'a') : '';
+    return g ? '<g transform="translate(50 39) scale(1.75)"' + (locked ? ' filter="url(#' + id + 'gs)" opacity=".45"' : '') + '>' + g + '</g>' : '';
+  }
   // b: { shape, fill, metal, icon|sil, num, ribbon, got }
   function svg(b) {
     var id = 'okbmBdg' + (++uid), d = SHAPE[b.shape];
@@ -67,13 +73,13 @@
         '<animateTransform attributeName="gradientTransform" type="translate" values="-60 -60;110 110;110 110" keyTimes="0;.55;1" dur="' + gl[1] + 's" repeatCount="indefinite"/></linearGradient>';
     }
     var s = '<svg viewBox="0 0 100 114" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + esc(b.ko) + '" style="color:' + ink + '">' +
-      '<defs>' + grad + '</defs>' +
+      '<defs>' + grad + '<filter id="' + id + 'gs"><feColorMatrix type="saturate" values="0"/></filter></defs>' +
       '<path d="' + d + '" fill="url(#' + id + ')"/>' +
       (gl ? '<path d="' + d + '" fill="url(#' + id + 'g)"/>' : '') +
       '<path d="' + d + '" fill="' + fill + '" transform="translate(50 50) scale(.86) translate(-50 -50)"/>' +
       '<path d="' + d + '" fill="none" stroke="' + ink + '" stroke-opacity=".35" stroke-width="1.2" stroke-dasharray="2.4 2.2" transform="translate(50 50) scale(.78) translate(-50 -50)"/>';
     if (b.sil && SIL[b.sil]) s += '<path d="' + SIL[b.sil] + '" fill="' + ink + '" fill-opacity="' + (locked ? '.4' : '.92') + '"/>';
-    else if (b.icon) s += ICON[b.icon];
+    else if (b.icon) s += art(b, id, locked) || ICON[b.icon];
     if (b.num != null) s += '<text x="50" y="76" text-anchor="middle" font-family="' + NUMFONT + '" font-weight="700" font-size="' + (String(b.num).length > 3 ? 15 : 22) + '" fill="' + ink + '">' + esc(b.num) + '</text>';
     s += '<path d="M4 92 H96 L91 101 L96 110 H4 L9 101 Z" fill="' + (locked ? '#2a2a30' : m[0]) + '"/>' +
       '<text x="50" y="104.6" text-anchor="middle" font-family="' + NUMFONT + '" font-weight="600" font-size="13" letter-spacing=".3" fill="' + (locked ? '#a1a1a9' : '#fff') + '"' + (rainbow ? ' stroke="#000" stroke-opacity=".35" stroke-width=".6" paint-order="stroke"' : '') + '>' + esc(b.ribbon) + '</text>';
