@@ -326,7 +326,7 @@
       .okbm-fi .fi-l1 { display: flex; align-items: center; gap: 5px; font-size: 0.95rem; font-weight: 900; white-space: nowrap; }
       .okbm-fi .fi-l1 small { font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.78); }
       .okbm-fi .fi-l2 { margin-top: 2px; font-size: 0.8rem; font-weight: 700; color: #cbd5e1; }
-      .okbm-fi .fi-main { position: absolute; left: 18px; right: 18px; top: calc(var(--okbm-status-top, 0px) + 74px); bottom: 14px; display: flex; flex-direction: column; justify-content: center; gap: clamp(10px, 2.2vh, 20px); }
+      .okbm-fi .fi-main { position: absolute; left: 18px; right: 18px; max-width: 440px; margin: 0 auto; top: calc(var(--okbm-status-top, 0px) + 74px); bottom: 14px; display: flex; flex-direction: column; justify-content: center; gap: clamp(10px, 2.2vh, 20px); }
       .okbm-fi .fi-top { text-align: left; }
       .okbm-fi .fi-eb { font-family: Oswald, 'Avenir Next Condensed', 'Arial Narrow', sans-serif; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.28em; color: #6ee7b7; }
       .okbm-fi .fi-en { margin-top: 2px; font-family: Oswald, 'Avenir Next Condensed', 'Arial Narrow', sans-serif; font-size: clamp(1.25rem, 6vw, 1.45rem); font-weight: 700; line-height: 1.1; color: #fff; white-space: nowrap; }
@@ -8483,7 +8483,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
   };
 
   // 낭만피드 첫 장 안내. 2026-10-29 플로깅·배지 소식으로 바꾸며 기록 이름을 새로 썼다(예전 안내를 닫은 사람도 한 번 보게)
-  var OKBM_FEED_INTRO_KEY = 'okbm_feed_intro_v2_dismissed';
+  var OKBM_FEED_INTRO_KEY = 'okbm_feed_intro_v3_dismissed';
   function okbmVaultIntroDismissed() {
     try { return localStorage.getItem(OKBM_FEED_INTRO_KEY) === '1'; } catch (e) { return false; }
   }
@@ -8564,16 +8564,21 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
   function okbmWatchVaultIntroSeen(reel) {
     if (!reel || reel.__okbmIntroWatch) return;
     reel.__okbmIntroWatch = true;
+    // 첫 장이 실제로 화면에 보인 적이 있을 때만 '봤다'로 적는다.
+    // 홈 '최근 다녀온 후기' 등에서 특정 피드로 바로 들어와 처음부터 아래에 있으면, 보지도 않은 첫 장이 '봤다'로 적히던 문제
+    var shown = false;
     var onScroll = function() {
       var intro = reel.querySelector('[data-vault-intro="1"]');
       if (!intro) return;
-      if (reel.scrollTop >= intro.offsetHeight * 0.6) {
+      if (reel.offsetHeight > 0 && reel.scrollTop < intro.offsetHeight * 0.3) shown = true;
+      if (shown && reel.scrollTop >= intro.offsetHeight * 0.6) {
         try { localStorage.setItem(OKBM_FEED_INTRO_KEY, '1'); } catch (e) {}
         reel.removeEventListener('scroll', onScroll);
         reel.__okbmIntroWatch = false;
       }
     };
     reel.addEventListener('scroll', onScroll, { passive: true });
+    setTimeout(onScroll, 600);
     reel.addEventListener('click', function(e) {
       if (e.target && e.target.closest && e.target.closest('[data-vault-intro="1"] [data-feed-write]')) {
         try { localStorage.setItem(OKBM_FEED_INTRO_KEY, '1'); } catch (e2) {}

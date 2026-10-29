@@ -379,7 +379,7 @@ window.purgeIfStale = purgeIfStale;
     'okbm_my_proposals',
     'okbm_naver_force_login',
     'okbm_vault_intro_dismissed',
-    'okbm_feed_intro_v2_dismissed',
+    'okbm_feed_intro_v3_dismissed',
     // 한 번만 뜨는 안내(포토맵 공지·아이폰 앱 안내·포토맵 버튼 점)는 로그아웃 뒤에도 남긴다(다시 로그인하면 또 뜨지 않게)
     'okbm_map_notice_id',
     'okbm_app_notice',
@@ -699,7 +699,7 @@ window.autoPurgeLegacyClientCache = window.autoPurgeLegacyClientCache || functio
     'okbm_bookmarks', 'okbm_visited', 'okbm_memos', 'okbm_plan_memos', 'okbm_plan_spots', 'okbm_plan_events',
     'okbm_packing_history', 'okbm_selected_gears_multi', 'okbm_favorite_gears', 'okbm_custom_gears',
     'okbm_gear_presets', 'okbm_gear_meta', 'okbm_hero_cover_url', 'okbm_my_proposals',
-    'okbm_naver_force_login', 'okbm_vault_intro_dismissed', 'okbm_feed_intro_v2_dismissed', 'okbm_dirty_user_keys',
+    'okbm_naver_force_login', 'okbm_vault_intro_dismissed', 'okbm_feed_intro_v3_dismissed', 'okbm_dirty_user_keys',
     'okbm_map_notice_id', 'okbm_app_notice', 'okbm_pm_seen'
   ];
   try {
