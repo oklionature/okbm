@@ -697,9 +697,44 @@
     }
   }
 
+  // 관리자 계정이면 맨 위 쪽지·알림·설정 옆에 '운영' 아이콘을 둔다(누르면 ops.html 운영자 창).
+  // 예전엔 프로필 사진 → 설정 창 맨 아래 버튼까지 내려가야 열렸다. 판별은 서버에서 확인한 메모리 플래그(__okbmIsAdmin)만 본다.
+  // 확인 안 한 새 링크·피드와 검수·신고 대기 수를 합쳐 빨간 숫자로 붙인다(SUPABASE_H3 okbm_admin_activity).
+  var opsAskedAt = 0;
+  function paintOpsIcon() {
+    var icons = document.querySelector('#userProfileModalOverlay .mr-icons');
+    if (!icons) return;
+    var btn = icons.querySelector('[data-mr-act="ops"]');
+    if (window.__okbmIsAdmin !== true) { if (btn) btn.remove(); return; }
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mr-ib';
+      btn.setAttribute('data-mr-act', 'ops');
+      btn.setAttribute('aria-label', '운영자 창');
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg><span class="mr-badge" style="display:none;"></span>';
+      icons.insertBefore(btn, icons.firstChild);
+    }
+    var client = window.supabaseClient;
+    if (!client || typeof client.rpc !== 'function' || Date.now() - opsAskedAt < 60000) return;
+    opsAskedAt = Date.now();
+    var seen = '';
+    try { seen = localStorage.getItem('okbm_admin_activity_seen') || ''; } catch (e) {}
+    Promise.resolve(client.rpc('okbm_admin_activity', { p_since: seen || null, p_limit: 1 })).then(function (res) {
+      var d = res && !res.error && res.data;
+      var badge = btn.querySelector('.mr-badge');
+      if (!d || !badge) return;
+      var n = Number(d.new_links || 0) + Number(d.new_feeds || 0) + Number(d.inbox_pending || 0) + Number(d.reports_pending || 0);
+      badge.textContent = n > 99 ? '99+' : String(n);
+      badge.style.display = n ? 'flex' : 'none';
+    }).catch(function () {});
+  }
+  window.addEventListener('okbm_admin_flag', function () { opsAskedAt = 0; paintOpsIcon(); });
+
   window.okbmMyReportOpened = function () {
     ensureCss();
     placeLegacy();
+    paintOpsIcon();
     // 사진 옆에는 숫자 줄만(세로 가운데), 닉네임은 사진 아래 소개글 위(.mr-pinfo)에 둔다. 인스타그램처럼 기준선이 하나라 덜 어수선하다
     placeStats();
     setTab('rep'); // 열 때는 늘 리포트부터
@@ -850,6 +885,7 @@
       case 'note': if (typeof window.openUserNotificationInbox === 'function') window.openUserNotificationInbox('note', e); break;
       case 'notif': if (typeof window.openUserNotificationInbox === 'function') window.openUserNotificationInbox('notif', e); break;
       case 'settings': openSettings(); break;
+      case 'ops': window.location.assign('ops.html'); break;
       case 'profile': openProfileEditor(); break;
       case 'bio': if (typeof window.editReportUserBio === 'function') window.editReportUserBio(); break;
       case 'sns': if (typeof window.openSnsEditorModal === 'function') window.openSnsEditorModal(); break;

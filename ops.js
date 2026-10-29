@@ -322,15 +322,16 @@
     for (var i = days - 1; i >= 0; i--) dayKeys.push(seoulDate(i));
     var maxV = 1;
     dayKeys.forEach(function (d) { maxV = Math.max(maxV, visitByDay[d] || 0); });
-    html += '<section><h2>날짜별 방문자 · 회원가입</h2><div class="days" style="height:140px">' + dayKeys.map(function (d) {
+    var dayCls = days > 14 ? ' n30' : days > 7 ? ' n14' : '';
+    html += '<section><h2>날짜별 방문자 · 회원가입</h2><div class="days' + dayCls + '" style="height:140px">' + dayKeys.map(function (d, di) {
       var v = visitByDay[d] || 0;
       var mv = Math.min(v, memberByDay[d] || 0);
       var h = Math.max(2, Math.round((v / maxV) * 90));
       var mh = v ? Math.round(h * mv / v) : 0;
       var j = Number(joinByDay[d] || 0);
       return '<div title="' + d + ' 방문 ' + v + ' (회원 ' + mv + ') · 가입 ' + j + '"><em>' + (v || '') + '</em><i style="height:' + (h - mh) + 'px"></i>' +
-        (mh ? '<i class="m" style="height:' + mh + 'px"></i>' : '') + '<small>' + d.slice(8) + '</small><span class="join">' + (j ? '+' + j : '') + '</span></div>';
-    }).join('') + '</div><div class="legend"><span><b style="background:var(--accent)"></b>비회원</span><span><b style="background:var(--ok)"></b>회원</span><span style="color:var(--ok)">+N 그날 회원가입</span></div></section>';
+        (mh ? '<i class="m" style="height:' + mh + 'px"></i>' : '') + '<small' + (days > 14 && (dayKeys.length - 1 - di) % 5 ? ' class="hide"' : '') + '>' + d.slice(8) + '</small><span class="join">' + (j ? '+' + j : '') + '</span></div>';
+    }).join('') + '</div><p class="day-pick" id="dayPick">' + (days > 14 ? '막대를 누르면 그날 숫자가 보여요.' : '') + '</p><div class="legend"><span><b style="background:var(--accent)"></b>비회원</span><span><b style="background:var(--ok)"></b>회원</span><span style="color:var(--ok)">+N 그날 회원가입</span></div></section>';
 
     function foldFrom(start, title, sum) {
       var body = html.slice(start).replace(/<h2>[\s\S]*?<\/h2>/, '');
@@ -451,6 +452,14 @@
     });
   }
   out.addEventListener('click', function (e) {
+    var dayCol = e.target.closest('.days > div[title]');
+    if (dayCol) {
+      Array.prototype.forEach.call(out.querySelectorAll('.days > div.pick'), function (x) { x.classList.remove('pick'); });
+      dayCol.classList.add('pick');
+      var pickEl = document.getElementById('dayPick');
+      if (pickEl) pickEl.textContent = dayCol.getAttribute('title');
+      return;
+    }
     var b = e.target.closest && e.target.closest('#featScreens button');
     if (!b) return;
     featScreen = b.getAttribute('data-screen') || '';
@@ -540,12 +549,13 @@
     var newLinks = (d.links || []).filter(function (x) { return isNew(x.created_at); });
     var newFeeds = (d.feeds || []).filter(function (x) { return isNew(x.created_at); });
     html += '<div class="kpis" style="grid-template-columns:repeat(2, 1fr)">' +
-      '<div class="kpi"><b class="' + (newLinks.length ? 'warn' : '') + '">' + num(newLinks.length) + '</b><span>새 크리에이터 링크</span></div>' +
-      '<div class="kpi"><b class="' + (newFeeds.length ? 'warn' : '') + '">' + num(newFeeds.length) + '</b><span>새 피드</span></div>' +
+      // 칸을 누르면 그 목록 탭으로 바꾸고 목록으로 내려간다(아래 탭 버튼을 따로 누르지 않아도 되게)
+      '<button type="button" class="kpi" data-act-tab="links" data-act-jump="1"><b class="' + (newLinks.length ? 'warn' : '') + '">' + num(newLinks.length) + '</b><span>새 크리에이터 링크 ›</span></button>' +
+      '<button type="button" class="kpi" data-act-tab="feeds" data-act-jump="1"><b class="' + (newFeeds.length ? 'warn' : '') + '">' + num(newFeeds.length) + '</b><span>새 피드 ›</span></button>' +
       '<a class="kpi" href="map.html?open=admin_inbox"><b class="' + (d.inbox_pending ? 'warn' : '') + '">' + num(d.inbox_pending) + '</b><span>장소 검수 대기 ›<br>검수함에서 처리하면 줄어요</span></a>' +
       '<div class="kpi"><b class="' + (d.reports_pending ? 'warn' : '') + '">' + num(d.reports_pending) + '</b><span>신고 대기<br>신고 검수함에서 처리하면 줄어요</span></div>' +
       '</div>';
-    html += '<div class="tabs"><button type="button" data-act-tab="links" class="' + (actTab === 'links' ? 'on' : '') + '">크리에이터 링크 ' + num(newLinks.length) + '</button>' +
+    html += '<div class="tabs" id="actTabs"><button type="button" data-act-tab="links" class="' + (actTab === 'links' ? 'on' : '') + '">크리에이터 링크 ' + num(newLinks.length) + '</button>' +
       '<button type="button" data-act-tab="feeds" class="' + (actTab === 'feeds' ? 'on' : '') + '">새 피드 ' + num(newFeeds.length) + '</button></div>';
     var all = actTab === 'links' ? (d.links || []) : (d.feeds || []);
     var list = actShowAll ? all : (actTab === 'links' ? newLinks : newFeeds);
@@ -582,7 +592,15 @@
 
   act.addEventListener('click', async function (e) {
     var tab = e.target.closest('[data-act-tab]');
-    if (tab) { actTab = tab.getAttribute('data-act-tab'); renderActivity(); return; }
+    if (tab) {
+      actTab = tab.getAttribute('data-act-tab');
+      renderActivity();
+      if (tab.hasAttribute('data-act-jump')) {
+        var tabsEl = document.getElementById('actTabs');
+        if (tabsEl) tabsEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
+      return;
+    }
     if (e.target.closest('[data-act-all]')) { actShowAll = !actShowAll; renderActivity(); return; }
     if (e.target.closest('[data-act-seen]')) {
       // 지금 보이는 것 중 가장 늦은 시각(서버 시각·기기 시각 포함)까지 확인한 것으로 둔다.
