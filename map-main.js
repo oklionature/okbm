@@ -3366,7 +3366,11 @@ function updateSmartResetButtons() {
       }
 
       // 등록 유튜브가 있으면 그 영상. 없고 인스타만 있으면 인스타. 검색 영상은 잠금 링크로 쓰지 않는다.
+      // 관리자가 올린 박지는 유튜브 대신 등록자 인스타(없으면 대표 인스타)로 보낸다.
       function okbmSpotUnlockTarget(spot) {
+        if (spot && String(spot.author || '').trim() === '관리자') {
+          return okbmSpotAuthorSnsUrl(spot) || 'https://instagram.com/oklionnature';
+        }
         var yts = okbmStoredSpotYouTubeUrls(spot);
         if (yts.length) {
           var clean = cleanYouTubeUrl(yts[0]);
