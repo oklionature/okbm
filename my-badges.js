@@ -518,6 +518,8 @@
     checkNew: checkNew,
     done: done,
     intro: intro,
-    svg: svg
+    svg: svg,
+    // 도 모양 경로(badge-ring.js 도 클리어 칩이 쓴다)
+    sil: function (ko) { return SIL[ko] || ''; }
   };
 })();

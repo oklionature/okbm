@@ -2,12 +2,13 @@
 // 장착 배지 사진 링 + 플로깅 피드 테두리 (2026-10-29, SUPABASE_H20_EQUIPPED_BADGE.sql)
 //
 // · 받은 배지 중 하나를 장착하면(my-badges.js 배지 창) 프로필 사진 둘레에 링이 둘러진다. 장착 안 하면 지금 그대로.
-//   링 무늬·모양 = 배지 종류(무엇을 했나), 띠 재질 = 단계(얼마나 했나: 철·동·은·금·무지개).
-//   플로깅은 금속 띠 가운데 초록 줄 + 오른쪽 위 잎 가지 하나로 구분한다(잎 화환은 과해서 뺐다).
+//   얇은 링 색 = 단계(얼마나 했나: 철·동·은·금·무지개), 오른쪽 아래 작은 칩 = 종류(무엇을 했나: 텐트·잎·산·지도·도 모양·깃발·사계절·섬).
+//   예전엔 금속 띠·리벳·보석·메달·바깥 장식을 다 얹어 게임 테두리처럼 보였다(10-29 대표님: 촌스럽다). 사진이 주인공이 되게 장식을 걷었다.
+//   인스타 스토리 링처럼 색이 이어지고, 빛줄기가 지나가며 별이 깜빡인다(단계가 오를수록 별이 많다). 움직임 줄이기 설정이면 멈춘다.
 // · 값은 '종류:단계:배지id'(users.equipped_badge). 남의 것은 피드를 그릴 때 이미 받는 get_public_profiles의 badge로 안다.
 //   (그 함수는 로그인한 사람에게만 돌아서, 로그인 안 한 사람에게는 링이 안 보인다)
 // · 사진 자리(img[data-user-avatar-id], img[data-user-avatar-small])를 찾아 그 동그라미 위에 링 그림을 얹는다.
-//   화면마다 따로 고치지 않아도 사진이 나오는 곳에 다 붙는다. 움직임은 없다.
+//   화면마다 따로 고치지 않아도 사진이 나오는 곳에 다 붙는다.
 // · 플로깅 피드 테두리(낭만피드 릴스 틀·정보창 카드)의 공용 CSS도 여기 둔다.
 // 인라인 onclick 없음(CSP).
 // =========================================================================
@@ -17,28 +18,97 @@
 
   var CATS = ['trips', 'plog', 'ever', 'reg', 'do', 'spot', 'season', 'island'];
   var TIERS = ['i', 'b', 's', 'g', 'r'];
-  // [어두운, 밝은, 중간]
-  var METAL = { i: ['#24272b', '#b9c0c8', '#4d5259'], b: ['#6b3a17', '#f2b27a', '#b06a35'], s: ['#7d838c', '#ffffff', '#b4bac2'], g: ['#7d5c0c', '#ffe58f', '#c79b22'] };
-  var FILL = { trips: '#24473a', plog: '#0f4a36', ever: '#2a323d', reg: '#5a4120', do: '#1b2f4d', spot: '#5e2a22', season: '#2d4466', island: '#16545b' };
-  var ICON = {
-    trips: '<path d="M33 52 L50 26 L67 52 Z M50 26 V52 M45 52 L50 43 L55 52" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>',
-    plog: '<path d="M38.5 34h23l3.6 19.5a3 3 0 0 1-3 3.5H37.9a3 3 0 0 1-3-3.5z M43.5 34c-1.8-3.6-.8-8 2.8-10 M56.5 34c1.8-3.6.8-8-2.8-10" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><path d="M43.5 45.5l4.4 4.4 8.4-8.9" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>',
-    ever: '<path d="M28 54 L44 32 L51 41 L60 28 L74 54 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>',
-    reg: '<path d="M50 24c-8 0-14 6-14 13.5C36 48 50 56 50 56s14-8 14-18.5C64 30 58 24 50 24z" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="50" cy="37.5" r="4.5" fill="currentColor"/>',
-    do: '<path d="M50 24 L64 29 V40 C64 49 57 54 50 57 C43 54 36 49 36 40 V29 Z" fill="none" stroke="currentColor" stroke-width="3"/><path d="M44 41 L48.5 45.5 L57 36" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>',
-    spot: '<path d="M40 56 V26 M40 27 C48 23 54 31 62 27 V41 C54 45 48 37 40 41" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>',
-    season: '<circle cx="50" cy="40" r="14" fill="none" stroke="currentColor" stroke-width="3"/><path d="M50 26 V54 M36 40 H64" stroke="currentColor" stroke-width="2.2"/>',
-    island: '<path d="M30 52 Q40 46 50 52 T70 52" fill="none" stroke="currentColor" stroke-width="3"/><path d="M42 47 Q50 36 58 47" fill="none" stroke="currentColor" stroke-width="3"/><path d="M50 42 V28 M50 29 Q43 26 40 31 M50 29 Q57 26 60 31" fill="none" stroke="currentColor" stroke-width="2.6"/>'
+  // 링 색 띠(인스타 스토리 링처럼 왼쪽 아래 → 오른쪽 위로 이어진다). [어두운 끝, 중간, 밝은 가운데, 오른쪽 위 끝]
+  var BAND = { i: ['#5d636a', '#9aa1a9', '#e3e7ec', '#c7ccd2'], b: ['#b8622b', '#f0a066', '#ffd9b3', '#ffc28f'], s: ['#9fb0c3', '#e3e9f0', '#ffffff', '#f6f9fc'], g: ['#f2a20c', '#ffd84a', '#fff6c2', '#ffe680'] };
+  // 무지개(백패킹 100회 등)는 인스타 그라데이션 색
+  var RAINBOW = ['#feda75', '#fa7e1e', '#d62976', '#962fbf', '#4f5bd5'];
+  // 반짝이 별 [각도, 반지름, 크기, 시작 초]와 밝기. 단계가 오를수록 늘어난다(철 1 · 동 1 · 은 2 · 금 3 · 무지개 4)
+  var SPARK = {
+    i: [[[318, 50, 5.2, 0]], 0.7], b: [[[318, 50, 5.8, 0]], 0.9],
+    s: [[[318, 50, 6.6, 0], [62, 49, 4.6, 1.1]], 1],
+    g: [[[318, 50, 7.4, 0], [62, 49, 5.2, 0.9], [250, 49.5, 4.2, 1.8]], 1],
+    r: [[[318, 50, 7.8, 0], [62, 49, 5.6, 0.7], [250, 49.5, 4.4, 1.4], [22, 50, 3.8, 2.1]], 1]
   };
-  var R = 45.5, PHOTO_R = 40.5, uid = 0;
-  // 그림 판: 가로 -6~126, 세로 -10~126. 사진 동그라미는 중심 (60,60) 반지름 40.5
-  var VB = { x: -6, y: -10, w: 132, h: 136 };
+  var CR = '#fff6e4';
+  // 종류 칩: 바탕 [밝은, 어두운] + 그림(가운데 0,0, 대략 -11~11). c는 바탕의 어두운 색
+  var KIND = {
+    // 1인용 알파인 돔(3/4 시점), 머스타드: 엇갈린 검은 폴, 검은 바닥 띠, 걷어 만 문 안의 메시, 위쪽 벤트
+    trips: { bg: ['#3f8a5c', '#1d4f33'], ic: function (c, id) {
+      return '<defs><linearGradient id="' + id + 't" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#f7c95a"/><stop offset="1" stop-color="#cf9622"/></linearGradient></defs>' +
+        '<ellipse cx=".6" cy="6.4" rx="11" ry="1.3" fill="#000" opacity=".35"/>' +
+        '<path d="M-2.2 -7.2 C2.6 -8.4 7.8 -5 10.4 2.6 L-6.4 5.2 C-5 .6 -3.8 -3.6 -2.2 -7.2Z" fill="url(#' + id + 't)"/>' +
+        '<path d="M-9.8 3.6 C-8.8 -1.4 -6 -5.6 -2.2 -7.2 C-3.8 -3.6 -5 .6 -6.4 5.2 Z" fill="#b07d17"/>' +
+        '<path d="M-8.7 2.8 C-7.8 -1 -5.8 -4 -3.3 -5.4 C-4.4 -2.4 -5.3 .6 -6.3 3.9 Z" fill="#d7dbde"/>' +
+        '<path d="M-8.7 2.8 C-8.2 .8 -7.4 -.8 -6.6 -1.8 C-6.2 .2 -6.2 2 -6.3 3.9Z" fill="#aeb4b9"/>' +
+        '<path d="M-9.2 3.2 L-6.6 4.4" stroke="#b07d17" stroke-width="1.5" stroke-linecap="round"/><path d="M-8.4 3.2 l.3 .9 M-7.1 3.8 l.3 .9" stroke="#222" stroke-width=".4"/>' +
+        '<path d="M-9.8 3.6 L-6.4 5.2 L10.4 2.6 L10.8 3.6 L-6.6 6.6 L-10.3 4.6 Z" fill="#26282b"/>' +
+        '<path d="M-.6 -6 L1.6 -6.5 L.7 -5.3Z M4.4 -5.9 L6.4 -5.8 L5.2 -4.9Z" fill="#000" opacity=".35"/>' +
+        '<path d="M-.6 -7.2 C3 -7.6 6.4 -5.4 8.4 -2" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width=".7" stroke-linecap="round"/>' +
+        '<path d="M-10.4 4.4 C-8.6 -2 -5.2 -7.4 -.4 -7.8 C4.4 -8.2 8.6 -4.4 10.9 3.4" fill="none" stroke="#1d1f22" stroke-width=".8" stroke-linecap="round"/>' +
+        '<path d="M-6.6 6.4 C-5.2 .6 -3.8 -3.8 -2 -7.4" fill="none" stroke="#1d1f22" stroke-width=".8" stroke-linecap="round"/>';
+    } },
+    // 눈 덮인 두 봉우리 + 정상 깃발
+    ever: { bg: ['#566a8c', '#252f42'], ic: function () {
+      return '<path d="M-10 6 L-4.6 -1.6 L-2 1 L2.8 -6.2 L10 6 Z" fill="#c9d5e6"/>' +
+        '<path d="M2.8 -6.2 L10 6 L4.4 6 L5 -.4 Z M-4.6 -1.6 L-2 1 L-3.6 6 L-5.2 2Z" fill="#000" opacity=".22"/>' +
+        '<path d="M2.8 -6.2 L5.4 -2 L4.2 -2.6 L3.2 -1.2 L2 -2.6 L.6 -1.6 L.4 -2.6 Z M-4.6 -1.6 L-3.4 -.4 L-4.2 -.6 L-5 .3 L-5.6 -.4Z" fill="#fff"/>' +
+        '<path d="M2.8 -6.2 V-10.4" stroke="' + CR + '" stroke-width=".8" stroke-linecap="round"/><path d="M3 -10.4 L6.8 -9.2 L3 -8 Z" fill="#ff6b57"/>';
+    } },
+    // 소나무 선 섬 + 물결
+    island: { bg: ['#22a3a6', '#0b4f5e'], ic: function () {
+      return '<path d="M-7.6 3.4 C-5.6 -1.2 -1.8 -2.8 1.2 -2.6 C4.4 -2.4 6.8 .2 7.6 3.4 Z" fill="' + CR + '"/>' +
+        '<path d="M1.2 -2.6 C4.4 -2.4 6.8 .2 7.6 3.4 L4 3.4 C3.8 .8 2.8 -1.4 1.2 -2.6Z" fill="#000" opacity=".16"/>' +
+        '<path d="M0 -10.4 L2.6 -5.8 L1.4 -5.9 L3.4 -2.6 L-3.4 -2.6 L-1.4 -5.9 L-2.6 -5.8 Z" fill="#8fe0a4"/>' +
+        '<path d="M-10.6 6.4 Q-8 4.2 -5.3 6.4 T0 6.4 T5.3 6.4 T10.6 6.4" fill="none" stroke="' + CR + '" stroke-width="1.4" stroke-linecap="round"/>';
+    } },
+    // 잎맥 있는 잎
+    plog: { bg: ['#21b07a', '#0b5a3c'], ic: function (c) {
+      return '<path d="M-6.4 6.6 C-7.6 -2 -1.6 -8.6 7.6 -8.8 C8.6 .4 2.4 6.8 -6.4 6.6 Z" fill="' + CR + '"/>' +
+        '<path d="M-7.6 8.6 C-5 4 -1 -.6 5.6 -6.6" fill="none" stroke="' + c + '" stroke-width="1.2" stroke-linecap="round"/>' +
+        '<path d="M-3 2.6 L-3.6 -1.6 M0 -.4 L-.2 -4.6 M2.8 -3.2 L3.2 -6.6 M-2.4 2.4 L1.6 3.6 M.6 -.2 L4.4 .2" stroke="' + c + '" stroke-width=".75" stroke-linecap="round" opacity=".7"/>' +
+        '<path d="M-7.6 8.6 C-8.2 9.6 -9 10 -9.8 10" stroke="' + CR + '" stroke-width="1.2" stroke-linecap="round"/>';
+    } },
+    // 접힌 지도 + 점선 길 + 빨간 핀
+    reg: { bg: ['#c48a3a', '#6b4313'], ic: function (c) {
+      return '<path d="M-9 -5.2 L-3 -7.6 L3 -5.2 L9 -7.6 V5.6 L3 8 L-3 5.6 L-9 8 Z" fill="' + CR + '"/>' +
+        '<path d="M-3 -7.6 L3 -5.2 V8 L-3 5.6Z" fill="#000" opacity=".14"/>' +
+        '<path d="M-6.6 4.6 C-4.6 1 -1.6 3.2 .6 .4 C2.2 -1.6 3.6 -1.4 5 -2.6" fill="none" stroke="' + c + '" stroke-width=".9" stroke-dasharray="1.4 1.1" stroke-linecap="round"/>' +
+        '<g transform="translate(5.6 -2.2)"><path d="M0 0 C-.8 -1.6 -3 -3.2 -3 -5.4 A3 3 0 1 1 3 -5.4 C3 -3.2 .8 -1.6 0 0Z" fill="#ff5a47" stroke="' + c + '" stroke-width=".5"/><circle cy="-5.4" r="1.1" fill="#fff"/></g>';
+    } },
+    // 그 도의 실제 모양(my-badges.js SIL). 모양을 못 받으면 방패
+    do: { bg: ['#4d6fe0', '#1d2f78'], ic: function (c, id, b) {
+      var sil = doSil(b && b.id);
+      return sil ? '<g transform="scale(.4) translate(-50 -41)"><path d="' + sil + '" fill="' + CR + '"/></g>'
+        : '<path d="M0 -8 L7 -5.4 V0 C7 4.6 3.8 7 0 8.4 C-3.8 7 -7 4.6 -7 0 V-5.4 Z" fill="' + CR + '"/>';
+    } },
+    // 펄럭이는 깃발
+    spot: { bg: ['#e0603f', '#7a1e10'], ic: function () {
+      return '<path d="M-9 9 Q-4.8 5.6 -.6 9 Z" fill="' + CR + '" opacity=".55"/>' +
+        '<path d="M-4.8 7.8 V-9" stroke="' + CR + '" stroke-width="1.5" stroke-linecap="round"/>' +
+        '<path d="M-4.4 -8.6 C-1 -10.2 1.6 -6.8 5 -8 C6.2 -8.4 7.2 -8.4 8.2 -8.2 C7.4 -6 7.4 -3.8 8.2 -1.4 C6.8 -1.8 5.8 -1.8 5 -1.4 C1.6 -.2 -1 -3.6 -4.4 -2Z" fill="' + CR + '"/>';
+    } },
+    // 네 계절 꽃잎(봄 분홍 · 여름 초록 · 가을 주황 · 겨울 하늘)
+    season: { bg: ['#3a4560', '#1a2030'], ic: function () {
+      var cs = ['#ffb3cf', '#7fe08f', '#ff9a4a', '#bfe6ff'], s = '';
+      for (var k = 0; k < 4; k++) s += '<path d="M0 -1 C-3 -3 -3.2 -7.6 0 -9.6 C3.2 -7.6 3 -3 0 -1Z" fill="' + cs[k] + '" transform="rotate(' + (45 + k * 90) + ')"/>';
+      return s + '<circle r="1.8" fill="' + CR + '"/>';
+    } }
+  };
+  // 도 클리어 배지 id(doJEONNAM 등) → 도 모양 경로
+  var DO_KO = { GYEONGGI: '경기', GANGWON: '강원', CHUNGBUK: '충북', CHUNGNAM: '충남', JEONBUK: '전북', JEONNAM: '전남', GYEONGBUK: '경북', GYEONGNAM: '경남', JEJU: '제주' };
+  function doSil(id) {
+    var ko = DO_KO[String(id || '').replace(/^do/, '')];
+    var api = window.okbmBadges;
+    return ko && api && typeof api.sil === 'function' ? api.sil(ko) : '';
+  }
+  // 움직임을 줄이라고 해 둔 기기에서는 빛줄기·반짝이를 멈춘다
+  function still() {
+    try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+  }
+  // 그림 판: 가로 -6~126, 세로 -10~126. 사진 동그라미는 중심 (60,60) 반지름 40.5 (.okbm-ring 자리 CSS가 이 값에 맞춰져 있다)
+  // 안쪽 그림은 0~100 판(사진 중심 50,50 반지름 43)으로 그려 이 판에 맞춰 줄인다
+  var VB = { x: -6, y: -10, w: 132, h: 136 }, uid = 0;
 
-  function pt(r, deg) { var a = (deg - 90) * Math.PI / 180; return [60 + r * Math.cos(a), 60 + r * Math.sin(a)]; }
-  function f(v) { return v.toFixed(2); }
-  function arc(r, a0, a1) { var p0 = pt(r, a0), p1 = pt(r, a1); return 'M' + f(p0[0]) + ' ' + f(p0[1]) + ' A' + r + ' ' + r + ' 0 ' + ((a1 - a0) > 180 ? 1 : 0) + ' 1 ' + f(p1[0]) + ' ' + f(p1[1]); }
-  function line(r0, a0, r1, a1, col, w, op) { var p = pt(r0, a0), q = pt(r1, a1); return '<line x1="' + f(p[0]) + '" y1="' + f(p[1]) + '" x2="' + f(q[0]) + '" y2="' + f(q[1]) + '" stroke="' + col + '" stroke-width="' + w + '"' + (op ? ' stroke-opacity="' + op + '"' : '') + ' stroke-linecap="round"/>'; }
-  function dot(r, a, rad, fill, stroke) { var p = pt(r, a); return '<circle cx="' + f(p[0]) + '" cy="' + f(p[1]) + '" r="' + rad + '" fill="' + fill + '"' + (stroke ? ' stroke="' + stroke + '" stroke-width=".9"' : '') + '/>'; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
   function parse(v) {
@@ -47,107 +117,49 @@
     return { cat: m[1], tier: m[2], id: m[3], key: m[0] };
   }
 
-  // 링 그림(사진 없음). photoUrl을 주면 사진까지 넣은 그림(배지 창 미리보기용)
-  // 플로깅 링 장식: sprig(오른쪽 위 잎 가지 하나, 기본) · wreath(잎 화환, 처음 것) · pair(메달 양옆 새싹 두 장) · stripe(초록 줄만)
-  var PLOG_STYLE = 'sprig'; // 2026-10-29 대표님: 잎 화환은 과해서 잎 가지 하나로
+  function star(x, y, r, op, begin, move) {
+    var a = r * 0.22, d = 'M0 ' + (-r) + ' Q' + a + ' ' + (-a) + ' ' + r + ' 0 Q' + a + ' ' + a + ' 0 ' + r + ' Q' + (-a) + ' ' + a + ' ' + (-r) + ' 0 Q' + (-a) + ' ' + (-a) + ' 0 ' + (-r) + 'Z';
+    return '<g transform="translate(' + x.toFixed(2) + ' ' + y.toFixed(2) + ')"' + (move ? ' opacity="0"' : ' opacity="' + op + '"') + '>' +
+      '<circle r="' + (r * 0.55) + '" fill="#fff8dc" opacity=".45"/><path d="' + d + '" fill="#fff"/>' +
+      (move ? '<animate attributeName="opacity" values="0;' + op + ';0;0" keyTimes="0;.22;.5;1" dur="2.6s" begin="' + begin + 's" repeatCount="indefinite"/>' +
+        '<animateTransform attributeName="transform" type="scale" additive="sum" values=".4;1;.4;.4" keyTimes="0;.22;.5;1" dur="2.6s" begin="' + begin + 's" repeatCount="indefinite"/>' : '') +
+      '</g>';
+  }
+
+  // 링 그림(사진 없음). photoUrl을 주면 사진까지 넣은 그림(배지 창 미리보기용). opts.small: 작은 사진(피드 머리줄 등)이면 링·칩을 조금 굵게
+  // 링 색 = 단계(철·동·은·금·무지개), 오른쪽 아래 칩 = 종류. 은·금처럼 반짝이게 빛줄기가 지나가고 별이 깜빡인다
   function ringSvg(badge, photoUrl, opts) {
     var b = typeof badge === 'string' ? parse(badge) : badge;
     if (!b) return '';
-    var id = 'okbmRing' + (++uid), cat = b.cat, tier = b.tier, rainbow = tier === 'r', m = METAL[rainbow ? 'g' : tier];
-    var s = '<svg viewBox="' + VB.x + ' ' + VB.y + ' ' + VB.w + ' ' + VB.h + '" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">';
-    s += '<defs><clipPath id="' + id + 'c"><circle cx="60" cy="60" r="' + PHOTO_R + '"/></clipPath>' +
-      '<linearGradient id="' + id + 'm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + m[1] + '"/><stop offset=".42" stop-color="' + m[2] + '"/><stop offset=".58" stop-color="' + m[0] + '"/><stop offset="1" stop-color="' + m[2] + '"/></linearGradient>' +
-      '<linearGradient id="' + id + 'r" x1="0" y1="0" x2="1" y2="1">' + ['#ff5e7a', '#ffb347', '#ffe66d', '#7ee081', '#5ec8ff', '#8f7bff', '#ff7ad9'].map(function (c, i) { return '<stop offset="' + (i / 6).toFixed(2) + '" stop-color="' + c + '"/>'; }).join('') + '</linearGradient>' +
-      '<linearGradient id="' + id + 'l" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bbf7d0"/><stop offset=".5" stop-color="#34d399"/><stop offset="1" stop-color="#047857"/></linearGradient>' +
-      '<radialGradient id="' + id + 'g1"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="#7dd3fc"/><stop offset="1" stop-color="#1d4ed8"/></radialGradient>' +
-      '<radialGradient id="' + id + 'g2"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="#fda4af"/><stop offset="1" stop-color="#be123c"/></radialGradient>' +
-      '<radialGradient id="' + id + 'g3"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="#6ee7b7"/><stop offset="1" stop-color="#047857"/></radialGradient>' +
-    '</defs>';
-    var band = rainbow ? 'url(#' + id + 'r)' : 'url(#' + id + 'm)';
-
-    // 띠 바깥으로 나오는 모양 (띠 뒤)
-    var plogStyle = (opts && opts.plog) || PLOG_STYLE;
-    if (cat === 'plog') {
-      var leaf = function (r, a, tilt, rx, ry) {
-        var c = pt(r, a), rot = a - 90 + tilt;
-        var tip = [c[0] + (rx - 1.5) * Math.cos(rot * Math.PI / 180), c[1] + (rx - 1.5) * Math.sin(rot * Math.PI / 180)];
-        return '<ellipse cx="' + f(c[0]) + '" cy="' + f(c[1]) + '" rx="' + rx + '" ry="' + ry + '" transform="rotate(' + f(rot) + ' ' + f(c[0]) + ' ' + f(c[1]) + ')" fill="url(#' + id + 'l)" stroke="#063d2a" stroke-width=".9"/>' +
-          '<line x1="' + f(c[0]) + '" y1="' + f(c[1]) + '" x2="' + f(tip[0]) + '" y2="' + f(tip[1]) + '" stroke="#063d2a" stroke-opacity=".55" stroke-width=".6"/>';
-      };
-      if (plogStyle === 'wreath') {
-        // 초록 잎 화환: 아래 메달에서 시작해 양쪽으로 올라가 위에서 만난다
-        for (var la = 158; la >= 14; la -= 16) s += leaf(53.2, la, 52, 6.2, 2.7);
-        for (var lb = 202; lb <= 346; lb += 16) s += leaf(53.2, lb, 128, 6.2, 2.7);
-        s += '<circle cx="60" cy="1.5" r="3.6" fill="url(#' + id + 'g3)" stroke="#063d2a" stroke-width="1"/>';
-      } else if (plogStyle === 'sprig') {
-        // 오른쪽 위에 잎 달린 가지 하나
-        s += '<path d="' + arc(52, 22, 68) + '" fill="none" stroke="#065f46" stroke-width="1.6" stroke-linecap="round"/>' +
-          leaf(56.5, 30, 20, 6.4, 2.9) + leaf(56.5, 46, 20, 6.4, 2.9) + leaf(49.8, 38, 160, 5.2, 2.5) + leaf(56.5, 62, 20, 5.4, 2.6);
-      } else if (plogStyle === 'pair') {
-        // 아래 메달에서 양옆으로 돋은 새싹 두 장
-        s += leaf(55, 156, 70, 7.6, 3.3) + leaf(55, 204, 110, 7.6, 3.3);
-      }
-    }
-    if (cat === 'ever') {
-      s += '<path d="M31 24 L42 3 L50 14 L60 -7 L70 14 L78 3 L89 24 Z" fill="' + band + '" stroke="#0b0b0d" stroke-width="1.3" stroke-linejoin="round"/>' +
-        '<path d="M55.6 2 L60 -7 L64.4 2 L62 1 L60 3.5 L58 1Z M39.6 8 L42 3 L44.6 8 L42 7Z M75.4 8 L78 3 L80.6 8 L78 7Z" fill="#fff"/>';
-    }
-    if (cat === 'island') {
-      var w = '';
-      for (var k = 0; k < 20; k++) { var a0 = k * 18, p0 = pt(49, a0), pm = pt(59, a0 + 9), p1 = pt(49, a0 + 18); w += (k ? ' Q' : 'M' + f(p0[0]) + ' ' + f(p0[1]) + ' Q') + f(pm[0]) + ' ' + f(pm[1]) + ' ' + f(p1[0]) + ' ' + f(p1[1]); }
-      s += '<path d="' + w + 'Z" fill="' + band + '" stroke="#0b0b0d" stroke-width="1.2"/>';
-      for (var k2 = 0; k2 < 20; k2++) s += '<path d="' + arc(53.5, k2 * 18 + 4, k2 * 18 + 14) + '" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.2" stroke-linecap="round"/>';
-    }
-    if (cat === 'spot') {
-      var fp = pt(49, 40), ft = pt(68, 40);
-      s += '<line x1="' + f(fp[0]) + '" y1="' + f(fp[1]) + '" x2="' + f(ft[0]) + '" y2="' + f(ft[1]) + '" stroke="#0b0b0d" stroke-width="4.6" stroke-linecap="round"/>' +
-        '<line x1="' + f(fp[0]) + '" y1="' + f(fp[1]) + '" x2="' + f(ft[0]) + '" y2="' + f(ft[1]) + '" stroke="' + band + '" stroke-width="3" stroke-linecap="round"/>' +
-        '<path d="M' + f(ft[0]) + ' ' + f(ft[1]) + ' l15 5 l-12 8 z" fill="#ef4444" stroke="#0b0b0d" stroke-width="1.2" stroke-linejoin="round"/>';
-    }
-    if (cat === 'reg') s += '<path d="M60 -4 L66 10 L60 7 L54 10 Z" fill="#ef4444" stroke="#0b0b0d" stroke-width="1.2" stroke-linejoin="round"/>';
-
-    if (photoUrl) s += '<image href="' + esc(photoUrl) + '" x="19.5" y="19.5" width="81" height="81" preserveAspectRatio="xMidYMid slice" clip-path="url(#' + id + 'c)"/>';
-
-    // 띠
-    s += '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="#0b0b0d" stroke-width="11"/>' +
-      '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="' + band + '" stroke-width="9"/>';
-    // 재질 (단계)
-    if (tier === 'i') for (var a = 0; a < 360; a += 22.5) s += '<path d="' + arc(R, a + 1, a + 11) + '" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width="9"/>';
-    if (tier === 'b') {
-      s += '<circle cx="60" cy="60" r="42.6" fill="none" stroke="#3d1f0a" stroke-opacity=".7" stroke-width=".9"/><circle cx="60" cy="60" r="48.4" fill="none" stroke="#3d1f0a" stroke-opacity=".7" stroke-width=".9"/>';
-      [[28, 2.2], [150, 1.8], [205, 2.6], [320, 1.6], [250, 1.4]].forEach(function (p) { s += dot(R + (p[0] % 3 - 1), p[0], p[1], '#4fb39a', null); });
-    }
-    // 무늬 (종류)
-    if (cat === 'trips') for (var t = 0; t < 360; t += 7.5) s += line(41.5, t, 49.5, t + 6, '#0b0b0d', 1.4, 0.5) + line(41.8, t + 1.2, 49.2, t + 7, '#fff', 0.8, 0.35);
-    if (cat === 'plog') {
-      // 띠 가운데 초록 줄 (금속 띠 안에서도 플로깅인 게 보이게)
-      s += '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="#063d2a" stroke-width="3.6"/><circle cx="60" cy="60" r="' + R + '" fill="none" stroke="#34d399" stroke-width="2.2"/>';
-    }
-    if (cat === 'ever') for (var t2 = 0; t2 < 360; t2 += 10) { var big = t2 % 30 === 0; s += line(big ? 46 : 47.6, t2, 49.6, t2, '#0b0b0d', big ? 1.3 : 0.9, 0.75); }
-    if (cat === 'reg') for (var t3 = 0; t3 < 360; t3 += 15) { var card = t3 % 90 === 0; s += line(card ? 41.5 : 46.5, t3, 49.6, t3, '#0b0b0d', card ? 1.8 : 1, 0.8); }
-    if (cat === 'do') for (var t4 = 0; t4 < 360; t4 += 40) s += line(40.5, t4 + 20, 50.5, t4 + 20, '#0b0b0d', 2.2);
-    if (cat === 'spot') s += '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="#0b0b0d" stroke-opacity=".6" stroke-width="1.6" stroke-dasharray=".1 4.2" stroke-linecap="round"/>';
-    if (cat === 'season') {
-      [['#f9a8d4', 0], ['#4ade80', 90], ['#fb923c', 180], ['#bae6fd', 270]].forEach(function (q) {
-        s += '<path d="' + arc(R, q[1] + 5, q[1] + 85) + '" fill="none" stroke="#0b0b0d" stroke-width="6.4" stroke-linecap="round"/>' +
-          '<path d="' + arc(R, q[1] + 5, q[1] + 85) + '" fill="none" stroke="' + q[0] + '" stroke-width="4.6" stroke-linecap="round"/>';
-      });
-    }
-    // 위쪽 반사광 / 아래쪽 그늘
-    s += '<path d="' + arc(48.6, 285, 355) + '" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.5" stroke-linecap="round"/>' +
-      '<path d="' + arc(42.4, 105, 175) + '" fill="none" stroke="#000" stroke-opacity=".4" stroke-width="1.4" stroke-linecap="round"/>';
-    // 리벳(철) / 옆 장식(은) / 보석(금 이상) / 별(무지개)
-    if (tier === 'i') [45, 135, 225, 315].forEach(function (d) { var p = pt(R, d); s += dot(R, d, 2.6, '#9aa1a9', '#0b0b0d') + '<circle cx="' + f(p[0] - 0.8) + '" cy="' + f(p[1] - 0.8) + '" r="1" fill="#fff"/>'; });
-    if (tier === 's') [90, 270].forEach(function (d) { s += dot(R, d, 3.4, '#ffffff', '#0b0b0d'); });
-    if (tier === 'g' || rainbow) s += dot(R, 90, 4.4, 'url(#' + id + 'g1)', '#0b0b0d') + dot(R, 270, 4.4, 'url(#' + id + 'g2)', '#0b0b0d');
-    if (rainbow) [[-40, 60, 3.8], [38, 62, 5], [-24, 64, 2.8]].forEach(function (q) {
-      var c = pt(q[1], q[0]), r = q[2];
-      s += '<path d="M' + f(c[0]) + ' ' + f(c[1] - r) + ' Q' + f(c[0]) + ' ' + f(c[1]) + ' ' + f(c[0] + r) + ' ' + f(c[1]) + ' Q' + f(c[0]) + ' ' + f(c[1]) + ' ' + f(c[0]) + ' ' + f(c[1] + r) + ' Q' + f(c[0]) + ' ' + f(c[1]) + ' ' + f(c[0] - r) + ' ' + f(c[1]) + ' Q' + f(c[0]) + ' ' + f(c[1]) + ' ' + f(c[0]) + ' ' + f(c[1] - r) + 'Z" fill="#fff"/>';
-    });
-    // 아래 메달
-    s += '<circle cx="60" cy="106" r="13" fill="#0b0b0d"/><circle cx="60" cy="106" r="12" fill="' + band + '"/><circle cx="60" cy="106" r="9" fill="' + FILL[cat] + '"/>' +
-      '<g transform="translate(60 106) scale(.31) translate(-51 -40)" style="color:#f4efe2">' + ICON[cat] + '</g>';
-    return s + '</svg>';
+    var id = 'okbmRing' + (++uid), kind = KIND[b.cat], small = !!(opts && opts.small), move = !still();
+    var W = small ? 5 : 3.8, CHIP = small ? 17 : 15;
+    var band = b.tier === 'r'
+      ? '<linearGradient id="' + id + 'm" x1="0" y1="1" x2="1" y2="0">' + RAINBOW.map(function (c, i) { return '<stop offset="' + (i / 4) + '" stop-color="' + c + '"/>'; }).join('') + '</linearGradient>'
+      : (function (g) { return '<linearGradient id="' + id + 'm" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="' + g[0] + '"/><stop offset=".35" stop-color="' + g[1] + '"/><stop offset=".6" stop-color="' + g[2] + '"/><stop offset=".8" stop-color="' + g[1] + '"/><stop offset="1" stop-color="' + g[3] + '"/></linearGradient>'; })(BAND[b.tier]);
+    // 빛줄기: 3.2초마다 왼쪽 위에서 오른쪽 아래로 한 번 지나간다
+    var sheen = '<linearGradient id="' + id + 'sh" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="40" y2="40"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity="' + (move ? '.85' : '0') + '"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>' +
+      (move ? '<animateTransform attributeName="gradientTransform" type="translate" values="-50 -50;110 110;110 110" keyTimes="0;.45;1" dur="3.2s" repeatCount="indefinite"/>' : '') + '</linearGradient>';
+    var defs = band + sheen +
+      '<linearGradient id="' + id + 'hl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
+      '<radialGradient id="' + id + 'b" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="' + kind.bg[0] + '"/><stop offset="1" stop-color="' + kind.bg[1] + '"/></radialGradient>' +
+      '<linearGradient id="' + id + 'gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".5" stop-color="#fff" stop-opacity=".06"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>' +
+      '<clipPath id="' + id + 'c"><circle cx="50" cy="50" r="43"/></clipPath>';
+    var s = '<svg viewBox="' + VB.x + ' ' + VB.y + ' ' + VB.w + ' ' + VB.h + '" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><defs>' + defs + '</defs>' +
+      '<g transform="translate(60 60) scale(' + (40.5 / 43).toFixed(4) + ') translate(-50 -50)">';
+    if (photoUrl) s += '<image href="' + esc(photoUrl) + '" x="7" y="7" width="86" height="86" clip-path="url(#' + id + 'c)" preserveAspectRatio="xMidYMid slice"/>';
+    // 링: 색 띠 + 왼쪽 위 하이라이트 + 빛줄기
+    s += '<circle cx="50" cy="50" r="48" fill="none" stroke="url(#' + id + 'm)" stroke-width="' + W + '"/>' +
+      '<circle cx="50" cy="50" r="48" fill="none" stroke="url(#' + id + 'hl)" stroke-width="' + (W * 0.45) + '" transform="translate(-.6 -.6)"/>' +
+      '<circle cx="50" cy="50" r="48" fill="none" stroke="url(#' + id + 'sh)" stroke-width="' + W + '"/>';
+    // 오른쪽 아래 종류 칩: 바탕색 + 그림 + 위쪽 유리 광택 + 단계 색 테두리
+    s += '<g transform="translate(83 83)"><circle r="' + (CHIP + 2.6) + '" fill="#000"/><circle r="' + CHIP + '" fill="url(#' + id + 'b)"/>' +
+      '<g transform="scale(' + (CHIP / 12.4).toFixed(4) + ')">' + kind.ic(kind.bg[1], id, b) + '</g>' +
+      '<circle r="' + (CHIP * 0.93) + '" fill="url(#' + id + 'gl)"/>' +
+      '<circle r="' + CHIP + '" fill="none" stroke="url(#' + id + 'm)" stroke-width="' + (CHIP * 0.15) + '"/><circle r="' + CHIP + '" fill="none" stroke="url(#' + id + 'sh)" stroke-width="' + (CHIP * 0.15) + '"/></g>';
+    // 반짝이 별
+    var sp = SPARK[b.tier];
+    sp[0].forEach(function (p) { var a = (p[0] - 90) * Math.PI / 180; s += star(50 + p[1] * Math.cos(a), 50 + p[1] * Math.sin(a), p[2], sp[1], p[3], move); });
+    return s + '</g></svg>';
   }
 
   // ---------------------------------------------------------------- 누가 무엇을 장착했나
@@ -239,17 +251,17 @@
     // 링이 옆 글자에 닿지 않게, 가로로 늘어선 줄 안에서만 양옆을 조금 띄운다
     var par = holder.parentElement, pd = par ? getComputedStyle(par) : null;
     if (pd && /flex/.test(pd.display) && !/column/.test(pd.flexDirection)) {
-      var gap = Math.round(w * 0.24) + 'px';
+      var gap = Math.round(w * 0.12) + 'px';
       holder.style.marginLeft = gap; holder.style.marginRight = gap;
     }
-    // 프로필처럼 큰 사진은 아래 메달·위 장식이 밑의 소개글·위 글자를 가리지 않게 위아래도 띄운다
+    // 프로필처럼 큰 사진은 반짝이 별·아래 칩이 위 글자·밑의 소개글에 닿지 않게 위아래도 조금 띄운다
     if (w >= 56) {
-      holder.style.marginTop = Math.round(w * (b.cat === 'ever' || b.cat === 'plog' || b.cat === 'reg' ? 0.26 : 0.14)) + 'px';
-      holder.style.marginBottom = Math.round(w * 0.26) + 'px';
+      holder.style.marginTop = Math.round(w * 0.1) + 'px';
+      holder.style.marginBottom = Math.round(w * 0.1) + 'px';
     }
     var el = document.createElement('span');
     el.className = 'okbm-ring';
-    el.innerHTML = ringSvg(b);
+    el.innerHTML = ringSvg(b, '', { small: w < 56 });
     holder.appendChild(el);
   }
   // 사진은 피드에 따라온 주소로 바로 그려져 프로필을 따로 받지 않는 사람도 있다. 그런 사람만 모아 한 번에(50명씩) 받는다
@@ -346,5 +358,5 @@
   // 앞서 실린 파일이 늦게 함수를 만들 수도 있어 한 번 더 감싼다
   window.addEventListener('load', wrapFetchers, { once: true });
 
-  window.okbmBadgeRing = { setPlogStyle: function (v) { PLOG_STYLE = v; }, parse: parse, svg: ringSvg, badgeOf: badgeOf, mine: readMine, equip: equip, syncMine: syncMine, paint: paint };
+  window.okbmBadgeRing = { parse: parse, svg: ringSvg, badgeOf: badgeOf, mine: readMine, equip: equip, syncMine: syncMine, paint: paint };
 })();
