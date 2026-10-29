@@ -14208,11 +14208,9 @@ function okbmNotifSvg(name, px, color) {
   return '<svg viewBox="0 0 24 24" width="' + px + '" height="' + px + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (OKBM_NOTIF_ICON[name] || OKBM_NOTIF_ICON.bell) + '</svg>';
 }
 
-// 알림에는 보낸 사람 id가 없다. 알 수 있는 것만 채운다:
-//   피드 사진·올린 사람은 feeds에서, 댓글 단 사람은 get_feed_comments에서(댓글 알림 id = pn_feed_comment_<댓글 id>).
-//   별·관심 등록은 누가 했는지 모르니 종류 아이콘만 보인다(관심 등록은 원래 익명).
+// 보낸 사람은 알림의 actor_id(H21)로 안다. 관심 등록(follow)은 원래 익명이라 비어 있고 종류 아이콘만 보인다.
+// 피드 사진은 feeds에서 받아 둔다.
 window.__okbmNotifFeedInfo = window.__okbmNotifFeedInfo || {};
-window.__okbmNotifActor = window.__okbmNotifActor || {};
 function okbmNotifThumbUrl(u) {
   u = String(u || '');
   if (u.indexOf('http://') === 0) u = 'https://' + u.slice(7);
@@ -14228,77 +14226,41 @@ function okbmNotifFeedId(r) {
 }
 async function okbmEnrichNotifRows(rows) {
   var feedCache = window.__okbmNotifFeedInfo;
-  var actorCache = window.__okbmNotifActor;
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var needFeeds = [];
-  var commentFeeds = [];
   (rows || []).forEach(function(r) {
     var fid = okbmNotifFeedId(r);
-    if (!fid) return;
-    if (!feedCache[fid] && needFeeds.indexOf(fid) === -1) needFeeds.push(fid);
-    var kind = String(r.kind || '').toLowerCase();
-    if ((kind === 'feed_comment' || kind === 'feed_reply') && actorCache[String(r.id)] === undefined && commentFeeds.indexOf(fid) === -1) commentFeeds.push(fid);
+    if (fid && !feedCache[fid] && needFeeds.indexOf(fid) === -1) needFeeds.push(fid);
   });
   var jobs = [];
   if (needFeeds.length && targetUrl) {
     var inList = needFeeds.slice(0, 40).map(function(id) { return '"' + id.replace(/"/g, '') + '"'; }).join(',');
-    jobs.push(fetch(targetUrl + '/rest/v1/feeds?id=in.(' + encodeURIComponent(inList) + ')&select=id,user_id,photos', { headers: okbmUgcRestHeaders() })
+    jobs.push(fetch(targetUrl + '/rest/v1/feeds?id=in.(' + encodeURIComponent(inList) + ')&select=id,photos', { headers: okbmUgcRestHeaders() })
       .then(function(res) { return res.ok ? res.json() : []; })
       .then(function(list) {
-        needFeeds.forEach(function(id) { if (!feedCache[id]) feedCache[id] = { thumb: '', userId: '' }; });
+        needFeeds.forEach(function(id) { if (!feedCache[id]) feedCache[id] = { thumb: '' }; });
         (Array.isArray(list) ? list : []).forEach(function(f) {
           var photos = f.photos;
           if (typeof photos === 'string') { try { photos = JSON.parse(photos); } catch (e) { photos = []; } }
           var first = (Array.isArray(photos) ? photos : []).filter(function(u) { return typeof u === 'string' && u.indexOf('http') === 0; })[0];
-          feedCache[String(f.id)] = { thumb: okbmNotifThumbUrl(first), userId: String(f.user_id || '') };
+          feedCache[String(f.id)] = { thumb: okbmNotifThumbUrl(first) };
         });
       }).catch(function() {}));
   }
-  var client = window.supabaseClient;
-  if (commentFeeds.length && client && typeof client.rpc === 'function') {
-    commentFeeds.slice(0, 8).forEach(function(fid) {
-      jobs.push(Promise.resolve(client.rpc('get_feed_comments', { p_feed_id: fid })).then(function(res) {
-        var list = (res && Array.isArray(res.data)) ? res.data : [];
-        window.__userProfilePhotoMap = window.__userProfilePhotoMap || {};
-        list.forEach(function(c) {
-          if (c && c.user_id && c.photo_url && !window.__userProfilePhotoMap[c.user_id]) window.__userProfilePhotoMap[c.user_id] = c.photo_url;
-        });
-        (rows || []).forEach(function(r) {
-          if (okbmNotifFeedId(r) !== fid) return;
-          var kind = String(r.kind || '').toLowerCase();
-          var hit = null;
-          if (kind === 'feed_comment') {
-            var cid = String(r.id || '').replace('pn_feed_comment_', '');
-            hit = list.filter(function(c) { return String(c.id) === cid; })[0];
-          } else {
-            // feed_reply 본문은 '닉네임: 댓글' — 그 닉네임의 남이 쓴 마지막 댓글
-            var nick = String(r.body || '').split(': ')[0];
-            hit = list.filter(function(c) { return c.nickname === nick && !c.is_mine; }).pop();
-          }
-          actorCache[String(r.id)] = hit && hit.user_id ? String(hit.user_id) : '';
-        });
-      }).catch(function() {}));
-    });
-  }
-  if (jobs.length) await Promise.all(jobs);
   var people = [];
   (rows || []).forEach(function(r) {
     var uid = okbmNotifActorId(r);
     if (uid && people.indexOf(uid) === -1) people.push(uid);
   });
   if (people.length && typeof window.okbmPrefetchUserPhotos === 'function') {
-    try { await window.okbmPrefetchUserPhotos(people); } catch (e) {}
+    jobs.push(Promise.resolve(window.okbmPrefetchUserPhotos(people)).catch(function() {}));
   }
-  return jobs.length > 0 || people.length > 0;
+  if (jobs.length) await Promise.all(jobs);
+  return jobs.length > 0;
 }
 function okbmNotifActorId(r) {
-  var kind = String((r && r.kind) || '').toLowerCase();
-  if (kind === 'follow_feed') {
-    var info = window.__okbmNotifFeedInfo[okbmNotifFeedId(r)];
-    return info ? info.userId : '';
-  }
-  if (kind === 'feed_comment' || kind === 'feed_reply') return window.__okbmNotifActor[String(r.id)] || '';
-  return '';
+  if (!r || String(r.kind || '').toLowerCase() === 'follow') return '';
+  return String(r.actor_id || '').trim();
 }
 
 // 제목 'OO님이 ~' 에서 이름만 굵게
@@ -14325,11 +14287,11 @@ function okbmNotifRowHtml(r, unread) {
   var canOpen = Boolean(loungePostId || feedOpenId);
   var actor = okbmNotifActorId(r);
   var left;
-  if (actor) {
+  if (kind === 'lounge_reply') {
+    left = '<span style="width:44px; height:44px; border-radius:50%; background:#17171b; flex-shrink:0; display:grid; place-items:center; overflow:hidden;"><img src="logo.png" alt="" style="width:28px; height:28px; object-fit:contain;"></span>';
+  } else if (actor) {
     left = '<span style="position:relative; flex-shrink:0; display:inline-flex;">' + okbmNoteAvatarHtml(actor, 44) +
       '<span style="position:absolute; right:-3px; bottom:-3px; width:20px; height:20px; border-radius:50%; background:' + ks.fill + '; display:grid; place-items:center; box-shadow:0 0 0 2px #000000;">' + okbmNotifSvg(ks.icon, 11, '#ffffff') + '</span></span>';
-  } else if (kind === 'lounge_reply') {
-    left = '<span style="width:44px; height:44px; border-radius:50%; background:#17171b; flex-shrink:0; display:grid; place-items:center; overflow:hidden;"><img src="logo.png" alt="" style="width:28px; height:28px; object-fit:contain;"></span>';
   } else {
     left = '<span style="width:44px; height:44px; border-radius:50%; background:' + ks.soft + '; flex-shrink:0; display:grid; place-items:center;">' + okbmNotifSvg(ks.icon, 20, ks.ink) + '</span>';
   }
