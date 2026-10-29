@@ -42,13 +42,14 @@
     '.mr-edit button{width:100%;height:36px;border-radius:10px;border:1px solid var(--mr-line);background:var(--bg-2,#17171b);color:#f2f2f3;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}',
     '.mr-edit button:active,.mr-row:active,.mr-st:active,.mr-tr:active{opacity:.6}',
     // 숫자 한 줄
-    '.mr-stats{flex-shrink:0;display:grid;grid-template-columns:repeat(3,1fr);margin:16px 16px 0;padding:12px 0;border-top:1px solid var(--mr-line);border-bottom:1px solid var(--mr-line)}',
+    '.mr-stats{flex-shrink:0;display:grid;grid-template-columns:repeat(4,1fr);margin:16px 16px 0;padding:12px 0;border-top:1px solid var(--mr-line);border-bottom:1px solid var(--mr-line)}',
     '.mr-st{background:none;border:0;color:#f2f2f3;font:inherit;padding:0;cursor:pointer;min-width:0}',
     '.mr-st+.mr-st{border-left:1px solid var(--mr-line)}',
     '.mr-stats-slot .mr-stats{margin:0;padding:0;border:0;text-align:left}',
     '.mr-stats-slot .mr-st{text-align:left}',
     '.mr-stats-slot .mr-st+.mr-st{border-left:0}',
     '.mr-stats-slot .mr-st b{font-size:19px}',
+    '.mr-st-plog small{display:inline-flex;align-items:center;gap:2px}.mr-st-plog small .okbm-plog-ic{width:12px;height:12px;color:#34d399}',
     '.mr-st b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}',
     '.mr-st small{display:block;margin-top:2px;font-size:12px;color:var(--mr-tx3);font-weight:600}',
     // 탭
@@ -611,6 +612,13 @@
     var a = $('mrFollowCount'), b = $('mrFollowCount2');
     if (a) a.textContent = String(n);
     if (b) b.textContent = n ? n + '명' : '';
+    // 플로깅(H19): 공개 피드 중 플로깅 사진이 있는 것
+    var p = $('mrPlogCount');
+    if (p && S.feeds) {
+      p.textContent = num(S.feeds.filter(function (f) { return f && f.plogging_photo && f.is_published !== false; }).length);
+      var lab = p.nextElementSibling;
+      if (lab && !lab.querySelector('svg') && typeof window.okbmPlogIcon === 'function') lab.insertAdjacentHTML('afterbegin', window.okbmPlogIcon());
+    }
   }
 
   // ---------------------------------------------------------------- 탭
@@ -646,7 +654,7 @@
     renderSaved();
     renderRecords();
     renderReport();
-    loadFeeds(force).then(function () { renderRecords(); renderReport(); });
+    loadFeeds(force).then(function () { renderCounts(); renderRecords(); renderReport(); });
   }
 
   function ensureCss() {

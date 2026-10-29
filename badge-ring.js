@@ -226,7 +226,7 @@
     if (!b) {
       holder.classList.remove('okbm-ringed');
       holder.removeAttribute('data-okbm-ring');
-      holder.style.marginLeft = holder.style.marginRight = '';
+      holder.style.marginLeft = holder.style.marginRight = holder.style.marginTop = holder.style.marginBottom = '';
       return;
     }
     var w = holder.getBoundingClientRect().width || holder.offsetWidth || 0;
@@ -240,6 +240,11 @@
     if (pd && /flex/.test(pd.display) && !/column/.test(pd.flexDirection)) {
       var gap = Math.round(w * 0.24) + 'px';
       holder.style.marginLeft = gap; holder.style.marginRight = gap;
+    }
+    // 프로필처럼 큰 사진은 아래 메달·위 장식이 밑의 소개글·위 글자를 가리지 않게 위아래도 띄운다
+    if (w >= 56) {
+      holder.style.marginTop = Math.round(w * (b.cat === 'ever' || b.cat === 'plog' || b.cat === 'reg' ? 0.26 : 0.14)) + 'px';
+      holder.style.marginBottom = Math.round(w * 0.26) + 'px';
     }
     var el = document.createElement('span');
     el.className = 'okbm-ring';

@@ -5505,6 +5505,7 @@ function ensureMyReportAndAuthModalsInDOM() {
             <button type="button" class="mr-st" data-mr-tab="rec" data-mr-year="all"><b id="reportTotalCountNumber">0</b><small>전체 기록</small></button>
             <button type="button" class="mr-st" data-mr-tab="rec" data-mr-year="cur"><b id="reportYearCountNumber">0</b><small id="reportYearCardLabel">올해</small></button>
             <button type="button" class="mr-st" data-mr-act="routers"><b id="mrFollowCount">0</b><small>관심루터</small></button>
+            <button type="button" class="mr-st mr-st-plog" data-mr-tab="rec" data-mr-year="all"><b id="mrPlogCount">0</b><small>플로깅</small></button>
           </div>
           <div class="mr-tabs" role="tablist">
             <button type="button" role="tab" class="mr-tab" data-mr-tab="rep">리포트</button>
