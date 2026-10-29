@@ -3,7 +3,7 @@
 //
 // · 받은 배지 중 하나를 장착하면(my-badges.js 배지 창) 프로필 사진 둘레에 링이 둘러진다. 장착 안 하면 지금 그대로.
 //   링 무늬·모양 = 배지 종류(무엇을 했나), 띠 재질 = 단계(얼마나 했나: 철·동·은·금·무지개).
-//   플로깅은 금속 띠 바깥에 초록 잎 화환이 붙어 가장 눈에 띈다.
+//   플로깅은 금속 띠 가운데 초록 줄 + 오른쪽 위 잎 가지 하나로 구분한다(잎 화환은 과해서 뺐다).
 // · 값은 '종류:단계:배지id'(users.equipped_badge). 남의 것은 피드를 그릴 때 이미 받는 get_public_profiles의 badge로 안다.
 //   (그 함수는 로그인한 사람에게만 돌아서, 로그인 안 한 사람에게는 링이 안 보인다)
 // · 사진 자리(img[data-user-avatar-id], img[data-user-avatar-small])를 찾아 그 동그라미 위에 링 그림을 얹는다.
@@ -48,7 +48,9 @@
   }
 
   // 링 그림(사진 없음). photoUrl을 주면 사진까지 넣은 그림(배지 창 미리보기용)
-  function ringSvg(badge, photoUrl) {
+  // 플로깅 링 장식: sprig(오른쪽 위 잎 가지 하나, 기본) · wreath(잎 화환, 처음 것) · pair(메달 양옆 새싹 두 장) · stripe(초록 줄만)
+  var PLOG_STYLE = 'sprig'; // 2026-10-29 대표님: 잎 화환은 과해서 잎 가지 하나로
+  function ringSvg(badge, photoUrl, opts) {
     var b = typeof badge === 'string' ? parse(badge) : badge;
     if (!b) return '';
     var id = 'okbmRing' + (++uid), cat = b.cat, tier = b.tier, rainbow = tier === 'r', m = METAL[rainbow ? 'g' : tier];
@@ -64,16 +66,27 @@
     var band = rainbow ? 'url(#' + id + 'r)' : 'url(#' + id + 'm)';
 
     // 띠 바깥으로 나오는 모양 (띠 뒤)
+    var plogStyle = (opts && opts.plog) || PLOG_STYLE;
     if (cat === 'plog') {
-      // 초록 잎 화환: 아래 메달에서 시작해 양쪽으로 올라가 위에서 만난다
-      var leaf = function (a, side) {
-        var c = pt(53.2, a), rot = a + (side > 0 ? -38 : 38);
-        return '<ellipse cx="' + f(c[0]) + '" cy="' + f(c[1]) + '" rx="6.2" ry="2.7" transform="rotate(' + f(rot) + ' ' + f(c[0]) + ' ' + f(c[1]) + ')" fill="url(#' + id + 'l)" stroke="#063d2a" stroke-width=".9"/>' +
-          '<line x1="' + f(c[0]) + '" y1="' + f(c[1]) + '" x2="' + f(c[0] + 4.2 * Math.cos((rot) * Math.PI / 180)) + '" y2="' + f(c[1] + 4.2 * Math.sin((rot) * Math.PI / 180)) + '" stroke="#063d2a" stroke-opacity=".55" stroke-width=".6"/>';
+      var leaf = function (r, a, tilt, rx, ry) {
+        var c = pt(r, a), rot = a - 90 + tilt;
+        var tip = [c[0] + (rx - 1.5) * Math.cos(rot * Math.PI / 180), c[1] + (rx - 1.5) * Math.sin(rot * Math.PI / 180)];
+        return '<ellipse cx="' + f(c[0]) + '" cy="' + f(c[1]) + '" rx="' + rx + '" ry="' + ry + '" transform="rotate(' + f(rot) + ' ' + f(c[0]) + ' ' + f(c[1]) + ')" fill="url(#' + id + 'l)" stroke="#063d2a" stroke-width=".9"/>' +
+          '<line x1="' + f(c[0]) + '" y1="' + f(c[1]) + '" x2="' + f(tip[0]) + '" y2="' + f(tip[1]) + '" stroke="#063d2a" stroke-opacity=".55" stroke-width=".6"/>';
       };
-      for (var la = 158; la >= 14; la -= 16) s += leaf(la, 1);
-      for (var lb = 202; lb <= 346; lb += 16) s += leaf(lb, -1);
-      s += '<circle cx="60" cy="1.5" r="3.6" fill="url(#' + id + 'g3)" stroke="#063d2a" stroke-width="1"/>';
+      if (plogStyle === 'wreath') {
+        // 초록 잎 화환: 아래 메달에서 시작해 양쪽으로 올라가 위에서 만난다
+        for (var la = 158; la >= 14; la -= 16) s += leaf(53.2, la, 52, 6.2, 2.7);
+        for (var lb = 202; lb <= 346; lb += 16) s += leaf(53.2, lb, 128, 6.2, 2.7);
+        s += '<circle cx="60" cy="1.5" r="3.6" fill="url(#' + id + 'g3)" stroke="#063d2a" stroke-width="1"/>';
+      } else if (plogStyle === 'sprig') {
+        // 오른쪽 위에 잎 달린 가지 하나
+        s += '<path d="' + arc(52, 22, 68) + '" fill="none" stroke="#065f46" stroke-width="1.6" stroke-linecap="round"/>' +
+          leaf(56.5, 30, 20, 6.4, 2.9) + leaf(56.5, 46, 20, 6.4, 2.9) + leaf(49.8, 38, 160, 5.2, 2.5) + leaf(56.5, 62, 20, 5.4, 2.6);
+      } else if (plogStyle === 'pair') {
+        // 아래 메달에서 양옆으로 돋은 새싹 두 장
+        s += leaf(55, 156, 70, 7.6, 3.3) + leaf(55, 204, 110, 7.6, 3.3);
+      }
     }
     if (cat === 'ever') {
       s += '<path d="M31 24 L42 3 L50 14 L60 -7 L70 14 L78 3 L89 24 Z" fill="' + band + '" stroke="#0b0b0d" stroke-width="1.3" stroke-linejoin="round"/>' +
@@ -318,5 +331,5 @@
   // 앞서 실린 파일이 늦게 함수를 만들 수도 있어 한 번 더 감싼다
   window.addEventListener('load', wrapFetchers, { once: true });
 
-  window.okbmBadgeRing = { parse: parse, svg: ringSvg, badgeOf: badgeOf, mine: readMine, equip: equip, syncMine: syncMine, paint: paint };
+  window.okbmBadgeRing = { setPlogStyle: function (v) { PLOG_STYLE = v; }, parse: parse, svg: ringSvg, badgeOf: badgeOf, mine: readMine, equip: equip, syncMine: syncMine, paint: paint };
 })();
