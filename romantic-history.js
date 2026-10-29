@@ -1225,6 +1225,7 @@
       window.interactiveHistory,
       window.packingHistoryList,
       window.__allLoadedFeeds,
+      window.__okbmOldPickRows,
       window.__currentScopedPastTripLogs,
       (window.__memoryStore && window.__memoryStore['okbm_packing_history']) ? window.__memoryStore['okbm_packing_history'] : null
     ];
@@ -4192,6 +4193,7 @@ window.toggleFeedStar = async function(cardId, e) {
       window.interactiveHistory,
       (typeof window.safeGetStorage === 'function') ? window.safeGetStorage('okbm_packing_history', []) : null,
       window.__allLoadedFeeds,
+      window.__okbmOldPickRows,
       window.__currentScopedPastTripLogs,
       window.__currentScopedSavedFeeds,
       (typeof safeGetJSON === 'function') ? safeGetJSON('okbm_cached_community_feeds', []) : null
@@ -7607,8 +7609,135 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     return window.__okbmVaultBootPromise;
   };
 
+  // 낭만 피드에 최신 글 5개마다 예전 글 1개를 끼운다.
+  // 예전 글 = 다녀온 날짜가 90일 넘은 공개 글. 좋아요·댓글이 많을수록 자주 뽑히고, 같은 날엔 모두 같은 순서(날짜를 씨앗으로).
+  // 가벼운 목록(id·날짜·좋아요)으로 고른 뒤 고른 글만 통째로 받는다. 고른 id는 하루 동안 저장해 목록을 다시 받지 않는다.
+  var OLD_PICK_EVERY = 5;
+  var OLD_PICK_MIN_AGE_DAYS = 90;
+  var OLD_PICK_POOL = 20;
+  var OLD_PICK_STORE_KEY = 'okbm_old_picks_v1';
+  window.__okbmOldPickRows = window.__okbmOldPickRows || [];
+  window.__okbmOldPickIds = window.__okbmOldPickIds || new Set();
+
+  function okbmOldPickDayKey() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function okbmSeededRandom(seedText) {
+    var h = 2166136261;
+    for (var i = 0; i < seedText.length; i++) {
+      h ^= seedText.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return function() {
+      h = (h + 0x6D2B79F5) | 0;
+      var t = Math.imul(h ^ (h >>> 15), 1 | h);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // 무게 있는 섞기: 점수 = 난수^(1/무게). 그다음 같은 사람이 연달아 나오지 않게 한 칸씩 미룬다.
+  function okbmChooseOldPicks(rows, dayKey) {
+    var cutoff = Date.now() - OLD_PICK_MIN_AGE_DAYS * 86400000;
+    var rand = okbmSeededRandom('okbm-old-' + dayKey);
+    var scored = rows.filter(function(r) {
+      var t = window.getRecordDateNum(r);
+      return r && r.id && t && t < cutoff;
+    }).map(function(r) {
+      var w = 1 + (Number(r.likes_count) || 0) + 2 * (Number(r.comments_count) || 0);
+      return { row: r, key: Math.pow(rand(), 1 / w) };
+    }).sort(function(a, b) { return b.key - a.key; }).map(function(s) { return s.row; });
+
+    var out = [];
+    var waiting = [];
+    scored.forEach(function(r) {
+      var last = out.length ? out[out.length - 1] : null;
+      if (last && last.user_id && last.user_id === r.user_id) { waiting.push(r); return; }
+      out.push(r);
+      for (var w = 0; w < waiting.length; w++) {
+        if (waiting[w].user_id !== r.user_id) { out.push(waiting.splice(w, 1)[0]); break; }
+      }
+    });
+    return out.concat(waiting).slice(0, OLD_PICK_POOL).map(function(r) { return String(r.id); });
+  }
+
+  window.okbmLoadOldPicks = function() {
+    if (window.__okbmOldPickPromise) return window.__okbmOldPickPromise;
+    window.__okbmOldPickPromise = (async function() {
+      var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
+      var targetKey = window.SUPABASE_ANON_KEY || '';
+      if (!targetKey) return [];
+      var headers = (typeof window.okbmPublicRestHeaders === 'function')
+        ? window.okbmPublicRestHeaders()
+        : {
+          'apikey': targetKey,
+          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + targetKey)),
+          'Content-Type': 'application/json'
+        };
+      var doFetch = function(url) {
+        return (typeof window.okbmPublicFetch === 'function') ? window.okbmPublicFetch(url, { headers: headers }) : fetch(url, { headers: headers });
+      };
+      try {
+        var dayKey = okbmOldPickDayKey();
+        var stored = safeGetJSON(OLD_PICK_STORE_KEY, null);
+        var ids = (stored && stored.day === dayKey && Array.isArray(stored.ids)) ? stored.ids : null;
+        if (!ids) {
+          var listRes = await doFetch(targetUrl + '/rest/v1/feeds?select=id,user_id,date,likes_count,comments_count&is_published=eq.true&limit=1000');
+          if (!listRes || !listRes.ok) return [];
+          var lite = await listRes.json();
+          ids = okbmChooseOldPicks(Array.isArray(lite) ? lite : [], dayKey);
+          try { localStorage.setItem(OLD_PICK_STORE_KEY, JSON.stringify({ day: dayKey, ids: ids })); } catch (eStore) {}
+        }
+        if (!ids.length) return [];
+        var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,comments_count,last_comment,plogging_photo,is_published,feed_type,created_at';
+        var inList = ids.map(function(id) { return '"' + String(id).replace(/"/g, '') + '"'; }).join(',');
+        var rowRes = await doFetch(targetUrl + '/rest/v1/feeds?select=' + projectionColumns + '&is_published=eq.true&id=in.(' + encodeURIComponent(inList) + ')');
+        if (!rowRes || !rowRes.ok) return [];
+        var rows = await rowRes.json();
+        var byId = {};
+        (Array.isArray(rows) ? rows : []).forEach(function(r) {
+          if (r && r.id && !(window.okbmIsExplicitlyPrivate && window.okbmIsExplicitlyPrivate(r))) byId[String(r.id)] = r;
+        });
+        var ordered = ids.map(function(id) { return byId[id]; }).filter(Boolean);
+        window.__okbmOldPickRows = ordered;
+        window.__okbmOldPickIds = new Set(ordered.map(function(r) { return String(r.id); }));
+        // 피드가 이미 열려 있으면 보던 자리를 지키며 끼워 넣는다
+        if (ordered.length && window.__okbmHistoryModalOpen && typeof window.renderHistoryStage === 'function') {
+          window.renderHistoryStage(false, { sync: true });
+        }
+        return ordered;
+      } catch (eOld) {
+        console.warn('[romantic-history.js:okbmLoadOldPicks]', eOld);
+        return [];
+      }
+    })();
+    return window.__okbmOldPickPromise;
+  };
+
+  // 최신순 목록(chrono)에 예전 글을 끼운다. 이미 보인 최신 글 수·예전 글 수를 받아 이어서 끼울 수 있다(더 불러오기).
+  window.okbmInterleaveOldPicks = function(chrono, picks, chronoBefore, picksBefore, isEnd) {
+    var out = [];
+    var n = chronoBefore || 0;
+    var p = picksBefore || 0;
+    chrono.forEach(function(item) {
+      out.push(item);
+      n += 1;
+      if (n % OLD_PICK_EVERY === 0 && p < picks.length) {
+        out.push(picks[p]);
+        p += 1;
+      }
+    });
+    if (isEnd) {
+      for (; p < picks.length; p++) out.push(picks[p]);
+    }
+    return out;
+  };
+
   if (typeof window.location === 'undefined' || String(window.location.pathname || '').indexOf('map.html') === -1) {
     window.okbmPrefetchVaultFeeds();
+    window.okbmLoadOldPicks();
   }
 
   window.fetchMoreCommunityFeeds = async function() {
@@ -7618,7 +7747,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     window.__isFetchingMoreFeeds = true;
 
     var reelContainer = document.getElementById('reelsVerticalContainer');
-    var currentRenderedCount = reelContainer ? reelContainer.querySelectorAll('.reel-page-snap:not([data-vault-intro])').length : 0;
+    // 끼워 넣은 예전 글은 서버 페이지 자리에 세지 않는다
+    var currentRenderedCount = reelContainer ? reelContainer.querySelectorAll('.reel-page-snap:not([data-vault-intro]):not([data-old-pick])').length : 0;
     var offset = Math.max(currentRenderedCount, window.__feedPaginationOffset || 0);
 
     try {
@@ -7631,6 +7761,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         }
       } else {
         window.__feedHasMore = false;
+        if (typeof window.appendNewFeedCardsToReels === 'function') window.appendNewFeedCardsToReels([]);
       }
     } catch (err) {
       console.warn('[romantic-history.js:fetchMoreCommunityFeeds]', err);
@@ -8438,7 +8569,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
 
-    return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + idx + '" data-feed-id="' + cardId + '" data-ready-shot-sig="' + escapeHtml(okbmReadyShotCardSig(record)) + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '">' +
+    var oldPickAttr = (window.__okbmOldPickIds && window.__okbmOldPickIds.has(String(record.id || ''))) ? ' data-old-pick="1"' : '';
+    return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap"' + oldPickAttr + ' data-reel-idx="' + idx + '" data-feed-id="' + cardId + '" data-ready-shot-sig="' + escapeHtml(okbmReadyShotCardSig(record)) + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '">' +
       headerBarHtml +
       (isPlogged ? '<div class="okbm-plog-frame" aria-hidden="true"></div>' : '') +
 
@@ -8780,6 +8912,10 @@ window.renderHistoryStage = function(isLoading, opts) {
 
     var combinedList = [];
     var addedIds = new Set();
+    var oldPickIds = window.__okbmOldPickIds || new Set();
+    if (oldPickIds.size && Array.isArray(window.__okbmOldPickRows)) {
+      ssotFeedPool = ssotFeedPool.concat(window.__okbmOldPickRows);
+    }
 
     ssotFeedPool.forEach(function(item, idx) {
       if (!item) return;
@@ -8821,6 +8957,19 @@ window.renderHistoryStage = function(isLoading, opts) {
     }
 
     currentList = sortDescFn(currentList);
+
+    // 최신 글 5개마다 예전 글 1개. 예전 글은 최신순 자리에서 빼고 뽑힌 순서대로 끼운다.
+    if (oldPickIds.size) {
+      var pickById = {};
+      var chronoList = [];
+      currentList.forEach(function(r) {
+        var rid = String(r.id || '').trim();
+        if (oldPickIds.has(rid)) pickById[rid] = r;
+        else chronoList.push(r);
+      });
+      var pickList = window.__okbmOldPickRows.map(function(r) { return pickById[String(r.id)]; }).filter(Boolean);
+      currentList = window.okbmInterleaveOldPicks(chronoList, pickList, 0, 0, window.__feedHasMore === false);
+    }
 
     if (!isLoading) {
       var existingReel = document.getElementById('reelsVerticalContainer');
@@ -8932,13 +9081,34 @@ window.renderHistoryStage = function(isLoading, opts) {
 
     window.appendNewFeedCardsToReels = function(newItems) {
       var reelContainer = document.getElementById('reelsVerticalContainer');
-      if (!reelContainer || !Array.isArray(newItems) || newItems.length === 0) return;
+      // 빈 배열은 마지막 페이지라는 뜻: 남은 예전 글만 끝에 붙인다
+      if (!reelContainer || !Array.isArray(newItems)) return;
+      if (newItems.length === 0 && !(window.__okbmOldPickIds && window.__okbmOldPickIds.size)) return;
 
       newItems = window.okbmApplyUgcSafetyFilter(newItems);
-      if (!newItems.length) return;
 
       var existingCards = reelContainer.querySelectorAll('.reel-page-snap:not([data-vault-intro])');
       var startIdx = existingCards.length;
+
+      // 예전 글로 이미 끼웠거나 끼울 글은 최신순 자리에서 빼고, 이어서 5개마다 하나씩 끼운다
+      var appendPickIds = window.__okbmOldPickIds || new Set();
+      if (appendPickIds.size) {
+        var shownIds = new Set();
+        var shownChrono = 0;
+        existingCards.forEach(function(card) {
+          shownIds.add(String(card.getAttribute('data-feed-id') || ''));
+          if (!card.hasAttribute('data-old-pick') && !card.hasAttribute('data-vault-empty')) shownChrono += 1;
+        });
+        var chronoAdd = newItems.filter(function(item) {
+          var iid = String(item && item.id || '').trim();
+          return iid && !appendPickIds.has(iid) && !shownIds.has(iid);
+        });
+        var pendingPicks = window.okbmApplyUgcSafetyFilter(window.__okbmOldPickRows.filter(function(r) {
+          return !shownIds.has(String(r.id));
+        }));
+        newItems = window.okbmInterleaveOldPicks(chronoAdd, pendingPicks, shownChrono, 0, window.__feedHasMore === false);
+      }
+      if (!newItems.length) return;
 
       var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
       var profile = safeGetJSON('user_profile', null);
