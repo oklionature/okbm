@@ -1195,10 +1195,10 @@
                 seen.add(fid);
                 merged.push(f);
               });
-              // 별 많은 순(같으면 최근 순)으로 6개. 두 조회를 합쳤으니 여기서 다시 줄 세운다.
-              var spotFeedsAll = filterFeedsForMapSpot(spot, merged);
-              if (typeof window.okbmSortSpotFeedsByStars === 'function') spotFeedsAll = window.okbmSortSpotFeedsByStars(spotFeedsAll);
-              var validFeeds = spotFeedsAll.slice(0, 6);
+              // 별 많은 순(같으면 최근 순). 두 조회를 합쳤으니 여기서 다시 줄 세운다.
+              // 전부 캐시에 둔다: 정보창 칸은 앞 6개만, '전체 보기'와 상세 창은 전부를 쓴다.
+              var validFeeds = filterFeedsForMapSpot(spot, merged);
+              if (typeof window.okbmSortSpotFeedsByStars === 'function') validFeeds = window.okbmSortSpotFeedsByStars(validFeeds);
               limitedMapSet(window.__spotFeedsCache, sId || spotMainName, validFeeds, 50);
               return validFeeds;
             } catch (e) {
@@ -4969,7 +4969,12 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         var backpackSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:11px; height:11px; display:inline-block; vertical-align:-1.5px; flex-shrink:0;"><rect x="4" y="2" width="16" height="5" rx="2.5"/><path d="M8 2v5M16 2v5M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M12 7l-4 4M12 7l4 4M8 15h8v4H8z"/></svg>`;
         var starSvg = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:10px; height:10px; display:inline-block; vertical-align:-1px; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
 
-        var feedCardsHtml = matchedFeeds.map(function(f) {
+        // 사진 있는 글만 칸에 오른다. 앞 6개만 보이고, 더 있으면 끝에 '전체 보기' 칸.
+        matchedFeeds = matchedFeeds.filter(okbmSpotFeedThumb);
+        if (!matchedFeeds.length) return '';
+        var totalFeeds = matchedFeeds.length;
+
+        var feedCardsHtml = matchedFeeds.slice(0, SPOT_FEED_RAIL_MAX).map(function(f) {
           var fId = escapeHtml(String(f.id));
           var realPhotos = Array.isArray(f.photos) ? f.photos.filter(function(u) {
             return typeof u === 'string' && u.trim().startsWith('https://');
@@ -5017,12 +5022,96 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
 
         if (!feedCardsHtml) return '';
 
+        // 누르기는 아래 문서 클릭 위임이 받는다(onclick 문자열을 새로 쓰면 CSP 해시를 다시 뽑아야 함)
+        var moreHtml = totalFeeds > SPOT_FEED_RAIL_MAX
+          ? `<button type="button" data-spot-feeds-all="${escapeHtml(String(spot.id).trim())}" style="flex:0 0 96px; width:96px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:#e2e8f0; cursor:pointer; flex-shrink:0; font-family:inherit; padding:0;">
+              <span style="width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; pointer-events:none;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+              </span>
+              <span style="font-size:0.68rem; font-weight:800; line-height:1.35; text-align:center; pointer-events:none;">후기 ${totalFeeds}개<br>전체 보기</span>
+            </button>`
+          : '';
+
         return `
           <div style="display:flex; overflow-x:auto; gap:6px; padding:2px 0; scrollbar-width:none; -webkit-overflow-scrolling:touch;">
-            ${feedCardsHtml}
+            ${feedCardsHtml}${moreHtml}
           </div>
         `;
       }
+
+      var SPOT_FEED_RAIL_MAX = 6;
+      function okbmSpotFeedThumb(f) {
+        var list = f && Array.isArray(f.photos) ? f.photos : [];
+        for (var i = 0; i < list.length; i++) {
+          if (typeof list[i] === 'string' && list[i].trim().startsWith('https://')) return list[i].trim();
+        }
+        return '';
+      }
+
+      // 박지 후기 전체 보기: 별 많은 순 2열 목록. 칸을 누르면 상세 창(z 880)이 이 창(z 870) 위에 열리고, 닫으면 목록으로 돌아온다.
+      function closeSpotFeedsAllModal() {
+        var el = document.getElementById('mapSpotFeedAllModal');
+        if (el) el.remove();
+        if (typeof window.unregisterModalClose === 'function') window.unregisterModalClose('mapSpotFeedAllModal');
+      }
+      function openSpotFeedsAllModal(spotId) {
+        var sId = String(spotId || '').trim();
+        var feeds = (window.__spotFeedsCache && window.__spotFeedsCache.has(sId)) ? window.__spotFeedsCache.get(sId) : [];
+        if (typeof window.filterHiddenUgcFeeds === 'function') feeds = window.filterHiddenUgcFeeds(feeds);
+        feeds = okbmSortSpotFeedsByStars(feeds).filter(okbmSpotFeedThumb);
+        if (!feeds.length) return;
+        closeSpotFeedsAllModal();
+        var starsMap = safeGetJSON('okbm_feed_stars_counts', {}) || {};
+        var spotName = (currentActiveSpot && String(currentActiveSpot.id).trim() === sId)
+          ? (currentActiveSpot.spot_main || currentActiveSpot.name || '') : (feeds[0].spot || '');
+        var cards = feeds.map(function(f) {
+          var server = (f.likes_count !== undefined && f.likes_count !== null) ? Number(f.likes_count) : Number(f.likes || 0);
+          var stars = Number(starsMap[String(f.id).trim()]) || server || 0;
+          return `<button type="button" data-spot-feed-open="${escapeHtml(String(f.id))}" data-spot-id="${escapeHtml(sId)}" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; padding:0; cursor:pointer; display:flex; flex-direction:column; text-align:left; font-family:inherit; color:inherit;">
+              <span style="width:100%; aspect-ratio:3/4; background:#000; display:block; pointer-events:none;"><img src="${escapeHtml(okbmSafeImageUrl(okbmSpotFeedThumb(f)))}" alt="" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;"></span>
+              <span style="padding:6px 8px; display:flex; justify-content:space-between; align-items:center; gap:6px; pointer-events:none;">
+                <span style="font-size:0.7rem; color:#e2e8f0; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;">${escapeHtml(f.author || '개척 캠퍼')}</span>
+                <span style="font-size:0.66rem; color:#fde047; font-weight:800; font-family:'Space Grotesk', sans-serif; flex-shrink:0;">★ ${stars}</span>
+              </span>
+            </button>`;
+        }).join('');
+        var modalEl = document.createElement('div');
+        modalEl.id = 'mapSpotFeedAllModal';
+        modalEl.setAttribute('role', 'dialog');
+        modalEl.setAttribute('aria-label', '후기 전체 보기');
+        modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 0px)); background:#0c1017; z-index:870; display:flex; flex-direction:column; box-sizing:border-box;';
+        modalEl.innerHTML = `
+          <div style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div style="min-width:0;">
+              <div style="font-size:0.92rem; font-weight:900; color:#ffffff;">후기 ${feeds.length}개</div>
+              ${spotName ? `<div style="font-size:0.68rem; color:#94a3b8; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(spotName)} · 별 많은 순</div>` : ''}
+            </div>
+            <button type="button" data-spot-feeds-all-close="1" aria-label="닫기" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:4px 6px; line-height:1;">✕</button>
+          </div>
+          <div style="flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px; display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; align-content:start; width:100%; max-width:480px; margin:0 auto; box-sizing:border-box;">
+            ${cards}
+          </div>`;
+        document.body.appendChild(modalEl);
+        if (typeof window.registerModalOpen === 'function') window.registerModalOpen('mapSpotFeedAllModal', closeSpotFeedsAllModal);
+      }
+      window.openSpotFeedsAllModal = openSpotFeedsAllModal;
+
+      document.addEventListener('click', function(e) {
+        var t = e.target && e.target.closest ? e.target : null;
+        if (!t) return;
+        var allBtn = t.closest('[data-spot-feeds-all]');
+        if (allBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          openSpotFeedsAllModal(allBtn.getAttribute('data-spot-feeds-all'));
+          return;
+        }
+        if (t.closest('[data-spot-feeds-all-close]')) { closeSpotFeedsAllModal(); return; }
+        var open = t.closest('[data-spot-feed-open]');
+        if (open && typeof window.openMapSpotFeedDetailModal === 'function') {
+          window.openMapSpotFeedDetailModal(open.getAttribute('data-spot-feed-open'), open.getAttribute('data-spot-id'));
+        }
+      }, true);
 
       // 인스타 탭: 관리자 등록 → 크리에이터 등록(추천순) 게시물. 줄을 누르면 화면 전체 보기 창에서 인스타 공식 embed를 연다.
       function spotInstaPosts(spot) {
