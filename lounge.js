@@ -159,7 +159,7 @@
   // phase: later(7일 넘게 남음) · soon(7일 안) · open(신청 중, 마감 시각을 앎) · opened(오픈은 지났고 마감을 모름) · closed(마감). hot이면 맨 위.
   // 마감을 모르면 '신청 중'이라 하지 않는다. 티켓은 행사 몇 달 전에 매진되기 일쑤라, 예전엔 마감을 행사 시작일로 잡아
   // 9/11에 열고 9월에 끝난 코리아 백패커스 데이가 '신청 중 · 11/6까지'로 보여 행사 날짜처럼 읽혔다.
-  // 오픈한 지 3일 안이면 '오픈됨'으로 맨 위에 두고, 그 뒤로는 회색 한 줄로만 남긴다.
+  // 그래서 '10월 22일(목) 오후 2시 신청'처럼 신청 날만 적는다. 오픈한 지 3일 안이면 금색으로 맨 위에, 그 뒤로는 회색 한 줄로만 남긴다.
   // 신청 일시 칸이 비어 있으면 설명·한 줄 소개·참가 글에서 읽는다.
   // 읽는 말투: '티켓은 10월 26일 월요일 저녁 8시에 오픈' · '일반 신청은 10월 19일 19시부터' · '티켓 오픈 9/11 12:00'
   //           · '신청은 10월 21일부터 27일까지' · '쿠폰 등록은 10월 28일 자정까지' · '10/29까지 사전예매'
@@ -237,7 +237,7 @@
   function applyLine(a, long) {
     if (a.phase === 'open') return '신청 중 · ' + untilText(a.close, long);
     if (a.phase === 'closed') return '신청 마감';
-    if (a.phase === 'opened') return whenText(a.open, long) + ' 신청 오픈됨' + (a.hot ? '' : ' · 마감 여부는 신청 링크에서');
+    if (a.phase === 'opened') return whenText(a.open, long) + ' 신청';
     return whenText(a.open, long) + ' 신청 오픈';
   }
   function applyChip(a, minutes) {
@@ -246,7 +246,7 @@
       return isHotChip(c) ? c + ' 마감' : '신청 중';
     }
     if (a.phase === 'closed') return '';
-    if (a.phase === 'opened') return '오픈됨';
+    if (a.phase === 'opened') return '';
     return leftChip(a.open, minutes) + (minutes ? '' : ' 오픈');
   }
   function ago(iso) {
@@ -1004,7 +1004,7 @@
     const body = `<div class="lmx-in">
       ${poster ? `<img class="lm-poster" src="${escapeHtml(okbmSafeImageUrl(e.poster_url))}" alt="" loading="lazy" decoding="async">` : ''}
       ${e.subtitle ? `<div class="lm-rs" style="margin:0 0 6px">${esc(e.subtitle)}</div>` : ''}
-      ${kv('일정', v.dateText + ' (' + v.weekday + ')')}${ap ? kv('신청', [ap.open ? whenText(ap.open, false) + ' 오픈' : '', ap.close ? untilText(ap.close, false) : '마감 미정'].filter(Boolean).join(' ~ ')) : ''}${kv('장소', place)}${kv('주최', e.host)}${kv('참가', e.fee)}
+      ${kv('일정', v.dateText + ' (' + v.weekday + ')')}${ap ? kv('신청', [ap.open ? whenText(ap.open, false) + ' 오픈' : '', ap.close ? untilText(ap.close, false) : ''].filter(Boolean).join(' ~ ')) : ''}${kv('장소', place)}${kv('주최', e.host)}${kv('참가', e.fee)}
       ${e.description ? `<p class="lm-desc">${esc(e.description)}</p>` : ''}
       ${ig ? `<div class="lm-ig" data-kind="${esc(ig.kind)}" data-code="${esc(ig.code)}"></div>` : ''}
       ${(eventApplyUrl(e) || e.spot_id) ? `<div class="lmx-btns">
@@ -2058,7 +2058,7 @@
     const ap = applyView(e);
     if (ap && ap.hot) {
       const at = ap.phase === 'open' ? new Date(ap.close - 1) : ap.open;
-      const chip = ap.phase === 'open' ? applyChip(ap, true).replace(' 마감', '') : (ap.phase === 'opened' ? '오픈됨' : leftChip(ap.open, true));
+      const chip = ap.phase === 'open' ? applyChip(ap, true).replace(' 마감', '') : (ap.phase === 'opened' ? '행사 ' + v.ddText : leftChip(ap.open, true));
       const hot = isHotChip(chip);
       return '<button type="button" class="hd-row" data-a="lounge" data-v="0" data-id="' + esc(e.id) + '"><span class="hd-k">' + hdDate(at, ap.phase === 'open') + '<small' + (hot ? ' class="hot"' : '') + '>' + esc(chip) + '</small></span>' + hdText(e.title, applyLine(ap, false), hot) + '</button>';
     }
@@ -2473,7 +2473,7 @@
           <div>${field('lmEvFee', '참가', inp('lmEvFee', 'fee', e && e.fee, 'maxlength="60" placeholder="무료 · 선착순 80팀"'))}</div></div>
         <div class="lm-two"><div>${field('lmEvOpen', '신청 시작', inp('lmEvOpen', 'apply_open_at', e && localDT(e.apply_open_at), 'type="datetime-local"'))}</div>
           <div>${field('lmEvClose', '신청 마감', inp('lmEvClose', 'apply_close_at', e && localDT(e.apply_close_at), 'type="datetime-local"'))}</div></div>
-        <p class="lm-hint">${guess ? '설명 글에서 읽어 채웠어요. 틀리면 고쳐 주세요. ' : ''}신청 시작 7일 전부터 마감까지 행사 목록 맨 위에 '몇 월 며칠 몇 시 신청 오픈'으로 크게 떠요. 비워 두면 설명 글('10월 26일 저녁 8시에 오픈')에서 읽고, 마감을 비우면 행사 전날 밤까지예요.</p>
+        <p class="lm-hint">${guess ? '설명 글에서 읽어 채웠어요. 틀리면 고쳐 주세요. ' : ''}신청 시작 7일 전부터 마감까지 행사 목록 맨 위에 '몇 월 며칠 몇 시 신청 오픈'으로 크게 떠요. 비워 두면 설명 글('10월 26일 저녁 8시에 오픈', '10월 27일까지')에서 읽어요. 마감을 모르면 '신청 중' 대신 '10월 22일 신청'으로만 떠요. 매진·마감되면 마감 칸에 그 시각을 적어 주세요.</p>
         ${field('lmEvUrl', '신청 링크', inp('lmEvUrl', 'apply_url', e && eventApplyUrl(e), 'type="url" inputmode="url" placeholder="https://"'))}
         ${field('lmEvIg', '인스타 게시물 링크', inp('lmEvIg', 'instagram_url', e && eventIgUrl(e), 'type="url" inputmode="url" maxlength="300" placeholder="https://www.instagram.com/p/…"'))}
         <p class="lm-hint">신청 페이지와 인스타 게시물은 같이 넣을 수 있어요. 인스타는 앱 안에서 열려요.</p>
