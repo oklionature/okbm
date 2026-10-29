@@ -13809,7 +13809,7 @@ function okbmNoteIsSameGroup(a, b) {
 
 function okbmRenderNoteBubbles(rows, myId, theirId) {
   if (!rows.length) {
-    return '<div style="text-align:center; padding:48px 12px; color:#64748b; font-size:0.78rem; line-height:1.6;">아직 주고받은 쪽지가 없습니다.<br>첫 쪽지를 보내보세요.</div>';
+    return '<div style="text-align:center; padding:48px 12px; color:#8b8b93; font-size:13px; line-height:1.6;">아직 주고받은 쪽지가 없어요.<br>첫 쪽지를 보내 보세요.</div>';
   }
   var html = '';
   var prevDay = '';
@@ -13817,7 +13817,7 @@ function okbmRenderNoteBubbles(rows, myId, theirId) {
     var r = rows[i];
     var day = okbmNoteDayKey(r.created_at);
     if (day && day !== prevDay) {
-      html += '<div style="display:flex; flex-shrink:0; justify-content:center; margin:10px 0 8px;"><span style="font-size:0.62rem; color:#94a3b8; background:rgba(15,23,42,0.55); border-radius:999px; padding:5px 10px;">' + _escapeReportPropHtml(okbmNoteDateChip(r.created_at)) + '</span></div>';
+      html += '<div style="display:flex; flex-shrink:0; justify-content:center; margin:10px 0 8px;"><span style="font-size:11px; color:#8b8b93; background:#17171b; border-radius:999px; padding:5px 10px;">' + _escapeReportPropHtml(okbmNoteDateChip(r.created_at)) + '</span></div>';
       prevDay = day;
     }
     var mine = okbmNoteIdsMatch(r.sender_id, myId);
@@ -13829,20 +13829,20 @@ function okbmRenderNoteBubbles(rows, myId, theirId) {
     var groupEnd = !next || !sameNextDay || !okbmNoteIsSameGroup(r, next);
     var body = _escapeReportPropHtml(r.body || '');
     var when = groupEnd ? okbmNoteClockHtml(r.created_at) : '';
-    var timeHtml = when ? '<span style="font-size:0.54rem; color:#64748b; line-height:1.2; flex-shrink:0; margin-bottom:1px;">' + _escapeReportPropHtml(when) + '</span>' : '';
+    var timeHtml = when ? '<span style="font-size:11px; color:#8b8b93; line-height:1.2; flex-shrink:0; margin-bottom:1px;">' + _escapeReportPropHtml(when) + '</span>' : '';
     var topGap = groupStart ? '8px' : '2px';
     if (mine) {
       var radius = groupStart && groupEnd ? '18px 18px 4px 18px' : (groupStart ? '18px 18px 4px 18px' : (groupEnd ? '18px 4px 4px 18px' : '18px 4px 4px 18px'));
       html += '<div style="display:flex; flex-shrink:0; justify-content:flex-end; align-items:flex-end; gap:6px; margin:' + topGap + ' 0 0;">' +
         timeHtml +
-        '<div style="max-width:72%; background:#fee500; color:#191919; border-radius:' + radius + '; padding:8px 11px; font-size:0.82rem; line-height:1.45; white-space:pre-wrap; word-break:break-word; box-shadow:0 1px 2px rgba(0,0,0,0.18);">' + body + '</div>' +
+        '<div style="max-width:72%; background:#2b6fd6; color:#ffffff; border-radius:' + radius + '; padding:9px 12px; font-size:14px; line-height:1.45; white-space:pre-wrap; word-break:break-word;">' + body + '</div>' +
       '</div>';
     } else {
       var radius = groupStart && groupEnd ? '18px 18px 18px 4px' : (groupStart ? '18px 18px 18px 4px' : (groupEnd ? '4px 18px 18px 4px' : '4px 18px 18px 4px'));
       var avatar = groupStart ? okbmNoteAvatarHtml(theirId || r.sender_id, 28) : '<span style="width:28px; flex-shrink:0; display:inline-block;"></span>';
       html += '<div style="display:flex; flex-shrink:0; justify-content:flex-start; align-items:flex-end; gap:6px; margin:' + topGap + ' 0 0;">' +
         avatar +
-        '<div style="max-width:68%; background:#2b3344; color:#f8fafc; border-radius:' + radius + '; padding:8px 11px; font-size:0.82rem; line-height:1.45; white-space:pre-wrap; word-break:break-word;">' + body + '</div>' +
+        '<div style="max-width:68%; background:#17171b; color:#f2f2f3; border-radius:' + radius + '; padding:9px 12px; font-size:14px; line-height:1.45; white-space:pre-wrap; word-break:break-word;">' + body + '</div>' +
         timeHtml +
       '</div>';
     }
@@ -13988,17 +13988,16 @@ window.openDirectMessageThread = async function(userId, nickname) {
   overlay.dataset.userId = theirId;
   overlay.dataset.author = theirNick;
   overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); z-index:2147483644 !important; background:#000000; display:flex; justify-content:center; align-items:stretch; pointer-events:auto;';
-  overlay.innerHTML = '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; background:#15202b; display:flex; flex-direction:column; box-sizing:border-box; pointer-events:auto;">' +
-    '<div style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); border-bottom:1px solid rgba(255,255,255,0.08); background:#0f1720;">' +
-      '<button type="button" onclick="window.closeDirectMessageModals({});" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer;">◀</button>' +
-      '<span style="font-size:0.95rem; font-weight:900; color:#ffffff; max-width:72%; overflow:hidden; display:inline-flex; align-items:center;">' + okbmNoteNameWithLoginHtml(theirId, theirNick, 36) + '</span>' +
-      '<div style="width:32px;"></div>' +
+  overlay.innerHTML = '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; background:#000000; display:flex; flex-direction:column; box-sizing:border-box; pointer-events:auto;">' +
+    '<div style="flex-shrink:0; display:flex; align-items:center; gap:4px; min-height:48px; padding:0 10px 0 4px; padding-top:env(safe-area-inset-top, 0px); border-bottom:1px solid rgba(255,255,255,0.08); background:#000000;">' +
+      '<button type="button" aria-label="뒤로" onclick="window.closeDirectMessageModals({});" style="background:none; border:none; color:#f2f2f3; width:40px; height:40px; display:grid; place-items:center; cursor:pointer; flex-shrink:0;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>' +
+      '<span style="font-size:15px; font-weight:700; color:#f2f2f3; min-width:0; flex:1; overflow:hidden; display:inline-flex; align-items:center;">' + okbmNoteNameWithLoginHtml(theirId, theirNick, 30) + '</span>' +
     '</div>' +
-    '<div id="directMessageThreadList" style="flex:1; min-height:0; overflow-y:auto; padding:10px 12px 16px; display:block; background:#15202b;"></div>' +
+    '<div id="directMessageThreadList" style="flex:1; min-height:0; overflow-y:auto; padding:10px 12px 16px; display:block; background:#000000;"></div>' +
     '<div id="directMessageBlockedHint" style="display:none; flex-shrink:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); color:#fda4af; font-size:0.78rem; text-align:center;">차단된 상대와는 쪽지를 주고받을 수 없습니다.</div>' +
-    '<div id="directMessageComposer" style="flex-shrink:0; display:flex; gap:8px; align-items:flex-end; padding:8px 10px calc(10px + env(safe-area-inset-bottom, 0px)); border-top:1px solid rgba(255,255,255,0.08); background:#0f1720;">' +
-      '<textarea id="directMessageInput" maxlength="500" rows="1" placeholder="메시지를 입력하세요" style="flex:1; min-height:38px; max-height:90px; resize:none; background:#1e293b; border:1px solid rgba(255,255,255,0.08); border-radius:20px; color:#e2e8f0; font-size:0.84rem; padding:9px 14px; outline:none; line-height:1.4;"></textarea>' +
-      '<button type="button" id="directMessageSendBtn" onclick="window.sendDirectMessage();" style="flex-shrink:0; height:38px; min-width:52px; padding:0 14px; border:none; border-radius:19px; background:#fee500; color:#191919; font-size:0.80rem; font-weight:900; cursor:pointer;">전송</button>' +
+    '<div id="directMessageComposer" style="flex-shrink:0; display:flex; gap:8px; align-items:flex-end; padding:8px 10px calc(10px + env(safe-area-inset-bottom, 0px)); border-top:1px solid rgba(255,255,255,0.08); background:#000000;">' +
+      '<textarea id="directMessageInput" maxlength="500" rows="1" placeholder="쪽지 쓰기" aria-label="쪽지 내용" style="flex:1; min-height:38px; max-height:90px; resize:none; background:#17171b; border:1px solid rgba(255,255,255,0.08); border-radius:20px; color:#f2f2f3; font-size:14px; padding:9px 14px; outline:none; line-height:1.4;"></textarea>' +
+      '<button type="button" id="directMessageSendBtn" aria-label="보내기" onclick="window.sendDirectMessage();" style="flex-shrink:0; width:38px; height:38px; padding:0; border:none; border-radius:50%; background:#2b6fd6; color:#ffffff; display:grid; place-items:center; cursor:pointer;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>' +
     '</div>' +
   '</div>';
   document.body.appendChild(overlay);
@@ -14116,94 +14115,294 @@ window.okbmBindNoteSwipeRows = function() {
   });
 };
 
+// 쪽지·알림 목록 공용: 시간은 '방금·3분·2시간·어제·4일·10월 20일'로 짧게 쓴다
+function okbmInboxAgo(iso) {
+  var t = new Date(iso || '').getTime();
+  if (isNaN(t)) return '';
+  var now = new Date();
+  var sec = Math.max(0, Math.round((now.getTime() - t) / 1000));
+  if (sec < 60) return '방금';
+  if (sec < 3600) return Math.floor(sec / 60) + '분';
+  var d = new Date(t);
+  var startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (t >= startToday) return Math.floor(sec / 3600) + '시간';
+  var days = Math.ceil((startToday - t) / 86400000);
+  if (days <= 1) return '어제';
+  if (days < 7) return days + '일';
+  return (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+}
+
+// 알림 묶음: 오늘 / 이번 주(7일 안) / 이전
+function okbmInboxGroupOf(iso) {
+  var t = new Date(iso || '').getTime();
+  if (isNaN(t)) return '이전';
+  var now = new Date();
+  var startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (t >= startToday) return '오늘';
+  if (t >= startToday - 6 * 86400000) return '이번 주';
+  return '이전';
+}
+
+var OKBM_INBOX_EMPTY_STYLE = 'text-align:center; padding:48px 12px; color:#8b8b93; font-size:13px; line-height:1.6;';
+var OKBM_INBOX_HINT_HTML = '<div style="margin:18px 0 8px; font-size:12px; color:#8b8b93; text-align:center;">왼쪽으로 밀면 지울 수 있어요</div>';
+
 window.okbmPaintNoteInboxList = async function() {
   var listEl = document.getElementById('userNotificationInboxList');
   if (!listEl) return;
-  listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">불러오는 중</div>';
+  listEl.innerHTML = '<div style="' + OKBM_INBOX_EMPTY_STYLE + '">불러오는 중</div>';
   var threads = await window.okbmFetchMyNoteThreads();
   var unreadSum = 0;
   (threads || []).forEach(function(t) { unreadSum += Number(t.unread || 0) || 0; });
   window.__okbmUnreadNoteCount = unreadSum;
   if (typeof window.okbmApplyUnreadBadge === 'function') window.okbmApplyUnreadBadge();
   if (!threads.length) {
-    listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">주고받은 쪽지가 없습니다.<br>상대 아이디를 눌러 쪽지를 보낼 수 있습니다.</div>';
+    listEl.innerHTML = '<div style="' + OKBM_INBOX_EMPTY_STYLE + '">아직 주고받은 쪽지가 없어요.<br>피드나 프로필에서 쪽지 버튼을 누르면 대화가 시작돼요.</div>';
     return;
   }
   if (typeof window.okbmPrefetchUserPhotos === 'function') {
     await window.okbmPrefetchUserPhotos(threads.map(function(t) { return t.otherId; }));
   }
   listEl.innerHTML = threads.map(function(t) {
-    var unreadNum = t.unread ? '<span style="font-size:0.58rem; color:#38bdf8; font-weight:800; flex-shrink:0;">' + (t.unread > 9 ? '9+' : String(t.unread)) + '</span>' : '';
-    return '<div class="okbm-note-swipe" data-thread-id="' + _escapeReportPropHtml(t.threadId) + '" style="position:relative; overflow:hidden; border-bottom:1px solid rgba(255,255,255,0.06);">' +
+    var unreadNum = t.unread ? '<span style="min-width:18px; height:18px; padding:0 5px; box-sizing:border-box; border-radius:9px; background:#e11d48; color:#ffffff; font-size:11px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">' + (t.unread > 9 ? '9+' : String(t.unread)) + '</span>' : '';
+    return '<div class="okbm-note-swipe" data-thread-id="' + _escapeReportPropHtml(t.threadId) + '" style="position:relative; overflow:hidden;">' +
       '<div class="okbm-note-swipe-actions" style="position:absolute; right:0; top:0; bottom:0; width:76px; display:flex;">' +
-        '<button type="button" data-thread-id="' + _escapeReportPropHtml(t.threadId) + '" data-user-id="' + _escapeReportPropHtml(t.otherId) + '" onclick="window.deleteDirectMessageThread(this.dataset.threadId, this.dataset.userId, event, true);" style="width:76px; border:none; background:#f43f5e; color:#ffffff; font-size:0.78rem; font-weight:900; cursor:pointer;">삭제</button>' +
+        '<button type="button" data-thread-id="' + _escapeReportPropHtml(t.threadId) + '" data-user-id="' + _escapeReportPropHtml(t.otherId) + '" onclick="window.deleteDirectMessageThread(this.dataset.threadId, this.dataset.userId, event, true);" style="width:76px; border:none; background:#f43f5e; color:#ffffff; font-size:13px; font-weight:800; cursor:pointer;">삭제</button>' +
       '</div>' +
-      '<div class="okbm-note-swipe-front" data-open="0" style="position:relative; background:#0c1017; transform:translateX(0); will-change:transform; touch-action:pan-y;">' +
-        '<button type="button" data-user-id="' + _escapeReportPropHtml(t.otherId) + '" data-author="' + _escapeReportPropHtml(t.otherNick) + '" onclick="if(this.parentElement && this.parentElement.dataset.open===\'1\'){return;} window.openDirectMessageThread(this.dataset.userId, this.dataset.author);" style="width:100%; text-align:left; background:transparent; border:none; padding:12px 0; display:flex; gap:10px; align-items:center; cursor:pointer;">' +
-          okbmNoteAvatarHtml(t.otherId, 44) +
+      '<div class="okbm-note-swipe-front" data-open="0" style="position:relative; background:#000000; transform:translateX(0); will-change:transform; touch-action:pan-y;">' +
+        '<button type="button" data-user-id="' + _escapeReportPropHtml(t.otherId) + '" data-author="' + _escapeReportPropHtml(t.otherNick) + '" onclick="if(this.parentElement && this.parentElement.dataset.open===\'1\'){return;} window.openDirectMessageThread(this.dataset.userId, this.dataset.author);" style="width:100%; text-align:left; background:transparent; border:none; padding:10px 16px; display:flex; gap:12px; align-items:center; cursor:pointer; font-family:inherit;">' +
+          okbmNoteAvatarHtml(t.otherId, 48) +
           '<div style="min-width:0; flex:1;">' +
-            '<div style="display:flex; justify-content:space-between; gap:8px; align-items:center;">' +
-              '<div style="font-size:0.82rem; font-weight:800; color:#e2e8f0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + _escapeReportPropHtml(t.otherNick) + '</div>' +
+            '<div style="display:flex; justify-content:space-between; gap:8px; align-items:baseline;">' +
+              '<div style="font-size:14px; font-weight:700; color:#f2f2f3; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + _escapeReportPropHtml(t.otherNick) + '</div>' +
+              (t.lastAt ? '<span style="font-size:12px; color:#8b8b93; flex-shrink:0;">' + okbmInboxAgo(t.lastAt) + '</span>' : '') +
+            '</div>' +
+            '<div style="display:flex; justify-content:space-between; gap:8px; align-items:center; margin-top:3px;">' +
+              '<div style="font-size:13px; color:' + (t.unread ? '#f2f2f3' : '#8b8b93') + '; line-height:1.45; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + _escapeReportPropHtml(t.lastBody) + '</div>' +
               unreadNum +
             '</div>' +
-            '<div style="font-size:0.68rem; color:#94a3b8; margin-top:4px; line-height:1.45; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + _escapeReportPropHtml(t.lastBody) + '</div>' +
-            (t.lastAt ? '<div style="font-size:0.58rem; color:#64748b; margin-top:6px;">' + okbmFormatNoteTime(t.lastAt) + '</div>' : '') +
           '</div>' +
         '</button>' +
       '</div>' +
     '</div>';
-  }).join('');
+  }).join('') + OKBM_INBOX_HINT_HTML;
   window.okbmBindNoteSwipeRows();
 };
+
+// 알림 종류별 표시: 무엇을 했는지 작은 동그라미 아이콘과 색
+var OKBM_NOTIF_ICON = {
+  star: '<path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/>',
+  chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  tent: '<path d="M3 20 12 4l9 16z"/><path d="m12 20-3-6h6z"/>',
+  user: '<circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M19 8v6"/><path d="M22 11h-6"/>',
+  bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>'
+};
+function okbmNotifKindStyle(kind) {
+  if (kind === 'feed_like') return { icon: 'star', fill: '#e11d48', soft: 'rgba(225,29,72,0.16)', ink: '#ff4d6d' };
+  if (kind === 'feed_comment' || kind === 'feed_reply') return { icon: 'chat', fill: '#2b6fd6', soft: 'rgba(76,148,248,0.16)', ink: '#4c94f8' };
+  if (kind === 'follow_feed') return { icon: 'tent', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
+  if (kind === 'follow') return { icon: 'user', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
+  if (kind === 'lounge_comment' || kind === 'lounge_reply') return { icon: 'chat', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
+  return { icon: 'bell', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
+}
+function okbmNotifSvg(name, px, color) {
+  return '<svg viewBox="0 0 24 24" width="' + px + '" height="' + px + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (OKBM_NOTIF_ICON[name] || OKBM_NOTIF_ICON.bell) + '</svg>';
+}
+
+// 알림에는 보낸 사람 id가 없다. 알 수 있는 것만 채운다:
+//   피드 사진·올린 사람은 feeds에서, 댓글 단 사람은 get_feed_comments에서(댓글 알림 id = pn_feed_comment_<댓글 id>).
+//   별·관심 등록은 누가 했는지 모르니 종류 아이콘만 보인다(관심 등록은 원래 익명).
+window.__okbmNotifFeedInfo = window.__okbmNotifFeedInfo || {};
+window.__okbmNotifActor = window.__okbmNotifActor || {};
+function okbmNotifThumbUrl(u) {
+  u = String(u || '');
+  if (u.indexOf('http://') === 0) u = 'https://' + u.slice(7);
+  if (u.indexOf('https://') !== 0) return '';
+  var r2 = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
+  if (u.indexOf(r2) === 0) return 'https://img.romanticroute.kr/cdn-cgi/image/width=120,quality=70,fit=cover,format=auto/' + u.slice(r2.length);
+  return u;
+}
+function okbmNotifFeedId(r) {
+  var kind = String((r && r.kind) || '').toLowerCase();
+  if (kind === 'feed_like' || kind === 'feed_comment' || kind === 'feed_reply' || kind === 'follow_feed') return String(r.related_id || '').trim();
+  return '';
+}
+async function okbmEnrichNotifRows(rows) {
+  var feedCache = window.__okbmNotifFeedInfo;
+  var actorCache = window.__okbmNotifActor;
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var needFeeds = [];
+  var commentFeeds = [];
+  (rows || []).forEach(function(r) {
+    var fid = okbmNotifFeedId(r);
+    if (!fid) return;
+    if (!feedCache[fid] && needFeeds.indexOf(fid) === -1) needFeeds.push(fid);
+    var kind = String(r.kind || '').toLowerCase();
+    if ((kind === 'feed_comment' || kind === 'feed_reply') && actorCache[String(r.id)] === undefined && commentFeeds.indexOf(fid) === -1) commentFeeds.push(fid);
+  });
+  var jobs = [];
+  if (needFeeds.length && targetUrl) {
+    var inList = needFeeds.slice(0, 40).map(function(id) { return '"' + id.replace(/"/g, '') + '"'; }).join(',');
+    jobs.push(fetch(targetUrl + '/rest/v1/feeds?id=in.(' + encodeURIComponent(inList) + ')&select=id,user_id,photos', { headers: okbmUgcRestHeaders() })
+      .then(function(res) { return res.ok ? res.json() : []; })
+      .then(function(list) {
+        needFeeds.forEach(function(id) { if (!feedCache[id]) feedCache[id] = { thumb: '', userId: '' }; });
+        (Array.isArray(list) ? list : []).forEach(function(f) {
+          var photos = f.photos;
+          if (typeof photos === 'string') { try { photos = JSON.parse(photos); } catch (e) { photos = []; } }
+          var first = (Array.isArray(photos) ? photos : []).filter(function(u) { return typeof u === 'string' && u.indexOf('http') === 0; })[0];
+          feedCache[String(f.id)] = { thumb: okbmNotifThumbUrl(first), userId: String(f.user_id || '') };
+        });
+      }).catch(function() {}));
+  }
+  var client = window.supabaseClient;
+  if (commentFeeds.length && client && typeof client.rpc === 'function') {
+    commentFeeds.slice(0, 8).forEach(function(fid) {
+      jobs.push(Promise.resolve(client.rpc('get_feed_comments', { p_feed_id: fid })).then(function(res) {
+        var list = (res && Array.isArray(res.data)) ? res.data : [];
+        window.__userProfilePhotoMap = window.__userProfilePhotoMap || {};
+        list.forEach(function(c) {
+          if (c && c.user_id && c.photo_url && !window.__userProfilePhotoMap[c.user_id]) window.__userProfilePhotoMap[c.user_id] = c.photo_url;
+        });
+        (rows || []).forEach(function(r) {
+          if (okbmNotifFeedId(r) !== fid) return;
+          var kind = String(r.kind || '').toLowerCase();
+          var hit = null;
+          if (kind === 'feed_comment') {
+            var cid = String(r.id || '').replace('pn_feed_comment_', '');
+            hit = list.filter(function(c) { return String(c.id) === cid; })[0];
+          } else {
+            // feed_reply 본문은 '닉네임: 댓글' — 그 닉네임의 남이 쓴 마지막 댓글
+            var nick = String(r.body || '').split(': ')[0];
+            hit = list.filter(function(c) { return c.nickname === nick && !c.is_mine; }).pop();
+          }
+          actorCache[String(r.id)] = hit && hit.user_id ? String(hit.user_id) : '';
+        });
+      }).catch(function() {}));
+    });
+  }
+  if (jobs.length) await Promise.all(jobs);
+  var people = [];
+  (rows || []).forEach(function(r) {
+    var uid = okbmNotifActorId(r);
+    if (uid && people.indexOf(uid) === -1) people.push(uid);
+  });
+  if (people.length && typeof window.okbmPrefetchUserPhotos === 'function') {
+    try { await window.okbmPrefetchUserPhotos(people); } catch (e) {}
+  }
+  return jobs.length > 0 || people.length > 0;
+}
+function okbmNotifActorId(r) {
+  var kind = String((r && r.kind) || '').toLowerCase();
+  if (kind === 'follow_feed') {
+    var info = window.__okbmNotifFeedInfo[okbmNotifFeedId(r)];
+    return info ? info.userId : '';
+  }
+  if (kind === 'feed_comment' || kind === 'feed_reply') return window.__okbmNotifActor[String(r.id)] || '';
+  return '';
+}
+
+// 제목 'OO님이 ~' 에서 이름만 굵게
+function okbmNotifTitleHtml(title) {
+  var m = String(title || '').match(/^(관심 루터 )?(.+?)님이 (.*)$/);
+  if (!m) return _escapeReportPropHtml(title || '알림');
+  return _escapeReportPropHtml(m[1] || '') + '<b style="color:#f2f2f3; font-weight:700;">' + _escapeReportPropHtml(m[2]) + '</b>님이 ' + _escapeReportPropHtml(m[3]);
+}
+
+function okbmNotifRowHtml(r, unread) {
+  var kind = String(r.kind || '').toLowerCase();
+  var ks = okbmNotifKindStyle(kind);
+  // 백패커 라운지 댓글·건의 답변 알림은 누르면 그 글을 연다 (related_id = 글 id)
+  var loungePostId = (kind === 'lounge_comment' || kind === 'lounge_reply') ? String(r.related_id || '').trim() : '';
+  // 내 피드에 달린 별·댓글, 내가 댓글 단 피드의 새 댓글 알림(H17)은 누르면 그 피드를 연다 (related_id = 피드 id).
+  // 댓글 알림이면 댓글 창도 펼친다.
+  var isFeedCommentKind = kind === 'feed_comment' || kind === 'feed_reply';
+  var feedOpenId = okbmNotifFeedId(r);
+  var openAttrs = loungePostId
+    ? ' class="okbm-notif-row" role="button" tabindex="0" data-lounge-post="' + _escapeReportPropHtml(loungePostId) + '"'
+    : (feedOpenId
+      ? ' class="okbm-notif-row" role="button" tabindex="0" data-feed-open="' + _escapeReportPropHtml(feedOpenId) + '" data-feed-comments="' + (isFeedCommentKind ? '1' : '0') + '"'
+      : '');
+  var canOpen = Boolean(loungePostId || feedOpenId);
+  var actor = okbmNotifActorId(r);
+  var left;
+  if (actor) {
+    left = '<span style="position:relative; flex-shrink:0; display:inline-flex;">' + okbmNoteAvatarHtml(actor, 44) +
+      '<span style="position:absolute; right:-3px; bottom:-3px; width:20px; height:20px; border-radius:50%; background:' + ks.fill + '; display:grid; place-items:center; box-shadow:0 0 0 2px #000000;">' + okbmNotifSvg(ks.icon, 11, '#ffffff') + '</span></span>';
+  } else if (kind === 'lounge_reply') {
+    left = '<span style="width:44px; height:44px; border-radius:50%; background:#17171b; flex-shrink:0; display:grid; place-items:center; overflow:hidden;"><img src="logo.png" alt="" style="width:28px; height:28px; object-fit:contain;"></span>';
+  } else {
+    left = '<span style="width:44px; height:44px; border-radius:50%; background:' + ks.soft + '; flex-shrink:0; display:grid; place-items:center;">' + okbmNotifSvg(ks.icon, 20, ks.ink) + '</span>';
+  }
+  var info = feedOpenId ? window.__okbmNotifFeedInfo[feedOpenId] : null;
+  var right = '';
+  if (info && info.thumb) {
+    right = '<span style="width:44px; height:44px; border-radius:6px; background:#17171b; overflow:hidden; flex-shrink:0;"><img src="' + escapeHtml(okbmSafeImageUrl(info.thumb)) + '" alt="" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.style.display=\'none\'"></span>';
+  } else if (canOpen) {
+    right = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#55555d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><path d="m9 18 6-6-6-6"/></svg>';
+  }
+  var when = okbmInboxAgo(r.created_at);
+  var body = String(r.body || '').trim();
+  // 쪽지 줄과 같은 밀어서 삭제 구조 (okbmBindNoteSwipeRows가 함께 묶는다)
+  var safeNotifId = _escapeReportPropHtml(String(r.id || ''));
+  var bg = unread ? '#0f0f11' : '#000000';
+  return '<div class="okbm-note-swipe" data-notif-id="' + safeNotifId + '" style="position:relative; overflow:hidden;">' +
+    '<div class="okbm-note-swipe-actions" style="position:absolute; right:0; top:0; bottom:0; width:76px; display:flex;">' +
+      '<button type="button" data-notif-id="' + safeNotifId + '" onclick="window.deleteUserNotification(this.dataset.notifId, event);" style="width:76px; border:none; background:#f43f5e; color:#ffffff; font-size:13px; font-weight:800; cursor:pointer;">삭제</button>' +
+    '</div>' +
+    '<div class="okbm-note-swipe-front" data-open="0" style="position:relative; background:' + bg + '; transform:translateX(0); will-change:transform; touch-action:pan-y;">' +
+      '<div' + openAttrs + ' style="padding:10px 16px; display:flex; gap:12px; align-items:center;' + (canOpen ? ' cursor:pointer;' : '') + '">' +
+        left +
+        '<div style="min-width:0; flex:1; font-size:13px; line-height:1.45; color:#d1d1d6;">' +
+          '<div>' + okbmNotifTitleHtml(r.title) + (when ? ' <span style="color:#8b8b93; font-size:12px; white-space:nowrap;">' + when + '</span>' : '') + '</div>' +
+          (body ? '<div style="color:#8b8b93; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + _escapeReportPropHtml(body) + '</div>' : '') +
+        '</div>' +
+        right +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function okbmNotifListHtml(rows, unreadSet) {
+  var html = '';
+  var group = '';
+  rows.forEach(function(r) {
+    var g = okbmInboxGroupOf(r.created_at);
+    if (g !== group) {
+      html += '<div style="padding:16px 16px 6px; font-size:14px; font-weight:700; color:#f2f2f3;">' + g + '</div>';
+      group = g;
+    }
+    html += okbmNotifRowHtml(r, unreadSet[String(r.id || '')]);
+  });
+  return html + OKBM_INBOX_HINT_HTML;
+}
 
 window.okbmPaintNotifInboxList = async function() {
   var listEl = document.getElementById('userNotificationInboxList');
   if (!listEl) return;
-  listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">불러오는 중</div>';
+  listEl.innerHTML = '<div style="' + OKBM_INBOX_EMPTY_STYLE + '">불러오는 중</div>';
   var rows = await window.pollUserNotifications(true);
   if (!listEl) return;
   if (!rows.length) {
-    listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">아직 도착한 알림이 없습니다.</div>';
+    listEl.innerHTML = '<div style="' + OKBM_INBOX_EMPTY_STYLE + '">아직 온 알림이 없어요.<br>내 피드에 별이나 댓글이 달리면 여기로 와요.</div>';
     return;
   }
   var unreadIds = [];
-  listEl.innerHTML = rows.map(function(r) {
-    if (r && !r.is_read && r.id) unreadIds.push(String(r.id));
-    var when = okbmFormatNoteTime(r.created_at);
-    var unreadDot = r.is_read ? '' : '<span style="width:7px; height:7px; border-radius:50%; background:#38bdf8; flex-shrink:0; margin-top:6px;"></span>';
-    // 백패커 라운지 댓글·건의 답변 알림은 누르면 그 글을 연다 (related_id = 글 id)
-    var kind = String(r.kind || '').toLowerCase();
-    var loungePostId = (kind === 'lounge_comment' || kind === 'lounge_reply') ? String(r.related_id || '').trim() : '';
-    // 내 피드에 달린 별·댓글, 내가 댓글 단 피드의 새 댓글 알림(H17)은 누르면 그 피드를 연다 (related_id = 피드 id).
-    // 댓글 알림이면 댓글 창도 펼친다.
-    var isFeedCommentKind = kind === 'feed_comment' || kind === 'feed_reply';
-    var feedOpenId = (isFeedCommentKind || kind === 'feed_like' || kind === 'follow_feed') ? String(r.related_id || '').trim() : '';
-    var openAttrs = loungePostId
-      ? ' class="okbm-notif-row" role="button" tabindex="0" data-lounge-post="' + _escapeReportPropHtml(loungePostId) + '"'
-      : (feedOpenId
-        ? ' class="okbm-notif-row" role="button" tabindex="0" data-feed-open="' + _escapeReportPropHtml(feedOpenId) + '" data-feed-comments="' + (isFeedCommentKind ? '1' : '0') + '"'
-        : '');
-    var canOpen = Boolean(loungePostId || feedOpenId);
-    // 쪽지 줄과 같은 밀어서 삭제 구조 (okbmBindNoteSwipeRows가 함께 묶는다)
-    var safeNotifId = _escapeReportPropHtml(String(r.id || ''));
-    return '<div class="okbm-note-swipe" data-notif-id="' + safeNotifId + '" style="position:relative; overflow:hidden; border-bottom:1px solid rgba(255,255,255,0.06);">' +
-      '<div class="okbm-note-swipe-actions" style="position:absolute; right:0; top:0; bottom:0; width:76px; display:flex;">' +
-        '<button type="button" data-notif-id="' + safeNotifId + '" onclick="window.deleteUserNotification(this.dataset.notifId, event);" style="width:76px; border:none; background:#f43f5e; color:#ffffff; font-size:0.78rem; font-weight:900; cursor:pointer;">삭제</button>' +
-      '</div>' +
-      '<div class="okbm-note-swipe-front" data-open="0" style="position:relative; background:#0c1017; transform:translateX(0); will-change:transform; touch-action:pan-y;">' +
-        '<div' + openAttrs + ' style="padding:12px 0; display:flex; gap:8px; align-items:flex-start;' + (canOpen ? ' cursor:pointer;' : '') + '">' +
-          unreadDot +
-          '<div style="min-width:0; flex:1;">' +
-            '<div style="font-size:0.80rem; font-weight:800; color:#e2e8f0;">' + _escapeReportPropHtml(r.title || '알림') + '</div>' +
-            '<div style="font-size:0.68rem; color:#94a3b8; margin-top:4px; line-height:1.45;">' + _escapeReportPropHtml(r.body || '') + '</div>' +
-            (when ? '<div style="font-size:0.58rem; color:#64748b; margin-top:6px;">' + when + (loungePostId ? ' · 글 보기 ›' : (feedOpenId ? ' · 피드 보기 ›' : '')) + '</div>' : '') +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-  window.okbmBindNoteSwipeRows();
-  okbmBindNotifRowOpen(listEl);
+  var unreadSet = {};
+  rows.forEach(function(r) {
+    if (r && !r.is_read && r.id) { unreadIds.push(String(r.id)); unreadSet[String(r.id)] = true; }
+  });
+  var paint = function() {
+    listEl.innerHTML = okbmNotifListHtml(rows, unreadSet);
+    window.okbmBindNoteSwipeRows();
+    okbmBindNotifRowOpen(listEl);
+  };
+  paint();
+  // 얼굴·피드 사진은 뒤에서 받아 다시 그린다(그 사이 알림 탭을 떠났으면 그리지 않는다)
+  okbmEnrichNotifRows(rows).then(function(changed) {
+    if (!changed || window.__okbmInboxTab !== 'notif' || !document.body.contains(listEl)) return;
+    if (listEl.querySelector('.okbm-note-swipe-front[data-open="1"]')) return;
+    paint();
+  }).catch(function() {});
   if (unreadIds.length) {
     await window.markUserNotificationsRead(unreadIds);
     if (typeof window.pollUserNotifications === 'function') {
@@ -14240,7 +14439,7 @@ window.deleteUserNotification = async function(notifId, ev) {
       if (row.getAttribute('data-notif-id') === id) row.remove();
     });
     if (window.__okbmInboxTab === 'notif' && !listEl.querySelector('.okbm-note-swipe')) {
-      listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">아직 도착한 알림이 없습니다.</div>';
+      listEl.innerHTML = '<div style="' + OKBM_INBOX_EMPTY_STYLE + '">아직 온 알림이 없어요.<br>내 피드에 별이나 댓글이 달리면 여기로 와요.</div>';
     }
   }
   if (typeof showToast === 'function') showToast('알림을 삭제했습니다.', 'success', 1600);
@@ -14358,12 +14557,9 @@ window.okbmSwitchInboxTab = function(tab, ev) {
     if (typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
   }
   window.__okbmInboxTab = String(tab || '') === 'notif' ? 'notif' : 'note';
-  var notifTab = document.getElementById('okbmInboxTabNotif');
-  var noteTab = document.getElementById('okbmInboxTabNote');
-  var active = 'height:30px; padding:0 16px; border:none; border-radius:8px; font-size:0.80rem; font-weight:900; cursor:pointer; background:rgba(56,189,248,0.2); color:#7dd3fc; pointer-events:auto;';
-  var idle = 'height:30px; padding:0 16px; border:none; border-radius:8px; font-size:0.80rem; font-weight:800; cursor:pointer; background:transparent; color:#94a3b8; pointer-events:auto;';
-  if (noteTab) noteTab.style.cssText = window.__okbmInboxTab === 'note' ? active : idle;
-  if (notifTab) notifTab.style.cssText = window.__okbmInboxTab === 'notif' ? active : idle;
+  // 쪽지와 알림은 창 하나를 쓰되 탭 없이 따로 보인다(낭만리포트 맨 위 아이콘이 각각 연다)
+  var titleEl = document.getElementById('okbmInboxTitle');
+  if (titleEl) titleEl.textContent = window.__okbmInboxTab === 'notif' ? '알림' : '쪽지';
   if (window.__okbmInboxTab === 'notif') {
     window.okbmPaintNotifInboxList();
   } else {
@@ -14394,15 +14590,12 @@ window.openUserNotificationInbox = async function(initialTab, ev) {
   var overlay = document.createElement('div');
   overlay.id = 'userNotificationInboxModal';
   overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); z-index:2147483644 !important; background:#000000; display:flex; justify-content:center; align-items:stretch; pointer-events:auto;';
-  overlay.innerHTML = '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; background:#0c1017; display:flex; flex-direction:column; box-sizing:border-box; pointer-events:auto;">' +
-    '<div style="flex-shrink:0; display:flex; align-items:center; gap:10px; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); border-bottom:1px solid rgba(255,255,255,0.08);">' +
-      '<button type="button" onclick="document.getElementById(\'userNotificationInboxModal\').remove();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; flex-shrink:0;">◀</button>' +
-      '<div style="display:flex; align-items:center; gap:4px; background:rgba(255,255,255,0.05); border-radius:10px; padding:3px;">' +
-        '<button type="button" id="okbmInboxTabNote" onclick="window.okbmSwitchInboxTab(\'note\', event);">쪽지</button>' +
-        '<button type="button" id="okbmInboxTabNotif" onclick="window.okbmSwitchInboxTab(\'notif\', event);">알림</button>' +
-      '</div>' +
+  overlay.innerHTML = '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; background:#000000; font-family:var(--font-body, \'Pretendard Variable\', Pretendard, -apple-system, sans-serif); display:flex; flex-direction:column; box-sizing:border-box; pointer-events:auto;">' +
+    '<div style="flex-shrink:0; display:flex; align-items:center; gap:4px; min-height:48px; padding:0 16px 0 4px; padding-top:env(safe-area-inset-top, 0px); border-bottom:1px solid rgba(255,255,255,0.08);">' +
+      '<button type="button" aria-label="뒤로" onclick="document.getElementById(\'userNotificationInboxModal\').remove();" style="background:none; border:none; color:#f2f2f3; width:40px; height:40px; display:grid; place-items:center; cursor:pointer; flex-shrink:0;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>' +
+      '<h2 id="okbmInboxTitle" style="margin:0; font-size:16px; font-weight:700; color:#f2f2f3;">' + (tab === 'notif' ? '알림' : '쪽지') + '</h2>' +
     '</div>' +
-    '<div id="userNotificationInboxList" style="flex:1; min-height:0; overflow-y:auto; padding:12px 16px 20px; color:#94a3b8; font-size:0.78rem;">불러오는 중</div>' +
+    '<div id="userNotificationInboxList" style="flex:1; min-height:0; overflow-y:auto; padding:4px 0 20px; color:#8b8b93; font-size:13px;">불러오는 중</div>' +
   '</div>';
   overlay.addEventListener('click', function(e) { e.stopPropagation(); });
   document.body.appendChild(overlay);
