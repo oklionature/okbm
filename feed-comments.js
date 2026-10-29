@@ -5,6 +5,7 @@
 // 2) 댓글 창: 아래에서 올라오는 창. 비회원은 읽기만, 회원은 쓰기·지우기(쓴 사람·피드 주인·관리자).
 // 3) 알림을 눌러 들어오면(?feed=ID&comments=1) 피드가 열린 뒤 댓글 창을 바로 펼친다.
 // 4) 답글(H22): 댓글마다 '답글 달기'. 답글은 맨 위 댓글 밑에 한 단계로 들여 쓰고, 알림은 답한 그 댓글 쓴 사람에게만 간다(서버 트리거).
+// 5) 수정(H23): 내 댓글에 '수정'. 누르면 입력칸에 글이 들어가고 '댓글 수정 중 ✕'가 뜬다. 고친 댓글은 시간 옆에 '수정됨'.
 // 새 버튼은 onclick 속성 없이 이벤트로 단다(CSP 해시).
 (function () {
   'use strict';
@@ -94,6 +95,9 @@
       '#okbmCommentSheet .cm-nick{color:#fff;font-weight:900;font-size:0.76rem;background:none;border:0;padding:0;cursor:pointer;font-family:inherit;}' +
       '#okbmCommentSheet .cm-tag{color:#38bdf8;font-weight:800;}' +
       '#okbmCommentSheet .cm-del{background:none;border:0;color:#64748b;font-size:0.66rem;cursor:pointer;padding:0;font-family:inherit;}' +
+      '#okbmCommentSheet .cm-edit{background:none;border:0;color:#94a3b8;font-size:0.66rem;font-weight:800;cursor:pointer;padding:0;font-family:inherit;}' +
+      '#okbmCommentSheet .cm-edited{color:#64748b;}' +
+      '#okbmCommentSheet .cm-row.is-editing .cm-body{color:#7dd3fc;}' +
       '#okbmCommentSheet .cm-reply{background:none;border:0;color:#94a3b8;font-size:0.66rem;font-weight:800;cursor:pointer;padding:0;font-family:inherit;}' +
       '#okbmCommentSheet .cm-row.is-reply{margin-left:39px;}' +
       '#okbmCommentSheet .cm-row.is-reply .cm-av{width:24px;height:24px;font-size:0.62rem;}' +
@@ -162,7 +166,7 @@
   }
 
   // ---------- 2) 댓글 창 ----------
-  var state = { feedId: '', rows: [], busy: false, replyTo: null };
+  var state = { feedId: '', rows: [], busy: false, replyTo: null, editing: null };
 
   function closeSheet() {
     var el = document.getElementById('okbmCommentSheet');
@@ -170,6 +174,7 @@
     if (typeof window.unregisterModalClose === 'function') window.unregisterModalClose('okbmCommentSheet');
     state.feedId = '';
     state.replyTo = null;
+    state.editing = null;
   }
 
   function renderList() {
@@ -203,7 +208,8 @@
       var photo = avatarUrl(r.photo_url);
       // 사진·닉네임을 누르면 그 회원 피드 모아보기를 연다
       var who = ' data-cmt-user="' + esc(uid) + '" data-cmt-nick="' + esc(nick) + '"';
-      return '<div class="cm-row' + (isReply ? ' is-reply' : '') + '" data-cmt-id="' + esc(r.id) + '">' +
+      var isEditing = state.editing && String(state.editing.id) === String(r.id);
+      return '<div class="cm-row' + (isReply ? ' is-reply' : '') + (isEditing ? ' is-editing' : '') + '" data-cmt-id="' + esc(r.id) + '">' +
         '<button type="button" class="cm-av"' + who + ' aria-label="' + esc(nick) + '님 피드 모아보기">' +
           (photo ? '<img src="' + esc(photo) + '" alt="" decoding="async" data-cmt-fallback="' + esc(nick.charAt(0)) + '">' : esc(nick.charAt(0))) +
         '</button>' +
@@ -211,7 +217,9 @@
           '<div class="cm-meta"><button type="button" class="cm-nick"' + who + '>' + esc(nick) + '</button>' +
             (r.is_author ? '<span class="cm-tag">작성자</span>' : '') +
             '<span>' + esc(whenText(r.created_at)) + '</span>' +
+            (r.edited_at ? '<span class="cm-edited">수정됨</span>' : '') +
             '<button type="button" class="cm-reply" data-cmt-reply="' + esc(r.id) + '" data-cmt-reply-nick="' + esc(nick) + '">답글 달기</button>' +
+            (r.is_mine ? '<button type="button" class="cm-edit" data-cmt-edit="' + esc(r.id) + '">수정</button>' : '') +
             (r.can_delete ? '<button type="button" class="cm-del" data-cmt-del="' + esc(r.id) + '">삭제</button>' : '') +
           '</div>' +
           '<div class="cm-body">' + (r.reply_to_nickname ? '<span class="cm-at">@' + esc(r.reply_to_nickname) + '</span>' : '') + esc(r.body) + '</div>' +
@@ -279,7 +287,7 @@
       '<div class="cm-h"><b>댓글</b><button type="button" class="cm-x" data-cmt-close="1" aria-label="댓글 닫기">✕</button></div>' +
       '<div class="cm-list"></div>' +
       '<div class="cm-err" hidden></div>' +
-      '<div class="cm-replying" hidden><span></span><button type="button" data-cmt-reply-cancel="1" aria-label="답글 그만 쓰기">✕</button></div>' +
+      '<div class="cm-replying" hidden><span></span><button type="button" data-cmt-reply-cancel="1" aria-label="그만 쓰기">✕</button></div>' +
       '<div class="cm-foot">' + footHtml() + '</div>' +
     '</div>';
     document.body.appendChild(wrap);
@@ -294,19 +302,85 @@
     el.hidden = !msg;
   }
 
-  function setReplyTo(id, nick) {
-    state.replyTo = id ? { id: Number(id), nick: nick || '' } : null;
+  // 입력칸 위 한 줄: 답글 남기는 중 / 댓글 수정 중. 둘은 같이 하지 않는다.
+  function paintMode() {
     var bar = document.querySelector('#okbmCommentSheet .cm-replying');
     var ta = document.querySelector('#okbmCommentSheet textarea');
+    var btn = document.querySelector('#okbmCommentSheet .cm-send');
     if (bar) {
-      bar.hidden = !state.replyTo;
+      bar.hidden = !state.replyTo && !state.editing;
       var label = bar.querySelector('span');
-      if (label) label.innerHTML = state.replyTo ? '<b>' + esc(state.replyTo.nick || '낭만루터') + '</b>님에게 답글 남기는 중' : '';
+      if (label) {
+        label.innerHTML = state.editing ? '<b>댓글 수정 중</b>'
+          : state.replyTo ? '<b>' + esc(state.replyTo.nick || '낭만루터') + '</b>님에게 답글 남기는 중' : '';
+      }
     }
+    if (ta) ta.placeholder = state.editing ? '댓글 고치기' : state.replyTo ? '답글 달기' : '댓글 달기';
+    if (btn) btn.textContent = state.editing ? '수정' : '등록';
+  }
+
+  function setReplyTo(id, nick) {
+    var wasEditing = !!state.editing;
+    state.editing = null;
+    state.replyTo = id ? { id: Number(id), nick: nick || '' } : null;
+    var ta = document.querySelector('#okbmCommentSheet textarea');
+    if (wasEditing) { if (ta) ta.value = ''; renderList(); }
+    paintMode();
+    if (ta && state.replyTo) ta.focus();
+  }
+
+  function setEditing(id) {
+    var ta = document.querySelector('#okbmCommentSheet textarea');
+    var row = id ? state.rows.filter(function (r) { return String(r.id) === String(id); })[0] : null;
+    var wasEditing = !!state.editing;
+    state.replyTo = null;
+    state.editing = row ? { id: Number(row.id) } : null;
     if (ta) {
-      ta.placeholder = state.replyTo ? '답글 달기' : '댓글 달기';
-      if (state.replyTo) ta.focus();
+      if (row) ta.value = String(row.body || '');
+      else if (wasEditing) ta.value = '';
     }
+    showErr('');
+    renderList();
+    paintMode();
+    if (ta && row) {
+      ta.focus();
+      try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch (e) {}
+    }
+  }
+
+  function saveEdit(ta, btn, body) {
+    var feedId = state.feedId;
+    var id = state.editing.id;
+    var old = state.rows.filter(function (r) { return String(r.id) === String(id); })[0];
+    if (old && String(old.body || '') === body) { setEditing(null); return; }
+    state.busy = true;
+    if (btn) btn.setAttribute('aria-busy', 'true');
+    showErr('');
+    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_feed_comment_edit'); // 기능 사용 세기 (H8)
+    rpc('update_feed_comment', { p_id: id, p_body: body }).then(function (res) {
+      if (state.feedId !== feedId) return;
+      state.rows.forEach(function (r) {
+        if (String(r.id) !== String(id)) return;
+        r.body = (res && res.body) || body;
+        r.edited_at = (res && res.edited_at) || new Date().toISOString();
+      });
+      setEditing(null);
+      // 댓글 수는 그대로(차단한 회원 댓글은 목록에 없어 rows 수가 적을 수 있다), 최근 댓글 한 줄만 다시 그린다
+      var cntEl = document.querySelector('[data-cmt-count-for="' + (window.CSS && CSS.escape ? CSS.escape(feedId) : feedId) + '"]');
+      var cnt = cntEl ? Number(cntEl.textContent) || state.rows.length : state.rows.length;
+      paintCounts(feedId, cnt, lastOf(state.rows));
+      toast('댓글을 고쳤어요.', 'success', 1600);
+    }).catch(function (e) {
+      var m = String((e && (e.message || e.details)) || '');
+      if (m.indexOf('not authorized') !== -1) { setEditing(null); showErr('이 댓글은 고칠 수 없어요. 지워졌을 수 있어요.'); }
+      else if (m.indexOf('rate limited') !== -1) showErr('너무 자주 고치고 있어요. 1분 뒤에 다시 해 주세요.');
+      else if (m.indexOf('not authenticated') !== -1) showErr('로그인이 풀렸어요. 다시 로그인해 주세요.');
+      else showErr('댓글을 고치지 못했어요. 잠시 후 다시 해 주세요.');
+      console.warn('[feed-comments.js:edit]', e);
+    }).then(function () {
+      state.busy = false;
+      if (btn) btn.removeAttribute('aria-busy');
+    });
   }
 
   function send() {
@@ -315,6 +389,7 @@
     if (!ta || state.busy) return;
     var body = String(ta.value || '').trim();
     if (!body) { showErr('댓글 내용을 적어 주세요.'); ta.focus(); return; }
+    if (state.editing) { saveEdit(ta, btn, body); return; }
     var feedId = state.feedId;
     state.busy = true;
     if (btn) btn.setAttribute('aria-busy', 'true');
@@ -354,6 +429,7 @@
       // 맨 위 댓글을 지우면 그 밑 답글도 서버에서 같이 지워진다
       state.rows = state.rows.filter(function (r) { return String(r.id) !== String(commentId) && String(r.parent_id) !== String(commentId); });
       if (state.replyTo && String(state.replyTo.id) === String(commentId)) setReplyTo(null);
+      if (state.editing && String(state.editing.id) === String(commentId)) setEditing(null);
       renderList();
       var count = (res && typeof res.comments_count === 'number') ? res.comments_count : state.rows.length;
       paintCounts(feedId, count, lastOf(state.rows));
@@ -383,7 +459,9 @@
         setReplyTo(replyBtn.getAttribute('data-cmt-reply'), replyBtn.getAttribute('data-cmt-reply-nick'));
         return;
       }
-      if (t.closest('[data-cmt-reply-cancel]')) { setReplyTo(null); return; }
+      if (t.closest('[data-cmt-reply-cancel]')) { if (state.editing) setEditing(null); else setReplyTo(null); return; }
+      var editBtn = t.closest('[data-cmt-edit]');
+      if (editBtn) { setEditing(editBtn.getAttribute('data-cmt-edit')); return; }
       var who = t.closest('[data-cmt-user]');
       if (who) {
         var uid = who.getAttribute('data-cmt-user') || '';
