@@ -33,7 +33,8 @@
     '#userFeedCollectionModal .mr-av{cursor:default}',
     '#userFeedCollectionModal .mr-av[data-up-act]{cursor:pointer}',
     '#userFeedCollectionModal .mr-st{cursor:default}',
-    '#userFeedCollectionModal .up-bio{margin-top:12px;font-size:15px;line-height:1.5;color:var(--tx-2,#d1d1d6);word-break:keep-all;overflow-wrap:anywhere;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}',
+    '#userFeedCollectionModal .up-nick{margin-top:12px}',
+    '#userFeedCollectionModal .up-bio{margin-top:4px;font-size:15px;line-height:1.5;color:var(--tx-2,#d1d1d6);word-break:keep-all;overflow-wrap:anywhere;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}',
     '#userFeedCollectionModal .up-sns{display:flex;align-items:center;gap:6px;margin-top:8px}',
     '#userFeedCollectionModal .up-sns:empty{display:none}',
     '#userFeedCollectionModal .up-btns{display:flex;gap:6px;margin-top:14px}',
@@ -194,10 +195,10 @@
     return '<div class="up-head">' +
       '<div class="mr-prof">' +
         '<div class="mr-av"' + (photo ? ' data-up-act="photo"' : '') + '>' + avatarHtml(uid, photo) + '</div>' +
-        '<div class="mr-stats-slot"><span class="mr-nick">' + esc(d.author || '') + '</span>' +
-          (cells ? '<div class="mr-stats">' + cells + '</div>' : '') +
-        '</div>' +
+        '<div class="mr-stats-slot">' + (cells ? '<div class="mr-stats">' + cells + '</div>' : '') + '</div>' +
       '</div>' +
+      // 닉네임은 사진 아래(낭만리포트와 같은 자리)
+      '<div class="up-nick mr-nick">' + esc(d.author || '') + '</div>' +
       (d.bio ? '<div class="up-bio">' + esc(d.bio) + '</div>' : '') +
       '<div class="up-sns">' + sns + '</div>' +
       btns +

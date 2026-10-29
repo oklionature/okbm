@@ -27,7 +27,8 @@
     // 프로필
     '.mr-prof-card{flex-shrink:0;padding:10px 16px 0;box-sizing:border-box}',
     '.mr-prof{display:flex;gap:18px;align-items:center}',
-    '.mr-stats-slot{flex:1;min-width:0}',
+    '.mr-stats-slot{flex:1;min-width:0;align-self:center}',
+    '#userProfileScrollBody>.mr-stats{display:none}',
     '.mr-av{flex:none;position:relative;width:80px;height:80px;border-radius:50%;padding:2px;background:rgba(255,255,255,.12);box-sizing:border-box;cursor:pointer}',
     '.mr-pinfo{margin-top:12px;display:flex;flex-direction:column;gap:3px}',
     '.mr-stats-slot .mr-nick{display:block;margin:0 0 10px;font-size:18px}',
@@ -677,15 +678,30 @@
     });
   };
 
+  // 숫자 줄을 사진 오른쪽 칸으로 옮긴다. 프로필은 열 때·사진을 바꿀 때 새로 그려지므로 그때마다 다시 옮긴다
+  // (옮기기 전 아래쪽에 잠깐 보였다 올라가 사진이 출렁이는 것처럼 보이지 않게, 칸 밖에 있을 때는 숨긴다: CSS)
+  var STATS = null, headWatch = null;
+  function placeStats() {
+    var slot = document.querySelector('#userProfileModalOverlay .mr-stats-slot');
+    var stats = document.querySelector('#userProfileModalOverlay .mr-stats') || STATS;
+    if (!stats) return;
+    STATS = stats;
+    if (slot && stats.parentNode !== slot) slot.appendChild(stats);
+    var head = document.getElementById('reportProfileHeaderContainer');
+    if (head && !headWatch) {
+      headWatch = new MutationObserver(function () {
+        var sl = document.querySelector('#userProfileModalOverlay .mr-stats-slot');
+        if (sl && STATS && STATS.parentNode !== sl) { sl.appendChild(STATS); renderCounts(); }
+      });
+      headWatch.observe(head, { childList: true, subtree: true });
+    }
+  }
+
   window.okbmMyReportOpened = function () {
     ensureCss();
     placeLegacy();
-    // 인스타처럼 닉네임을 사진 오른쪽 숫자 줄 위에 둔다(맨 위 제목은 '낭만루트' 그대로)
-    var nickEl = document.querySelector('#userProfileModalOverlay .mr-pinfo .mr-nick'), slot0 = document.querySelector('#userProfileModalOverlay .mr-stats-slot');
-    if (nickEl && slot0) slot0.insertBefore(nickEl, slot0.firstChild);
-    // 숫자 줄을 사진 오른쪽으로 (프로필은 열 때마다 새로 그려진다)
-    var slot = document.querySelector('#userProfileModalOverlay .mr-stats-slot'), stats = document.querySelector('#userProfileModalOverlay .mr-stats');
-    if (slot && stats && stats.parentNode !== slot) slot.appendChild(stats);
+    // 사진 옆에는 숫자 줄만(세로 가운데), 닉네임은 사진 아래 소개글 위(.mr-pinfo)에 둔다. 인스타그램처럼 기준선이 하나라 덜 어수선하다
+    placeStats();
     setTab('rep'); // 열 때는 늘 리포트부터
     if (myId() !== S.uid) { S.feeds = null; S.year = null; S.ryear = null; }
     S.shown = PAGE;
