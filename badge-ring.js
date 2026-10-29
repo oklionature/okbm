@@ -189,7 +189,8 @@
     '.okbm-ring{position:absolute;left:-31.48%;top:-36.42%;width:162.96%;height:167.9%;pointer-events:none;z-index:3}',
     '.okbm-ring>svg{display:block;width:100%;height:100%}',
     // 플로깅 피드 테두리
-    '.okbm-plog-frame{position:absolute;inset:0;border:3px solid #34d399;border-radius:18px;pointer-events:none;z-index:399;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35)}',
+    // 앱은 화면이 상태바(시계 줄) 뒤까지 깔려 윗선이 가려진다: 머리줄처럼 상태바 높이만큼 내려 시작한다
+    '.okbm-plog-frame{position:absolute;inset:0;top:var(--okbm-status-top, env(safe-area-inset-top, 0px));border:3px solid #34d399;border-radius:18px;pointer-events:none;z-index:399;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35)}',
     '.okbm-plog-chip{display:inline-flex;align-items:center;gap:3px;flex-shrink:0;padding:2px 8px 2px 6px;border-radius:999px;background:rgba(4,30,20,.82);border:1px solid rgba(52,211,153,.55);color:#a7f3d0;font-size:0.7rem;font-weight:800;line-height:1.2;text-shadow:none}',
     '.okbm-plog-chip svg{width:13px;height:13px;color:#34d399}',
     '.okbm-plog-rail{border:1.5px solid #34d399 !important}'
