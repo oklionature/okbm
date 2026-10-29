@@ -123,7 +123,6 @@
   // ---------- 신청·오픈 일시 (SUPABASE_H18) ----------
   // 행사는 신청 시작 7일 전부터 마감까지 맨 위로 올리고, 할인은 시작 7일 전부터 '곧 오픈'으로 올린다.
   const HOT_MS = 7 * 86400000;
-  const OPENED_HOT_MS = 3 * 86400000;
   function parseTs(s) { if (!s) return null; const d = new Date(s); return isNaN(d) ? null : d; }
   function hourText(d) {
     const h = d.getHours(), m = d.getMinutes();
@@ -159,7 +158,7 @@
   // phase: later(7일 넘게 남음) · soon(7일 안) · open(신청 중, 마감 시각을 앎) · opened(오픈은 지났고 마감을 모름) · closed(마감). hot이면 맨 위.
   // 마감을 모르면 '신청 중'이라 하지 않는다. 티켓은 행사 몇 달 전에 매진되기 일쑤라, 예전엔 마감을 행사 시작일로 잡아
   // 9/11에 열고 9월에 끝난 코리아 백패커스 데이가 '신청 중 · 11/6까지'로 보여 행사 날짜처럼 읽혔다.
-  // 그래서 '10월 22일(목) 오후 2시 신청'처럼 신청 날만 적는다. 오픈한 지 3일 안이면 금색으로 맨 위에, 그 뒤로는 회색 한 줄로만 남긴다.
+  // 그래서 '10월 22일(목) 오후 2시 신청'처럼 신청 날만 적는다. 오픈한 그날 밤 12시까지만 금색으로 맨 위에, 다음 날부터는 회색 한 줄로 날짜순 목록에 남긴다.
   // 신청 일시 칸이 비어 있으면 설명·한 줄 소개·참가 글에서 읽는다.
   // 읽는 말투: '티켓은 10월 26일 월요일 저녁 8시에 오픈' · '일반 신청은 10월 19일 19시부터' · '티켓 오픈 9/11 12:00'
   //           · '신청은 10월 21일부터 27일까지' · '쿠폰 등록은 10월 28일 자정까지' · '10/29까지 사전예매'
@@ -230,7 +229,7 @@
     else if (open && !close && (!start || now < start)) phase = 'opened';
     // 글에서 읽은 신청이 이미 끝났으면 아무것도 안 보인다(대피소 예약처럼 계속 받는 것을 '마감'으로 잘못 보이지 않게)
     if (fromText && phase === 'closed') return null;
-    const hot = phase === 'soon' || phase === 'open' || (phase === 'opened' && now - open <= OPENED_HOT_MS);
+    const hot = phase === 'soon' || phase === 'open' || (phase === 'opened' && dayDiff(open) === 0);
     return { open: open, close: close, phase: phase, hot: hot, at: phase === 'open' ? close : open, fromText: fromText };
   }
   // 큰 글씨 한 줄과 오른쪽 꼬리표. open의 마감이 오늘·내일이면 꼬리표를 '오늘 마감'으로.
