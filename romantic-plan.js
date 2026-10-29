@@ -3764,7 +3764,7 @@ window.saveCurrentPackingRecord = function() {
 
     var prevRecords = entry ? entry.records : null;
     cache[key] = { loading: true, at: Date.now(), records: prevRecords };
-    var projection = 'id,user_id,author,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,is_published,feed_type,created_at';
+    var projection = 'id,user_id,author,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,plogging_photo,is_published,feed_type,created_at';
     // date는 'YYYY.MM.DD'가 기본이고 예전 행은 'YYYY-MM-DD'일 수 있어 구분자 자리를 '_'(한 글자 아무거나)로 둔다.
     var url = base + '/rest/v1/feeds?select=' + projection + '&' + ownerFilter +
       '&date=like.' + encodeURIComponent(year + '_' + mm + '*') + '&order=date.asc&limit=100';

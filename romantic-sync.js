@@ -9274,6 +9274,14 @@ window.openPastTripRegisterModal = function(ev) {
       '.ptw-pubcard{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}.ptw-pub{display:flex;justify-content:space-between;align-items:center;gap:10px}.ptw-pub b{font-size:0.80rem;color:#fff;font-weight:900}' +
       '.ptw-sw{flex:none;width:44px;height:26px;border-radius:13px;border:0;background:#334155;position:relative;cursor:pointer;padding:0;transition:background .2s}.ptw-sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}' +
       '.ptw-sw[aria-checked="true"]{background:#5bb8f0}.ptw-sw[aria-checked="true"]:after{transform:translateX(18px)}.ptw-sw:disabled{opacity:.45;cursor:default}' +
+      '.ptw-plog{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,background .2s}.ptw-plog.on{border-color:rgba(45,212,191,0.4);background:rgba(45,212,191,0.05)}' +
+      '.ptw-plog .ptw-pub b{display:inline-flex;align-items:center;gap:6px}.ptw-plog .ptw-pub b svg{width:17px;height:17px;color:#2dd4bf}.ptw-plog .ptw-sw[aria-checked="true"]{background:#2dd4bf}' +
+      '.ptw-plog p{margin:0;font-size:0.72rem;color:#94a3b8;line-height:1.5;font-weight:600}.ptw-plog-row{display:flex;align-items:center;gap:12px}' +
+      '.ptw-plog-slot{flex:none;position:relative;width:84px;height:84px;border-radius:12px;border:1.5px dashed rgba(45,212,191,0.5);background:rgba(45,212,191,0.06);color:#5eead4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:0.66rem;font-weight:800;cursor:pointer;padding:0;font-family:inherit;background-size:cover;background-position:center}' +
+      '.ptw-plog-slot svg{width:24px;height:24px}.ptw-plog-slot.has{border-style:solid;border-color:#2dd4bf}.ptw-plog-slot.has>span{display:none}' +
+      '.ptw-plog-ck{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:#2dd4bf;color:#04201c;display:flex;align-items:center;justify-content:center}.ptw-plog-ck svg{width:13px;height:13px;stroke-width:3}' +
+      '.ptw-plog-msg{min-width:0;font-size:0.72rem;line-height:1.5;color:#94a3b8;font-weight:700}.ptw-plog-msg b{display:block;font-size:0.80rem;color:#5eead4;font-weight:900}.ptw-plog-msg.warn b{color:#fbbf24}' +
+      '.ptw-plog-msg button{margin-top:4px;background:none;border:0;padding:0;color:#94a3b8;font-size:0.68rem;font-weight:800;text-decoration:underline;cursor:pointer;font-family:inherit}' +
       '.ptw-done{position:absolute;inset:0;z-index:30;background:#07090e;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;gap:12px;padding:24px;text-align:center}.ptw-done[hidden]{display:none}.ptw-done .ck{width:56px;height:56px;border-radius:50%;background:#5bb8f0;color:#001521;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center}' +
       '.ptw-done>:first-child{margin-top:auto}.ptw-done>:last-child{margin-bottom:auto}.ptw-done>*{flex-shrink:0}' +
       '.ptw-done h6{margin:0;font-size:1.05rem;font-weight:900;color:#fff}.ptw-done p{margin:0;font-size:0.78rem;color:#94a3b8;line-height:1.55}.ptw-card{width:220px;height:150px;border-radius:14px;background:#141824;position:relative;overflow:hidden}.ptw-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}' +
@@ -9347,6 +9355,14 @@ window.openPastTripRegisterModal = function(ev) {
           '<input type="text" id="pastTripNaverInput" inputmode="url" placeholder="네이버 블로그 링크" onblur="window.onPastTripLinkBlur(\'blog\');" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(3,199,90,0.28); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />' +
           '<div style="font-size:calc(0.66rem + 1pt); color:#64748b; line-height:1.45;">다른 낭만 루터분들에게 도움이 됩니다</div>' +
         '</div></details>' +
+        '<div class="ptw-plog" id="pastTripPlogCard">' +
+          '<div class="ptw-pub"><b>' + window.okbmPlogIcon() + '플로깅 했어요</b><button type="button" id="pastTripPlogSwitch" class="ptw-sw" role="switch" aria-checked="false" aria-label="플로깅 했어요"></button></div>' +
+          '<div id="pastTripPlogBody" hidden>' +
+            '<p>박지 주변 쓰레기를 주웠다면, 주운 쓰레기나 봉투 사진 한 장을 올려 주세요.</p>' +
+            '<div class="ptw-plog-row" style="margin-top:10px;"><button type="button" id="pastTripPlogSlot" class="ptw-plog-slot" aria-label="플로깅 사진 고르기"></button><div id="pastTripPlogMsg" class="ptw-plog-msg" role="status"></div></div>' +
+            '<input type="file" id="pastTripPlogInput" accept="image/*" style="display:none;" />' +
+          '</div>' +
+        '</div>' +
         '<div class="ptw-pubcard">' +
           '<div class="ptw-pub"><b>피드에 공개</b><button type="button" id="pastTripPublishSwitch" class="ptw-sw" role="switch" aria-checked="true" aria-label="피드에 공개"></button></div>' +
           '<div id="pastTripPublishHint" role="status" style="font-size:0.72rem; font-weight:700; line-height:1.45; margin:0; color:#94a3b8;"></div>' +
@@ -9494,6 +9510,15 @@ window.submitPastTripRegister = async function() {
   if (ytInput && ytUrl) ytInput.value = ytUrl;
   if (naverInput && blogUrl) naverInput.value = blogUrl;
 
+  if (st.ploggingUploading) {
+    if (typeof showToast === 'function') showToast('플로깅 사진을 올리는 중이에요. 잠깐만 기다려 주세요.', 'info', 2200);
+    return;
+  }
+  var ploggingPhoto = (st.ploggingOn === true && String(st.ploggingPhoto || '').indexOf('https://') === 0) ? String(st.ploggingPhoto) : '';
+  if (st.ploggingOn === true && !ploggingPhoto && typeof showToast === 'function') {
+    showToast('사진을 올려야 플로깅으로 세요. 피드는 그대로 올라가요.', 'info', 2600);
+  }
+
   var packedItems = Array.isArray(st.items) ? st.items.slice() : [];
   var totalGrams = 0;
   packedItems.forEach(function(it) { totalGrams += Number(it && it.weight ? it.weight : 0); });
@@ -9547,6 +9572,7 @@ window.submitPastTripRegister = async function() {
     youtube: ytUrl || '',
     blog: blogUrl || '',
     readyShotPhoto: '',
+    ploggingPhoto: ploggingPhoto,
     _isLocalOwner: true,
     feedType: 'route'
   };
@@ -9830,10 +9856,13 @@ window._ptwInit = function(modal) {
   var hidden = document.getElementById('pastTripDateInput');
   st.__ptwDateDefault = hidden ? String(hidden.value || '') : '';
   st.publishOff = false;
+  st.ploggingOn = false;
+  st.ploggingPhoto = '';
   window.__pastTripRegisterState = st;
   // 사진을 고른 순간 원본 파일에서 읽는다 (줄이기·변환 전이라 촬영 정보가 남아 있다)
   modal.addEventListener('change', function(e) {
     if (e.target && e.target.id === 'pastTripPhotoInput') window._ptwOnPhotosPicked(e.target.files);
+    if (e.target && e.target.id === 'pastTripPlogInput') window._ptwOnPlogPicked(e.target);
   }, true);
   modal.addEventListener('toggle', function(e) {
     if (e.target && e.target.open && e.target.querySelector && e.target.querySelector('#pastTripGearSearchInput')) window._ptwEnsureGears();
@@ -9844,6 +9873,25 @@ window._ptwInit = function(modal) {
   modal.addEventListener('click', function(e) {
     var t = e.target && e.target.closest ? e.target : null;
     if (!t) return;
+    if (t.closest('#pastTripPlogSwitch')) {
+      var sp = window.__pastTripRegisterState || {};
+      sp.ploggingOn = sp.ploggingOn !== true;
+      window._ptwRenderPlog();
+      return;
+    }
+    if (t.closest('#pastTripPlogSlot')) {
+      var sp2 = window.__pastTripRegisterState || {};
+      if (sp2.ploggingUploading) return;
+      var pi = document.getElementById('pastTripPlogInput');
+      if (pi) pi.click();
+      return;
+    }
+    if (t.closest('[data-ptw-plog="remove"]')) {
+      var sp3 = window.__pastTripRegisterState || {};
+      sp3.ploggingPhoto = '';
+      window._ptwRenderPlog();
+      return;
+    }
     var sw = t.closest('#pastTripPublishSwitch');
     if (sw && !sw.disabled) {
       var s2 = window.__pastTripRegisterState || {};
@@ -9870,6 +9918,7 @@ window._ptwInit = function(modal) {
       }
     }
   });
+  window._ptwRenderPlog();
   window._pastTripRenderPublishHint();
 };
 (function() {
@@ -9899,6 +9948,115 @@ window._ptwInit = function(modal) {
 })();
 
 // 올린 뒤 완료 화면. "닫기"를 누르면 원래 하던 다음 동작(목록 열기 등)을 이어서 한다
+// =========================================================================
+// 플로깅 (2026-10-29, H19): 올리기 화면 '플로깅 했어요' 스위치 + 사진 한 장(주운 쓰레기·봉투).
+// 사진이 올라가야 플로깅 1번으로 센다(feeds.plogging_photo). 스위치만 켜고 사진이 없으면 피드는 그대로 올라간다.
+// 표시는 묶은 봉투+체크 선 그림(okbmPlogIcon) 하나를 피드 상세·박지 후기·프로필이 같이 쓴다.
+// =========================================================================
+window.okbmPlogIcon = function(cls) {
+  return '<svg class="okbm-plog-ic' + (cls ? ' ' + cls : '') + '" width="1.15em" height="1.15em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M7.2 9h9.6l1.7 10.1a1.6 1.6 0 0 1-1.6 1.9H7.1a1.6 1.6 0 0 1-1.6-1.9z"/><path d="M9.4 9C8.6 7 9 4.6 10.6 3.6"/><path d="M14.6 9c.8-2 .4-4.4-1.2-5.4"/><path d="m9.3 14.9 1.9 1.9 3.6-3.8"/></svg>';
+};
+
+// 그 사람을 관심 루터로 둔 사람 수(H19 okbm_follower_count, 숫자만). 실패하면 null. 1분 동안은 다시 묻지 않는다.
+var okbmFollowerCountCache = {};
+window.okbmFollowerCount = function(userId, author, fresh) {
+  var uid = String(userId || '').trim();
+  if (!uid || !window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return Promise.resolve(null);
+  var hit = okbmFollowerCountCache[uid];
+  if (!fresh && hit && Date.now() - hit.at < 60000) return hit.job;
+  var headers = { apikey: window.SUPABASE_ANON_KEY, 'Content-Type': 'application/json',
+    Authorization: typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + window.SUPABASE_ANON_KEY) };
+  var job = fetch(window.SUPABASE_URL + '/rest/v1/rpc/okbm_follower_count', {
+    method: 'POST', headers: headers, body: JSON.stringify({ p_user_id: uid, p_author: String(author || '').trim() })
+  }).then(function(r) { return r.ok ? r.json() : null; }).then(function(n) {
+    return (n === null || isNaN(Number(n))) ? null : Number(n);
+  }).catch(function() { return null; });
+  okbmFollowerCountCache[uid] = { at: Date.now(), job: job };
+  return job;
+};
+
+window._ptwRenderPlog = function() {
+  var card = document.getElementById('pastTripPlogCard');
+  if (!card) return;
+  var st = window.__pastTripRegisterState || {};
+  var on = st.ploggingOn === true;
+  var photo = String(st.ploggingPhoto || '');
+  var sw = document.getElementById('pastTripPlogSwitch');
+  var body = document.getElementById('pastTripPlogBody');
+  var slot = document.getElementById('pastTripPlogSlot');
+  var msg = document.getElementById('pastTripPlogMsg');
+  card.classList.toggle('on', on);
+  if (sw) sw.setAttribute('aria-checked', String(on));
+  if (body) body.hidden = !on;
+  if (!slot || !msg) return;
+  var safe = photo ? okbmSafeImageUrl(photo) : '';
+  slot.classList.toggle('has', !!safe);
+  slot.style.backgroundImage = safe ? 'url("' + safe.replace(/"/g, '%22') + '")' : '';
+  if (st.ploggingUploading) {
+    slot.innerHTML = '<span>올리는 중</span>';
+    msg.className = 'ptw-plog-msg';
+    msg.innerHTML = '<b>사진을 올리고 있어요</b>잠깐만 기다려 주세요.';
+  } else if (safe) {
+    slot.innerHTML = '<i class="ptw-plog-ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></i>';
+    msg.className = 'ptw-plog-msg';
+    msg.innerHTML = '<b>플로깅으로 기록돼요</b>프로필 플로깅 수에 1번 더해져요.<br><button type="button" data-ptw-plog="remove">사진 빼기</button>';
+  } else {
+    slot.innerHTML = '<span>' + window.okbmPlogIcon() + '</span><span>사진 한 장</span>';
+    msg.className = 'ptw-plog-msg warn';
+    msg.innerHTML = '<b>사진을 올려야 플로깅으로 세요</b>사진이 없으면 피드만 올라가요.';
+  }
+};
+
+// 플로깅 사진 한 장을 줄여서 R2에 올린다(Supabase Storage는 쓰지 않는다). 실패하면 ''.
+window._ptwUploadPlogPhoto = function(file) {
+  var toBlob = typeof window.processSinglePhotoSmart === 'function'
+    ? Promise.resolve(window.processSinglePhotoSmart(file, { maxDim: 1200, quality: 0.82 }))
+    : new Promise(function(resolve) {
+      var url = '';
+      try { url = URL.createObjectURL(file); } catch (e) { resolve(null); return; }
+      var img = new Image();
+      img.onload = function() {
+        var k = Math.min(1, 1200 / Math.max(img.width, img.height));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob(resolve, 'image/jpeg', 0.82);
+      };
+      img.onerror = function() { URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
+  return toBlob.then(function(blob) {
+    return blob && typeof window.okbmUploadImageBlob === 'function' ? window.okbmUploadImageBlob(blob, 'plog') : '';
+  }).catch(function() { return ''; });
+};
+
+window._ptwOnPlogPicked = function(input) {
+  var file = input && input.files && input.files[0];
+  if (input) input.value = '';
+  if (!file) return;
+  if (typeof window.okbmIsSupportedPhotoFile === 'function' && !window.okbmIsSupportedPhotoFile(file)) {
+    if (typeof showToast === 'function') showToast('지원하는 파일형식이 아닙니다.', 'warn', 2200);
+    return;
+  }
+  var st = window.__pastTripRegisterState || {};
+  st.ploggingUploading = true;
+  window._ptwRenderPlog();
+  var btn = document.getElementById('pastTripSubmitBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.55'; }
+  window._ptwUploadPlogPhoto(file).then(function(url) {
+    var s2 = window.__pastTripRegisterState || {};
+    s2.ploggingUploading = false;
+    if (url && String(url).indexOf('https://') === 0) s2.ploggingPhoto = String(url);
+    else if (typeof showToast === 'function') showToast('플로깅 사진을 올리지 못했어요. 다시 골라 주세요.', 'warn', 2400);
+    var b2 = document.getElementById('pastTripSubmitBtn');
+    if (b2) { b2.disabled = false; b2.style.opacity = '1'; }
+    window._ptwRenderPlog();
+    if (typeof window._ptwScheduleDraftSave === 'function') window._ptwScheduleDraftSave();
+  });
+};
+
 window._ptwShowDone = function(record, next) {
   var box = document.getElementById('pastTripDone');
   if (!box) { next(); return; }
@@ -9914,10 +10072,24 @@ window._ptwShowDone = function(record, next) {
     '<h6>' + (pub ? '피드에 올라갔어요' : '나만 보기로 저장했어요') + '</h6>' +
     '<p>' + (pub ? '다른 낭만루터들이 피드와 박지 후기에서 볼 수 있어요.' : esc(why)) + '</p>' +
     (photo ? '<div class="ptw-card"><img src="' + escapeHtml(okbmSafeImageUrl(photo)) + '" alt="" referrerpolicy="no-referrer"><div><b>' + esc(spotShort) + '</b>' + esc(record.date || '') + '</div></div>' : '') +
+    (record.ploggingPhoto ? '<p class="ptw-plog-done" style="display:inline-flex;align-items:center;gap:6px;color:#5eead4;font-weight:800;">' + window.okbmPlogIcon() + '플로깅 1번이 더해졌어요</p>' : '') +
+    (pub ? '<p id="ptwFollowNews" hidden></p>' : '') +
     '<div id="ptwBadge" class="ptw-badge"></div>' +
     '<div class="ptw-row2"><button type="button" data-ptw-done="close">닫기</button>' +
     (pub ? '<button type="button" class="p" data-ptw-done="share">공유하기</button>' : '') + '</div>';
   box.hidden = false;
+  var plogIc = box.querySelector('.ptw-plog-done svg');
+  if (plogIc) plogIc.style.cssText = 'width:16px;height:16px;flex:none;';
+  // 공개로 올라갔으면 나를 관심 루터로 둔 사람 수만 알린다(H19, 명단은 안 받는다)
+  if (pub && typeof window.okbmFollowerCount === 'function') {
+    var meId = typeof window.okbmGetCurrentUserId === 'function' ? window.okbmGetCurrentUserId() : '';
+    window.okbmFollowerCount(meId, record.author || '').then(function(n) {
+      var el = document.getElementById('ptwFollowNews');
+      if (!el || !(n > 0)) return;
+      el.textContent = '관심 루터 ' + Number(n).toLocaleString('ko-KR') + '명에게 소식이 갔어요';
+      el.hidden = false;
+    });
+  }
   // 배지: 새로 받았으면 크게, 아니면 다음 배지까지 한 줄 (my-badges.js)
   if (window.okbmBadges && typeof window.okbmBadges.done === 'function') window.okbmBadges.done(document.getElementById('ptwBadge'), record);
   box.onclick = function(e) {
@@ -9950,7 +10122,7 @@ function ptwDraftHasContent(d) {
   var hasMemo = String(d.singleMemo || '').trim() ||
     (d.photoMemos || []).some(function(m) { return String(m || '').trim(); });
   return !!((d.photos && d.photos.length) || hasMemo || String(d.spotName || '').trim() ||
-    (d.items && d.items.length) || String(d.yt || '').trim() || String(d.blog || '').trim());
+    (d.items && d.items.length) || String(d.yt || '').trim() || String(d.blog || '').trim() || String(d.ploggingPhoto || '').trim());
 }
 
 window._ptwCollectDraft = function() {
@@ -9976,7 +10148,9 @@ window._ptwCollectDraft = function() {
     presetId: st.presetId || '',
     yt: val('pastTripYoutubeInput'),
     blog: val('pastTripNaverInput'),
-    publishOff: !!st.publishOff
+    publishOff: !!st.publishOff,
+    ploggingOn: st.ploggingOn === true,
+    ploggingPhoto: String(st.ploggingPhoto || '').indexOf('https://') === 0 ? String(st.ploggingPhoto) : ''
   };
 };
 
@@ -10017,6 +10191,8 @@ window._ptwRestoreDraft = function(modal) {
   st.items = Array.isArray(d.items) ? d.items : [];
   st.presetId = String(d.presetId || '');
   st.publishOff = !!d.publishOff;
+  st.ploggingOn = d.ploggingOn === true;
+  st.ploggingPhoto = String(d.ploggingPhoto || '').indexOf('https://') === 0 ? String(d.ploggingPhoto) : '';
   window.__pastTripRegisterState = st;
 
   var setVal = function(id, v) { var el = document.getElementById(id); if (el) el.value = String(v || ''); };
@@ -10052,6 +10228,7 @@ window._ptwRestoreDraft = function(modal) {
   window._pastTripRenderGearList();
   var sw = document.getElementById('pastTripPublishSwitch');
   if (sw && !sw.disabled) sw.setAttribute('aria-checked', st.publishOff ? 'false' : 'true');
+  window._ptwRenderPlog();
   window._pastTripRenderPublishHint();
 
   // 불러온 걸 알리고, 원하면 빈 칸으로 새로 쓰게 한다
@@ -13898,7 +14075,7 @@ window.okbmPaintNotifInboxList = async function() {
     // 내 피드에 달린 별·댓글, 내가 댓글 단 피드의 새 댓글 알림(H17)은 누르면 그 피드를 연다 (related_id = 피드 id).
     // 댓글 알림이면 댓글 창도 펼친다.
     var isFeedCommentKind = kind === 'feed_comment' || kind === 'feed_reply';
-    var feedOpenId = (isFeedCommentKind || kind === 'feed_like') ? String(r.related_id || '').trim() : '';
+    var feedOpenId = (isFeedCommentKind || kind === 'feed_like' || kind === 'follow_feed') ? String(r.related_id || '').trim() : '';
     var openAttrs = loungePostId
       ? ' class="okbm-notif-row" role="button" tabindex="0" data-lounge-post="' + _escapeReportPropHtml(loungePostId) + '"'
       : (feedOpenId

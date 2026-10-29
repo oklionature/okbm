@@ -1646,6 +1646,10 @@
         feed_type: normalized.feedType || 'route',
         updated_at: new Date().toISOString()
       };
+      // H19: 플로깅 사진은 아는 기록만 보낸다(모르는 기록을 고칠 때 서버 값을 지우지 않게)
+      if (normalized.ploggingPhoto !== undefined) {
+        payload.plogging_photo = String(normalized.ploggingPhoto || '').indexOf('https://') === 0 ? String(normalized.ploggingPhoto) : null;
+      }
 
       payload.photos = (payload.photos || []).filter(function(url) {
         return typeof url === 'string' && /^https?:\/\//.test(url.trim());
@@ -2309,6 +2313,7 @@ window.normalizeHistoryRecord = function(r, idx) {
     var rScale = (r && (r.ready_shot_scale !== undefined ? r.ready_shot_scale : r.readyShotScale));
     var rawLikes = (r && (r.likes_count !== undefined ? r.likes_count : r.likes));
     var finalLikes = (rawLikes !== undefined && rawLikes !== null && !isNaN(Number(rawLikes))) ? Number(rawLikes) : 0;
+    var rawPlog = r ? (r.plogging_photo !== undefined ? r.plogging_photo : r.ploggingPhoto) : undefined;
 
     return {
       id: recordId,
@@ -2343,6 +2348,8 @@ window.normalizeHistoryRecord = function(r, idx) {
       // H17 댓글 수·최근 댓글 한 줄(트리거가 채운다). 댓글 전체는 feed-comments.js가 창을 열 때 받는다.
       commentsCount: (r && !isNaN(Number(r.comments_count !== undefined ? r.comments_count : r.commentsCount))) ? Number(r.comments_count !== undefined ? r.comments_count : r.commentsCount) : 0,
       lastComment: (r && (r.last_comment || r.lastComment)) || null,
+      // H19 플로깅 사진(주운 쓰레기·봉투, R2 https). 칸을 안 받아 온 기록은 undefined로 두어 저장할 때 지우지 않는다.
+      ploggingPhoto: rawPlog === undefined ? undefined : (String(rawPlog || '').indexOf('https://') === 0 ? String(rawPlog) : ''),
       instagram: (r && r.instagram) ? r.instagram : '',
       youtube: (r && r.youtube) ? r.youtube : '',
       blog: (r && (r.blog || r.blog_url || r.naverBlog)) ? String(r.blog || r.blog_url || r.naverBlog) : '',
@@ -4763,6 +4770,19 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       '</div>';
     }).join('');
 
+    // H19 플로깅 인증: 사진들 맨 끝에 주운 쓰레기·봉투 사진 한 장 + '플로깅 인증' 표시
+    var plogPhoto = String(log.ploggingPhoto || log.plogging_photo || '').trim();
+    var plogIcon = typeof window.okbmPlogIcon === 'function' ? window.okbmPlogIcon() : '';
+    var ploggingSectionHtml = plogPhoto.indexOf('https://') === 0
+      ? '<div class="okbm-plog-sec" style="width:100%; display:flex; flex-direction:column; background:#000000;">' +
+          '<div style="width:100%; overflow:hidden; background:#000000; position:relative; display:flex; align-items:center; justify-content:center;">' +
+            '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(plogPhoto)) + '" alt="플로깅 인증 사진" loading="lazy" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
+            '<span class="okbm-plog-pill" style="position:absolute; top:10px; left:10px; display:inline-flex; align-items:center; gap:5px; padding:5px 10px 5px 8px; border-radius:999px; background:rgba(4,32,28,0.82); border:1px solid rgba(45,212,191,0.45); color:#99f6e4; font-size:0.72rem; font-weight:800;">' + plogIcon + '플로깅 인증</span>' +
+          '</div>' +
+          '<div style="padding:10px 14px 14px 14px; background:#080b11; border-bottom:1px solid rgba(255,255,255,0.06); font-size:0.80rem; color:#cbd5e1; line-height:1.55;"><b style="color:#5eead4; font-weight:800;">플로깅했어요</b> · 박지 주변 쓰레기를 주워 왔어요.</div>' +
+        '</div>'
+      : '';
+
     var templateSectionHtml =
       '<div style="padding:18px 16px 20px 16px; background:#000000; display:flex; justify-content:center;">' +
         '<div class="okbm-feed-postcard" style="border-radius:14px; overflow:hidden; background:#000000; box-shadow:0 12px 30px rgba(0,0,0,0.9);">' +
@@ -4851,7 +4871,8 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:2px solid rgba(255,255,255,0.12); overflow:clip; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:28px; box-sizing:border-box;">' +
       '<div class="okbm-feed-head" style="position:sticky; top:0; z-index:20; padding:8px 12px; background:#000000; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.08);">' +
         '<button type="button" onclick="window.goBackModal(event);" aria-label="뒤로" style="background:#0c1017; border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>' +
-        '<div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">' + authorLineHtml + spotTitleHtml + '</div>' +
+        '<div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">' + authorLineHtml + spotTitleHtml +
+          (ploggingSectionHtml ? '<span class="okbm-plog-mark" title="플로깅 인증" aria-label="플로깅 인증" style="flex:none; display:inline-flex; color:#2dd4bf;">' + plogIcon + '</span>' : '') + '</div>' +
         '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
           '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;" title="' + escapeHtml(log.date || '') + '">' + escapeHtml(sShortDate) + '</span>' +
           window.okbmFeedInstagramBadgeHtml(log.instagram || log.insta || '') +
@@ -4860,6 +4881,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       '</div>' +
       '<div style="display:flex; flex-direction:column; width:100%;">' +
         photoSectionsHtml +
+        ploggingSectionHtml +
       '</div>' +
       templateSectionHtml +
       interactiveBarHtml +
@@ -5141,7 +5163,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (window.__okbmSavedFeedResolveInflight) return;
     window.__okbmSavedFeedResolveInflight = true;
 
-    var projection = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,comments_count,last_comment,is_published,feed_type,created_at';
+    var projection = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,comments_count,last_comment,plogging_photo,is_published,feed_type,created_at';
     var foundIds = {};
     var allOk = true;
     try {
@@ -5402,7 +5424,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     memo = memo.replace(/\s+/g, ' ').trim().slice(0, 80);
     return '<button type="button" class="mr-tr js-open-user-feed-row" data-feed-id="' + escapeHtml(String(f.id || '')) + '" data-author="' + escapeHtml(targetAuthor) + '" data-user-id="' + escapeHtml(targetUserId) + '">' +
       '<span class="mr-th"' + (th ? ' style="background-image:url(&quot;' + escapeHtml(th) + '&quot;)"' : '') + '></span>' +
-      '<span class="mr-tt"><b>' + escapeHtml(name) + '</b><small>' + escapeHtml(meta) + '</small>' + (memo ? '<small class="up-memo">' + escapeHtml(memo) + '</small>' : '') + '</span>' +
+      '<span class="mr-tt"><b>' + escapeHtml(name) + (f.ploggingPhoto && typeof window.okbmPlogIcon === 'function' ? window.okbmPlogIcon() : '') + '</b><small>' + escapeHtml(meta) + '</small>' + (memo ? '<small class="up-memo">' + escapeHtml(memo) + '</small>' : '') + '</span>' +
     '</button>';
   };
 
@@ -7364,7 +7386,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         };
 
         var fetchTableRows = function(tableName) {
-          var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,comments_count,last_comment,is_published,feed_type,created_at';
+          var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,comments_count,last_comment,plogging_photo,is_published,feed_type,created_at';
           var filterParam = currentUserId
             ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
             : '&is_published=eq.true';
@@ -7496,7 +7518,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           };
         var profile = safeGetJSON('user_profile', null);
         var currentUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
-        var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,comments_count,last_comment,is_published,feed_type,created_at';
+        var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,comments_count,last_comment,plogging_photo,is_published,feed_type,created_at';
         var filterParam = currentUserId
           ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
           : '&is_published=eq.true';

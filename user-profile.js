@@ -6,6 +6,8 @@
 //   · 탭 '기록 | 발자취'. 기록은 연도 칩으로 고르고, 발자취는 포토맵(그 사람 사진으로 채운 시·군)과 받은 배지
 //   · 숫자·연도 칩·발자취는 기록 목록 한 번(박지·날짜·첫 사진 주소, 91개에 약 6KB)으로 만든다.
 //     예전에는 기록 수·올해 수를 HEAD 요청 두 번으로 셌다.
+//   · 숫자 칸은 기록 · 올해 · 플로깅(공개 피드 중 플로깅 사진 있는 것, H19). 예전 '다녀온 박지'는 뜻이 안 읽혀 뺐다
+//   · 관심 버튼 '+ 관심 루터 24': 그 사람을 관심 루터로 둔 사람 수만(okbm_follower_count). 누가 했는지는 안 보인다
 //   · 기록을 보고 뒤로 오거나 관심을 눌러 창이 다시 그려져도 보던 탭·연도·스크롤을 이어 간다
 // 인라인 onclick을 쓰지 않는다(data-up-act로 받는다. CSP 해시가 필요 없게).
 // =========================================================================
@@ -38,6 +40,9 @@
     '#userFeedCollectionModal .up-btn{flex:1;height:36px;border-radius:10px;border:1px solid var(--line,rgba(255,255,255,.08));background:var(--bg-2,#17171b);color:#f2f2f3;font:inherit;font-size:13.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:4px;cursor:pointer}',
     '#userFeedCollectionModal .up-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}',
     '#userFeedCollectionModal .up-btn.up-follow{background:var(--accent-fill,#2b6fd6);border-color:var(--accent-fill,#2b6fd6);color:#fff}',
+    '#userFeedCollectionModal .up-btn em{font-style:normal;font-weight:800;margin-left:3px;font-variant-numeric:tabular-nums}',
+    '#userFeedCollectionModal .mr-st small .okbm-plog-ic{width:12px;height:12px;color:#2dd4bf;vertical-align:-2px;margin-right:2px}',
+    '#userModalCardsContainer .mr-tt b .okbm-plog-ic{width:14px;height:14px;color:#2dd4bf;vertical-align:-2px;margin-left:4px}',
     '#userFeedCollectionModal .up-btn:active,#userFeedCollectionModal .mr-tr:active{opacity:.6}',
     '#userFeedCollectionModal .up-pane{display:none}',
     '#userFeedCollectionModal .up-pane.on{display:block}',
@@ -110,7 +115,8 @@
     var get = function (sel) {
       return fetch(base + encodeURIComponent(sel), { headers: a.headers }).then(function (r) { if (!r.ok) throw new Error('logs ' + r.status); return r.json(); });
     };
-    WAIT[k] = get('id,user_id,author,spot,spot_id,date,photo,ph:photos->0')
+    WAIT[k] = get('id,user_id,author,spot,spot_id,date,photo,is_published,plogging_photo,ph:photos->0')
+      .catch(function () { return get('id,user_id,author,spot,spot_id,date,photo,ph:photos->0'); })
       .catch(function () { return get('id,user_id,author,spot,spot_id,date,photo'); })
       .then(function (rows) {
         rows = Array.isArray(rows) ? rows : [];
@@ -134,13 +140,33 @@
 
   function statsOf(rows) {
     if (!rows) return null;
-    var y = String(new Date().getFullYear()), year = 0, spots = {};
+    var y = String(new Date().getFullYear()), year = 0, plog = 0;
     rows.forEach(function (r) {
       if (String(r.date || '').indexOf(y) === 0) year++;
-      var s = String(r.spot_id || '').trim() || String(r.spot || '').replace(/\s+/g, ' ').trim();
-      if (s) spots[s] = 1;
+      if (r.plogging_photo && r.is_published !== false) plog++;
     });
-    return { total: rows.length, year: year, spots: Object.keys(spots).length };
+    return { total: rows.length, year: year, plog: plog };
+  }
+
+  // 관심 루터 수: 사람마다 한 번 받고, 이 창에서 관심을 누르면 1을 더하거나 빼서 보여 준다(서버 반영을 기다리지 않게)
+  var FOLLOWERS = {};
+  function followersOf(m) {
+    var uid = String(m.dataset.userId || '').trim(), on = flag(m.dataset.following);
+    if (!uid) return null;
+    var f = FOLLOWERS[uid];
+    if (!f) {
+      FOLLOWERS[uid] = f = { n: null, on: on };
+      if (typeof window.okbmFollowerCount === 'function') {
+        window.okbmFollowerCount(uid, m.dataset.author || '').then(function (n) {
+          if (n === null) return;
+          f.n = n; f.on = on; // 받은 수는 물을 때 상태 기준. 그 뒤에 누른 것은 아래에서 더하고 뺀다
+          var mm = modal();
+          if (mm && String(mm.dataset.userId || '').trim() === uid) paintHeader(mm);
+        });
+      }
+    }
+    if (f.n !== null && f.on !== on) { f.n = Math.max(0, f.n + (on ? 1 : -1)); f.on = on; }
+    return f.n;
   }
 
   function headerHtml(m) {
@@ -152,15 +178,16 @@
     };
     var cells = (hideTotal ? '' : cell('userModalRouteCountBadge', st && st.total, '기록')) +
       (hideYear ? '' : cell('userModalYearCount', st && st.year, '올해')) +
-      (hideTotal ? '' : cell('', st && st.spots, '다녀온 박지'));
+      (hideTotal ? '' : cell('', st && st.plog, (window.okbmPlogIcon ? window.okbmPlogIcon() : '') + '플로깅'));
     var sns = typeof window.renderUserSnsBadgesHtml === 'function' ? window.renderUserSnsBadgesHtml(d.insta || '', d.yt || '', d.blog || '', false, '') : '';
     var photo = String(d.photo || '');
     var btns = '';
     if (!self && uid) {
+      var fc = followersOf(m), fcHtml = fc === null ? '' : '<em>' + num(fc) + '</em>';
       btns = '<div class="up-btns">' +
         (flag(d.following)
-          ? '<button type="button" class="up-btn" data-up-act="follow"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>관심 중</button>'
-          : '<button type="button" class="up-btn up-follow" data-up-act="follow"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>관심</button>') +
+          ? '<button type="button" class="up-btn" data-up-act="follow" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>관심 루터' + fcHtml + '</button>'
+          : '<button type="button" class="up-btn up-follow" data-up-act="follow" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>관심 루터' + fcHtml + '</button>') +
         (flag(d.canMessage) ? '<button type="button" class="up-btn" data-up-act="note">쪽지</button>' : '') +
       '</div>';
     }

@@ -8,6 +8,8 @@
 //   별점이 없으면 칩·한 줄 모두 팁으로만 저장한다. 피드 글은 만들지 않는다.
 // · 로그인한 사람이 "다녀왔음"을 켜면 이 창이 자동으로 올라온다.
 // · 인라인 핸들러 없음(이벤트 위임) → csp-extract 대상 아님. 정보창 태그와 겹치는 팁(바닥·어프로치)은 두지 않는다.
+// · 플로깅(2026-10-29, H19): 맨 위 "이 박지에서 플로깅 N번 · 사진 보기 ›"(공개 피드 중 플로깅 사진 있는 것),
+//   이 박지에서 플로깅한 사람의 후기 이름 옆에 '플로깅' 표시. 쓰레기 상태(하나만) 팁 묶음.
 // =========================================================================
 (function () {
   'use strict';
@@ -19,6 +21,7 @@
     { key: 'view', label: '풍경', tips: ['일출 명소', '일몰 명소', '운해', '야경', '별이 잘 보임', '360도 파노라마 뷰', '바다 뷰', '호수 뷰'] },
     { key: 'size', label: '박지 크기', one: true, tips: ['텐트 1~2동', '텐트 3~5동', '텐트 6동 이상'] },
     { key: 'mood', label: '분위기', one: true, tips: ['조용함', '사람 많음'] },
+    { key: 'trash', label: '쓰레기', one: true, tips: ['깨끗함', '쓰레기 조금', '쓰레기 많음'] },
     { key: 'note', label: '알아 둘 것', tips: ['바람 셈', '그늘 없음', '벌레 많음', '통신 약함'] }
   ];
   var TTL = 2 * 60 * 1000;
@@ -42,9 +45,10 @@
   };
   var shortName = function (s) { return String((s && (s.spot_main || s.name || s.fullName)) || '이 박지').replace(/\s*\(.*?\)/g, '').trim(); };
   var md = function (iso) { var d = new Date(iso); return isNaN(d) ? '' : (d.getMonth() + 1) + '.' + d.getDate(); };
+  var plogIc = function () { return typeof window.okbmPlogIcon === 'function' ? window.okbmPlogIcon() : ''; };
 
   // ---------- 서버 ----------
-  var store = {}; // id → { at, tips, rev, error }
+  var store = {}; // id → { at, tips, rev, plog, error }
   var inflight = {};
   function rpc(name, args) {
     var c = window.supabaseClient;
@@ -66,9 +70,11 @@
     if (inflight[id]) return inflight[id];
     inflight[id] = Promise.all([
       rpc('okbm_spot_tips_summary', { p_spot_id: id }).catch(function (e) { console.warn('[spot-tips:tips]', e); return null; }),
-      rpc('get_spot_reviews', { p_spot_id: id, p_limit: 5 }).catch(function (e) { console.warn('[spot-tips:rev]', e); return null; })
+      rpc('get_spot_reviews', { p_spot_id: id, p_limit: 5 }).catch(function (e) { console.warn('[spot-tips:rev]', e); return null; }),
+      rpc('okbm_spot_plogging', { p_spot_id: id }).catch(function (e) { console.warn('[spot-tips:plog]', e); return null; })
     ]).then(function (r) {
-      store[id] = { at: Date.now(), tips: r[0] || (hit && hit.tips) || null, rev: r[1] || (hit && hit.rev) || null, error: !r[0] && !r[1] };
+      store[id] = { at: Date.now(), tips: r[0] || (hit && hit.tips) || null, rev: r[1] || (hit && hit.rev) || null,
+        plog: r[2] || (hit && hit.plog) || null, error: !r[0] && !r[1] };
       delete inflight[id];
       repaint(id);
       return store[id];
@@ -90,6 +96,12 @@
       '.stp-line{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}',
       '.stp-line span{font-size:0.64rem;font-weight:800;color:#cbd5e1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:999px;padding:3px 8px}',
       '.stp-empty{font-size:0.68rem;color:#94a3b8;margin-top:6px;line-height:1.45}',
+      '.stp-plog{width:100%;display:flex;align-items:center;gap:7px;margin-top:8px;padding:9px 10px;border-radius:8px;border:1px solid rgba(45,212,191,0.28);background:rgba(45,212,191,0.07);color:#99f6e4;font-size:0.72rem;font-weight:800;cursor:pointer;font-family:inherit;text-align:left}',
+      '.stp-plog svg{width:16px;height:16px;color:#2dd4bf;flex:none}.stp-plog span{margin-left:auto;font-size:0.64rem;font-weight:700;color:#5eead4;opacity:.85;flex:none}',
+      '.stp-who .stp-pg{display:inline-flex;align-items:center;gap:2px;color:#5eead4;font-weight:800;flex:none}.stp-who .stp-pg svg{width:12px;height:12px}',
+      '.stp-pgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}',
+      '.stp-pcell{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:0;padding:0;background:#141824 center/cover no-repeat;cursor:pointer}',
+      '.stp-pcell span{position:absolute;left:0;right:0;bottom:0;padding:14px 6px 5px;background:linear-gradient(transparent,rgba(0,0,0,.8));color:#e2e8f0;font-size:0.60rem;font-weight:800;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.stp-item{padding:7px 0 1px;border-top:1px solid rgba(255,255,255,0.06);margin-top:7px}',
       '.stp-who{display:flex;align-items:center;gap:6px;font-size:0.66rem;color:#64748b;min-width:0}',
       '.stp-who b{color:#e2e8f0;font-weight:800;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
@@ -140,6 +152,9 @@
     if (revCount) meta.push('<strong>★ ' + avg.toFixed(1) + '</strong> · 후기 ' + revCount);
     if (visits) meta.push('<u>' + visits + '명 다녀옴</u>');
     var h = '<div class="stp-h"><b><em>★</em> 박지 후기</b><span class="stp-meta">' + meta.join(' · ') + '</span></div>';
+    var plog = hit.plog || {}, plogN = Number(plog.count) || 0, plogUsers = {};
+    (Array.isArray(plog.items) ? plog.items : []).forEach(function (p) { if (p && p.user_id) plogUsers[p.user_id] = true; });
+    if (plogN) h += '<button type="button" class="stp-plog" data-stp="plog" data-spot="' + esc(id) + '">' + plogIc() + '이 박지에서 플로깅 ' + plogN + '번<span>사진 보기 ›</span></button>';
     if (top.length) h += '<div class="stp-line">' + top.map(function (k) { return '<span>' + esc(k) + ' ' + tipMap[k] + '</span>'; }).join('') + '</div>';
 
     // 최근 글: 별점 후기 + 팁 한 줄 (같은 사람 것은 별점 후기만)
@@ -166,6 +181,7 @@
         right = '<button type="button" class="red" data-stp="del" data-spot="' + esc(id) + '" data-uid="' + esc(x.user_id) + '">삭제 (운영팀)</button>';
       }
       return '<div class="stp-item"><div class="stp-who"><b>' + esc(x.nickname || '백패커') + '</b>' +
+        (plogUsers[x.user_id] ? '<span class="stp-pg">' + plogIc() + '플로깅</span>' : '') +
         (it.kind === 'rev' ? '<span class="st">' + stars(x.rating) + '</span>' : '') +
         '<span>' + esc(md(it.at)) + '</span>' + right + '</div>' +
         (it.kind === 'rev' ? (x.text ? '<div class="stp-txt">' + esc(x.text) + '</div>' : '') : '<div class="stp-txt">' + esc(x.note) + '</div>') + '</div>';
@@ -250,6 +266,44 @@
     setTimeout(function () { if (sheet) sheet.classList.add('on'); }, 20);
     dim.addEventListener('click', closeSheet);
     sheet.addEventListener('click', onSheetClick);
+  }
+  // 플로깅 사진 보기: 같은 아래 창에 사진 칸. 누르면 그 피드를 연다
+  function openPlogSheet(id) {
+    injectCss();
+    closeSheet();
+    var plog = (store[id] && store[id].plog) || {};
+    var items = (Array.isArray(plog.items) ? plog.items : []).filter(function (p) {
+      return p && String(p.photo || '').indexOf('https://') === 0 && !hiddenUgc(p.id, p.user_id);
+    });
+    var name = shortName(spotOf(id));
+    var thumbOf = function (u) { return typeof window.okbmUserCollThumb === 'function' ? window.okbmUserCollThumb(u) : u; };
+    dim = document.createElement('div');
+    dim.className = 'stp-dim';
+    sheet = document.createElement('div');
+    sheet.className = 'stp-sheet';
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-label', name + ' 플로깅 사진');
+    sheet.innerHTML = '<h6>' + esc(name) + ' 플로깅 ' + (Number(plog.count) || items.length) + '번</h6>' +
+      '<p>이 박지 주변 쓰레기를 주워 온 낭만루터들의 인증 사진이에요.</p>' +
+      '<div class="stp-body"><div class="stp-pgrid">' + items.map(function (p) {
+        var u = String(thumbOf(p.photo) || p.photo).replace(/"/g, '%22');
+        return '<button type="button" class="stp-pcell" data-stp-feed="' + esc(p.id) + '" style="background-image:url(&quot;' + esc(u) + '&quot;)" aria-label="' + esc((p.author || '낭만루터') + ' 플로깅 인증') + '"><span>' + esc(p.author || '낭만루터') + '</span></button>';
+      }).join('') + '</div></div>' +
+      '<div class="stp-row"><button type="button" data-stp="skip">닫기</button></div>';
+    document.body.appendChild(dim);
+    document.body.appendChild(sheet);
+    void sheet.offsetHeight;
+    setTimeout(function () { if (sheet) sheet.classList.add('on'); }, 20);
+    dim.addEventListener('click', closeSheet);
+    sheet.addEventListener('click', function (e) {
+      if (e.target.closest('[data-stp="skip"]')) { closeSheet(); return; }
+      var c = e.target.closest('[data-stp-feed]');
+      if (!c) return;
+      var fid = c.getAttribute('data-stp-feed');
+      closeSheet();
+      if (typeof window.okbmOpenDirectFeed === 'function') window.okbmOpenDirectFeed(fid);
+      else window.location.assign('index.html?feed=' + encodeURIComponent(fid));
+    });
   }
   function paintStars() {
     if (!sheet) return;
@@ -368,9 +422,11 @@
     }
     var act = b.getAttribute('data-stp');
     // 기능 사용 세기 (H8): open 남기기 창 · all 후기 전부 보기 · write 사진과 함께 후기 올리기
-    if (/^(open|all|write)$/.test(act) && typeof window.okbmMetric === 'function') window.okbmMetric('feat_spot_tips_' + act);
+    if (/^(open|all|write|plog)$/.test(act) && typeof window.okbmMetric === 'function') window.okbmMetric('feat_spot_tips_' + act);
     if (act === 'open') {
       load(id, false).then(function () { openSheet(id, false); });
+    } else if (act === 'plog') {
+      openPlogSheet(id);
     } else if (act === 'all') {
       if (typeof window.openLoungeSpotReviews === 'function') window.openLoungeSpotReviews(id);
     } else if (act === 'write') {

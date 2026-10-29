@@ -1147,7 +1147,7 @@
             var targetKey = window.SUPABASE_ANON_KEY || '';
             var spotMainName = (spot.spot_main || spot.name || '').trim();
             if (!sId && !spotMainName) return [];
-            var selectCols = 'id,user_id,spot,spot_id,photos,photo_memos_json,author,instagram,memo,weight_kg,likes_count,comments_count,last_comment,date,created_at,feed_type';
+            var selectCols = 'id,user_id,spot,spot_id,photos,photo_memos_json,author,instagram,memo,weight_kg,likes_count,comments_count,last_comment,plogging_photo,date,created_at,feed_type';
             // 공개 글과 내 글만 받는다. 서버 규칙은 관리자에게 남의 나만보기 글도 내주므로 여기서 거른다
             var myUid = (typeof window.okbmGetCurrentUserId === 'function') ? String(window.okbmGetCurrentUserId() || '').trim() : '';
             var visibleParam = myUid
