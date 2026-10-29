@@ -9274,13 +9274,13 @@ window.openPastTripRegisterModal = function(ev) {
       '.ptw-pubcard{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}.ptw-pub{display:flex;justify-content:space-between;align-items:center;gap:10px}.ptw-pub b{font-size:0.80rem;color:#fff;font-weight:900}' +
       '.ptw-sw{flex:none;width:44px;height:26px;border-radius:13px;border:0;background:#334155;position:relative;cursor:pointer;padding:0;transition:background .2s}.ptw-sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}' +
       '.ptw-sw[aria-checked="true"]{background:#5bb8f0}.ptw-sw[aria-checked="true"]:after{transform:translateX(18px)}.ptw-sw:disabled{opacity:.45;cursor:default}' +
-      '.ptw-plog{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,background .2s}.ptw-plog.on{border-color:rgba(45,212,191,0.4);background:rgba(45,212,191,0.05)}' +
-      '.ptw-plog .ptw-pub b{display:inline-flex;align-items:center;gap:6px}.ptw-plog .ptw-pub b svg{width:17px;height:17px;color:#2dd4bf}.ptw-plog .ptw-sw[aria-checked="true"]{background:#2dd4bf}' +
+      '.ptw-plog{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,background .2s}.ptw-plog.on{border-color:rgba(52,211,153,0.4);background:rgba(52,211,153,0.05)}' +
+      '.ptw-plog .ptw-pub b{display:inline-flex;align-items:center;gap:6px}.ptw-plog .ptw-pub b svg{width:17px;height:17px;color:#34d399}.ptw-plog .ptw-sw[aria-checked="true"]{background:#34d399}' +
       '.ptw-plog p{margin:0;font-size:0.72rem;color:#94a3b8;line-height:1.5;font-weight:600}.ptw-plog-row{display:flex;align-items:center;gap:12px}' +
-      '.ptw-plog-slot{flex:none;position:relative;width:84px;height:84px;border-radius:12px;border:1.5px dashed rgba(45,212,191,0.5);background:rgba(45,212,191,0.06);color:#5eead4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:0.66rem;font-weight:800;cursor:pointer;padding:0;font-family:inherit;background-size:cover;background-position:center}' +
-      '.ptw-plog-slot svg{width:24px;height:24px}.ptw-plog-slot.has{border-style:solid;border-color:#2dd4bf}.ptw-plog-slot.has>span{display:none}' +
-      '.ptw-plog-ck{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:#2dd4bf;color:#04201c;display:flex;align-items:center;justify-content:center}.ptw-plog-ck svg{width:13px;height:13px;stroke-width:3}' +
-      '.ptw-plog-msg{min-width:0;font-size:0.72rem;line-height:1.5;color:#94a3b8;font-weight:700}.ptw-plog-msg b{display:block;font-size:0.80rem;color:#5eead4;font-weight:900}.ptw-plog-msg.warn b{color:#fbbf24}' +
+      '.ptw-plog-slot{flex:none;position:relative;width:84px;height:84px;border-radius:12px;border:1.5px dashed rgba(52,211,153,0.5);background:rgba(52,211,153,0.06);color:#6ee7b7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:0.66rem;font-weight:800;cursor:pointer;padding:0;font-family:inherit;background-size:cover;background-position:center}' +
+      '.ptw-plog-slot svg{width:24px;height:24px}.ptw-plog-slot.has{border-style:solid;border-color:#34d399}.ptw-plog-slot.has>span{display:none}' +
+      '.ptw-plog-ck{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:#34d399;color:#04201c;display:flex;align-items:center;justify-content:center}.ptw-plog-ck svg{width:13px;height:13px;stroke-width:3}' +
+      '.ptw-plog-msg{min-width:0;font-size:0.72rem;line-height:1.5;color:#94a3b8;font-weight:700}.ptw-plog-msg b{display:block;font-size:0.80rem;color:#6ee7b7;font-weight:900}.ptw-plog-msg.warn b{color:#fbbf24}' +
       '.ptw-plog-msg button{margin-top:4px;background:none;border:0;padding:0;color:#94a3b8;font-size:0.68rem;font-weight:800;text-decoration:underline;cursor:pointer;font-family:inherit}' +
       '.ptw-done{position:absolute;inset:0;z-index:30;background:#07090e;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;gap:12px;padding:24px;text-align:center}.ptw-done[hidden]{display:none}.ptw-done .ck{width:56px;height:56px;border-radius:50%;background:#5bb8f0;color:#001521;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center}' +
       '.ptw-done>:first-child{margin-top:auto}.ptw-done>:last-child{margin-bottom:auto}.ptw-done>*{flex-shrink:0}' +
@@ -10072,7 +10072,7 @@ window._ptwShowDone = function(record, next) {
     '<h6>' + (pub ? '피드에 올라갔어요' : '나만 보기로 저장했어요') + '</h6>' +
     '<p>' + (pub ? '다른 낭만루터들이 피드와 박지 후기에서 볼 수 있어요.' : esc(why)) + '</p>' +
     (photo ? '<div class="ptw-card"><img src="' + escapeHtml(okbmSafeImageUrl(photo)) + '" alt="" referrerpolicy="no-referrer"><div><b>' + esc(spotShort) + '</b>' + esc(record.date || '') + '</div></div>' : '') +
-    (record.ploggingPhoto ? '<p class="ptw-plog-done" style="display:inline-flex;align-items:center;gap:6px;color:#5eead4;font-weight:800;">' + window.okbmPlogIcon() + '플로깅 1번이 더해졌어요</p>' : '') +
+    (record.ploggingPhoto ? '<p class="ptw-plog-done" style="display:inline-flex;align-items:center;gap:6px;color:#6ee7b7;font-weight:800;">' + window.okbmPlogIcon() + '플로깅 1번이 더해졌어요</p>' : '') +
     (pub ? '<p id="ptwFollowNews" hidden></p>' : '') +
     '<div id="ptwBadge" class="ptw-badge"></div>' +
     '<div class="ptw-row2"><button type="button" data-ptw-done="close">닫기</button>' +

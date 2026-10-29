@@ -194,7 +194,7 @@
     if (S.loading && S.uid === uid) return S.loading;
     S.uid = uid;
     var q = a.url + '/rest/v1/feeds?' + ownerFilter(uid) +
-      '&select=id,spot,spot_id,date,photos,likes_count,comments_count,elevation,created_at,is_published&order=date.desc&limit=1000';
+      '&select=id,spot,spot_id,date,photos,likes_count,comments_count,elevation,created_at,is_published,plogging_photo&order=date.desc&limit=1000';
     S.loading = fetch(q, { headers: a.headers }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
       if (S.uid !== uid) return S.feeds || [];
       S.feeds = Array.isArray(rows) ? rows : [];
@@ -325,6 +325,14 @@
       add({ id: 'trips' + t[0], group: 'trips', ladder: 'trips', shape: 'circle', fill: '#24473a', metal: t[1], icon: 'tent', num: t[0], ribbon: 'BACKPACKING',
         ko: t[0] === 1 ? '첫 백패킹' : '백패킹 ' + t[0] + '회', title: t[0] + ' BACKPACKING', desc: t[0] === 1 ? '첫 백패킹 피드를 올렸어요' : '백패킹 피드를 ' + t[0] + '번 올렸어요',
         got: !!x, date: x && x.d, spot: nameOf(x), cur: Math.min(feeds.length, t[0]), goal: t[0], unit: '회' });
+    });
+    // 플로깅(H19): 플로깅 사진을 붙인 공개 피드 수. 단계는 기록과 같다(1·5 철, 10~30 동, 40~70 은, 80·90 금, 100 무지개)
+    var plogAsc = asc.filter(function (x) { return !!x.f.plogging_photo; });
+    [[1, 'i'], [5, 'i'], [10, 'b'], [20, 'b'], [30, 'b'], [40, 's'], [50, 's'], [60, 's'], [70, 's'], [80, 'g'], [90, 'g'], [100, 'r']].forEach(function (t) {
+      var x = plogAsc[t[0] - 1];
+      add({ id: 'plog' + t[0], group: 'plog', ladder: 'plog', shape: 'circle', fill: '#0f4a36', metal: t[1], icon: 'bag', num: t[0], ribbon: 'PLOGGING',
+        ko: t[0] === 1 ? '첫 플로깅' : '플로깅 ' + t[0] + '회', title: t[0] + ' PLOGGING', desc: t[0] === 1 ? '박지 주변 쓰레기를 주워 처음 인증했어요' : '박지 주변 쓰레기를 주워 ' + t[0] + '번 인증했어요',
+        got: !!x, date: x && x.d, spot: nameOf(x), cur: Math.min(plogAsc.length, t[0]), goal: t[0], unit: '회' });
     });
     // 누적 높이
     var sum = 0, cross = {};
@@ -520,7 +528,7 @@
     box.innerHTML = h;
     if (window.okbmBadges && S.feeds) {
       // 배지는 공개 피드만 센다(나만 보기로 올린 것은 빼고)
-      window.okbmBadges.set(buildBadges(feeds.filter(function (f) { return f.is_published !== false; })));
+      window.okbmBadges.set(buildBadges(feeds.filter(function (f) { return f.is_published !== false; })), true);
       window.okbmBadges.card($('mrBadges'));
       // 새 배지는 낭만리포트를 열 때마다 한 번 본다
       if (!S.badgeChecked) { S.badgeChecked = true; window.okbmBadges.checkNew(S.uid); window.okbmBadges.intro(S.uid); }

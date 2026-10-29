@@ -4777,9 +4777,9 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       ? '<div class="okbm-plog-sec" style="width:100%; display:flex; flex-direction:column; background:#000000;">' +
           '<div style="width:100%; overflow:hidden; background:#000000; position:relative; display:flex; align-items:center; justify-content:center;">' +
             '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(plogPhoto)) + '" alt="플로깅 인증 사진" loading="lazy" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
-            '<span class="okbm-plog-pill" style="position:absolute; top:10px; left:10px; display:inline-flex; align-items:center; gap:5px; padding:5px 10px 5px 8px; border-radius:999px; background:rgba(4,32,28,0.82); border:1px solid rgba(45,212,191,0.45); color:#99f6e4; font-size:0.72rem; font-weight:800;">' + plogIcon + '플로깅 인증</span>' +
+            '<span class="okbm-plog-pill" style="position:absolute; top:10px; left:10px; display:inline-flex; align-items:center; gap:5px; padding:5px 10px 5px 8px; border-radius:999px; background:rgba(4,30,20,0.82); border:1px solid rgba(52,211,153,0.45); color:#a7f3d0; font-size:0.72rem; font-weight:800;">' + plogIcon + '플로깅 인증</span>' +
           '</div>' +
-          '<div style="padding:10px 14px 14px 14px; background:#080b11; border-bottom:1px solid rgba(255,255,255,0.06); font-size:0.80rem; color:#cbd5e1; line-height:1.55;"><b style="color:#5eead4; font-weight:800;">플로깅했어요</b> · 박지 주변 쓰레기를 주워 왔어요.</div>' +
+          '<div style="padding:10px 14px 14px 14px; background:#080b11; border-bottom:1px solid rgba(255,255,255,0.06); font-size:0.80rem; color:#cbd5e1; line-height:1.55;"><b style="color:#6ee7b7; font-weight:800;">플로깅했어요</b> · 박지 주변 쓰레기를 주워 왔어요.</div>' +
         '</div>'
       : '';
 
@@ -4872,7 +4872,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       '<div class="okbm-feed-head" style="position:sticky; top:0; z-index:20; padding:8px 12px; background:#000000; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.08);">' +
         '<button type="button" onclick="window.goBackModal(event);" aria-label="뒤로" style="background:#0c1017; border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>' +
         '<div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">' + authorLineHtml + spotTitleHtml +
-          (ploggingSectionHtml ? '<span class="okbm-plog-mark" title="플로깅 인증" aria-label="플로깅 인증" style="flex:none; display:inline-flex; color:#2dd4bf;">' + plogIcon + '</span>' : '') + '</div>' +
+          (ploggingSectionHtml ? '<span class="okbm-plog-mark" title="플로깅 인증" aria-label="플로깅 인증" style="flex:none; display:inline-flex; color:#34d399;">' + plogIcon + '</span>' : '') + '</div>' +
         '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
           '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;" title="' + escapeHtml(log.date || '') + '">' + escapeHtml(sShortDate) + '</span>' +
           window.okbmFeedInstagramBadgeHtml(log.instagram || log.insta || '') +
@@ -7772,7 +7772,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     return String(new Date().getFullYear()) === m[1] ? md : (m[1] + '년 ' + md);
   }
 
-  function okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, canNavigateSpot, extraRightHtml, spotId) {
+  function okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, canNavigateSpot, extraRightHtml, spotId, plogged) {
     var safeAuthor = escapeHtml(authorName || '낭만백패커');
     var safeUserId = escapeHtml(recordUserId || '');
     var safeSpot = escapeHtml(spotName || '나의 힐링 스팟');
@@ -7791,6 +7791,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           '<div style="display:flex; align-items:center; gap:5px; min-width:0; line-height:1.2; margin-bottom:2px;">' +
             '<span style="font-size:0.9rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; ' + textShadowStyle + '">' + safeAuthor + '</span>' +
             (safeDate ? '<span style="font-size:0.74rem; font-weight:600; color:rgba(255,255,255,0.78); flex-shrink:0; ' + textShadowStyle + '">· ' + safeDate + '</span>' : '') +
+            // H19 플로깅한 피드: 날짜 옆에 플로깅 표시 (모양은 badge-ring.js CSS)
+            (plogged && typeof window.okbmPlogIcon === 'function' ? '<span class="okbm-plog-chip">' + window.okbmPlogIcon() + '플로깅</span>' : '') +
           '</div>' +
           spotRow +
         '</div>' +
@@ -8249,7 +8251,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       }
     }
 
-    var headerBarHtml = okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, canNavigateSpot, socialBadgesHtml, record.spotId);
+    var isPlogged = String(record.ploggingPhoto || record.plogging_photo || '').indexOf('https://') === 0;
+    var headerBarHtml = okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, canNavigateSpot, socialBadgesHtml, record.spotId, isPlogged);
 
     var hasRealFieldPhotos = Boolean(totalPhotosCount > 0);
     var isPub = Boolean(record.isPublished === true && hasRealFieldPhotos);
@@ -8382,6 +8385,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + idx + '" data-feed-id="' + cardId + '" data-ready-shot-sig="' + escapeHtml(okbmReadyShotCardSig(record)) + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '">' +
       headerBarHtml +
+      (isPlogged ? '<div class="okbm-plog-frame" aria-hidden="true"></div>' : '') +
 
       '<div class="reel-media-stage">' +
         '<div style="width:100% !important; height:100% !important; position:relative; overflow:hidden; background:#000000;">' +

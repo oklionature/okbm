@@ -4960,13 +4960,15 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           var weightStr = weightVal ? (weightVal + 'kg') : '';
           var serverLikes = (f.likes_count !== undefined && f.likes_count !== null) ? Number(f.likes_count) : Number(f.likes || 0);
           var likesCount = Number(starsMap[String(f.id).trim()]) || serverLikes || 0;
+          // H19 플로깅한 피드는 초록 테두리 + 이름표 앞 봉투 표시 (CSS는 badge-ring.js)
+          var isPlog = String(f.plogging_photo || f.ploggingPhoto || '').indexOf('https://') === 0;
 
           return `
-            <div data-feed-id="${fId}" data-spot-id="${escapeHtml(String(spot.id).trim())}" onclick="openMapSpotFeedDetailModal(this.dataset.feedId, this.dataset.spotId)" style="flex:0 0 145px; width:145px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
+            <div data-feed-id="${fId}" data-spot-id="${escapeHtml(String(spot.id).trim())}" onclick="openMapSpotFeedDetailModal(this.dataset.feedId, this.dataset.spotId)"${isPlog ? ' class="okbm-plog-rail"' : ''} style="flex:0 0 145px; width:145px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
               <div style="width:100%; aspect-ratio:3/4; position:relative; background:#000; overflow:hidden;">
                 <img src="${escapeHtml(okbmSafeImageUrl(thumbUrl))}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy" />
                 <div style="position:absolute; top:5px; left:5px; background:#0c1017; padding:2px 6px; border-radius:4px; font-size:0.56rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85px;">
-                  ${escapeHtml(authorNick)}
+                  ${isPlog && typeof window.okbmPlogIcon === 'function' ? '<span style="display:inline-flex;vertical-align:-2px;margin-right:3px;color:#34d399;">' + window.okbmPlogIcon() + '</span>' : ''}${escapeHtml(authorNick)}
                 </div>
               </div>
               <div style="padding:6px 7px; display:flex; flex-direction:column; gap:3px;">
