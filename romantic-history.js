@@ -4705,7 +4705,9 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (typeof window.openUgcSafetyMenu !== 'function') return '';
 
     var isFloat = variant === 'float';
-    var btnStyle = isFloat
+    var btnStyle = variant === 'plain'
+      ? 'background:none; border:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#d1d1d6; padding:0; flex-shrink:0;'
+      : isFloat
       ? 'background:#0c1017; border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0; flex-shrink:0;'
       : 'background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#94a3b8; flex-shrink:0;';
 
@@ -4848,27 +4850,36 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var spotLabelHtml = escapeHtml(sSpotName || '낭만 스팟') + (log.elevation ? (' <span style="font-size:0.75rem; color:#fde047; font-weight:800;">(' + escapeHtml(String(log.elevation)) + ')</span>') : '');
     var spotTitleHtml = sCanMap
       ? okbmFeedSpotPillHtml(sSpotName, sSpotId)
-      : ('<div style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">' + spotLabelHtml + '</div>');
+      : ('<div style="font-size:12px; font-weight:600; color:#d1d1d6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + spotLabelHtml + '</div>');
     // 남의 글은 박지 이름 왼쪽(같은 줄)에 작성자 아이디. 누르면 그 회원 피드 모아보기(내 글은 뺀다)
     var sIsOwner = typeof window.isRecordOwner === 'function' && window.isRecordOwner(log);
     var sAuthor = String(log.author || log.nick || log.nickname || '').trim();
     var sAuthorUserId = String(log.userId || log.user_id || '').trim();
     // 프로필 사진이 등록돼 있으면 동그라미 사진, 없으면 동그라미 안 사람 아이콘(사진은 받는 대로 okbmPaintUserAvatarNodes가 채운다)
+    if (sIsOwner) {
+      var sOwnNick = (sProfile && sProfile.nickname) ? sProfile.nickname : (localStorage.getItem('okbm_user_nick') || '');
+      sAuthor = String(sOwnNick || sAuthor || '').trim();
+      if (!sAuthorUserId) sAuthorUserId = sMyId;
+    }
     var sAvatarSmall = '';
-    if (!sIsOwner && sAuthorUserId && typeof window.resolveUserMasterPhoto === 'function') {
+    if (sAuthorUserId && typeof window.resolveUserMasterPhoto === 'function') {
       sAvatarSmall = okbmSmallAvatarUrl(window.resolveUserMasterPhoto(sAuthorUserId, sAuthor, ''));
     }
     var authorAvatarHtml =
-      '<span style="position:relative; width:22px; height:22px; border-radius:50%; overflow:hidden; background:#1e293b; border:1px solid rgba(255,255,255,0.18); flex-shrink:0; box-sizing:border-box;">' +
-        '<svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="position:absolute; left:50%; top:50%; width:12px; height:12px; transform:translate(-50%,-50%); display:' + (sAvatarSmall ? 'none' : 'block') + ';" fill="none" stroke="#94a3b8" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+      '<span style="position:relative; display:block; width:36px; height:36px; border-radius:50%; overflow:hidden; background:#17171b; border:1px solid rgba(255,255,255,0.12); flex-shrink:0; box-sizing:border-box;">' +
+        '<svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="position:absolute; left:50%; top:50%; width:18px; height:18px; transform:translate(-50%,-50%); display:' + (sAvatarSmall ? 'none' : 'block') + ';" fill="none" stroke="#8b8b93" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
         '<img data-user-avatar-small="' + escapeHtml(sAuthorUserId) + '" src="' + escapeHtml(sAvatarSmall) + '" alt="" decoding="async" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:' + (sAvatarSmall ? 'block' : 'none') + ';" />' +
       '</span>';
-    var authorLineHtml = (!sIsOwner && (sAuthor || sAuthorUserId))
-      ? '<button type="button" data-author="' + escapeHtml(sAuthor) + '" data-user-id="' + escapeHtml(sAuthorUserId) + '" data-metric-click="feat_user_feed_open" onclick="window.okbmOpenFeedAuthor(this);" style="flex:0 1 auto; min-width:0; max-width:42%; background:none; border:0; padding:2px 0; display:inline-flex; align-items:center; gap:6px; color:#e2e8f0; font-size:0.8rem; font-weight:800; cursor:pointer;" title="' + escapeHtml(sAuthor || '작성자') + '님의 피드 모아보기">' +
-          authorAvatarHtml +
-          '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(sAuthor || '낭만백패커') + '</span>' +
-        '</button>'
-      : '';
+    // 사진 옆 두 줄: 윗줄 이름 · 날짜, 아랫줄 박지. 남의 글은 사진·이름을 누르면 그 회원 피드 모아보기
+    var sCanOpenAuthor = !sIsOwner && Boolean(sAuthor || sAuthorUserId);
+    var sAuthorName = escapeHtml(sAuthor || '낭만백패커');
+    var authorAttrs = ' type="button" data-author="' + escapeHtml(sAuthor) + '" data-user-id="' + escapeHtml(sAuthorUserId) + '" data-metric-click="feat_user_feed_open" onclick="window.okbmOpenFeedAuthor(this);" title="' + escapeHtml(sAuthor || '작성자') + '님의 피드 모아보기"';
+    var authorAvatarBtnHtml = sCanOpenAuthor
+      ? '<button' + authorAttrs + ' style="background:none; border:0; padding:0; cursor:pointer; flex-shrink:0; border-radius:50%;">' + authorAvatarHtml + '</button>'
+      : authorAvatarHtml;
+    var authorNameHtml = sCanOpenAuthor
+      ? '<button' + authorAttrs + ' style="min-width:0; background:none; border:0; padding:0; font:inherit; font-size:14px; font-weight:700; color:#f2f2f3; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + sAuthorName + '</button>'
+      : '<span style="min-width:0; font-size:14px; font-weight:700; color:#f2f2f3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + sAuthorName + '</span>';
 
     var interactiveBarHtml =
       '<div style="padding:10px 16px 14px 16px; background:#000000; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.06);">' +
@@ -4889,30 +4900,36 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         '</div>' +
       '</div>';
 
-    // 머리글 한 줄: ◀ · 작성자 · 박지 · 날짜 · ⋯. 스크롤해도 지금 보는 카드의 머리글이 위에 붙는다(sticky).
+    // 머리글: ‹ · 사진 · (이름 · 날짜 / 박지) · ⋯. 스크롤해도 지금 보는 카드의 머리글이 위에 붙는다(sticky).
     // ⋯는 하나만: 내 글이면 수정·삭제, 남의 글이면 신고·차단(위쪽에 따로 있던 ⋯·◀ 줄은 없앴다)
     var sMoreHtml = sIsOwner
       ? (typeof window.openTripActionMenu === 'function'
-        ? '<button type="button" data-feed-id="' + sFeedId + '" onclick="event.preventDefault(); event.stopPropagation(); window.openTripActionMenu(this.dataset.feedId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#94a3b8; flex-shrink:0;" title="수정·삭제">' +
-            '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
+        ? '<button type="button" data-feed-id="' + sFeedId + '" onclick="event.preventDefault(); event.stopPropagation(); window.openTripActionMenu(this.dataset.feedId, event);" style="background:none; border:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#d1d1d6; padding:0; flex-shrink:0;" title="수정·삭제" aria-label="수정·삭제">' +
+            '<svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
           '</button>'
         : '')
-      : okbmBuildFeedOthersMoreBtnHtml(log.id, log.userId || log.user_id, log.author || log.nick || log.nickname, 'inline');
-    // 날짜는 짧게: 올해면 10.23, 아니면 25.10.23
+      : okbmBuildFeedOthersMoreBtnHtml(log.id, log.userId || log.user_id, log.author || log.nick || log.nickname, 'plain');
+    // 날짜: 올해면 10월 23일, 아니면 2025년 10월 23일 (릴스 머리줄과 같은 규칙)
     var sDateParts = String(log.date || '').match(/\d+/g);
     var sShortDate = String(log.date || '');
     if (sDateParts && sDateParts.length >= 3 && String(sDateParts[0]).length === 4) {
-      var sMd = String(sDateParts[1]).padStart(2, '0') + '.' + String(sDateParts[2]).padStart(2, '0');
-      sShortDate = Number(sDateParts[0]) === new Date().getFullYear() ? sMd : (String(sDateParts[0]).slice(2) + '.' + sMd);
+      var sMd = Number(sDateParts[1]) + '월 ' + Number(sDateParts[2]) + '일';
+      sShortDate = Number(sDateParts[0]) === new Date().getFullYear() ? sMd : (sDateParts[0] + '년 ' + sMd);
     }
 
     return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:2px solid rgba(255,255,255,0.12); overflow:clip; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:28px; box-sizing:border-box;">' +
-      '<div class="okbm-feed-head" style="position:sticky; top:0; z-index:20; padding:8px 12px; background:#000000; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.08);">' +
-        '<button type="button" onclick="window.goBackModal(event);" aria-label="뒤로" style="background:#0c1017; border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>' +
-        '<div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">' + authorLineHtml + spotTitleHtml +
-          (ploggingSectionHtml ? '<span class="okbm-plog-mark" title="플로깅 인증" aria-label="플로깅 인증" style="flex:none; display:inline-flex; color:#34d399;">' + plogIcon + '</span>' : '') + '</div>' +
-        '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
-          '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;" title="' + escapeHtml(log.date || '') + '">' + escapeHtml(sShortDate) + '</span>' +
+      '<div class="okbm-feed-head" style="position:sticky; top:0; z-index:20; padding:6px 4px 6px 2px; background:#000000; display:flex; align-items:center; gap:8px; border-bottom:1px solid rgba(255,255,255,0.08);">' +
+        '<button type="button" onclick="window.goBackModal(event);" aria-label="뒤로" style="background:none; border:0; color:#f2f2f3; width:40px; height:40px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>' +
+        authorAvatarBtnHtml +
+        '<div style="display:flex; flex-direction:column; justify-content:center; gap:3px; min-width:0; flex:1;">' +
+          '<div style="display:flex; align-items:center; gap:5px; min-width:0; line-height:1.25;">' +
+            authorNameHtml +
+            (sShortDate ? '<span style="font-size:12px; color:#8b8b93; flex-shrink:0; white-space:nowrap;" title="' + escapeHtml(log.date || '') + '">· ' + escapeHtml(sShortDate) + '</span>' : '') +
+            (ploggingSectionHtml ? '<span class="okbm-plog-mark" title="플로깅 인증" aria-label="플로깅 인증" style="flex:none; display:inline-flex; color:#34d399;">' + plogIcon + '</span>' : '') +
+          '</div>' +
+          '<div style="display:flex; min-width:0; color:#d1d1d6;">' + spotTitleHtml + '</div>' +
+        '</div>' +
+        '<div style="display:flex; align-items:center; gap:2px; flex-shrink:0;">' +
           window.okbmFeedInstagramBadgeHtml(log.instagram || log.insta || '') +
           sMoreHtml +
         '</div>' +
