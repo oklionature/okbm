@@ -5385,29 +5385,25 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
   };
 
+  // 등록자 정보창 기록 줄: 낭만리포트 '내 기록' 줄(.mr-tr)과 같은 모양. 박지 이름은 괄호 앞을 굵게, 괄호 안은 날짜와 한 줄에
   window.__buildUserCollectionFeedRowHtml = function(f, targetAuthor, targetUserId) {
     if (!f) return '';
-    var thumb = (window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(f)[0]) || f.photo || (f.photos && f.photos[0]) || f.readyShotPhoto || f.customTemplatePhoto || '';
-    var fSpot = escapeHtml(f.spot || '나의 힐링 스팟');
-    var fDate = escapeHtml(f.date || '');
-    var fWeight = escapeHtml(String(f.weightKg || f.weight_kg || '0.00'));
-    var rawMemo = String(f.memo || f.oneLineMemo || '');
-    var fMemo = escapeHtml(rawMemo.slice(0, 60));
-    var safeId = escapeHtml(String(f.id || ''));
-
-    return '<div class="js-open-user-feed-row" data-feed-id="' + safeId + '" data-author="' + escapeHtml(targetAuthor) + '" data-user-id="' + escapeHtml(targetUserId) + '" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; gap:12px; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">' +
-      '<div style="width:58px; height:58px; border-radius:8px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.14);">' +
-        (thumb ? '<img src="' + escapeHtml(okbmSafeImageUrl(thumb)) + '" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; display:block;" />' : '<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#64748b;"><svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="currentColor" stroke-width="1.8"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></div>') +
-      '</div>' +
-      '<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">' +
-        '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-          '<span style="font-size:0.86rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + fSpot + '</span>' +
-          '<span style="font-size:0.75rem; font-weight:900; color:#34d399; font-family:\'Space Grotesk\', sans-serif;">' + fWeight + 'kg</span>' +
-        '</div>' +
-        '<span style="font-size:0.62rem; color:#64748b; font-family:\'JetBrains Mono\', monospace;">' + fDate + '</span>' +
-        (fMemo ? ('<span style="font-size:0.68rem; color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">“' + fMemo + '”</span>') : '') +
-      '</div>' +
-    '</div>';
+    var raw = (window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(f)[0]) || f.photo || (f.photos && f.photos[0]) || f.readyShotPhoto || f.customTemplatePhoto || '';
+    var th = typeof window.okbmUserCollThumb === 'function' ? window.okbmUserCollThumb(raw) : raw;
+    th = th ? okbmSafeImageUrl(th) : '';
+    var spot = String(f.spot || '나의 힐링 스팟').replace(/^\[[^\]]*\]\s*/, '').trim();
+    var pm = spot.match(/^(.*?)\s*\((.*)\)\s*$/);
+    var name = pm ? pm[1] : spot, place = pm ? pm[2] : '';
+    var dateLabel = typeof window.okbmUserCollDateLabel === 'function' ? window.okbmUserCollDateLabel(f.date) : String(f.date || '');
+    var w = parseFloat(f.weightKg || f.weight_kg || 0);
+    var meta = [place, dateLabel, w > 0 ? '배낭 ' + (Math.round(w * 10) / 10) + 'kg' : ''].filter(Boolean).join(' · ');
+    var memo = String(f.memo || f.oneLineMemo || '');
+    if (memo.charAt(0) === '[') { try { var mArr = JSON.parse(memo); if (Array.isArray(mArr)) memo = String(mArr[0] || ''); } catch (eMemo) {} }
+    memo = memo.replace(/\s+/g, ' ').trim().slice(0, 80);
+    return '<button type="button" class="mr-tr js-open-user-feed-row" data-feed-id="' + escapeHtml(String(f.id || '')) + '" data-author="' + escapeHtml(targetAuthor) + '" data-user-id="' + escapeHtml(targetUserId) + '">' +
+      '<span class="mr-th"' + (th ? ' style="background-image:url(&quot;' + escapeHtml(th) + '&quot;)"' : '') + '></span>' +
+      '<span class="mr-tt"><b>' + escapeHtml(name) + '</b><small>' + escapeHtml(meta) + '</small>' + (memo ? '<small class="up-memo">' + escapeHtml(memo) + '</small>' : '') + '</span>' +
+    '</button>';
   };
 
   window.__userCollectionPagingState = {
@@ -5446,6 +5442,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       var currentUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
       var isOwner = Boolean(currentUserId && state.targetUserId && currentUserId === state.targetUserId);
 
+      if (state.year) filterParam += '&date=like.' + encodeURIComponent(state.year + '*'); // 등록자 정보창에서 고른 연도(user-profile.js)
       var query = targetUrl + '/rest/v1/feeds?' + filterParam + '&order=date.desc,created_at.desc&offset=' + state.offset + '&limit=' + state.limit;
       if (!isOwner) {
         query += '&is_published=eq.true';
@@ -5498,7 +5495,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         var appendedHtml = newItems.map(function(item) {
           return window.__buildUserCollectionFeedRowHtml(item, state.targetAuthor, state.targetUserId);
         }).join('');
-        container.insertAdjacentHTML('beforeend', appendedHtml);
+        (document.getElementById('userModalCardsContainer') || container).insertAdjacentHTML('beforeend', appendedHtml);
       }
     } catch (err) {
       console.warn('[romantic-history.js:__handleUserCollectionScroll]', err);
@@ -5600,59 +5597,26 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
   };
 
+  // 서버 공개 프로필(소개·사진·SNS·활동 숨김)이 오면 등록자 정보창 머리를 다시 그린다(user-profile.js)
   window.okbmApplyRouterPublicProfile = function(uRow) {
     if (!uRow || !uRow.id) return;
     var modal = document.getElementById('userFeedCollectionModal');
     if (!modal || String(modal.dataset.userId || '') !== String(uRow.id)) return;
-    var wrapEl = document.getElementById('userCollectionHeaderWrapper');
-    if (!wrapEl || typeof window.renderUserProfileHeaderSection !== 'function') return;
-    var viewerId = '';
-    try { viewerId = String((typeof window.okbmGetCurrentUserId === 'function' && window.okbmGetCurrentUserId()) || localStorage.getItem('okbm_user_id') || '').trim(); } catch (eViewer) { viewerId = ''; }
-    var viewingSelf = Boolean(viewerId && viewerId === String(uRow.id));
     var gears = (uRow.my_gears && typeof uRow.my_gears === 'object') ? uRow.my_gears : {};
     var sns = (gears.sns && typeof gears.sns === 'object') ? gears.sns : {};
+    var on = function(v) { return v === true || v === '1' || v === 1; };
+    var hideYear = on(uRow.hide_year_activity) || (uRow.hide_year_activity == null && on(gears.hide_year_activity));
+    var hideTotal = on(uRow.hide_total_activity) || (uRow.hide_total_activity == null && on(gears.hide_total_activity));
     var photo = String(uRow.hero_cover_url || uRow.photo_url || '').trim();
-    var hideYearActivity = uRow.hide_year_activity === true || uRow.hide_year_activity === '1' || uRow.hide_year_activity === 1;
-    var hideTotalActivity = uRow.hide_total_activity === true || uRow.hide_total_activity === '1' || uRow.hide_total_activity === 1;
-    if (!hideYearActivity && gears.hide_year_activity != null) {
-      hideYearActivity = gears.hide_year_activity === true || gears.hide_year_activity === '1' || gears.hide_year_activity === 1;
-    }
-    if (!hideTotalActivity && gears.hide_total_activity != null) {
-      hideTotalActivity = gears.hide_total_activity === true || gears.hide_total_activity === '1' || gears.hide_total_activity === 1;
-    }
-    var alreadyFollowing = modal.dataset.following === '1';
-    var canMessage = !viewingSelf && modal.dataset.canMessage !== '0';
-    var countBadge = document.getElementById('userModalRouteCountBadge');
-    var yearBadge = document.getElementById('userModalYearCount');
-    var feedCount = 0;
-    var yearCount = 0;
-    if (countBadge) {
-      var countMatch = String(countBadge.textContent || '').match(/\d+/);
-      if (countMatch) feedCount = parseInt(countMatch[0], 10);
-    }
-    if (yearBadge) {
-      var yearMatch = String(yearBadge.textContent || '').match(/\d+/);
-      if (yearMatch) yearCount = parseInt(yearMatch[0], 10);
-    }
-    wrapEl.innerHTML = window.renderUserProfileHeaderSection({
-      isOwner: viewingSelf,
-      userId: String(uRow.id),
-      nickname: String(uRow.nickname || modal.dataset.author || '').trim(),
-      bio: String(uRow.bio || '').trim(),
-      photoUrl: photo,
-      instagram: String(uRow.instagram || sns.instagram || '').trim(),
-      youtube: String(uRow.youtube || sns.youtube || '').trim(),
-      blog: String(uRow.blog || sns.blog || '').trim(),
-      snsChannel: '',
-      feedCount: feedCount,
-      yearCount: yearCount,
-      isFollowing: alreadyFollowing,
-      canMessage: canMessage,
-      hideYearActivity: viewingSelf ? false : hideYearActivity,
-      hideTotalActivity: viewingSelf ? false : hideTotalActivity,
-      showProfileMore: !viewingSelf,
-      moreFeedId: String(modal.dataset.feedId || '')
-    });
+    if (uRow.nickname) modal.dataset.author = String(uRow.nickname).trim();
+    modal.dataset.bio = String(uRow.bio || '').trim();
+    if (photo) modal.dataset.photo = photo;
+    modal.dataset.insta = String(uRow.instagram || sns.instagram || modal.dataset.insta || '').trim();
+    modal.dataset.yt = String(uRow.youtube || sns.youtube || modal.dataset.yt || '').trim();
+    modal.dataset.blog = String(uRow.blog || sns.blog || modal.dataset.blog || '').trim();
+    modal.dataset.hideYear = hideYear ? '1' : '0';
+    modal.dataset.hideTotal = hideTotal ? '1' : '0';
+    if (typeof window.okbmUserCollPaintHeader === 'function') window.okbmUserCollPaintHeader();
     if (photo && photo.indexOf('http') === 0 && typeof window.okbmPaintUserAvatarNodes === 'function') {
       window.okbmPaintUserAvatarNodes(String(uRow.id), photo);
     }
@@ -5688,6 +5652,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
 
     var old = document.getElementById('userFeedCollectionModal');
+    var oldKey = old ? String(old.dataset.userId || old.dataset.author || '').trim() : '';
     if (old) old.remove();
 
     var targetAuthor = String(authorName || '').trim();
@@ -5702,6 +5667,8 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (!myUserId) {
       try { myUserId = (typeof window.okbmGetCurrentUserId === 'function') ? String(window.okbmGetCurrentUserId() || '').trim() : ''; } catch (eSelf) { myUserId = ''; }
     }
+    // 기록을 보고 뒤로 왔거나 관심을 눌러 같은 사람 창을 다시 그리면 보던 탭·연도·스크롤을 이어 간다(user-profile.js)
+    var keepView = Boolean(isRestored) || Boolean(oldKey && oldKey === (targetUserId || targetAuthor));
     var followKey = targetUserId || targetAuthor;
     var followingList = safeGetJSON('okbm_following_users', []);
     var isFollowing = followingList.includes(followKey);
@@ -5753,39 +5720,27 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       isLoading: Boolean((window.SUPABASE_URL || '') && (window.SUPABASE_ANON_KEY || '') && (targetUserId || targetAuthor))
     };
 
-    var repSnsBadgeHtml = '';
+    var otherInsta = '';
+    var otherYt = '';
+    var otherBlog = '';
     if (isSelf) {
-      var selfInsta = localStorage.getItem('okbm_user_instagram') || '';
-      var selfYt = localStorage.getItem('okbm_user_youtube') || '';
-      var selfBlog = localStorage.getItem('okbm_user_blog') || '';
-      var selfSns = localStorage.getItem('okbm_user_sns_channel') || '';
-      if (typeof window.renderUserSnsBadgesHtml === 'function') {
-        repSnsBadgeHtml = window.renderUserSnsBadgesHtml(selfInsta, selfYt, selfBlog, true, selfSns);
-      }
+      otherInsta = localStorage.getItem('okbm_user_instagram') || '';
+      otherYt = localStorage.getItem('okbm_user_youtube') || '';
+      otherBlog = localStorage.getItem('okbm_user_blog') || '';
     } else {
-      var otherInsta = '';
-      var otherYt = '';
-      var otherBlog = '';
       initialRenderList.forEach(function(f) {
         if (!otherInsta && (f.instagram || f.insta || f.instaId)) otherInsta = f.instagram || f.insta || f.instaId;
         if (!otherYt && (f.youtube || f.youtubeUrl)) otherYt = f.youtube || f.youtubeUrl;
         if (!otherBlog && (f.blog || f.blogUrl)) otherBlog = f.blog || f.blogUrl;
       });
-      if (typeof window.renderUserSnsBadgesHtml === 'function') {
-        repSnsBadgeHtml = window.renderUserSnsBadgesHtml(otherInsta, otherYt, otherBlog, false, '');
-      }
     }
 
     var firstFeedId = (initialRenderList[0] && initialRenderList[0].id) ? String(initialRenderList[0].id).trim() : '';
     var canNote = !isSelf && Boolean(targetUserId) && !(typeof window.isUserBlocked === 'function' && window.isUserBlocked(targetUserId));
-    var visitorYear = String(new Date().getFullYear());
-    var visitorYearCount = initialRenderList.filter(function(r) {
-      return String((r && r.date) || '').indexOf(visitorYear) !== -1;
-    }).length;
 
     var cardsHtml = '';
     if (previewList.length === 0) {
-      cardsHtml = '<div style="width:100%; padding:60px 20px; text-align:center; color:#94a3b8; font-size:0.80rem;">등록된 낭만루트 기록이 없습니다.</div>';
+      cardsHtml = '<div class="mr-empty">불러오는 중이에요</div>';
     } else {
       cardsHtml = previewList.map(function(f) {
         return window.__buildUserCollectionFeedRowHtml(f, targetAuthor, targetUserId);
@@ -5819,54 +5774,41 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     modalEl.dataset.following = isFollowing ? '1' : '0';
     modalEl.dataset.canMessage = canNote ? '1' : '0';
     modalEl.dataset.feedId = firstFeedId;
-    window.__visitorSelectedYear = String(new Date().getFullYear());
-    window.__visitorProfileLogs = initialRenderList.slice();
+    modalEl.dataset.isSelf = isSelf ? '1' : '0';
+    modalEl.dataset.bio = isSelf ? String((profile && profile.bio) || localStorage.getItem('okbm_user_bio') || '') : '';
+    modalEl.dataset.photo = initialPhotoUrl;
+    modalEl.dataset.insta = String(otherInsta || '');
+    modalEl.dataset.yt = String(otherYt || '');
+    modalEl.dataset.blog = String(otherBlog || '');
     var inspectBlocked = Boolean(window.__okbmInspectBlockedUserId && String(window.__okbmInspectBlockedUserId).trim() === targetUserId);
     if (inspectBlocked) modalEl.dataset.fromBlocked = '1';
     var collectionZ = inspectBlocked ? '2147483645' : '2147483642';
-    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + collectionZ + ' !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + collectionZ + ' !important; display:flex; flex-direction:column; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
-    modalEl.innerHTML = `
-      <div style="flex-shrink:0 !important; position:relative; width:100%; height:calc(47px + env(safe-area-inset-top, 0px)); min-height:calc(47px + env(safe-area-inset-top, 0px)); background:#000000; padding:0 16px; padding-top:env(safe-area-inset-top, 0px); box-sizing:border-box; z-index:10;">
-        <div style="height:47px; display:flex; align-items:center; justify-content:flex-start; max-width:480px; margin:0 auto;">
-          <button type="button" onclick="window.navigateToDockTab('router');" style="height:47px; display:inline-flex; align-items:center; gap:8px; background:none; border:none; padding:0; cursor:pointer;">
-            <span style="width:30px; height:30px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-              <img src="logo.png" alt="낭만루트 로고" style="width:28px; height:28px; object-fit:contain; display:block;" />
-            </span>
-            <span style="font-family:var(--font-display), 'SUIT', sans-serif; font-size:1.2rem; font-weight:900; letter-spacing:-0.035em; line-height:1; background:linear-gradient(135deg, #ffffff 0%, #e2e8f0 30%, #94a3b8 52%, #ffffff 78%, #cbd5e1 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.9)) drop-shadow(0 0 8px rgba(255,255,255,0.15));">낭만루트</span>
-          </button>
-        </div>
-      </div>
-
-      <div id="userCollectionHeaderWrapper" style="flex-shrink:0; width:100%; max-width:480px; margin:0 auto; box-sizing:border-box; z-index:9;">
-        ${(typeof window.renderUserProfileHeaderSection === 'function') ? window.renderUserProfileHeaderSection({
-          isOwner: isSelf,
-          userId: targetUserId,
-          nickname: targetAuthor,
-          bio: isSelf ? ((profile && profile.bio) || localStorage.getItem('okbm_user_bio') || '') : '',
-          photoUrl: initialPhotoUrl,
-          instagram: isSelf ? (localStorage.getItem('okbm_user_instagram') || '') : otherInsta,
-          youtube: isSelf ? (localStorage.getItem('okbm_user_youtube') || '') : otherYt,
-          blog: isSelf ? (localStorage.getItem('okbm_user_blog') || '') : otherBlog,
-          snsChannel: isSelf ? (localStorage.getItem('okbm_user_sns_channel') || '') : '',
-          feedCount: initialRenderList.length,
-          yearCount: visitorYearCount,
-          isFollowing: isFollowing,
-          canMessage: canNote,
-          showProfileMore: !isSelf,
-          moreFeedId: firstFeedId
-        }) : ''}
-      </div>
-
-      <div id="userModalCardsContainer" onscroll="window.__handleUserCollectionScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(80px + env(safe-area-inset-bottom, 8px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
-        ${cardsHtml}
-      </div>
-    `;
+    // 머리·탭·발자취와 누름은 user-profile.js(data-up-act). 머리는 okbmUserCollMounted가 채운다
+    modalEl.innerHTML =
+      '<div class="up-top"><div>' +
+        '<button type="button" class="up-logo" data-up-act="home"><img src="logo.png" alt="" />낭만루트</button>' +
+        (isSelf ? '' : '<button type="button" class="mr-ib" data-up-act="more" aria-label="더보기"><svg viewBox="0 0 24 24" style="fill:currentColor;stroke:none;"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>') +
+      '</div></div>' +
+      '<div id="userCollScroll" class="up-scroll"><div class="up-in">' +
+        '<div id="userCollectionHeaderWrapper"></div>' +
+        '<div class="mr-tabs">' +
+          '<button type="button" class="mr-tab on" data-up-tab="rec">기록</button>' +
+          '<button type="button" class="mr-tab" data-up-tab="foot">발자취</button>' +
+        '</div>' +
+        '<div class="up-pane on" data-up-pane="rec">' +
+          '<div class="mr-chips up-years" id="upYearChips"></div>' +
+          '<div id="userModalCardsContainer">' + cardsHtml + '</div>' +
+        '</div>' +
+        '<div class="up-pane" data-up-pane="foot"><div id="upFoot"></div></div>' +
+      '</div></div>';
 
     document.body.appendChild(modalEl);
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('history');
     }
+    if (typeof window.okbmUserCollMounted === 'function') window.okbmUserCollMounted(modalEl, keepView);
 
     var targetUrl = window.SUPABASE_URL || '';
     var targetKey = window.SUPABASE_ANON_KEY || '';
@@ -5909,48 +5851,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         ? ('user_id=eq.' + encodeURIComponent(targetUserId))
         : ('author=eq.' + encodeURIComponent(targetAuthor));
 
-      var countQuery = targetUrl + '/rest/v1/feeds?' + filterParam + '&select=id';
-      if (!isSelf) {
-        countQuery += '&is_published=eq.true';
-      }
-
-      fetch(countQuery, {
-        method: 'HEAD',
-        headers: {
-          'apikey': targetKey,
-          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
-          'Prefer': 'count=exact'
-        }
-      }).then(function(res) {
-        var cr = res.headers.get('content-range');
-        if (cr && cr.includes('/')) {
-          var totalCount = cr.split('/')[1];
-          if (totalCount && totalCount !== '*') {
-            var badgeEl = document.getElementById('userModalRouteCountBadge');
-            var totalEl = document.getElementById('userModalTotalCount');
-            if (badgeEl) badgeEl.innerText = totalCount;
-            if (totalEl) totalEl.innerText = totalCount;
-          }
-        }
-      }).catch(function() {});
-
-      var yearCountQuery = countQuery + '&date=like.' + encodeURIComponent(visitorYear + '*');
-      fetch(yearCountQuery, {
-        method: 'HEAD',
-        headers: {
-          'apikey': targetKey,
-          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
-          'Prefer': 'count=exact'
-        }
-      }).then(function(res) {
-        var cr = res.headers.get('content-range');
-        if (cr && cr.includes('/')) {
-          var yearTotal = cr.split('/')[1];
-          var yearEl = document.getElementById('userModalYearCount');
-          if (yearTotal && yearTotal !== '*' && yearEl && String(window.__visitorSelectedYear || visitorYear) === String(visitorYear)) yearEl.innerText = yearTotal;
-        }
-      }).catch(function() {});
-
+      // 기록 수·올해 수·다녀온 박지 수는 user-profile.js가 가벼운 기록 목록 한 번으로 센다(예전 HEAD 두 번)
       var fetchQuery = targetUrl + '/rest/v1/feeds?' + filterParam + '&order=date.desc,created_at.desc&offset=0&limit=10';
       if (!isSelf) {
         fetchQuery += '&is_published=eq.true';
@@ -5963,6 +5864,13 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
           'Content-Type': 'application/json'
         }
       }).then(function(r) { return r.ok ? r.json() : []; }).then(function(serverRows) {
+        // 연도를 골랐거나 보던 자리를 되살리는 중이면 user-profile.js가 목록을 따로 받는다
+        if (window.__userCollectionPagingState && window.__userCollectionPagingState.skipInitial) return;
+        if (Array.isArray(serverRows) && serverRows.length === 0) {
+          var emptyBox = document.getElementById('userModalCardsContainer');
+          if (emptyBox) emptyBox.innerHTML = '<div class="mr-empty">아직 올린 기록이 없어요</div>';
+          if (window.__userCollectionPagingState) window.__userCollectionPagingState.hasMore = false;
+        }
         if (Array.isArray(serverRows) && serverRows.length > 0) {
           var serverNormalized = serverRows.map(function(row, sIdx) {
             var norm = window.normalizeHistoryRecord(row, sIdx);
@@ -5980,6 +5888,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
               return window.__buildUserCollectionFeedRowHtml(f, targetAuthor, targetUserId);
             }).join('');
           }
+          if (typeof window.__okbmUserCollPutTop === 'function') { window.__okbmUserCollPutTop(); window.__okbmUserCollPutTop = null; }
         }
         if (window.__userCollectionPagingState) window.__userCollectionPagingState.isLoading = false;
       }).catch(function() {

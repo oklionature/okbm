@@ -18,7 +18,7 @@
   var PAGE = 4; // 내 기록은 처음 4개, '더 보기'를 누르면 전부
 
   var CSS = [
-    '#userProfileModalOverlay{--mr-line:var(--line,rgba(255,255,255,.08));--mr-card:var(--bg-1,#0f0f11);--mr-tx2:var(--tx-2,#d1d1d6);--mr-tx3:var(--tx-3,#8b8b93);--mr-acc:var(--accent,#4c94f8)}',
+    '#userProfileModalOverlay,#userFeedCollectionModal{--mr-line:var(--line,rgba(255,255,255,.08));--mr-card:var(--bg-1,#0f0f11);--mr-tx2:var(--tx-2,#d1d1d6);--mr-tx3:var(--tx-3,#8b8b93);--mr-acc:var(--accent,#4c94f8)}',
     '.mr-icons{display:flex;gap:2px;margin-right:-8px}',
     '.mr-ib{position:relative;width:40px;height:40px;border:0;border-radius:12px;background:none;color:#f2f2f3;display:grid;place-items:center;cursor:pointer}',
     '.mr-ib:active{opacity:.6}',
@@ -236,9 +236,10 @@
   function sggKey(s) { return String(s.region || '').trim() + '|' + String(s.cityName || s.city_name || '').trim(); }
 
   // 내 포토맵: 박지가 있는 시·군 중 내 피드 박지나 클리어(다녀옴)한 박지가 하나라도 있는 곳(photo-map.js '내 지도'와 같은 기준)
-  function photoMapStats(feeds) {
+  // other: 남의 기록(등록자 정보창 발자취)일 때. 이 기기의 클리어(다녀옴)는 보는 사람 것이라 섞지 않는다
+  function photoMapStats(feeds, other) {
     var ix = spotIndex();
-    var visited = vault('okbm_visited', []);
+    var visited = other ? [] : vault('okbm_visited', []);
     var mine = {};
     (Array.isArray(visited) ? visited : []).forEach(function (id) { mine[String(id).trim()] = 1; });
     feeds.forEach(function (f) { var s = spotOfFeed(f); if (s) mine[String(s.id).trim()] = 1; });
@@ -311,7 +312,7 @@
   // 클리어(다녀옴)만 누른 박지는 시·군 수에는 들어가지만 날짜가 없다.
   var EVEREST = 8849;
   var DO_ROMAN = [['경기', 'GYEONGGI'], ['강원', 'GANGWON'], ['충북', 'CHUNGBUK'], ['충남', 'CHUNGNAM'], ['전북', 'JEONBUK'], ['전남', 'JEONNAM'], ['경북', 'GYEONGBUK'], ['경남', 'GYEONGNAM'], ['제주', 'JEJU']];
-  function buildBadges(feeds) {
+  function buildBadges(feeds, other) {
     var asc = feeds.map(function (f) { return { f: f, d: feedDate(f), s: spotOfFeed(f) }; })
       .sort(function (a, b) { return (a.d ? a.d.getTime() : 9e15) - (b.d ? b.d.getTime() : 9e15); });
     var nameOf = function (x) { return x ? String((x.s && (x.s.fullName || x.s.spot_main)) || x.f.spot || '').replace(/^\[[^\]]*\]\s*/, '') : ''; };
@@ -339,7 +340,7 @@
         got: !!x, date: x && x.d, spot: nameOf(x), cur: Math.min(sum, EVEREST * t[0]), goal: EVEREST * t[0], unit: 'm' });
     });
     // 포토맵: 시·군을 처음 채운 피드 (클리어만 한 곳은 날짜 없이 수에 더한다)
-    var pm = photoMapStats(feeds), firstAt = {}, order = [];
+    var pm = photoMapStats(feeds, other), firstAt = {}, order = [];
     asc.forEach(function (x) {
       if (!x.s) return;
       var k = sggKey(x.s);
@@ -378,7 +379,7 @@
         got: got, date: got && allDated && last ? last.d : null, spot: got && allDated ? nameOf(last) : '', cur: done, goal: keys.length, unit: '곳' });
     });
     // 제보 채택(새 박지 제보만)
-    var props = vault('okbm_my_proposals', []);
+    var props = other ? [] : vault('okbm_my_proposals', []);
     var acc = (Array.isArray(props) ? props : []).filter(function (p) {
       if (!p || p.is_correction || p.isCorrection || p.type === 'correction') return false;
       return typeof window.okbmProposalStatusKind === 'function' && window.okbmProposalStatusKind(p) === 'accepted';
@@ -640,6 +641,21 @@
     loadFeeds(force).then(function () { renderRecords(); renderReport(); });
   }
 
+  function ensureCss() {
+    if (document.getElementById('okbmMyReportCss')) return;
+    var st = document.createElement('style'); st.id = 'okbmMyReportCss'; st.textContent = CSS; document.head.appendChild(st);
+  }
+
+  // 등록자 정보창 발자취(user-profile.js)가 같은 계산·겉모양을 쓴다. 남의 기록이라 other=true로 부른다
+  window.okbmReportKit = {
+    ensureCss: ensureCss,
+    photoMapStats: function (feeds) { return photoMapStats(feeds, true); },
+    buildBadges: function (feeds) { return buildBadges(feeds, true); },
+    spotOfFeed: spotOfFeed,
+    sggKey: sggKey,
+    thumb: thumb
+  };
+
   // 피드 완료 화면(my-badges.js okbmBadges.done)에서 쓴다: 내 피드를 새로 받아 배지를 다시 계산한다
   window.okbmComputeBadges = function () {
     return loadFeeds(true).then(function (feeds) {
@@ -648,9 +664,7 @@
   };
 
   window.okbmMyReportOpened = function () {
-    if (!document.getElementById('okbmMyReportCss')) {
-      var st = document.createElement('style'); st.id = 'okbmMyReportCss'; st.textContent = CSS; document.head.appendChild(st);
-    }
+    ensureCss();
     placeLegacy();
     // 인스타처럼 닉네임을 사진 오른쪽 숫자 줄 위에 둔다(맨 위 제목은 '낭만루트' 그대로)
     var nickEl = document.querySelector('#userProfileModalOverlay .mr-pinfo .mr-nick'), slot0 = document.querySelector('#userProfileModalOverlay .mr-stats-slot');
