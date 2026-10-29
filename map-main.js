@@ -1173,14 +1173,14 @@
                   ? fetchFeeds(
                     targetUrl + '/rest/v1/feeds?select=' + selectCols +
                     '&spot_id=eq.' + encodeURIComponent(sId) +
-                    '&feed_type=neq.snap' + visibleParam + '&order=created_at.desc&limit=40'
+                    '&feed_type=neq.snap' + visibleParam + '&order=likes_count.desc.nullslast,created_at.desc&limit=40'
                   )
                   : Promise.resolve([]),
                 spotMainName
                   ? fetchFeeds(
                     targetUrl + '/rest/v1/feeds?select=' + selectCols +
                     '&spot_id=is.null&spot=ilike.*' + encodeURIComponent(spotMainName) +
-                    '*&feed_type=neq.snap' + visibleParam + '&order=created_at.desc&limit=40'
+                    '*&feed_type=neq.snap' + visibleParam + '&order=likes_count.desc.nullslast,created_at.desc&limit=40'
                   )
                   : Promise.resolve([])
               ]);
@@ -1195,7 +1195,10 @@
                 seen.add(fid);
                 merged.push(f);
               });
-              var validFeeds = filterFeedsForMapSpot(spot, merged).slice(0, 6);
+              // 별 많은 순(같으면 최근 순)으로 6개. 두 조회를 합쳤으니 여기서 다시 줄 세운다.
+              var spotFeedsAll = filterFeedsForMapSpot(spot, merged);
+              if (typeof window.okbmSortSpotFeedsByStars === 'function') spotFeedsAll = window.okbmSortSpotFeedsByStars(spotFeedsAll);
+              var validFeeds = spotFeedsAll.slice(0, 6);
               limitedMapSet(window.__spotFeedsCache, sId || spotMainName, validFeeds, 50);
               return validFeeds;
             } catch (e) {
@@ -4938,6 +4941,21 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         });
       }
 
+   // 정보창 후기 피드 순서: 별 많은 순, 같으면 최근에 올린 순. 별은 내가 방금 누른 값(okbm_feed_stars_counts)이 있으면 그걸 쓴다.
+   function okbmSortSpotFeedsByStars(feeds) {
+        var starsMap = safeGetJSON('okbm_feed_stars_counts', {}) || {};
+        var starsOf = function(f) {
+          var server = (f.likes_count !== undefined && f.likes_count !== null) ? Number(f.likes_count) : Number(f.likes || 0);
+          return Number(starsMap[String(f.id).trim()]) || server || 0;
+        };
+        return (Array.isArray(feeds) ? feeds : []).slice().sort(function(a, b) {
+          var d = starsOf(b) - starsOf(a);
+          if (d) return d;
+          return String(b.created_at || '').localeCompare(String(a.created_at || ''));
+        });
+   }
+   window.okbmSortSpotFeedsByStars = okbmSortSpotFeedsByStars;
+
    function buildSpotFieldFeedsTrackContent(spot, matchedFeeds) {
         if (!Array.isArray(matchedFeeds) || matchedFeeds.length === 0) return '';
         matchedFeeds = filterFeedsForMapSpot(spot, matchedFeeds);
@@ -4946,6 +4964,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           matchedFeeds = window.filterHiddenUgcFeeds(matchedFeeds);
         }
         if (!matchedFeeds.length) return '';
+        matchedFeeds = okbmSortSpotFeedsByStars(matchedFeeds);
         var starsMap = safeGetJSON('okbm_feed_stars_counts', {}) || {};
         var backpackSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:11px; height:11px; display:inline-block; vertical-align:-1.5px; flex-shrink:0;"><rect x="4" y="2" width="16" height="5" rx="2.5"/><path d="M8 2v5M16 2v5M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M12 7l-4 4M12 7l4 4M8 15h8v4H8z"/></svg>`;
         var starSvg = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:10px; height:10px; display:inline-block; vertical-align:-1px; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
