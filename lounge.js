@@ -123,6 +123,7 @@
   // ---------- 신청·오픈 일시 (SUPABASE_H18) ----------
   // 행사는 신청 시작 7일 전부터 마감까지 맨 위로 올리고, 할인은 시작 7일 전부터 '곧 오픈'으로 올린다.
   const HOT_MS = 7 * 86400000;
+  const OPENED_HOT_MS = 3 * 86400000;
   function parseTs(s) { if (!s) return null; const d = new Date(s); return isNaN(d) ? null : d; }
   function hourText(d) {
     const h = d.getHours(), m = d.getMinutes();
@@ -154,8 +155,11 @@
     return n <= 0 ? '오늘' : (n === 1 ? '내일' : 'D-' + n);
   }
   const isHotChip = function (c) { return c === '오늘' || c === '내일' || /분 뒤$/.test(c); };
-  // 행사 신청 상태. 신청 일시가 없으면 null. 마감을 비우면 행사 시작일 0시(전날 밤)까지.
-  // phase: later(7일 넘게 남음) · soon(7일 안) · open(신청 중) · closed(마감). hot이면 맨 위.
+  // 행사 신청 상태. 신청 일시가 없으면 null.
+  // phase: later(7일 넘게 남음) · soon(7일 안) · open(신청 중, 마감 시각을 앎) · opened(오픈은 지났고 마감을 모름) · closed(마감). hot이면 맨 위.
+  // 마감을 모르면 '신청 중'이라 하지 않는다. 티켓은 행사 몇 달 전에 매진되기 일쑤라, 예전엔 마감을 행사 시작일로 잡아
+  // 9/11에 열고 9월에 끝난 코리아 백패커스 데이가 '신청 중 · 11/6까지'로 보여 행사 날짜처럼 읽혔다.
+  // 오픈한 지 3일 안이면 '오픈됨'으로 맨 위에 두고, 그 뒤로는 회색 한 줄로만 남긴다.
   // 신청 일시 칸이 비어 있으면 설명·한 줄 소개·참가 글에서 읽는다.
   // 읽는 말투: '티켓은 10월 26일 월요일 저녁 8시에 오픈' · '일반 신청은 10월 19일 19시부터' · '티켓 오픈 9/11 12:00'
   //           · '신청은 10월 21일부터 27일까지' · '쿠폰 등록은 10월 28일 자정까지' · '10/29까지 사전예매'
@@ -217,19 +221,23 @@
       if (!t) return null;
       open = t.open; closeSet = t.close;
     }
-    const close = closeSet || parseD(e.start_date);
+    const close = closeSet;
     const now = Date.now();
+    const start = parseD(e.start_date);
     let phase = 'closed';
     if (open && now < open) phase = open - now <= HOT_MS ? 'soon' : 'later';
     else if (close && now < close) phase = 'open';
+    else if (open && !close && (!start || now < start)) phase = 'opened';
     // 글에서 읽은 신청이 이미 끝났으면 아무것도 안 보인다(대피소 예약처럼 계속 받는 것을 '마감'으로 잘못 보이지 않게)
     if (fromText && phase === 'closed') return null;
-    return { open: open, close: close, phase: phase, hot: phase === 'soon' || phase === 'open', at: phase === 'open' ? close : open, fromText: fromText };
+    const hot = phase === 'soon' || phase === 'open' || (phase === 'opened' && now - open <= OPENED_HOT_MS);
+    return { open: open, close: close, phase: phase, hot: hot, at: phase === 'open' ? close : open, fromText: fromText };
   }
   // 큰 글씨 한 줄과 오른쪽 꼬리표. open의 마감이 오늘·내일이면 꼬리표를 '오늘 마감'으로.
   function applyLine(a, long) {
     if (a.phase === 'open') return '신청 중 · ' + untilText(a.close, long);
     if (a.phase === 'closed') return '신청 마감';
+    if (a.phase === 'opened') return whenText(a.open, long) + ' 신청 오픈됨' + (a.hot ? '' : ' · 마감 여부는 신청 링크에서');
     return whenText(a.open, long) + ' 신청 오픈';
   }
   function applyChip(a, minutes) {
@@ -238,6 +246,7 @@
       return isHotChip(c) ? c + ' 마감' : '신청 중';
     }
     if (a.phase === 'closed') return '';
+    if (a.phase === 'opened') return '오픈됨';
     return leftChip(a.open, minutes) + (minutes ? '' : ' 오픈');
   }
   function ago(iso) {
@@ -982,9 +991,12 @@
     // 신청 일시가 있으면 제목 밑에 '10월 30일(목) 오후 2시 신청 오픈'을 크게, 오른쪽엔 행사 D-day 대신 신청 꼬리표
     const ap = v.past ? null : applyView(e);
     const apChip = ap && ap.hot ? applyChip(ap, false) : '';
-    const apHtml = ap ? '<div class="lm-ap' + (ap.phase === 'closed' ? ' off' : (isHotChip(apChip.split(' ')[0]) ? ' hot' : '')) + '">' + esc(applyLine(ap, true)) + '</div>' : '';
+    const apOff = ap && (ap.phase === 'closed' || (ap.phase === 'opened' && !ap.hot));
+    const apHtml = ap ? '<div class="lm-ap' + (apOff ? ' off' : (isHotChip(apChip.split(' ')[0]) ? ' hot' : '')) + '">' + esc(applyLine(ap, true)) + '</div>' : '';
+    // 신청 꼬리표를 달아도 행사 날과 헷갈리지 않게 위에 '행사 D-9'를 작게 같이 둔다
+    const ddHtml = apChip ? '<span class="dd-s">행사 ' + esc(v.ddText) + '</span><span class="dd-e">' + esc(apChip) + '</span>' : esc(v.ddText);
     const head = `<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="false"><div class="lm-date"><b>${v.d}</b><small>${esc(v.mon)} ${esc(v.wd)}</small></div>
-      <div class="lm-rb"><div class="lm-rt">${esc(e.title)}${evTags(e)}</div><div class="lm-rs">${esc([place, v.days].filter(Boolean).join(' · '))}</div>${apHtml}</div><span class="lm-dd${apChip && isHotChip(apChip.split(' ')[0]) ? ' hot' : ''}">${esc(apChip || v.ddText)}</span></button>`;
+      <div class="lm-rb"><div class="lm-rt">${esc(e.title)}${evTags(e)}</div><div class="lm-rs">${esc([place, v.days].filter(Boolean).join(' · '))}</div>${apHtml}</div><span class="lm-dd${apChip && isHotChip(apChip.split(' ')[0]) ? ' hot' : ''}">${ddHtml}</span></button>`;
     const ig = eventIg(e);
     // 인스타 게시물이 펼쳐지면 같은 포스터가 두 번 보이므로 포스터는 게시물이 없을 때만
     const poster = ig ? '' : okbmSafeImageUrl(e.poster_url);
@@ -992,7 +1004,7 @@
     const body = `<div class="lmx-in">
       ${poster ? `<img class="lm-poster" src="${escapeHtml(okbmSafeImageUrl(e.poster_url))}" alt="" loading="lazy" decoding="async">` : ''}
       ${e.subtitle ? `<div class="lm-rs" style="margin:0 0 6px">${esc(e.subtitle)}</div>` : ''}
-      ${kv('일정', v.dateText + ' (' + v.weekday + ')')}${ap ? kv('신청', [ap.open ? whenText(ap.open, false) + ' 오픈' : '', untilText(ap.close, false)].filter(Boolean).join(' ~ ')) : ''}${kv('장소', place)}${kv('주최', e.host)}${kv('참가', e.fee)}
+      ${kv('일정', v.dateText + ' (' + v.weekday + ')')}${ap ? kv('신청', [ap.open ? whenText(ap.open, false) + ' 오픈' : '', ap.close ? untilText(ap.close, false) : '마감 미정'].filter(Boolean).join(' ~ ')) : ''}${kv('장소', place)}${kv('주최', e.host)}${kv('참가', e.fee)}
       ${e.description ? `<p class="lm-desc">${esc(e.description)}</p>` : ''}
       ${ig ? `<div class="lm-ig" data-kind="${esc(ig.kind)}" data-code="${esc(ig.code)}"></div>` : ''}
       ${(eventApplyUrl(e) || e.spot_id) ? `<div class="lmx-btns">
@@ -2046,7 +2058,7 @@
     const ap = applyView(e);
     if (ap && ap.hot) {
       const at = ap.phase === 'open' ? new Date(ap.close - 1) : ap.open;
-      const chip = ap.phase === 'open' ? applyChip(ap, true).replace(' 마감', '') : leftChip(ap.open, true);
+      const chip = ap.phase === 'open' ? applyChip(ap, true).replace(' 마감', '') : (ap.phase === 'opened' ? '오픈됨' : leftChip(ap.open, true));
       const hot = isHotChip(chip);
       return '<button type="button" class="hd-row" data-a="lounge" data-v="0" data-id="' + esc(e.id) + '"><span class="hd-k">' + hdDate(at, ap.phase === 'open') + '<small' + (hot ? ' class="hot"' : '') + '>' + esc(chip) + '</small></span>' + hdText(e.title, applyLine(ap, false), hot) + '</button>';
     }
