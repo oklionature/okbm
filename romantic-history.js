@@ -327,18 +327,24 @@
       .okbm-fi .fi-l1 small { font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.78); }
       .okbm-fi .fi-l2 { margin-top: 2px; font-size: 0.8rem; font-weight: 700; color: #cbd5e1; }
       .okbm-fi .fi-main { position: absolute; left: 18px; right: 18px; top: calc(var(--okbm-status-top, 0px) + 74px); bottom: 14px; display: flex; flex-direction: column; justify-content: center; gap: clamp(10px, 2.2vh, 20px); }
-      .okbm-fi .fi-eb { font-family: Oswald, 'Avenir Next Condensed', 'Arial Narrow', sans-serif; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.3em; padding-left: 0.3em; color: #6ee7b7; }
-      .okbm-fi .fi-en { margin-top: -6px; font-family: Oswald, 'Avenir Next Condensed', 'Arial Narrow', sans-serif; font-size: clamp(1.55rem, 7.6vw, 1.9rem); font-weight: 700; line-height: 1.08; color: #fff; }
-      .okbm-fi .fi-ko { margin-top: -4px; font-size: 1.05rem; font-weight: 800; color: #d1fae5; letter-spacing: -0.3px; }
-      .okbm-fi .fi-feat { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-      .okbm-fi .fi-feat > div { background: #0d0f12; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; }
-      .okbm-fi .fi-fv { height: clamp(84px, 14vh, 118px); display: flex; align-items: center; justify-content: center; }
-      .okbm-fi .fi-fv .fi-ring { width: clamp(84px, 14vh, 108px) !important; }
+      .okbm-fi .fi-top { text-align: left; }
+      .okbm-fi .fi-eb { font-family: Oswald, 'Avenir Next Condensed', 'Arial Narrow', sans-serif; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.28em; color: #6ee7b7; }
+      .okbm-fi .fi-en { margin-top: 2px; font-family: Oswald, 'Avenir Next Condensed', 'Arial Narrow', sans-serif; font-size: clamp(1.25rem, 6vw, 1.45rem); font-weight: 700; line-height: 1.1; color: #fff; white-space: nowrap; }
+      .okbm-fi .fi-ko { margin-top: 6px; font-size: 1rem; font-weight: 800; color: #d1fae5; letter-spacing: -0.3px; }
+      .okbm-fi .fi-feat { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+      .okbm-fi .fi-feat > div { background: #0d0f12; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 10px 6px 11px; display: flex; flex-direction: column; align-items: center; }
+      .okbm-fi .fi-fv { height: clamp(84px, 13vh, 104px); width: 100%; display: flex; align-items: center; justify-content: center; }
+      .okbm-fi .fi-bdg { display: block; height: 100%; aspect-ratio: 100 / 114; }
+      .okbm-fi .fi-bdg svg { display: block; width: 100%; height: 100%; }
+      .okbm-fi .fi-pf { display: flex; flex-direction: column; align-items: center; }
+      .okbm-fi .fi-pf .fi-ring { width: clamp(56px, 9vh, 64px) !important; }
+      .okbm-fi .fi-pf b { margin-top: 1px; font-size: 0.72rem; font-weight: 900; color: #fff; }
+      .okbm-fi .fi-pf em { font-style: normal; font-size: 0.62rem; color: #a1a1aa; white-space: nowrap; }
       .okbm-fi .fi-mc { position: relative; display: block; height: 100%; aspect-ratio: 80 / 104; border-radius: 10px; border: 3px solid #34d399; background: #111 url('https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/feed/official/pack_20261017_m6oadd-01.jpg') center / cover; box-sizing: border-box; }
       .okbm-fi .fi-mc i { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 2px; padding: 2px 7px 2px 5px; border-radius: 999px; background: rgba(4,30,20,0.85); border: 1px solid rgba(52,211,153,0.55); color: #a7f3d0; font-style: normal; font-size: 0.66rem; font-weight: 800; white-space: nowrap; }
       .okbm-fi .fi-mc i svg { width: 11px; height: 11px; color: #34d399; }
-      .okbm-fi .fi-feat p { margin: 8px 0 0; font-size: 0.8rem; color: #d1d1d6; line-height: 1.45; word-break: keep-all; }
-      .okbm-fi .fi-feat p b { display: block; color: #fff; font-size: 0.84rem; }
+      .okbm-fi .fi-feat p { margin: 8px 0 0; font-size: 0.72rem; color: #d1d1d6; line-height: 1.4; word-break: keep-all; }
+      .okbm-fi .fi-feat p b { display: block; color: #fff; font-size: 0.75rem; }
       .okbm-fi .fi-ladder { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 86%; margin: 0 auto; }
       .okbm-fi .fi-ladder svg { display: block; width: 100%; height: auto; }
       .okbm-fi .fi-ladder .lock { opacity: 0.55; }
@@ -8496,7 +8502,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
   // 링·배지 그림은 badge-ring.js·my-badges.js, 초록 외곽선·칩 모양은 badge-ring.js CSS를 쓴다. 후기 올리기 버튼은 붙이지 않는다(data-no-write)
   function okbmVaultIntroSnapHtml() {
     if (okbmVaultIntroDismissed()) return '';
-    var logo = 'https://romanticroute.kr/logo.png';
+    var logo = 'logo.png';
     var ringApi = window.okbmBadgeRing, badgeApi = window.okbmBadges;
     var ring = function(size) {
       var svg = ringApi && typeof ringApi.svg === 'function' ? ringApi.svg('plog:g:plog80', logo) : '';
@@ -8518,12 +8524,13 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:16px; height:16px; pointer-events:none;"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>' +
       '</button>' +
       '<div class="fi-main">' +
-        '<div class="fi-eb">NEW UPDATE</div>' +
-        '<div class="fi-en">PLOGGING &amp;<br>BADGE SYSTEM</div>' +
-        '<div class="fi-ko">박지에서 쓰레기를 주워 오셨나요?</div>' +
+        '<div class="fi-top"><div class="fi-eb">NEW UPDATE</div>' +
+        '<div class="fi-en">PLOGGING &amp; BADGE SYSTEM</div>' +
+        '<div class="fi-ko">박지에서 쓰레기를 주워 오셨나요?</div></div>' +
         '<div class="fi-feat">' +
-          '<div><span class="fi-fv">' + ring(108) + '</span><p><b>배지를 모아 장착하면</b>프로필 사진에 테두리가 생겨요</p></div>' +
-          '<div><span class="fi-fv"><span class="fi-mc"><i>' + bag + '플로깅</i></span></span><p><b>플로깅 인증 피드는</b>외곽선이 초록색으로 표시돼요</p></div>' +
+          '<div><span class="fi-fv">' + (badgeApi && typeof badgeApi.svg === 'function' ? '<span class="fi-bdg">' + badgeApi.svg({ shape: 'circle', fill: '#0f4a36', metal: 'g', icon: 'bag', num: 80, ribbon: 'PLOGGING', got: true, ko: '플로깅 80회' }) + '</span>' : '') + '</span><p><b>배지를 장착하면</b>사진에 테두리</p></div>' +
+          '<div><span class="fi-fv"><span class="fi-mc"><i>' + bag + '플로깅</i></span></span><p><b>플로깅 인증 피드</b>초록 외곽선</p></div>' +
+          '<div><span class="fi-fv"><span class="fi-pf">' + ring(64) + '<b>낭만루트</b><em>기록 91 · 플로깅 12</em></span></span><p><b>내 프로필에도</b>남이 볼 때도</p></div>' +
         '</div>' +
         '<div class="fi-ladder">' + badge(1, 'i', true) + badge(10, 'b', true) + badge(40, 's', false) + badge(80, 'g', false) + badge(100, 'r', false) + '</div>' +
         '<div class="fi-how"><b>이렇게 해요</b><ol>' +

@@ -229,8 +229,9 @@
       holder.style.marginLeft = holder.style.marginRight = '';
       return;
     }
-    var w = holder.getBoundingClientRect().width || holder.offsetWidth || 36;
-    if (w < 16) return;
+    var w = holder.getBoundingClientRect().width || holder.offsetWidth || 0;
+    // 아직 안 보이는 창(낭만리포트를 열기 전 등)이면 크기가 0이다. 보일 때 다시 칠한다
+    if (w < 16) { retryLater(); return; }
     if (getComputedStyle(holder).position === 'static') holder.style.position = 'relative';
     holder.classList.add('okbm-ringed');
     holder.setAttribute('data-okbm-ring', b.key);
@@ -266,6 +267,12 @@
       if (u && u !== me && u !== 'guest' && !ASKED[u] && !(cache[u] && 'badge' in cache[u]) && missing.indexOf(u) < 0) missing.push(u);
     }
     askMissing(missing.slice(0, 50));
+  }
+  var retryTimer = 0, retries = 0;
+  function retryLater() {
+    if (retryTimer || retries > 20) return;
+    retries++;
+    retryTimer = setTimeout(function () { retryTimer = 0; paint(document); }, 400);
   }
   var timer = 0;
   function schedule() { clearTimeout(timer); timer = setTimeout(function () { paint(document); }, 120); }
@@ -316,6 +323,8 @@
     ensureCss();
     wrapFetchers();
     paint(document);
+    // 탭·창을 열면 숨어 있던 사진이 보이게 된다. 누른 뒤 한 번 더 칠한다
+    document.addEventListener('click', function () { retries = 0; setTimeout(schedule, 350); }, true);
     new MutationObserver(function (list) {
       for (var i = 0; i < list.length; i++) {
         var nodes = list[i].addedNodes;
