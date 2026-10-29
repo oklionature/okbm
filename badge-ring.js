@@ -292,7 +292,10 @@
       var u = img.getAttribute('data-user-avatar-id') || img.getAttribute('data-user-avatar-small') || '';
       var h = holderOf(img);
       if (h && u) paintHolder(h, u);
-      if (u && u !== me && u !== 'guest' && !ASKED[u] && !(cache[u] && 'badge' in cache[u]) && missing.indexOf(u) < 0) missing.push(u);
+      // 내 것도 이 기기에 적어 둔 값이 없으면 서버에서 한 번 받는다. 로그아웃 뒤 청소·새 기기·앱 다시 설치로 기기 값이 지워지면
+      // 서버엔 장착돼 있는데도 링이 사라져 '저절로 풀린' 것처럼 보였다(10-29 대표님).
+      var need = u === me ? !readMine() : true;
+      if (u && need && u !== 'guest' && !ASKED[u] && !(cache[u] && 'badge' in cache[u]) && missing.indexOf(u) < 0) missing.push(u);
     }
     askMissing(missing.slice(0, 50));
   }
