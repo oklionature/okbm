@@ -68,12 +68,22 @@
         '<path d="M-3 2.6 L-3.6 -1.6 M0 -.4 L-.2 -4.6 M2.8 -3.2 L3.2 -6.6 M-2.4 2.4 L1.6 3.6 M.6 -.2 L4.4 .2" stroke="' + c + '" stroke-width=".75" stroke-linecap="round" opacity=".7"/>' +
         '<path d="M-7.6 8.6 C-8.2 9.6 -9 10 -9.8 10" stroke="' + CR + '" stroke-width="1.2" stroke-linecap="round"/>';
     } },
-    // 접힌 지도 + 점선 길 + 빨간 핀
-    reg: { bg: ['#c48a3a', '#6b4313'], ic: function (c) {
-      return '<path d="M-9 -5.2 L-3 -7.6 L3 -5.2 L9 -7.6 V5.6 L3 8 L-3 5.6 L-9 8 Z" fill="' + CR + '"/>' +
-        '<path d="M-3 -7.6 L3 -5.2 V8 L-3 5.6Z" fill="#000" opacity=".14"/>' +
-        '<path d="M-6.6 4.6 C-4.6 1 -1.6 3.2 .6 .4 C2.2 -1.6 3.6 -1.4 5 -2.6" fill="none" stroke="' + c + '" stroke-width=".9" stroke-dasharray="1.4 1.1" stroke-linecap="round"/>' +
-        '<g transform="translate(5.6 -2.2)"><path d="M0 0 C-.8 -1.6 -3 -3.2 -3 -5.4 A3 3 0 1 1 3 -5.4 C3 -3.2 .8 -1.6 0 0Z" fill="#ff5a47" stroke="' + c + '" stroke-width=".5"/><circle cy="-5.4" r="1.1" fill="#fff"/></g>';
+    // 폴라로이드 두 장: 뒤에 비스듬히 한 장, 앞 사진 안에 지도(바다·땅·길·점선 경로·빨간 핀). 다녀온 곳을 사진으로 채우는 포토맵
+    reg: { bg: ['#c48a3a', '#6b4313'], ic: function (c, id) {
+      var photo = function (inner) {
+        return '<rect x="-7.6" y="-9" width="15.2" height="18" rx="1" fill="' + CR + '"/>' +
+          '<rect x="-6.2" y="-7.6" width="12.4" height="11.6" fill="#2b2f33"/>' + (inner || '');
+      };
+      return '<g transform="scale(.84)"><g transform="translate(-2.2 .4) rotate(-14)" opacity=".85">' + photo() + '<rect x="-6.2" y="-7.6" width="12.4" height="11.6" fill="#000" opacity=".25"/></g>' +
+        '<ellipse cx="1.8" cy="9.2" rx="7" ry="1" fill="#000" opacity=".3"/>' +
+        '<g transform="translate(1.8 0) rotate(7)">' + photo(
+          '<clipPath id="' + id + 'pm"><rect x="-6.2" y="-7.6" width="12.4" height="11.6"/></clipPath><g clip-path="url(#' + id + 'pm)">' +
+          '<rect x="-6.2" y="-7.6" width="12.4" height="11.6" fill="#7cc4e4"/>' +
+          '<path d="M-6.4 -7.8 H2.4 C1 -5.6 1.8 -3.8 3.6 -2.6 C5.4 -1.4 5.6 1 6.4 2 V4.2 H-6.4 Z" fill="#a8d8a0"/>' +
+          '<path d="M-6.4 -3.4 C-3.6 -4 -1.6 -2.6 .6 -3.4 M-3.2 -7.8 C-3.4 -4.6 -2.2 -1 -3 4.2" fill="none" stroke="#fff6e4" stroke-width=".7" opacity=".85"/>' +
+          '<path d="M-4.6 2.6 C-3 .4 -1 1.2 .2 -1.2 C.9 -2.6 1.6 -3.4 2.4 -4" fill="none" stroke="#e2392b" stroke-width=".8" stroke-dasharray="1.2 .9" stroke-linecap="round"/>' +
+          '<g transform="translate(2.6 -3.6)"><path d="M0 0 C-.6 -1.2 -2.2 -2.4 -2.2 -4 A2.2 2.2 0 1 1 2.2 -4 C2.2 -2.4 .6 -1.2 0 0Z" fill="#ff5a47" stroke="#7a1a10" stroke-width=".35"/><circle cy="-4" r=".8" fill="#fff"/></g></g>') +
+        '<path d="M-6.2 -7.6 H6.2" stroke="#fff" stroke-opacity=".5" stroke-width=".5"/></g></g>';
     } },
     // 그 도의 실제 모양(my-badges.js SIL). 모양을 못 받으면 방패
     do: { bg: ['#4d6fe0', '#1d2f78'], ic: function (c, id, b) {

@@ -399,7 +399,8 @@
         ko: t[3], title: t[0] === 1 ? 'FIRST SPOT' : '10 SPOTS', desc: '제보한 박지가 ' + t[0] + '곳 채택됐어요',
         got: acc >= t[0], date: null, spot: '', cur: Math.min(acc, t[0]), goal: t[0], unit: '개' });
     });
-    // 연도별 사계절: 그해에 봄(3~5월)·여름(6~8월)·가을(9~11월)·겨울(12·1·2월)을 모두 다녀오면 그 해 배지. 첫 기록 해부터 올해까지
+    // 사계절: 한 해에 봄(3~5월)·여름(6~8월)·가을(9~11월)·겨울(12·1·2월)을 모두 다녀온 해의 수. 1 · 2 · 3 · 4 · 5회
+    // 테두리는 1회 철, 2회 동, 3회 은, 4회 금, 5회 무지개(예전엔 해마다 금 배지 하나씩이라 몇 번 했는지 차이가 없었다)
     var bySeason = {}, seasonAt = {};
     asc.forEach(function (x) {
       if (!x.d) return;
@@ -407,13 +408,18 @@
       o[season(x.d.getMonth())] = 1;
       if (!seasonAt[y] && Object.keys(o).length === 4) seasonAt[y] = x;
     });
-    var firstY = asc.length && asc[0].d ? asc[0].d.getFullYear() : new Date().getFullYear();
-    for (var sy = new Date().getFullYear(); sy >= firstY; sy--) {
-      var sx = seasonAt[sy], sn = Object.keys(bySeason[sy] || {}).length;
-      add({ id: 'season' + sy, group: 'season', shape: 'circle', fill: '#2d4466', metal: 'g', icon: 'season', num: String(sy), ribbon: '4 SEASONS',
-        ko: sy + ' 사계절', title: sy + ' 4 SEASONS', desc: sy + '년에 봄·여름·가을·겨울을 모두 다녀왔어요',
-        got: !!sx, date: sx && sx.d, spot: nameOf(sx), cur: sn, goal: 4, unit: '계절' });
-    }
+    // 다 채운 해를 채운 날 순으로
+    var fullYears = Object.keys(seasonAt).map(function (y) { return seasonAt[y]; }).sort(function (a, b) { return a.d.getTime() - b.d.getTime(); });
+    var bestSn = 0;
+    Object.keys(bySeason).forEach(function (y) { bestSn = Math.max(bestSn, Object.keys(bySeason[y]).length); });
+    [[1, 'i'], [2, 'b'], [3, 's'], [4, 'g'], [5, 'r']].forEach(function (t) {
+      var x = fullYears[t[0] - 1], first = t[0] === 1 && !fullYears.length;
+      add({ id: 'season' + t[0], group: 'season', ladder: 'season', shape: 'circle', fill: '#2d4466', metal: t[1], icon: 'season', num: t[0], ribbon: '4 SEASONS',
+        ko: '사계절 ' + t[0] + '회', title: t[0] + ' x 4 SEASONS', desc: '봄·여름·가을·겨울을 모두 다녀온 해가 ' + t[0] + '번이에요',
+        got: !!x, date: x && x.d, spot: nameOf(x),
+        // 첫 배지 전에는 올해까지 가장 많이 채운 계절 수를, 그다음부터는 채운 해의 수를 보인다
+        cur: first ? bestSn : Math.min(fullYears.length, t[0]), goal: first ? 4 : t[0], unit: first ? '계절' : '해' });
+    });
     // 섬: 섬 박지에 다녀온 횟수(같은 섬을 다시 가도 센다) 10 · 20 … 70회. 테두리 10·20 동, 30~50 은, 60·70 금
     var islN = 0, islAt = {};
     asc.forEach(function (x) {
