@@ -101,6 +101,8 @@
     '.bdg-nx i{display:block;height:6px;border-radius:3px;background:var(--bg-3,#2a2a30);margin-top:7px;overflow:hidden}',
     '.bdg-nx i u{display:block;height:100%;border-radius:3px;background:#c88b57}',
     '.bdg-empty{margin-top:10px;font-size:13px;color:var(--tx-3,#8b8b93);line-height:1.5}',
+    // 남의 프로필: 받은 배지만 네 칸씩, 누르지 않는다
+    '.bdg-ro{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 4px;justify-items:center;margin-top:12px}.bdg-ro .bdg-it{cursor:default}',
     // 전체 보기
     '.bdg-all{position:fixed;inset:0 0 calc(56px + env(safe-area-inset-bottom,8px)) 0;z-index:2147483647;background:#000;color:#f2f2f3;display:flex;flex-direction:column}',
     '.bdg-all-h{flex:none;display:flex;align-items:center;gap:6px;height:calc(52px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 12px 0 4px;border-bottom:1px solid var(--line,rgba(255,255,255,.08))}',
@@ -199,6 +201,15 @@
     if (!box) return;
     ensureCss();
     var got = LIST.filter(function (b) { return b.got; });
+    // 남의 프로필(발자취): 받은 배지만 모두 보인다. 못 받은 배지·전체 보기·다음 배지·눌러서 자세히 보기는 없다
+    if (!OWN) {
+      var mine = got.slice().sort(function (a, b) { return (b.date ? b.date.getTime() : 0) - (a.date ? a.date.getTime() : 0); });
+      box.innerHTML = '<div class="mr-h"><span class="mr-k">받은 배지 <b style="color:#f2f2f3;font-size:14px;margin-left:3px">' + mine.length + '</b></span></div>' +
+        (mine.length ? '<div class="bdg-ro">' + mine.map(function (b) {
+          return '<div class="bdg-it">' + svg(b) + '<span>' + esc(b.ko) + (b.date ? '<small>' + esc(fmtDate(b.date)) + '</small>' : '') + '</span></div>';
+        }).join('') + '</div>' : '<p class="bdg-empty">아직 받은 배지가 없어요.</p>');
+      return;
+    }
     var recent = got.slice().sort(function (a, b) { return (b.date ? b.date.getTime() : 0) - (a.date ? a.date.getTime() : 0); }).slice(0, 4);
     var h = '<div class="mr-h"><span class="mr-k">배지 <b style="color:#f2f2f3;font-size:14px;margin-left:3px">' + got.length + '</b> / ' + LIST.length + '</span><button type="button" class="mr-go" data-bdg-all="1">전체 보기 ›</button></div>';
     if (recent.length) h += '<div class="bdg-row">' + recent.map(function (b) { return item(b); }).join('') + (recent.length < 4 ? new Array(4 - recent.length + 1).join('<span style="width:74px"></span>') : '') + '</div>';

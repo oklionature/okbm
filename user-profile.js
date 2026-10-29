@@ -352,13 +352,10 @@
     h += '</div><div class="mr-card" id="upBadges"></div>';
     box.innerHTML = h;
     if (pm.total) drawMap(rows, pm);
-    // 배지: 낭만리포트와 같은 카드(my-badges.js). 남의 화면이라 '다음 배지까지' 줄은 뺀다. 새 배지 알림(checkNew)은 부르지 않는다
+    // 배지: 남의 화면이라 받은 배지만 모두 보인다(my-badges.js card, own 아님). 누르거나 전체 보기로 못 받은 것까지 보지 않는다. 새 배지 알림(checkNew)은 부르지 않는다
     if (window.okbmBadges) {
       window.okbmBadges.set(K.buildBadges(rows));
       window.okbmBadges.card($('upBadges'));
-      box.querySelectorAll('#upBadges .bdg-nx').forEach(function (e) { e.remove(); });
-      var k = box.querySelector('#upBadges .mr-k');
-      if (k && k.firstChild && k.firstChild.nodeType === 3) k.firstChild.textContent = '받은 배지 ';
     }
   }
 
