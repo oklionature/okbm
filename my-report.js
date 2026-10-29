@@ -45,13 +45,13 @@
     '.mr-stats{flex-shrink:0;display:grid;grid-template-columns:repeat(4,1fr);margin:16px 16px 0;padding:12px 0;border-top:1px solid var(--mr-line);border-bottom:1px solid var(--mr-line)}',
     '.mr-st{background:none;border:0;color:#f2f2f3;font:inherit;padding:0;cursor:pointer;min-width:0}',
     '.mr-st+.mr-st{border-left:1px solid var(--mr-line)}',
-    '.mr-stats-slot .mr-stats{margin:0;padding:0;border:0;text-align:left}',
-    '.mr-stats-slot .mr-st{text-align:left}',
+    // 사진 옆 숫자 줄: 칸 너비를 똑같이 나누고 숫자·글자를 칸 가운데에 맞춘다(글자 길이가 달라 삐뚤어 보이지 않게)
+    '.mr-stats-slot .mr-stats{margin:0;padding:0;border:0;text-align:center}',
+    '.mr-stats-slot .mr-st{text-align:center}',
     '.mr-stats-slot .mr-st+.mr-st{border-left:0}',
     '.mr-stats-slot .mr-st b{font-size:19px}',
-    '.mr-st-plog small{display:inline-flex;align-items:center;gap:2px}.mr-st-plog small .okbm-plog-ic{width:12px;height:12px;color:#34d399}',
     '.mr-st b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}',
-    '.mr-st small{display:block;margin-top:2px;font-size:12px;color:var(--mr-tx3);font-weight:600}',
+    '.mr-st small{display:block;margin-top:2px;font-size:12px;color:var(--mr-tx3);font-weight:600;white-space:nowrap}',
     // 탭
     '.mr-tabs{position:sticky;top:0;z-index:5;flex-shrink:0;display:flex;background:#000;border-bottom:1px solid var(--mr-line);margin-top:8px}',
     '.mr-tab{flex:1;height:46px;background:none;border:0;color:var(--mr-tx3);font:inherit;font-size:14px;font-weight:700;position:relative;cursor:pointer}',
@@ -616,8 +616,6 @@
     var p = $('mrPlogCount');
     if (p && S.feeds) {
       p.textContent = num(S.feeds.filter(function (f) { return f && f.plogging_photo && f.is_published !== false; }).length);
-      var lab = p.nextElementSibling;
-      if (lab && !lab.querySelector('svg') && typeof window.okbmPlogIcon === 'function') lab.insertAdjacentHTML('afterbegin', window.okbmPlogIcon());
     }
   }
 

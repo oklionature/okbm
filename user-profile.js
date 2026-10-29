@@ -178,7 +178,7 @@
     };
     var cells = (hideTotal ? '' : cell('userModalRouteCountBadge', st && st.total, '기록')) +
       (hideYear ? '' : cell('userModalYearCount', st && st.year, '올해')) +
-      (hideTotal ? '' : cell('', st && st.plog, (window.okbmPlogIcon ? window.okbmPlogIcon() : '') + '플로깅'));
+      (hideTotal ? '' : cell('', st && st.plog, '플로깅'));
     var sns = typeof window.renderUserSnsBadgesHtml === 'function' ? window.renderUserSnsBadgesHtml(d.insta || '', d.yt || '', d.blog || '', false, '') : '';
     var photo = String(d.photo || '');
     var btns = '';
