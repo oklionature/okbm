@@ -14263,11 +14263,18 @@ function okbmNotifActorId(r) {
   return String(r.actor_id || '').trim();
 }
 
-// 제목 'OO님이 ~' 에서 이름만 굵게
-function okbmNotifTitleHtml(title) {
+// 제목 'OO님이 ~' 에서 이름만 굵게. 보낸 사람(actor)을 알면 이름을 누르면 그 사람 피드 모아보기가 열린다.
+function okbmNotifTitleNick(title) {
+  var m = String(title || '').match(/^(관심 루터 )?(.+?)님이 (.*)$/);
+  return m ? m[2] : '';
+}
+function okbmNotifTitleHtml(title, actor) {
   var m = String(title || '').match(/^(관심 루터 )?(.+?)님이 (.*)$/);
   if (!m) return _escapeReportPropHtml(title || '알림');
-  return _escapeReportPropHtml(m[1] || '') + '<b style="color:#f2f2f3; font-weight:700;">' + _escapeReportPropHtml(m[2]) + '</b>님이 ' + _escapeReportPropHtml(m[3]);
+  var who = actor
+    ? ' data-notif-user="' + _escapeReportPropHtml(actor) + '" data-notif-nick="' + _escapeReportPropHtml(m[2]) + '" style="color:#f2f2f3; font-weight:700; cursor:pointer;"'
+    : ' style="color:#f2f2f3; font-weight:700;"';
+  return _escapeReportPropHtml(m[1] || '') + '<b' + who + '>' + _escapeReportPropHtml(m[2]) + '</b>님이 ' + _escapeReportPropHtml(m[3]);
 }
 
 function okbmNotifRowHtml(r, unread) {
@@ -14290,7 +14297,9 @@ function okbmNotifRowHtml(r, unread) {
   if (kind === 'lounge_reply') {
     left = '<span style="width:44px; height:44px; border-radius:50%; background:#17171b; flex-shrink:0; display:grid; place-items:center; overflow:hidden;"><img src="logo.png" alt="" style="width:28px; height:28px; object-fit:contain;"></span>';
   } else if (actor) {
-    left = '<span style="position:relative; flex-shrink:0; display:inline-flex;">' + okbmNoteAvatarHtml(actor, 44) +
+    // 얼굴을 누르면 게시물이 아니라 그 사람 피드 모아보기(okbmBindNotifRowOpen)
+    var actorNick = okbmNotifTitleNick(r.title);
+    left = '<span role="button" tabindex="0" aria-label="' + _escapeReportPropHtml((actorNick || '보낸 사람') + '님 프로필 보기') + '" data-notif-user="' + _escapeReportPropHtml(actor) + '" data-notif-nick="' + _escapeReportPropHtml(actorNick) + '" style="position:relative; flex-shrink:0; display:inline-flex; cursor:pointer;">' + okbmNoteAvatarHtml(actor, 44) +
       '<span style="position:absolute; right:-3px; bottom:-3px; width:20px; height:20px; border-radius:50%; background:' + ks.fill + '; display:grid; place-items:center; box-shadow:0 0 0 2px #000000;">' + okbmNotifSvg(ks.icon, 11, '#ffffff') + '</span></span>';
   } else {
     left = '<span style="width:44px; height:44px; border-radius:50%; background:' + ks.soft + '; flex-shrink:0; display:grid; place-items:center;">' + okbmNotifSvg(ks.icon, 20, ks.ink) + '</span>';
@@ -14315,7 +14324,7 @@ function okbmNotifRowHtml(r, unread) {
       '<div' + openAttrs + ' style="padding:10px 16px; display:flex; gap:12px; align-items:center;' + (canOpen ? ' cursor:pointer;' : '') + '">' +
         left +
         '<div style="min-width:0; flex:1; font-size:13px; line-height:1.45; color:#d1d1d6;">' +
-          '<div>' + okbmNotifTitleHtml(r.title) + (when ? ' <span style="color:#8b8b93; font-size:12px; white-space:nowrap;">' + when + '</span>' : '') + '</div>' +
+          '<div>' + okbmNotifTitleHtml(r.title, actor) + (when ? ' <span style="color:#8b8b93; font-size:12px; white-space:nowrap;">' + when + '</span>' : '') + '</div>' +
           (body ? '<div style="color:#8b8b93; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + _escapeReportPropHtml(body) + '</div>' : '') +
         '</div>' +
         right +
@@ -14417,6 +14426,23 @@ function okbmBindNotifRowOpen(listEl) {
   if (!listEl || listEl.__okbmNotifOpenBound) return;
   listEl.__okbmNotifOpenBound = true;
   var go = function(e) {
+    // 보낸 사람 얼굴·이름: 그 사람 피드 모아보기
+    var who = e.target && e.target.closest ? e.target.closest('[data-notif-user]') : null;
+    if (who && listEl.contains(who)) {
+      if (e.type === 'keydown') {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+      }
+      e.stopPropagation();
+      var whoId = String(who.getAttribute('data-notif-user') || '').trim();
+      if (!whoId || typeof window.openUserFeedCollectionModal !== 'function') return;
+      var whoBox = document.getElementById('userNotificationInboxModal');
+      if (whoBox) whoBox.remove();
+      if (typeof window.unregisterModalClose === 'function') window.unregisterModalClose('userNotificationInboxModal');
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_user_feed_open'); // 기능 사용 세기 (H8)
+      window.openUserFeedCollectionModal(who.getAttribute('data-notif-nick') || '', whoId, 'route');
+      return;
+    }
     var row = e.target && e.target.closest ? e.target.closest('.okbm-notif-row') : null;
     if (!row || !listEl.contains(row)) return;
     var postId = String(row.getAttribute('data-lounge-post') || '').trim();
