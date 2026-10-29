@@ -9281,6 +9281,7 @@ window.openPastTripRegisterModal = function(ev) {
       '.ptw-plog-slot svg{width:24px;height:24px}.ptw-plog-slot.has{border-style:solid;border-color:#34d399}.ptw-plog-slot.has>span{display:none}' +
       '.ptw-plog-ck{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:#34d399;color:#04201c;display:flex;align-items:center;justify-content:center}.ptw-plog-ck svg{width:13px;height:13px;stroke-width:3}' +
       '.ptw-plog-msg{min-width:0;font-size:0.72rem;line-height:1.5;color:#94a3b8;font-weight:700}.ptw-plog-msg b{display:block;font-size:0.80rem;color:#6ee7b7;font-weight:900}.ptw-plog-msg.warn b{color:#fbbf24}' +
+      '.ptw-plog-slot.bad{border-color:#fbbf24;border-style:solid}' +
       '.ptw-plog-msg button{margin-top:4px;background:none;border:0;padding:0;color:#94a3b8;font-size:0.68rem;font-weight:800;text-decoration:underline;cursor:pointer;font-family:inherit}' +
       '.ptw-done{position:absolute;inset:0;z-index:30;background:#07090e;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;gap:12px;padding:24px;text-align:center}.ptw-done[hidden]{display:none}.ptw-done .ck{width:56px;height:56px;border-radius:50%;background:#5bb8f0;color:#001521;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center}' +
       '.ptw-done>:first-child{margin-top:auto}.ptw-done>:last-child{margin-bottom:auto}.ptw-done>*{flex-shrink:0}' +
@@ -9515,7 +9516,12 @@ window.submitPastTripRegister = async function() {
     return;
   }
   var ploggingPhoto = (st.ploggingOn === true && String(st.ploggingPhoto || '').indexOf('https://') === 0) ? String(st.ploggingPhoto) : '';
-  if (st.ploggingOn === true && !ploggingPhoto && typeof showToast === 'function') {
+  var plogCk = ploggingPhoto ? window._ptwPlogCheck() : null;
+  if (plogCk && !plogCk.ok) {
+    ploggingPhoto = '';
+    if (typeof showToast === 'function') showToast(plogCk.why === 'far' ? '박지에서 먼 곳에서 찍은 사진이라 플로깅으로 세지 않아요. 피드는 그대로 올라가요.'
+      : '피드 날짜에 찍은 사진이 아니라 플로깅으로 세지 않아요. 피드는 그대로 올라가요.', 'info', 2800);
+  } else if (st.ploggingOn === true && !ploggingPhoto && typeof showToast === 'function') {
     showToast('사진을 올려야 플로깅으로 세요. 피드는 그대로 올라가요.', 'info', 2600);
   }
 
@@ -9809,6 +9815,7 @@ window._ptwSyncSwitch = function() {
   var origHint = window._pastTripRenderPublishHint;
   window._pastTripRenderPublishHint = function() {
     if (typeof origHint === 'function') origHint();
+    if (typeof window._ptwRenderPlog === 'function') window._ptwRenderPlog();
     window._ptwSyncSwitch();
     var st = window.__pastTripRegisterState || {};
     var el = document.getElementById('pastTripPublishHint');
@@ -9889,6 +9896,8 @@ window._ptwInit = function(modal) {
     if (t.closest('[data-ptw-plog="remove"]')) {
       var sp3 = window.__pastTripRegisterState || {};
       sp3.ploggingPhoto = '';
+      sp3.ploggingTakenDay = '';
+      sp3.ploggingGeo = null;
       window._ptwRenderPlog();
       return;
     }
@@ -9976,6 +9985,68 @@ window.okbmFollowerCount = function(userId, author, fresh) {
   return job;
 };
 
+// 플로깅 사진 확인(2026-10-29 대표님): 아무 쓰레기 사진이나 올려 세지 않게, 고르는 순간 원본의 촬영 정보로 본다.
+// · 촬영 날짜가 없으면(카톡으로 받은 사진·캡처 등) 올리지 않는다
+// · 찍은 날이 피드 날짜이거나 다음 날(1박이라 다음 날 아침에 줍는 경우)이어야 센다
+// · 위치가 있고 박지 좌표를 알면 박지에서 5km 안이어야 센다. 위치는 거리 계산에만 쓰고 서버로 보내지 않는다(이 기기 임시 저장에만)
+// 촬영 정보는 고칠 수 있고 검사는 기기에서 하므로 완전히 막지는 못한다. 나머지는 피드 신고로.
+var PLOG_MAX_KM = 5;
+window._ptwPlogSpotKm = function(lat, lng) {
+  var st = window.__pastTripRegisterState || {};
+  var id = String(st.spotId || '').trim();
+  if (!id || !isFinite(lat) || !isFinite(lng)) return null;
+  var raw = [];
+  if (Array.isArray(window.spots)) raw = raw.concat(window.spots);
+  if (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots)) raw = raw.concat(registeredSpots);
+  var s = raw.find(function(x) { return x && String(x.id || x.spot_id || '').trim() === id; });
+  if (!s) return null;
+  var rad = Math.PI / 180, best = null;
+  [[s.campsite_lat, s.campsite_lng], [s.lat, s.lng]].forEach(function(p) {
+    var la = Number(p[0]), lo = Number(p[1]);
+    if (!isFinite(la) || !isFinite(lo) || (!la && !lo)) return;
+    var dLa = (la - lat) * rad, dLo = (lo - lng) * rad;
+    var h = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(lat * rad) * Math.cos(la * rad) * Math.sin(dLo / 2) * Math.sin(dLo / 2);
+    var km = 12742 * Math.asin(Math.sqrt(h));
+    if (best === null || km < best) best = km;
+  });
+  return best;
+};
+// { ok, why: 'nodate' | 'date' | 'far' }
+window._ptwPlogCheck = function() {
+  var st = window.__pastTripRegisterState || {};
+  if (!st.ploggingTakenDay) return { ok: false, why: 'nodate' };
+  var di = document.getElementById('pastTripDateInput');
+  var feedIso = di ? String(di.value || '').trim() : '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(feedIso)) {
+    var p = feedIso.split('-').map(Number);
+    var next = window._ptwIsoOf(new Date(p[0], p[1] - 1, p[2] + 1));
+    if (st.ploggingTakenDay !== feedIso && st.ploggingTakenDay !== next) return { ok: false, why: 'date' };
+  }
+  var g = st.ploggingGeo;
+  if (g && isFinite(g.lat) && isFinite(g.lng)) {
+    var km = window._ptwPlogSpotKm(g.lat, g.lng);
+    if (km !== null && km > PLOG_MAX_KM) return { ok: false, why: 'far', km: km };
+  }
+  return { ok: true };
+};
+function ptwPlogDayLabel(iso) {
+  var m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? (Number(m[2]) + '월 ' + Number(m[3]) + '일') : '';
+}
+
+// 피드 날짜를 바꾸면(달력·사진 날짜 채우기·임시 저장 불러오기) 플로깅 확인을 다시 그린다
+(function() {
+  var orig = window._pastTripSyncDateDisplay;
+  if (typeof orig !== 'function' || orig.__plog) return;
+  var wrapped = function() {
+    var out = orig.apply(this, arguments);
+    if (typeof window._ptwRenderPlog === 'function') window._ptwRenderPlog();
+    return out;
+  };
+  wrapped.__plog = true;
+  window._pastTripSyncDateDisplay = wrapped;
+})();
+
 window._ptwRenderPlog = function() {
   var card = document.getElementById('pastTripPlogCard');
   if (!card) return;
@@ -9998,10 +10069,21 @@ window._ptwRenderPlog = function() {
     msg.className = 'ptw-plog-msg';
     msg.innerHTML = '<b>사진을 올리고 있어요</b>잠깐만 기다려 주세요.';
   } else if (safe) {
-    slot.innerHTML = '<i class="ptw-plog-ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></i>';
-    msg.className = 'ptw-plog-msg';
-    msg.innerHTML = '<b>플로깅으로 기록돼요</b>프로필 플로깅 수에 1번 더해져요.<br><button type="button" data-ptw-plog="remove">사진 빼기</button>';
+    var ck = window._ptwPlogCheck();
+    slot.innerHTML = ck.ok ? '<i class="ptw-plog-ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></i>' : '';
+    slot.classList.toggle('bad', !ck.ok);
+    msg.className = 'ptw-plog-msg' + (ck.ok ? '' : ' warn');
+    var rm = '<br><button type="button" data-ptw-plog="remove">사진 빼기</button>';
+    if (ck.ok) msg.innerHTML = '<b>플로깅으로 기록돼요</b>프로필 플로깅 수에 1번 더해져요.' + rm;
+    else if (ck.why === 'far') msg.innerHTML = '<b>박지에서 먼 곳에서 찍은 사진이에요</b>박지 ' + PLOG_MAX_KM + 'km 안에서 찍은 사진만 플로깅으로 세요.' + rm;
+    else msg.innerHTML = '<b>피드 날짜와 찍은 날이 달라요</b>그날(또는 다음 날) 찍은 사진만 플로깅으로 세요. 찍은 날 ' + ptwPlogDayLabel(st.ploggingTakenDay) + rm;
+  } else if (st.ploggingError === 'nodate') {
+    slot.classList.remove('bad');
+    slot.innerHTML = '<span>' + window.okbmPlogIcon() + '</span><span>다시 고르기</span>';
+    msg.className = 'ptw-plog-msg warn';
+    msg.innerHTML = '<b>촬영 날짜가 없는 사진이에요</b>휴대폰 앨범에서 직접 찍은 원본을 골라 주세요. 카톡으로 받은 사진·캡처는 날짜가 없어 세지 않아요.';
   } else {
+    slot.classList.remove('bad');
     slot.innerHTML = '<span>' + window.okbmPlogIcon() + '</span><span>사진 한 장</span>';
     msg.className = 'ptw-plog-msg warn';
     msg.innerHTML = '<b>사진을 올려야 플로깅으로 세요</b>사진이 없으면 피드만 올라가요.';
@@ -10042,14 +10124,28 @@ window._ptwOnPlogPicked = function(input) {
   }
   var st = window.__pastTripRegisterState || {};
   st.ploggingUploading = true;
+  st.ploggingError = '';
   window._ptwRenderPlog();
   var btn = document.getElementById('pastTripSubmitBtn');
   if (btn) { btn.disabled = true; btn.style.opacity = '0.55'; }
-  window._ptwUploadPlogPhoto(file).then(function(url) {
+  var meta = null;
+  window._ptwReadPhotoMeta([file]).then(function(m) {
+    meta = m || {};
+    // 촬영 날짜가 없으면 올리지 않는다
+    if (!(meta.date instanceof Date) || isNaN(meta.date)) return null;
+    return window._ptwUploadPlogPhoto(file);
+  }).catch(function() { return null; }).then(function(url) {
     var s2 = window.__pastTripRegisterState || {};
     s2.ploggingUploading = false;
-    if (url && String(url).indexOf('https://') === 0) s2.ploggingPhoto = String(url);
-    else if (typeof showToast === 'function') showToast('플로깅 사진을 올리지 못했어요. 다시 골라 주세요.', 'warn', 2400);
+    if (url === null) {
+      s2.ploggingError = 'nodate';
+      s2.ploggingPhoto = '';
+    } else if (url && String(url).indexOf('https://') === 0) {
+      s2.ploggingPhoto = String(url);
+      s2.ploggingTakenDay = window._ptwIsoOf(meta.date);
+      s2.ploggingGeo = (meta.lat != null && isFinite(meta.lat)) ? { lat: Number(meta.lat), lng: Number(meta.lng) } : null;
+    }
+    else if (url !== null && typeof showToast === 'function') showToast('플로깅 사진을 올리지 못했어요. 다시 골라 주세요.', 'warn', 2400);
     var b2 = document.getElementById('pastTripSubmitBtn');
     if (b2) { b2.disabled = false; b2.style.opacity = '1'; }
     window._ptwRenderPlog();
@@ -10150,7 +10246,9 @@ window._ptwCollectDraft = function() {
     blog: val('pastTripNaverInput'),
     publishOff: !!st.publishOff,
     ploggingOn: st.ploggingOn === true,
-    ploggingPhoto: String(st.ploggingPhoto || '').indexOf('https://') === 0 ? String(st.ploggingPhoto) : ''
+    ploggingPhoto: String(st.ploggingPhoto || '').indexOf('https://') === 0 ? String(st.ploggingPhoto) : '',
+    ploggingTakenDay: st.ploggingTakenDay || '',
+    ploggingGeo: st.ploggingGeo || null
   };
 };
 
@@ -10193,6 +10291,8 @@ window._ptwRestoreDraft = function(modal) {
   st.publishOff = !!d.publishOff;
   st.ploggingOn = d.ploggingOn === true;
   st.ploggingPhoto = String(d.ploggingPhoto || '').indexOf('https://') === 0 ? String(d.ploggingPhoto) : '';
+  st.ploggingTakenDay = /^\d{4}-\d{2}-\d{2}$/.test(String(d.ploggingTakenDay || '')) ? d.ploggingTakenDay : '';
+  st.ploggingGeo = d.ploggingGeo && isFinite(d.ploggingGeo.lat) ? { lat: Number(d.ploggingGeo.lat), lng: Number(d.ploggingGeo.lng) } : null;
   window.__pastTripRegisterState = st;
 
   var setVal = function(id, v) { var el = document.getElementById(id); if (el) el.value = String(v || ''); };
