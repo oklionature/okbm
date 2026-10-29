@@ -4,6 +4,7 @@
 //    댓글 수·최근 댓글은 피드 줄의 comments_count·last_comment만 쓰고, 댓글 전체는 창을 열 때 그 피드 것만 받는다.
 // 2) 댓글 창: 아래에서 올라오는 창. 비회원은 읽기만, 회원은 쓰기·지우기(쓴 사람·피드 주인·관리자).
 // 3) 알림을 눌러 들어오면(?feed=ID&comments=1) 피드가 열린 뒤 댓글 창을 바로 펼친다.
+// 4) 답글(H22): 댓글마다 '답글 달기'. 답글은 맨 위 댓글 밑에 한 단계로 들여 쓰고, 알림은 답한 그 댓글 쓴 사람에게만 간다(서버 트리거).
 // 새 버튼은 onclick 속성 없이 이벤트로 단다(CSP 해시).
 (function () {
   'use strict';
@@ -93,6 +94,15 @@
       '#okbmCommentSheet .cm-nick{color:#fff;font-weight:900;font-size:0.76rem;background:none;border:0;padding:0;cursor:pointer;font-family:inherit;}' +
       '#okbmCommentSheet .cm-tag{color:#38bdf8;font-weight:800;}' +
       '#okbmCommentSheet .cm-del{background:none;border:0;color:#64748b;font-size:0.66rem;cursor:pointer;padding:0;font-family:inherit;}' +
+      '#okbmCommentSheet .cm-reply{background:none;border:0;color:#94a3b8;font-size:0.66rem;font-weight:800;cursor:pointer;padding:0;font-family:inherit;}' +
+      '#okbmCommentSheet .cm-row.is-reply{margin-left:39px;}' +
+      '#okbmCommentSheet .cm-row.is-reply .cm-av{width:24px;height:24px;font-size:0.62rem;}' +
+      '#okbmCommentSheet .cm-at{color:#7dd3fc;font-weight:800;margin-right:4px;}' +
+      '#okbmCommentSheet .cm-replying{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 16px;font-size:0.72rem;color:#cbd5e1;' +
+        'background:rgba(255,255,255,0.04);border-top:1px solid rgba(255,255,255,0.08);}' +
+      '#okbmCommentSheet .cm-replying[hidden]{display:none;}' +
+      '#okbmCommentSheet .cm-replying b{color:#fff;font-weight:900;}' +
+      '#okbmCommentSheet .cm-replying button{background:none;border:0;color:#94a3b8;font-size:0.9rem;cursor:pointer;padding:2px 4px;font-family:inherit;}' +
       '#okbmCommentSheet .cm-body{font-size:0.82rem;color:#e2e8f0;line-height:1.5;margin-top:2px;word-break:break-word;white-space:pre-wrap;}' +
       '#okbmCommentSheet .cm-empty{padding:28px 8px;text-align:center;font-size:0.76rem;color:#64748b;line-height:1.6;}' +
       '#okbmCommentSheet .cm-foot{border-top:1px solid rgba(255,255,255,0.08);padding:10px 12px;display:flex;gap:8px;align-items:flex-end;}' +
@@ -152,13 +162,14 @@
   }
 
   // ---------- 2) 댓글 창 ----------
-  var state = { feedId: '', rows: [], busy: false };
+  var state = { feedId: '', rows: [], busy: false, replyTo: null };
 
   function closeSheet() {
     var el = document.getElementById('okbmCommentSheet');
     if (el) el.remove();
     if (typeof window.unregisterModalClose === 'function') window.unregisterModalClose('okbmCommentSheet');
     state.feedId = '';
+    state.replyTo = null;
   }
 
   function renderList() {
@@ -170,13 +181,29 @@
       list.innerHTML = '<div class="cm-empty">아직 댓글이 없어요.<br>궁금한 점이나 응원을 남겨 보세요.</div>';
       return;
     }
-    list.innerHTML = state.rows.map(function (r) {
+    // 맨 위 댓글 순서대로, 그 밑에 답글을 단 순서대로. 맨 위 댓글이 안 보이면(차단 등) 답글을 맨 위로 올린다.
+    var ids = {};
+    state.rows.forEach(function (r) { ids[String(r.id)] = true; });
+    var kids = {};
+    var tops = [];
+    state.rows.forEach(function (r) {
+      var pid = r.parent_id == null ? '' : String(r.parent_id);
+      if (pid && ids[pid]) (kids[pid] = kids[pid] || []).push(r);
+      else tops.push(r);
+    });
+    var ordered = [];
+    tops.forEach(function (r) {
+      ordered.push(r);
+      (kids[String(r.id)] || []).forEach(function (k) { ordered.push(k); });
+    });
+    list.innerHTML = ordered.map(function (r) {
+      var isReply = r.parent_id != null && ids[String(r.parent_id)];
       var nick = String(r.nickname || '낭만루터');
       var uid = String(r.user_id || '');
       var photo = avatarUrl(r.photo_url);
       // 사진·닉네임을 누르면 그 회원 피드 모아보기를 연다
       var who = ' data-cmt-user="' + esc(uid) + '" data-cmt-nick="' + esc(nick) + '"';
-      return '<div class="cm-row">' +
+      return '<div class="cm-row' + (isReply ? ' is-reply' : '') + '" data-cmt-id="' + esc(r.id) + '">' +
         '<button type="button" class="cm-av"' + who + ' aria-label="' + esc(nick) + '님 피드 모아보기">' +
           (photo ? '<img src="' + esc(photo) + '" alt="" decoding="async" data-cmt-fallback="' + esc(nick.charAt(0)) + '">' : esc(nick.charAt(0))) +
         '</button>' +
@@ -184,9 +211,10 @@
           '<div class="cm-meta"><button type="button" class="cm-nick"' + who + '>' + esc(nick) + '</button>' +
             (r.is_author ? '<span class="cm-tag">작성자</span>' : '') +
             '<span>' + esc(whenText(r.created_at)) + '</span>' +
+            '<button type="button" class="cm-reply" data-cmt-reply="' + esc(r.id) + '" data-cmt-reply-nick="' + esc(nick) + '">답글 달기</button>' +
             (r.can_delete ? '<button type="button" class="cm-del" data-cmt-del="' + esc(r.id) + '">삭제</button>' : '') +
           '</div>' +
-          '<div class="cm-body">' + esc(r.body) + '</div>' +
+          '<div class="cm-body">' + (r.reply_to_nickname ? '<span class="cm-at">@' + esc(r.reply_to_nickname) + '</span>' : '') + esc(r.body) + '</div>' +
         '</div>' +
       '</div>';
     }).join('');
@@ -251,6 +279,7 @@
       '<div class="cm-h"><b>댓글</b><button type="button" class="cm-x" data-cmt-close="1" aria-label="댓글 닫기">✕</button></div>' +
       '<div class="cm-list"></div>' +
       '<div class="cm-err" hidden></div>' +
+      '<div class="cm-replying" hidden><span></span><button type="button" data-cmt-reply-cancel="1" aria-label="답글 그만 쓰기">✕</button></div>' +
       '<div class="cm-foot">' + footHtml() + '</div>' +
     '</div>';
     document.body.appendChild(wrap);
@@ -265,6 +294,21 @@
     el.hidden = !msg;
   }
 
+  function setReplyTo(id, nick) {
+    state.replyTo = id ? { id: Number(id), nick: nick || '' } : null;
+    var bar = document.querySelector('#okbmCommentSheet .cm-replying');
+    var ta = document.querySelector('#okbmCommentSheet textarea');
+    if (bar) {
+      bar.hidden = !state.replyTo;
+      var label = bar.querySelector('span');
+      if (label) label.innerHTML = state.replyTo ? '<b>' + esc(state.replyTo.nick || '낭만루터') + '</b>님에게 답글 남기는 중' : '';
+    }
+    if (ta) {
+      ta.placeholder = state.replyTo ? '답글 달기' : '댓글 달기';
+      if (state.replyTo) ta.focus();
+    }
+  }
+
   function send() {
     var ta = document.querySelector('#okbmCommentSheet textarea');
     var btn = document.querySelector('#okbmCommentSheet .cm-send');
@@ -276,15 +320,23 @@
     if (btn) btn.setAttribute('aria-busy', 'true');
     showErr('');
     if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_feed_comment_send'); // 기능 사용 세기 (H8)
-    rpc('add_feed_comment', { p_feed_id: feedId, p_body: body }).then(function (res) {
+    var args = { p_feed_id: feedId, p_body: body };
+    if (state.replyTo) args.p_reply_to = state.replyTo.id;
+    rpc('add_feed_comment', args).then(function (res) {
       ta.value = '';
+      var wasReply = !!state.replyTo;
+      setReplyTo(null);
       var count = (res && typeof res.comments_count === 'number') ? res.comments_count : state.rows.length + 1;
       return load(feedId).then(function () {
         paintCounts(feedId, count, lastOf(state.rows));
+        // 답글은 목록 끝이 아니라 그 댓글 밑에 들어가므로 새 답글이 보이게 옮긴다
+        var row = wasReply && res && res.id ? document.querySelector('#okbmCommentSheet [data-cmt-id="' + res.id + '"]') : null;
+        if (row && row.scrollIntoView) row.scrollIntoView({ block: 'center' });
       });
     }).catch(function (e) {
       var m = String((e && (e.message || e.details)) || '');
-      if (m.indexOf('rate limited') !== -1) showErr('댓글을 너무 빨리 달고 있어요. 1분 뒤에 다시 해 주세요.');
+      if (m.indexOf('reply target not found') !== -1) { setReplyTo(null); showErr('답할 댓글이 지워졌어요. 그냥 댓글로 다시 올려 주세요.'); }
+      else if (m.indexOf('rate limited') !== -1) showErr('댓글을 너무 빨리 달고 있어요. 1분 뒤에 다시 해 주세요.');
       else if (m.indexOf('blocked') !== -1) showErr('이 피드에는 댓글을 달 수 없어요.');
       else if (m.indexOf('not authenticated') !== -1) showErr('로그인이 풀렸어요. 다시 로그인해 주세요.');
       else showErr('댓글을 올리지 못했어요. 잠시 후 다시 해 주세요.');
@@ -299,7 +351,9 @@
     if (!window.confirm('이 댓글을 지울까요?')) return;
     var feedId = state.feedId;
     rpc('delete_feed_comment', { p_id: Number(commentId) }).then(function (res) {
-      state.rows = state.rows.filter(function (r) { return String(r.id) !== String(commentId); });
+      // 맨 위 댓글을 지우면 그 밑 답글도 서버에서 같이 지워진다
+      state.rows = state.rows.filter(function (r) { return String(r.id) !== String(commentId) && String(r.parent_id) !== String(commentId); });
+      if (state.replyTo && String(state.replyTo.id) === String(commentId)) setReplyTo(null);
       renderList();
       var count = (res && typeof res.comments_count === 'number') ? res.comments_count : state.rows.length;
       paintCounts(feedId, count, lastOf(state.rows));
@@ -319,6 +373,17 @@
       if (t === sheet) { closeSheet(); return; }
       if (t.closest('[data-cmt-close]')) { closeSheet(); return; }
       if (t.closest('[data-cmt-send]')) { send(); return; }
+      var replyBtn = t.closest('[data-cmt-reply]');
+      if (replyBtn) {
+        if (!loggedIn()) {
+          closeSheet();
+          if (typeof window.openLoginModal === 'function') window.openLoginModal({ message: '로그인하면 답글을 남길 수 있어요.' });
+          return;
+        }
+        setReplyTo(replyBtn.getAttribute('data-cmt-reply'), replyBtn.getAttribute('data-cmt-reply-nick'));
+        return;
+      }
+      if (t.closest('[data-cmt-reply-cancel]')) { setReplyTo(null); return; }
       var who = t.closest('[data-cmt-user]');
       if (who) {
         var uid = who.getAttribute('data-cmt-user') || '';
