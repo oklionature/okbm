@@ -316,6 +316,38 @@
       @media (prefers-reduced-motion: reduce) {
         .reel-page-snap[data-vault-intro="1"] .vault-intro-next svg { animation: none; }
       }
+      /* 첫 장: 플로깅·배지 소식 (okbmVaultIntroSnapHtml) */
+      .reel-page-snap.okbm-fi { display: block !important; padding: 0 !important; gap: 0 !important; text-align: center !important; color: #f2f2f3 !important; }
+      .okbm-fi .fi-head { position: absolute; left: 0; right: 60px; top: calc(var(--okbm-status-top, 0px) + 4px); display: flex; align-items: center; gap: 2px; padding: 0 0 0 4px; text-align: left; z-index: 4; }
+      .okbm-fi .fi-ring { position: relative; display: block; flex: none; z-index: 0; }
+      .okbm-fi .fi-ring svg { display: block; width: 100%; height: auto; }
+      .okbm-fi .fi-ring::before { content: ""; position: absolute; left: 19.3%; top: 21.7%; width: 61.4%; height: 59.6%; border-radius: 50%; background: #0b0e14; z-index: -1; }
+      .okbm-fi .fi-who { min-width: 0; }
+      .okbm-fi .fi-l1 { display: flex; align-items: center; gap: 5px; font-size: 0.95rem; font-weight: 900; white-space: nowrap; }
+      .okbm-fi .fi-l1 small { font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.78); }
+      .okbm-fi .fi-l2 { margin-top: 2px; font-size: 0.8rem; font-weight: 700; color: #cbd5e1; }
+      .okbm-fi .fi-main { position: absolute; left: 18px; right: 18px; top: calc(var(--okbm-status-top, 0px) + 74px); bottom: 14px; display: flex; flex-direction: column; justify-content: center; gap: clamp(10px, 2.2vh, 20px); }
+      .okbm-fi .fi-eb { font-family: Oswald, 'Avenir Next Condensed', 'Arial Narrow', sans-serif; font-size: 0.82rem; font-weight: 600; letter-spacing: 0.3em; padding-left: 0.3em; color: #6ee7b7; }
+      .okbm-fi .fi-en { margin-top: -6px; font-family: Oswald, 'Avenir Next Condensed', 'Arial Narrow', sans-serif; font-size: clamp(1.55rem, 7.6vw, 1.9rem); font-weight: 700; line-height: 1.08; color: #fff; }
+      .okbm-fi .fi-ko { margin-top: -4px; font-size: 1.05rem; font-weight: 800; color: #d1fae5; letter-spacing: -0.3px; }
+      .okbm-fi .fi-feat { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .okbm-fi .fi-feat > div { background: #0d0f12; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; }
+      .okbm-fi .fi-fv { height: clamp(84px, 14vh, 118px); display: flex; align-items: center; justify-content: center; }
+      .okbm-fi .fi-fv .fi-ring { width: clamp(84px, 14vh, 108px) !important; }
+      .okbm-fi .fi-mc { position: relative; display: block; height: 100%; aspect-ratio: 80 / 104; border-radius: 10px; border: 3px solid #34d399; background: #111 url('https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/feed/official/pack_20261017_m6oadd-01.jpg') center / cover; box-sizing: border-box; }
+      .okbm-fi .fi-mc i { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 2px; padding: 2px 7px 2px 5px; border-radius: 999px; background: rgba(4,30,20,0.85); border: 1px solid rgba(52,211,153,0.55); color: #a7f3d0; font-style: normal; font-size: 0.66rem; font-weight: 800; white-space: nowrap; }
+      .okbm-fi .fi-mc i svg { width: 11px; height: 11px; color: #34d399; }
+      .okbm-fi .fi-feat p { margin: 8px 0 0; font-size: 0.8rem; color: #d1d1d6; line-height: 1.45; word-break: keep-all; }
+      .okbm-fi .fi-feat p b { display: block; color: #fff; font-size: 0.84rem; }
+      .okbm-fi .fi-ladder { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 86%; margin: 0 auto; }
+      .okbm-fi .fi-ladder svg { display: block; width: 100%; height: auto; }
+      .okbm-fi .fi-ladder .lock { opacity: 0.55; }
+      .okbm-fi .fi-how { text-align: left; background: #0d0f12; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 12px 14px; font-size: 0.84rem; line-height: 1.5; color: #e5e7eb; }
+      .okbm-fi .fi-how > b { color: #fff; }
+      .okbm-fi .fi-how ol { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+      .okbm-fi .fi-how li { display: flex; gap: 8px; align-items: flex-start; }
+      .okbm-fi .fi-how li b { color: #fff; }
+      .okbm-fi .fi-how li i { flex: none; width: 19px; height: 19px; margin-top: 1px; border-radius: 50%; background: #34d399; color: #04261a; font-style: normal; font-size: 0.72rem; font-weight: 900; display: grid; place-items: center; }
       .reel-page-snap[data-vault-intro="1"] .vault-intro-close {
         position: absolute !important;
         top: calc(var(--okbm-status-top, 0px) + 10px) !important;
@@ -8444,8 +8476,10 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     '</div>';
   };
 
+  // 낭만피드 첫 장 안내. 2026-10-29 플로깅·배지 소식으로 바꾸며 기록 이름을 새로 썼다(예전 안내를 닫은 사람도 한 번 보게)
+  var OKBM_FEED_INTRO_KEY = 'okbm_feed_intro_v2_dismissed';
   function okbmVaultIntroDismissed() {
-    try { return localStorage.getItem('okbm_vault_intro_dismissed') === '1'; } catch (e) { return false; }
+    try { return localStorage.getItem(OKBM_FEED_INTRO_KEY) === '1'; } catch (e) { return false; }
   }
 
   function okbmVaultEmptySnapHtml() {
@@ -8458,19 +8492,45 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     '</div>';
   }
 
+  // 첫 장: 낭만루트 공식 계정 피드 한 장처럼(링 두른 로고·이름·날짜·플로깅, 초록 외곽선) + 플로깅·배지 시스템 소식
+  // 링·배지 그림은 badge-ring.js·my-badges.js, 초록 외곽선·칩 모양은 badge-ring.js CSS를 쓴다. 후기 올리기 버튼은 붙이지 않는다(data-no-write)
   function okbmVaultIntroSnapHtml() {
     if (okbmVaultIntroDismissed()) return '';
-    return '<div id="vaultIntroSnap" class="reel-page-snap" data-vault-intro="1">' +
+    var logo = 'https://romanticroute.kr/logo.png';
+    var ringApi = window.okbmBadgeRing, badgeApi = window.okbmBadges;
+    var ring = function(size) {
+      var svg = ringApi && typeof ringApi.svg === 'function' ? ringApi.svg('plog:g:plog80', logo) : '';
+      return svg ? '<span class="fi-ring" style="width:' + size + 'px">' + svg + '</span>'
+        : '<img src="' + logo + '" alt="" style="width:' + Math.round(size * 0.6) + 'px; height:' + Math.round(size * 0.6) + 'px; border-radius:50%; background:#0b0e14;" />';
+    };
+    var bag = typeof window.okbmPlogIcon === 'function' ? window.okbmPlogIcon() : '';
+    var badge = function(n, metal, got) {
+      return badgeApi && typeof badgeApi.svg === 'function'
+        ? '<span' + (got ? '' : ' class="lock"') + '>' + badgeApi.svg({ shape: 'circle', fill: '#0f4a36', metal: metal, icon: 'bag', num: n, ribbon: 'PLOGGING', got: got, ko: '플로깅 ' + n + '회' }) + '</span>' : '';
+    };
+    return '<div id="vaultIntroSnap" class="reel-page-snap okbm-fi" data-vault-intro="1" data-no-write="1">' +
+      '<div class="okbm-plog-frame" aria-hidden="true"></div>' +
+      '<div class="fi-head">' + ring(70) +
+        '<div class="fi-who"><div class="fi-l1">낭만루트 <small>· 10월 29일</small><span class="okbm-plog-chip">' + bag + '플로깅</span></div>' +
+        '<div class="fi-l2">업데이트 소식</div></div>' +
+      '</div>' +
       '<button type="button" class="vault-intro-close" aria-label="안내 닫기" onclick="window.okbmDismissVaultIntro(event)">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:16px; height:16px; pointer-events:none;"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>' +
       '</button>' +
-      '<p style="margin:0; max-width:280px; font-size:0.96rem; font-weight:800; color:#ffffff; line-height:1.65; word-break:keep-all; letter-spacing:-0.2px;">등록된 장소에 추억을 피드로 남기시면<br>지도 후기피드에 노출이됩니다.</p>' +
-      '<img src="logo.png" alt="낭만루트 로고" style="width:128px; height:128px; object-fit:contain; display:block; flex-shrink:0;" />' +
-      '<p style="margin:0; max-width:260px; font-size:0.96rem; font-weight:800; color:#ffffff; line-height:1.65; word-break:keep-all; letter-spacing:-0.2px;">다음 낭만루터 분들에게<br>생생한 후기를 알려주세요</p>' +
-      // 아래에 피드가 이어진다는 표시 (첫 장이 안내라 넘길 줄 모르는 경우가 있다)
-      '<div class="vault-intro-next" aria-hidden="true">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:20px; height:20px;"><polyline points="6 15 12 9 18 15"/></svg>' +
-        '<span>위로 넘겨서 피드 보기</span>' +
+      '<div class="fi-main">' +
+        '<div class="fi-eb">NEW UPDATE</div>' +
+        '<div class="fi-en">PLOGGING &amp;<br>BADGE SYSTEM</div>' +
+        '<div class="fi-ko">박지에서 쓰레기를 주워 오셨나요?</div>' +
+        '<div class="fi-feat">' +
+          '<div><span class="fi-fv">' + ring(108) + '</span><p><b>배지를 모아 장착하면</b>프로필 사진에 테두리가 생겨요</p></div>' +
+          '<div><span class="fi-fv"><span class="fi-mc"><i>' + bag + '플로깅</i></span></span><p><b>플로깅 인증 피드는</b>외곽선이 초록색으로 표시돼요</p></div>' +
+        '</div>' +
+        '<div class="fi-ladder">' + badge(1, 'i', true) + badge(10, 'b', true) + badge(40, 's', false) + badge(80, 'g', false) + badge(100, 'r', false) + '</div>' +
+        '<div class="fi-how"><b>이렇게 해요</b><ol>' +
+          '<li><i>1</i><span>피드 올리기에서 <b>\'플로깅 했어요\'</b>를 켜요</span></li>' +
+          '<li><i>2</i><span>주운 쓰레기·봉투 사진 한 장을 붙이면 플로깅 1번</span></li>' +
+          '<li><i>3</i><span>받은 배지는 낭만리포트에서 <b>장착</b>해요</span></li>' +
+        '</ol></div>' +
       '</div>' +
     '</div>';
   }
@@ -8501,7 +8561,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       var intro = reel.querySelector('[data-vault-intro="1"]');
       if (!intro) return;
       if (reel.scrollTop >= intro.offsetHeight * 0.6) {
-        try { localStorage.setItem('okbm_vault_intro_dismissed', '1'); } catch (e) {}
+        try { localStorage.setItem(OKBM_FEED_INTRO_KEY, '1'); } catch (e) {}
         reel.removeEventListener('scroll', onScroll);
         reel.__okbmIntroWatch = false;
       }
@@ -8509,14 +8569,14 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     reel.addEventListener('scroll', onScroll, { passive: true });
     reel.addEventListener('click', function(e) {
       if (e.target && e.target.closest && e.target.closest('[data-vault-intro="1"] [data-feed-write]')) {
-        try { localStorage.setItem('okbm_vault_intro_dismissed', '1'); } catch (e2) {}
+        try { localStorage.setItem(OKBM_FEED_INTRO_KEY, '1'); } catch (e2) {}
       }
     });
   }
 
   window.okbmDismissVaultIntro = function(ev) {
     if (ev) { ev.preventDefault(); ev.stopPropagation(); }
-    try { localStorage.setItem('okbm_vault_intro_dismissed', '1'); } catch (e) {}
+    try { localStorage.setItem(OKBM_FEED_INTRO_KEY, '1'); } catch (e) {}
     var reel = document.getElementById('reelsVerticalContainer');
     if (!reel) return;
     var intro = reel.querySelector('[data-vault-intro="1"]');

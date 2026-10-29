@@ -87,6 +87,7 @@
   function ensureIntroButton(modal) {
     var intro = modal.querySelector('[data-vault-intro="1"]');
     if (!intro || intro.querySelector('.okbm-feed-write-intro')) return;
+    if (intro.getAttribute('data-no-write') === '1') return; // 플로깅·배지 소식 첫 장은 버튼 없이
     var b = document.createElement('button');
     b.type = 'button';
     b.className = 'okbm-feed-write-intro';
