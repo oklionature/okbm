@@ -64,8 +64,8 @@
     return TAB_ORDER[i];
   }
   // 사는이야기(life)는 글이 없어 투표(poll) 칸으로 바꿨다. 옛 life 글이 남아 있어도 이름은 보인다 (SUPABASE_H25)
-  const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['poll', '투표'], ['suggestion', '건의']];
-  const CAT_LABEL = { backpacking: '백패킹이야기', life: '사는이야기', poll: '투표', suggestion: '건의' };
+  const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['poll', '설문·투표'], ['suggestion', '건의']];
+  const CAT_LABEL = { backpacking: '백패킹이야기', life: '사는이야기', poll: '설문·투표', suggestion: '건의' };
   const GEAR_CAT = { shelter: '텐트', sleep: '침낭', pack: '배낭', food: '식량', kitchen: '조리', wear: '의류', electronics: '전자', camp: '캠프', other: '기타' };
   const HOME_N = 3;
   const POST_PAGE = 20;
@@ -530,6 +530,7 @@
       '.lm-poll{margin-top:10px;display:flex;flex-direction:column;gap:6px}',
       '.lm-popt{width:100%;min-height:42px;padding:9px 14px;border-radius:12px;border:1.5px solid #34343a;font-size:14px;font-weight:700;text-align:left;line-height:1.4;transition:border-color .15s,background .15s}',
       '.lm-popt:active{background:#1c1c20;border-color:var(--blue)}',
+      'button.lm-pbar{width:100%;text-align:left;cursor:pointer}button.lm-pbar:active{opacity:.75}',
       '.lm-pbar{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:42px;padding:9px 14px;border-radius:12px;background:#1c1c20;overflow:hidden;font-size:14px;line-height:1.4}',
       '.lm-pbar i{position:absolute;left:0;top:0;bottom:0;background:#2e2e34;transition:width .5s var(--ease)}',
       '.lm-pbar.top i{background:color-mix(in srgb,var(--blue) 34%,#1c1c20)}',
@@ -1677,7 +1678,7 @@
     const on = D.liked.has(p.id);
     return `<button type="button" class="lm-act ${on ? 'on' : ''}" data-a="like" data-v="${esc(p.id)}" aria-pressed="${on}" aria-label="좋아요 ${Number(p.likes_count) || 0}개">${ico(P.heart, 17)}<span>${Number(p.likes_count) || 0}</span></button>`;
   };
-  // 투표: 하기 전엔 보기 버튼, 한 뒤(또는 마감)엔 막대와 %. 누가 뭘 골랐는지는 안 보인다
+  // 투표: 하기 전엔 보기 버튼, 한 뒤(또는 마감)엔 막대와 %. 마감 전엔 막대를 눌러 바꾼다 (SUPABASE_H27). 누가 뭘 골랐는지는 안 보인다
   function pollLeft(p, closed) {
     if (closed) return '마감';
     if (!p.poll_ends_at) return '';
@@ -1700,7 +1701,10 @@
       rows = opts.map(function (o, i) {
         const n = Number(counts[i]) || 0;
         const pct = total ? Math.round(n * 100 / total) : 0;
-        return `<div class="lm-pbar${i === mine ? ' mine' : ''}${n && n === max ? ' top' : ''}"><i style="width:${pct}%"></i><span>${esc(o)}${i === mine ? ico(P.check, 14) : ''}</span><b>${pct}%</b></div>`;
+        const cls = 'lm-pbar' + (i === mine ? ' mine' : '') + (n && n === max ? ' top' : '');
+        const inner = `<i style="width:${pct}%"></i><span>${esc(o)}${i === mine ? ico(P.check, 14) : ''}</span><b>${pct}%</b>`;
+        return closed || i === mine ? `<div class="${cls}">${inner}</div>`
+          : `<button type="button" class="${cls}" data-a="poll-vote" data-v="${esc(p.id)}" data-i="${i}" aria-label="${esc(o)}로 바꾸기">${inner}</button>`;
       }).join('');
     } else if (closed) {
       rows = '<div class="lm-pmeta" style="margin:0">마감된 투표예요</div>';
@@ -1710,7 +1714,8 @@
       }).join('');
     }
     const meta = [total + '명 참여', pollLeft(p, closed)].filter(Boolean).join(' · ');
-    return `<div class="lm-poll" data-poll="${esc(p.id)}">${rows}<div class="lm-pmeta">${esc(meta)}${counts || closed ? '' : ' · 고르면 결과가 보여요'}</div></div>`;
+    const tail = closed ? '' : counts ? (mine >= 0 ? ' · 다른 보기를 누르면 바꿔요' : '') : ' · 고르면 결과가 보여요';
+    return `<div class="lm-poll" data-poll="${esc(p.id)}">${rows}<div class="lm-pmeta">${esc(meta)}${tail}</div></div>`;
   }
   function paintPoll(id) {
     const p = findPost(id);
@@ -3058,7 +3063,7 @@
   // =====================================================================
   // 회원 쓰기 (P4): 글·사진·댓글·좋아요·박지 후기. 권한은 RLS, 닉네임·개수는 서버 트리거가 채운다
   // =====================================================================
-  const POST_CATS = [['backpacking', '백패킹이야기'], ['poll', '투표'], ['suggestion', '건의']];
+  const POST_CATS = [['backpacking', '백패킹이야기'], ['poll', '설문·투표'], ['suggestion', '건의']];
   const POLL_ENDS = [['1', '1일'], ['3', '3일'], ['7', '7일'], ['0', '마감 없음']];
 
   // ----- 글 쓰기·고치기 -----
@@ -3084,7 +3089,7 @@
           const on = d[0] === '7';
           return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="poll-end" data-v="' + d[0] + '">' + esc(d[1]) + '</button>';
         }).join('')}</div>
-        <p class="lm-hint">한 사람이 한 번 골라요. 결과는 고른 뒤에 보이고, 누가 뭘 골랐는지는 안 보여요.</p>
+        <p class="lm-hint">한 사람이 하나를 골라요. 마감 전엔 바꿀 수 있고, 결과는 고른 뒤에 보여요. 누가 뭘 골랐는지는 안 보여요.</p>
       </div>`;
   }
   function postFormHtml(p, cat) {
@@ -3177,7 +3182,7 @@
         if (row.category === 'poll') D.poll[row.id] = { post_id: row.id, total: 0, counts: null, mine: null, closed: false };
       }
       closeSheet();
-      toast(st.id ? '글을 고쳤어요' : (row.category === 'suggestion' ? '건의를 보냈어요. 답변이 달리면 알려 드릴게요' : row.category === 'poll' ? '투표를 올렸어요' : '글을 올렸어요'));
+      toast(st.id ? '글을 고쳤어요' : (row.category === 'suggestion' ? '건의를 보냈어요. 답변이 달리면 알려 드릴게요' : row.category === 'poll' ? '설문을 올렸어요' : '글을 올렸어요'));
       if (!st.id && S.cat !== 'all' && S.cat !== row.category) S.cat = 'all';
       renderBoard();
       if (win && !st.id) {
