@@ -1475,8 +1475,8 @@ window.updateStudioCardLive = function() {
           <div style="display:flex; align-items:flex-end; justify-content:space-between;">
           <div style="flex:1; min-width:0;"></div>
           <div style="flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:6px; font-family:'Space Grotesk', sans-serif; font-size:0.64rem; font-weight:900; color:#ffffff; letter-spacing:0.8px; text-shadow:0 2px 6px rgba(0,0,0,0.95);">
-            <span>${totalCount} ITEMS</span>
-            <span style="color:rgba(255,255,255,0.35);">·</span>
+            ${totalCount ? `<span>${totalCount} ITEMS</span>
+            <span style="color:rgba(255,255,255,0.35);">·</span>` : ''}
             <span style="font-size:0.76rem; font-weight:900; color:#ffffff;">${weightKg} KG</span>
             <span style="color:rgba(255,255,255,0.35);">·</span>
             <span style="font-size:0.55rem; padding:1px 5px; border-radius:3px; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.35); color:#6ee7b7; font-weight:800;">LNT</span>
@@ -1598,8 +1598,8 @@ window.updateStudioCardLive = function() {
           </div>
           <div style="flex:1; width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; min-height:0; box-sizing:border-box;">
             <div style="display:flex; justify-content:center; align-items:center; gap:6px; font-family:'Space Grotesk', sans-serif; letter-spacing:0.6px;">
-              <span style="color:#ffffff; font-weight:800; font-size:0.74rem;">${totalCount} ITEMS</span>
-              <span style="color:rgba(255,255,255,0.35);">·</span>
+              ${totalCount ? `<span style="color:#ffffff; font-weight:800; font-size:0.74rem;">${totalCount} ITEMS</span>
+              <span style="color:rgba(255,255,255,0.35);">·</span>` : ''}
               <span style="color:#ffffff; font-weight:900; font-size:0.86rem;">${weightKg} KG</span>
               <span style="color:rgba(255,255,255,0.35);">·</span>
               <span style="color:#e2e8f0; font-weight:800; font-size:0.55rem; padding:1px 4px; border-radius:3px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25);">LNT</span>
@@ -1972,6 +1972,10 @@ var TEMPLATE_NAMES = {
 };
 
 var STUDIO_MODE_ORDER = ['balance', 'kuchi', 'issue', 'spread', 'magazine', 'overlay', 'minimal', 'chic', 'essay', 'sage', 'editorial'];
+// 빠른 레디샷(무게만 빠르게, readyshot-quick.js)은 장비 목록 칸이 없는 무게형 6개만 쓴다
+var STUDIO_QUICK_ORDER = ['balance', 'kuchi', 'issue', 'magazine', 'minimal', 'chic'];
+function studioModeOrder() { return window.__readyShotQuick ? STUDIO_QUICK_ORDER : STUDIO_MODE_ORDER; }
+function studioModeFallback() { return window.__readyShotQuick ? 'kuchi' : 'spread'; }
 var STUDIO_MODE_NAMES = {
   balance: '발란스',
   kuchi: '쿠치',
@@ -2673,7 +2677,7 @@ function renderMagazineCoverMarkup(opts) {
 
   var typeHtml =
     '<div class="mag-kg">' + escapeHtml(String(weightKg)) + '<b>KG</b></div>' +
-    '<div class="mag-items">' + totalCount + ' ITEMS</div>';
+    (totalCount ? '<div class="mag-items">' + totalCount + ' ITEMS</div>' : '');
   var memoHtml = memoText
     ? ('<div class="mag-memo">' + escapeHtml(memoText) + '</div>')
     : '';
@@ -2785,7 +2789,7 @@ function renderIssueMarkup(opts) {
         (memoText ? '<div class="iss-memo">' + escapeHtml(memoText) + '</div>' : '') +
         '<div class="iss-note iss-spot">' + escapeHtml(spot) + '</div>' +
         '<svg class="iss-arrow iss-a2" viewBox="0 0 70 50" aria-hidden="true"><path d="M62 18 C 40 8, 22 22, 6 28"/></svg>' +
-        '<div class="iss-count"><span class="iss-num">' + escapeHtml(String(totalCount)) + '</span><b>ITEM</b></div>' +
+        (totalCount ? '<div class="iss-count"><span class="iss-num">' + escapeHtml(String(totalCount)) + '</span><b>ITEM</b></div>' : '') +
         renderIssueStyleBrandMark('iss-logo') +
       '</div>' +
     '</div>';
@@ -2811,7 +2815,7 @@ function renderKuchiMarkup(opts) {
   var memoText = readyShotOneLineMemo(opts.memo);
   var mastInner =
     '<div class="kc-kg">' + escapeHtml(String(weightKg)) + '</div>' +
-    '<div class="kc-items">' + totalCount + ' items</div>' +
+    (totalCount ? '<div class="kc-items">' + totalCount + ' items</div>' : '<div class="kc-items" aria-hidden="true">&nbsp;</div>') +
     (memoText ? '<div class="kc-memo">' + escapeHtml(memoText) + '</div>' : '');
 
   return '' +
@@ -2853,7 +2857,7 @@ function renderBalanceMarkup(opts) {
     '<div class="bl-end">낭만루터</div>';
   var wordInner =
     '<div class="bl-kg">' + escapeHtml(String(weightKg)) + '<b>kg</b></div>' +
-    '<div class="bl-count">' + totalCount + ' items</div>';
+    (totalCount ? '<div class="bl-count">' + totalCount + ' items</div>' : '');
   var metaInner =
     '<div class="bl-date">' + escapeHtml(dateStr) + '</div>' +
     (memoText ? '<div class="bl-memo">' + escapeHtml(memoText) + '</div>' : '') +
@@ -2978,8 +2982,8 @@ window.generateReadyShotMarkup = function(record, options) {
           <div style="display:flex; align-items:flex-end; justify-content:space-between;">
           <div style="flex:1; min-width:0;"></div>
           <div style="flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:6px; font-family:'Space Grotesk', sans-serif; font-size:0.64rem; font-weight:900; color:#ffffff; letter-spacing:0.8px; text-shadow:0 2px 6px rgba(0,0,0,0.95);">
-            <span>${totalCount} ITEMS</span>
-            <span style="color:rgba(255,255,255,0.35);">·</span>
+            ${totalCount ? `<span>${totalCount} ITEMS</span>
+            <span style="color:rgba(255,255,255,0.35);">·</span>` : ''}
             <span style="font-size:0.76rem; font-weight:900; color:#ffffff;">${weightKg} KG</span>
             <span style="color:rgba(255,255,255,0.35);">·</span>
             <span style="font-size:0.55rem; padding:1px 5px; border-radius:3px; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.35); color:#6ee7b7; font-weight:800;">LNT</span>
@@ -3099,8 +3103,8 @@ window.generateReadyShotMarkup = function(record, options) {
           </div>
           <div style="flex:1; width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; min-height:0; box-sizing:border-box;">
             <div style="display:flex; justify-content:center; align-items:center; gap:6px; font-family:'Space Grotesk', sans-serif; letter-spacing:0.6px;">
-              <span style="color:#ffffff; font-weight:800; font-size:0.74rem;">${totalCount} ITEMS</span>
-              <span style="color:rgba(255,255,255,0.35);">·</span>
+              ${totalCount ? `<span style="color:#ffffff; font-weight:800; font-size:0.74rem;">${totalCount} ITEMS</span>
+              <span style="color:rgba(255,255,255,0.35);">·</span>` : ''}
               <span style="color:#ffffff; font-weight:900; font-size:0.86rem;">${weightKg} KG</span>
               <span style="color:rgba(255,255,255,0.35);">·</span>
               <span style="color:#e2e8f0; font-weight:800; font-size:0.55rem; padding:1px 4px; border-radius:3px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25);">LNT</span>
@@ -3473,9 +3477,10 @@ function renderTemplateChips() {
   var html = '';
 
   if (family === 'photo') {
-    var activeMode = window.currentStudioCardMode || 'spread';
-    if (STUDIO_MODE_ORDER.indexOf(activeMode) === -1) activeMode = 'spread';
-    html = STUDIO_MODE_ORDER.map(function(mode) {
+    var order = studioModeOrder();
+    var activeMode = window.currentStudioCardMode || studioModeFallback();
+    if (order.indexOf(activeMode) === -1) activeMode = studioModeFallback();
+    html = order.map(function(mode) {
       var isActive = (mode === activeMode);
       var name = STUDIO_MODE_NAMES[mode] || mode;
       return '<button type="button" class="tmpl-chip-btn' + (isActive ? ' active' : '') + '" onclick="window.switchStudioModeFromReadyShot(this.dataset.studioMode)" data-studio-mode="' + mode + '">' +
@@ -3527,6 +3532,12 @@ function syncReadyShotFamilyToggle() {
   var pamphletBtn = document.getElementById('btnReadyShotFamilyPamphlet');
   if (photoBtn) photoBtn.classList.toggle('active', family === 'photo');
   if (pamphletBtn) pamphletBtn.classList.toggle('active', family === 'pamphlet');
+  // 빠른 레디샷: 팸플릿(전부 장비 목록형)은 숨기고, 장비를 담으면 템플릿이 더 열린다는 안내를 보인다
+  var quick = !!window.__readyShotQuick;
+  var toggle = document.getElementById('readyShotFamilyToggle');
+  if (toggle) { if (quick) toggle.style.setProperty('display', 'none', 'important'); else toggle.style.removeProperty('display'); }
+  var more = document.getElementById('readyShotQuickMore');
+  if (more) more.style.display = quick ? 'flex' : 'none';
 }
 
 function syncReadyShotPhotoButtons() {
@@ -3804,7 +3815,7 @@ window.switchReadyShotFamily = function(family) {
 window.switchStudioModeFromReadyShot = function(mode) {
   if (mode === 'nrc') mode = 'overlay';
   if (mode === 'packing') mode = 'magazine';
-  if (STUDIO_MODE_ORDER.indexOf(mode) === -1) mode = 'spread';
+  if (studioModeOrder().indexOf(mode) === -1) mode = studioModeFallback();
   window.currentStudioCardMode = mode;
   try { localStorage.setItem('romantic_studio_mode', mode); } catch (e) {}
   window.readyShotFamily = 'photo';
@@ -4195,6 +4206,11 @@ function ensurePackShareModalDOM() {
         <div id="packShareCaptureArea" style="width:100%; max-width:330px; display:flex; align-items:center; justify-content:center; transition:transform 0.2s ease, opacity 0.2s ease;"></div>
       </div>
 
+      <div id="readyShotQuickMore" style="display:none; flex-shrink:0; width:100%; max-width:330px; margin:2px auto 0; align-items:center; justify-content:space-between; gap:10px; padding:11px 13px; border-radius:12px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); box-sizing:border-box;">
+        <span style="font-size:0.74rem; color:#cbd5e1; line-height:1.45;">장비도 채우면 장비 목록 템플릿 11개가 더 열려요</span>
+        <button type="button" id="btnReadyShotQuickToGear" style="flex-shrink:0; background:none; border:0; padding:4px 0; color:#FFC83D; font-size:0.76rem; font-weight:900; cursor:pointer; white-space:nowrap;">장비 담기 ›</button>
+      </div>
+
       <div id="readyShotBottomSpacer" style="flex-shrink:0; width:100%; height:calc(28px + env(safe-area-inset-bottom, 0px)); pointer-events:none;" aria-hidden="true"></div>
     </div>
   `;
@@ -4407,6 +4423,7 @@ window.handleShareCardPhotoUpload = async function(e) {
 };
 
 window.closePackShareModal = function() {
+  window.__readyShotQuick = false;
   teardownCardSwipeGesture();
   teardownStudioPhotoDrag();
   closeReadyShotShareSheet();
@@ -4430,8 +4447,10 @@ window.closePackShareModal = function() {
   window.syncGlobalModalScrollLock();
 };
 
-window.openPackShareModal = function(record, items, forceStudio) {
-  if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_pack_share_open'); // 기능 사용 세기 (H8)
+// opts.quick: 빠른 레디샷(readyshot-quick.js). 장비 없이 무게·사진·메모만 받고 무게형 템플릿 6개만 보인다
+window.openPackShareModal = function(record, items, forceStudio, opts) {
+  window.__readyShotQuick = !!(opts && opts.quick);
+  if (typeof window.okbmMetric === 'function') window.okbmMetric(window.__readyShotQuick ? 'feat_readyshot_quick_open' : 'feat_pack_share_open'); // 기능 사용 세기 (H8)
   if (record && typeof record.then === 'function') {
     record = (window.currentShareRecord && typeof window.currentShareRecord.then !== 'function')
       ? window.currentShareRecord
@@ -4472,7 +4491,7 @@ window.openPackShareModal = function(record, items, forceStudio) {
     return m ? { name: m[1], weight: parseInt(m[2], 10) } : { name: str, weight: 0 };
   });
 
-  if (currentShareItems.length === 0 && window.selectedGearMap) {
+  if (currentShareItems.length === 0 && window.selectedGearMap && !window.__readyShotQuick) {
     Object.keys(window.selectedGearMap).forEach(function(catId) {
       (window.selectedGearMap[catId] || []).forEach(function(it) {
         if (it && (it.name || it.itemName)) {
@@ -4514,21 +4533,22 @@ window.openPackShareModal = function(record, items, forceStudio) {
   var modeCandidate = recordMode || savedMode || 'spread';
   if (modeCandidate === 'nrc') modeCandidate = 'overlay';
   if (modeCandidate === 'packing') modeCandidate = 'magazine';
-  if (STUDIO_MODE_ORDER.indexOf(modeCandidate) === -1) modeCandidate = 'spread';
+  if (studioModeOrder().indexOf(modeCandidate) === -1) modeCandidate = studioModeFallback();
   window.currentStudioCardMode = modeCandidate;
 
   var savedFamily = '';
   try { savedFamily = localStorage.getItem('romantic_ready_shot_family') || ''; } catch (e) {}
-  window.readyShotFamily = (savedFamily === 'pamphlet') ? 'pamphlet' : 'photo';
+  window.readyShotFamily = (savedFamily === 'pamphlet' && !window.__readyShotQuick) ? 'pamphlet' : 'photo';
 
   var spotLabel = document.getElementById('shareCardSpotLabel');
   var memoInput = document.getElementById('shareCardMemoInput');
 
  // 🛡️ [하드코딩 박멸]: 박지 미입력 시 '나의 힐링 스팟', 각오/메모 미입력 시 완전 공백('')
   var autoSpot = currentShareRecord.spot || '';
-  var targetDateStr = currentShareRecord.date || window.activeSelectedDateKey || '';
+  // 빠른 레디샷은 사용자가 고른 장소만 쓴다(일정·추천 박지로 채우지 않음)
+  var targetDateStr = window.__readyShotQuick ? '' : (currentShareRecord.date || window.activeSelectedDateKey || '');
 
-  if (!autoSpot && window.currentLuckySpot && window.currentLuckySpot.name) {
+  if (!autoSpot && !window.__readyShotQuick && window.currentLuckySpot && window.currentLuckySpot.name) {
     autoSpot = window.currentLuckySpot.name;
     if (window.currentLuckySpot.elevation) currentShareRecord.elevation = window.currentLuckySpot.elevation;
   }
@@ -4646,8 +4666,8 @@ function updateShareCardLive() {
     var photoUrl = resolveReadyShotDisplayUrl();
     var hasPhoto = !!photoUrl;
     if (!photoUrl) photoUrl = READY_SHOT_PLACEHOLDER_PHOTO;
-    var mode = window.currentStudioCardMode || rec.readyShotMode || 'spread';
-    if (STUDIO_MODE_ORDER.indexOf(mode) === -1) mode = 'spread';
+    var mode = window.currentStudioCardMode || rec.readyShotMode || studioModeFallback();
+    if (studioModeOrder().indexOf(mode) === -1) mode = studioModeFallback();
 
     var markup = window.generateReadyShotMarkup(rec, {
       photo: photoUrl,
@@ -4797,11 +4817,12 @@ initCardSwipeGesture = function() {
       card.style.opacity = '1';
       var family = window.readyShotFamily || 'photo';
       if (family === 'photo') {
-        var modeIdx = STUDIO_MODE_ORDER.indexOf(window.currentStudioCardMode || 'spread');
+        var order = studioModeOrder();
+        var modeIdx = order.indexOf(window.currentStudioCardMode || studioModeFallback());
         if (modeIdx === -1) modeIdx = 0;
         var nextMode = (dx < 0)
-          ? STUDIO_MODE_ORDER[(modeIdx + 1) % STUDIO_MODE_ORDER.length]
-          : STUDIO_MODE_ORDER[(modeIdx - 1 + STUDIO_MODE_ORDER.length) % STUDIO_MODE_ORDER.length];
+          ? order[(modeIdx + 1) % order.length]
+          : order[(modeIdx - 1 + order.length) % order.length];
         window.switchStudioModeFromReadyShot(nextMode);
       } else {
         var tmplIdx = TEMPLATE_ORDER.indexOf(selectedTemplateId);

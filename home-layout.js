@@ -106,7 +106,9 @@
     if (!btn) return;
     var kind = btn.getAttribute('data-quick');
     if (typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(8); } catch (err) {} }
-    if (kind === 'ready' && typeof window.openPlanModal === 'function') window.openPlanModal('calculator');
+    // 레디샷: '무게만 빠르게 | 장비로 계산하기'를 고르는 창(readyshot-quick.js). 없으면 예전처럼 계산기
+    if (kind === 'ready' && typeof window.okbmOpenReadyShot === 'function') window.okbmOpenReadyShot();
+    else if (kind === 'ready' && typeof window.openPlanModal === 'function') window.openPlanModal('calculator');
     else if (kind === 'guide' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(1);
     else if (kind === 'rank' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(3);
     else if (kind === 'board' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(2);
