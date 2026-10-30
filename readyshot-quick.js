@@ -271,7 +271,8 @@
         weightGrams: Math.round(kg * 1000),
         itemCount: 0,
         items: [],
-        oneLineMemo: memo
+        oneLineMemo: memo,
+        readyShotMode: 'poster' // 처음엔 블랙 포스터(글자 안에 사진)로 보인다
       };
       window.openPackShareModal(rec, [], true, { quick: true });
       // 사진은 레디샷 창의 올리기 함수에 그대로 넘긴다(미리보기·압축·R2 업로드를 같이 한다)

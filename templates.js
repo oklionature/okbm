@@ -819,6 +819,17 @@ async function captureStudioCardCanvas(card) {
   document.body.appendChild(host);
   try {
     flattenCaptureInsets(clone);
+    // 포스터 템플릿의 글자 안 사진(canvas): cloneNode는 canvas 그림을 복사하지 않으므로, 그리기가 끝나길 기다려 옮겨 그린다
+    var liveCanvases = source.querySelectorAll('canvas');
+    if (liveCanvases.length) {
+      await Promise.all(Array.prototype.map.call(liveCanvases, function(cv) { return cv.__rsPaint || Promise.resolve(); }));
+      var cloneCanvases = clone.querySelectorAll('canvas');
+      Array.prototype.forEach.call(cloneCanvases, function(cv, i) {
+        var lv = liveCanvases[i];
+        if (!lv) return;
+        try { cv.getContext('2d').drawImage(lv, 0, 0); } catch (eCv) {}
+      });
+    }
     var liveImgs = source.querySelectorAll('img');
     var cloneImgs = clone.querySelectorAll('img');
     await Promise.all(Array.prototype.map.call(cloneImgs, function(img, idx) {
@@ -1451,6 +1462,11 @@ window.updateStudioCardLive = function() {
   var posY = (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50;
   var scale = currentPhotoScaleVal || 1.0;
 
+  if (mode === 'poster' || mode === 'posterPaper') {
+    container.innerHTML = renderPosterMarkup({ photo: window.currentSharePhoto, posX: posX, posY: posY, scale: scale, spot: spotVal, date: (window.currentShareRecord && window.currentShareRecord.date) || '', weightKg: weightKg, memo: memoVal, paper: mode === 'posterPaper' });
+    return;
+  }
+
   var brandSvgWhite = (SVG_ICONS && typeof SVG_ICONS.brandLogo === 'function') ? SVG_ICONS.brandLogo('#ffffff', '#ffffff') : '';
   var brandSvgDark = (SVG_ICONS && typeof SVG_ICONS.brandLogo === 'function') ? SVG_ICONS.brandLogo('#0f172a', '#475569') : '';
 
@@ -1971,12 +1987,14 @@ var TEMPLATE_NAMES = {
   6: '📸 코닥 슬라이드'
 };
 
-var STUDIO_MODE_ORDER = ['balance', 'kuchi', 'issue', 'spread', 'magazine', 'overlay', 'minimal', 'chic', 'essay', 'sage', 'editorial'];
-// 빠른 레디샷(무게만 빠르게, readyshot-quick.js)은 장비 목록 칸이 없는 무게형 6개만 쓴다
-var STUDIO_QUICK_ORDER = ['balance', 'kuchi', 'issue', 'magazine', 'minimal', 'chic'];
+var STUDIO_MODE_ORDER = ['poster', 'posterPaper', 'balance', 'kuchi', 'issue', 'spread', 'magazine', 'overlay', 'minimal', 'chic', 'essay', 'sage', 'editorial'];
+// 빠른 레디샷(무게만 빠르게, readyshot-quick.js)은 장비 목록 칸이 없는 무게형만 쓴다. 포스터(10-31)를 맨 앞에
+var STUDIO_QUICK_ORDER = ['poster', 'posterPaper', 'balance', 'kuchi', 'issue', 'magazine', 'minimal', 'chic'];
 function studioModeOrder() { return window.__readyShotQuick ? STUDIO_QUICK_ORDER : STUDIO_MODE_ORDER; }
-function studioModeFallback() { return window.__readyShotQuick ? 'kuchi' : 'spread'; }
+function studioModeFallback() { return window.__readyShotQuick ? 'poster' : 'spread'; }
 var STUDIO_MODE_NAMES = {
+  poster: '블랙 포스터',
+  posterPaper: '페이퍼 포스터',
   balance: '발란스',
   kuchi: '쿠치',
   issue: '이슈',
@@ -2511,6 +2529,148 @@ function renderIssueStyleBrandMark(extraClass) {
   return '<img class="' + cls + '" src="fulllogo.png" alt="낭만루트" />';
 }
 
+// ===== 포스터(블랙·페이퍼): 큰 무게 글자 안에 사진 (2026-10-31, 시안 .claude/mockups/readyshot-quick/tmpl/글자사진.html) =====
+// html2canvas는 CSS background-clip:text를 못 찍어서, 큰 글자는 <canvas>에 직접 그린다.
+// 글자를 칠하고 → source-in → 사진을 cover로 덮으면 글자 모양만 사진이 남는다. 피드 상세 등 어디에 끼워도 그려지게
+// 화면에 들어온 canvas[data-rs-poster]를 감시해서 그린다(아래 watchReadyShotPosters).
+var RS_POSTER_FONT = "900 extra-condensed 400px Archivo";
+function ensurePosterFonts() {
+  if (document.getElementById('rs-poster-font-link')) return;
+  var link = document.createElement('link');
+  link.id = 'rs-poster-font-link';
+  link.rel = 'stylesheet';
+  link.href = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,800..900&family=JetBrains+Mono:wght@400;500;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap';
+  document.head.appendChild(link);
+}
+function ensurePosterStyles() {
+  if (document.getElementById('rs-poster-style')) return;
+  var st = document.createElement('style');
+  st.id = 'rs-poster-style';
+  // 크기는 카드 폭 기준(cqw). 시안 1080px 폭에서 px/10.8 = cqw
+  var mono = "'JetBrains Mono','Nanum Gothic Coding',monospace";
+  st.textContent =
+    '.rs-poster{position:relative;overflow:hidden;container-type:inline-size;background:#0b0b0b;color:#efece4;user-select:none;box-sizing:border-box;}' +
+    '.rs-poster.paper{background:#eeebe3;color:#16160f;}' +
+    '.rs-poster canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}' +
+    '.rs-poster .rsp-top{position:absolute;left:5.93cqw;right:5.93cqw;top:4.44cqw;display:flex;justify-content:space-between;font:500 1.85cqw ' + mono + ';letter-spacing:.2em;}' +
+    '.rs-poster .rsp-memo{position:absolute;left:5.93cqw;right:5.93cqw;top:103.9cqw;font:700 2.96cqw ' + mono + ';letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+    '.rs-poster .rsp-spec{position:absolute;left:5.93cqw;right:5.93cqw;top:110.9cqw;display:grid;grid-template-columns:repeat(4,1fr);gap:1.85cqw;font:400 1.94cqw/1.5 ' + mono + ';}' +
+    '.rs-poster .rsp-spec>div{min-width:0;}' +
+    '.rs-poster .rsp-spec b{display:block;font-weight:500;font-size:1.76cqw;letter-spacing:.14em;margin-bottom:.56cqw;opacity:.6;}' +
+    '.rs-poster .rsp-spec span{display:block;font-weight:700;font-size:2.04cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}' +
+    '.rs-poster .rsp-bot{position:absolute;left:5.93cqw;right:5.93cqw;bottom:5.37cqw;height:8.89cqw;display:flex;align-items:flex-end;justify-content:space-between;}' +
+    '.rs-poster .rsp-bar{display:block;width:16.67cqw;height:3.7cqw;}' +
+    '.rs-poster .rsp-logo{display:block;height:8.89cqw;width:auto;}';
+  document.head.appendChild(st);
+}
+// 7.90 → 7.9, 8.00 → 8
+function posterKgText(kg) {
+  var n = Math.round(Number(kg || 0) * 10) / 10;
+  return isFinite(n) && n > 0 ? String(n) : '0';
+}
+function posterClass(kg) {
+  var n = Number(kg || 0);
+  return n <= 6 ? 'ULTRALIGHT' : (n > 14 ? 'HEAVY' : 'STANDARD');
+}
+function renderPosterMarkup(opts) {
+  ensurePosterFonts();
+  ensurePosterStyles();
+  var kg = posterKgText(opts.weightKg);
+  var memoText = readyShotOneLineMemo(opts.memo);
+  // 장소는 괄호 안 설명(정상 인근 헬기장 등)을 빼고 짧게
+  var spot = (opts.spot && opts.spot !== '나의 힐링 스팟') ? String(opts.spot).replace(/\s*\([^)]*\)\s*$/, '') : '';
+  var paper = !!opts.paper;
+  return '' +
+    '<div class="photo-overlay-card rs-poster' + (paper ? ' paper' : '') + '" style="' + (opts.wrapCss || 'width:100%; max-width:330px; aspect-ratio:3/4; margin:auto;') + ' border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45);">' +
+      '<canvas width="1080" height="1440" data-rs-poster="1" data-kg="' + escapeHtml(kg) + '" data-photo="' + escapeHtml(okbmSafeImageUrl(opts.photo || '')) + '" data-px="' + Number(opts.posX || 50) + '" data-py="' + Number(opts.posY || 50) + '" data-scale="' + Number(opts.scale || 1) + '" data-ink="' + (paper ? '#16160f' : '#efece4') + '"></canvas>' +
+      '<div class="rsp-top"><span>READY SHOT</span><span>' + escapeHtml(opts.date || '') + '</span></div>' +
+      (memoText ? '<div class="rsp-memo">' + escapeHtml(memoText) + '</div>' : '') +
+      '<div class="rsp-spec">' +
+        '<div><b>DATE</b><span>' + escapeHtml(opts.date || '-') + '</span></div>' +
+        '<div><b>SPOT</b><span>' + escapeHtml(spot || '-') + '</span></div>' +
+        '<div><b>CLASS</b><span>' + posterClass(opts.weightKg) + '</span></div>' +
+        '<div><b>WEIGHT</b><span>' + escapeHtml(kg) + ' KG</span></div>' +
+      '</div>' +
+      '<div class="rsp-bot"><i class="rsp-bar"></i><img class="rsp-logo" src="' + (paper ? 'rs-logo-dark.png' : 'rs-logo-white.png') + '" alt="낭만루트" /></div>' +
+    '</div>';
+}
+window.renderPosterMarkup = renderPosterMarkup;
+
+// 글자를 한 자씩 그린다. 틈은 눈에 보이는 크기(px)로 정하고, 숫자와 KG 사이는 조금 더 벌린다
+function drawPosterCanvas(cv, img) {
+  var c = cv.getContext('2d');
+  var num = cv.getAttribute('data-kg') || '0', unit = 'KG';
+  var box = { x: 64, y: 128, w: 952, h: 936, gap: 14, unitGap: 34 };
+  c.clearRect(0, 0, cv.width, cv.height);
+  c.font = RS_POSTER_FONT;
+  c.fillStyle = '#000';
+  var chars = (num + unit).split(''), ws = chars.map(function(ch) { return c.measureText(ch).width; });
+  var m = c.measureText(num + unit), asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent;
+  var sumW = ws.reduce(function(a, b) { return a + b; }, 0);
+  var sx = (box.w - (chars.length - 2) * box.gap - box.unitGap) / sumW, sy = box.h / (asc + desc);
+  var x = box.x;
+  chars.forEach(function(ch, i) {
+    c.save();
+    c.translate(x, box.y + asc * sy);
+    c.scale(sx, sy);
+    c.fillText(ch, 0, 0);
+    c.restore();
+    x += ws[i] * sx + (i === num.length - 1 ? box.unitGap : box.gap);
+  });
+  c.globalCompositeOperation = 'source-in';
+  if (img && img.width) {
+    // object-fit:cover + object-position(px,py) + 확대(scale)
+    var px = Number(cv.getAttribute('data-px') || 50) / 100, py = Number(cv.getAttribute('data-py') || 50) / 100;
+    var zoom = Math.max(1, Number(cv.getAttribute('data-scale') || 1));
+    var r = Math.max(box.w / img.width, box.h / img.height) * zoom, w = img.width * r, h = img.height * r;
+    c.drawImage(img, box.x + (box.w - w) * px, box.y + (box.h - h) * py, w, h);
+  } else {
+    c.fillStyle = '#3a3f3a';
+    c.fillRect(0, 0, cv.width, cv.height);
+  }
+  c.globalCompositeOperation = 'source-over';
+  // 왼쪽 아래 바코드(줄 굵기 2·1·3px 반복). 오른쪽 로고와 아래 끝을 맞춘다
+  c.fillStyle = cv.getAttribute('data-ink') || '#efece4';
+  var bx = 64, by = 1440 - 58 - 40, bw = 180, pat = [2, 3, 1, 4, 3, 2], gaps = [3, 4, 2, 3, 2, 4], k = 0;
+  while (bx < 64 + bw - 3) { var w0 = pat[k % pat.length]; c.fillRect(bx, by, w0, 40); bx += w0 + gaps[k % gaps.length]; k++; }
+}
+function paintPosterCanvas(cv) {
+  if (cv.getAttribute('data-drawn') === '1') return;
+  cv.setAttribute('data-drawn', '1');
+  var src = cv.getAttribute('data-photo') || '';
+  var fontReady = (document.fonts && document.fonts.load) ? document.fonts.load(RS_POSTER_FONT).catch(function() {}) : Promise.resolve();
+  var imgReady = new Promise(function(resolve) {
+    if (!src) return resolve(null);
+    var img = new Image();
+    // R2·img.romanticroute.kr는 CORS를 열어 둬서, 저장(html2canvas) 때 canvas가 더럽혀지지 않는다
+    if (src.indexOf('blob:') !== 0 && src.indexOf('data:') !== 0) img.crossOrigin = 'anonymous';
+    img.onload = function() { resolve(img); };
+    img.onerror = function() { resolve(null); };
+    img.src = src;
+  });
+  // 저장(captureStudioCardCanvas)이 그리기가 끝나길 기다릴 수 있게 약속을 붙여 둔다
+  cv.__rsPaint = Promise.all([fontReady, imgReady]).then(function(r) {
+    if (!cv.isConnected) return;
+    drawPosterCanvas(cv, r[1]);
+    // 레디샷 창이면 미리 찍어 둔 저장용 그림을 다시 찍게 한다(그리기 전에 찍혔을 수 있다)
+    if (cv.closest && cv.closest('#packShareCaptureArea') && typeof scheduleReadyShotPrecapture === 'function') scheduleReadyShotPrecapture();
+  });
+}
+function paintPosterCanvases(root) {
+  var list = (root || document).querySelectorAll ? (root || document).querySelectorAll('canvas[data-rs-poster]:not([data-drawn])') : [];
+  Array.prototype.forEach.call(list, paintPosterCanvas);
+}
+(function watchReadyShotPosters() {
+  if (window.__rsPosterWatch || typeof MutationObserver === 'undefined') return;
+  window.__rsPosterWatch = true;
+  var pending = false;
+  new MutationObserver(function() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function() { pending = false; paintPosterCanvases(document); });
+  }).observe(document.documentElement, { childList: true, subtree: true });
+})();
+
 
 function renderPhotoOverlayMarkup(opts) {
   opts = opts || {};
@@ -2960,6 +3120,10 @@ window.generateReadyShotMarkup = function(record, options) {
   var brandSvgDark = (SVG_ICONS && typeof SVG_ICONS.brandLogo === 'function') ? SVG_ICONS.brandLogo('#0f172a', '#475569') : '';
   var svgDot = '<span style="display:inline-block; width:3px; height:3px; background:#94a3b8; border-radius:50%; margin-right:3px; vertical-align:middle; flex-shrink:0;"></span>';
   var svgShield = (SVG_ICONS && SVG_ICONS.lntShield) || '<svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" style="width:11px; height:11px; display:inline-block; vertical-align:-1px; margin-right:3px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>';
+
+  if (mode === 'poster' || mode === 'posterPaper') {
+    return renderPosterMarkup({ photo: photoUrl, posX: posX, posY: posY, scale: scale, spot: spotVal, date: dateStr, weightKg: weightKg, memo: memo, paper: mode === 'posterPaper' });
+  }
 
   if (mode === 'minimal') {
     var minimalMemo = readyShotOneLineMemo(memo);
@@ -4839,6 +5003,8 @@ initCardSwipeGesture = function() {
 
     if (!wasSwipe && absDx < 10 && absDy < 10 && elapsed < 450) {
       if ((window.readyShotFamily || 'photo') !== 'photo') return;
+      // 포스터는 사진을 canvas에 그려서, 사진(img)을 옮기는 위치 조절 창과 맞지 않는다
+      if (/^poster/.test(window.currentStudioCardMode || '')) return;
       if (resolveReadyShotDisplayUrl()) {
         __cardSkipClickUntil = Date.now() + 600;
         if (typeof openReadyShotFrameModal === 'function') openReadyShotFrameModal();
