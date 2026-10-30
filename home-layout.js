@@ -2,8 +2,8 @@
 // 홈 개편 (2026-10-14): 바로가기 네 개 · 최근 다녀온 후기 · 인기 스팟 "후기 N · 찜 N"
 // 시안: 인스타에니/낭만루트_앱점검/미리보기/미리보기.html "1. 첫 화면" 넷째 판
 //
-// · 바로가기 다섯 개(#homeQuickNav [data-quick])는 누르면 그 화면으로 넘어간다(스크롤 아님).
-//   초보 가이드 개수는 lounge.js가 #hqGuideCount에 채운다. 박지 랭킹은 라운지 박지 후기 탭(평점 높은 박지)을 연다.
+// · 바로가기 세 칸(#homeQuickNav [data-quick], 2026-10-31): 레디샷 · 동행 구하기 · 후기 올리기. 누르면 그 화면으로 넘어간다.
+//   초보 가이드·박지 랭킹·자유게시판 바로가기는 그 밑 백패커 라운지(#okbmLoungeHome, lounge.js) 알약으로 옮겼다.
 // · 최근 다녀온 후기는 운영자 글을 빼고 회원이 공개한 글만, 다녀온 날짜가 최근인 것부터. 개수와 상관없이 바로가기 바로 밑(대표님 10-14).
 // · 인라인 핸들러 없음(이벤트 위임) → csp-extract 대상 아님.
 // · src 보간은 escapeHtml(okbmSafeImageUrl(...))만 (scripts/check-unsafe-url-interpolation.py).
@@ -32,21 +32,24 @@
     var css = document.createElement('style');
     css.id = 'okbmHomeLayoutCss';
     css.textContent = [
-      '.hq{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:0 14px;margin-top:-14px}',
-      '.hq-btn{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:76px;padding:12px 2px 10px;border-radius:16px;background:#171A1F;border:1px solid #2A2F37;color:#F2F3F5;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}',
-      '.hq-btn svg{flex:none}',
-      '.hq-btn b{font-size:11px;font-weight:800;letter-spacing:-.04em;white-space:nowrap}',
-      '.hq-btn em{font-style:normal;font-size:10px;font-weight:700;color:#7D8490;min-height:12px}',
-      '.hq-btn.hq-hi{background:#5bb8f0;border-color:#5bb8f0;color:#001521}',
-      '.hq-btn.hq-hi em{color:#00324d}',
+      // 세 칸을 설명 칸에 바로 붙인다(홈 칸 사이 기본 간격 28px을 당김). 첫 화면에 히어로와 같이 보이게
+      '.hq{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 14px;margin-top:-20px}',
+      '.hq-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:62px;padding:0 4px;border-radius:14px;background:#0c0d10;border:1px solid rgba(255,255,255,.08);color:#F2F3F5;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}',
+      '.hq-btn:active{background:#16161a}',
+      '.hq-btn b{font-size:14px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}',
+      '.hq-btn em{font-style:normal;font-size:11.5px;font-weight:600;color:#8e8e93;white-space:nowrap}',
+      // 백패커 라운지 칸 안 간격 (.hl-wrap 기본 28px보다 촘촘히)
+      '#okbmLoungeHome{gap:14px}',
+      '#okbmLoungeHome #homeDealStrip{margin:10px 14px 0}',
+      '#okbmLoungeHome #okbmHomeMag{margin-top:14px}',
       // 바로가기 밑 두 칸: 왼쪽 이달의 행사, 오른쪽 할인 소식 (lounge.js가 #homeDealStrip에 그린다)
       // 홈 칸 사이 기본 간격(28px)에서 8px을 당겨 바로가기와 20px만 띄운다
       '.hd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:-8px 14px 0;color:#F2F3F5}',
-      '.hd-col{min-width:0;border-radius:14px;background:#171A1F;border:1px solid #2A2F37;padding:11px 9px 3px}',
+      '.hd-col{min-width:0;border-radius:14px;background:#0c0d10;border:1px solid rgba(255,255,255,.08);padding:11px 9px 3px}',
       '.hd-h{display:flex;justify-content:space-between;align-items:center;gap:4px;margin-bottom:4px;padding:0 2px}',
       '.hd-h b{font-size:13.5px;font-weight:900;letter-spacing:-.02em;white-space:nowrap}',
       '.hd-h b i{font-style:normal;margin-left:3px;font-size:11.5px;font-weight:800;color:#8b8b93}',
-      '.hd-h button{flex:none;font:inherit;font-size:11.5px;font-weight:800;color:#5bb8f0;background:none;border:0;padding:4px 0;cursor:pointer}',
+      '.hd-h button{flex:none;font:inherit;font-size:11.5px;font-weight:800;color:#8e8e93;background:none;border:0;padding:4px 0;cursor:pointer}',
       '.hd-row{width:100%;display:flex;gap:7px;align-items:flex-start;padding:8px 2px;border:0;border-top:1px solid rgba(255,255,255,.07);background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}',
       '.hd-row:first-of-type{border-top:0}',
       '.hd-row:active{opacity:.6}',
@@ -54,10 +57,9 @@
       '.hd-k{flex:none;width:50px;text-align:center}',
       '.hd-tl{font-style:normal;font-size:10.5px;font-weight:800;margin-right:1px;color:#8b8b93}',
       '.hd-k b{display:block;font-size:14.5px;font-weight:900;letter-spacing:-.04em;line-height:1.1;white-space:nowrap;font-variant-numeric:tabular-nums}',
-      '.hd-ev .hd-k b{color:#8fc1ff}',
-      '.hd-deal .hd-k b{color:#ffb08f}',
-      '.hd-k small{display:inline-block;margin-top:3px;padding:1px 4px;border-radius:4px;font-size:9.5px;font-weight:900;white-space:nowrap;background:rgba(255,255,255,.08);color:#cfd3da}',
-      '.hd-k small.hot{background:#ff4d4f;color:#fff}',
+      // 행사|할인 (2026-10-31): 날짜·할인율은 흰 글씨, 남은 날은 회색 글씨. 오늘·내일만 붉은 글씨(꼬리표 바탕 없음)
+      '.hd-k small{display:block;margin-top:3px;font-size:10.5px;font-weight:800;white-space:nowrap;color:#8e8e93}',
+      '.hd-k small.hot{color:#ff8a7e}',
       '.hd-x{flex:1;min-width:0;padding-top:1px;font-size:12px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere}',
       // 신청·오픈 일시 한 줄(lounge.js hdText): 제목 밑 금색, 오늘·내일이면 빨강
       '.hd-xw{flex:1;min-width:0;padding-top:1px}',
@@ -104,7 +106,8 @@
     if (!btn) return;
     var kind = btn.getAttribute('data-quick');
     if (typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(8); } catch (err) {} }
-    if (kind === 'guide' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(1);
+    if (kind === 'ready' && typeof window.openPlanModal === 'function') window.openPlanModal('calculator');
+    else if (kind === 'guide' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(1);
     else if (kind === 'rank' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(3);
     else if (kind === 'board' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(2);
     else if (kind === 'join' && typeof window.openTripJoinListModal === 'function') window.openTripJoinListModal();
@@ -272,12 +275,12 @@
     });
   };
 
-  // ---------- 함께하기: 이번 주말 동행 상자 ----------
+  // ---------- 바로가기 '동행 구하기' 밑 한 줄: 모집 중인 동행 수 ----------
   window.okbmHomeTogetherTrips = function (activeTrips) {
-    var el = document.getElementById('homeTogetherTripText');
+    var el = document.getElementById('hqJoinSub');
     if (!el) return;
     var open = (activeTrips || []).filter(function (t) { return !t.isClosed; });
-    el.textContent = open.length ? ('모집 중 ' + open.length + '개 · ' + (open[0].spotName || '')) : '첫 동행을 모집해 보세요';
+    el.textContent = open.length ? ('모집 중 ' + open.length) : '오픈채팅';
   };
   function onTogetherClick(e) {
     var t = e.target && e.target.closest ? e.target : null;

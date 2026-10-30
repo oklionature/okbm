@@ -81,12 +81,14 @@
     spotRev: null, // 박지 하나의 후기 {spot_id, tier, summary, reviews, mine, done, tipSum, tipRows}
     rank: null, // 박지 랭킹 전체(평점순·후기 많은 순 탭을 열 때 한 번 받는다, SUPABASE_H26). 홈은 D.top 10곳만
     tipsRecent: null, // 최근 팁(칩·한 줄) — 박지 후기 탭에서 별점 후기와 섞는다 (SUPABASE_G4)
+    news: [], // 소식(박지 통제·업데이트·공지)·매거진 (SUPABASE_H28 lounge_news). 홈 라운지 맨 위 띠와 아래 매거진 줄
     poll: {}, // 투표 결과 {글id: {total, counts|null, mine, closed}} (SUPABASE_H25 okbm_poll_results)
   };
   // 화면 상태. tab = 홈 탭, wtab = 라운지 창 탭 (서로 따로 기억), revSpot = 후기 탭을 한 박지로 좁힘
   // revView: 박지 후기 창의 작은 탭 'recent'(최근 후기, 처음) | 'top'(평점순) | 'many'(후기 많은 순)
   // revBand: 평점순에서 고른 점수대 'all' | '45'(4.5 이상) | '4'(4점대) | '3'(3점대) | 'low'(3점 미만)
-  const S = { tab: 0, wtab: 0, cat: 'all', revSpot: null, revView: 'recent', revBand: 'all' };
+  // hub: 홈 라운지 알약 'board' | 'poll' | 'review' | 'guide'
+  const S = { tab: 0, wtab: 0, cat: 'all', revSpot: null, revView: 'recent', revBand: 'all', hub: 'board' };
   let timeSig = ''; // 신청·오픈 상태 요약 (renderAll·timeTick)
 
   // ---------- 날짜 ----------
@@ -409,6 +411,43 @@
       '#okbmLoungeHome .hg-t.r{border-color:#ff8a65;color:#ff8a65}',
       '#okbmLoungeHome .hg-t.g{border-color:#9ccc65;color:#9ccc65}',
       '#okbmLoungeHome .hg-x{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      // 홈 백패커 라운지 (2026-10-31): 소식 띠 · 알약 네 개 · 매거진 줄. 무채색 카드, 눈에 띄는 색은 소식 띠 왼쪽 줄 하나
+      '#okbmHomeNews{display:flex;flex-direction:column;gap:6px;padding:0 14px}',
+      '#okbmHomeNews .hn-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;padding:14px 16px 14px 18px;border-radius:16px;background:#16161a;text-align:left;overflow:hidden;color:var(--tx);animation:lmhIn .35s var(--ease)}',
+      '#okbmHomeNews .hn-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#ff6b5e}',
+      '#okbmHomeNews .hn-card.k-update:before{background:#5bb8f0}#okbmHomeNews .hn-card.k-notice:before{background:#a1a1a8}',
+      '#okbmHomeNews .hn-card:active{background:#1c1c20}',
+      '#okbmHomeNews .hn-card em{font-style:normal;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:6px;background:rgba(255,107,94,.16);color:#ff8a7e}',
+      '#okbmHomeNews .k-update em{background:rgba(91,184,240,.16);color:#8fd0ff}#okbmHomeNews .k-notice em{background:rgba(255,255,255,.08);color:#d1d1d6}',
+      '#okbmHomeNews .hn-card b{font-size:15.5px;font-weight:800;line-height:1.35;padding-right:36px}',
+      '#okbmHomeNews .hn-card small{font-size:12.5px;color:#a1a1a8;line-height:1.4}',
+      '#okbmHomeNews .hn-dots{position:absolute;right:14px;top:17px;display:flex;gap:4px}#okbmHomeNews .hn-dots i{width:5px;height:5px;border-radius:50%;background:#3a3a40}#okbmHomeNews .hn-dots i.on{background:#f2f2f7}',
+      '#okbmHomeNews .hn-add{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;font-size:12px;font-weight:800;color:var(--sub);padding:2px 0}',
+      '#okbmHomeHub{padding:0 14px}',
+      '#okbmHomeHub .hh-chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:4px}',
+      '#okbmHomeHub .hh-chips button{display:flex;align-items:center;justify-content:center;min-width:0;padding:0 4px;height:34px;border-radius:17px;background:#1c1c20;color:#c7c7cc;font-size:12.5px;font-weight:700;white-space:nowrap;transition:background .15s,color .15s}',
+      '#okbmHomeHub .hh-chips button.on{background:var(--tx);color:#000}',
+      '#okbmHomeHub .hh-row{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 2px;border-top:1px solid rgba(255,255,255,.07);text-align:left;color:var(--tx)}',
+      '#okbmHomeHub .hh-row:first-child{border-top:0}',
+      '#okbmHomeHub .hh-row:active{opacity:.6}',
+      '#okbmHomeHub .hh-x{min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '#okbmHomeHub .hh-x i{font-style:normal;font-size:11.5px;font-weight:800;color:var(--blue);margin-right:6px}',
+      '#okbmHomeHub .hh-row small{flex:none;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}',
+      '#okbmHomeHub .hh-cta{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;height:42px;margin-top:6px;border-radius:12px;background:#1c1c20;font-size:13.5px;font-weight:700;color:var(--tx)}',
+      '#okbmHomeHub .hh-cta:active{background:#26262b}',
+      '#okbmHomeHub .hh-empty{padding:28px 0 22px;text-align:center;font-size:13px;color:var(--sub)}',
+      '#okbmHomeMag .hm-head{padding:0 14px;margin-bottom:10px;font-size:var(--fs-title,16px);font-weight:900;color:var(--tx)}',
+      '#okbmHomeMag .hm-rail{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 14px;scroll-snap-type:x proximity}',
+      '#okbmHomeMag .hm-rail::-webkit-scrollbar{display:none}',
+      '#okbmHomeMag .hm-card{position:relative;flex:none;width:124px;aspect-ratio:4/5;border-radius:12px;overflow:hidden;background:#1c1c20;scroll-snap-align:start;text-align:left}',
+      '#okbmHomeMag .hm-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}',
+      '#okbmHomeMag .hm-card span{position:absolute;left:0;right:0;bottom:0;padding:24px 10px 10px;font-size:13px;font-weight:800;line-height:1.35;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.72));display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}',
+      '#okbmHomeMag .hm-card span em{font-style:normal;display:block;font-size:11px;color:#ff8a7e}',
+      '#okbmHomeMag .hm-card.add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px dashed rgba(255,255,255,.22);background:none;color:var(--sub)}',
+      '#okbmHomeMag .hm-card.add span{position:static;padding:0;background:none;color:var(--sub);font-size:12px}',
+      '.hm-view{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:12px -4px 0}',
+      '.hm-view::-webkit-scrollbar{display:none}',
+      '.hm-view img{flex:none;width:100%;height:auto;border-radius:12px;scroll-snap-align:center;background:#17171b}',
       '.lm-tchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.lm-tchips span{font-size:11px;font-weight:700;color:var(--tx);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:2px 8px}',
       '.lm-tchips.lg{margin:4px 0 6px}.lm-tchips.lg span{font-size:12px;padding:3px 9px}',
       '#okbmLoungeHome .lmh-empty{height:192px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:12.5px;color:var(--sub);text-align:center}',
@@ -743,6 +782,13 @@
       .order('sort', { ascending: true }).order('created_at', { ascending: true }).limit(80));
     D.deals = Array.isArray(rows) ? rows : [];
   }
+  async function loadNews() {
+    const c = sb();
+    if (!c) throw new Error('no_client');
+    const rows = await q(c.from('lounge_news').select('id,kind,title,body,link_url,images,sort,is_active,created_at')
+      .order('sort', { ascending: true }).order('created_at', { ascending: false }).limit(60));
+    D.news = Array.isArray(rows) ? rows : [];
+  }
   async function loadPosts(cat, more) {
     const c = sb();
     if (!c) throw new Error('no_client');
@@ -900,7 +946,7 @@
   }
   // 탭 순서와 같은 순서로 불러온다. D.fail[i] = 그 탭만 실패
   function loadTabs() {
-    return Promise.allSettled([loadEvents(), loadGuides(), loadPosts('all'), loadTop(), loadDeals()]).then(function (r) {
+    return Promise.allSettled([loadEvents(), loadGuides(), loadPosts('all'), loadTop(), loadDeals(), loadNews()]).then(function (r) {
       r.forEach(function (x) { if (x.status === 'rejected') console.warn('[lounge.js:loadTabs]', x.reason); });
       D.fail = r.map(function (x) { return x.status === 'rejected'; });
       return r;
@@ -2185,9 +2231,9 @@
     clearTimeout(hTimer);
     hTimer = setTimeout(function () { if (!hpanel) return; hpanel.classList.remove('anim'); hpanel.style.height = ''; }, 420);
   }
-  // 홈 개편(2026-10-14): 탭 없이 행사·초보 가이드·자유게시판을 각자 칸에 3줄씩 (index.html #okbmHome*Body)
-  const SPLIT = [['okbmHomeEventsBody', 0], ['okbmHomeGuidesBody', 1], ['okbmHomeBoardBody', 2]];
-  const isSplit = function () { return !!document.getElementById('okbmHomeGuidesBody'); };
+  // 홈 개편(2026-10-31): 히어로 밑 바로가기 세 칸 다음 '백패커 라운지' 한 덩어리 (index.html #okbmLoungeHome)
+  //   소식 띠(#okbmHomeNews) → 알약 네 개(#okbmHomeHub: 게시판·설문·투표·후기·랭킹·초보 가이드) → 행사|할인(#homeDealStrip) → 매거진(#okbmHomeMag)
+  const isSplit = function () { return !!document.getElementById('okbmHomeHub'); };
   function paintQuickCounts() {
     if (D.status !== 'ready') return;
     const g = document.getElementById('hqGuideCount');
@@ -2196,32 +2242,6 @@
     const en = thisMonthEvents().length;
     if (g) g.textContent = gn ? gn + '편' : '\u00a0';
     if (e) e.textContent = en ? en + '개' : '\u00a0';
-  }
-  // 시안 넷째 판 모양: 행사는 목록만(전체 링크는 제목 옆), 가이드는 테두리 상자 안 꼬리표+제목, 자유게시판은 상자 하나
-  const TIP_TONE = { '주의점': 'r', '기본상식': 'g' };
-  function splitEvents() {
-    const list = homeEventList().slice(0, HOME_N);
-    return list.length ? list.map(evItem).join('') : '<div class="lmh-empty" style="height:120px">다가오는 행사가 아직 없어요</div>';
-  }
-  function splitGuides() {
-    const tipList = tips();
-    const daily = typeof window.okbmDailyOrder === 'function' ? window.okbmDailyOrder(tipList, function (t) { return t.id; }, 'guides') : tipList;
-    const rows = daily.slice(0, HOME_N).concat(kits().slice(0, Math.max(0, HOME_N - daily.length)));
-    if (!rows.length) return '<div class="lmh-empty" style="height:120px">초보 가이드를 준비하고 있어요</div>';
-    return '<div class="hg">' + rows.map(function (t) {
-      const note = t.kind === 'kit' ? '장비' : (TIP_NOTES.indexOf(t.note) >= 0 ? t.note : '팁');
-      return '<button type="button" class="hg-row" data-a="lounge" data-v="1" data-id="' + esc(t.id) + '"><span class="hg-t ' + (TIP_TONE[note] || '') + '">' + esc(note) + '</span><span class="hg-x">' + esc(t.title) + '</span></button>';
-    }).join('') + '</div>';
-  }
-  function splitBoard() {
-    const p = visiblePosts('all')[0];
-    let sub = '첫 글을 남겨 보세요';
-    if (p) {
-      const d = new Date(p.created_at);
-      const md = isNaN(d) ? '' : (d.getMonth() + 1) + '.' + d.getDate();
-      sub = [p.title, p.nickname, md].filter(Boolean).join(' · ');
-    }
-    return '<b>자유게시판</b><p>' + esc(sub) + '</p><button type="button" class="tg-act" data-a="new-post">글쓰기</button>';
   }
   // 바로가기 밑 두 칸 (2026-10-21): 왼쪽 이달의 행사, 오른쪽 할인 소식. 칸마다 3줄, 제목 옆 '전체 ›'.
   // 행사는 참가할 수 있는 가까운 날부터(homeEventList), 할인은 진행중을 마감이 가까운 순(ongoingDeals).
@@ -2280,27 +2300,169 @@
       + '<div class="hd-col hd-deal"><div class="hd-h"><b>할인 소식<i>' + dealN + '</i></b><button type="button" data-a="lounge" data-v="' + TAB_DEAL + '">전체 ›</button></div>'
       + (now.length ? now.slice(0, HOME_N).map(hdDealRow).join('') : '<div class="hd-empty">진행중인 할인이 없어요</div>') + '</div>';
   }
-  function renderSplit(only) {
-    const ready = D.status === 'ready';
-    SPLIT.forEach(function (x) {
-      if (only != null && x[1] !== only) return;
-      const el = document.getElementById(x[0]);
-      if (!el) return;
-      if (x[1] === 2) {
-        el.setAttribute('data-a', 'lounge');
-        el.setAttribute('data-v', '2');
-        if (ready && !D.fail[2]) el.innerHTML = splitBoard();
-        return;
-      }
-      if (!ready || D.fail[x[1]]) { el.innerHTML = paneHtml(x[1], false); return; }
-      keepOpen(el, function () { el.innerHTML = x[1] === 0 ? splitEvents() : splitGuides(); });
-    });
-    const ea = document.getElementById('okbmHomeEventsAll');
-    const ga = document.getElementById('okbmHomeGuidesAll');
-    if (ready && ea) ea.textContent = D.events.length + '개 전체';
-    if (ready && ga) ga.textContent = (tips().length + kits().length) + '편 전체';
+  function renderSplit() {
+    paintNews();
+    paintHub();
+    paintMag();
     paintQuickCounts();
     paintDealSurfaces();
+  }
+
+  // ----- 소식 띠: 박지 통제·업데이트·공지. 여러 개면 5초마다 넘어간다 -----
+  const NEWS_KIND = { closure: '박지 통제', update: '업데이트', notice: '공지', magazine: '매거진' };
+  const newsList = function () { return D.news.filter(function (n) { return n.kind !== 'magazine' && (n.is_active !== false || D.admin); }); };
+  const magList = function () { return D.news.filter(function (n) { return n.kind === 'magazine' && (n.is_active !== false || D.admin); }); };
+  const newsImgs = function (n) { return (Array.isArray(n && n.images) ? n.images : []).filter(function (u) { return okbmSafeImageUrl(u); }); };
+  const firstLine = function (t) { return String(t || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean)[0] || ''; };
+  let newsAt = 0, newsTimer = null;
+  function newsSlide(n, i, len) {
+    const sub = firstLine(n.body);
+    return `<button type="button" class="hn-card k-${esc(n.kind)}" data-a="news" data-v="${esc(n.id)}">
+      ${len > 1 ? `<span class="hn-dots" aria-hidden="true">${Array.from({ length: len }, function (_, j) { return '<i' + (j === i ? ' class="on"' : '') + '></i>'; }).join('')}</span>` : ''}
+      <em>${esc(NEWS_KIND[n.kind] || '소식')}${n.is_active === false ? ' · 숨김' : ''}</em><b>${esc(n.title)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</button>`;
+  }
+  function paintNews() {
+    const el = document.getElementById('okbmHomeNews');
+    if (!el) return;
+    const list = D.status === 'ready' ? newsList() : [];
+    clearInterval(newsTimer);
+    const add = D.admin && D.status === 'ready' ? '<button type="button" class="hn-add" data-a="new-news" data-v="closure">' + ico(P.plus, 14) + '소식 올리기 (운영팀)</button>' : '';
+    if (!list.length) {
+      el.innerHTML = add;
+      el.hidden = !add;
+      return;
+    }
+    el.hidden = false;
+    newsAt = newsAt % list.length;
+    el.innerHTML = newsSlide(list[newsAt], newsAt, list.length) + add;
+    if (list.length > 1 && !reduce) {
+      newsTimer = setInterval(function () {
+        if (document.hidden) return;
+        const l = newsList();
+        if (l.length < 2) return;
+        newsAt = (newsAt + 1) % l.length;
+        const card = el.querySelector('.hn-card');
+        if (card) card.outerHTML = newsSlide(l[newsAt], newsAt, l.length);
+      }, 5000);
+    }
+  }
+
+  // ----- 알약 네 개: 게시판 · 설문·투표 · 후기·랭킹 · 초보 가이드. 칸마다 세 줄 -----
+  const HUB = [['board', '게시판'], ['poll', '설문·투표'], ['review', '후기·랭킹'], ['guide', '초보 가이드']];
+  function hubRow(attrs, tag, title, meta) {
+    return `<button type="button" class="hh-row" ${attrs}><span class="hh-x">${tag ? `<i>${esc(tag)}</i>` : ''}${esc(title)}</span>${meta ? `<small>${esc(meta)}</small>` : ''}</button>`;
+  }
+  function hubBody(key) {
+    if (D.status !== 'ready') return '<div class="hh-empty">불러오는 중…</div>';
+    if (key === 'board' || key === 'poll') {
+      const st = postsBy[key === 'poll' ? 'poll' : 'all'];
+      if (!st) return '<div class="hh-empty">불러오는 중…</div>';
+      const list = visiblePosts(key === 'poll' ? 'poll' : 'all').filter(function (p) { return !p.is_private; }).slice(0, HOME_N);
+      const rows = list.map(function (p) {
+        const poll = p.category === 'poll';
+        const r = D.poll[p.id];
+        const meta = poll ? (r ? (Number(r.total) || 0) + '명 참여' : '참여하기') : [p.nickname, Number(p.comments_count) ? '댓글 ' + p.comments_count : ''].filter(Boolean).join(' · ');
+        return hubRow('data-a="lounge" data-v="2" data-id="' + esc(p.id) + '"', poll ? '설문' : '', p.title, meta);
+      }).join('');
+      return (rows || '<div class="hh-empty">' + (key === 'poll' ? '첫 설문을 올려 보세요' : '첫 글을 기다리고 있어요') + '</div>')
+        + '<button type="button" class="hh-cta" data-a="new-post" data-v="' + (key === 'poll' ? 'poll' : '') + '">' + ico(P.plus, 16) + (key === 'poll' ? '설문 만들기' : '글쓰기') + '</button>';
+    }
+    if (key === 'review') {
+      const top = D.top.filter(function (r) { return spotById(r.spot_id); }).slice(0, HOME_N);
+      const rows = top.map(function (r) {
+        const s = spotById(r.spot_id);
+        return hubRow('data-a="spot" data-v="' + esc(r.spot_id) + '"', '★ ' + Number(r.avg_rating || 0).toFixed(1), spotName(s), [spotRegion(s), '후기 ' + (Number(r.review_count) || 0)].filter(Boolean).join(' · '));
+      }).join('');
+      return (rows || '<div class="hh-empty">아직 박지 후기가 없어요</div>')
+        + '<button type="button" class="hh-cta" data-a="lounge" data-v="3">평점순·후기 많은 순 전체 보기' + ico(P.chevR, 16) + '</button>';
+    }
+    const tipList = tips();
+    const daily = typeof window.okbmDailyOrder === 'function' ? window.okbmDailyOrder(tipList, function (t) { return t.id; }, 'guides') : tipList;
+    const rows = daily.slice(0, HOME_N).concat(kits().slice(0, Math.max(0, HOME_N - daily.length)));
+    const html = rows.map(function (t) {
+      const note = t.kind === 'kit' ? '장비' : (TIP_NOTES.indexOf(t.note) >= 0 ? t.note : '팁');
+      return hubRow('data-a="lounge" data-v="1" data-id="' + esc(t.id) + '"', note, t.title, '');
+    }).join('');
+    return (html || '<div class="hh-empty">초보 가이드를 준비하고 있어요</div>')
+      + '<button type="button" class="hh-cta" data-a="lounge" data-v="1">가이드 ' + (tips().length + kits().length) + '편 전체 보기' + ico(P.chevR, 16) + '</button>';
+  }
+  function paintHub() {
+    const el = document.getElementById('okbmHomeHub');
+    if (!el) return;
+    const key = HUB.some(function (h) { return h[0] === S.hub; }) ? S.hub : 'board';
+    el.innerHTML = '<div class="hh-chips" role="tablist" aria-label="라운지">' + HUB.map(function (h) {
+      return '<button type="button" role="tab" data-a="hub" data-v="' + h[0] + '" class="' + (h[0] === key ? 'on' : '') + '" aria-selected="' + (h[0] === key) + '">' + esc(h[1]) + '</button>';
+    }).join('') + '</div><div class="hh-body" role="tabpanel">' + hubBody(key) + '</div>';
+  }
+
+  // ----- 매거진 줄: 카드뉴스 표지. 누르면 한 장씩 넘겨 본다 -----
+  function paintMag() {
+    const el = document.getElementById('okbmHomeMag');
+    if (!el) return;
+    const list = D.status === 'ready' ? magList() : [];
+    if (!list.length && !D.admin) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.innerHTML = '<div class="hm-head">낭만 매거진</div><div class="hm-rail">' + list.map(function (n) {
+      const cover = newsImgs(n)[0];
+      return `<button type="button" class="hm-card" data-a="news" data-v="${esc(n.id)}" aria-label="${esc(n.title)}">${cover ? `<img src="${escapeHtml(okbmSafeImageUrl(cover))}" alt="" loading="lazy" decoding="async">` : ''}<span>${n.is_active === false ? '<em>숨김</em>' : ''}${esc(n.title)}</span></button>`;
+    }).join('') + (D.admin ? '<button type="button" class="hm-card add" data-a="new-news" data-v="magazine">' + ico(P.plus, 20) + '<span>매거진 올리기</span></button>' : '') + '</div>';
+  }
+  // 소식·매거진 보기 (아래에서 올라오는 창). 사진이 여러 장이면 옆으로 넘긴다
+  function openNews(id) {
+    const n = D.news.find(function (x) { return String(x.id) === String(id); });
+    if (!n) return;
+    const imgs = newsImgs(n);
+    const link = n.link_url && HTTPS_RE.test(n.link_url) ? n.link_url : '';
+    openSheet(`<p class="lm-ssub" style="margin:0 0 4px">${esc(NEWS_KIND[n.kind] || '소식')} · ${esc(ago(n.created_at))}</p><h3 id="loungeSheetTitle">${esc(n.title)}</h3>
+      ${imgs.length ? `<div class="hm-view">${imgs.map(function (u, i) { return `<img src="${escapeHtml(okbmSafeImageUrl(u))}" alt="${esc(n.title)} ${i + 1}/${imgs.length}" loading="lazy" decoding="async">`; }).join('')}</div>${imgs.length > 1 ? `<p class="lm-hint" style="text-align:center">옆으로 넘겨 보세요 · ${imgs.length}장</p>` : ''}` : ''}
+      ${n.body ? `<p class="lm-desc">${bodyHtml(n.body)}</p>` : ''}
+      ${link ? `<a class="lm-btn main" style="display:flex;align-items:center;justify-content:center;margin-top:16px;text-decoration:none" href="${escapeHtml(okbmSafeExternalUrl(link))}" target="_blank" rel="noopener noreferrer">자세히 보기</a>` : ''}
+      ${D.admin ? `<div class="lmx-links" style="margin-top:14px"><button type="button" data-a="edit-news" data-v="${esc(n.id)}">수정</button><button type="button" class="red" data-a="del-news" data-v="${esc(n.id)}">삭제</button></div>` : ''}`,
+    { kind: 'news-view', id: n.id });
+  }
+  // 운영팀 올리기·고치기
+  function newsFormHtml(n, kind) {
+    return `<h3 id="loungeSheetTitle">${n ? '고치기' : (kind === 'magazine' ? '매거진 올리기' : '소식 올리기')}</h3><p class="lm-ssub">관리자에게만 보이는 화면이에요. 매거진은 첫 사진이 표지예요(1080×1350 세로 카드뉴스, 10장까지).</p>
+      <form data-form="news" novalidate autocomplete="off">
+        <div class="lm-chipline" role="radiogroup" aria-label="종류">${Object.keys(NEWS_KIND).map(function (k) {
+          const on = k === kind;
+          return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="news-kind" data-v="' + k + '">' + esc(NEWS_KIND[k]) + '</button>';
+        }).join('')}</div>
+        ${field('lmNwTitle', '제목', inp('lmNwTitle', 'title', n && n.title, 'maxlength="80" required data-autofocus placeholder="예: 굴업도 개머리언덕, 11월 한 달 야영 금지"'), true)}
+        ${field('lmNwBody', '내용', '<textarea class="lm-ta" id="lmNwBody" name="body" maxlength="3000" placeholder="첫 줄은 띠 아래 한 줄로 보여요. 예: 옹진군 공고 · 12월 1일부터 다시 열려요">' + esc(n && n.body) + '</textarea>')}
+        ${field('lmNwLink', '자세히 보기 링크', inp('lmNwLink', 'link_url', n && n.link_url, 'type="url" inputmode="url" maxlength="500" placeholder="https:// 공고·안내 글 (선택)"'))}
+        <span class="lm-lbl">사진 <span data-pcount>${(SH.photos || []).length}</span>/10</span>
+        <div class="lm-thumbs" data-thumbs>${thumbsHtml()}</div>
+        <label class="lm-file">${ico(P.img, 18)}<span>사진 추가</span><input type="file" accept="image/*,.heic,.heif" multiple data-post-files hidden></label>
+        ${field('lmNwSort', '순서 (작을수록 앞)', inp('lmNwSort', 'sort', n ? n.sort : 0, 'type="number" inputmode="numeric" min="-999" max="999"'))}
+        <div style="margin-top:10px">${sw('is_active', '모두에게 보이기', n ? n.is_active !== false : true)}</div>
+        <button type="submit" class="lm-btn main">${n ? '저장' : '올리기'}</button>
+      </form>`;
+  }
+  function openNewsForm(n, kind) {
+    if (!D.admin) return;
+    const k = n ? n.kind : (NEWS_KIND[kind] ? kind : 'closure');
+    const st = { kind: 'news', id: n ? n.id : null, nkind: k, photos: newsImgs(n || {}).map(function (u) { return { url: u }; }), sw: { is_active: n ? n.is_active !== false : true } };
+    const prev = SH;
+    SH = st; // thumbsHtml이 SH를 읽는다
+    const html = newsFormHtml(n, k);
+    SH = prev;
+    openSheet(html, st);
+  }
+  async function saveNews(f) {
+    const st = SH;
+    const val = function (n) { return String((f.elements[n] && f.elements[n].value) || '').trim(); };
+    const images = st.photos.map(function (ph) { return ph.url; }).filter(function (u) { return okbmSafeImageUrl(u); }).slice(0, 10);
+    const row = {
+      kind: st.nkind, title: val('title'), body: val('body'), link_url: val('link_url'), images: images,
+      sort: Math.max(-999, Math.min(999, parseInt(val('sort'), 10) || 0)), is_active: !!st.sw.is_active
+    };
+    const bad = function (name, msg) { toast(msg, true); if (name && f.elements[name]) f.elements[name].focus(); };
+    if (!row.title) return bad('title', '제목을 적어 주세요');
+    if (row.link_url && !HTTPS_RE.test(row.link_url)) return bad('link_url', '링크는 https://로 시작해야 해요');
+    if (st.photos.some(function (ph) { return ph.uploading; })) return toast('사진을 올리는 중이에요. 잠시 뒤 다시 눌러 주세요', true);
+    if (row.kind === 'magazine' && !images.length) return bad('', '매거진은 사진(표지)을 한 장 이상 올려 주세요');
+    await submitRow(f, 'lounge_news', st.id, row, st.id ? '고쳤어요' : (row.kind === 'magazine' ? '매거진을 올렸어요' : '소식을 올렸어요'));
   }
   function renderHome() {
     if (isSplit()) { renderSplit(); return; }
@@ -2984,6 +3146,9 @@
       } else if (table === 'lounge_deals') {
         await loadDeals();
         D.fail[4] = false;
+      } else if (table === 'lounge_news') {
+        await loadNews();
+        D.fail[5] = false;
       }
     } catch (e) { console.warn('[lounge.js:reloadAdminData]', e); }
     renderAll();
@@ -3111,10 +3276,10 @@
         <button type="submit" class="lm-btn main">${p ? '저장' : '올리기'}</button>
       </form>`;
   }
-  function openPostForm(p) {
+  function openPostForm(p, cat0) {
     if (needLogin('로그인하면 글을 쓸 수 있어요')) return;
     if (p && !isMine(p.user_id)) return;
-    const cat = p ? p.category : (S.cat !== 'all' ? S.cat : 'backpacking');
+    const cat = p ? p.category : (cat0 || (S.cat !== 'all' ? S.cat : 'backpacking'));
     const st = { kind: 'post', id: p ? p.id : null, cat: cat, pollDays: 7, photos: postPhotos(p || {}).map(function (u) { return { url: u }; }) };
     const prev = SH;
     SH = st; // thumbsHtml이 SH를 읽는다
@@ -3122,19 +3287,21 @@
     SH = prev;
     openSheet(html, st);
   }
+  const PHOTO_MAX = { post: 5, news: 10 };
   function refreshThumbs() {
-    if (!sheet || SH.kind !== 'post') return;
+    if (!sheet || !PHOTO_MAX[SH.kind]) return;
     sheet.querySelector('[data-thumbs]').innerHTML = thumbsHtml();
     sheet.querySelector('[data-pcount]').textContent = String(SH.photos.length);
   }
   async function onPostFiles(input) {
     const files = Array.prototype.slice.call(input.files || []);
     input.value = '';
-    if (!files.length || !sheet || SH.kind !== 'post') return;
+    if (!files.length || !sheet || !PHOTO_MAX[SH.kind]) return;
     const st = SH;
-    const room = 5 - st.photos.length;
-    if (room <= 0) { toast('사진은 5장까지 올릴 수 있어요', true); return; }
-    if (files.length > room) toast('사진은 5장까지라서 ' + room + '장만 올려요');
+    const max = PHOTO_MAX[st.kind];
+    const room = max - st.photos.length;
+    if (room <= 0) { toast('사진은 ' + max + '장까지 올릴 수 있어요', true); return; }
+    if (files.length > room) toast('사진은 ' + max + '장까지라서 ' + room + '장만 올려요');
     const jobs = files.slice(0, room).map(function (f) {
       const ph = { uploading: true };
       st.photos.push(ph);
@@ -3576,7 +3743,27 @@
       }
       // 회원 쓰기
       case 'need-login': needLogin(); break;
-      case 'new-post': openPostForm(null); break;
+      case 'new-post': openPostForm(null, v === 'poll' ? 'poll' : null); break;
+      // 홈 라운지 알약: 설문·투표는 처음 누를 때 투표 글만 받는다
+      case 'hub': {
+        S.hub = v;
+        paintHub();
+        tick();
+        if (v === 'poll' && !postsBy.poll) loadPosts('poll').then(paintHub).catch(function (err) { console.warn('[lounge.js:hub]', err); delete postsBy.poll; });
+        break;
+      }
+      case 'news': openNews(v); break;
+      case 'new-news': openNewsForm(null, v); break;
+      case 'edit-news': { const n = D.news.find(function (x) { return String(x.id) === String(v); }); if (n) openNewsForm(n); break; }
+      case 'del-news':
+        deleteRow('lounge_news', v, '이 소식을 삭제할까요?').then(function (ok) { if (ok) reloadAdminData('lounge_news'); });
+        break;
+      case 'news-kind': {
+        if (SH.kind !== 'news') break;
+        SH.nkind = v;
+        t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+        break;
+      }
       case 'edit-post': { const p = findPost(v); if (p) openPostForm(p); break; }
       case 'pcat': {
         if (SH.kind !== 'post' || SH.id) break;
@@ -3621,7 +3808,7 @@
         t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
         break;
       }
-      case 'photo-del': if (SH.kind === 'post') { SH.photos.splice(Number(v), 1); refreshThumbs(); } break;
+      case 'photo-del': if (PHOTO_MAX[SH.kind]) { SH.photos.splice(Number(v), 1); refreshThumbs(); } break;
       case 'like': toggleLike(v); break;
       case 'del-comment': deleteComment(v, t.dataset.post); break;
       case 'ugc': openUgc(t); break;
@@ -3795,6 +3982,7 @@
     else if (f.dataset.form === 'deal') saveDeal(f);
     else if (f.dataset.form === 'guide') saveGuide(f);
     else if (f.dataset.form === 'post') savePost(f);
+    else if (f.dataset.form === 'news') saveNews(f);
     else if (f.dataset.form === 'comment') saveComment(f);
     else if (f.dataset.form === 'review') saveReview(f);
   }
@@ -3862,7 +4050,7 @@
   function start() {
     injectCss();
     const dealStrip = document.getElementById('homeDealStrip');
-    if (dealStrip && !dealStrip.__okbmDeal) {
+    if (dealStrip && !dealStrip.__okbmDeal && !(document.getElementById('okbmLoungeHome') || { contains: function () { return false; } }).contains(dealStrip)) {
       dealStrip.__okbmDeal = true;
       dealStrip.addEventListener('click', onClick);
     }
