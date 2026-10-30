@@ -63,8 +63,9 @@
     const i = Math.max(0, Math.min(TAB_ORDER.length - 1, Math.round(Number(track) || 0)));
     return TAB_ORDER[i];
   }
-  const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['life', '사는이야기'], ['suggestion', '건의']];
-  const CAT_LABEL = { backpacking: '백패킹이야기', life: '사는이야기', suggestion: '건의' };
+  // 사는이야기(life)는 글이 없어 투표(poll) 칸으로 바꿨다. 옛 life 글이 남아 있어도 이름은 보인다 (SUPABASE_H25)
+  const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['poll', '투표'], ['suggestion', '건의']];
+  const CAT_LABEL = { backpacking: '백패킹이야기', life: '사는이야기', poll: '투표', suggestion: '건의' };
   const GEAR_CAT = { shelter: '텐트', sleep: '침낭', pack: '배낭', food: '식량', kitchen: '조리', wear: '의류', electronics: '전자', camp: '캠프', other: '기타' };
   const HOME_N = 3;
   const POST_PAGE = 20;
@@ -79,6 +80,7 @@
     liked: new Set(), likeChecked: new Set(), // 내가 좋아요 누른 글(본인 것만 보임)
     spotRev: null, // 박지 하나의 후기 {spot_id, tier, summary, reviews, mine, done, tipSum, tipRows}
     tipsRecent: null, // 최근 팁(칩·한 줄) — 박지 후기 탭에서 별점 후기와 섞는다 (SUPABASE_G4)
+    poll: {}, // 투표 결과 {글id: {total, counts|null, mine, closed}} (SUPABASE_H25 okbm_poll_results)
   };
   // 화면 상태. tab = 홈 탭, wtab = 라운지 창 탭 (서로 따로 기억), revSpot = 후기 탭을 한 박지로 좁힘
   // revView: 박지 후기 창의 작은 탭 'recent'(최근 후기, 처음) | 'top'(평점 높은 박지)
@@ -325,6 +327,8 @@
     const m = String((e && (e.message || e.details || e.hint)) || e || '');
     if (/rate limit/i.test(m)) return '너무 자주 올렸어요. 잠시 뒤 다시 해 주세요';
     if (/invalid_photos/.test(m)) return '사진을 다시 올려 주세요';
+    if (/invalid_poll_end/.test(m)) return '마감을 다시 골라 주세요';
+    if (/invalid_poll/.test(m)) return '보기는 2~5개, 서로 다르게 40자 안으로 적어 주세요';
     if (/JWT|not authenticated|401|42501/i.test(m) || (e && (e.code === '42501' || e.code === 'PGRST301'))) return '다시 로그인해 주세요';
     return fallback || '저장하지 못했어요. 잠시 뒤 다시 해 주세요';
   }
@@ -501,9 +505,23 @@
       '.lm-act.on svg{fill:currentColor;animation:lmPop .35s var(--ease)}',
       '.lm-stars{font-size:12px;letter-spacing:1px;color:var(--star)}',
       '.lm-stars span{color:#3a3a40}',
-      '.lm-cats{display:flex;gap:18px;overflow-x:auto;margin:14px 0 2px;scrollbar-width:none}',
-      '.lm-cats button{flex:none;display:inline-flex;align-items:center;gap:4px;padding:4px 0;font-size:12.5px;font-weight:700;color:var(--faint)}',
-      '.lm-cats button.on{color:var(--tx)}',
+      // 게시판 분류: 위 탭 줄과 헷갈리지 않게 알약 버튼으로, 고른 칸은 흰 바탕
+      '.lm-cats{display:flex;gap:8px;overflow-x:auto;margin:16px 0 2px;scrollbar-width:none}',
+      '.lm-cats button{flex:none;display:inline-flex;align-items:center;gap:4px;height:34px;padding:0 14px;border-radius:17px;background:#1c1c20;font-size:13.5px;font-weight:700;color:#c7c7cc;transition:background .15s,color .15s}',
+      '.lm-cats button.on{background:var(--tx);color:#000}',
+      // 투표: 보기 버튼 → 고른 뒤 막대
+      '.lm-poll{margin-top:10px;display:flex;flex-direction:column;gap:6px}',
+      '.lm-popt{width:100%;min-height:42px;padding:9px 14px;border-radius:12px;border:1.5px solid #34343a;font-size:14px;font-weight:700;text-align:left;line-height:1.4;transition:border-color .15s,background .15s}',
+      '.lm-popt:active{background:#1c1c20;border-color:var(--blue)}',
+      '.lm-pbar{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:42px;padding:9px 14px;border-radius:12px;background:#1c1c20;overflow:hidden;font-size:14px;line-height:1.4}',
+      '.lm-pbar i{position:absolute;left:0;top:0;bottom:0;background:#2e2e34;transition:width .5s var(--ease)}',
+      '.lm-pbar.top i{background:color-mix(in srgb,var(--blue) 34%,#1c1c20)}',
+      '.lm-pbar span,.lm-pbar b{position:relative;display:inline-flex;align-items:center;gap:5px}',
+      '.lm-pbar span{font-weight:600}.lm-pbar.mine span{font-weight:800}',
+      '.lm-pbar b{flex:none;font-weight:800;font-variant-numeric:tabular-nums}',
+      '.lm-pmeta{margin-top:2px;font-size:11.5px;color:var(--sub)}',
+      '.lm-popt-in{display:flex;align-items:center;gap:6px}.lm-popt-in .lm-in{flex:1;min-width:0}',
+      '.lm-popt-in button{flex:none;width:32px;height:32px;display:grid;place-items:center;color:var(--sub)}',
       '.lm-private{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:11.5px;color:var(--sub)}',
       '.lm-empty{padding:36px 0;text-align:center;font-size:13px;line-height:1.6;color:var(--sub)}',
       '.lm-kv{display:flex;justify-content:space-between;gap:14px;padding:7px 0;font-size:13.5px}',
@@ -669,7 +687,7 @@
   }
 
   // ---------- 데이터 (window.supabaseClient, RLS가 권한을 가른다) ----------
-  const POST_COLS = 'id,user_id,nickname,category,title,body,photos,is_private,likes_count,comments_count,created_at';
+  const POST_COLS = 'id,user_id,nickname,category,title,body,photos,is_private,likes_count,comments_count,created_at,poll_options,poll_ends_at';
   const postsBy = {}; // cat → { rows, done, loading }
 
   async function q(builder) {
@@ -732,7 +750,7 @@
       }
       if (list.length) st.cursor = list[list.length - 1].created_at;
       st.done = list.length < POST_PAGE;
-      await loadMyLikes(list.map(function (p) { return p.id; }));
+      await Promise.all([loadMyLikes(list.map(function (p) { return p.id; })), loadPolls(list)]);
     } finally {
       st.loading = false;
     }
@@ -750,6 +768,16 @@
       (Array.isArray(rows) ? rows : []).forEach(function (r) { D.liked.add(r.post_id); });
     } catch (e) { console.warn('[lounge.js:loadMyLikes]', e); }
   }
+  // 투표 결과: 참여 수는 누구나, 보기별 수는 내가 했거나 마감된 투표만 온다. 실패해도 목록은 보여 준다
+  async function loadPolls(rows) {
+    const c = sb();
+    const ids = rows.filter(function (p) { return p.category === 'poll'; }).map(function (p) { return p.id; });
+    if (!c || !ids.length) return;
+    try {
+      const res = await q(c.rpc('okbm_poll_results', { p_ids: ids }));
+      (Array.isArray(res) ? res : []).forEach(function (r) { if (r && r.post_id) D.poll[r.post_id] = r; });
+    } catch (e) { console.warn('[lounge.js:loadPolls]', e); }
+  }
   // 목록에 없는 글 하나 (알림·신고 검수에서 열 때). 없으면 null
   async function loadPostById(id) {
     const c = sb();
@@ -757,6 +785,7 @@
     const rows = await q(c.from('lounge_posts').select(POST_COLS).eq('id', id).limit(1));
     const p = Array.isArray(rows) && rows[0] ? rows[0] : null;
     if (!p) return null;
+    await loadPolls([p]);
     const st = postsBy.all || (postsBy.all = { rows: [], done: false, loading: false, cursor: null });
     if (!st.rows.some(function (x) { return x.id === p.id; })) {
       p.__extra = true; // 더 보기 기준(cursor)에는 안 쓴다
@@ -1620,6 +1649,66 @@
     const on = D.liked.has(p.id);
     return `<button type="button" class="lm-act ${on ? 'on' : ''}" data-a="like" data-v="${esc(p.id)}" aria-pressed="${on}" aria-label="좋아요 ${Number(p.likes_count) || 0}개">${ico(P.heart, 17)}<span>${Number(p.likes_count) || 0}</span></button>`;
   };
+  // 투표: 하기 전엔 보기 버튼, 한 뒤(또는 마감)엔 막대와 %. 누가 뭘 골랐는지는 안 보인다
+  function pollLeft(p, closed) {
+    if (closed) return '마감';
+    if (!p.poll_ends_at) return '';
+    const ms = new Date(p.poll_ends_at) - Date.now();
+    if (ms <= 0) return '마감';
+    const h = Math.ceil(ms / 3600000);
+    return h >= 24 ? Math.ceil(h / 24) + '일 남음' : h + '시간 남음';
+  }
+  function pollHtml(p) {
+    const opts = Array.isArray(p.poll_options) ? p.poll_options : [];
+    if (!opts.length) return '';
+    const r = D.poll[p.id] || {};
+    const closed = !!r.closed || (p.poll_ends_at && new Date(p.poll_ends_at) <= Date.now());
+    const counts = Array.isArray(r.counts) ? r.counts : null;
+    const total = Number(r.total) || 0;
+    const mine = r.mine == null ? -1 : Number(r.mine);
+    let rows;
+    if (counts) {
+      const max = Math.max.apply(null, counts.concat([0]));
+      rows = opts.map(function (o, i) {
+        const n = Number(counts[i]) || 0;
+        const pct = total ? Math.round(n * 100 / total) : 0;
+        return `<div class="lm-pbar${i === mine ? ' mine' : ''}${n && n === max ? ' top' : ''}"><i style="width:${pct}%"></i><span>${esc(o)}${i === mine ? ico(P.check, 14) : ''}</span><b>${pct}%</b></div>`;
+      }).join('');
+    } else if (closed) {
+      rows = '<div class="lm-pmeta" style="margin:0">마감된 투표예요</div>';
+    } else {
+      rows = opts.map(function (o, i) {
+        return `<button type="button" class="lm-popt" data-a="poll-vote" data-v="${esc(p.id)}" data-i="${i}">${esc(o)}</button>`;
+      }).join('');
+    }
+    const meta = [total + '명 참여', pollLeft(p, closed)].filter(Boolean).join(' · ');
+    return `<div class="lm-poll" data-poll="${esc(p.id)}">${rows}<div class="lm-pmeta">${esc(meta)}${counts || closed ? '' : ' · 고르면 결과가 보여요'}</div></div>`;
+  }
+  function paintPoll(id) {
+    const p = findPost(id);
+    if (!p || !layer) return;
+    layer.querySelectorAll('[data-poll]').forEach(function (el) { if (el.dataset.poll === String(id)) el.outerHTML = pollHtml(p); });
+  }
+  const pollBusy = new Set();
+  async function votePoll(id, i) {
+    if (needLogin('로그인하면 투표할 수 있어요')) return;
+    const c = sb();
+    if (!c || pollBusy.has(id)) return;
+    pollBusy.add(id);
+    tick();
+    try {
+      const r = await q(c.rpc('okbm_poll_vote', { p_post_id: id, p_choice: i }));
+      if (r && r.post_id) D.poll[id] = r;
+      paintPoll(id);
+    } catch (e) {
+      console.warn('[lounge.js:votePoll]', e);
+      const m = String((e && e.message) || e || '');
+      if (/poll_closed/.test(m)) { D.poll[id] = Object.assign({}, D.poll[id], { closed: true }); paintPoll(id); }
+      toast(/poll_closed/.test(m) ? '마감된 투표예요' : /login_required/.test(m) ? '로그인하면 투표할 수 있어요' : writeErr(e, '투표하지 못했어요. 잠시 뒤 다시 해 주세요'), true);
+    } finally {
+      pollBusy.delete(id);
+    }
+  }
   // 댓글 입력: 회원만. 건의 글은 작성자·운영팀만 보이므로 RLS가 나머지를 막는다
   function composeHtml(p) {
     if (!loggedIn()) return '<button type="button" class="lmx-login" data-a="need-login">로그인하고 댓글 달기</button>';
@@ -1667,6 +1756,7 @@
       <div class="lm-rb">
         <div class="lm-who">${whoName(p.nickname, p.user_id)}<span>${esc(ago(p.created_at))}</span><span>· ${esc(CAT_LABEL[p.category] || '')}</span></div>
         <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}</div>${p.body ? `<div class="lm-bd">${bodyHtml(p.body)}</div>` : ''}
+        ${p.category === 'poll' ? pollHtml(p) : ''}
         ${photos.length ? `<div class="lm-photos ${photos.length > 1 ? 'multi' : ''}">${photos.map(function (u) { return `<img src="${escapeHtml(okbmSafeImageUrl(u))}" alt="" loading="lazy" decoding="async">`; }).join('')}</div>` : ''}
         ${p.is_private ? `<div class="lm-private">${ico(P.lock, 13)}나와 운영팀만 볼 수 있어요 · 댓글 ${cc}</div>`
           : `<div class="lm-acts">${likeBtn(p)}<span class="lm-act">${ico(P.chat, 17)}<span>${cc}</span></span></div>`}
@@ -2886,7 +2976,8 @@
   // =====================================================================
   // 회원 쓰기 (P4): 글·사진·댓글·좋아요·박지 후기. 권한은 RLS, 닉네임·개수는 서버 트리거가 채운다
   // =====================================================================
-  const POST_CATS = [['backpacking', '백패킹이야기'], ['life', '사는이야기'], ['suggestion', '건의']];
+  const POST_CATS = [['backpacking', '백패킹이야기'], ['poll', '투표'], ['suggestion', '건의']];
+  const POLL_ENDS = [['1', '1일'], ['3', '3일'], ['7', '7일'], ['0', '마감 없음']];
 
   // ----- 글 쓰기·고치기 -----
   function thumbsHtml() {
@@ -2896,7 +2987,26 @@
       return `<div class="lm-thumb"><img src="${escapeHtml(okbmSafeImageUrl(ph.url))}" alt="" decoding="async"><button type="button" data-a="photo-del" data-v="${i}" aria-label="사진 ${i + 1} 빼기">${ico(P.x, 14)}</button></div>`;
     }).join('');
   }
+  // 투표 보기 칸 (2~5개). 3번째부터 뺄 수 있다
+  function pollOptHtml(i, value) {
+    return `<div class="lm-popt-in">${inp('lmPollOpt' + i, 'opt', value, 'maxlength="40" placeholder="보기 ' + (i + 1) + '"')}${i >= 2 ? `<button type="button" data-a="poll-del" aria-label="보기 ${i + 1} 빼기">${ico(P.x, 16)}</button>` : ''}</div>`;
+  }
+  function pollFieldsHtml(p, cat) {
+    if (p) return p.category === 'poll' ? '<p class="lm-hint">보기와 마감은 올린 뒤에 바꿀 수 없어요.</p>' : '';
+    return `<div data-poll-fields ${cat === 'poll' ? '' : 'hidden'}>
+        <span class="lm-lbl">보기 <b aria-hidden="true">*</b> <span style="font-weight:600">2~5개</span></span>
+        <div data-popts>${pollOptHtml(0, '')}${pollOptHtml(1, '')}</div>
+        <button type="button" class="lm-file" data-a="poll-add">${ico(P.plus, 18)}<span>보기 추가</span></button>
+        <span class="lm-lbl">마감</span>
+        <div class="lm-chipline" role="radiogroup" aria-label="마감">${POLL_ENDS.map(function (d) {
+          const on = d[0] === '7';
+          return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="poll-end" data-v="' + d[0] + '">' + esc(d[1]) + '</button>';
+        }).join('')}</div>
+        <p class="lm-hint">한 사람이 한 번 골라요. 결과는 고른 뒤에 보이고, 누가 뭘 골랐는지는 안 보여요.</p>
+      </div>`;
+  }
   function postFormHtml(p, cat) {
+    const poll = cat === 'poll';
     return `<h3 id="loungeSheetTitle">${p ? '글 고치기' : '새 글'}</h3>
       <form data-form="post" novalidate autocomplete="off">
         <div class="lm-chipline" role="radiogroup" aria-label="분류">${POST_CATS.map(function (c) {
@@ -2905,8 +3015,9 @@
         }).join('')}</div>
         <p class="lm-hint" data-private-note ${cat === 'suggestion' ? '' : 'hidden'}>건의는 나와 운영팀만 볼 수 있어요. 답변이 달리면 알림으로 알려 드려요.</p>
         ${p ? '<p class="lm-hint">분류는 올린 뒤에 바꿀 수 없어요.</p>' : ''}
-        ${field('lmPostTitle', '제목', inp('lmPostTitle', 'title', p && p.title, 'maxlength="80" required data-autofocus placeholder="제목"'), true)}
-        ${field('lmPostBody', '내용', '<textarea class="lm-ta" id="lmPostBody" name="body" maxlength="3000" placeholder="어떤 이야기를 나눌까요?" style="min-height:140px">' + esc(p && p.body) + '</textarea>')}
+        <label class="lm-lbl" for="lmPostTitle"><span data-title-lbl>${poll ? '질문' : '제목'}</span> <b aria-hidden="true">*</b></label>${inp('lmPostTitle', 'title', p && p.title, 'maxlength="80" required data-autofocus placeholder="' + (poll ? '무엇을 물어볼까요?' : '제목') + '"')}
+        ${pollFieldsHtml(p, cat)}
+        ${field('lmPostBody', poll ? '설명 (선택)' : '내용', '<textarea class="lm-ta" id="lmPostBody" name="body" maxlength="3000" placeholder="' + (poll ? '덧붙일 말이 있으면 적어요' : '어떤 이야기를 나눌까요?') + '" style="min-height:' + (poll ? 72 : 140) + 'px">' + esc(p && p.body) + '</textarea>')}
         <span class="lm-lbl">사진 <span data-pcount>${(SH.photos || []).length}</span>/5</span>
         <div class="lm-thumbs" data-thumbs>${thumbsHtml()}</div>
         <label class="lm-file">${ico(P.img, 18)}<span>사진 추가</span><input type="file" accept="image/*,.heic,.heif" multiple data-post-files hidden></label>
@@ -2917,7 +3028,7 @@
     if (needLogin('로그인하면 글을 쓸 수 있어요')) return;
     if (p && !isMine(p.user_id)) return;
     const cat = p ? p.category : (S.cat !== 'all' ? S.cat : 'backpacking');
-    const st = { kind: 'post', id: p ? p.id : null, cat: cat, photos: postPhotos(p || {}).map(function (u) { return { url: u }; }) };
+    const st = { kind: 'post', id: p ? p.id : null, cat: cat, pollDays: 7, photos: postPhotos(p || {}).map(function (u) { return { url: u }; }) };
     const prev = SH;
     SH = st; // thumbsHtml이 SH를 읽는다
     const html = postFormHtml(p, cat);
@@ -2958,12 +3069,20 @@
     if (!title) { toast('제목을 적어 주세요', true); f.elements.title.focus(); return; }
     if (st.photos.some(function (ph) { return ph.uploading; })) { toast('사진을 올리는 중이에요. 잠시 뒤 다시 눌러 주세요', true); return; }
     const photos = st.photos.map(function (ph) { return ph.url; }).filter(function (u) { return okbmSafeImageUrl(u); }).slice(0, 5);
+    const row0 = { user_id: me, category: st.cat, title: title, body: body, photos: photos };
+    if (!st.id && st.cat === 'poll') {
+      const opts = Array.prototype.map.call(f.querySelectorAll('[name="opt"]'), function (el) { return String(el.value || '').trim(); }).filter(Boolean);
+      if (opts.length < 2) { toast('보기를 2개 이상 적어 주세요', true); return; }
+      if (new Set(opts).size !== opts.length) { toast('같은 보기가 있어요', true); return; }
+      row0.poll_options = opts;
+      row0.poll_ends_at = st.pollDays ? new Date(Date.now() + st.pollDays * 86400000).toISOString() : null;
+    }
     const btn = f.querySelector('[type="submit"]');
     btn.disabled = true;
     try {
       const rows = await q(st.id
         ? c.from('lounge_posts').update({ title: title, body: body, photos: photos }).eq('id', st.id).select(POST_COLS)
-        : c.from('lounge_posts').insert([{ user_id: me, category: st.cat, title: title, body: body, photos: photos }]).select(POST_COLS));
+        : c.from('lounge_posts').insert([row0]).select(POST_COLS));
       const row = Array.isArray(rows) && rows[0];
       if (!row) throw new Error('no_rows');
       if (st.id) {
@@ -2973,9 +3092,10 @@
         if (!postsBy.all) postsBy.all = { rows: [row], done: true, loading: false };
         D.comments[row.id] = [];
         D.likeChecked.add(row.id);
+        if (row.category === 'poll') D.poll[row.id] = { post_id: row.id, total: 0, counts: null, mine: null, closed: false };
       }
       closeSheet();
-      toast(st.id ? '글을 고쳤어요' : (row.category === 'suggestion' ? '건의를 보냈어요. 답변이 달리면 알려 드릴게요' : '글을 올렸어요'));
+      toast(st.id ? '글을 고쳤어요' : (row.category === 'suggestion' ? '건의를 보냈어요. 답변이 달리면 알려 드릴게요' : row.category === 'poll' ? '투표를 올렸어요' : '글을 올렸어요'));
       if (!st.id && S.cat !== 'all' && S.cat !== row.category) S.cat = 'all';
       renderBoard();
       if (win && !st.id) {
@@ -3376,7 +3496,42 @@
         SH.cat = v;
         t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
         sheet.querySelector('[data-private-note]').hidden = v !== 'suggestion';
+        { // 투표면 제목→질문, 보기·마감 칸을 보인다
+          const poll = v === 'poll';
+          sheet.querySelector('[data-poll-fields]').hidden = !poll;
+          sheet.querySelector('[data-title-lbl]').textContent = poll ? '질문' : '제목';
+          sheet.querySelector('#lmPostTitle').placeholder = poll ? '무엇을 물어볼까요?' : '제목';
+          const bd = sheet.querySelector('#lmPostBody');
+          bd.placeholder = poll ? '덧붙일 말이 있으면 적어요' : '어떤 이야기를 나눌까요?';
+          const bl = sheet.querySelector('label[for="lmPostBody"]');
+          if (bl) bl.textContent = poll ? '설명 (선택)' : '내용';
+        }
         tick();
+        break;
+      }
+      case 'poll-vote': votePoll(v, Number(t.dataset.i)); break;
+      case 'poll-add': {
+        const box = sheet && sheet.querySelector('[data-popts]');
+        if (!box) break;
+        const n = box.children.length;
+        if (n >= 5) { toast('보기는 5개까지예요', true); break; }
+        box.insertAdjacentHTML('beforeend', pollOptHtml(n, ''));
+        box.lastElementChild.querySelector('input').focus();
+        t.style.display = n + 1 >= 5 ? 'none' : ''; // .lm-file이 display를 정해 hidden이 안 먹는다
+        break;
+      }
+      case 'poll-del': {
+        const box = t.closest('[data-popts]');
+        const vals = Array.prototype.map.call(box.querySelectorAll('input'), function (el) { return el.value; });
+        vals.splice(Array.prototype.indexOf.call(box.children, t.parentElement), 1);
+        box.innerHTML = vals.map(function (x, i) { return pollOptHtml(i, x); }).join(''); // 번호·placeholder를 다시 맞춘다
+        sheet.querySelector('[data-a="poll-add"]').style.display = '';
+        break;
+      }
+      case 'poll-end': {
+        if (SH.kind !== 'post') break;
+        SH.pollDays = Number(v) || 0;
+        t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
         break;
       }
       case 'photo-del': if (SH.kind === 'post') { SH.photos.splice(Number(v), 1); refreshThumbs(); } break;
@@ -3574,7 +3729,7 @@
     clearTimeout(reloadTimer);
     reloadTimer = setTimeout(function () {
       Object.keys(postsBy).forEach(function (k) { delete postsBy[k]; });
-      if (uidChanged) { D.recent = null; D.comments = {}; D.liked.clear(); D.likeChecked.clear(); D.spotRev = null; }
+      if (uidChanged) { D.recent = null; D.comments = {}; D.liked.clear(); D.likeChecked.clear(); D.spotRev = null; D.poll = {}; }
       D.pastEvents = null;
       loadTabs().then(function (r) {
         D.status = r.every(function (x) { return x.status === 'rejected'; }) ? 'error' : 'ready';
