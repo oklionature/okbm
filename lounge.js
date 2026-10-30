@@ -897,7 +897,7 @@
   // ---------- 목록 조각 (홈·라운지 창 공용. full = 창에서 전부) ----------
   const chev = function (rot) { return '<span class="lm-chev ' + (rot ? 'rot' : '') + '">' + ico(P.chevR, 18) + '</span>'; };
   const stars = function (n) { n = Math.max(0, Math.min(5, Math.round(Number(n) || 0))); return '<span class="lm-stars">' + '★'.repeat(n) + '<span>' + '★'.repeat(5 - n) + '</span></span>'; };
-  // 후기 글쓴이 이름: 누르면 그 사람 정보창(프로필)
+  // 글·댓글·후기 글쓴이 이름: 누르면 그 사람 정보창(프로필)
   const whoName = function (name, uid) {
     const n = String(name || '백패커');
     if (!uid) return '<b>' + esc(n) + '</b>';
@@ -906,6 +906,12 @@
   const av = function (name, uid, cls) {
     const ch = String(name || '낭').trim().charAt(0) || '낭';
     return '<div class="lm-av ' + (cls || '') + '" style="background:' + avColor(uid) + '">' + esc(ch) + '</div>';
+  };
+  // 라운지 창 글·댓글·후기의 동그라미: 누르면 그 사람 정보창 (홈 목록 줄은 줄 전체가 버튼이라 그냥 av)
+  const avUser = function (name, uid, cls) {
+    if (!uid) return av(name, uid, cls);
+    const n = String(name || '백패커');
+    return '<button type="button" data-a="user" data-v="' + esc(uid) + '" data-n="' + esc(n) + '" style="padding:0;border-radius:50%" aria-label="' + esc(n) + ' 정보 보기">' + av(name, uid, cls) + '</button>';
   };
   const fold = function (id, head, body, open) { return '<div class="lmx' + (open ? ' open' : '') + '" data-id="' + esc(id) + '">' + head + '<div class="lmx-body"><div>' + body + '</div></div></div>'; };
   const moreBtn = function (tab, label) { return '<button type="button" class="lmh-more" data-a="lounge" data-v="' + tab + '">' + esc(label) + ico(P.chevR, 14) + '</button>'; };
@@ -1606,7 +1612,7 @@
         ? `<button type="button" class="red" data-a="del-comment" data-v="${esc(c.id)}" data-post="${esc(p.id)}">삭제${D.admin && !own ? ' (운영팀)' : ''}</button>`
         : '';
       const report = own ? '' : ugcBtn('lounge_comment', c.id, c.user_id, c.nickname);
-      return `<div class="lmx-cm">${av(c.nickname, c.user_id, 'sm')}<div class="lm-rb"><div class="lm-who" style="font-size:12px"><b>${esc(c.nickname)}</b><span>${esc(ago(c.created_at))}</span></div><div class="lm-bd">${esc(c.body)}</div>
+      return `<div class="lmx-cm">${avUser(c.nickname, c.user_id, 'sm')}<div class="lm-rb"><div class="lm-who" style="font-size:12px">${whoName(c.nickname, c.user_id)}<span>${esc(ago(c.created_at))}</span></div><div class="lm-bd">${esc(c.body)}</div>
         ${acts || report ? `<div class="lm-cm-acts">${acts}${report}</div>` : ''}</div></div>`;
     }).join('') + '</div>';
   }
@@ -1657,9 +1663,9 @@
     const cc = Number(p.comments_count) || 0;
     const own = isMine(p.user_id);
     const head = `<div class="lm-post" data-a="x" role="button" tabindex="0" aria-expanded="false">
-      <div class="lm-lcol">${av(p.nickname, p.user_id)}${cc ? '<div class="lm-thread"></div>' : ''}</div>
+      <div class="lm-lcol">${avUser(p.nickname, p.user_id)}${cc ? '<div class="lm-thread"></div>' : ''}</div>
       <div class="lm-rb">
-        <div class="lm-who"><b>${esc(p.nickname)}</b><span>${esc(ago(p.created_at))}</span><span>· ${esc(CAT_LABEL[p.category] || '')}</span></div>
+        <div class="lm-who">${whoName(p.nickname, p.user_id)}<span>${esc(ago(p.created_at))}</span><span>· ${esc(CAT_LABEL[p.category] || '')}</span></div>
         <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}</div>${p.body ? `<div class="lm-bd">${bodyHtml(p.body)}</div>` : ''}
         ${photos.length ? `<div class="lm-photos ${photos.length > 1 ? 'multi' : ''}">${photos.map(function (u) { return `<img src="${escapeHtml(okbmSafeImageUrl(u))}" alt="" loading="lazy" decoding="async">`; }).join('')}</div>` : ''}
         ${p.is_private ? `<div class="lm-private">${ico(P.lock, 13)}나와 운영팀만 볼 수 있어요 · 댓글 ${cc}</div>`
@@ -1713,7 +1719,7 @@
     const s = spotById(t.spot_id);
     if ((!s && !inSpot) || hidden({ id: 'tip_' + t.spot_id + '_' + t.user_id, user_id: t.user_id })) return '';
     const own = isMine(t.user_id);
-    return `<div class="lm-post" style="cursor:default"><div class="lm-lcol">${av(t.nickname, t.user_id)}</div><div class="lm-rb">
+    return `<div class="lm-post" style="cursor:default"><div class="lm-lcol">${avUser(t.nickname, t.user_id)}</div><div class="lm-rb">
       <div class="lm-who">${whoName(t.nickname, t.user_id)}${own ? '<span class="lm-mine">내 후기</span>' : ''}<span>${esc(ago(t.updated_at))}</span></div>
       ${inSpot ? '' : `<div class="lm-rs" style="margin-top:1px"><button type="button" data-a="rev-spot" data-v="${esc(t.spot_id)}" style="color:var(--sub)">${esc(spotName(s))}</button></div>`}
       ${tipChips(t.tips)}${t.note ? `<div class="lm-bd">${esc(t.note)}</div>` : ''}
@@ -1743,7 +1749,7 @@
     if ((!s && !inSpot) || hidden(r)) return '';
     const own = isMine(r.user_id);
     const edited = r.updated_at && r.created_at && (new Date(r.updated_at) - new Date(r.created_at) > 60000);
-    return `<div class="lm-post" style="cursor:default"><div class="lm-lcol">${av(r.nickname, r.user_id)}</div><div class="lm-rb">
+    return `<div class="lm-post" style="cursor:default"><div class="lm-lcol">${avUser(r.nickname, r.user_id)}</div><div class="lm-rb">
       <div class="lm-who">${whoName(r.nickname, r.user_id)}${own ? '<span class="lm-mine">내 후기</span>' : ''}<span>${esc(ago(r.created_at))}${edited ? ' · 수정됨' : ''}</span></div>
       <div class="lm-rs" style="margin-top:1px">${inSpot ? '' : `<button type="button" data-a="rev-spot" data-v="${esc(r.spot_id)}" style="color:var(--sub)">${esc(spotName(s))}</button> `}${stars(r.rating)}</div>
       ${tipChips(chips)}${r.text ? `<div class="lm-bd">${esc(r.text)}</div>` : ''}
