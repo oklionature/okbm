@@ -5875,12 +5875,14 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         '<div class="mr-tabs">' +
           '<button type="button" class="mr-tab on" data-up-tab="rec">기록</button>' +
           '<button type="button" class="mr-tab" data-up-tab="foot">발자취</button>' +
+          '<button type="button" class="mr-tab" data-up-tab="rev">후기</button>' +
         '</div>' +
         '<div class="up-pane on" data-up-pane="rec">' +
           '<div class="mr-chips up-years" id="upYearChips"></div>' +
           '<div id="userModalCardsContainer">' + cardsHtml + '</div>' +
         '</div>' +
         '<div class="up-pane" data-up-pane="foot"><div id="upFoot"></div></div>' +
+        '<div class="up-pane" data-up-pane="rev"><div id="upRev" style="padding:10px 12px 8px"></div></div>' +
       '</div></div>';
 
     document.body.appendChild(modalEl);

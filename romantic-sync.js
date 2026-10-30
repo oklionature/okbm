@@ -5498,7 +5498,7 @@ function ensureMyReportAndAuthModalsInDOM() {
           </div>
         </header>
 
-        <!-- 본문: 프로필 → 숫자 한 줄 → 탭(내 기록·저장·리포트). 탭 동작과 리포트 카드는 my-report.js -->
+        <!-- 본문: 프로필 → 숫자 한 줄 → 탭(리포트·내 기록·후기·저장). 탭 동작과 리포트 카드는 my-report.js -->
         <div id="userProfileScrollBody" style="flex:1 1 0%; min-height:0; width:100%; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior-y:contain; padding:0 0 20px; display:flex; flex-direction:column; box-sizing:border-box; z-index:10;">
           <div id="reportProfileHeaderContainer" style="flex-shrink:0; width:100%; box-sizing:border-box;"></div>
           <div class="mr-stats">
@@ -5510,6 +5510,7 @@ function ensureMyReportAndAuthModalsInDOM() {
           <div class="mr-tabs" role="tablist">
             <button type="button" role="tab" class="mr-tab" data-mr-tab="rep">리포트</button>
             <button type="button" role="tab" class="mr-tab" data-mr-tab="rec">내 기록</button>
+            <button type="button" role="tab" class="mr-tab" data-mr-tab="rev">후기</button>
             <button type="button" role="tab" class="mr-tab" data-mr-tab="save">저장</button>
           </div>
 
@@ -5517,6 +5518,11 @@ function ensureMyReportAndAuthModalsInDOM() {
             <div class="mr-chips" id="mrYearChips"></div>
             <div id="mrRecList"></div>
             <button type="button" class="mr-row" data-mr-act="trips">사진으로 모아보기<span class="mr-r">›</span></button>
+          </section>
+
+          <!-- 후기: 내가 남긴 박지 후기(별점·팁·한 줄). my-report.js renderReviews, SQL H24 -->
+          <section class="mr-pane" data-mr-pane="rev">
+            <div id="mrRevList"></div>
           </section>
 
           <!-- 저장: 관심 피드를 바로 펼쳐 보인다(my-report.js renderSaved). 관심 루터는 위 숫자 줄에 있어 여기서는 뺀다 -->

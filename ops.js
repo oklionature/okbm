@@ -172,6 +172,8 @@
     ['feat_report_year', '낭만리포트', '연도 고르기'],
     ['feat_report_activity', '낭만리포트', '활동 기록 펼치기'],
     ['feat_report_visitor', '낭만리포트', '방문자 활동 보기'],
+    ['feat_profile_reviews', '낭만리포트', '남의 프로필 후기 탭'],
+    ['feat_report_review_spot', '낭만리포트', '후기 탭에서 박지 열기'],
     ['feat_pasttrip_register', '낭만리포트', '지난 여행 직접 등록'],
     ['feat_my_proposal_edit', '낭만리포트', '내 제보 고치기'],
     ['feat_my_proposal_delete', '낭만리포트', '내 제보 지우기'],

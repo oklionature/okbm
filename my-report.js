@@ -76,6 +76,17 @@
     '.mr-tt b{display:block;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     '.mr-tt small{display:block;margin-top:3px;font-size:12px;color:var(--mr-tx3);font-variant-numeric:tabular-nums}',
     '.mr-more{height:40px;border-radius:12px;border:1px solid var(--mr-line);background:none;color:var(--mr-tx2);font:inherit;font-size:13px;font-weight:700;cursor:pointer}',
+    // 후기 탭 (내 리포트·등록자 정보창 공용, renderReviews)
+    '.mr-rv{display:block;width:100%;padding:12px 4px;border:0;border-bottom:1px solid var(--mr-line);background:none;color:#f2f2f3;font:inherit;text-align:left;cursor:pointer}',
+    '.mr-rv:active{opacity:.6}',
+    '.mr-rv-h{display:flex;align-items:center;gap:6px}',
+    '.mr-rv-h b{flex:1;min-width:0;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.mr-rv-h small{flex:none;font-size:12px;color:var(--mr-tx3);font-variant-numeric:tabular-nums}',
+    '.mr-rv-st{flex:none;font-size:12px;letter-spacing:1px;color:#fbbf24}',
+    '.mr-rv-st i{font-style:normal;color:var(--bg-3,#2a2a30)}',
+    '.mr-rv-tg{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}',
+    '.mr-rv-tg span{height:22px;padding:0 8px;border-radius:6px;background:var(--bg-2,#17171b);font-size:11.5px;font-weight:600;color:var(--mr-tx2);display:inline-flex;align-items:center}',
+    '.mr-rv-tx{margin-top:6px;font-size:13.5px;line-height:1.5;color:var(--mr-tx2);word-break:keep-all;overflow-wrap:anywhere;white-space:pre-line}',
     // 리포트
     '.mr-card{background:var(--mr-card);border:1px solid var(--mr-line);border-radius:14px;padding:14px;box-sizing:border-box}',
     '.mr-h{display:flex;justify-content:space-between;align-items:center;gap:8px}',
@@ -630,7 +641,7 @@
   function setTab(t) {
     var root = $('userProfileModalOverlay');
     if (!root) return;
-    if (['rec', 'save', 'rep'].indexOf(t) < 0) t = 'rep';
+    if (['rec', 'save', 'rev', 'rep'].indexOf(t) < 0) t = 'rep';
     root.querySelectorAll('.mr-tab').forEach(function (b) { var on = b.getAttribute('data-mr-tab') === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
     root.querySelectorAll('.mr-pane').forEach(function (p) { p.classList.toggle('on', p.getAttribute('data-mr-pane') === t); });
   }
@@ -667,6 +678,71 @@
     var st = document.createElement('style'); st.id = 'okbmMyReportCss'; st.textContent = CSS; document.head.appendChild(st);
   }
 
+  // ---------------------------------------------------------------- 후기 탭 (H24)
+  // 그 사람이 남긴 박지 후기: 별점 후기(comments)와 팁·한 줄(okbm_spot_tips)을 박지마다 한 줄로 합쳐 최근 순으로.
+  // 내 리포트 '후기' 탭과 등록자 정보창 '후기' 탭이 같이 쓴다. 누르면 그 박지를 지도에서 연다
+  var REV = {};
+  function loadReviews(uid, fresh) {
+    var c = window.supabaseClient, hit = REV[uid];
+    if (!c || !uid) return Promise.resolve(null);
+    if (hit && !fresh && (hit.rows || hit.job) && Date.now() - hit.at < 120000) return hit.job || Promise.resolve(hit);
+    var job = Promise.resolve(c.rpc('okbm_user_spot_reviews', { p_user_id: uid })).then(function (res) {
+      if (res && res.error) throw res.error;
+      var d = (res && res.data) || {}, by = {}, rows = [];
+      var put = function (sid) { return by[sid] || (by[sid] = (rows.push({ spot_id: sid, tips: [], text: '', at: '' }), rows[rows.length - 1])); };
+      (Array.isArray(d.reviews) ? d.reviews : []).forEach(function (r) {
+        var o = put(String(r.spot_id));
+        o.rating = Number(r.rating) || 0; o.text = String(r.text || '').trim(); o.at = String(r.updated_at || r.created_at || '');
+      });
+      (Array.isArray(d.tips) ? d.tips : []).forEach(function (t) {
+        var o = put(String(t.spot_id));
+        o.tips = Array.isArray(t.tips) ? t.tips : [];
+        if (!o.text) o.text = String(t.note || '').trim();
+        var at = String(t.updated_at || '');
+        if (at > o.at) o.at = at;
+      });
+      rows.sort(function (a, b) { return b.at.localeCompare(a.at); });
+      return (REV[uid] = { rows: rows, tier: d.tier || 'guest', at: Date.now() });
+    }).catch(function (e) { console.warn('[my-report:reviews]', e); delete REV[uid]; return null; });
+    REV[uid] = { job: job, at: Date.now() };
+    return job;
+  }
+  function reviewsHtml(r, self) {
+    if (!r) return '<div class="mr-empty">후기를 불러오지 못했어요</div>';
+    if (r.tier !== 'member') return '<div class="mr-empty">로그인하면 후기를 볼 수 있어요</div>';
+    if (!r.rows.length) return '<div class="mr-empty">' + (self ? '아직 남긴 후기가 없어요.<br>다녀온 박지 정보창에서 후기를 남겨 보세요.' : '아직 남긴 후기가 없어요') + '</div>';
+    var byId = {};
+    spotList().forEach(function (s) { if (s && s.id != null) byId[String(s.id).trim()] = s; });
+    return '<div class="mr-cap2" style="margin:0 4px 2px">박지 후기 ' + num(r.rows.length) + '</div>' + r.rows.map(function (o) {
+      var s = byId[o.spot_id], name = String((s && (s.spot_main || s.name)) || '').trim() || '박지';
+      var m = o.at.match(/(\d{4})-(\d{2})-(\d{2})/), date = m ? m[1] + '.' + m[2] + '.' + m[3] : '';
+      var n = Math.max(0, Math.min(5, Math.round(o.rating || 0)));
+      return '<button type="button" class="mr-rv" data-rv-spot="' + esc(o.spot_id) + '">' +
+        '<span class="mr-rv-h"><b>' + esc(name) + '</b>' + (n ? '<span class="mr-rv-st" aria-label="별점 ' + n + '점">' + '★'.repeat(n) + '<i>' + '★'.repeat(5 - n) + '</i></span>' : '') + '<small>' + esc(date) + '</small></span>' +
+        (o.tips.length ? '<span class="mr-rv-tg">' + o.tips.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</span>' : '') +
+        (o.text ? '<span class="mr-rv-tx" style="display:block">' + esc(o.text) + '</span>' : '') +
+      '</button>';
+    }).join('');
+  }
+  // box에 uid의 후기를 그린다. 내 것은 열 때마다 새로 받는다(방금 남긴 후기가 보이게)
+  function renderReviews(box, uid, self) {
+    if (!box || !uid) return;
+    var hit = REV[uid];
+    if (!(hit && hit.rows)) box.innerHTML = '<div class="mr-empty">불러오는 중이에요</div>';
+    else box.innerHTML = reviewsHtml(hit, self);
+    loadReviews(uid, self).then(function (r) { if (box.isConnected) box.innerHTML = reviewsHtml(r, self); });
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest && e.target.closest('#userProfileModalOverlay [data-rv-spot], #userFeedCollectionModal [data-rv-spot]');
+    if (!el) return;
+    e.preventDefault();
+    e.stopPropagation();
+    metric('feat_report_review_spot');
+    try { sessionStorage.setItem('okbm_entered_via_index', '1'); } catch (er) {}
+    var url = 'map.html?id=' + encodeURIComponent(el.getAttribute('data-rv-spot') || '');
+    if (typeof window.smoothNavigate === 'function') window.smoothNavigate(url); else window.location.assign(url);
+  }, true);
+
   // 등록자 정보창 발자취(user-profile.js)가 같은 계산·겉모양을 쓴다. 남의 기록이라 other=true로 부른다
   window.okbmReportKit = {
     ensureCss: ensureCss,
@@ -674,7 +750,8 @@
     buildBadges: function (feeds) { return buildBadges(feeds, true); },
     spotOfFeed: spotOfFeed,
     sggKey: sggKey,
-    thumb: thumb
+    thumb: thumb,
+    renderReviews: renderReviews
   };
 
   // 피드 완료 화면(my-badges.js okbmBadges.done)에서 쓴다: 내 피드를 새로 받아 배지를 다시 계산한다
@@ -873,6 +950,7 @@
       metric('feat_report_tab');
       setTab(tab);
       if (tab === 'save') renderSaved();
+      if (tab === 'rev') renderReviews($('mrRevList'), myId(), true);
       if (yr) { S.year = yr === 'cur' ? curYear() : yr; S.shown = PAGE; renderRecords(); }
       if (el.getAttribute('data-mr-go') === 'myprops') {
         var body = $('accBody_myprops');

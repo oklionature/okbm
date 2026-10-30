@@ -3,7 +3,8 @@
 //
 // 창 뼈대와 첫 목록은 romantic-history.js openUserFeedCollectionModal이 만들고, 여기서는
 //   · 머리(사진 + 이름·숫자 한 줄 + 소개·SNS + 관심·쪽지): 낭만리포트(my-report.js)와 같은 틀
-//   · 탭 '기록 | 발자취'. 기록은 연도 칩으로 고르고, 발자취는 포토맵(그 사람 사진으로 채운 시·군)과 받은 배지
+//   · 탭 '기록 | 발자취 | 후기'. 기록은 연도 칩으로 고르고, 발자취는 포토맵(그 사람 사진으로 채운 시·군)과 받은 배지,
+//     후기는 그 사람이 남긴 박지 후기(별점·팁·한 줄, my-report.js renderReviews, SQL H24)
 //   · 숫자·연도 칩·발자취는 기록 목록 한 번(박지·날짜·첫 사진 주소, 91개에 약 6KB)으로 만든다.
 //     예전에는 기록 수·올해 수를 HEAD 요청 두 번으로 셌다.
 //   · 숫자 칸은 기록 · 올해 · 플로깅(공개 피드 중 플로깅 사진 있는 것, H19). 예전 '다녀온 박지'는 뜻이 안 읽혀 뺐다
@@ -365,6 +366,7 @@
     m.querySelectorAll('[data-up-tab]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-up-tab') === tab); });
     m.querySelectorAll('[data-up-pane]').forEach(function (p) { p.classList.toggle('on', p.getAttribute('data-up-pane') === tab); });
     if (tab === 'foot') renderFoot(m);
+    if (tab === 'rev' && kit() && kit().renderReviews) kit().renderReviews($('upRev'), String(m.dataset.userId || '').trim(), flag(m.dataset.isSelf));
   }
 
   // ---------------------------------------------------------------- 창이 그려진 뒤 (romantic-history.js가 부른다)
@@ -379,6 +381,7 @@
     paintHeader(m);
     paintYears(m);
     if (v.tab === 'foot' && !(!flag(m.dataset.isSelf) && flag(m.dataset.hideTotal))) setTab(m, 'foot');
+    else if (v.tab === 'rev') setTab(m, 'rev');
     var restoreTop = keep ? v.top : 0;
     var putTop = function () { if (sc && restoreTop) { sc.scrollTop = restoreTop; restoreTop = 0; } };
     if (keep && (v.year || v.count > 10)) reloadList(m, v.count).then(putTop);
@@ -417,6 +420,7 @@
     if (tab) {
       if (tab === view(m).tab) return;
       if (tab === 'foot' && typeof window.okbmMetric === 'function') window.okbmMetric('feat_report_visitor'); // 기능 사용 세기 (H8)
+      if (tab === 'rev' && typeof window.okbmMetric === 'function') window.okbmMetric('feat_profile_reviews');
       setTab(m, tab);
       return;
     }
