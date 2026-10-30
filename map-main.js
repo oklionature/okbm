@@ -1478,7 +1478,9 @@
         const useNativeGeo = !!(nativeGeo && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
         if (!useNativeGeo && !navigator.geolocation) return showToast('위치 서비스를 지원하지 않습니다.', { html: ICONS.ALERT_CARD });
         const getPosition = (onOk, onFail) => {
-          if (useNativeGeo) nativeGeo.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 }).then(onOk, onFail);
+          // 안드로이드 앱은 대략 위치 권한만 받는다(구글 플레이 위치 정책, 2027-01-27). 아이폰은 그대로 정확한 위치.
+          const highAccuracy = !(typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() === 'android');
+          if (useNativeGeo) nativeGeo.getCurrentPosition({ enableHighAccuracy: highAccuracy, timeout: 15000 }).then(onOk, onFail);
           else navigator.geolocation.getCurrentPosition(onOk, onFail);
         };
         getPosition((pos) => {
