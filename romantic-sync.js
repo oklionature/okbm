@@ -15237,6 +15237,7 @@ if (typeof window !== 'undefined') {
   var historyGuardDepth = 0;      // 지금 쌓여 있는 우리 기록 칸 수
   var historyGuardSkipPop = false; // 우리가 history.go로 되돌리는 중이라 다음 popstate 한 번은 무시
   var historyGuardSkipTimer = 0;
+  var historyGuardKeepY = null;   // 칸을 지우기 직전 스크롤 위치. 지울 때 브라우저가 창 열 때 저장한 위치(잠겨서 0)로 끌어올리면 되돌린다
   var historyGuardStuckAt = -1;   // 뒤로가기로 닫으려던 순간의 창 수. 닫히는 중이거나 못 닫은 창에 칸을 다시 쌓지 않는다
   var historyGuardTimer = 0;
   var historyGuardSettleTimer = 0;
@@ -15273,7 +15274,18 @@ if (typeof window !== 'undefined') {
     historyGuardSkipPop = true;
     clearTimeout(historyGuardSkipTimer);
     historyGuardSkipTimer = setTimeout(function() { historyGuardSkipPop = false; }, 700);
+    // 앱 뒤로가기는 창을 먼저 닫아 제자리로 돌려놓은 뒤 이 칸을 지운다. 아직 다른 창이 열려 잠겨 있으면 기억하지 않는다
+    historyGuardKeepY = document.body && document.body.classList.contains('trip-modal-open') ? null : (window.pageYOffset || 0);
     history.go(steps);
+  }
+  function restoreHistoryGuardY() {
+    var y = historyGuardKeepY;
+    historyGuardKeepY = null;
+    if (y == null) return;
+    var put = function() { if (Math.abs((window.pageYOffset || 0) - y) > 1) window.scrollTo(0, y); };
+    put();
+    window.requestAnimationFrame(function() { put(); window.requestAnimationFrame(put); });
+    setTimeout(put, 80);
   }
 
   function syncHistoryGuard() {
@@ -15311,6 +15323,7 @@ if (typeof window !== 'undefined') {
     if (historyGuardSkipPop) {
       historyGuardSkipPop = false;
       clearTimeout(historyGuardSkipTimer);
+      restoreHistoryGuardY();
       return;
     }
     var target = readGuardDepth(e.state);
