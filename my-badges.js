@@ -207,7 +207,7 @@
     if (!box) return;
     ensureCss();
     var got = LIST.filter(function (b) { return b.got; });
-    // 남의 프로필(발자취): 받은 배지만 모두 보인다. 못 받은 배지·전체 보기·다음 배지·눌러서 자세히 보기는 없다
+    // 남의 프로필(컬렉션): 받은 배지만 모두 보인다. 못 받은 배지·전체 보기·다음 배지·눌러서 자세히 보기는 없다
     if (!OWN) {
       var mine = got.slice().sort(function (a, b) { return (b.date ? b.date.getTime() : 0) - (a.date ? a.date.getTime() : 0); });
       box.innerHTML = '<div class="mr-h"><span class="mr-k">받은 배지 <b style="color:#f2f2f3;font-size:14px;margin-left:3px">' + mine.length + '</b></span></div>' +
@@ -528,7 +528,7 @@
   });
 
   window.okbmBadges = {
-    // own: 내 배지면 true(장착 버튼을 보인다). 남의 프로필 발자취는 안 넘긴다
+    // own: 내 배지면 true(장착 버튼을 보인다). 남의 프로필 컬렉션는 안 넘긴다
     set: function (list, own) { LIST = Array.isArray(list) ? list : []; OWN = own === true; },
     card: card,
     openAll: openAll,

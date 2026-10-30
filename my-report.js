@@ -249,7 +249,7 @@
   function sggKey(s) { return String(s.region || '').trim() + '|' + String(s.cityName || s.city_name || '').trim(); }
 
   // 내 포토맵: 박지가 있는 시·군 중 내 피드 박지나 클리어(다녀옴)한 박지가 하나라도 있는 곳(photo-map.js '내 지도'와 같은 기준)
-  // other: 남의 기록(등록자 정보창 발자취)일 때. 이 기기의 클리어(다녀옴)는 보는 사람 것이라 섞지 않는다
+  // other: 남의 기록(등록자 정보창 컬렉션)일 때. 이 기기의 클리어(다녀옴)는 보는 사람 것이라 섞지 않는다
   function photoMapStats(feeds, other) {
     var ix = spotIndex();
     var visited = other ? [] : vault('okbm_visited', []);
@@ -743,7 +743,7 @@
     if (typeof window.smoothNavigate === 'function') window.smoothNavigate(url); else window.location.assign(url);
   }, true);
 
-  // 등록자 정보창 발자취(user-profile.js)가 같은 계산·겉모양을 쓴다. 남의 기록이라 other=true로 부른다
+  // 등록자 정보창 컬렉션(user-profile.js)가 같은 계산·겉모양을 쓴다. 남의 기록이라 other=true로 부른다
   window.okbmReportKit = {
     ensureCss: ensureCss,
     photoMapStats: function (feeds) { return photoMapStats(feeds, true); },

@@ -5864,7 +5864,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var collectionZ = inspectBlocked ? '2147483645' : '2147483642';
     modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + collectionZ + ' !important; display:flex; flex-direction:column; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
-    // 머리·탭·발자취와 누름은 user-profile.js(data-up-act). 머리는 okbmUserCollMounted가 채운다
+    // 머리·탭·컬렉션와 누름은 user-profile.js(data-up-act). 머리는 okbmUserCollMounted가 채운다
     modalEl.innerHTML =
       '<div class="up-top"><div>' +
         '<button type="button" class="up-logo" data-up-act="home"><img src="logo.png" alt="" />낭만루트</button>' +
@@ -5874,7 +5874,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         '<div id="userCollectionHeaderWrapper"></div>' +
         '<div class="mr-tabs">' +
           '<button type="button" class="mr-tab on" data-up-tab="rec">기록</button>' +
-          '<button type="button" class="mr-tab" data-up-tab="foot">발자취</button>' +
+          '<button type="button" class="mr-tab" data-up-tab="foot">컬렉션</button>' +
           '<button type="button" class="mr-tab" data-up-tab="rev">후기</button>' +
         '</div>' +
         '<div class="up-pane on" data-up-pane="rec">' +
