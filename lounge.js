@@ -79,12 +79,14 @@
     fail: [false, false, false, false],
     liked: new Set(), likeChecked: new Set(), // 내가 좋아요 누른 글(본인 것만 보임)
     spotRev: null, // 박지 하나의 후기 {spot_id, tier, summary, reviews, mine, done, tipSum, tipRows}
+    rank: null, // 박지 랭킹 전체(평점순·후기 많은 순 탭을 열 때 한 번 받는다, SUPABASE_H26). 홈은 D.top 10곳만
     tipsRecent: null, // 최근 팁(칩·한 줄) — 박지 후기 탭에서 별점 후기와 섞는다 (SUPABASE_G4)
     poll: {}, // 투표 결과 {글id: {total, counts|null, mine, closed}} (SUPABASE_H25 okbm_poll_results)
   };
   // 화면 상태. tab = 홈 탭, wtab = 라운지 창 탭 (서로 따로 기억), revSpot = 후기 탭을 한 박지로 좁힘
-  // revView: 박지 후기 창의 작은 탭 'recent'(최근 후기, 처음) | 'top'(평점 높은 박지)
-  const S = { tab: 0, wtab: 0, cat: 'all', revSpot: null, revView: 'recent' };
+  // revView: 박지 후기 창의 작은 탭 'recent'(최근 후기, 처음) | 'top'(평점순) | 'many'(후기 많은 순)
+  // revBand: 평점순에서 고른 점수대 'all' | '45'(4.5 이상) | '4'(4점대) | '3'(3점대) | 'low'(3점 미만)
+  const S = { tab: 0, wtab: 0, cat: 'all', revSpot: null, revView: 'recent', revBand: 'all' };
   let timeSig = ''; // 신청·오픈 상태 요약 (renderAll·timeTick)
 
   // ---------- 날짜 ----------
@@ -478,6 +480,21 @@
       '.lm-tag.soon{color:#ff8a3d;border-color:rgba(255,138,61,.55)}',
       '.lm-tag.long{color:var(--sub);border-color:rgba(139,139,147,.45)}',
       '.lm-score{flex:none;width:48px;font-size:18px;font-weight:900;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}',
+      '.lm-score.one{color:var(--sub)}', // 후기 1개짜리 점수는 흐리게
+      // 박지 랭킹: 점수대 분포 막대, 점수대 제목, 후기 많은 순 막대
+      '.lm-dist{margin:14px 0 0}',
+      '.lm-dist-t{font-size:12px;font-weight:700;color:var(--sub)}',
+      '.lm-dist-bar{display:flex;gap:2px;height:12px;margin-top:8px;border-radius:6px;overflow:hidden}',
+      '.lm-dist i.b45{background:#3d8bff}.lm-dist i.b4{background:#7cb0ff}.lm-dist i.b3{background:#b9d3ff}.lm-dist i.blow{background:#5a5a62}',
+      '.lm-dist-l{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:11.5px;color:var(--sub)}',
+      '.lm-dist-l span{display:inline-flex;align-items:center;gap:5px}.lm-dist-l i{width:8px;height:8px;border-radius:2px}',
+      '.lm-band{display:flex;justify-content:space-between;align-items:baseline;margin:20px 0 2px;font-size:12px;color:var(--sub)}',
+      '.lm-band b{font-size:14px;font-weight:800;color:var(--tx)}',
+      '.lm-rgn{margin-left:6px;font-size:11.5px;font-weight:600;color:var(--sub)}',
+      '.lm-row>.lm-stars{flex:none;align-self:center;margin-left:10px}',
+      '.lm-rank{flex:none;width:28px;font-size:15px;font-weight:800;color:var(--sub);font-variant-numeric:tabular-nums}',
+      '.lm-cbar{height:5px;margin-top:6px;border-radius:3px;background:#1c1c20;overflow:hidden}.lm-cbar i{display:block;height:100%;border-radius:3px;background:var(--blue)}',
+      '.lm-many{flex:none;margin-left:12px;text-align:right;line-height:1.3}.lm-many b{display:block;font-size:14px;font-weight:800}.lm-many small{font-size:11px;color:var(--sub)}',
       '.lm-score small{display:block;margin-top:4px;font-size:10px;font-weight:700;letter-spacing:0;color:var(--sub)}',
       '.lm-post{position:relative;display:flex;gap:12px;padding:14px 0 12px;border-bottom:1px solid var(--div);cursor:pointer;transition:opacity .15s}',
       '.lm-lcol{flex:none;width:32px;display:flex;flex-direction:column;align-items:center}',
@@ -827,14 +844,25 @@
     Object.keys(postsBy).forEach(function (k) { postsBy[k].rows = postsBy[k].rows.filter(function (x) { return x.id !== id; }); });
     delete D.comments[id];
   }
-  async function loadTop() {
+  // 홈은 10곳만 받는다. 랭킹 탭을 한 번 열었으면(D.rank) 다시 받을 때도 전체를 받는다 (전송량 아끼기)
+  async function loadTop(full) {
     const c = sb();
     if (!c) throw new Error('no_client');
-    const rows = await q(c.rpc('get_top_reviewed_spots', { p_min_count: 1, p_limit: 10 }));
+    full = full || D.rank !== null;
+    const rows = await q(c.rpc('get_top_reviewed_spots', { p_min_count: 1, p_limit: full ? 500 : 10 }));
     // 점수가 같으면 후기가 많은 박지를 앞에 (후기 1개짜리 5.0이 1등이 되지 않게)
-    D.top = (Array.isArray(rows) ? rows : []).slice().sort(function (a, b) {
+    const list = (Array.isArray(rows) ? rows : []).slice().sort(function (a, b) {
       return (Number(b.avg_rating) || 0) - (Number(a.avg_rating) || 0) || (Number(b.review_count) || 0) - (Number(a.review_count) || 0);
     });
+    D.top = list.slice(0, 10);
+    if (full) D.rank = list;
+  }
+  let rankLoading = false;
+  function ensureRank() {
+    if (D.rank !== null || rankLoading || D.status !== 'ready') return;
+    rankLoading = true;
+    loadTop(true).catch(function (e) { console.warn('[lounge.js:ensureRank]', e); D.rank = D.top.slice(); })
+      .then(function () { rankLoading = false; rerenderPane(3); });
   }
   async function loadRecentReviews(more) {
     const c = sb();
@@ -1799,7 +1827,61 @@
     return `<button type="button" class="lm-row lmh-row" data-a="${full ? 'rev-spot' : 'spot'}" data-v="${esc(r.spot_id)}"><div class="lm-score">${Number(r.avg_rating || 0).toFixed(1)}</div>
       <div class="lm-rb"><div class="lm-rt">${esc(spotName(s))}</div><div class="lm-rs">${esc([spotRegion(s), '후기 ' + (Number(r.review_count) || 0) + '개'].filter(Boolean).join(' · '))}</div></div>${chev(false)}</button>`;
   }
-  const bestRowFull = function (r) { return bestRow(r, true); };
+  // 점수대: 4.5 이상 / 4점대 / 3점대 / 3점 미만
+  const BANDS = [['45', '4.5점 이상'], ['4', '4점대'], ['3', '3점대'], ['low', '3점 미만']];
+  function bandOf(r) {
+    const a = Number(r.avg_rating) || 0;
+    return a >= 4.5 ? '45' : a >= 4 ? '4' : a >= 3 ? '3' : 'low';
+  }
+  function starsHtml(a) {
+    const n = Math.round(Number(a) || 0);
+    return '<span class="lm-stars">' + '★'.repeat(n) + '<span>' + '★'.repeat(5 - n) + '</span></span>';
+  }
+  // 평점순 줄: 점수·이름·지역·후기 수·별. 후기 1개는 흐리게 표시해 여러 명이 준 점수와 구분한다
+  function rankRow(r) {
+    const s = spotById(r.spot_id);
+    if (!s) return '';
+    const n = Number(r.review_count) || 0;
+    return `<button type="button" class="lm-row lmh-row" data-a="rev-spot" data-v="${esc(r.spot_id)}"><div class="lm-score${n < 2 ? ' one' : ''}">${Number(r.avg_rating || 0).toFixed(1)}</div>
+      <div class="lm-rb"><div class="lm-rt">${esc(spotName(s))}</div><div class="lm-rs">${esc([spotRegion(s), '후기 ' + n + '개'].filter(Boolean).join(' · '))}</div></div>${starsHtml(r.avg_rating)}</button>`;
+  }
+  function paneRankTop(list) {
+    const cnt = {};
+    list.forEach(function (r) { const b = bandOf(r); cnt[b] = (cnt[b] || 0) + 1; });
+    const bands = BANDS.filter(function (b) { return cnt[b[0]]; });
+    const band = S.revBand !== 'all' && cnt[S.revBand] ? S.revBand : 'all';
+    let h = '<div class="lm-dist"><div class="lm-dist-t">후기 남은 박지 ' + list.length + '곳</div><div class="lm-dist-bar">' + bands.map(function (b) {
+      return '<i class="b' + b[0] + '" style="flex:' + cnt[b[0]] + '"></i>';
+    }).join('') + '</div><div class="lm-dist-l">' + bands.map(function (b) {
+      return '<span><i class="b' + b[0] + '"></i>' + esc(b[1]) + ' ' + cnt[b[0]] + '</span>';
+    }).join('') + '</div></div>';
+    h += '<div class="lm-cats" style="margin-top:12px">' + [['all', '전체']].concat(bands).map(function (b) {
+      return '<button type="button" data-a="rev-band" data-v="' + b[0] + '" class="' + (band === b[0] ? 'on' : '') + '">' + esc(b[1]) + '</button>';
+    }).join('') + '</div>';
+    bands.forEach(function (b) {
+      if (band !== 'all' && band !== b[0]) return;
+      const rows = list.filter(function (r) { return bandOf(r) === b[0]; });
+      h += '<div class="lm-band"><b>' + esc(b[1]) + '</b><span>' + rows.length + '곳</span></div>' + rows.map(rankRow).join('');
+    });
+    return h;
+  }
+  // 후기 많은 순: 같으면 평점 높은 순. 위 20곳만(뒤는 거의 후기 1개라 순서가 의미 없다)
+  function paneRankMany(list) {
+    const rows = list.slice().sort(function (a, b) {
+      return (Number(b.review_count) || 0) - (Number(a.review_count) || 0) || (Number(b.avg_rating) || 0) - (Number(a.avg_rating) || 0);
+    }).slice(0, 20);
+    const max = rows.length ? Number(rows[0].review_count) || 1 : 1;
+    let i = 0;
+    return '<div class="lm-dist-t" style="margin:14px 0 2px">다녀온 사람이 많은 박지</div>' + rows.map(function (r) {
+      const s = spotById(r.spot_id);
+      if (!s) return '';
+      const n = Number(r.review_count) || 0;
+      i += 1;
+      return `<button type="button" class="lm-row lmh-row" data-a="rev-spot" data-v="${esc(r.spot_id)}"><div class="lm-rank">${i}</div>
+        <div class="lm-rb"><div class="lm-rt">${esc(spotName(s))}<small class="lm-rgn">${esc(spotRegion(s))}</small></div><div class="lm-cbar"><i style="width:${Math.max(4, Math.round(n * 100 / max))}%"></i></div></div>
+        <div class="lm-many"><b>${n}개</b><small>★ ${Number(r.avg_rating || 0).toFixed(1)}</small></div></button>`;
+    }).join('');
+  }
   const tipChips = function (tips) {
     return (Array.isArray(tips) && tips.length) ? '<div class="lm-tchips">' + tips.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('') + '</div>' : '';
   };
@@ -1885,16 +1967,16 @@
       if (!top.length) return homeEmpty('아직 박지 후기가 없어요', 3, '라운지 열기');
       return top.slice(0, HOME_N).map(function (r) { return bestRow(r, false); }).join('') + moreBtn(3, '최근 후기까지 전체 보기');
     }
-    // 작은 탭 두 개: 처음엔 최근 후기. 평점 높은 박지 10곳이 화면을 다 채워 최근 후기가 묻혔다
-    const view = S.revView === 'top' ? 'top' : 'recent';
-    let h = '<div class="lm-seg" role="tablist">' +
-      '<button type="button" role="tab" data-a="rev-view" data-v="recent" class="' + (view === 'recent' ? 'on' : '') + '" aria-selected="' + (view === 'recent') + '">최근 후기</button>' +
-      '<button type="button" role="tab" data-a="rev-view" data-v="top" class="' + (view === 'top' ? 'on' : '') + '" aria-selected="' + (view === 'top') + '">평점 높은 박지</button></div>';
-    if (view === 'top') {
-      // 받침이 있으면 "이에요", 없으면 "예요" (한글이 아니면 "이에요")
-      const bestName = top.length ? spotName(spotById(top[0].spot_id)) : '';
-      if (top.length) h += `<div class="lm-head">평점이 가장 높은 박지는<br><em>${esc(bestName)}</em>${josa(bestName, '이에요', '예요')}</div>`;
-      h += top.length ? top.map(bestRowFull).join('') : '<div class="lm-empty">아직 박지 후기가 없어요</div>';
+    // 작은 탭 세 개: 처음엔 최근 후기. 랭킹이 화면을 다 채워 최근 후기가 묻혔다
+    const view = S.revView === 'top' || S.revView === 'many' ? S.revView : 'recent';
+    let h = '<div class="lm-seg" role="tablist">' + [['recent', '최근 후기'], ['top', '평점순'], ['many', '후기 많은 순']].map(function (t) {
+      return '<button type="button" role="tab" data-a="rev-view" data-v="' + t[0] + '" class="' + (view === t[0] ? 'on' : '') + '" aria-selected="' + (view === t[0]) + '">' + t[1] + '</button>';
+    }).join('') + '</div>';
+    if (view !== 'recent') {
+      const rank = (D.rank || []).filter(function (r) { return spotById(r.spot_id); });
+      if (D.rank === null) h += '<div class="lm-empty">불러오는 중…</div>';
+      else if (!rank.length) h += '<div class="lm-empty">아직 박지 후기가 없어요</div>';
+      else h += view === 'top' ? paneRankTop(rank) : paneRankMany(rank);
     } else if (D.recent === null) {
       h += '<div class="lm-empty" data-recent>불러오는 중…</div>';
     } else if (D.recentTier !== 'member') {
@@ -1904,7 +1986,7 @@
       h += items || '<div class="lm-empty">아직 후기가 없어요</div>';
       if (!D.recentDone && D.recent.length) h += '<button type="button" class="lmh-more" data-a="more-reviews">더 보기' + ico(P.chevR, 16) + '</button>';
     }
-    h += '<p class="lm-hint" style="margin-top:20px">후기는 박지마다 한 사람에 하나예요. 별점 없이 팁만 남겨도 돼요. 지도에서 박지를 열거나 「평점 높은 박지」에서 박지를 눌러 남길 수 있어요.</p>';
+    h += '<p class="lm-hint" style="margin-top:20px">후기는 박지마다 한 사람에 하나예요. 별점 없이 팁만 남겨도 돼요. 지도에서 박지를 열거나 「평점순」에서 박지를 눌러 남길 수 있어요.</p>';
     return h;
   }
   const PANES = [paneEvents, paneGuide, paneBoard, paneReviews, paneDeals];
@@ -3380,7 +3462,7 @@
     lounge: 'feat_lounge_open', 'deal-ig': 'feat_lounge_insta', 'body-yt': 'feat_lounge_video', 'tip-play': 'feat_lounge_video',
     past: 'feat_lounge_past', cat: 'feat_board_cat', 'more-posts': 'feat_lounge_more', 'more-reviews': 'feat_lounge_more', 'more-spot-reviews': 'feat_lounge_more',
     'new-post': 'feat_board_write', 'edit-post': 'feat_board_edit', 'del-post': 'feat_board_delete', like: 'feat_board_like',
-    ugc: 'feat_lounge_ugc', user: 'feat_lounge_user', 'rev-spot': 'feat_lounge_spot_reviews', 'rev-all': 'feat_lounge_spot_reviews', 'rev-view': 'feat_lounge_spot_reviews', review: 'feat_lounge_review_write',
+    ugc: 'feat_lounge_ugc', user: 'feat_lounge_user', 'rev-spot': 'feat_lounge_spot_reviews', 'rev-all': 'feat_lounge_spot_reviews', 'rev-view': 'feat_lounge_spot_reviews', 'rev-band': 'feat_lounge_spot_reviews', review: 'feat_lounge_review_write',
     spot: 'feat_lounge_spot_map', 'cal-open': 'feat_lounge_cal', 'open-cal': 'feat_lounge_cal', 'cal-mark': 'feat_lounge_cal_mark', 'cal-plan': 'feat_lounge_cal_plan'
   };
   function loungeMetric(a, v, item) {
@@ -3543,9 +3625,13 @@
         break;
       case 'rev-spot': showSpotReviews(v); break;
       case 'rev-view':
-        S.revView = v === 'top' ? 'top' : 'recent';
+        S.revView = v === 'top' || v === 'many' ? v : 'recent';
         rerenderPane(3);
-        if (S.revView === 'recent') ensureRecent();
+        if (S.revView === 'recent') ensureRecent(); else ensureRank();
+        break;
+      case 'rev-band':
+        S.revBand = v || 'all';
+        rerenderPane(3);
         break;
       case 'rev-all':
         S.revSpot = null;
