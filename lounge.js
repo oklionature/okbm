@@ -81,7 +81,7 @@
     spotRev: null, // 박지 하나의 후기 {spot_id, tier, summary, reviews, mine, done, tipSum, tipRows}
     rank: null, // 박지 랭킹 전체(평점순·후기 많은 순 탭을 열 때 한 번 받는다, SUPABASE_H26). 홈은 D.top 10곳만
     tipsRecent: null, // 최근 팁(칩·한 줄) — 박지 후기 탭에서 별점 후기와 섞는다 (SUPABASE_G4)
-    news: [], // 소식(박지 통제·업데이트·공지)·매거진 (SUPABASE_H28 lounge_news). 홈 라운지 맨 위 띠와 아래 매거진 줄
+    news: [], // 소식(야영 금지·업데이트·공지)·매거진 (SUPABASE_H28 lounge_news). 홈 라운지 맨 위 띠와 아래 매거진 줄
     poll: {}, // 투표 결과 {글id: {total, counts|null, mine, closed}} (SUPABASE_H25 okbm_poll_results)
   };
   // 화면 상태. tab = 홈 탭, wtab = 라운지 창 탭 (서로 따로 기억), revSpot = 후기 탭을 한 박지로 좁힘
@@ -2308,8 +2308,8 @@
     paintDealSurfaces();
   }
 
-  // ----- 소식 띠: 박지 통제·업데이트·공지. 여러 개면 5초마다 넘어간다 -----
-  const NEWS_KIND = { closure: '박지 통제', update: '업데이트', notice: '공지', magazine: '매거진' };
+  // ----- 소식 띠: 야영 금지·업데이트·공지. 여러 개면 5초마다 넘어간다 -----
+  const NEWS_KIND = { closure: '야영 금지', update: '업데이트', notice: '공지', magazine: '매거진' };
   const newsList = function () { return D.news.filter(function (n) { return n.kind !== 'magazine' && (n.is_active !== false || D.admin); }); };
   const magList = function () { return D.news.filter(function (n) { return n.kind === 'magazine' && (n.is_active !== false || D.admin); }); };
   const newsImgs = function (n) { return (Array.isArray(n && n.images) ? n.images : []).filter(function (u) { return okbmSafeImageUrl(u); }); };
