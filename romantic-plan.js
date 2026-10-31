@@ -64,6 +64,32 @@
       .pk-dock { flex-shrink:0; display:flex; gap:8px; padding:10px 0 4px; border-top:1px solid var(--line, rgba(255,255,255,0.08)); background:#000000; }
       .pk-dock-sub { flex-shrink:0; height:48px; padding:0 14px; border-radius:14px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; font-family:inherit; }
       .pk-dock-save { flex:1; min-width:0; height:48px; border-radius:14px; border:none; background:#5bb8f0; color:#00131f; font-size:15px; font-weight:900; cursor:pointer; white-space:nowrap; font-family:inherit; }
+      /* 장비 상세 창: 가운데 카드, 뒤는 흐리고 어둡게 */
+      .gdm-card { background:#1a1c22; border-radius:22px; width:100%; max-width:400px; padding:18px; box-sizing:border-box; display:flex; flex-direction:column; gap:12px; position:relative; max-height:88vh; overflow-y:auto; box-shadow:0 20px 50px rgba(0,0,0,0.5); color:var(--tx-1, #f2f2f3); }
+      .gdm-top { display:flex; align-items:center; gap:6px; }
+      .gdm-tag { font-size:11px; font-weight:800; color:var(--tx-2, #d1d1d6); background:var(--bg-2, #17171b); padding:4px 9px; border-radius:999px; }
+      .gdm-x { margin-left:auto; width:32px; height:32px; border-radius:50%; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-2, #d1d1d6); font-size:14px; cursor:pointer; padding:0; }
+      .gdm-brand { font-size:12px; font-weight:700; color:var(--tx-3, #8b8b93); }
+      .gdm-title { font-size:19px; font-weight:900; line-height:1.35; word-break:keep-all; margin-top:3px; }
+      .gdm-box { background:var(--bg-2, #17171b); border-radius:14px; padding:12px 14px; }
+      .gdm-box-h { font-size:13px; font-weight:800; color:var(--tx-2, #d1d1d6); }
+      .gdm-sub { font-size:12px; font-weight:600; color:var(--tx-3, #8b8b93); margin-top:2px; }
+      .gdm-g { font-size:28px; font-weight:900; line-height:1; font-variant-numeric:tabular-nums; }
+      .gdm-specs { font-size:14px; line-height:1.55; color:var(--tx-1, #f2f2f3); margin-top:6px; word-break:keep-all; }
+      .gdm-src { display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px solid var(--line, rgba(255,255,255,0.08)); font-size:12px; color:var(--tx-3, #8b8b93); gap:8px; }
+      .gdm-src a { color:var(--tx-2, #d1d1d6); font-size:13px; font-weight:800; text-decoration:none; white-space:nowrap; }
+      .gdm-btns { display:flex; gap:8px; margin-top:2px; }
+      .gdm-btn { flex:1; min-width:0; height:46px; border-radius:14px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:14px; font-weight:800; cursor:pointer; font-family:inherit; white-space:nowrap; }
+      .gdm-btn.is-main { background:#5bb8f0; color:#00131f; font-weight:900; }
+      /* 장비 정보 고치기 창: 테두리 없는 회색 입력칸, 저장만 하늘색 */
+      .gme-panel { width:100%; max-width:480px; max-height:100%; overflow-y:auto; background:#1a1c22; border-radius:22px 22px 0 0; padding:10px 18px 16px; display:flex; flex-direction:column; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.5); animation:slideUpSheet 0.22s ease-out; color:var(--tx-1, #f2f2f3); }
+      .gme-grab { width:40px; height:5px; border-radius:9px; background:var(--bg-3, #2a2a30); margin:0 auto 12px; }
+      .gme-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+      .gme-lbl { display:block; font-size:12px; color:var(--tx-3, #8b8b93); font-weight:700; margin:12px 0 6px; }
+      .gme-in { width:100%; height:44px; border-radius:12px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:14px; font-weight:600; padding:0 12px; outline:none; box-sizing:border-box; font-family:inherit; -webkit-appearance:none; appearance:none; }
+      .gme-in::placeholder { color:var(--tx-3, #8b8b93); }
+      .gme-sel { background-image:linear-gradient(45deg, transparent 50%, #d1d1d6 50%), linear-gradient(135deg, #d1d1d6 50%, transparent 50%); background-position:calc(100% - 18px) 20px, calc(100% - 13px) 20px; background-size:5px 5px; background-repeat:no-repeat; padding-right:30px; }
+      .gme-sel option { background:#1a1c22; color:#ffffff; }
       /* 담긴 장비 펼침 */
       .pk-packed { display:none; position:absolute; inset:0; z-index:600; background:rgba(0,0,0,0.6); flex-direction:column; justify-content:flex-end; }
       .pk-packed-panel { max-height:78%; background:#1a1c22; border-radius:22px 22px 0 0; padding:16px 0 8px; display:flex; flex-direction:column; box-shadow:0 -12px 35px rgba(0,0,0,0.6); }
@@ -76,7 +102,7 @@
       .pk-seg button.is-on { background:var(--bg-3, #2a2a30); color:#ffffff; }
       .pk-packed-list { flex:1; min-height:0; overflow-y:auto; }
       .pk-packed-group { padding:12px 18px 4px; display:flex; justify-content:space-between; font-size:12px; font-weight:800; color:var(--tx-3, #8b8b93); font-variant-numeric:tabular-nums; }
-      .pk-it { display:flex; align-items:center; gap:12px; padding:11px 18px; border-bottom:1px solid var(--line, rgba(255,255,255,0.08)); }
+      .pk-it { display:flex; align-items:center; gap:12px; padding:10px 18px; border-bottom:1px solid var(--line, rgba(255,255,255,0.08)); }
       .pk-it-n { flex:1; min-width:0; }
       .pk-it-n b { display:block; font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
       .pk-it-new { font-size:11px; font-weight:800; color:var(--tx-2, #d1d1d6); margin-right:6px; }
@@ -108,40 +134,41 @@
       }
 
       /*  [체크리스트 & 장비 선반 최적화 클래스군] */
+      /* 체크리스트 줄: 상자 없이 구분선, 동그라미 체크. 체크 상태는 .checked 하나로 그린다 */
       .checklist-item-row {
-        border-radius: 9px !important;
-        padding: 10px 12px !important;
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        cursor: pointer !important;
-        user-select: none !important;
-        -webkit-user-select: none !important;
-        -webkit-tap-highlight-color: transparent !important;
-        touch-action: manipulation !important;
-        transition: all 0.12s ease !important;
-        flex-shrink: 0 !important;
-        min-height: 44px !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
-        box-sizing: border-box !important;
-      }
-
-      .checklist-checkbox-box {
-        width: 20px !important;
-        height: 20px !important;
-        border-radius: 6px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        color: #0f172a !important;
-        font-size: 12.5px !important;
-        font-weight: 900 !important;
-        flex-shrink: 0 !important;
-        transition: all 0.12s ease !important;
-      }
-
-      .gear-shelf-item-row {
         padding:12px 2px !important;
+        display:flex !important;
+        justify-content:space-between !important;
+        align-items:center !important;
+        gap:10px !important;
+        cursor:pointer !important;
+        user-select:none !important;
+        -webkit-user-select:none !important;
+        -webkit-tap-highlight-color:transparent !important;
+        touch-action:manipulation !important;
+        flex-shrink:0 !important;
+        box-sizing:border-box !important;
+        border-bottom:1px solid var(--line, rgba(255,255,255,0.08)) !important;
+      }
+      .checklist-checkbox-box {
+        width:22px !important; height:22px !important; border-radius:50% !important;
+        border:2px solid var(--tx-4, #55555d) !important; background:none !important;
+        display:flex !important; align-items:center !important; justify-content:center !important;
+        color:#000000 !important; font-size:13px !important; font-weight:900 !important; flex-shrink:0 !important;
+        box-sizing:border-box !important;
+      }
+      .checklist-item-row.checked .checklist-checkbox-box { background:#ffffff !important; border-color:#ffffff !important; }
+      .checklist-item-name { font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:5px; min-width:0; }
+      .checklist-item-row.checked .checklist-item-name { color:var(--tx-3, #8b8b93); }
+      .checklist-item-weight { font-size:13px; font-weight:800; color:var(--tx-2, #d1d1d6); font-variant-numeric:tabular-nums; }
+      .checklist-item-row.checked .checklist-item-weight { color:var(--tx-3, #8b8b93); }
+      .ck-head { position:relative; display:flex; align-items:center; gap:8px; min-height:36px; z-index:50; flex-shrink:0; }
+      .ck-del { width:28px; height:28px; border-radius:50%; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-2, #d1d1d6); font-size:12px; cursor:pointer; padding:0; }
+      .ck-add { display:flex; gap:8px; flex-shrink:0; }
+      .ck-add input { height:44px; border-radius:12px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:14px; padding:0 12px; outline:none; font-family:inherit; box-sizing:border-box; }
+      .ck-add input::placeholder { color:var(--tx-3, #8b8b93); }
+      .gear-shelf-item-row {
+        padding:10px 2px !important;
         display:flex !important;
         justify-content:space-between !important;
         align-items:center !important;
@@ -1496,60 +1523,32 @@
     modal = document.createElement('div');
     modal.id = 'gearDetailModal';
     modal.className = 'custom-modal-overlay';
-    modal.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.82); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:1000030 !important; justify-content:center; align-items:center; padding:16px; box-sizing:border-box;';
+    modal.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); z-index:1000030 !important; justify-content:center; align-items:center; padding:16px; box-sizing:border-box;';
     modal.onclick = function(e) { if (e.target === modal) window.closeGearDetailModal(); };
 
     modal.innerHTML = `
-      <div style="background:#0c1017; border:1px solid rgba(255,255,255,0.14); box-shadow:0 8px 24px rgba(0,0,0,0.45); border-radius:20px; width:100%; max-width:400px; padding:20px; box-sizing:border-box; display:flex; flex-direction:column; gap:13px; position:relative; max-height:88vh; overflow-y:auto; contain:content;">
-        
-        <!-- 상단: 카테고리 배지, 검증 배지, 닫기 버튼 -->
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span id="gdmCategoryBadge" style="font-size:0.68rem; font-weight:800; padding:3px 8px; border-radius:6px; background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">카테고리</span>
-            <span id="gdmVerifiedBadge" style="font-size:0.62rem; font-weight:700; background:rgba(45,212,191,0.12); border:1px solid rgba(45,212,191,0.3); color:#2dd4bf; padding:2px 6px; border-radius:6px;">🛡️ 공식 제원</span>
-          </div>
-          <button type="button" onclick="window.closeGearDetailModal()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#94a3b8; width:28px; height:28px; border-radius:50%; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; transition:all 0.15s ease;">✕</button>
+      <div class="gdm-card">
+        <div class="gdm-top">
+          <span id="gdmCategoryBadge" class="gdm-tag">카테고리</span>
+          <span id="gdmVerifiedBadge" class="gdm-tag">공식 제원</span>
+          <button type="button" class="gdm-x" onclick="window.closeGearDetailModal()" aria-label="닫기">✕</button>
         </div>
-
-        <!-- 상품명 & 브랜드 -->
-        <div style="display:flex; flex-direction:column; gap:3px;">
-          <div id="gdmBrand" style="font-size:0.75rem; font-weight:700; color:#38bdf8;">브랜드</div>
-          <div id="gdmTitle" style="font-size:1.05rem; font-weight:900; color:#ffffff; line-height:1.36; word-break:keep-all;">장비명</div>
+        <div>
+          <div id="gdmBrand" class="gdm-brand">브랜드</div>
+          <div id="gdmTitle" class="gdm-title">장비명</div>
         </div>
-
-        <!-- 무게 강조 카드 -->
-        <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;">
-          <div style="display:flex; flex-direction:column; gap:2px;">
-            <span style="font-size:0.66rem; font-weight:800; color:#94a3b8;">제원 무게</span>
-            <span id="gdmWeightType" style="font-size:0.60rem; color:#64748b; font-weight:600;">공식제원무게</span>
-          </div>
-          <div style="text-align:right;">
-            <div id="gdmWeightGrams" style="font-size:1.32rem; font-weight:900; color:#2dd4bf; font-family:'JetBrains Mono', monospace; line-height:1.1;">0g</div>
-            <div id="gdmWeightKg" style="font-size:0.68rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:2px;">(0.00 kg)</div>
-          </div>
+        <div class="gdm-box" style="display:flex; align-items:center;">
+          <div><div class="gdm-box-h">제원 무게</div><div id="gdmWeightType" class="gdm-sub">공식제원무게</div></div>
+          <div style="margin-left:auto; text-align:right;"><div id="gdmWeightGrams" class="gdm-g">0g</div><div id="gdmWeightKg" class="gdm-sub">0.00kg</div></div>
         </div>
-
-        <!-- 상세 제원 및 출처 -->
-        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:8px;">
-          <div style="font-size:0.70rem; font-weight:800; color:#cbd5e1; display:flex; align-items:center; gap:4px;">
-            <span>📋 상세 제원 & 특성</span>
-          </div>
-          <div id="gdmSpecs" style="font-size:0.76rem; color:#e2e8f0; line-height:1.55; word-break:keep-all;">상세 제원 정보</div>
-          
-          <div style="border-top:1px dashed rgba(255,255,255,0.08); padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:0.62rem; color:#64748b;">정보 검증 출처</span>
-            <span id="gdmEvidence" style="font-size:0.64rem; color:#94a3b8; font-weight:600;">공식 카탈로그 제원</span>
-          </div>
+        <div class="gdm-box">
+          <div class="gdm-box-h">상세 제원 & 특성</div>
+          <div id="gdmSpecs" class="gdm-specs">상세 제원 정보</div>
+          <div class="gdm-src"><span>정보 검증 출처</span><span id="gdmEvidence">공식 카탈로그 제원</span></div>
         </div>
-
-        <!-- 하단 액션 버튼 -->
-        <div style="display:flex; gap:8px; margin-top:2px;">
-          <button type="button" id="gdmFavBtn" onclick="window.toggleDetailModalFav()" style="flex:1; height:42px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; font-size:0.76rem; font-weight:700; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;">
-            <span>⭐ 내 장비</span>
-          </button>
-          <button type="button" id="gdmPackBtn" onclick="window.toggleDetailModalPack()" style="flex:1.4; height:42px; background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border:1px solid rgba(255,255,255,0.2); color:#ffffff; font-size:0.78rem; font-weight:800; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 4px 14px rgba(37,99,235,0.4);">
-            <span>배낭에 담기</span>
-          </button>
+        <div class="gdm-btns">
+          <button type="button" id="gdmFavBtn" class="gdm-btn" onclick="window.toggleDetailModalFav()">☆ 내 장비 추가</button>
+          <button type="button" id="gdmPackBtn" class="gdm-btn is-main" onclick="window.toggleDetailModalPack()">배낭에 담기</button>
         </div>
       </div>
     `;
@@ -1652,12 +1651,7 @@
     var pal = CATEGORY_PALETTE[resolvedCatId] || { color: '#38bdf8', label: cat.title, bg: 'rgba(56,189,248,0.12)', border: 'rgba(56,189,248,0.3)' };
 
     var catBadge = document.getElementById('gdmCategoryBadge');
-    if (catBadge) {
-      catBadge.innerText = pal.label;
-      catBadge.style.color = pal.color;
-      catBadge.style.background = pal.bg;
-      catBadge.style.borderColor = pal.border;
-    }
+    if (catBadge) catBadge.innerText = pal.label;
 
     var verBadge = document.getElementById('gdmVerifiedBadge');
     if (verBadge) {
@@ -1675,7 +1669,7 @@
     if (gEl) gEl.innerText = w.toLocaleString() + 'g';
 
     var kgEl = document.getElementById('gdmWeightKg');
-    if (kgEl) kgEl.innerText = '(' + (w / 1000).toFixed(2) + ' kg)';
+    if (kgEl) kgEl.innerText = (w / 1000).toFixed(2) + 'kg';
 
     var wtEl = document.getElementById('gdmWeightType');
     if (wtEl) wtEl.innerText = gear.weight_type || '공식제원무게';
@@ -1698,7 +1692,7 @@
         } else if (cleanUrl.indexOf('rei.com') !== -1) {
           domainLabel = 'REI 공식 제원';
         }
-        evEl.innerHTML = '<a href="' + escapeHtml(okbmSafeExternalUrl(cleanUrl)) + '" target="_blank" rel="noopener noreferrer" style="color:#38bdf8; text-decoration:none; font-weight:700; display:inline-flex; align-items:center; gap:4px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); padding:3px 8px; border-radius:6px; font-size:0.64rem; transition:all 0.15s ease;"><span>' + domainLabel + '</span> <span style="font-size:0.7rem;">↗</span></a>';
+        evEl.innerHTML = '<a href="' + escapeHtml(okbmSafeExternalUrl(cleanUrl)) + '" target="_blank" rel="noopener noreferrer">' + domainLabel + ' ↗</a>';
       } else {
         evEl.innerText = evVal || '공식 카탈로그 제원';
       }
@@ -1724,8 +1718,7 @@
 
     var isFav = window.favoriteGearSet && window.favoriteGearSet.has(gear.name);
     if (favBtn) {
-      favBtn.innerHTML = isFav ? '<span style="color:#fde047;">★ 내 장비 (등록됨)</span>' : '<span>☆ 내 장비 추가</span>';
-      favBtn.style.borderColor = isFav ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.14)';
+      favBtn.innerHTML = isFav ? '<span style="color:#fbbf24;">★</span> 내 장비 (등록됨)' : '☆ 내 장비 추가';
     }
 
     var targetCatId = resolvePlanGearCategoryId(gear.name, gear) || window.currentOpeningCategoryId || 'other';
@@ -1733,15 +1726,9 @@
     var count = currentCatItems.filter(function(it) { return it.name === gear.name; }).length;
 
     if (packBtn) {
-      if (count > 0) {
-        packBtn.innerHTML = '<span>빼기</span>';
-        packBtn.style.background = 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)';
-        packBtn.style.boxShadow = '0 4px 14px rgba(225,29,72,0.4)';
-      } else {
-        packBtn.innerHTML = '<span>배낭에 담기</span>';
-        packBtn.style.background = 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)';
-        packBtn.style.boxShadow = '0 4px 14px rgba(37,99,235,0.4)';
-      }
+      // 담기만 하늘색, 이미 담겼으면 회색 '배낭에서 빼기'
+      packBtn.textContent = count > 0 ? '배낭에서 빼기' : '배낭에 담기';
+      packBtn.classList.toggle('is-main', count === 0);
     }
   };
 
@@ -3063,29 +3050,8 @@ window.saveCurrentPackingRecord = function() {
   window.paintChecklistRow = function(changedRow, isChecked) {
     if (!changedRow) return;
     changedRow.classList.toggle('checked', !!isChecked);
-    var themeBorder = changedRow.getAttribute('data-theme-border') || 'rgba(255,255,255,0.14)';
-    changedRow.style.background = isChecked ? 'rgba(253,224,71,0.05)' : 'rgba(15,23,42,0.5)';
-    changedRow.style.border = '1px solid ' + (isChecked ? 'rgba(253,224,71,0.3)' : 'rgba(255,255,255,0.08)');
-    changedRow.style.borderLeft = isChecked ? '2px solid rgba(253,224,71,0.85)' : ('2px solid ' + themeBorder);
-
     var chkIcon = changedRow.querySelector('.check-icon') || changedRow.querySelector('.checklist-checkbox-box');
-    if (chkIcon) {
-      chkIcon.innerHTML = isChecked ? '✓' : '';
-      chkIcon.style.border = '1.2px solid ' + (isChecked ? '#fde047' : 'rgba(255,255,255,0.3)');
-      chkIcon.style.background = isChecked ? 'linear-gradient(135deg, #fde047 0%, #f59e0b 100%)' : 'rgba(0,0,0,0.35)';
-    }
-
-    var nameEl = changedRow.querySelector('.checklist-item-name');
-    if (nameEl) {
-      nameEl.style.color = isChecked ? '#94a3b8' : '#ffffff';
-      nameEl.style.textDecoration = isChecked ? 'line-through' : 'none';
-    }
-    var weightEl = changedRow.querySelector('.checklist-item-weight');
-    if (weightEl) {
-      weightEl.style.color = isChecked ? '#94a3b8' : (changedRow.getAttribute('data-theme-color') || '#cbd5e1');
-      weightEl.style.background = isChecked ? 'rgba(255,255,255,0.04)' : (changedRow.getAttribute('data-theme-bg') || 'rgba(255,255,255,0.06)');
-      weightEl.style.borderColor = isChecked ? 'rgba(255,255,255,0.1)' : (changedRow.getAttribute('data-theme-border') || 'rgba(255,255,255,0.14)');
-    }
+    if (chkIcon) chkIcon.innerHTML = isChecked ? '✓' : '';
   };
 
   window.togglePackCheckByIndex = function(itemIdx) {
@@ -3158,25 +3124,13 @@ window.saveCurrentPackingRecord = function() {
     if (fill) fill.style.width = pct + '%';
 
     var label = document.getElementById('checklistProgressLabel');
-    if (label) {
-      label.textContent = all ? '패킹 체크 100% 완료' : ('패킹 체크 완료 (' + packed + '/' + total + ' · ' + pct + '%)');
-    }
-
-    var dock = document.getElementById('checklistProgressDock');
-    if (dock) {
-      dock.style.border = '1px solid ' + (all ? 'rgba(253,224,71,0.6)' : 'rgba(255,255,255,0.2)');
-      dock.style.boxShadow = all ? '0 4px 16px rgba(253,224,71,0.3)' : '0 4px 14px rgba(0,0,0,0.5)';
-    }
-
-    var icon = document.getElementById('checklistProgressIcon');
-    if (icon) icon.style.stroke = all ? '#fde047' : '#ffffff';
+    if (label) label.textContent = all ? '패킹 체크 100% 완료' : '패킹 체크 완료';
+    var countEl = document.getElementById('checklistProgressCount');
+    if (countEl) countEl.textContent = String(packed);
 
     var toggleBtn = document.getElementById('checklistToggleAllBtn');
     if (toggleBtn) {
       toggleBtn.textContent = all ? '전체 해제' : '전체 선택';
-      toggleBtn.style.background = all ? 'rgba(253,224,71,0.12)' : 'rgba(255,255,255,0.08)';
-      toggleBtn.style.borderColor = all ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.18)';
-      toggleBtn.style.color = all ? '#fde047' : '#f8fafc';
       var dateStr = window.activeSelectedDateKey || '';
       toggleBtn.classList.add('js-toggle-all-pack');
       toggleBtn.setAttribute('data-force-state', (!all) ? '1' : '0');
@@ -4458,90 +4412,68 @@ window.saveCurrentPackingRecord = function() {
         })());
     var isAllComplete = planItems.length > 0 && packedCount === planItems.length;
 
-    var checklistViewHtml = `
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; justify-content:space-between; gap:6px; padding:2px 0 0 0; overflow:hidden; box-sizing:border-box;">
-        
-        <!-- 🏛️ 1. 상단 요약 헤더 -->
-        <div onclick="window.togglePlanTripDateInlineDropdown(event);" style="position:relative; background:linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(15,23,42,0.7) 100%); border:1px solid rgba(255,255,255,0.12); border-top:1px solid rgba(255,255,255,0.22); border-radius:12px; padding:10px 14px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box; box-shadow:0 4px 16px rgba(0,0,0,0.5); z-index:50; cursor:pointer;">
-          <div style="display:flex; flex-direction:column; gap:3px; min-width:0; flex:1; padding-right:12px;">
-            <div style="font-size:0.74rem; color:#38bdf8; font-family:'Space Grotesk', sans-serif; font-weight:800; letter-spacing:0.3px; display:flex; align-items:center; gap:4px;">
-              <span>${activeDateStr}</span>
-              <span style="font-size:0.68rem; color:#94a3b8;">▾</span>
-            </div>
-            <div style="font-size:0.96rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-              <svg viewBox="0 0 24 24" style="width:15px; height:15px; fill:none; stroke:#38bdf8; stroke-width:2.2; flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-0.01em;">${escapeHtml(spotTitle)}</span>
-            </div>
-          </div>
-          
-          <div style="display:flex; align-items:center; flex-shrink:0;" onclick="event.stopPropagation();">
-            <button type="button" id="checklistToggleAllBtn" class="js-toggle-all-pack" data-force-state="${!isAllComplete ? '1' : '0'}" data-date="${escapeHtml(activeDateStr)}" style="background:${isAllComplete ? 'rgba(253,224,71,0.12)' : 'rgba(255,255,255,0.08)'}; border:1px solid ${isAllComplete ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.18)'}; color:${isAllComplete ? '#fde047' : '#f8fafc'}; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:6px; cursor:pointer; transition:all 0.15s ease;">
-              ${isAllComplete ? '전체 해제' : '전체 선택'}
-            </button>
-          </div>
+    var ckDateParts = okbmPlanDateParts(activeDateStr);
+    var ckDateLabel = ckDateParts ? (ckDateParts.m + '.' + String(ckDateParts.d).padStart(2, '0') + ' (' + OKBM_PLAN_WD[new Date(ckDateParts.y, ckDateParts.m - 1, ckDateParts.d).getDay()] + ')') : escapeHtml(activeDateStr);
+    var ckTotalGrams = planItems.reduce(function(sum, it) { return sum + (Number(it.weight) || 0); }, 0);
 
-          <!-- 인라인 일정 아코디언 드롭다운 -->
-          <div id="calcTripDateDropdown" style="display:none; position:absolute; top:54px; left:0; right:0; z-index:700; background:#0d121d; border:1.5px solid rgba(56,189,248,0.4); border-radius:8px; padding:8px; flex-direction:column; gap:6px; box-shadow:0 16px 40px rgba(0,0,0,0.95); box-sizing:border-box;"></div>
+    var checklistViewHtml = `
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:10px; padding:2px 0 4px 0; overflow:hidden; box-sizing:border-box;">
+
+        <!-- 1. 일정 한 줄 + 전체 선택 -->
+        <div class="ck-head">
+          <button type="button" class="pk-trip-spot" onclick="window.togglePlanTripDateInlineDropdown(event);">
+            <span class="pk-trip-date">${ckDateLabel} ▾</span>
+            <span class="pk-trip-name">${escapeHtml(spotTitle)}</span>
+          </button>
+          <button type="button" id="checklistToggleAllBtn" class="pk-trip-list js-toggle-all-pack" data-force-state="${!isAllComplete ? '1' : '0'}" data-date="${escapeHtml(activeDateStr)}">${isAllComplete ? '전체 해제' : '전체 선택'}</button>
+          <div id="calcTripDateDropdown" style="display:none; position:absolute; top:44px; left:0; right:0; z-index:700; background:#1a1c22; border-radius:16px; padding:10px; flex-direction:column; gap:6px; box-shadow:0 18px 45px rgba(0,0,0,0.9); box-sizing:border-box;"></div>
         </div>
 
-        <!-- 📋 2. 체크리스트 목록 영역 -->
-        <div id="checklistItemsScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; overscroll-behavior:contain !important; touch-action:pan-y !important; contain:content; display:flex; flex-direction:column; gap:5px; padding-right:2px;">
+        <!-- 2. 챙긴 개수 카드 -->
+        <div class="pk-card" style="padding:12px 16px; flex-shrink:0;">
+          <div style="display:flex; align-items:baseline; gap:6px;">
+            <span id="checklistProgressCount" style="font-size:22px; font-weight:900; font-variant-numeric:tabular-nums;">${packedCount}</span>
+            <span class="pk-g" style="font-size:13px;">/ ${planItems.length} 챙김</span>
+            <span class="pk-g" style="margin-left:auto;">${(ckTotalGrams / 1000).toFixed(2)}kg</span>
+          </div>
+          <div class="pk-gauge" style="margin:8px 0 0;"><i id="checklistProgressFill" style="width:${planProgressPct}%;"></i></div>
+        </div>
+
+        <!-- 3. 체크리스트 목록 -->
+        <div id="checklistItemsScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior:contain !important; touch-action:pan-y !important; display:flex; flex-direction:column;">
         ${planItems.map(function(it, idx) {
             var checkKey = activeDateStr + '__' + it.name;
             var isChecked = window.packedCheckSet && window.packedCheckSet.has(checkKey);
             var gWeightKg = (it.weight / 1000).toFixed(2);
             var isFood = it.isConsumable === true;
-            var theme = SOFT_THEMES[it.categoryId] || { color: '#cbd5e1', bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.14)' };
-
-            var rowBg = isChecked ? 'rgba(253,224,71,0.05)' : 'rgba(15,23,42,0.5)';
-            var rowBorder = isChecked ? 'rgba(253,224,71,0.3)' : 'rgba(255,255,255,0.08)';
-            var rowBorderLeft = isChecked ? '2px solid rgba(253,224,71,0.85)' : ('2px solid ' + theme.border);
-            var chkBoxBorder = isChecked ? '#fde047' : 'rgba(255,255,255,0.3)';
-            var chkBoxBg = isChecked ? 'linear-gradient(135deg, #fde047 0%, #f59e0b 100%)' : 'rgba(0,0,0,0.35)';
-
             return `
-              <div onclick="window.togglePackCheckByIndex(Number(this.dataset.checkIdx))" class="checklist-item-row${isChecked ? ' checked' : ''}" data-check-idx="${idx}" data-theme-border="${theme.border}" data-theme-color="${theme.color}" data-theme-bg="${theme.bg}" style="background:${rowBg}; border:1px solid ${rowBorder}; border-left:${rowBorderLeft};">
-                <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                  <div class="checklist-checkbox-box check-icon" style="border:1.2px solid ${chkBoxBorder}; background:${chkBoxBg};">
-                    ${isChecked ? '✓' : ''}
-                  </div>
-
-                  <span class="checklist-item-name" style="font-size:0.83rem; font-weight:800; color:${isChecked ? '#94a3b8' : '#ffffff'}; text-decoration:${isChecked ? 'line-through' : 'none'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:5px;">
-                    ${isFood ? '<span style="display:inline-flex; align-items:center; width:13px; height:13px; color:#fb923c;">' + UI_ICONS.foodUtensils + '</span>' : ''}
-                    <span>${escapeHtml(it.name || '')}</span>
+              <div onclick="window.togglePackCheckByIndex(Number(this.dataset.checkIdx))" class="checklist-item-row${isChecked ? ' checked' : ''}" data-check-idx="${idx}">
+                <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
+                  <div class="checklist-checkbox-box check-icon">${isChecked ? '✓' : ''}</div>
+                  <span class="checklist-item-name">
+                    ${isFood ? '<span style="display:inline-flex; align-items:center; width:14px; height:14px; color:var(--tx-3, #8b8b93); flex-shrink:0;">' + UI_ICONS.foodUtensils + '</span>' : ''}
+                    <span style="overflow:hidden; text-overflow:ellipsis;">${escapeHtml(it.name || '')}</span>
                   </span>
                 </div>
-
-                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0; margin-left:8px;">
-                  <span class="checklist-item-weight" style="font-size:0.72rem; font-weight:800; color:${isChecked ? '#94a3b8' : theme.color}; font-family:'JetBrains Mono', monospace; background:${isChecked ? 'rgba(255,255,255,0.04)' : theme.bg}; border:1px solid ${isChecked ? 'rgba(255,255,255,0.1)' : theme.border}; padding:1px 6px; border-radius:4px;">
-                    ${gWeightKg > 0 ? (gWeightKg + 'kg') : '0.00kg'}
-                  </span>
-                  ${isFood ? `
-                    <button type="button" data-okbm-arg="${escapeHtml(it.id)}" onclick="event.stopPropagation(); window.removeChecklistConsumableItem(this.dataset.okbmArg, event)" style="background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.25); color:#fda4af; font-size:0.58rem; padding:1.5px 4.5px; border-radius:3px; cursor:pointer;">✕</button>
-                  ` : ''}
+                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                  <span class="checklist-item-weight">${gWeightKg > 0 ? (gWeightKg + 'kg') : '0.00kg'}</span>
+                  ${isFood ? `<button type="button" class="ck-del" aria-label="빼기" data-okbm-arg="${escapeHtml(it.id)}" onclick="event.stopPropagation(); window.removeChecklistConsumableItem(this.dataset.okbmArg, event)">✕</button>` : ''}
                 </div>
               </div>
             `;
           }).join('')}
         </div>
 
-        <!-- 3. 하단 음식/소모품 즉시 추가 바 -->
-        <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.12); border-radius:9px; padding:6px 8px; display:flex; gap:5px; align-items:center; flex-shrink:0; box-sizing:border-box;">
-          <span style="display:inline-flex; align-items:center; width:14px; height:14px; color:#fb923c; flex-shrink:0;">${UI_ICONS.foodUtensils}</span>
-          <input type="text" id="inputChecklistFoodName" placeholder="음식·간식·소모품 추가 (예: 전투식량, 간식)" onkeydown="if(event.key==='Enter') window.addChecklistConsumableItem();" style="flex:1; min-width:0; height:32px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#fff; font-size:0.74rem; padding:0 8px; outline:none;" />
-          <input type="number" id="inputChecklistFoodWeight" placeholder="무게g" onkeydown="if(event.key==='Enter') window.addChecklistConsumableItem();" style="width:58px; height:32px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#fff; font-size:0.74rem; padding:0 5px; outline:none; font-family:'JetBrains Mono', monospace;" />
-          <button type="button" onclick="window.addChecklistConsumableItem();" style="height:32px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#f8fafc; font-size:0.72rem; font-weight:900; padding:0 10px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap;">
-            + 추가
-          </button>
+        <!-- 4. 음식·간식 바로 추가 -->
+        <div class="ck-add">
+          <input type="text" id="inputChecklistFoodName" placeholder="음식·간식 추가 (예: 전투식량)" onkeydown="if(event.key==='Enter') window.addChecklistConsumableItem();" style="flex:1; min-width:0;" />
+          <input type="number" id="inputChecklistFoodWeight" placeholder="g" onkeydown="if(event.key==='Enter') window.addChecklistConsumableItem();" style="width:64px;" />
+          <button type="button" class="pk-dock-sub" style="height:44px;" onclick="window.addChecklistConsumableItem();">추가</button>
         </div>
 
-        <!-- 4. 최하단 프로그레스 게이지 완료 독 -->
-        <div id="checklistProgressDock" style="position:relative; width:100%; height:44px; border-radius:10px; overflow:hidden; border:1px solid ${isAllComplete ? 'rgba(253,224,71,0.6)' : 'rgba(255,255,255,0.2)'}; background:rgba(15,23,42,0.7); flex-shrink:0; box-shadow:${isAllComplete ? '0 4px 16px rgba(253,224,71,0.3)' : '0 4px 14px rgba(0,0,0,0.5)'}; transition:all 0.25s ease;">
-          <div id="checklistProgressFill" style="position:absolute; top:0; left:0; bottom:0; width:${planProgressPct}%; background:linear-gradient(90deg, rgba(253,224,71,0.2) 0%, rgba(245,158,11,0.55) 100%); transition:width 0.25s ease; pointer-events:none;"></div>
-          <button type="button" class="js-complete-checklist" data-date="${escapeHtml(activeDateStr)}" style="position:relative; z-index:2; width:100%; height:100%; background:none; border:none; color:#ffffff; font-size:0.84rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap;">
-            <svg id="checklistProgressIcon" viewBox="0 0 24 24" style="width:16px; height:16px; stroke:${isAllComplete ? '#fde047' : '#ffffff'}; fill:none; stroke-width:2.5;"><polyline points="20 6 9 17 4 12"/></svg>
-            <span id="checklistProgressLabel">${isAllComplete ? '패킹 체크 100% 완료' : ('패킹 체크 완료 (' + packedCount + '/' + planItems.length + ' · ' + planProgressPct + '%)')}</span>
-          </button>
+        <!-- 5. 완료 -->
+        <div id="checklistProgressDock" style="flex-shrink:0;">
+          <button type="button" class="pk-dock-save js-complete-checklist" data-date="${escapeHtml(activeDateStr)}" style="width:100%;"><span id="checklistProgressLabel">${isAllComplete ? '패킹 체크 100% 완료' : '패킹 체크 완료'}</span></button>
         </div>
       </div>
     `;
@@ -4853,41 +4785,36 @@ window.saveCurrentPackingRecord = function() {
         <!-- 1. 상단 달력 카드 (기본 달력과 같은 것) -->
         ${planCalendarCardHtml}
 
-        <!-- 2. 하단 찜 목록 박스 -->
-        <div style="flex:1 1 0% !important; min-height:0 !important; display:flex; flex-direction:column; gap:5px; overflow:hidden; box-sizing:border-box;">
-          <div style="padding:2px 4px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-            <div style="display:flex; align-items:center; gap:5px; font-size:0.82rem; font-weight:900; color:rgba(217,180,99,0.95);">
-              ${UI_ICONS.starGold}
-              <span>가보고 싶은 곳 (${bookmarkedSpots.length}곳)</span>
-            </div>
+        <!-- 2. 하단 찜 목록: 카드 한 장 안에 줄, 오른쪽 작은 달력 아이콘이 '목적지로 설정' -->
+        <div style="flex:1 1 0% !important; min-height:0 !important; display:flex; flex-direction:column; gap:8px; overflow:hidden; box-sizing:border-box;">
+          <div style="padding:4px 2px 0; display:flex; align-items:baseline; gap:6px; flex-shrink:0;">
+            <span style="color:#fbbf24; font-size:15px;">★</span>
+            <b style="font-size:17px; font-weight:900; color:var(--tx-1, #f2f2f3);">가보고 싶은 곳</b>
+            <span class="pk-g">${bookmarkedSpots.length}곳</span>
           </div>
 
-          <div style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; touch-action:pan-y !important; display:flex; flex-direction:column; gap:4px; padding-right:1px;">
+          <div style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; touch-action:pan-y !important;">
             ${bookmarkedSpots.length === 0 ? `
-              <div style="text-align:center; padding:35px 0; color:#94a3b8; font-size:0.75rem; line-height:1.6;">
+              <div style="text-align:center; padding:35px 0; color:var(--tx-3, #8b8b93); font-size:13px; line-height:1.6;">
                 찜해둔 장소가 없습니다.<br>
                 전국지도에서 가보고 싶은 곳을 찜해보세요.
               </div>
-            ` : bookmarkedSpots.map(function(s) {
+            ` : '<div class="pk-card" style="padding:0 16px;">' + bookmarkedSpots.map(function(s, i) {
                 var safeName = escapeHtml(s.name);
                 var safeElev = escapeHtml(s.elevation);
                 var safeMeta = escapeHtml(s.metaLine);
                 return `
-                  <div class="js-open-spot-map" data-spot="${safeName}" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-left:1.5px solid rgba(217,180,99,0.6); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0;">
-                    <div style="flex:1; min-width:0; padding-right:10px;">
-                      <div style="font-size:0.82rem; font-weight:900; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                        ${safeName}
-                      </div>
-                      <div style="font-size:0.63rem; color:#94a3b8; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'Pretendard Variable', sans-serif;">
-                        ${safeMeta}
-                      </div>
+                  <div class="js-open-spot-map" data-spot="${safeName}" style="display:flex; align-items:center; gap:12px; padding:10px 0; cursor:pointer;${i < bookmarkedSpots.length - 1 ? ' border-bottom:1px solid var(--line, rgba(255,255,255,0.08));' : ''}">
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeName}</div>
+                      <div class="pk-meta" style="margin-top:2px;">${safeMeta}</div>
                     </div>
-                    <button type="button" class="js-select-plan-dest" data-spot="${safeName}" data-elevation="${safeElev}" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; font-size:0.68rem; font-weight:800; padding:5px 10px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap; transition:all 0.15s ease;">
-                      목적지로 설정
+                    <button type="button" class="js-select-plan-dest" aria-label="목적지로 설정" title="목적지로 설정" data-spot="${safeName}" data-elevation="${safeElev}" style="width:36px; height:36px; border-radius:50%; border:none; background:var(--bg-3, #2a2a30); display:grid; place-items:center; cursor:pointer; flex-shrink:0; padding:0;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d1d1d6" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M12 13v5M9.5 15.5h5"/></svg>
                     </button>
                   </div>
                 `;
-              }).join('')}
+              }).join('') + '</div>'}
           </div>
         </div>
 
@@ -4939,48 +4866,37 @@ window.saveCurrentPackingRecord = function() {
     });
 
     var filterChipsHtml = catChips.map(function(c) {
-      var isActive = (c.id === activeCatFilter);
-      var pal = CATEGORY_PALETTE[c.id] || { color: '#e2e8f0', bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.22)' };
-      var btnBg = isActive ? pal.bg : 'rgba(255,255,255,0.03)';
-      var btnBorder = isActive ? pal.border : 'rgba(255,255,255,0.08)';
-      var btnColor = isActive ? pal.color : '#94a3b8';
-
-      return '<button type="button" data-okbm-arg="' + escapeHtml(c.id) + '" onclick="window.setGearCategoryFilter(this.dataset.okbmArg)" style="background:' + btnBg + '; color:' + btnColor + '; border:1px solid ' + btnBorder + '; font-size:0.67rem; font-weight:' + (isActive ? '900' : '700') + '; padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer; transition:all 0.15s ease;">' + c.label + '</button>';
+      return '<button type="button" class="pk-chip' + (c.id === activeCatFilter ? ' is-on' : '') + '" data-okbm-arg="' + escapeHtml(c.id) + '" onclick="window.setGearCategoryFilter(this.dataset.okbmArg)">' + c.label + '</button>';
     }).join('');
 
     var gearsViewHtml = `
       <div id="planGearsScrollArea" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:8px; padding:2px 0; overflow-y:auto !important; overscroll-behavior:none !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; contain:content; box-sizing:border-box;">
         
-        <div style="background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.18); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; box-sizing:border-box;">
-          <div style="display:flex; flex-direction:column; gap:2px;">
-            <span style="font-size:0.80rem; font-weight:800; color:#f8fafc;">새 장비 직접 등록</span>
-            <span style="font-size:0.62rem; color:#64748b;">나만의 장비를 등록하고 관리해보세요</span>
+        <div class="pk-card" style="padding:14px 16px; display:flex; align-items:center; gap:12px; flex-shrink:0;">
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:15px; font-weight:900; color:var(--tx-1, #f2f2f3);">새 장비 직접 등록</div>
+            <div class="pk-g" style="margin-top:3px; font-weight:600;">나만의 장비를 등록하고 관리해보세요</div>
           </div>
-          <button type="button" onclick="window.openQuickGearRegisterModal({ addToPack: false });" style="height:32px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#ffffff; font-size:0.72rem; font-weight:800; padding:0 12px; border-radius:6px; cursor:pointer; flex-shrink:0;">
-            + 등록하기
-          </button>
+          <button type="button" class="pk-dock-sub" onclick="window.openQuickGearRegisterModal({ addToPack: false });" style="height:38px; font-size:13px; background:var(--bg-3, #2a2a30);">+ 등록하기</button>
         </div>
 
-        <div style="background:linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(15,23,42,0.6) 100%); border:1px solid rgba(255,255,255,0.15); border-top:1px solid rgba(255,255,255,0.25); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
-          <div style="font-size:0.80rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
-            <span>⭐ 내 장비</span>
-            <span style="font-size:0.70rem; color:#94a3b8; font-weight:800;" id="mgrFavCountLabel">(${filteredFavGears.length}개)</span>
-          </div>
-          <div style="display:flex; align-items:baseline; gap:5px;">
-            <span style="font-size:0.68rem; color:#94a3b8; font-weight:800;">${investLabelText}</span>
-            <span id="mgrTotalInvestText" style="font-size:1.02rem; font-weight:900; color:#fbbf24; font-family:'JetBrains Mono', 'Space Grotesk', monospace; text-shadow:0 1px 6px rgba(251,191,36,0.35);">₩${totalInvestAmount.toLocaleString()}</span>
-          </div>
+        <div class="pk-card" style="padding:14px 16px; display:flex; align-items:center; gap:6px; flex-shrink:0;">
+          <span style="color:#fbbf24; font-size:15px;">⭐</span>
+          <b style="font-size:15px; font-weight:900; color:var(--tx-1, #f2f2f3);">내 장비</b>
+          <span class="pk-g" id="mgrFavCountLabel">(${filteredFavGears.length}개)</span>
+          <span class="pk-g" style="margin-left:auto;">${investLabelText}</span>
+          <span id="mgrTotalInvestText" style="font-size:16px; font-weight:900; color:var(--tx-1, #f2f2f3); font-variant-numeric:tabular-nums;">₩${totalInvestAmount.toLocaleString()}</span>
         </div>
 
         <!-- 가로 스크롤 카테고리 필터 바 -->
-        <div style="display:flex; gap:5px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; -webkit-overflow-scrolling:touch; flex-shrink:0;">
+        <div class="pk-chips" style="flex-shrink:0;">
           ${filterChipsHtml}
         </div>
 
         <!-- 장비 목록 영역 -->
-        <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+        <div style="display:flex; flex-direction:column; flex:1;">
           ${filteredFavGears.length === 0 ? `
-            <div style="text-align:center; padding:35px 0; color:#64748b; font-size:0.74rem; line-height:1.5;">
+            <div class="pk-shelf-empty">
               등록된 장비가 없습니다.<br>
               상단에서 직접 등록하거나 배낭계산기에서 ⭐을 눌러보세요.
             </div>
@@ -4991,35 +4907,20 @@ window.saveCurrentPackingRecord = function() {
             var rawPrice = parseInt(String(meta.price || '').replace(/[^0-9]/g, ''), 10);
             var displayPrice = !isNaN(rawPrice) && rawPrice > 0 ? rawPrice.toLocaleString() : '';
             var safeGearNameAttr = escapeHtml(g.name);
+            var statusStyle = curStatus === 'repair' ? 'color:#f43f5e; background:rgba(244,63,94,0.12);' : (curStatus === 'sell' ? 'color:#fbbf24; background:rgba(251,191,36,0.12);' : 'color:var(--tx-2, #d1d1d6); background:var(--bg-2, #17171b);');
+            var extra = [meta.purchaseDate ? escapeHtml(meta.purchaseDate) + ' 구매' : '', displayPrice ? '₩' + escapeHtml(displayPrice) : '', meta.memo ? escapeHtml(meta.memo) : ''].filter(Boolean).join(' · ');
 
             return `
-              <div class="my-gear-manage-card" data-gear-name="${safeGearNameAttr}" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-left:3.5px solid ${pal.color}; border-radius:8px; padding:7px 10px; display:flex; flex-direction:column; gap:5px; box-sizing:border-box; width:100%;">
-                
-                <div onclick="window.openGearMetaEditSheet(this.dataset.gear)" data-gear="${safeGearNameAttr}" style="display:flex; justify-content:space-between; align-items:center; gap:8px; width:100%; cursor:pointer;">
+              <div class="my-gear-manage-card" data-gear-name="${safeGearNameAttr}" style="border-bottom:1px solid var(--line, rgba(255,255,255,0.08)); padding:10px 2px; box-sizing:border-box; width:100%;">
+                <div onclick="window.openGearMetaEditSheet(this.dataset.gear)" data-gear="${safeGearNameAttr}" style="display:flex; align-items:center; gap:10px; width:100%; cursor:pointer;">
                   <div style="flex:1 1 0%; min-width:0;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                      <span style="font-size:0.82rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                        ${safeGearNameAttr}
-                      </span>
-                      <span style="font-size:0.60rem; font-weight:700; color:${curStatus === 'repair' ? '#fda4af' : (curStatus === 'sell' ? '#fde047' : '#94a3b8')}; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:1px 4px; border-radius:3px; flex-shrink:0;">
-                        ${curStatus === 'repair' ? '정비요망' : (curStatus === 'sell' ? '방출예정' : '정상')}
-                      </span>
-                    </div>
-                    <div style="font-size:0.60rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:2px;">
-                      <span style="color:${pal.color}; font-weight:700;">${escapeHtml(pal.label)}</span> · ${escapeHtml(g.brand || '내 장비')} · ${(g.weight / 1000).toFixed(2)}kg
-                    </div>
-                    <div style="font-size:0.60rem; color:#64748b; font-family:'JetBrains Mono', monospace; margin-top:2px; display:flex; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                      ${meta.purchaseDate ? `<span>${escapeHtml(meta.purchaseDate)} 구매</span>` : ''}
-                      ${displayPrice ? `<span style="color:#fbbf24; font-weight:700;">₩${escapeHtml(displayPrice)}</span>` : ''}
-                      ${meta.memo ? `<span style="color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">· ${escapeHtml(meta.memo)}</span>` : ''}
-                    </div>
+                    <div style="font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeGearNameAttr}</div>
+                    <div class="pk-meta" style="margin-top:2px;">${escapeHtml(pal.label)} · ${escapeHtml(g.brand || '내 장비')} · ${(g.weight / 1000).toFixed(2)}kg</div>
+                    ${extra ? `<div class="pk-meta" style="margin-top:1px;">${extra}</div>` : ''}
                   </div>
-
-                  <div style="display:flex; align-items:center; color:#64748b; font-size:1.1rem; flex-shrink:0; padding-left:4px; pointer-events:none;">
-                    ›
-                  </div>
+                  <span style="font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px; flex-shrink:0; ${statusStyle}">${curStatus === 'repair' ? '정비요망' : (curStatus === 'sell' ? '방출예정' : '정상')}</span>
+                  <span style="color:var(--tx-4, #55555d); font-size:18px; flex-shrink:0; pointer-events:none;">›</span>
                 </div>
-
               </div>
             `;
           }).join('')}
@@ -5104,60 +5005,61 @@ window.saveCurrentPackingRecord = function() {
 
     var sheet = document.createElement('div');
     sheet.id = 'gearMetaEditSheet';
-    sheet.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:rgba(0,0,0,0.75); z-index:1000030; display:flex; align-items:flex-end; justify-content:center; box-sizing:border-box;';
+    sheet.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:rgba(0,0,0,0.45); z-index:1000030; display:flex; align-items:flex-end; justify-content:center; box-sizing:border-box;';
+    var gmeCatId = resolvePlanGearCategoryId(gearName);
+    var gmeGear = (typeof window.findGearByName === 'function') ? window.findGearByName(gearName, gmeCatId) : null;
+    var gmeW = gmeGear ? Number(gmeGear.weight || gmeGear.weight_g || 0) : 0;
+    var gmeSub = [(PLAN_CATEGORY_PALETTE[gmeCatId] || {}).label || '', gmeW ? gmeW.toLocaleString() + 'g' : ''].filter(Boolean).join(' · ');
     sheet.onclick = function(e) { if (e.target === sheet) sheet.remove(); };
 
     sheet.innerHTML = `
-      <div style="width:100%; max-width:480px; max-height:100%; overflow-y:auto; background:#07090e; border-top:1.5px solid rgba(255,255,255,0.14); border-radius:16px 16px 0 0; padding:14px 16px 18px 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.95); animation:slideUpSheet 0.22s ease-out;">
-        <div style="width:36px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:0 auto 2px auto;"></div>
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
-          <div style="font-size:0.90rem; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;">
-            ${escapeHtml(gearName)}
+      <div class="gme-panel">
+        <div class="gme-grab"></div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="flex:1; min-width:0;">
+            ${gmeSub ? `<div class="pk-g">${escapeHtml(gmeSub)}</div>` : ''}
+            <div style="font-size:18px; font-weight:900; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(gearName)}</div>
           </div>
-          <button type="button" onclick="document.getElementById('gearMetaEditSheet').remove();" style="background:none; border:none; color:#64748b; font-size:1.1rem; cursor:pointer; padding:2px 6px;">✕</button>
+          <button type="button" class="gdm-x" onclick="document.getElementById('gearMetaEditSheet').remove();" aria-label="닫기">✕</button>
         </div>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <div style="display:flex; gap:8px;">
-            <div style="flex:1;">
-              <span style="font-size:0.62rem; color:#94a3b8; font-weight:700; margin-bottom:3px; display:block;">구매일</span>
-              <div onclick="window.openRomanticDatePickerModal('editSheetPurchaseDate')" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:6px; display:flex; align-items:center; padding:0 10px; box-sizing:border-box; cursor:pointer;">
-                <input type="text" id="editSheetPurchaseDate" placeholder="날짜 선택" value="${escapeHtml(meta.purchaseDate || '')}" readonly style="width:100%; min-width:0; height:100%; background:none; border:none; color:#cbd5e1; font-size:0.78rem; outline:none; font-family:'JetBrains Mono', monospace; padding:0; pointer-events:none;" />
-              </div>
-            </div>
-            <div style="flex:1;">
-              <span style="font-size:0.62rem; color:#94a3b8; font-weight:700; margin-bottom:3px; display:block;">구매가 (₩)</span>
-              <input type="text" id="editSheetPrice" inputmode="numeric" placeholder="150,000" value="${escapeHtml(displayPrice)}" oninput="window.formatDirectInputPrice(this)" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#fbbf24; font-size:0.78rem; font-weight:700; padding:0 10px; outline:none; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
+        <div class="gme-grid">
+          <div>
+            <span class="gme-lbl">구매일</span>
+            <div onclick="window.openRomanticDatePickerModal('editSheetPurchaseDate')" style="cursor:pointer;">
+              <input type="text" id="editSheetPurchaseDate" class="gme-in" placeholder="날짜 선택" value="${escapeHtml(meta.purchaseDate || '')}" readonly style="pointer-events:none;" />
             </div>
           </div>
           <div>
-            <span style="font-size:0.62rem; color:#94a3b8; font-weight:700; margin-bottom:3px; display:block;">분류</span>
-            <select id="editSheetCategory" data-initial="${escapeHtml(resolvePlanGearCategoryId(gearName))}" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#f1f5f9; font-size:0.78rem; font-weight:700; padding:0 10px; outline:none; -webkit-appearance:none; appearance:none; box-sizing:border-box;">
-              ${planGearCategoryOptionsHtml(resolvePlanGearCategoryId(gearName), false)}
+            <span class="gme-lbl">구매가</span>
+            <input type="text" id="editSheetPrice" class="gme-in" inputmode="numeric" placeholder="₩ 금액" value="${escapeHtml(displayPrice)}" oninput="window.formatDirectInputPrice(this)" />
+          </div>
+        </div>
+        <div class="gme-grid">
+          <div>
+            <span class="gme-lbl">분류</span>
+            <select id="editSheetCategory" class="gme-in gme-sel" data-initial="${escapeHtml(gmeCatId)}">
+              ${planGearCategoryOptionsHtml(gmeCatId, false)}
             </select>
           </div>
           <div>
-            <span style="font-size:0.62rem; color:#94a3b8; font-weight:700; margin-bottom:3px; display:block;">장비 상태</span>
-            <select id="editSheetStatus" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#f1f5f9; font-size:0.78rem; font-weight:700; padding:0 10px; outline:none; -webkit-appearance:none; appearance:none; box-sizing:border-box;">
-              <option value="ok" ${meta.status === 'ok' ? 'selected' : ''} style="background:#07090e; color:#ffffff;">정상</option>
-              <option value="repair" ${meta.status === 'repair' ? 'selected' : ''} style="background:#07090e; color:#ffffff;">정비요망</option>
-              <option value="sell" ${meta.status === 'sell' ? 'selected' : ''} style="background:#07090e; color:#ffffff;">방출예정</option>
+            <span class="gme-lbl">상태</span>
+            <select id="editSheetStatus" class="gme-in gme-sel">
+              <option value="ok" ${meta.status === 'ok' ? 'selected' : ''}>정상</option>
+              <option value="repair" ${meta.status === 'repair' ? 'selected' : ''}>정비요망</option>
+              <option value="sell" ${meta.status === 'sell' ? 'selected' : ''}>방출예정</option>
             </select>
           </div>
-          <div>
-            <span style="font-size:0.62rem; color:#94a3b8; font-weight:700; margin-bottom:3px; display:block;">관리 메모</span>
-            <textarea id="editSheetMemo" rows="3" placeholder="상태, 보관 위치, 수리 이력 등 메모를 자유롭게 입력하세요..." style="width:100%; height:72px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#cbd5e1; font-size:0.78rem; line-height:1.45; padding:8px 10px; outline:none; resize:none; box-sizing:border-box; font-family:'Pretendard Variable', -apple-system, sans-serif;">${escapeHtml(meta.memo || '')}</textarea>
-          </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
-          <button type="button" data-gear="${escapeHtml(gearName)}" onclick="window.saveGearMetaFromSheet(this.dataset.gear)" style="width:100%; height:44px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.22); border-radius:8px; color:#ffffff; font-size:0.82rem; font-weight:800; cursor:pointer;">저장 완료</button>
-          ${(function(){
-            var cList = safeGetJSON('okbm_custom_gears', []);
-            var isC = cList.some(function(cg){ return cg && cg.name === gearName; });
-            var delText = isC ? '장비 영구 삭제' : '내 장비에서 해제';
-            var msg = isC ? '이 장비를 영구 삭제하시겠습니까?' : '내 장비에서 해제하시겠습니까?';
-            return '<button type="button" data-gear="' + escapeHtml(gearName) + '" data-confirm-msg="' + escapeHtml(msg) + '" onclick="window.confirmRemoveFavoriteGearFromSheet(this)" style="width:100%; height:36px; background:none; border:none; color:#fda4af; font-size:0.72rem; font-weight:700; cursor:pointer; text-decoration:underline;">' + delText + '</button>';
-          })()}
-        </div>
+        <span class="gme-lbl">메모</span>
+        <textarea id="editSheetMemo" class="gme-in" rows="3" placeholder="보관 위치, 수리한 일 등" style="height:80px; padding:12px; line-height:1.45; resize:none;">${escapeHtml(meta.memo || '')}</textarea>
+        <button type="button" class="pk-dock-save" data-gear="${escapeHtml(gearName)}" onclick="window.saveGearMetaFromSheet(this.dataset.gear)" style="width:100%; flex:none; margin-top:16px;">저장</button>
+        ${(function(){
+          var cList = safeGetJSON('okbm_custom_gears', []);
+          var isC = cList.some(function(cg){ return cg && cg.name === gearName; });
+          var delText = isC ? '장비 영구 삭제' : '내 장비에서 빼기';
+          var msg = isC ? '이 장비를 영구 삭제하시겠습니까?' : '내 장비에서 빼시겠어요?';
+          return '<button type="button" data-gear="' + escapeHtml(gearName) + '" data-confirm-msg="' + escapeHtml(msg) + '" onclick="window.confirmRemoveFavoriteGearFromSheet(this)" style="width:100%; height:40px; margin-top:4px; background:none; border:none; color:var(--tx-3, #8b8b93); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit;">' + delText + '</button>';
+        })()}
       </div>
     `;
     document.body.appendChild(sheet);
