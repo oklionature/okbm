@@ -15,7 +15,7 @@
     var style = document.createElement('style');
     style.id = 'romantic-plan-core-style';
     style.innerHTML = `
-      /* 배낭 꾸리기(계산기) 화면: 플랜 일정 창과 같은 둥근 카드 · 중립 회색 · 하늘색 버튼 하나 (tokens.css 색) */
+      /* 배낭 꾸리기(계산기) 화면: 플랜 일정 창과 같은 둥근 카드 · 중립 회색. 하늘색은 '패킹 저장하기' 하나에만 (tokens.css 색) */
       .pk-head { flex:0 0 auto; display:flex; flex-direction:column; gap:10px; padding:2px 0 4px; position:relative; z-index:20; }
       .pk-trip { display:flex; align-items:center; gap:8px; min-height:36px; }
       .pk-trip-spot { flex:1; min-width:0; display:flex; align-items:baseline; gap:8px; background:none; border:none; padding:4px 0; color:var(--tx-1, #f2f2f3); cursor:pointer; text-align:left; font-family:inherit; }
@@ -39,7 +39,7 @@
       .pk-recent { margin-top:10px; padding-top:10px; border-top:1px solid var(--line, rgba(255,255,255,0.08)); display:flex; align-items:center; gap:6px; min-height:30px; cursor:pointer; }
       .pk-recent-label { flex-shrink:0; font-size:12px; font-weight:800; color:var(--tx-3, #8b8b93); margin-right:2px; }
       .pk-pill { min-width:0; max-width:120px; font-size:12px; font-weight:700; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); padding:6px 10px; border-radius:999px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-      .pk-pill.is-new { background:rgba(91,184,240,0.16); color:#5bb8f0; }
+      .pk-pill.is-new { color:#ffffff; }
       .pk-recent-all { margin-left:auto; flex-shrink:0; font-size:12px; font-weight:800; color:var(--tx-2, #d1d1d6); }
       .pk-recent-empty { font-size:12px; color:var(--tx-3, #8b8b93); font-weight:600; }
       .pk-search-row { display:flex; gap:8px; }
@@ -58,8 +58,8 @@
       .pk-shelf-empty button { margin-top:14px; height:40px; padding:0 18px; border-radius:12px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; }
       .pk-meta { font-size:12px; color:var(--tx-3, #8b8b93); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-variant-numeric:tabular-nums; }
       .pk-plus { width:34px; height:34px; border-radius:50%; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); font-size:20px; line-height:1; cursor:pointer; padding:0; }
-      .pk-step { display:flex; align-items:center; height:34px; border-radius:999px; background:rgba(91,184,240,0.16); color:#5bb8f0; }
-      .pk-step button { width:32px; height:34px; border:none; background:none; color:#5bb8f0; font-size:18px; font-weight:900; cursor:pointer; padding:0; }
+      .pk-step { display:flex; align-items:center; height:34px; border-radius:999px; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); }
+      .pk-step button { width:32px; height:34px; border:none; background:none; color:var(--tx-1, #f2f2f3); font-size:18px; font-weight:900; cursor:pointer; padding:0; }
       .pk-step span { min-width:14px; text-align:center; font-size:14px; font-weight:900; font-variant-numeric:tabular-nums; }
       .pk-dock { flex-shrink:0; display:flex; gap:8px; padding:10px 0 4px; border-top:1px solid var(--line, rgba(255,255,255,0.08)); background:#000000; }
       .pk-dock-sub { flex-shrink:0; height:48px; padding:0 14px; border-radius:14px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; font-family:inherit; }
@@ -79,7 +79,7 @@
       .pk-it { display:flex; align-items:center; gap:12px; padding:11px 18px; border-bottom:1px solid var(--line, rgba(255,255,255,0.08)); }
       .pk-it-n { flex:1; min-width:0; }
       .pk-it-n b { display:block; font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-      .pk-it-new { font-size:11px; font-weight:800; color:#5bb8f0; margin-right:6px; }
+      .pk-it-new { font-size:11px; font-weight:800; color:var(--tx-2, #d1d1d6); margin-right:6px; }
       .pk-it-w { flex-shrink:0; font-size:14px; font-weight:800; color:var(--tx-2, #d1d1d6); font-variant-numeric:tabular-nums; }
       .pk-it-x { flex-shrink:0; width:32px; height:32px; border-radius:50%; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-2, #d1d1d6); font-size:18px; cursor:pointer; padding:0; }
       .pk-packed-empty { text-align:center; padding:40px 0; color:var(--tx-3, #8b8b93); font-size:13px; }
