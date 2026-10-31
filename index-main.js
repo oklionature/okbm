@@ -4104,6 +4104,8 @@ var adBannersHtml = `
         return new Date(pA[0], pA[1]-1, pA[2]) - new Date(pB[0], pB[1]-1, pB[2]);
       });
 
+      var openCount = list.filter(function(t) { return !t.isClosed; }).length;
+
       var modal = document.createElement('div');
       modal.id = 'tripJoinListModal';
       modal.style.cssText = 'position:fixed; inset:0; background:#000000; z-index:1000045; display:flex; flex-direction:column; box-sizing:border-box;';
@@ -4114,32 +4116,44 @@ var adBannersHtml = `
             <button onclick="document.getElementById('tripJoinListModal').remove()" style="background:none; border:none; color:#cbd5e1; font-size:1.1rem; cursor:pointer; padding:0; display:flex; align-items:center;">◀</button>
             <span style="font-size:0.95rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:6px;">
               <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:none; stroke:#38bdf8; stroke-width:2.2; flex-shrink:0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
-              <span>전체 원정대 목록</span>
+              <span>동행 모집</span>
             </span>
           </div>
-          <button onclick="document.getElementById('tripJoinListModal').remove(); openTripCreateModal();" style="background:#ffffff; color:#000; font-size:0.72rem; font-weight:900; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">+ 모집하기</button>
         </div>
 
-        <div style="flex:1; overflow-y:auto; padding:12px 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px; display:flex; flex-direction:column; gap:8px; max-width:440px; margin:0 auto; width:100%; box-sizing:border-box;">
-          ${list.length === 0 ? '<div style="text-align:center; color:#64748b; padding:60px 0; font-size:0.78rem;">현재 등록된 원정대 공고가 없습니다.</div>' : list.map(function(t) {
+        <div style="flex:1; overflow-y:auto; padding:18px 16px calc(96px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:10px; max-width:440px; margin:0 auto; width:100%; box-sizing:border-box;">
+          ${openCount ? `<div style="font-size:0.74rem; font-weight:600; color:#8e8e93; margin-bottom:2px;">지금 모집 중 ${openCount}곳</div>` : ''}
+          ${list.length === 0 ? '<div style="text-align:center; color:#8e8e93; padding:60px 0 0; font-size:0.8rem;">지금 모집 중인 동행이 없어요.</div>' : list.map(function(t) {
             var dBadge = getTripDDayBadge(t.date);
             var isClosed = Boolean(t.isClosed);
             var maxCap = parseInt(t.maxCapacity, 10) || 4;
+            // 사진: 글에 올린 사진 → 없으면 그 박지의 등록 사진 (상세 화면과 같은 순서)
+            var photos = getTripPhotosList(t);
+            if (!photos.length && typeof getRegisteredSpotPhotos === 'function') photos = getRegisteredSpotPhotos(t.spotName) || [];
+            var thumb = photos[0]
+              ? `<img src="${escapeHtml(photos[0])}" alt="" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;">`
+              : `<svg viewBox="0 0 24 24" style="width:26px; height:26px; fill:none; stroke:#475569; stroke-width:1.8;"><path d="M3 20L12 4l9 16z"/><path d="M12 20v-5"/></svg>`;
             return `
-              <div data-trip-id="${escapeHtml(t.tripId)}" onclick="document.getElementById('tripJoinListModal').remove(); openTripDetailModal(this.dataset.tripId);" style="background:${isClosed ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.035)'}; border:1px solid ${isClosed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)'}; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; opacity:${isClosed ? '0.65' : '1'};">
-                <div style="flex:1; min-width:0; padding-right:8px;">
-                  <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
-                    <span style="font-size:0.60rem; padding:1px 5px; border-radius:3px; font-weight:800; ${dBadge.cls}">${dBadge.text}</span>
-                    <span style="font-size:0.86rem; font-weight:900; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(t.spotName)}</span>
+              <div data-trip-id="${escapeHtml(t.tripId)}" onclick="document.getElementById('tripJoinListModal').remove(); openTripDetailModal(this.dataset.tripId);" style="background:#0c0d10; border:1px solid ${isClosed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)'}; border-radius:14px; padding:12px; display:flex; align-items:center; gap:12px; cursor:pointer; opacity:${isClosed ? '0.65' : '1'};">
+                <div style="width:72px; height:72px; border-radius:10px; overflow:hidden; flex-shrink:0; background:#16181d; display:flex; align-items:center; justify-content:center;">${thumb}</div>
+                <div style="flex:1; min-width:0;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                      <span style="font-size:0.64rem; padding:2px 6px; border-radius:4px; font-weight:800; ${dBadge.cls}">${dBadge.text}</span>
+                      <span style="font-size:0.7rem; color:#94a3b8; font-family:var(--font-en);">${escapeHtml(t.date)}</span>
+                    </div>
+                    <span style="font-size:0.72rem; font-weight:800; color:${isClosed ? '#64748b' : '#38bdf8'}; flex-shrink:0;">${isClosed ? '마감' : '자세히 ›'}</span>
                   </div>
-                  <div style="font-size:0.65rem; color:#94a3b8; font-family:var(--font-en);">${escapeHtml(t.date)} · 희망 ${maxCap}명 · ${escapeHtml(t.authorName || '방장')}</div>
+                  <div style="font-size:0.94rem; font-weight:900; color:#fff; margin:7px 0 5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(t.spotName)}</div>
+                  <div style="font-size:0.7rem; color:#94a3b8;">희망 ${maxCap}명 · ${escapeHtml(t.authorName || '방장')}</div>
                 </div>
-                <span style="font-size:0.68rem; font-weight:800; ${isClosed ? 'color:#64748b; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);' : 'color:#38bdf8; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.25);'} padding:4px 8px; border-radius:6px; flex-shrink:0; display:inline-flex; align-items:center;">
-                  <span>${isClosed ? '마감' : '공고보기'}</span>
-                </span>
               </div>
             `;
           }).join('')}
+          <div style="margin-top:auto; padding-top:28px; text-align:center;">
+            <div style="font-size:0.76rem; color:#8e8e93; margin-bottom:10px;">원하는 장소나 날짜가 없나요?</div>
+            <button onclick="document.getElementById('tripJoinListModal').remove(); openTripCreateModal();" style="width:100%; background:#ffffff; color:#000; font-size:0.86rem; font-weight:900; border:none; padding:13px 0; border-radius:12px; cursor:pointer; font-family:inherit;">직접 모집하기</button>
+          </div>
         </div>
       `;
       document.body.appendChild(modal);
