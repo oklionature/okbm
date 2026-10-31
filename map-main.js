@@ -1969,6 +1969,17 @@ function updateSmartResetButtons() {
           : '';
       }
 
+      // 금지 사유(camp_status_note)와 확인한 날(camp_status_at). '야영이 금지되었습니다' 바로 아래에 둔다.
+      function campBanReasonHtml(spot, style) {
+        var note = String((spot && spot.camp_status_note) || '').trim();
+        var at = String((spot && spot.camp_status_at) || '').trim().slice(0, 10).replace(/-/g, '.');
+        if (!note && !at) return '';
+        return '<div style="' + style + ' color:#fecdd3; font-weight:700;">' +
+          (note ? escapeHtml(note) : '') +
+          (at ? '<div style="margin-top:2px; color:#fda4af; font-weight:600; font-size:0.92em;">' + at + ' 확인</div>' : '') +
+        '</div>';
+      }
+
       function campBanBannerHtml(spot) {
         if (!isCampBanned(spot)) return '';
         var rules = [
@@ -1985,7 +1996,8 @@ function updateSmartResetButtons() {
         }).join('');
         return '<div style="margin:6px 0 4px; padding:11px 12px; border-radius:10px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.45); color:#fecdd3; font-size:0.74rem; line-height:1.45;">' +
           '<div style="font-weight:900; color:#fb7185; font-size:0.9rem;">🚫 야영이 금지되었습니다</div>' +
-          '<div style="margin-top:4px; font-size:0.84rem; font-weight:800;">소중한 박지를 보호하기 위해 LNT 원칙을 꼭 지켜주세요.</div>' +
+          campBanReasonHtml(spot, 'margin-top:6px; font-size:0.8rem;') +
+          '<div style="margin-top:8px; font-size:0.84rem; font-weight:800;">소중한 박지를 보호하기 위해 LNT 원칙을 꼭 지켜주세요.</div>' +
           list +
         '</div>';
       }
@@ -6497,7 +6509,7 @@ var liveSearchTimer = null;
           </div>
 
           ${isCampBanned(spot)
-            ? '<div class="spot-desc-multi" style="color:#fda4af; font-weight:800;">🚫 야영이 금지되었습니다</div>'
+            ? '<div class="spot-desc-multi" style="color:#fda4af; font-weight:800;">🚫 야영이 금지되었습니다' + campBanReasonHtml(spot, 'margin-top:3px; font-size:0.92em;') + '</div>'
             : `<div class="spot-desc-multi">${ICONS.VIEW_CARD} <span class="spot-desc-text">${escapeHtml(descText)}</span>${descIsShort ? ' <button type="button" class="spot-desc-more">더보기</button>' : ''}</div>`}`;
 
         // 목록은 소개 앞 80자만 받는다(H15). '더보기'를 누르면 이 박지 하나의 전체 소개를 받아 카드 안에서 펼친다.
