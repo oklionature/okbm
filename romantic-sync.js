@@ -8207,7 +8207,7 @@ window._pastTripRenderPhotoStage = function() {
   if (stage) {
     if (!photos.length) {
       stage.innerHTML =
-        '<div onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="width:100%; aspect-ratio:3/4; max-height:420px; border:1.5px dashed rgba(255,255,255,0.16); border-radius:14px; background:#0b0f17; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-sizing:border-box;">' +
+        '<div onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="width:100%; aspect-ratio:3/4; max-height:420px; border:1.5px dashed rgba(255,255,255,0.16); border-radius:14px; background:#141517; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-sizing:border-box;">' +
           '<div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; color:#cbd5e1;">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>' +
           '</div>' +
@@ -8220,7 +8220,7 @@ window._pastTripRenderPhotoStage = function() {
         return '<div style="flex:0 0 100%; width:100%; height:100%; scroll-snap-align:start; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">' +
           '<img src="' + escapeHtml(okbmSafeImageUrl(url)) + '" alt="" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.32); transform:scale(1.15); pointer-events:none;" />' +
           '<img src="' + escapeHtml(okbmSafeImageUrl(url)) + '" alt="" style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" />' +
-          '<button type="button" data-okbm-idx="' + Number(pIdx) + '" onclick="event.stopPropagation(); window.removePastTripPhoto(Number(this.dataset.okbmIdx));" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:#0c1017; color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer;">✕</button>' +
+          '<button type="button" data-okbm-idx="' + Number(pIdx) + '" onclick="event.stopPropagation(); window.removePastTripPhoto(Number(this.dataset.okbmIdx));" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:#141517; color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer;">✕</button>' +
         '</div>';
       }).join('');
       var thumbsHtml = photos.map(function(tUrl, tIdx) {
@@ -8247,7 +8247,7 @@ window._pastTripRenderPhotoStage = function() {
             slidesHtml +
           '</div>' +
           (photos.length < 10
-            ? '<button type="button" onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="position:absolute; bottom:12px; right:12px; z-index:10; background:#0c1017; border:1px solid rgba(255,255,255,0.22); color:#e2e8f0; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer;">사진 추가</button>'
+            ? '<button type="button" onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="position:absolute; bottom:12px; right:12px; z-index:10; background:#141517; border:1px solid rgba(255,255,255,0.22); color:#e2e8f0; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer;">사진 추가</button>'
             : '') +
         '</div>' +
         '<div id="pastTripPhotoThumbs" style="width:100%; display:flex; flex-wrap:wrap; gap:8px; padding:10px 0 6px 0; box-sizing:border-box;">' +
@@ -8462,10 +8462,10 @@ window.switchPastTripMemoMode = function(mode) {
   var helper = document.getElementById('pastTripMemoModeHelper');
   if (btnSingle && btnPer) {
     var isSingle = st.memoMode === 'single';
-    btnSingle.style.background = isSingle ? '#38bdf8' : 'transparent';
+    btnSingle.style.background = isSingle ? '#ffffff' : 'transparent';
     btnSingle.style.color = isSingle ? '#000000' : '#94a3b8';
     btnSingle.style.fontWeight = isSingle ? '900' : '700';
-    btnPer.style.background = !isSingle ? '#38bdf8' : 'transparent';
+    btnPer.style.background = !isSingle ? '#ffffff' : 'transparent';
     btnPer.style.color = !isSingle ? '#000000' : '#94a3b8';
     btnPer.style.fontWeight = !isSingle ? '900' : '700';
   }
@@ -8838,7 +8838,7 @@ window._pastTripShowSpotChoice = function(show) {
   ov.style.cssText = 'position:fixed; inset:0; z-index:2147483647; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
   ov.onclick = function(e) { if (e.target === ov) window._pastTripShowSpotChoice(false); };
   ov.innerHTML =
-    '<div style="width:100%; max-width:320px; background:#0c1017; border-radius:14px; border:1px solid rgba(255,255,255,0.12); padding:16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.55);" onclick="event.stopPropagation();">' +
+    '<div style="width:100%; max-width:320px; background:#141517; border-radius:14px; border:1px solid rgba(255,255,255,0.12); padding:16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.55);" onclick="event.stopPropagation();">' +
       '<div style="font-size:0.92rem; font-weight:900; color:#fff; text-align:center;">장소를 등록하시겠습니까?</div>' +
       (name ? ('<div style="font-size:0.78rem; font-weight:800; color:#e2e8f0; text-align:center; word-break:break-all;">' + esc(name) + '</div>') : '') +
       '<div style="font-size:0.68rem; color:#94a3b8; line-height:1.5; text-align:center;">등록하기를 선택하시면 제보창으로 연결됩니다.<br>등록하지 않기를 선택하시면 나만보기와 이 기록에 저장됩니다.</div>' +
@@ -8860,12 +8860,12 @@ window._pastTripSetSpotBadge = function(kind) {
   if (!badge) return;
   if (kind === 'registered') {
     badge.textContent = '등록 장소 · 마이데이터 합산 가능';
-    badge.style.color = '#34d399';
+    badge.style.color = '#e5e7eb';
     badge.style.fontSize = '0.62rem';
     badge.style.lineHeight = '1.35';
   } else if (kind === 'unregistered') {
     badge.textContent = '비등록 장소는 나만보기에 저장됩니다. 추후 등록될경우 노출됩니다.';
-    badge.style.color = '#34d399';
+    badge.style.color = '#e5e7eb';
     badge.style.fontSize = 'calc(0.62rem + 3pt)';
     badge.style.lineHeight = '1.35';
   } else {
@@ -9273,17 +9273,17 @@ window.openPastTripRegisterModal = function(ev) {
   modal.innerHTML =
     '<style>#pastTripPhotoSwipeTrack::-webkit-scrollbar{display:none}#pastTripSpotSuggest::-webkit-scrollbar,#pastTripGearSuggest::-webkit-scrollbar{display:none}' +
       '#pastTripPhotoStage>div[onclick]{aspect-ratio:auto !important;height:150px !important}.ptw-step{display:flex;flex-direction:column;gap:8px}.ptw-h{display:flex;align-items:center;gap:8px;justify-content:space-between}' +
-      '.ptw-h h5{margin:0;font-size:0.86rem;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px}.ptw-n{width:20px;height:20px;border-radius:50%;background:#5bb8f0;color:#001521;font-size:0.68rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center}' +
+      '.ptw-h h5{margin:0;font-size:0.86rem;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px}.ptw-n{width:20px;height:20px;border-radius:50%;background:#2a2d33;color:#ffffff;font-size:0.68rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center}' +
       '.ptw-sub{font-size:0.64rem;color:#64748b;font-weight:700}.ptw-date{display:flex;align-items:center;gap:8px}.ptw-date label{font-size:0.74rem;font-weight:800;color:#94a3b8;flex:none}.ptw-date button{height:38px !important;font-size:0.84rem !important;flex:1}' +
-      '.ptw-geo{background:#0f1219;border:1px solid #1f2430;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}.ptw-geo[hidden]{display:none}.ptw-geo small{font-size:0.66rem;color:#8b93a5;font-weight:700}.ptw-geo b{font-size:0.88rem;color:#fff}' +
-      '.ptw-chips{display:flex;flex-wrap:wrap;gap:6px}.ptw-chip{height:32px;padding:0 12px;border-radius:999px;border:1px solid #262c3b;background:#141824;color:#cfd4df;font-size:0.72rem;font-weight:800;cursor:pointer;font-family:inherit}.ptw-chip.on{background:#fff;color:#000;border-color:#fff}' +
+      '.ptw-geo{background:#141517;border:1px solid #2a2b2f;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}.ptw-geo[hidden]{display:none}.ptw-geo small{font-size:0.66rem;color:#8b93a5;font-weight:700}.ptw-geo b{font-size:0.88rem;color:#fff}' +
+      '.ptw-chips{display:flex;flex-wrap:wrap;gap:6px}.ptw-chip{height:32px;padding:0 12px;border-radius:999px;border:1px solid #2e3034;background:#1b1c1f;color:#cfd4df;font-size:0.72rem;font-weight:800;cursor:pointer;font-family:inherit}.ptw-chip.on{background:#fff;color:#000;border-color:#fff}' +
       '.ptw-fold{border:1px solid rgba(255,255,255,0.1);border-radius:12px;background:rgba(255,255,255,0.02)}.ptw-fold>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:0.80rem;font-weight:900;color:#e2e8f0}.ptw-fold>summary::-webkit-details-marker{display:none}' +
       '.ptw-fold>summary span{font-size:0.66rem;color:#64748b;font-weight:700}.ptw-fb{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px}' +
       '.ptw-pubcard{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}.ptw-pub{display:flex;justify-content:space-between;align-items:center;gap:10px}.ptw-pub b{font-size:0.80rem;color:#fff;font-weight:900}' +
       '.ptw-sw{flex:none;width:44px;height:26px;border-radius:13px;border:0;background:#334155;position:relative;cursor:pointer;padding:0;transition:background .2s}.ptw-sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}' +
-      '.ptw-sw[aria-checked="true"]{background:#5bb8f0}.ptw-sw[aria-checked="true"]:after{transform:translateX(18px)}.ptw-sw:disabled{opacity:.45;cursor:default}' +
+      '.ptw-sw[aria-checked="true"]{background:#ffffff}.ptw-sw[aria-checked="true"]:after{background:#111214}.ptw-sw[aria-checked="true"]:after{transform:translateX(18px)}.ptw-sw:disabled{opacity:.45;cursor:default}' +
       '.ptw-plog{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,background .2s}.ptw-plog.on{border-color:rgba(52,211,153,0.4);background:rgba(52,211,153,0.05)}' +
-      '.ptw-plog .ptw-pub b{display:inline-flex;align-items:center;gap:6px}.ptw-plog .ptw-pub b svg{width:17px;height:17px;color:#34d399}.ptw-plog .ptw-sw[aria-checked="true"]{background:#34d399}' +
+      '.ptw-plog .ptw-pub b{display:inline-flex;align-items:center;gap:6px}.ptw-plog .ptw-pub b svg{width:17px;height:17px;color:#34d399}.ptw-plog .ptw-sw[aria-checked="true"]{background:#34d399}.ptw-plog .ptw-sw[aria-checked="true"]:after{background:#fff}' +
       '.ptw-plog p{margin:0;font-size:0.72rem;color:#94a3b8;line-height:1.5;font-weight:600}.ptw-plog-row{display:flex;align-items:center;gap:12px}' +
       '.ptw-plog-slot{flex:none;position:relative;width:84px;height:84px;border-radius:12px;border:1.5px dashed rgba(52,211,153,0.5);background:rgba(52,211,153,0.06);color:#6ee7b7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:0.66rem;font-weight:800;cursor:pointer;padding:0;font-family:inherit;background-size:cover;background-position:center}' +
       '.ptw-plog-slot svg{width:24px;height:24px}.ptw-plog-slot.has{border-style:solid;border-color:#34d399}.ptw-plog-slot.has>span{display:none}' +
@@ -9291,11 +9291,11 @@ window.openPastTripRegisterModal = function(ev) {
       '.ptw-plog-msg{min-width:0;font-size:0.72rem;line-height:1.5;color:#94a3b8;font-weight:700}.ptw-plog-msg b{display:block;font-size:0.80rem;color:#6ee7b7;font-weight:900}.ptw-plog-msg.warn b{color:#fbbf24}' +
       '.ptw-plog-slot.bad{border-color:#fbbf24;border-style:solid}' +
       '.ptw-plog-msg button{margin-top:4px;background:none;border:0;padding:0;color:#94a3b8;font-size:0.68rem;font-weight:800;text-decoration:underline;cursor:pointer;font-family:inherit}' +
-      '.ptw-done{position:absolute;inset:0;z-index:30;background:#07090e;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;gap:12px;padding:24px;text-align:center}.ptw-done[hidden]{display:none}.ptw-done .ck{width:56px;height:56px;border-radius:50%;background:#5bb8f0;color:#001521;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center}' +
+      '.ptw-done{position:absolute;inset:0;z-index:30;background:#07090e;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;gap:12px;padding:24px;text-align:center}.ptw-done[hidden]{display:none}.ptw-done .ck{width:56px;height:56px;border-radius:50%;background:#ffffff;color:#000000;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center}' +
       '.ptw-done>:first-child{margin-top:auto}.ptw-done>:last-child{margin-bottom:auto}.ptw-done>*{flex-shrink:0}' +
-      '.ptw-done h6{margin:0;font-size:1.05rem;font-weight:900;color:#fff}.ptw-done p{margin:0;font-size:0.78rem;color:#94a3b8;line-height:1.55}.ptw-card{width:220px;height:150px;border-radius:14px;background:#141824;position:relative;overflow:hidden}.ptw-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}' +
+      '.ptw-done h6{margin:0;font-size:1.05rem;font-weight:900;color:#fff}.ptw-done p{margin:0;font-size:0.78rem;color:#94a3b8;line-height:1.55}.ptw-card{width:220px;height:150px;border-radius:14px;background:#1b1c1f;position:relative;overflow:hidden}.ptw-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}' +
       '.ptw-card div{position:absolute;left:0;right:0;bottom:0;padding:24px 10px 8px;background:linear-gradient(transparent,rgba(0,0,0,.85));text-align:left;font-size:0.66rem;color:#cbd5e1}.ptw-card b{display:block;font-size:0.82rem;color:#fff}' +
-      '.ptw-row2{display:flex;gap:8px;width:100%;max-width:300px}.ptw-row2 button{flex:1;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e2e8f0;font-size:0.84rem;font-weight:900;cursor:pointer;font-family:inherit}.ptw-row2 button.p{background:#5bb8f0;border-color:#5bb8f0;color:#001521}' +
+      '.ptw-row2{display:flex;gap:8px;width:100%;max-width:300px}.ptw-row2 button{flex:1;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e2e8f0;font-size:0.84rem;font-weight:900;cursor:pointer;font-family:inherit}.ptw-row2 button.p{background:#ffffff;border-color:#ffffff;color:#000000}' +
     '</style>' +
     '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; background:#07090e; box-sizing:border-box; position:relative;">' +
       '<div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">' +
@@ -9325,7 +9325,7 @@ window.openPastTripRegisterModal = function(ev) {
               '<input type="text" id="pastTripSpotInput" maxlength="60" placeholder="장소명 검색" autocomplete="off" onfocus="window.onPastTripSpotTyped();" oninput="window.onPastTripSpotTyped();" style="' + fieldCss + '" />' +
               '<button type="button" id="pastTripSpotConfirmBtn" onclick="window.confirmPastTripCustomSpot();" style="display:none; flex-shrink:0; height:42px; padding:0 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.08); color:#e2e8f0; font-size:0.74rem; font-weight:800; cursor:pointer; white-space:nowrap; align-items:center; justify-content:center; line-height:1; box-sizing:border-box;">확인</button>' +
             '</div>' +
-            '<div id="pastTripSpotSuggest" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:20; margin-top:4px; max-height:220px; overflow-y:auto; background:#0c1017; border:1px solid rgba(255,255,255,0.12); border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,0.55);"></div>' +
+            '<div id="pastTripSpotSuggest" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:20; margin-top:4px; max-height:220px; overflow-y:auto; background:#141517; border:1px solid rgba(255,255,255,0.12); border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,0.55);"></div>' +
           '</div>' +
           '<div id="pastTripSpotDetailPanel" style="display:none; flex-direction:column; gap:8px;">' +
             '<input type="text" id="pastTripRegionInput" maxlength="30" placeholder="지역 (시군구, 예: 평창)" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#cbd5e1; padding:0 12px; font-size:0.80rem; font-weight:700; outline:none; box-sizing:border-box;" />' +
@@ -9342,7 +9342,7 @@ window.openPastTripRegisterModal = function(ev) {
             '<span id="pastTripMemoCount" style="font-size:0.68rem; color:#64748b;">0/120</span>' +
           '</div>' +
           '<div style="display:inline-flex; gap:4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:3px; align-self:flex-start;">' +
-            '<button type="button" id="pastTripMemoModeSingle" onclick="window.switchPastTripMemoMode(\'single\');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:#38bdf8; color:#000; font-weight:900;">한 번에 쓰기</button>' +
+            '<button type="button" id="pastTripMemoModeSingle" onclick="window.switchPastTripMemoMode(\'single\');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:#ffffff; color:#000; font-weight:900;">한 번에 쓰기</button>' +
             '<button type="button" id="pastTripMemoModePerPhoto" onclick="window.switchPastTripMemoMode(\'per_photo\');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:transparent; color:#94a3b8; font-weight:700;">사진별 쓰기</button>' +
           '</div>' +
           '<div id="pastTripMemoModeHelper" style="font-size:0.68rem; color:#64748b;">한 줄이면 충분해요. 최대 120자</div>' +
@@ -9352,7 +9352,7 @@ window.openPastTripRegisterModal = function(ev) {
           '<div style="font-size:0.68rem; color:#64748b; line-height:1.5;">내 장비나 장비 세트에서 고르면 무게가 함께 기록돼요. 안 넣어도 피드에 올라가요.</div>' +
           '<div style="display:flex; flex-direction:column; gap:6px;">' +
             '<input type="text" id="pastTripGearSearchInput" maxlength="40" placeholder="장비 검색" autocomplete="off" onfocus="window.onPastTripGearTyped();" oninput="window.onPastTripGearTyped();" style="width:100%; height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.82rem; outline:none; box-sizing:border-box;" />' +
-            '<div id="pastTripGearSuggest" style="display:none; max-height:220px; overflow-y:auto; background:#0c1017; border:1px solid rgba(255,255,255,0.12); border-radius:10px;"></div>' +
+            '<div id="pastTripGearSuggest" style="display:none; max-height:220px; overflow-y:auto; background:#141517; border:1px solid rgba(255,255,255,0.12); border-radius:10px;"></div>' +
             '<button type="button" onclick="window.togglePastTripPresetSheet();" style="width:100%; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:#e2e8f0; font-size:0.76rem; font-weight:800; cursor:pointer;">장비세트로 추가하기</button>' +
           '</div>' +
           '<div id="pastTripPresetSheet" style="display:none; flex-direction:column; gap:6px;"></div>' +
@@ -9378,7 +9378,7 @@ window.openPastTripRegisterModal = function(ev) {
         '</div>' +
       '</div>' +
       '<div style="flex-shrink:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) 16px; border-top:1px solid rgba(255,255,255,0.08); box-sizing:border-box;">' +
-        '<button type="button" id="pastTripSubmitBtn" onclick="window.submitPastTripRegister();" style="width:100%; height:46px; border-radius:12px; border:1px solid rgba(56,189,248,0.45); background:#38bdf8; color:#000000; font-size:0.90rem; font-weight:900; cursor:pointer;">올리기</button>' +
+        '<button type="button" id="pastTripSubmitBtn" onclick="window.submitPastTripRegister();" style="width:100%; height:46px; border-radius:12px; border:1px solid #ffffff; background:#ffffff; color:#000000; font-size:0.90rem; font-weight:900; cursor:pointer;">올리기</button>' +
       '</div>' +
       '<div id="pastTripDone" class="ptw-done" hidden></div>' +
     '</div>';
@@ -9431,11 +9431,11 @@ window.updatePastTripMemoCount = function() {
     var idx = Number(st.photoIndex) || 0;
     st.photoMemos[idx] = raw;
     countEl.textContent = cur + '/120';
-    countEl.style.color = '#38bdf8';
+    countEl.style.color = '#ffffff';
   } else {
     st.singleMemo = raw;
     countEl.textContent = cur + '/120';
-    countEl.style.color = (cur >= 1 && cur <= 120) ? '#34d399' : '#64748b';
+    countEl.style.color = (cur >= 1 && cur <= 120) ? '#e5e7eb' : '#64748b';
   }
   window.__pastTripRegisterState = st;
 };
@@ -9671,7 +9671,7 @@ window._pastTripRenderPublishHint = function() {
     ok: '피드와 지도 후기에 함께 올라가요.'
   }[state];
   el.textContent = text;
-  el.style.color = state === 'ok' ? '#6ee7b7' : '#fbbf24';
+  el.style.color = state === 'ok' ? '#e5e7eb' : '#fbbf24';
 };
 
 // 장소 선택·사진 변경 뒤에 안내를 다시 그린다.
