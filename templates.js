@@ -87,7 +87,6 @@ function setupStudioPhotoDrag(targetEl) {
   var startDist = 0;
   var startScale = 1.0;
   var touchStartTime = 0;
-  var studioModes = ['balance', 'kuchi', 'issue', 'spread', 'magazine', 'overlay', 'minimal', 'chic', 'essay', 'sage', 'editorial'];
 
   function getDistance(touches) {
     var dx = touches[0].clientX - touches[1].clientX;
@@ -206,6 +205,7 @@ function setupStudioPhotoDrag(targetEl) {
           window.currentPhotoPosY = startPosY;
           updateTransform();
 
+          var studioModes = studioModeOrder();
           var curMode = window.currentStudioCardMode || 'minimal';
           var curIdx = studioModes.indexOf(curMode);
           if (curIdx === -1) curIdx = 0;
@@ -4163,7 +4163,8 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     var rec = window.currentShareRecord || {};
     var items = (Array.isArray(window.currentShareItems) && window.currentShareItems.length > 0) ? window.currentShareItems : (rec.items || []);
 
-    if (items.length === 0 && window.selectedGearMap) {
+    // 빠른 레디샷은 장비 없이 잰 무게만 쓴다. 계산기에 담아 둔 장비를 끌어오면 무게까지 바뀐다
+    if (items.length === 0 && window.selectedGearMap && !window.__readyShotQuick) {
       Object.keys(window.selectedGearMap).forEach(function(catId) {
         (window.selectedGearMap[catId] || []).forEach(function(it) {
           if (it && (it.name || it.itemName)) {

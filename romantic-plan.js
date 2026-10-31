@@ -3400,7 +3400,7 @@ window.saveCurrentPackingRecord = function() {
     if (mode === 'nrc') mode = 'overlay';
     if (mode === 'packing') mode = 'magazine';
     if (mode === 'pamphlet') return true;
-    return mode === 'balance' || mode === 'kuchi' || mode === 'issue' || mode === 'spread' ||
+    return mode === 'poster' || mode === 'posterPaper' || mode === 'balance' || mode === 'kuchi' || mode === 'issue' || mode === 'spread' ||
       mode === 'magazine' || mode === 'overlay' || mode === 'minimal' || mode === 'chic' ||
       mode === 'essay' || mode === 'sage' || mode === 'editorial';
   };
