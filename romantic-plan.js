@@ -90,6 +90,13 @@
       .gme-in::placeholder { color:var(--tx-3, #8b8b93); }
       .gme-sel { background-image:linear-gradient(45deg, transparent 50%, #d1d1d6 50%), linear-gradient(135deg, #d1d1d6 50%, transparent 50%); background-position:calc(100% - 18px) 20px, calc(100% - 13px) 20px; background-size:5px 5px; background-repeat:no-repeat; padding-right:30px; }
       .gme-sel option { background:#1a1c22; color:#ffffff; }
+      /* 내 장비 세트 창 */
+      .ps-head { display:flex; align-items:center; gap:10px; padding:10px 18px 8px; flex-shrink:0; }
+      .ps-head b { font-size:17px; font-weight:900; color:var(--tx-1, #f2f2f3); }
+      .ps-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line, rgba(255,255,255,0.08)); cursor:pointer; flex-shrink:0; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:pan-y; }
+      .ps-row b { display:block; font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .ps-btn { height:34px; padding:0 14px; border-radius:999px; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); font-size:13px; font-weight:800; cursor:pointer; align-items:center; justify-content:center; font-family:inherit; white-space:nowrap; }
+      .ps-btn.is-del { color:#f43f5e; background:rgba(244,63,94,0.12); }
       /* 담긴 장비 펼침 */
       .pk-packed { display:none; position:absolute; inset:0; z-index:600; background:rgba(0,0,0,0.6); flex-direction:column; justify-content:flex-end; }
       .pk-packed-panel { max-height:78%; background:#1a1c22; border-radius:22px 22px 0 0; padding:16px 0 8px; display:flex; flex-direction:column; box-shadow:0 -12px 35px rgba(0,0,0,0.6); }
@@ -116,10 +123,10 @@
         bottom: 0 !important;
         width: 100% !important;
         max-width: 480px !important;
-        background: #0d121d !important;
-        border-top: 1.5px solid rgba(255, 255, 255, 0.16) !important;
-        border-radius: 16px 16px 0 0 !important;
-        box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.45) !important;
+        background: #1a1c22 !important;
+        border-top: none !important;
+        border-radius: 22px 22px 0 0 !important;
+        box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.5) !important;
         transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
         z-index: 1000020 !important;
         display: none;
@@ -657,14 +664,12 @@
       loadBtn.style.display = 'none';
       delBtn.style.display = 'flex';
       if (row) {
-        row.style.borderColor = 'rgba(244,63,94,0.45)';
         row.dataset.deleteMode = 'true';
       }
     } else {
       delBtn.style.display = 'none';
       loadBtn.style.display = 'flex';
       if (row) {
-        row.style.borderColor = 'rgba(255,255,255,0.09)';
         row.dataset.deleteMode = 'false';
       }
     }
@@ -719,9 +724,9 @@
     if (listContainer) {
       if (presets.length === 0) {
         listContainer.innerHTML = `
-          <div style="text-align:center; padding:35px 0; color:#64748b; font-size:0.75rem; line-height:1.5;">
-            저장된 내 장비 세트가 없습니다.<br>
-            현재 배낭에 담긴 장비들을 새 세트로 저장해보세요!
+          <div class="pk-shelf-empty" style="padding:32px 0;">
+            저장된 장비 세트가 없어요.<br>
+            지금 배낭에 담긴 장비를 세트로 저장해 보세요.
           </div>
         `;
       } else {
@@ -739,26 +744,22 @@
                  onmouseup="window.cancelPresetLongPress(event)"
                  onmouseleave="window.cancelPresetLongPress(event)"
                  oncontextmenu="event.preventDefault(); window.openPresetActionModal(this.dataset.presetId); return false;"
-                 style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:pan-y; transition:border-color 0.15s ease;">
-              <div style="min-width:0; flex:1; padding-right:10px;">
-                <div style="font-size:0.82rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                  ${escapeHtml(p.name)}
-                </div>
-                <div style="font-size:0.62rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:2px;">
-                  장비 ${p.itemCount || 0}개 · ${p.totalKg || '0.00'}kg
-                </div>
+                 class="ps-row">
+              <div style="min-width:0; flex:1;">
+                <b>${escapeHtml(p.name)}</b>
+                <div class="pk-meta" style="margin-top:2px;">장비 ${p.itemCount || 0}개 · ${p.totalKg || '0.00'}kg</div>
               </div>
               <div style="display:flex; align-items:center; flex-shrink:0; min-width:52px; justify-content:flex-end;">
                 <button type="button"
                         id="presetLoadBtn_${p.id}"
                         data-preset-id="${escapeHtml(p.id)}" onclick="event.stopPropagation(); window.loadGearPreset(this.dataset.presetId); window.closeQuickPresetPicker();"
-                        style="font-size:0.68rem; font-weight:800; color:#000000; background:#e2e8f0; border:none; padding:5px 12px; border-radius:5px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                        class="ps-btn" style="display:flex;">
                   장착
                 </button>
                 <button type="button"
                         id="presetDelBtn_${p.id}"
                         data-preset-id="${escapeHtml(p.id)}" onclick="event.stopPropagation(); window.deleteGearPreset(this.dataset.presetId);"
-                        style="display:none; font-size:0.68rem; font-weight:800; color:#fda4af; background:rgba(244,63,94,0.18); border:1px solid rgba(244,63,94,0.35); padding:5px 12px; border-radius:5px; cursor:pointer; align-items:center; justify-content:center;">
+                        class="ps-btn is-del" style="display:none;">
                   삭제
                 </button>
               </div>
@@ -2260,44 +2261,43 @@ window.openQuickGearRegisterModal = function(opts) {
 
     var modal = document.createElement('div');
     modal.id = 'quickGearDetailModal';
-    modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:rgba(0,0,0,0.75); z-index:1000030; display:flex; align-items:flex-end; justify-content:center; box-sizing:border-box;';
+    modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:rgba(0,0,0,0.45); z-index:1000030; display:flex; align-items:flex-end; justify-content:center; box-sizing:border-box;';
     modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
 
     modal.innerHTML = `
-      <div style="width:100%; max-width:480px; max-height:100%; overflow-y:auto; background:#07090e; border-top:1.5px solid rgba(255,255,255,0.14); border-radius:16px 16px 0 0; padding:14px 16px 18px 16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.95); animation:slideUpSheet 0.22s ease-out;">
-        <div style="width:36px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:0 auto 4px auto;"></div>
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
-          <span style="font-size:0.88rem; font-weight:800; color:#f8fafc; letter-spacing:-0.02em;">새 장비 등록</span>
-          <button type="button" onclick="document.getElementById('quickGearDetailModal').remove();" style="background:none; border:none; color:#64748b; font-size:1.1rem; cursor:pointer; padding:2px 6px;">✕</button>
+      <div class="gme-panel">
+        <div class="gme-grab"></div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="flex:1; font-size:18px; font-weight:900;">새 장비 등록</div>
+          <button type="button" class="gdm-x" onclick="document.getElementById('quickGearDetailModal').remove();" aria-label="닫기">✕</button>
         </div>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <input type="text" id="regGearName" placeholder="장비명 (예: MSR 엘릭서 2)" value="${escapeHtml(initName)}" oninput="window.previewQuickGearCategory(this.value)" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#ffffff; font-size:0.82rem; padding:0 12px; outline:none; box-sizing:border-box;" />
-          <div style="position:relative; width:100%;">
-            <select id="regGearCat" onchange="window.previewQuickGearCategory(document.getElementById('regGearName') ? document.getElementById('regGearName').value : '')" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#f1f5f9; font-size:0.80rem; font-weight:700; padding:0 30px 0 12px; outline:none; -webkit-appearance:none; appearance:none; box-sizing:border-box;">
-              ${planGearCategoryOptionsHtml('', true)}
-            </select>
-            <div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none; color:#64748b; font-size:0.65rem;">▼</div>
-          </div>
-          <div id="regGearCatHint" style="font-size:0.62rem; color:#94a3b8; min-height:14px; margin-top:-2px;"></div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; box-sizing:border-box;">
-            <input type="number" id="regGearWeight" placeholder="무게(g)" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#ffffff; font-size:0.82rem; padding:0 12px; outline:none; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
-            <input type="text" id="regGearBrand" placeholder="브랜드(선택)" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#ffffff; font-size:0.82rem; padding:0 12px; outline:none; box-sizing:border-box;" />
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; box-sizing:border-box;">
-            <div onclick="window.openRomanticDatePickerModal('regGearPurchaseDate')" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; display:flex; align-items:center; justify-content:space-between; padding:0 10px; box-sizing:border-box; cursor:pointer;">
-              <span style="font-size:0.75rem; color:#94a3b8; font-weight:800; flex-shrink:0;">구매일</span>
-              <input type="text" id="regGearPurchaseDate" placeholder="선택" readonly style="width:100%; min-width:0; height:100%; background:none; border:none; color:#cbd5e1; font-size:0.76rem; text-align:right; outline:none; font-family:'JetBrains Mono', monospace; padding:0; pointer-events:none;" />
+        <span class="gme-lbl">장비 이름</span>
+        <input type="text" id="regGearName" class="gme-in" placeholder="예: MSR 엘릭서 2" value="${escapeHtml(initName)}" oninput="window.previewQuickGearCategory(this.value)" />
+        <span class="gme-lbl">분류</span>
+        <select id="regGearCat" class="gme-in gme-sel" onchange="window.previewQuickGearCategory(document.getElementById('regGearName') ? document.getElementById('regGearName').value : '')">
+          ${planGearCategoryOptionsHtml('', true)}
+        </select>
+        <div id="regGearCatHint" class="pk-g" style="min-height:16px; margin-top:6px; font-weight:600;"></div>
+        <div class="gme-grid">
+          <div><span class="gme-lbl">무게 (g)</span><input type="number" id="regGearWeight" class="gme-in" placeholder="0" /></div>
+          <div><span class="gme-lbl">브랜드</span><input type="text" id="regGearBrand" class="gme-in" placeholder="선택" /></div>
+        </div>
+        <div class="gme-grid">
+          <div>
+            <span class="gme-lbl">구매일</span>
+            <div onclick="window.openRomanticDatePickerModal('regGearPurchaseDate')" style="cursor:pointer;">
+              <input type="text" id="regGearPurchaseDate" class="gme-in" placeholder="날짜 선택" readonly style="pointer-events:none;" />
             </div>
-            <input type="text" id="regGearPrice" inputmode="numeric" placeholder="구매가(원)" oninput="window.formatDirectInputPrice(this)" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fbbf24; font-size:0.80rem; font-weight:700; padding:0 12px; outline:none; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
           </div>
-          <label style="display:flex; align-items:center; gap:8px; padding:4px 2px; cursor:pointer; user-select:none; -webkit-user-select:none;">
-            <input type="checkbox" id="chkRegAddToPack" ${defaultAddToPack ? 'checked' : ''} style="width:16px; height:16px; accent-color:#38bdf8; cursor:pointer;" />
-            <span style="font-size:0.75rem; font-weight:800; color:#cbd5e1;">등록 즉시 현재 배낭에도 담기</span>
-          </label>
+          <div><span class="gme-lbl">구매가</span><input type="text" id="regGearPrice" class="gme-in" inputmode="numeric" placeholder="₩ 금액" oninput="window.formatDirectInputPrice(this)" /></div>
         </div>
-        <div style="display:flex; gap:8px; margin-top:2px;">
-          <button type="button" onclick="document.getElementById('quickGearDetailModal').remove();" style="flex:1; height:42px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:#94a3b8; font-size:0.78rem; font-weight:800; cursor:pointer;">취소</button>
-          <button type="button" onclick="window.submitQuickGearRegister();" style="flex:2; height:42px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.22); border-radius:8px; color:#ffffff; font-size:0.82rem; font-weight:800; cursor:pointer;">등록 완료</button>
+        <label style="display:flex; align-items:center; gap:10px; margin-top:14px; cursor:pointer; user-select:none; -webkit-user-select:none;">
+          <input type="checkbox" id="chkRegAddToPack" ${defaultAddToPack ? 'checked' : ''} style="width:20px; height:20px; accent-color:#5bb8f0; cursor:pointer; margin:0;" />
+          <span style="font-size:14px; font-weight:700; color:var(--tx-2, #d1d1d6);">등록하면서 지금 배낭에도 담기</span>
+        </label>
+        <div style="display:flex; gap:8px; margin-top:16px;">
+          <button type="button" class="pk-dock-sub" onclick="document.getElementById('quickGearDetailModal').remove();">취소</button>
+          <button type="button" class="pk-dock-save" onclick="window.submitQuickGearRegister();">등록 완료</button>
         </div>
       </div>
     `;
@@ -4466,7 +4466,7 @@ window.saveCurrentPackingRecord = function() {
 
         <!-- 4. 음식·간식 바로 추가 -->
         <div class="ck-add">
-          <input type="text" id="inputChecklistFoodName" placeholder="음식·간식 추가 (예: 전투식량)" onkeydown="if(event.key==='Enter') window.addChecklistConsumableItem();" style="flex:1; min-width:0;" />
+          <input type="text" id="inputChecklistFoodName" placeholder="음식·음료 추가" onkeydown="if(event.key==='Enter') window.addChecklistConsumableItem();" style="flex:1; min-width:0;" />
           <input type="number" id="inputChecklistFoodWeight" placeholder="g" onkeydown="if(event.key==='Enter') window.addChecklistConsumableItem();" style="width:64px;" />
           <button type="button" class="pk-dock-sub" style="height:44px;" onclick="window.addChecklistConsumableItem();">추가</button>
         </div>
@@ -4723,20 +4723,17 @@ window.saveCurrentPackingRecord = function() {
         </div>
 
         <!-- 7. 내 장비 세트 인라인 슬라이드 시트 -->
-        <div id="calcPresetBackdrop" onclick="window.closeQuickPresetPicker();" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000018;"></div>
+        <div id="calcPresetBackdrop" onclick="window.closeQuickPresetPicker();" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000018;"></div>
         <div id="calcPresetSlideSheet" class="calc-slide-sheet">
-          <div style="padding:12px 14px 8px 14px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-            <div style="display:flex; align-items:center; gap:5px; font-size:0.85rem; font-weight:800; color:#f1f5f9;">
-              ${PLAN_SVG.presetStack}
-              <span>내 장비 세트 선택</span>
-            </div>
-            <button type="button" onclick="window.closeQuickPresetPicker();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+          <div class="gme-grab" style="margin:10px auto 2px;"></div>
+          <div class="ps-head">
+            <b>내 장비 세트</b>
+            <span class="pk-g">눌러서 배낭에 담기</span>
+            <button type="button" class="gdm-x" onclick="window.closeQuickPresetPicker();" aria-label="닫기">✕</button>
           </div>
-          <div id="calcPresetSheetList" style="flex:1; overflow-y:auto; padding:10px 14px; display:flex; flex-direction:column; gap:6px;"></div>
-          <div style="padding:8px 14px 12px 14px; border-top:1px solid rgba(255,255,255,0.08); flex-shrink:0;">
-            <button type="button" onclick="window.closeQuickPresetPicker(); window.saveCurrentGearsAsPreset();" style="width:100%; height:38px; background:rgba(255,255,255,0.05); border:1px dashed rgba(255,255,255,0.2); color:#cbd5e1; font-size:0.75rem; font-weight:800; border-radius:8px; cursor:pointer;">
-              + 현재 배낭을 새 세트로 저장
-            </button>
+          <div id="calcPresetSheetList" style="flex:1; overflow-y:auto; padding:0 18px; display:flex; flex-direction:column;"></div>
+          <div style="padding:12px 18px 14px; flex-shrink:0;">
+            <button type="button" class="pk-dock-save" onclick="window.closeQuickPresetPicker(); window.saveCurrentGearsAsPreset();" style="width:100%; flex:none;">현재 배낭을 새 세트로 저장</button>
           </div>
         </div>
 
@@ -4789,7 +4786,7 @@ window.saveCurrentPackingRecord = function() {
         <div style="flex:1 1 0% !important; min-height:0 !important; display:flex; flex-direction:column; gap:8px; overflow:hidden; box-sizing:border-box;">
           <div style="padding:4px 2px 0; display:flex; align-items:baseline; gap:6px; flex-shrink:0;">
             <span style="color:#fbbf24; font-size:15px;">★</span>
-            <b style="font-size:17px; font-weight:900; color:var(--tx-1, #f2f2f3);">가보고 싶은 곳</b>
+            <b style="font-size:17px; font-weight:900; color:var(--tx-1, #f2f2f3);">찜 목록</b>
             <span class="pk-g">${bookmarkedSpots.length}곳</span>
           </div>
 
