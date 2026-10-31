@@ -5521,15 +5521,24 @@ var PAMPHLET_DRAW = {
     pmText(c, mid, 540, 752, pmFont(500, 20, PM_MONO), ink, 'center', 4.4);
     // 재료 문단: 'INGREDIENTS' 뒤로 장비를 쉼표로 잇고, 줄이 넘치면 마지막을 '외 N개'로
     var f = pmFont(700, 25, "'Nanum Myeongjo',serif"), maxW = 660, lh = 44, maxLines = 7;
-    var tokens = d.items.map(function(it) { return pmName(it) + ' ' + pmG(it[1]); });
     var lines = [], cur = '', x0 = 210, firstIndent = 0;
     c.font = pmFont(500, 20, PM_MONO); firstIndent = pmMeasure(c, 'INGREDIENTS', 4.4) + 18;
     c.font = f;
+    // 장비 하나가 한 줄보다 길면 줄을 못 바꾸고 카드 밖으로 나가므로, 이름을 줄 폭에 맞춰 '…'로 자른다
+    var fitToken = function(it, tail, w) {
+      var name = pmName(it), tw = pmMeasure(c, tail);
+      if (pmMeasure(c, name + tail) > w) name = pmFit(c, name, f, w - tw);
+      c.font = f;
+      return name + tail;
+    };
+    var tokens = d.items.map(function(it) { return fitToken(it, ' ' + pmG(it[1]), maxW - 30); });
     var used = 0;
     for (var k = 0; k < tokens.length; k++) {
-      var t = tokens[k] + (k < tokens.length - 1 ? ', ' : '.');
+      var sep = k < tokens.length - 1 ? ', ' : '.';
+      var t = tokens[k] + sep;
       var limit = maxW - (lines.length === 0 ? firstIndent : 0);
-      if (pmMeasure(c, cur + t) > limit && cur) { lines.push(cur); cur = ''; if (lines.length === maxLines) break; }
+      if (pmMeasure(c, cur + t) > limit && cur) { lines.push(cur); cur = ''; if (lines.length === maxLines) break; limit = maxW; }
+      if (!cur && pmMeasure(c, t) > limit) t = fitToken(d.items[k], ' ' + pmG(d.items[k][1]) + sep, limit);
       cur += t; used = k + 1;
     }
     if (cur && lines.length < maxLines) lines.push(cur);
@@ -5539,6 +5548,11 @@ var PAMPHLET_DRAW = {
       var suffix = function() { return ' 외 ' + (tokens.length - used) + '개'; };
       while (parts.length > 1 && pmMeasure(c, parts.join(', ') + suffix()) > maxW - (lastIdx === 0 ? firstIndent : 0)) { parts.pop(); used--; }
       lines[lastIdx] = parts.join(', ').replace(/[,.\s]+$/, '') + suffix();
+      var lastW = maxW - (lastIdx === 0 ? firstIndent : 0);
+      if (pmMeasure(c, lines[lastIdx]) > lastW) {
+        lines[lastIdx] = pmFit(c, lines[lastIdx].slice(0, -suffix().length), f, lastW - pmMeasure(c, suffix())) + suffix();
+        c.font = f;
+      }
     }
     pmText(c, 'INGREDIENTS', x0, 828, pmFont(500, 20, PM_MONO), ink, 'left', 4.4);
     lines.forEach(function(ln, i) { pmText(c, ln.trim(), x0 + (i === 0 ? firstIndent : 0), 830 + i * lh, f, ink); });
