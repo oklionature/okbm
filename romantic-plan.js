@@ -16,54 +16,55 @@
     style.id = 'romantic-plan-core-style';
     style.innerHTML = `
       /* 배낭 꾸리기(계산기) 화면: 플랜 일정 창과 같은 둥근 카드 · 중립 회색. 하늘색은 '패킹 저장하기' 하나에만 (tokens.css 색) */
-      .pk-head { flex:0 0 auto; display:flex; flex-direction:column; gap:10px; padding:2px 0 4px; position:relative; z-index:20; }
+      .pk-head { flex:0 0 auto; display:flex; flex-direction:column; gap:8px; padding:2px 0 4px; position:relative; z-index:20; }
       .pk-trip { display:flex; align-items:center; gap:8px; min-height:36px; }
       .pk-trip-spot { flex:1; min-width:0; display:flex; align-items:baseline; gap:8px; background:none; border:none; padding:4px 0; color:var(--tx-1, #f2f2f3); cursor:pointer; text-align:left; font-family:inherit; }
       .pk-trip-date { flex-shrink:0; font-size:13px; font-weight:800; color:var(--tx-2, #d1d1d6); font-variant-numeric:tabular-nums; }
       .pk-trip-name { min-width:0; font-size:17px; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
       .pk-trip-elev { flex-shrink:0; font-size:12px; font-weight:700; color:var(--tx-3, #8b8b93); }
       .pk-trip-list { flex-shrink:0; height:32px; padding:0 12px; border-radius:999px; background:var(--bg-2, #17171b); border:none; color:var(--tx-2, #d1d1d6); font-size:12px; font-weight:800; cursor:pointer; font-family:inherit; }
-      .pk-card { background:#1a1c22; border-radius:18px; padding:14px 16px 12px; }
+      .pk-card { background:#1a1c22; border-radius:18px; padding:12px 16px 10px; }
       .pk-wrow { display:flex; align-items:baseline; gap:8px; }
-      .pk-kg b { font-size:34px; font-weight:900; letter-spacing:-0.03em; line-height:1; color:var(--tx-1, #f2f2f3); font-variant-numeric:tabular-nums; }
-      .pk-kg i { font-style:normal; font-size:16px; font-weight:800; margin-left:3px; color:var(--tx-2, #d1d1d6); }
+      .pk-kg b { font-size:30px; font-weight:900; letter-spacing:-0.03em; line-height:1; color:var(--tx-1, #f2f2f3); font-variant-numeric:tabular-nums; }
+      .pk-kg i { font-style:normal; font-size:15px; font-weight:800; margin-left:3px; color:var(--tx-2, #d1d1d6); }
       .pk-g { font-size:12px; color:var(--tx-3, #8b8b93); font-weight:700; font-variant-numeric:tabular-nums; }
       .pk-cls { margin-left:auto; align-self:center; font-size:12px; font-weight:800; padding:5px 10px; border-radius:999px; color:#34d399; background:rgba(52,211,153,0.12); white-space:nowrap; }
-      .pk-gauge { height:6px; border-radius:9px; background:var(--bg-3, #2a2a30); margin:12px 0 4px; overflow:hidden; }
+      .pk-gauge { height:5px; border-radius:9px; background:var(--bg-3, #2a2a30); margin:10px 0 3px; overflow:hidden; }
       .pk-gauge i { display:block; height:100%; width:0; border-radius:9px; background:#34d399; transition:width .25s ease, background-color .2s ease; }
       .pk-marks { position:relative; height:14px; font-size:11px; color:var(--tx-3, #8b8b93); font-variant-numeric:tabular-nums; }
       .pk-marks span { position:absolute; top:0; }
       .pk-marks span:first-child { left:0; }
       .pk-marks span:last-child { right:0; }
       .pk-mark-ul { left:42.8%; transform:translateX(-50%); }
-      .pk-recent { margin-top:10px; padding-top:10px; border-top:1px solid var(--line, rgba(255,255,255,0.08)); display:flex; align-items:center; gap:6px; min-height:30px; cursor:pointer; }
+      .pk-recent { margin-top:8px; padding-top:8px; border-top:1px solid var(--line, rgba(255,255,255,0.08)); display:flex; align-items:center; gap:6px; min-height:30px; cursor:pointer; }
       .pk-recent-label { flex-shrink:0; font-size:12px; font-weight:800; color:var(--tx-3, #8b8b93); margin-right:2px; }
-      .pk-pill { min-width:0; max-width:120px; font-size:12px; font-weight:700; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); padding:6px 10px; border-radius:999px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .pk-pill { min-width:0; max-width:120px; font-size:12px; font-weight:700; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); padding:5px 10px; border-radius:999px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
       .pk-pill.is-new { color:#ffffff; }
       .pk-recent-all { margin-left:auto; flex-shrink:0; font-size:12px; font-weight:800; color:var(--tx-2, #d1d1d6); }
       .pk-recent-empty { font-size:12px; color:var(--tx-3, #8b8b93); font-weight:600; }
-      .pk-search-row { display:flex; gap:8px; }
-      .pk-search { flex:1; min-width:0; height:42px; border-radius:12px; background:var(--bg-2, #17171b); display:flex; align-items:center; gap:8px; padding:0 12px; color:var(--tx-3, #8b8b93); box-sizing:border-box; }
+      .pk-search-row { display:flex; gap:6px; align-items:center; }
+      .pk-fav { height:38px; flex-shrink:0; }
+      .pk-search { flex:1; min-width:0; height:38px; border-radius:999px; background:var(--bg-2, #17171b); display:flex; align-items:center; gap:8px; padding:0 12px; color:var(--tx-3, #8b8b93); box-sizing:border-box; }
       .pk-search input { flex:1; min-width:0; height:100%; background:none; border:none; outline:none; color:var(--tx-1, #f2f2f3); font-size:14px; font-family:inherit; padding:0; }
       .pk-search input::placeholder { color:var(--tx-3, #8b8b93); }
       .pk-search button { flex-shrink:0; width:22px; height:22px; border-radius:50%; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-2, #d1d1d6); font-size:11px; cursor:pointer; align-items:center; justify-content:center; padding:0; }
-      .pk-add { flex-shrink:0; width:42px; height:42px; border-radius:12px; border:none; background:var(--bg-2, #17171b); color:var(--tx-2, #d1d1d6); font-size:22px; font-weight:500; cursor:pointer; line-height:1; }
+      .pk-add { flex-shrink:0; width:38px; height:38px; border-radius:50%; border:none; background:var(--bg-2, #17171b); color:var(--tx-2, #d1d1d6); font-size:22px; font-weight:500; cursor:pointer; line-height:1; }
       .pk-chips { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; }
       .pk-chips::-webkit-scrollbar { display:none; }
       .pk-chip { flex:0 0 auto; height:34px; padding:0 14px; border-radius:999px; border:none; background:var(--bg-2, #17171b); color:var(--tx-2, #d1d1d6); font-size:13px; font-weight:800; white-space:nowrap; cursor:pointer; font-family:inherit; }
       .pk-chip.is-on { background:#ffffff; color:#000000; }
       .pk-shelf { flex:1 1 0%; min-height:0; overflow-y:auto; display:flex; flex-direction:column; margin-top:2px; }
-      .pk-shelf-sub { display:flex; justify-content:space-between; align-items:center; padding:8px 2px 4px; font-size:12px; font-weight:700; color:var(--tx-3, #8b8b93); }
+      .pk-shelf-sub { display:flex; justify-content:space-between; align-items:center; padding:6px 2px 2px; font-size:12px; font-weight:700; color:var(--tx-3, #8b8b93); }
       .pk-shelf-empty { text-align:center; padding:48px 16px; color:var(--tx-3, #8b8b93); font-size:13px; line-height:1.6; }
       .pk-shelf-empty button { margin-top:14px; height:40px; padding:0 18px; border-radius:12px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; }
       .pk-meta { font-size:12px; color:var(--tx-3, #8b8b93); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-variant-numeric:tabular-nums; }
-      .pk-plus { width:34px; height:34px; border-radius:50%; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); font-size:20px; line-height:1; cursor:pointer; padding:0; }
-      .pk-step { display:flex; align-items:center; height:34px; border-radius:999px; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); }
-      .pk-step button { width:32px; height:34px; border:none; background:none; color:var(--tx-1, #f2f2f3); font-size:18px; font-weight:900; cursor:pointer; padding:0; }
+      .pk-plus { width:32px; height:32px; border-radius:50%; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); font-size:20px; line-height:1; cursor:pointer; padding:0; }
+      .pk-step { display:flex; align-items:center; height:32px; border-radius:999px; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); }
+      .pk-step button { width:30px; height:32px; border:none; background:none; color:var(--tx-1, #f2f2f3); font-size:18px; font-weight:900; cursor:pointer; padding:0; }
       .pk-step span { min-width:14px; text-align:center; font-size:14px; font-weight:900; font-variant-numeric:tabular-nums; }
       .pk-dock { flex-shrink:0; display:flex; gap:8px; padding:10px 0 4px; border-top:1px solid var(--line, rgba(255,255,255,0.08)); background:#000000; }
-      .pk-dock-sub { flex-shrink:0; height:48px; padding:0 14px; border-radius:14px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; font-family:inherit; }
-      .pk-dock-save { flex:1; min-width:0; height:48px; border-radius:14px; border:none; background:#5bb8f0; color:#00131f; font-size:15px; font-weight:900; cursor:pointer; white-space:nowrap; font-family:inherit; }
+      .pk-dock-sub { flex-shrink:0; height:46px; padding:0 14px; border-radius:14px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; font-family:inherit; }
+      .pk-dock-save { flex:1; min-width:0; height:46px; border-radius:14px; border:none; background:#5bb8f0; color:#00131f; font-size:15px; font-weight:900; cursor:pointer; white-space:nowrap; font-family:inherit; }
       /* 장비 상세 창: 가운데 카드, 뒤는 흐리고 어둡게 */
       .gdm-card { background:#1a1c22; border-radius:22px; width:100%; max-width:400px; padding:18px; box-sizing:border-box; display:flex; flex-direction:column; gap:12px; position:relative; max-height:88vh; overflow-y:auto; box-shadow:0 20px 50px rgba(0,0,0,0.5); color:var(--tx-1, #f2f2f3); }
       .gdm-top { display:flex; align-items:center; gap:6px; }
@@ -175,7 +176,7 @@
       .ck-add input { height:44px; border-radius:12px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:14px; padding:0 12px; outline:none; font-family:inherit; box-sizing:border-box; }
       .ck-add input::placeholder { color:var(--tx-3, #8b8b93); }
       .gear-shelf-item-row {
-        padding:10px 2px !important;
+        padding:8px 2px !important;
         display:flex !important;
         justify-content:space-between !important;
         align-items:center !important;
@@ -1274,8 +1275,9 @@
 
     if (tabsContainer) {
       var activeTab = window.__activeCalcCategoryTab;
+      var favChip = document.getElementById('calcFavChip');
+      if (favChip) favChip.classList.toggle('is-on', activeTab === 'fav');
       var catList = [
-        { id: 'fav', title: '★ 즐겨찾기' },
         { id: 'all', title: '전체' },
         { id: 'shelter', title: '텐트·타프' },
         { id: 'sleep', title: '침낭·매트' },
@@ -4689,6 +4691,7 @@ window.saveCurrentPackingRecord = function() {
           </div>
 
           <div class="pk-search-row">
+            <button type="button" id="calcFavChip" class="pk-chip pk-fav${window.__activeCalcCategoryTab === 'fav' ? ' is-on' : ''}" onclick="window.setCalcCategoryTab('fav')">★ 즐겨찾기</button>
             <label class="pk-search">
               ${PLAN_SVG.search}
               <input type="text" id="calcShelfSearchInput" placeholder="장비 이름이나 브랜드" oninput="window.handleCalcShelfSearch(this.value)" />
