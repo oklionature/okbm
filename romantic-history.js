@@ -7935,6 +7935,88 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
  window.updateCarouselDots = window.updateCarouselFeedState;
 
+  // 피드 사진 두 손가락 확대(인스타처럼): 벌리면 사진이 화면 위로 떠서 손가락을 따라 커지고, 손을 떼면 제자리로 돌아간다.
+  // 아래 탭 줄(z 최대)도 덮도록 같은 층에 나중에 붙인다. 한 번 누르기(카드 뒤집기)와 겹치지 않게 두 손가락일 때만 잡고, 끝난 뒤 따라오는 누름은 버린다.
+  (function okbmBootFeedPinchZoom() {
+    if (window.__okbmFeedPinchBooted) return;
+    window.__okbmFeedPinchBooted = true;
+    var pinch = null; // { img, clone, shade, d0, mx0, my0 }
+    var dropClickUntil = 0;
+
+    function gap(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY); }
+    function mid(t) { return { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 }; }
+
+    function currentSlideImg(track) {
+      var w = track.clientWidth;
+      if (!w) return null;
+      var slide = track.children[Math.round(track.scrollLeft / w)];
+      return slide ? slide.querySelector('img.reel-photo-target') : null;
+    }
+
+    function begin(img, touches) {
+      var r = img.getBoundingClientRect();
+      if (!r.width || !r.height) return false;
+      var m = mid(touches);
+      var shade = document.createElement('div');
+      shade.style.cssText = 'position:fixed; inset:0; z-index:2147483647; background:#000000; opacity:0; pointer-events:none;';
+      var clone = document.createElement('img');
+      clone.src = img.currentSrc || img.src;
+      clone.alt = '';
+      clone.style.cssText = 'position:fixed; left:' + r.left + 'px; top:' + r.top + 'px; width:' + r.width + 'px; height:' + r.height + 'px; max-width:none; max-height:none; margin:0; object-fit:' + (getComputedStyle(img).objectFit || 'contain') + '; z-index:2147483647; pointer-events:none; transform-origin:' + (m.x - r.left) + 'px ' + (m.y - r.top) + 'px; will-change:transform;';
+      document.body.appendChild(shade);
+      document.body.appendChild(clone);
+      img.style.visibility = 'hidden';
+      pinch = { img: img, clone: clone, shade: shade, d0: gap(touches) || 1, mx0: m.x, my0: m.y };
+      return true;
+    }
+
+    function move(touches) {
+      var s = Math.max(1, Math.min(4, gap(touches) / pinch.d0));
+      var m = mid(touches);
+      pinch.clone.style.transform = 'translate(' + (m.x - pinch.mx0) + 'px,' + (m.y - pinch.my0) + 'px) scale(' + s + ')';
+      pinch.shade.style.opacity = String(Math.min(0.85, (s - 1) * 0.9));
+    }
+
+    function finish() {
+      var p = pinch;
+      pinch = null;
+      dropClickUntil = Date.now() + 450;
+      p.clone.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)';
+      p.shade.style.transition = 'opacity 0.22s ease';
+      p.clone.style.transform = 'none';
+      p.shade.style.opacity = '0';
+      setTimeout(function() {
+        p.img.style.visibility = '';
+        if (p.clone.parentNode) p.clone.parentNode.removeChild(p.clone);
+        if (p.shade.parentNode) p.shade.parentNode.removeChild(p.shade);
+      }, 240);
+    }
+
+    document.addEventListener('touchstart', function(e) {
+      if (pinch || e.touches.length !== 2) return;
+      var track = e.target && e.target.closest ? e.target.closest('.reel-horizontal-track') : null;
+      var img = track && currentSlideImg(track);
+      if (!img || !begin(img, e.touches)) return;
+      if (e.cancelable) e.preventDefault();
+    }, { passive: false, capture: true });
+
+    document.addEventListener('touchmove', function(e) {
+      if (!pinch) return;
+      if (e.cancelable) e.preventDefault();
+      if (e.touches.length >= 2) move(e.touches);
+    }, { passive: false, capture: true });
+
+    function onTouchEnd(e) {
+      if (pinch && e.touches.length < 2) finish();
+    }
+    document.addEventListener('touchend', onTouchEnd, true);
+    document.addEventListener('touchcancel', onTouchEnd, true);
+
+    document.addEventListener('click', function(e) {
+      if (Date.now() < dropClickUntil) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+  })();
+
   function okbmFeedSpotPillLabel(name, spotId) {
     var sid = String(spotId || '').trim();
     if (sid) {
