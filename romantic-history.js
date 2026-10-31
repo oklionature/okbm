@@ -503,6 +503,14 @@
         border-bottom: none !important;
         pointer-events: none !important;
       }
+      /* 사진 장수 알약(+ 버튼 왼쪽)이 있으면 글쓴이·장소 줄이 그 앞에서 끊기게 */
+      .reel-page-snap:has(> .okbm-feed-photo-count) > .reel-header-row > div:first-child {
+        margin-right: 94px !important;
+      }
+      /* 장소 이름 말줄임(feed-extras.js 100vw-130px)도 알약 앞에서: 글쓴이 사진 60px + 알약·+ 108px + 여백 12px */
+      #romanticHistoryModal .reel-page-snap:has(> .okbm-feed-photo-count) .js-feed-spot-map {
+        max-width: calc(100vw - 180px) !important;
+      }
       .history-tab-route .reel-page-snap > .reel-header-row button,
       .history-tab-route .reel-page-snap > .reel-header-row a {
         pointer-events: auto !important;
@@ -7879,6 +7887,10 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     if (container._okbmSlideIdx === curIdx) return;
     container._okbmSlideIdx = curIdx;
 
+    var countEl = document.getElementById('photoCount_' + cardId);
+    var countCur = countEl && countEl.querySelector('.okbm-photo-count-cur');
+    if (countCur) countCur.textContent = String(curIdx + 1);
+
     var wrap = document.getElementById('dotsWrap_' + cardId);
     if (wrap) {
       var dots = wrap.children;
@@ -8056,6 +8068,15 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     '</div>';
   }
 
+  // 사진이 두 장 넘으면 오른쪽 위 + 버튼(feed-extras.js, 36px·right 14px) 왼쪽에 '1/3' 알약. 넘기면 updateCarouselFeedState가 숫자를 바꾼다
+  function okbmFeedPhotoCountHtml(cardId, total) {
+    if (!(total > 1)) return '';
+    return '<div id="photoCount_' + cardId + '" class="okbm-feed-photo-count" aria-label="사진 ' + total + '장" style="position:absolute; top:calc(var(--okbm-status-top) + 14px); right:58px; z-index:401; pointer-events:none; display:inline-flex; align-items:center; gap:4px; height:20px; padding:0 7px; border-radius:10px; background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.22); color:#ffffff; font-size:0.66rem; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; letter-spacing:0.02em;">' +
+      '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="7" width="14" height="14" rx="2.5"/><path d="M3 15V5.5A2.5 2.5 0 0 1 5.5 3H15"/></svg>' +
+      '<span class="okbm-photo-count-cur">1</span><span style="color:rgba(255,255,255,0.6); font-weight:700;">/' + total + '</span>' +
+    '</div>';
+  }
+
   function okbmBuildReelPhotoFrontHtml(cardId, mediaItems, spotName, recordId) {
     var totalPhotosCount = Array.isArray(mediaItems) ? mediaItems.length : 0;
     var cardPureId = String(recordId || cardId || '').trim();
@@ -8131,6 +8152,13 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         }
       }
       front.innerHTML = okbmBuildReelPhotoFrontHtml(cardIdEsc, nextSrcs, rec.spot || '나의 힐링 스팟', cleanCardId);
+      var oldCount = card.querySelector('.okbm-feed-photo-count');
+      if (oldCount && oldCount.parentNode) oldCount.parentNode.removeChild(oldCount);
+      var countHtml = okbmFeedPhotoCountHtml(cardIdEsc, nextSrcs.length);
+      if (countHtml) {
+        var headRow = card.querySelector('.reel-header-row');
+        if (headRow) headRow.insertAdjacentHTML('afterend', countHtml);
+      }
       front.querySelectorAll('.reel-photo-target').forEach(function(img) {
         if (typeof window.applySmartPhotoFit === 'function') window.applySmartPhotoFit(img);
       });
@@ -8584,6 +8612,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var oldPickAttr = (window.__okbmOldPickIds && window.__okbmOldPickIds.has(String(record.id || ''))) ? ' data-old-pick="1"' : '';
     return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap"' + oldPickAttr + ' data-reel-idx="' + idx + '" data-feed-id="' + cardId + '" data-ready-shot-sig="' + escapeHtml(okbmReadyShotCardSig(record)) + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '">' +
       headerBarHtml +
+      okbmFeedPhotoCountHtml(cardId, totalPhotosCount) +
       (isPlogged ? '<div class="okbm-plog-frame" aria-hidden="true"></div>' : '') +
 
       '<div class="reel-media-stage">' +
