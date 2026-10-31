@@ -4066,6 +4066,13 @@
   window.closeLoungeWindow = closeLoungeWindow;
   window.closeLoungeSheet = function () { closeSheet(); };
   // 지도 정보창 후기 블록(romantic-sync.js)에서 부른다. 두 페이지 부트로더에 bindLazy로 걸려 있다
+  // 소식·매거진 한 건 바로 열기 (지도 첫 알림창 버튼). 아직 안 받았으면 받고 연다
+  window.openLoungeNews = function (id) {
+    ensureLayer();
+    const go = function () { openNews(id); };
+    if (D.news.some(function (x) { return String(x.id) === String(id); })) go();
+    else loadAll().then(go).catch(function (err) { console.warn('[lounge.js:openLoungeNews]', err); });
+  };
   window.openLoungeSpotReviews = function (spotId) { ensureLayer(); if (D.status === 'idle') loadAll(); showSpotReviews(spotId); };
   window.openSpotReviewSheet = function (spotId) {
     if (typeof window.okbmOpenSpotReviewSheet === 'function') return window.okbmOpenSpotReviewSheet(spotId);

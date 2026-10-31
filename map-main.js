@@ -8655,7 +8655,21 @@ var overlay = document.getElementById('customModalOverlay');
         if (closeBtn) closeBtn.addEventListener('click', closeNotice);
 
         // 공지 아래 버튼: data-notice-action="photomap"이면 닫고 사진 지도를 연다(지도가 아직 준비 전이면 잠깐 기다린다)
+        //   "news"면 닫고 라운지 소식·매거진(data-notice-news = lounge_news id)을 연다. 버튼 글자는 data-notice-label
         var actBtn = document.getElementById('okbmNoticeAction');
+        var actLabel = root.getAttribute('data-notice-label');
+        if (actBtn && actLabel) actBtn.textContent = actLabel;
+        var newsId = root.getAttribute('data-notice-news');
+        if (actBtn && root.getAttribute('data-notice-action') === 'news' && newsId) {
+          actBtn.hidden = false;
+          actBtn.addEventListener('click', function() {
+            closeNotice();
+            var load = typeof window.okbmLoadScript === 'function' ? window.okbmLoadScript(window.__okbmLoungeSrc) : Promise.resolve();
+            load.then(function() {
+              if (typeof window.openLoungeNews === 'function') window.openLoungeNews(newsId);
+            }).catch(function(err) { console.warn('[map-main.js:notice-news]', err); });
+          });
+        }
         if (actBtn && root.getAttribute('data-notice-action') === 'photomap') {
           actBtn.hidden = false;
           actBtn.addEventListener('click', function() {
