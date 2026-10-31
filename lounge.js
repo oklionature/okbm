@@ -416,7 +416,7 @@
       '#okbmHomeNews .hn-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;padding:14px 16px 14px 18px;border-radius:16px;background:#16161a;text-align:left;overflow:hidden;color:var(--tx);animation:lmhIn .35s var(--ease)}',
       '#okbmHomeNews .hn-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#ff6b5e}',
       '#okbmHomeNews .hn-card.k-update:before{background:#5bb8f0}#okbmHomeNews .hn-card.k-notice:before{background:#a1a1a8}',
-      '#okbmHomeNews .hn-card:active{background:#1c1c20}',
+      '#okbmHomeNews .hn-card:active{background:#1c1c20}#okbmHomeNews .hn-card{touch-action:pan-y}',
       '#okbmHomeNews .hn-card em{font-style:normal;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:6px;background:rgba(255,107,94,.16);color:#ff8a7e}',
       '#okbmHomeNews .k-update em{background:rgba(91,184,240,.16);color:#8fd0ff}#okbmHomeNews .k-notice em{background:rgba(255,255,255,.08);color:#d1d1d6}',
       '#okbmHomeNews .hn-card b{font-size:15.5px;font-weight:800;line-height:1.35;padding-right:36px}',
@@ -2308,18 +2308,57 @@
     paintDealSurfaces();
   }
 
-  // ----- 소식 띠: 야영 금지·업데이트·공지. 여러 개면 8초마다 넘어간다(대표님 10-31: 5초는 너무 빠름) -----
+  // ----- 소식 띠: 야영 금지·업데이트·공지. 여러 개면 8초마다 넘어간다(대표님 10-31: 5초는 너무 빠름)
+  //       좌우로 밀면 바로 다음·이전 소식으로 넘어가고, 8초 시계는 그때부터 다시 잰다 -----
   const NEWS_KIND = { closure: '야영 금지', update: '업데이트', notice: '공지', magazine: '매거진' };
   const newsList = function () { return D.news.filter(function (n) { return n.kind !== 'magazine' && (n.is_active !== false || D.admin); }); };
   const magList = function () { return D.news.filter(function (n) { return n.kind === 'magazine' && (n.is_active !== false || D.admin); }); };
   const newsImgs = function (n) { return (Array.isArray(n && n.images) ? n.images : []).filter(function (u) { return okbmSafeImageUrl(u); }); };
   const firstLine = function (t) { return String(t || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean)[0] || ''; };
   let newsAt = 0, newsTimer = null;
-  function newsSlide(n, i, len) {
+  function newsSlide(n, i, len, dx) {
     const sub = firstLine(n.body);
-    return `<button type="button" class="hn-card k-${esc(n.kind)}" data-a="news" data-v="${esc(n.id)}">
+    return `<button type="button" class="hn-card k-${esc(n.kind)}" data-a="news" data-v="${esc(n.id)}"${dx ? ` style="--dx:${dx}px"` : ''}>
       ${len > 1 ? `<span class="hn-dots" aria-hidden="true">${Array.from({ length: len }, function (_, j) { return '<i' + (j === i ? ' class="on"' : '') + '></i>'; }).join('')}</span>` : ''}
       <em>${esc(NEWS_KIND[n.kind] || '소식')}${n.is_active === false ? ' · 숨김' : ''}</em><b>${esc(n.title)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</button>`;
+  }
+  // step: +1 다음, -1 이전. 손으로 민 쪽에서 들어오게 --dx를 준다
+  function newsGo(el, step) {
+    const l = newsList();
+    if (l.length < 2) return;
+    newsAt = (newsAt + step + l.length) % l.length;
+    const card = el.querySelector('.hn-card');
+    if (card) card.outerHTML = newsSlide(l[newsAt], newsAt, l.length, reduce ? 0 : step * 24);
+  }
+  function newsAuto(el) {
+    clearInterval(newsTimer);
+    if (newsList().length < 2 || reduce) return;
+    newsTimer = setInterval(function () {
+      if (!document.hidden) newsGo(el, 1);
+    }, 8000);
+  }
+  // 밀기: 가로로 40px 넘게, 세로보다 많이 움직였을 때만. 민 뒤 따라오는 누름은 소식 열기로 치지 않는다
+  function bindNewsSwipe(el) {
+    if (el.__okbmSwipe) return;
+    el.__okbmSwipe = true;
+    let x0 = null, y0 = 0, swiped = 0;
+    el.addEventListener('pointerdown', function (ev) {
+      if (!ev.target.closest('.hn-card')) return;
+      x0 = ev.clientX; y0 = ev.clientY;
+    });
+    el.addEventListener('pointerup', function (ev) {
+      if (x0 === null) return;
+      const dx = ev.clientX - x0, dy = ev.clientY - y0;
+      x0 = null;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.2 || newsList().length < 2) return;
+      swiped = Date.now();
+      newsGo(el, dx < 0 ? 1 : -1);
+      newsAuto(el);
+    });
+    el.addEventListener('pointercancel', function () { x0 = null; });
+    el.addEventListener('click', function (ev) {
+      if (Date.now() - swiped < 400 && ev.target.closest('.hn-card')) { ev.stopPropagation(); ev.preventDefault(); }
+    }, true);
   }
   function paintNews() {
     const el = document.getElementById('okbmHomeNews');
@@ -2335,16 +2374,8 @@
     el.hidden = false;
     newsAt = newsAt % list.length;
     el.innerHTML = newsSlide(list[newsAt], newsAt, list.length) + add;
-    if (list.length > 1 && !reduce) {
-      newsTimer = setInterval(function () {
-        if (document.hidden) return;
-        const l = newsList();
-        if (l.length < 2) return;
-        newsAt = (newsAt + 1) % l.length;
-        const card = el.querySelector('.hn-card');
-        if (card) card.outerHTML = newsSlide(l[newsAt], newsAt, l.length);
-      }, 8000);
-    }
+    bindNewsSwipe(el);
+    newsAuto(el);
   }
 
   // ----- 알약 네 개: 게시판 · 설문·투표 · 후기·랭킹 · 초보 가이드. 칸마다 세 줄 -----
