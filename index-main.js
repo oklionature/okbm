@@ -4121,7 +4121,7 @@ var adBannersHtml = `
           </div>
         </div>
 
-        <div style="flex:1; overflow-y:auto; padding:18px 16px calc(96px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:10px; max-width:440px; margin:0 auto; width:100%; box-sizing:border-box;">
+        <div style="flex:1; overflow-y:auto; padding:18px 16px 24px 16px; display:flex; flex-direction:column; gap:10px; max-width:440px; margin:0 auto; width:100%; box-sizing:border-box;">
           ${openCount ? `<div style="font-size:0.74rem; font-weight:600; color:#8e8e93; margin-bottom:2px;">지금 모집 중 ${openCount}곳</div>` : ''}
           ${list.length === 0 ? '<div style="text-align:center; color:#8e8e93; padding:60px 0 0; font-size:0.8rem;">지금 모집 중인 동행이 없어요.</div>' : list.map(function(t) {
             var dBadge = getTripDDayBadge(t.date);
@@ -4150,9 +4150,13 @@ var adBannersHtml = `
               </div>
             `;
           }).join('')}
-          <div style="margin-top:auto; padding-top:28px; text-align:center;">
-            <div style="font-size:0.76rem; color:#8e8e93; margin-bottom:10px;">원하는 장소나 날짜가 없나요?</div>
-            <button onclick="document.getElementById('tripJoinListModal').remove(); openTripCreateModal();" style="width:100%; background:#ffffff; color:#000; font-size:0.86rem; font-weight:900; border:none; padding:13px 0; border-radius:12px; cursor:pointer; font-family:inherit;">직접 모집하기</button>
+        </div>
+
+        <!-- 직접 모집하기: 목록과 따로, 하단 메뉴(56px + 안전 여백) 바로 위에 붙는 띠 -->
+        <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.08); padding:10px 16px 12px; margin-bottom:calc(56px + env(safe-area-inset-bottom, 8px));">
+          <div style="max-width:440px; margin:0 auto; display:flex; align-items:center; gap:12px;">
+            <span style="flex:1; min-width:0; font-size:0.76rem; color:#8e8e93;">원하는 장소나 날짜가 없나요?</span>
+            <button onclick="document.getElementById('tripJoinListModal').remove(); openTripCreateModal();" style="flex-shrink:0; background:#ffffff; color:#000; font-size:0.84rem; font-weight:900; border:none; padding:11px 18px; border-radius:12px; cursor:pointer; font-family:inherit;">직접 모집하기</button>
           </div>
         </div>
       `;
