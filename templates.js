@@ -812,7 +812,8 @@ async function captureStudioCardCanvas(card) {
   clone.style.maxHeight = 'none';
   clone.style.aspectRatio = String(capW) + ' / ' + String(capH);
   clone.style.margin = '0';
-  clone.style.borderRadius = '0';
+  // 카드 기본 CSS의 border-radius !important를 이겨야 저장 그림 귀퉁이가 검게 깎이지 않는다
+  clone.style.setProperty('border-radius', '0', 'important');
   clone.style.boxShadow = 'none';
   clone.style.overflow = 'hidden';
   host.appendChild(clone);
@@ -1976,16 +1977,6 @@ if (!document.getElementById('template-chips-core-style')) {
   var old = document.getElementById('ready-shot-dock-hide-style');
   if (old) old.remove();
 })();
-
-var TEMPLATE_ORDER = [1, 8, 2, 18, 14, 6];
-var TEMPLATE_NAMES = {
-  1: '🧾 영수증',
-  8: '☁️ 솜사탕',
-  2: '🎫 보딩패스',
-  18: '🍋 레몬버터',
-  14: '🏷️ 다꾸스티커',
-  6: '📸 코닥 슬라이드'
-};
 
 var STUDIO_MODE_ORDER = ['poster', 'posterPaper', 'balance', 'kuchi', 'issue', 'spread', 'magazine', 'overlay', 'minimal', 'chic', 'essay', 'sage', 'editorial'];
 // 빠른 레디샷(무게만 빠르게, readyshot-quick.js)은 장비 목록 칸이 없는 무게형만 쓴다. 포스터(10-31)를 맨 앞에
@@ -3533,43 +3524,6 @@ window.generateReadyShotMarkup = function(record, options) {
   `;
 };
 
-// 🧰 [적응형 장비 리스트 엔진] - 20개까지 1열(1Col) 유지, 21개 이상부터 2열 적용
-function renderAdaptiveGearList(items, options) {
-  options = options || {};
-  var list = collapseDuplicatePackItems((items && items.length > 0) ? items : []);
-  var total = list.length;
-  if (total === 0) {
-    return '<div style="font-size:0.65rem; color:' + (options.subColor || '#94a3b8') + '; text-align:center; padding:6px 0;">세팅된 장비가 없습니다.</div>';
-  }
-  
-  var isTwoCol = total >= 21;
-  var displayItems = list; 
-
-  var fontSize = options.fontSize || '0.62rem';
-  var paddingY = options.paddingY || '0.8px';
-  if (total >= 19) { fontSize = '0.46rem'; paddingY = '0.2px'; }
-  else if (total >= 17) { fontSize = '0.50rem'; paddingY = '0.3px'; }
-  else if (total >= 11) { fontSize = '0.54rem'; paddingY = '0.5px'; }
-  else if (total >= 8) { fontSize = '0.60rem'; paddingY = '0.7px'; }
-
-  var nameColor = options.nameColor || 'inherit';
-  var wtColor = options.wtColor || '#38bdf8';
-  var rowsHtml = displayItems.map(function(it) {
-    var rawName = (typeof it === 'string') ? it : (it.name || '');
-    var cleanName = packItemDisplayName(rawName.replace(/\s*\(\d+g\)$/, ''), it.count);
-    var weightGrams = (typeof it === 'object' && it.weight) ? it.weight : 0;
-    var weightStr = weightGrams > 0 ? (weightGrams / 1000).toFixed(2) + 'kg' : '';
-    return '<div style="display:flex; justify-content:space-between; align-items:center; font-size:' + fontSize + '; padding:' + paddingY + ' 0; gap:2px; min-width:0; box-sizing:border-box;">' +
-      '<span style="color:' + nameColor + '; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; font-weight:700; display:flex; align-items:center;">' +
-        (options.bullet !== undefined ? options.bullet : SVG_ICONS.bullet) + '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(cleanName) + '</span>' +
-      '</span>' +
-      '<span style="font-family:\'JetBrains Mono\', monospace; font-weight:800; color:' + wtColor + '; flex-shrink:0; font-size:0.92em; letter-spacing:0px;">' + weightStr + '</span>' +
-    '</div>';
-  }).join('');
-
-  return '<div style="display:grid; grid-template-columns:' + (isTwoCol ? '1fr 1fr' : '1fr') + '; column-gap:6px; row-gap:0px; width:100%; box-sizing:border-box;">' + rowsHtml + '</div>';
-}
-
 window.saveCurrentPackingRecord = function() {
   if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_pack_save'); // 기능 사용 세기 (H8)
   var allItems = [];
@@ -4753,7 +4707,7 @@ window.openPackShareModal = function(record, items, forceStudio, opts) {
     memoInput.value = currentShareRecord.oneLineMemo || '';
   }
 
-  var savedTmpl = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
+  var savedTmpl = parseInt(localStorage.getItem('romantic_selected_template') || String(TEMPLATE_ORDER[0]), 10);
   selectedTemplateId = TEMPLATE_ORDER.indexOf(savedTmpl) !== -1 ? savedTmpl : TEMPLATE_ORDER[0];
   window.selectedTemplateId = selectedTemplateId;
 
@@ -5116,33 +5070,6 @@ if (!document.getElementById('template-cards-core-style')) {
       flex-shrink: 0 !important;
       filter: none !important;
     }
-    .tmpl-pledge-wrap {
-      margin-top: 4px !important;
-      padding: 4px 6px !important;
-      border-radius: 6px !important;
-      border-style: dashed !important;
-      border-width: 1px !important;
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 1px !important;
-      text-align: center !important;
-      box-sizing: border-box !important;
-    }
-    .tmpl-pledge-title {
-      font-size: 0.65rem !important;
-      font-weight: 900 !important;
-      letter-spacing: 0.5px !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 3px !important;
-      line-height: 1.2 !important;
-    }
-    .tmpl-pledge-sub {
-      font-size: 0.46rem !important;
-      line-height: 1.2 !important;
-    }
     .tmpl-row-between {
       display: flex !important;
       justify-content: space-between !important;
@@ -5153,227 +5080,616 @@ if (!document.getElementById('template-cards-core-style')) {
   document.head.appendChild(cardCoreStyle);
 }
 
-function generateCardMarkup(tmplId, record, items, spot, memo) {
-  var nick = record ? String(record.author || record.nickname || record.authorName || record.nick || '').trim() : '';
+// ===== 팸플릿(장비 목록형 레디샷) 9종 + 장비 0개 기록 카드 (2026-10-31, 시안 .claude/mockups/pamphlet/) =====
+// 옛 6종(영수증·솜사탕·보딩패스·레몬버터·다꾸스티커·코닥)을 걷어내고, 번호는 그대로 새 디자인에 잇는다(저장된 template_id 1·2·6·8·14·18).
+// 저장(html2canvas)이 clip-path·회전 종이·손글씨 글꼴을 제대로 못 찍어서 카드 전체를 <canvas> 1080x1440에 그린다.
+// 화면 어디(레디샷 창·피드 뒷면·상세)에 들어오든 canvas[data-rs-pamphlet]를 감시해 그리고, 저장은 __rsPaint를 기다려 옮겨 그린다.
+// 박지·날짜·지역·해발·무게는 카드마다 한 번씩만 쓴다(대표님).
+var PAMPHLET_FONT_CSS = 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,800..900&family=JetBrains+Mono:wght@400;500;700&family=Nanum+Gothic+Coding:wght@400;700&family=Yellowtail&family=Gaegu:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Nanum+Myeongjo:wght@700;800&display=swap';
+var PM_MONO = "'JetBrains Mono','Nanum Gothic Coding',monospace";
+var PM_SANS = "'Pretendard Variable',Pretendard,sans-serif";
+var PM_ARCH = 'extra-condensed {s}px Archivo';
+function ensurePamphletFonts() {
+  if (document.getElementById('rs-pamphlet-font-link')) return;
+  var link = document.createElement('link');
+  link.id = 'rs-pamphlet-font-link';
+  link.rel = 'stylesheet';
+  link.href = PAMPHLET_FONT_CSS;
+  // 글꼴 CSS가 오기 전에 document.fonts.load를 부르면 받을 글꼴이 없다며 바로 끝나서, CSS부터 기다린다
+  window.__pmCssReady = new Promise(function(resolve) { link.onload = resolve; link.onerror = resolve; setTimeout(resolve, 5000); });
+  document.head.appendChild(link);
+  var st = document.createElement('style');
+  st.id = 'rs-pamphlet-style';
+  st.textContent = '.rs-pamphlet{padding:0 !important;background:#111;}.rs-pamphlet canvas{position:absolute;inset:0;width:100%;height:100%;display:block;}';
+  document.head.appendChild(st);
+}
+
+var TEMPLATE_ORDER = [8, 22, 23, 21, 1, 2, 6, 18, 14];
+var TEMPLATE_NAMES = {
+  8: '패킹 리스트',
+  22: '블랙',
+  23: '미드나잇 패스',
+  21: 'LNT 택',
+  1: '영수증',
+  2: '보딩패스',
+  6: '필름',
+  18: '캠프 라벨',
+  14: '다꾸 노트'
+};
+var PAMPHLET_KEYS = { 8: 'list', 22: 'black', 23: 'midnight', 21: 'tag', 1: 'receipt', 2: 'pass', 6: 'film', 18: 'label', 14: 'note' };
+
+// ---- 카드에 넣을 값 모으기 ----
+function pamphletCleanSpot(s) {
+  return String(s || '').replace(/^\s*\[[^\]]*\]\s*/, '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+}
+function pamphletMasterSpot(rec, spot) {
+  try {
+    if (typeof window.okbmFindMasterSpot === 'function') return window.okbmFindMasterSpot(spot, rec && (rec.spotId || rec.spot_id)) || null;
+  } catch (e) {}
+  return null;
+}
+function pamphletData(tmplId, record, items, spot, memoArg) {
+  record = record || {};
+  var rawSpot = (spot !== undefined && spot !== null) ? String(spot).trim() : String(record.spot || '').trim();
+  if (rawSpot === '나의 힐링 스팟') rawSpot = '';
+  var ms = rawSpot ? pamphletMasterSpot(record, rawSpot) : null;
+  var region = '';
+  if (ms) region = [ms.region, String(ms.cityName || ms.city_name || '').replace(/(시|군)$/, '')].filter(Boolean).join(' ');
+  var elevRaw = String(record.elevation || (ms && ms.elevation) || '').replace(/[^\d.]/g, '');
+  var nick = String(record.author || record.nickname || record.authorName || record.nick || '').trim();
   if (!nick) {
     var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
     nick = profile && profile.nickname ? String(profile.nickname).trim() : '';
   }
-  if (!nick) nick = '낭만탐험가';
-  var list = collapseDuplicatePackItems(items || []);
-  var fallbackWeightGrams = (items || []).reduce(function(sum, it) {
-    var w = (typeof it === 'object' && it !== null) ? Number(it.weight || it.weight_g || 0) : 0;
-    return sum + w;
-  }, 0);
-  var weight = '0.00';
-  if (record && record.weightKg && record.weightKg !== 'undefined') {
-    weight = String(record.weightKg);
-  } else if (fallbackWeightGrams > 0) {
-    weight = (fallbackWeightGrams / 1000).toFixed(2);
-  } else if (record && record.weightGrams) {
-    weight = (Number(record.weightGrams) / 1000).toFixed(2);
+  var list = collapseDuplicatePackItems(items || []).map(function(it) { return [it.name, Math.round(Number(it.weight) || 0), it.count || 1]; });
+  var grams = list.reduce(function(s, it) { return s + it[1]; }, 0);
+  var kg = '0.00';
+  if (record.weightKg && record.weightKg !== 'undefined' && Number(record.weightKg) > 0) kg = Number(record.weightKg).toFixed(2);
+  else if (grams > 0) kg = (grams / 1000).toFixed(2);
+  else if (record.weightGrams) kg = (Number(record.weightGrams) / 1000).toFixed(2);
+  var d = String(record.date || '').replace(/[-/]/g, '.').slice(0, 10);
+  if (!/^\d{4}\.\d{2}\.\d{2}$/.test(d)) {
+    var now = new Date();
+    d = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
   }
-  var dateStr = (record && record.date) ? record.date : (function() {
-    var d = new Date();
-    return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
-  })();
-
-  var targetSpot = (spot !== undefined && spot !== null) ? String(spot).trim() : '';
-  var targetMemo = (memo !== undefined && memo !== null) ? String(memo).trim() : '';
-
-  // 🛡️ [박지 비공개 & 여백 레이아웃 보존 헬퍼]
-  var spotText = targetSpot ? escapeHtml(targetSpot) : '&nbsp;';
-  var spotPinText = targetSpot ? (SVG_ICONS.pin + escapeHtml(targetSpot)) : '&nbsp;';
-
-  var logoWhite = SVG_ICONS.brandLogo('#ffffff', '#ffffff');
-  var logoPink = SVG_ICONS.brandLogo('#f43f5e', '#fde047');
-  var logoSunset = SVG_ICONS.brandLogo('#ea580c', '#fb7185');
-
-  var makePledge = function(color, bg, border, sub) {
-    return '<div class="tmpl-pledge-wrap" style="background:' + bg + '; border-color:' + border + ';">' +
-      '<span class="tmpl-pledge-title" style="color:' + color + ';">' +
-        SVG_ICONS.lntShield + ' <span>[' + escapeHtml(nick) + ']님은 LNT를 준수합니다</span>' +
-      '</span>' +
-      '<span class="tmpl-pledge-sub" style="color:' + sub + ';">머문 자리는 처음처럼 · 비화식 실천 · 흔적 없는 머무름</span>' +
-    '</div>';
+  var photos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(record) : (record.photos || []);
+  var memo = String(memoArg || record.oneLineMemo || record.memo || '').split('\n')[0].trim();
+  if (typeof window.okbmBlankAutoPackingCaption === 'function') memo = window.okbmBlankAutoPackingCaption(memo, rawSpot) || '';
+  return {
+    t: list.length ? (PAMPHLET_KEYS[Number(tmplId)] || 'list') : 'note0',
+    spot: pamphletCleanSpot(rawSpot),
+    region: region,
+    elev: elevRaw ? (Math.round(Number(elevRaw)) + 'M') : '',
+    by: nick,
+    date: d,
+    items: list,
+    count: list.reduce(function(s, it) { return s + it[2]; }, 0),
+    kg: kg,
+    cls: posterClass(kg),
+    photos: Array.isArray(photos) ? photos.filter(function(u) { return typeof u === 'string' && u.indexOf('https://') === 0; }).length : 0,
+    plogging: !!(record.ploggingPhoto || record.plogging_photo),
+    memo: memo.length > 60 ? memo.slice(0, 59) + '…' : memo
   };
-
-  switch (Number(tmplId)) {
-    case 1:
-      return '<div class="tmpl-card-base" style="background:#f4f1ea; color:#1c1917; padding:12px 11px; font-family:\'JetBrains Mono\', monospace; border:1.5px solid #78716c; border-top:3px dashed #78716c; border-bottom:3px dashed #78716c;">' +
-        '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="text-align:center; border-bottom:1.2px dashed #78716c; padding-bottom:3px;">' +
-            '<div style="font-size:0.85rem; font-weight:900; letter-spacing:1px;">* ROMANTIC ROUTE POS *</div>' +
-            '<div style="font-size:0.46rem; color:#78716c;">REG: #2026 // EXPLORER: ' + escapeHtml(nick) + '</div>' +
-          '</div>' +
-          '<div style="font-size:0.58rem; color:#44403c;">' +
-            '<div>DEST : <strong>' + spotText + '</strong></div>' +
-            '<div>DATE : ' + escapeHtml(dateStr) + ' | ID: <strong style="color:#000;">' + escapeHtml(nick) + '</strong></div>' +
-            (targetMemo ? '<div style="font-style:italic; margin-top:1px; color:#000;">MEMO : "' + escapeHtml(targetMemo) + '"</div>' : '') +
-          '</div>' +
-          '<div class="tmpl-row-between" style="border-top:1px dashed #78716c; border-bottom:1px dashed #78716c; padding:2px 0; font-size:0.50rem; font-weight:900;">' +
-            '<span>[ITEM NAME]</span><span>[WEIGHT]</span>' +
-          '</div>' +
-          '<div style="flex:1; overflow:hidden;">' +
-            renderAdaptiveGearList(list, { nameColor: '#1c1917', wtColor: '#000000', bullet: '' }) +
-          '</div>' +
-        '</div>' +
-        '<div style="margin-top:auto;">' +
-          '<div style="border-top:1.5px solid #000; padding-top:3px; display:flex; justify-content:space-between; align-items:baseline;">' +
-            '<span style="font-weight:900; font-size:0.70rem;">TOTAL WEIGHT</span>' +
-            '<span style="font-weight:900; font-size:1.38rem; font-family:\'Space Grotesk\', sans-serif;">' + weight + ' KG</span>' +
-          '</div>' +
-          '<div class="tmpl-row-between" style="margin-top:3px; background:#e7e2d7; padding:3px 5px; border-radius:4px; border:1px solid #d6cfc4;">' +
-            '<div style="height:15px; width:75px; background:repeating-linear-gradient(90deg, #000 0px, #000 2px, transparent 2px, transparent 4px, #000 4px, #000 7px, transparent 7px, transparent 8px);"></div>' +
-            '<div style="border:1.2px solid #1e3a8a; color:#1e3a8a; padding:2px 5px; border-radius:3px; font-size:0.55rem; font-weight:900;">' +
-              '★ [' + escapeHtml(nick) + ']님은 LNT를 준수합니다 ★' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-
-    case 2:
-      return '<div class="tmpl-card-base" style="background:#0f172a; border:1.5px solid #334155; padding:12px 11px; font-family:\'Space Grotesk\', sans-serif; color:#ffffff;">' +
-        '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div class="tmpl-row-between" style="border-bottom:1.2px dashed #38bdf8; padding-bottom:3px;">' +
-            '<div style="display:flex; align-items:center; gap:4px;">' + logoWhite + '<span style="font-size:0.75rem; font-weight:900; letter-spacing:1px;">ROMANTIC AIRWAYS</span></div>' +
-            '<span style="background:#0284c7; color:#fff; font-size:0.46rem; font-weight:900; padding:1px 5px; border-radius:3px;">FIRST CLASS</span>' +
-          '</div>' +
-          '<div style="display:grid; grid-template-columns:1fr auto 1fr; gap:4px; align-items:center; background:#1e293b; border-radius:5px; padding:4px 7px; border:1px solid #334155;">' +
-            '<div><small style="font-size:0.40rem; color:#94a3b8; display:block;">DEPARTURE</small><strong style="font-size:0.80rem; color:#fff;">SEL</strong><small style="font-size:0.42rem; color:#cbd5e1; display:block;">CITY</small></div>' +
-            '<div style="text-align:center; color:#38bdf8;"><div style="font-size:0.62rem;">✈ RR-832</div><small style="font-size:0.40rem; color:#64748b;">' + escapeHtml(dateStr) + '</small></div>' +
-            '<div style="text-align:right;"><small style="font-size:0.40rem; color:#94a3b8; display:block;">DESTINATION</small><strong style="font-size:0.80rem; color:#34d399;">' + (targetSpot ? 'SZR' : 'SECRET') + '</strong><small style="font-size:0.42rem; color:#34d399; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + spotText + '</small></div>' +
-          '</div>' +
-          '<div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:2px; background:#1e293b; padding:2px 5px; border-radius:3px; font-size:0.46rem; color:#94a3b8; border:1px solid #334155;">' +
-            '<div>PAX: <strong style="color:#fff;">' + escapeHtml(nick) + '</strong></div>' +
-            '<div>GATE: <strong style="color:#38bdf8;">LNT-01</strong></div>' +
-            '<div style="text-align:right;">SEAT: <strong style="color:#34d399;">01A</strong></div>' +
-          '</div>' +
-          (targetMemo ? '<div style="font-size:0.56rem; color:#94a3b8; font-style:italic;">REMARKS: "' + escapeHtml(targetMemo) + '"</div>' : '') +
-          '<div style="border-top:1px dashed #334155; padding-top:2px; flex:1; overflow:hidden;">' +
-            renderAdaptiveGearList(list, { nameColor: '#cbd5e1', wtColor: '#38bdf8' }) +
-          '</div>' +
-        '</div>' +
-        '<div style="margin-top:auto;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:baseline; border-top:1.2px dashed #38bdf8; padding-top:2px;">' +
-            '<span style="font-size:0.56rem; color:#94a3b8;">BAGGAGE WEIGHT</span>' +
-            '<span style="font-size:1.35rem; font-weight:900; color:#34d399;">' + weight + ' KG</span>' +
-          '</div>' +
-          '<div style="font-size:0.55rem; color:#38bdf8; text-align:center; font-weight:900; background:#1e293b; border:1px solid #334155; padding:3px; border-radius:3px; margin-top:2px;">' +
-            '✈ [' + escapeHtml(nick) + ']님은 LNT를 준수합니다' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-
-    case 6:
-      return '<div class="tmpl-card-base" style="background:#f5f4ef; color:#18181b; padding:9px 8px 10px 8px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #a1a1aa;">' +
-        '<div style="background:#030303; color:#ffffff; padding:5px 6px 4px 6px; border-radius:5px; border:1.2px solid #27272a; flex:1; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden;">' +
-          '<div>' +
-            '<div class="tmpl-row-between" style="font-size:0.40rem; color:#a1a1aa; font-family:\'JetBrains Mono\', monospace; border-bottom:1px solid #27272a; padding-bottom:1px; margin-bottom:2px;">' +
-              '<span>■ ■ 낭만루트 EKT 100</span><span>▶ 24A ■ ■</span>' +
-            '</div>' +
-            '<div style="font-size:0.90rem; font-weight:900; color:#ffffff; font-family:\'SUIT\', sans-serif; line-height:1.2; min-height:1.2em;">' +
-              spotPinText +
-            '</div>' +
-            (targetMemo ? '<div style="font-size:0.56rem; color:#fde047; font-family:\'JetBrains Mono\', monospace;">"' + escapeHtml(targetMemo) + '"</div>' : '') +
-          '</div>' +
-          '<div style="margin-top:2px; border-top:1px dashed #27272a; padding-top:2px; flex:1; overflow:hidden;">' +
-            renderAdaptiveGearList(list, { nameColor: '#f4f4f5', wtColor: '#38bdf8', bullet: '· ' }) +
-          '</div>' +
-        '</div>' +
-        '<div style="padding-top:3px; margin-top:auto;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:baseline; padding:0 2px;">' +
-            '<span style="font-size:0.48rem; color:#71717a; font-family:\'JetBrains Mono\', monospace;">SLIDE // ' + escapeHtml(dateStr) + '</span>' +
-            '<span style="font-size:1.25rem; font-weight:900; color:#09090b; font-family:\'Space Grotesk\', sans-serif;">' + weight + ' KG</span>' +
-          '</div>' +
-          '<div style="border:1.2px solid #065f46; color:#065f46; background:#ecfdf5; font-weight:900; text-align:center; padding:3px; border-radius:4px; font-size:0.62rem; margin-top:2px; font-family:\'SUIT\', sans-serif;">' +
-            '🌿 [' + escapeHtml(nick) + ']님은 LNT를 준수합니다' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-
-    case 8:
-      return '<div class="tmpl-card-base" style="background:linear-gradient(180deg, #fff0f5 0%, #f0f9ff 100%); color:#334155; padding:11px 10px; font-family:\'Gaegu\', cursive; border:1.5px solid #fbcfe8;">' +
-        '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div class="tmpl-row-between" style="border-bottom:1.5px dashed #f472b6; padding-bottom:2px;">' +
-            '<div style="display:flex; align-items:center; gap:3px;">' +
-              logoPink +
-              '<span style="font-size:0.90rem; font-weight:700; color:#db2777;">낭만루트 구름다이어리 ☁️</span>' +
-            '</div>' +
-            '<span style="font-size:0.58rem; font-weight:700; background:#f472b6; color:#fff; padding:1px 4px; border-radius:5px;">힐링 🌸</span>' +
-          '</div>' +
-          '<div style="background:#ffffff; border-radius:6px; padding:4px 6px; border:1px solid #fbcfe8; min-height:1.4em;">' +
-            '<div style="font-size:0.92rem; font-weight:700; color:#831843;">' + spotText + '</div>' +
-            '<div style="font-size:0.62rem; color:#db2777;">기록 : <strong>' + escapeHtml(nick) + '</strong> (' + dateStr + ')</div>' +
-          '</div>' +
-          '<div style="background:rgba(255,255,255,0.85); border-radius:6px; padding:4px 6px; border:1px dashed #fbcfe8; flex:1; overflow:hidden;">' +
-            renderAdaptiveGearList(list, { nameColor: '#475569', wtColor: '#db2777', subColor: '#f472b6' }) +
-          '</div>' +
-        '</div>' +
-        '<div style="margin-top:auto;">' +
-          '<div class="tmpl-row-between" style="background:#ffffff; border-radius:5px; padding:2px 6px; border:1px solid #fbcfe8; margin-bottom:2px;">' +
-            '<span style="font-size:0.70rem; font-weight:700; color:#be185d;">배낭 무게</span>' +
-            '<span style="font-size:1.25rem; font-weight:700; color:#ec4899;">' + weight + ' kg</span>' +
-          '</div>' +
-          makePledge('#be185d', '#fce7f3', '#fbcfe8', '#db2777') +
-        '</div>' +
-      '</div>';
-
-    case 14:
-      return '<div class="tmpl-card-base" style="background:#faf7f2; color:#292524; padding:11px 10px; font-family:\'Gaegu\', cursive; border:1.5px solid #fed7aa;">' +
-        '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div class="tmpl-row-between" style="border-bottom:1.5px dashed #d6cfc4; padding-bottom:2px;">' +
-            '<div style="display:flex; align-items:center; gap:3px;">' +
-              logoSunset +
-              '<span style="font-size:0.90rem; font-weight:700; color:#c2410c;">다꾸스티커 🏷️</span>' +
-            '</div>' +
-            '<span style="font-size:0.58rem; font-weight:700; background:#fed7aa; color:#9a3412; padding:1px 3px; border-radius:3px;">MY TRAIL</span>' +
-          '</div>' +
-          '<div style="background:#ffffff; border-radius:5px; padding:4px 6px; border:1px solid #e7e2d7; min-height:1.4em;">' +
-            '<div style="font-size:0.90rem; font-weight:700; color:#431407;">' + spotText + '</div>' +
-          '</div>' +
-          '<div style="background:#fcfaf5; border-radius:5px; padding:4px 6px; border:1px dashed #d6cfc4; flex:1; overflow:hidden;">' +
-            renderAdaptiveGearList(list, { nameColor: '#44403c', wtColor: '#c2410c', subColor: '#a8a29e' }) +
-          '</div>' +
-        '</div>' +
-        '<div style="margin-top:auto;">' +
-          '<div class="tmpl-row-between" style="background:#ffffff; border-radius:5px; padding:2px 6px; border:1px solid #e7e2d7; margin-bottom:2px;">' +
-            '<span style="font-size:0.70rem; font-weight:700; color:#854d0e;">배낭 무게:</span>' +
-            '<span style="font-size:1.25rem; font-weight:700; color:#ca8a04;">' + weight + ' kg</span>' +
-          '</div>' +
-          makePledge('#c2410c', '#fff7ed', '#fed7aa', '#9a3412') +
-        '</div>' +
-      '</div>';
-
-    case 18:
-      return '<div class="tmpl-card-base" style="background:linear-gradient(180deg, #fefce8 0%, #fef9c3 100%); color:#713f12; padding:11px 10px; font-family:\'Gaegu\', cursive; border:1.5px solid #fde047;">' +
-        '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div class="tmpl-row-between" style="border-bottom:1.5px dashed #fde047; padding-bottom:2px;">' +
-            '<div style="display:flex; align-items:center; gap:3px;">' +
-              logoSunset +
-              '<span style="font-size:0.90rem; font-weight:700; color:#ca8a04;">레몬버터 🍋</span>' +
-            '</div>' +
-            '<span style="font-size:0.58rem; font-weight:700; background:#fef08a; color:#854d0e; padding:1px 3px; border-radius:3px;">SUNNY</span>' +
-          '</div>' +
-          '<div style="background:#ffffff; border-radius:5px; padding:4px 6px; border:1px solid #fef08a; min-height:1.4em;">' +
-            '<div style="font-size:0.90rem; font-weight:700; color:#713f12;">' + spotText + '</div>' +
-          '</div>' +
-          '<div style="background:#fffef0; border-radius:5px; padding:4px 6px; border:1px dashed #fde047; flex:1; overflow:hidden;">' +
-            renderAdaptiveGearList(list, { nameColor: '#713f12', wtColor: '#ca8a04', subColor: '#a16207' }) +
-          '</div>' +
-        '</div>' +
-        '<div style="margin-top:auto;">' +
-          '<div class="tmpl-row-between" style="background:#ffffff; border-radius:5px; padding:2px 6px; border:1px solid #fef08a; margin-bottom:2px;">' +
-            '<span style="font-size:0.70rem; font-weight:700; color:#854d0e;">배낭 무게:</span>' +
-            '<span style="font-size:1.25rem; font-weight:700; color:#ca8a04;">' + weight + ' kg</span>' +
-          '</div>' +
-          makePledge('#ca8a04', '#fef9c3', '#fde047', '#854d0e') +
-        '</div>' +
-      '</div>';
-    default:
-      return generateCardMarkup(1, record, items, spot, memo);
-  }
 }
+
+function generateCardMarkup(tmplId, record, items, spot, memo) {
+  ensurePamphletFonts();
+  var data = pamphletData(tmplId, record, items, spot, memo);
+  return '<div class="tmpl-card-base rs-pamphlet">' +
+    '<canvas width="1080" height="1440" data-rs-pamphlet="1" data-pm="' + escapeHtml(JSON.stringify(data)) + '"></canvas>' +
+  '</div>';
+}
+
+// ---- 그리기 도구 ----
+function pmFont(w, size, fam) { return w + ' ' + size + 'px ' + fam; }
+function pmArch(size) { return '900 ' + PM_ARCH.replace('{s}', size); }
+function pmMeasure(c, s, ls) {
+  if ('letterSpacing' in c) c.letterSpacing = '0px';
+  return c.measureText(s).width + (ls || 0) * Math.max(0, String(s).length - 1);
+}
+function pmText(c, s, x, y, f, color, align, ls) {
+  s = String(s == null ? '' : s);
+  if (!s) return 0;
+  c.save();
+  c.font = f;
+  c.fillStyle = color || '#000';
+  c.textBaseline = 'alphabetic';
+  ls = ls || 0;
+  var w = pmMeasure(c, s, ls);
+  var sx = align === 'right' ? x - w : (align === 'center' ? x - w / 2 : x);
+  c.textAlign = 'left';
+  if (!ls) {
+    c.fillText(s, sx, y);
+  } else if ('letterSpacing' in c) {
+    c.letterSpacing = ls + 'px';
+    c.fillText(s, sx, y);
+  } else {
+    for (var i = 0; i < s.length; i++) { c.fillText(s[i], sx, y); sx += c.measureText(s[i]).width + ls; }
+  }
+  c.restore();
+  return w;
+}
+function pmFit(c, s, f, maxW, ls) {
+  s = String(s || '');
+  c.save(); c.font = f;
+  if (pmMeasure(c, s, ls) > maxW) {
+    while (s.length > 1 && pmMeasure(c, s + '…', ls) > maxW) s = s.slice(0, -1);
+    s = s.replace(/\s+$/, '') + '…';
+  }
+  c.restore();
+  return s;
+}
+function pmG(n) { return Number(n || 0).toLocaleString('en-US') + 'g'; }
+function pmName(it) { return it[2] > 1 ? it[0] + ' ×' + it[2] : it[0]; }
+function pmHeavy(items) { return items.slice().sort(function(a, b) { return b[1] - a[1]; }); }
+function pmLine(c, x1, y1, x2, y2, color, w, dash) {
+  c.save(); c.strokeStyle = color; c.lineWidth = w || 2; if (dash) c.setLineDash(dash);
+  c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); c.restore();
+}
+function pmRound(c, x, y, w, h, r) {
+  c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+function pmBarcode(c, x, y, w, h, color) {
+  c.fillStyle = color;
+  var pat = [3, 1, 4, 1, 2, 3], gaps = [4, 3, 4, 5, 3, 4], k = 0, bx = x;
+  while (bx < x + w - 4) { var bw = pat[k % pat.length]; c.fillRect(bx, y, bw, h); bx += bw + gaps[k % gaps.length]; k++; }
+}
+var __pmNoise = null;
+function pmGrain(c, x, y, w, h, alpha) {
+  if (!__pmNoise) {
+    __pmNoise = document.createElement('canvas');
+    __pmNoise.width = __pmNoise.height = 160;
+    var nc = __pmNoise.getContext('2d'), img = nc.createImageData(160, 160);
+    for (var i = 0; i < img.data.length; i += 4) { var v = 90 + Math.random() * 90; img.data[i] = v; img.data[i + 1] = v - 6; img.data[i + 2] = v - 12; img.data[i + 3] = Math.random() * 70; }
+    nc.putImageData(img, 0, 0);
+  }
+  c.save(); c.globalAlpha = alpha || 0.35; c.globalCompositeOperation = 'multiply';
+  c.fillStyle = c.createPattern(__pmNoise, 'repeat'); c.fillRect(x, y, w, h); c.restore();
+}
+// 장비 줄: 이름은 왼쪽, 무게는 오른쪽. 칸이 모자라면 마지막 줄을 '외 N개'로
+function pmRows(c, items, o) {
+  var shown = items.length <= o.max ? items : items.slice(0, o.max - 1);
+  var rest = items.slice(shown.length);
+  var y = o.y;
+  var draw = function(name, wt, nameColor, wtColor) {
+    var ww = pmMeasure((c.font = o.fw, c), wt, o.ls);
+    var nm = pmFit(c, name, o.fn, (o.x2 - o.x1) - ww - (o.gap || 28), o.ls);
+    pmText(c, nm, o.x1, y, o.fn, nameColor, 'left', o.ls);
+    pmText(c, wt, o.x2, y, o.fw, wtColor, 'right', o.ls);
+    if (o.leader) {
+      c.save(); c.font = o.fn; var nw = pmMeasure(c, nm, o.ls); c.restore();
+      pmLine(c, o.x1 + nw + 10, y - 6, o.x2 - ww - 10, y - 6, o.leader, 2, [2, 5]);
+    }
+    if (o.rule) pmLine(c, o.x1, y + o.ruleY, o.x2, y + o.ruleY, o.rule, 1.5);
+    y += o.lh;
+  };
+  shown.forEach(function(it) { draw(pmName(it), pmG(it[1]), o.cn, o.cw); });
+  if (rest.length) draw('외 ' + rest.reduce(function(s, it) { return s + it[2]; }, 0) + '개', pmG(rest.reduce(function(s, it) { return s + it[1]; }, 0)), o.cm || o.cn, o.cm || o.cw);
+  return y;
+}
+var __pmLogo = {};
+function pmLoadLogo(src) {
+  if (__pmLogo[src]) return __pmLogo[src];
+  __pmLogo[src] = new Promise(function(resolve) { var im = new Image(); im.onload = function() { resolve(im); }; im.onerror = function() { resolve(null); }; im.src = src; });
+  return __pmLogo[src];
+}
+function pmLogo(c, img, rightX, bottomY, size) {
+  if (!img || !img.width) return;
+  var h = size, w = img.width * (h / img.height);
+  c.drawImage(img, rightX - w, bottomY - h, w, h);
+}
+function pmWeekday(date) {
+  var p = String(date).split('.');
+  var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  return isNaN(d) ? '' : ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()];
+}
+// 손 그림 스티커(흰 테두리): 테두리를 굵게 먼저 칠하고 그 위에 색을 채운다
+function pmSticker(c, x, y, size, rot, paths) {
+  c.save();
+  c.translate(x + size / 2, y + size / 2); c.rotate(rot * Math.PI / 180); c.scale(size / 120, size / 120); c.translate(-60, -60);
+  c.shadowColor = 'rgba(0,0,0,0.16)'; c.shadowBlur = 8; c.shadowOffsetY = 4;
+  c.lineJoin = 'round'; c.lineCap = 'round';
+  paths.forEach(function(p, i) {
+    var path = new Path2D(p.d);
+    if (p.outline) { c.strokeStyle = '#ffffff'; c.lineWidth = p.outline; c.stroke(path); c.shadowColor = 'transparent'; }
+    if (p.fill) { c.fillStyle = p.fill; c.fill(path); }
+    if (p.stroke) { c.strokeStyle = p.stroke; c.lineWidth = p.sw || 3; c.stroke(path); }
+  });
+  c.restore();
+}
+function pmFace(cx, cy, k) {
+  var e = 3.6 * k, dx = 11 * k, bx = 20 * k;
+  var circ = function(x, y, r) { return 'M' + (x - r) + ' ' + y + 'a' + r + ' ' + r + ' 0 1 0 ' + (2 * r) + ' 0a' + r + ' ' + r + ' 0 1 0 ' + (-2 * r) + ' 0Z'; };
+  var ell = function(x, y, rx, ry) { return 'M' + (x - rx) + ' ' + y + 'a' + rx + ' ' + ry + ' 0 1 0 ' + (2 * rx) + ' 0a' + rx + ' ' + ry + ' 0 1 0 ' + (-2 * rx) + ' 0Z'; };
+  return [
+    { d: ell(cx - bx, cy + 8 * k, 6 * k, 3.6 * k) + ell(cx + bx, cy + 8 * k, 6 * k, 3.6 * k), fill: 'rgba(255,159,176,0.85)' },
+    { d: circ(cx - dx, cy, e) + circ(cx + dx, cy, e), fill: '#3b2f2f' },
+    { d: 'M' + (cx - 6 * k) + ' ' + (cy + 7 * k) + 'Q' + cx + ' ' + (cy + 13 * k) + ' ' + (cx + 6 * k) + ' ' + (cy + 7 * k), stroke: '#3b2f2f', sw: 2.6 * k }
+  ];
+}
+
+// ---- 9종 + 기록 카드 ----
+var PAMPHLET_DRAW = {
+  // 8 패킹 리스트(종이): 담은 순서대로 장비와 무게만
+  list: function(c, d, L) {
+    var ink = '#16160f', sub = 'rgba(22,22,15,0.62)';
+    c.fillStyle = '#eeebe3'; c.fillRect(0, 0, 1080, 1440);
+    pmText(c, 'PACKING LIST', 72, 80, pmFont(500, 22, PM_MONO), ink, 'left', 4.8);
+    pmText(c, d.date, 1008, 80, pmFont(500, 22, PM_MONO), ink, 'right', 4.8);
+    pmText(c, pmFit(c, d.spot || 'PACK', pmFont(900, 76, PM_SANS), 936), 70, 186, pmFont(900, 76, PM_SANS), ink, 'left');
+    pmText(c, [d.region, d.elev].filter(Boolean).join(' · '), 74, 234, pmFont(500, 24, PM_MONO), sub);
+    pmLine(c, 72, 272, 1008, 272, ink, 2);
+    pmRows(c, d.items, { x1: 72, x2: 1008, y: 320, lh: 41.5, max: 17, fn: pmFont(400, 24, PM_MONO), fw: pmFont(500, 24, PM_MONO), cn: ink, cw: ink, cm: sub });
+    pmLine(c, 72, 1078, 1008, 1078, ink, 2);
+    pmText(c, 'TOTAL · ' + d.count + ' ITEMS', 72, 1194, pmFont(500, 20, PM_MONO), sub, 'left', 4);
+    pmText(c, d.cls, 72, 1232, pmFont(700, 24, PM_MONO), sub, 'left', 3);
+    var kgW = pmText(c, 'KG', 1008, 1230, pmArch(72), ink, 'right');
+    pmText(c, d.kg, 1008 - kgW - 12, 1230, pmArch(168), ink, 'right');
+    pmBarcode(c, 72, 1338, 180, 40, ink);
+    pmLogo(c, L.dark, 1008, 1378, 96);
+  },
+  // 22 블랙: 큰 무게 + 무거운 순 장비
+  black: function(c, d, L) {
+    var ink = '#efece4', sub = 'rgba(239,236,228,0.62)';
+    c.fillStyle = '#0b0b0b'; c.fillRect(0, 0, 1080, 1440);
+    pmText(c, 'ROMANTIC ROUTE', 72, 80, pmFont(500, 22, PM_MONO), ink, 'left', 4.8);
+    pmText(c, d.date, 1008, 80, pmFont(500, 22, PM_MONO), ink, 'right', 4.8);
+    pmText(c, 'BASE WEIGHT', 76, 170, pmFont(500, 20, PM_MONO), sub, 'left', 4);
+    var w = pmText(c, d.kg, 68, 470, pmArch(330), ink, 'left');
+    pmText(c, 'KG', 68 + w + 20, 470, pmArch(110), ink, 'left');
+    var sw = pmText(c, pmFit(c, d.spot, pmFont(700, 30, PM_SANS), 600), 74, 530, pmFont(700, 30, PM_SANS), ink);
+    pmText(c, [d.elev, d.cls].filter(Boolean).join(' · '), 74 + sw + 14, 530, pmFont(500, 24, PM_MONO), sub, 'left', 1);
+    pmRows(c, pmHeavy(d.items), { x1: 72, x2: 1008, y: 630, lh: 46, max: 14, fn: pmFont(400, 25, PM_MONO), fw: pmFont(400, 25, PM_MONO), cn: ink, cw: ink, cm: sub });
+    pmBarcode(c, 72, 1338, 180, 40, ink);
+    pmLogo(c, L.white, 1008, 1378, 96);
+  },
+  // 23 미드나잇 패스(남색 보딩패스)
+  midnight: function(c, d, L) {
+    var ink = '#e8ecf2', sub = 'rgba(232,236,242,0.62)';
+    c.fillStyle = '#101826'; c.fillRect(0, 0, 1080, 1440);
+    pmText(c, 'BOARDING PASS', 72, 80, pmFont(500, 22, PM_MONO), ink, 'left', 4.8);
+    pmText(c, 'ROMANTIC ROUTE', 1008, 80, pmFont(500, 22, PM_MONO), ink, 'right', 4.8);
+    pmText(c, 'DEPART', 72, 168, pmFont(500, 18, PM_MONO), sub, 'left', 3.6);
+    pmText(c, d.date.slice(5), 70, 256, pmArch(86), ink);
+    pmText(c, pmWeekday(d.date), 72, 306, pmFont(500, 24, PM_MONO), sub, 'left', 1);
+    pmText(c, '→', 540, 242, pmFont(500, 40, PM_MONO), sub, 'center');
+    pmText(c, 'ARRIVE', 1008, 184, pmFont(500, 18, PM_MONO), sub, 'right', 3.6);
+    pmText(c, pmFit(c, d.spot, pmFont(900, 70, PM_SANS), 420), 1008, 262, pmFont(900, 70, PM_SANS), ink, 'right');
+    pmText(c, d.region, 1008, 306, pmFont(500, 24, PM_MONO), sub, 'right');
+    var cols = [['CLASS', d.cls.slice(0, 3) === 'STA' ? 'STD' : d.cls.slice(0, 5)], ['ITEMS', String(d.count)], ['ELEV', d.elev || '-'], ['BY', d.by || '-']];
+    cols.forEach(function(col, i) {
+      var x = 72 + i * 239;
+      pmText(c, col[0], x, 408, pmFont(500, 16, PM_MONO), sub, 'left', 3.5);
+      pmText(c, pmFit(c, col[1], pmFont(700, 30, PM_MONO), 220), x, 452, pmFont(700, 30, PM_MONO), ink);
+    });
+    var heavy = pmHeavy(d.items), half = Math.ceil(Math.min(heavy.length, 14) / 2);
+    var left = heavy.length <= 14 ? heavy.slice(0, half) : heavy.slice(0, 7);
+    var right = heavy.length <= 14 ? heavy.slice(half) : heavy.slice(7);
+    var o = { y: 572, lh: 47, fn: pmFont(400, 24, PM_MONO), fw: pmFont(400, 24, PM_MONO), cn: ink, cw: ink, cm: sub, gap: 18 };
+    pmRows(c, left, Object.assign({}, o, { x1: 72, x2: 512, max: 7 }));
+    pmRows(c, right, Object.assign({}, o, { x1: 568, x2: 1008, max: 7 }));
+    pmText(c, 'BAGGAGE', 72, 1188, pmFont(500, 20, PM_MONO), sub, 'left', 4);
+    var kgW = pmText(c, 'KG', 1008, 1186, pmArch(72), ink, 'right');
+    pmText(c, d.kg, 1008 - kgW - 12, 1186, pmArch(168), ink, 'right');
+    pmBarcode(c, 72, 1338, 180, 40, ink);
+    pmLogo(c, L.white, 1008, 1378, 96);
+  },
+  // 21 LNT 택: 끈 달린 두꺼운 종이 택
+  tag: function(c, d, L) {
+    var ink = '#171713', cream = '#cfc7ab';
+    c.fillStyle = '#1c1d1a'; c.fillRect(0, 0, 1080, 1440);
+    c.save();
+    c.translate(540, 725); c.rotate(1.5 * Math.PI / 180); c.translate(-320, -615);
+    c.shadowColor = 'rgba(0,0,0,0.5)'; c.shadowBlur = 50; c.shadowOffsetY = 26;
+    c.beginPath(); c.moveTo(70, 0); c.lineTo(570, 0); c.lineTo(640, 70); c.lineTo(640, 1230); c.lineTo(0, 1230); c.lineTo(0, 70); c.closePath();
+    c.fillStyle = cream; c.fill(); c.shadowColor = 'transparent';
+    c.save(); c.clip(); pmGrain(c, 0, 0, 640, 1230, 0.3);
+    c.fillStyle = ink; c.fillRect(0, 1030, 640, 200); c.restore();
+    c.fillStyle = '#6d6a5e'; c.beginPath(); c.arc(320, 75, 42, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#8e8a7c'; c.beginPath(); c.arc(320, 75, 40, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#1c1d1a'; c.beginPath(); c.arc(320, 75, 31, 0, Math.PI * 2); c.fill();
+    pmText(c, 'ROMANTIC ROUTE', 56, 168, pmFont(700, 18, PM_MONO), ink, 'left', 4.3);
+    pmText(c, d.date, 584, 168, pmFont(700, 18, PM_MONO), ink, 'right', 4.3);
+    pmText(c, 'LNT', 52, 372, pmArch(230), ink, 'left', 2);
+    pmText(c, 'LEAVE NO TRACE', 56, 422, pmFont(700, 22, PM_MONO), ink, 'left', 9.2);
+    pmLine(c, 56, 466, 584, 466, ink, 3);
+    var spW = pmText(c, pmFit(c, d.spot, pmFont(900, 46, PM_SANS), 300), 56, 524, pmFont(900, 46, PM_SANS), ink);
+    pmText(c, pmFit(c, [d.region, d.elev].filter(Boolean).join(' · '), pmFont(500, 20, PM_MONO), 528 - spW - 20), 584, 520, pmFont(500, 20, PM_MONO), ink, 'right');
+    pmLine(c, 56, 548, 584, 548, 'rgba(23,23,19,0.4)', 1.5);
+    pmRows(c, d.items, { x1: 56, x2: 584, y: 584, lh: 34.5, max: 13, fn: pmFont(400, 21, PM_MONO), fw: pmFont(400, 21, PM_MONO), cn: ink, cw: ink, cm: 'rgba(23,23,19,0.6)', rule: 'rgba(23,23,19,0.16)', ruleY: 11 });
+    c.fillStyle = '#e2622b'; c.fillRect(56, 1137, 14, 14);
+    pmText(c, d.cls, 80, 1151, pmFont(500, 18, PM_MONO), cream, 'left', 4);
+    pmText(c, d.count + ' ITEMS', 56, 1184, pmFont(500, 18, PM_MONO), cream, 'left', 4);
+    var kgW = pmText(c, 'KG', 584, 1196, pmArch(54), cream, 'right');
+    pmText(c, d.kg, 584 - kgW - 8, 1196, pmArch(130), cream, 'right');
+    c.restore();
+    pmLine(c, 551, -20, 557, 172, '#b9b29a', 3);
+  },
+  // 1 영수증: 진한 빨강 위 구겨진 종이 영수증
+  receipt: function(c, d) {
+    var ink = '#1d1b17', red = '#a8322b';
+    c.fillStyle = red; c.fillRect(0, 0, 1080, 1440);
+    c.save();
+    c.translate(540, 719); c.rotate(-2.2 * Math.PI / 180); c.translate(-350, -635);
+    c.shadowColor = 'rgba(0,0,0,0.35)'; c.shadowBlur = 60; c.shadowOffsetY = 30;
+    c.beginPath(); c.moveTo(0, 0); c.lineTo(700, 0); c.lineTo(700, 1245);
+    for (var zx = 700, up = false; zx > 0; zx -= 21, up = !up) c.lineTo(zx - 21, up ? 1245 : 1270);
+    c.lineTo(0, 1245); c.closePath();
+    c.fillStyle = '#f3f0e8'; c.fill(); c.shadowColor = 'transparent';
+    c.save(); c.clip(); pmGrain(c, 0, 0, 700, 1270, 0.35);
+    c.strokeStyle = 'rgba(0,0,0,0.05)'; c.lineWidth = 18; c.beginPath(); c.moveTo(260, 0); c.lineTo(180, 1270); c.moveTo(0, 820); c.lineTo(700, 760); c.stroke(); c.restore();
+    pmText(c, 'Romantic Route', 350, 170, pmFont(400, 92, 'Yellowtail'), red, 'center');
+    pmText(c, 'PACKING RECEIPT', 350, 226, pmFont(500, 20, PM_MONO), ink, 'center', 6);
+    pmText(c, d.date, 60, 296, pmFont(400, 22, PM_MONO), ink);
+    pmText(c, pmFit(c, [d.spot, d.elev].filter(Boolean).join(' · '), pmFont(400, 22, PM_MONO), 360), 640, 296, pmFont(400, 22, PM_MONO), ink, 'right');
+    pmLine(c, 60, 324, 640, 324, ink, 2, [8, 6]);
+    pmRows(c, d.items, { x1: 60, x2: 640, y: 372, lh: 40, max: 14, fn: pmFont(400, 23, PM_MONO), fw: pmFont(400, 23, PM_MONO), cn: ink, cw: ink, cm: 'rgba(29,27,23,0.6)', leader: 'rgba(29,27,23,0.45)', gap: 40 });
+    pmLine(c, 60, 940, 640, 940, ink, 2, [8, 6]);
+    pmText(c, 'TOTAL ' + d.count + ' ITEMS', 60, 1006, pmFont(700, 30, PM_MONO), ink);
+    pmText(c, d.kg + ' KG', 640, 1006, pmArch(76), ink, 'right');
+    pmText(c, 'CLASS · ' + d.cls, 60, 1050, pmFont(500, 20, PM_MONO), ink, 'left', 4);
+    pmBarcode(c, 60, 1080, 580, 64, ink);
+    pmText(c, 'Thank you, mountain!', 350, 1218, pmFont(400, 64, 'Yellowtail'), red, 'center');
+    c.restore();
+  },
+  // 2 보딩패스: 왼쪽 띠에 LEAVE NO TRACE, 절취선 아래 짐표
+  pass: function(c, d) {
+    var ink = '#151a22', sub = '#7b8291', org = '#e4572e';
+    var bg = c.createLinearGradient(0, 0, 1080, 1440); bg.addColorStop(0, '#cfe0ee'); bg.addColorStop(1, '#f1e7d6');
+    c.fillStyle = bg; c.fillRect(0, 0, 1080, 1440);
+    c.save();
+    c.shadowColor = 'rgba(30,45,70,0.22)'; c.shadowBlur = 60; c.shadowOffsetY = 30;
+    pmRound(c, 110, 90, 860, 1260, 26); c.fillStyle = '#fbfaf7'; c.fill(); c.shadowColor = 'transparent';
+    c.save(); c.clip(); c.fillStyle = org; c.fillRect(110, 90, 150, 1260); c.restore();
+    c.save(); c.translate(185, 720); c.rotate(-Math.PI / 2);
+    pmText(c, 'LEAVE NO TRACE', 0, 42, pmArch(118), '#fbfaf7', 'center', 2); c.restore();
+    var x1 = 320, x2 = 910;
+    pmText(c, 'BOARDING PASS', x1, 177, pmFont(700, 22, PM_MONO), ink, 'left', 5.3);
+    c.font = pmFont(700, 18, PM_MONO); var pw = pmMeasure(c, d.cls, 2.5) + 28;
+    pmRound(c, x2 - pw, 150, pw, 38, 6); c.fillStyle = ink; c.fill();
+    pmText(c, d.cls, x2 - pw / 2, 176, pmFont(700, 18, PM_MONO), '#fbfaf7', 'center', 2.5);
+    pmText(c, 'DEPART', x1, 252, pmFont(500, 17, PM_MONO), sub, 'left', 3.4);
+    pmText(c, d.date.slice(5), x1 - 2, 344, pmArch(96), ink);
+    pmText(c, '→', 604, 326, pmFont(400, 46, PM_MONO), org, 'center');
+    pmText(c, 'ARRIVE', x2, 281, pmFont(500, 17, PM_MONO), sub, 'right', 3.4);
+    pmText(c, pmFit(c, d.spot, pmFont(900, 58, PM_SANS), 280), x2, 348, pmFont(900, 58, PM_SANS), ink, 'right');
+    [['REGION', d.region || '-'], ['ELEV', d.elev || '-'], ['ITEMS', String(d.count)], ['BY', d.by || '-']].forEach(function(col, i) {
+      var x = x1 + i * 151;
+      pmText(c, col[0], x, 417, pmFont(500, 16, PM_MONO), sub, 'left', 3.2);
+      pmText(c, pmFit(c, col[1], pmFont(700, 26, PM_MONO), 140), x, 456, pmFont(700, 26, PM_MONO), ink);
+    });
+    pmLine(c, x1, 502, x2, 502, ink, 2);
+    pmRows(c, pmHeavy(d.items), { x1: x1, x2: x2, y: 540, lh: 38, max: 13, fn: pmFont(400, 22, PM_MONO), fw: pmFont(400, 22, PM_MONO), cn: ink, cw: ink, cm: sub });
+    pmLine(c, 260, 1090, 970, 1090, 'rgba(21,26,34,0.25)', 3, [9, 7]);
+    c.fillStyle = '#e3e4e2'; c.beginPath(); c.arc(970, 1090, 23, 0, Math.PI * 2); c.fill();
+    pmText(c, 'BAGGAGE', x1, 1146, pmFont(500, 17, PM_MONO), sub, 'left', 3.4);
+    var w = pmText(c, d.kg, x1, 1265, pmArch(150), ink);
+    pmText(c, 'KG', x1 + w + 10, 1265, pmArch(62), ink);
+    pmBarcode(c, 660, 1170, 250, 110, ink);
+    c.restore();
+  },
+  // 6 필름: 라이트박스 위 필름 한 칸
+  film: function(c, d) {
+    var ink = '#2a2219', sub = '#8a7a62', amber = '#e59a3a', cream = '#f6efe2';
+    c.fillStyle = cream; c.fillRect(0, 0, 1080, 1440);
+    c.fillStyle = '#121110'; c.fillRect(70, 0, 940, 1440);
+    c.fillStyle = cream;
+    for (var hy = 0; hy < 1440; hy += 70) { c.fillRect(88, hy, 38, 40); c.fillRect(954, hy, 38, 40); }
+    for (var i = 0; i < 3; i++) {
+      c.save(); c.translate(160, 420 + i * 460); c.rotate(-Math.PI / 2);
+      pmText(c, 'ROMANTIC 400 ▸ ' + (12 + i), 0, 0, pmFont(700, 20, PM_MONO), amber, 'left', 3.6); c.restore();
+      c.save(); c.translate(920, 130 + i * 460); c.rotate(Math.PI / 2);
+      pmText(c, (12 + i) + 'A ◂ R-400', 0, 0, pmFont(700, 20, PM_MONO), amber, 'left', 3.6); c.restore();
+    }
+    pmRound(c, 180, 110, 720, 1220, 10); c.fillStyle = cream; c.fill();
+    pmText(c, 'FRAME 12', 236, 190, pmFont(500, 20, PM_MONO), sub, 'left', 4.8);
+    pmText(c, d.date, 844, 190, pmFont(500, 20, PM_MONO), sub, 'right', 4.8);
+    pmText(c, pmFit(c, d.spot, pmFont(900, 84, PM_SANS), 600), 234, 300, pmFont(900, 84, PM_SANS), ink);
+    pmText(c, [d.region, d.elev].filter(Boolean).join(' · '), 238, 344, pmFont(500, 22, PM_MONO), sub);
+    pmLine(c, 236, 386, 844, 386, ink, 2);
+    pmRows(c, d.items, { x1: 236, x2: 844, y: 428, lh: 40, max: 16, fn: pmFont(400, 23, PM_MONO), fw: pmFont(400, 23, PM_MONO), cn: ink, cw: ink, cm: sub });
+    pmText(c, 'TOTAL · ' + d.cls, 236, 1274, pmFont(500, 20, PM_MONO), sub, 'left', 4.4);
+    var kgW = pmText(c, 'KG', 844, 1270, pmArch(56), ink, 'right');
+    pmText(c, d.kg, 844 - kgW - 8, 1270, pmArch(130), ink, 'right');
+  },
+  // 18 캠프 라벨: 산·해·텐트 그림의 빈티지 라벨, 장비는 재료처럼 한 문단
+  label: function(c, d) {
+    var ink = '#26402a';
+    c.fillStyle = '#33492f'; c.fillRect(0, 0, 1080, 1440);
+    c.save(); c.shadowColor = 'rgba(0,0,0,0.3)'; c.shadowBlur = 40; c.shadowOffsetY = 20;
+    pmRound(c, 100, 110, 880, 1220, 40); c.fillStyle = '#f8f1dc'; c.fill(); c.restore();
+    c.save(); pmRound(c, 100, 110, 880, 1220, 40); c.clip(); pmGrain(c, 100, 110, 880, 1220, 0.3); c.restore();
+    c.save(); c.strokeStyle = ink; c.lineWidth = 3; pmRound(c, 122, 132, 836, 1176, 28); c.stroke();
+    c.lineWidth = 1.5; pmRound(c, 134, 144, 812, 1152, 22); c.stroke(); c.restore();
+    pmText(c, 'ROMANTIC ROUTE · EST. 2026', 540, 212, pmFont(500, 22, PM_MONO), ink, 'center', 9.2);
+    c.save(); c.translate(330, 236); c.lineWidth = 5; c.strokeStyle = ink; c.lineJoin = 'round'; c.lineCap = 'round';
+    [['M300 22 V10 M300 122 V110 M256 66 H244 M356 66 H344 M269 35 L261 27 M339 105 L331 97 M331 35 L339 27', null, 4],
+     ['M330 66a30 30 0 1 0 -60 0a30 30 0 1 0 60 0Z', '#e9b949'],
+     ['M40 222 L150 70 L205 146 L250 98 L380 222 Z', '#7a9a6a'],
+     ['M150 70 L128 101 L142 96 L156 110 L170 92 Z', '#f8f1dc'], ['M250 98 L234 118 L246 115 L258 126 L268 116 Z', '#f8f1dc'],
+     ['M96 222 L110 186 L124 222 M290 222 L305 180 L320 222 M110 186 V178 M305 180 V172', null, 4],
+     ['M150 236 L210 154 L270 236 Z', '#c9703f'], ['M210 154 L210 236'], ['M210 236 L190 206 L210 196 L230 206 Z', ink],
+     ['M200 150 L220 150', null, 4], ['M20 240 H400'], ['M60 250 H120 M160 250 H260 M300 250 H360', null, 3]
+    ].forEach(function(p) { var path = new Path2D(p[0]); if (p[1]) { c.fillStyle = p[1]; c.fill(path); } c.lineWidth = p[2] || 5; c.stroke(path); });
+    c.restore();
+    pmText(c, pmFit(c, d.spot, pmFont(800, 120, "'Nanum Myeongjo',serif"), 780), 540, 626, pmFont(800, 120, "'Nanum Myeongjo',serif"), ink, 'center', -4);
+    pmText(c, 'Backpacking Provisions', 540, 702, 'italic 400 30px "DM Serif Display"', ink, 'center', 4.8);
+    var mid = [d.date, d.elev].filter(Boolean).join(' · ');
+    c.font = pmFont(500, 20, PM_MONO); var mw = pmMeasure(c, mid, 4.4) / 2 + 20;
+    pmLine(c, 220, 745, 540 - mw, 745, ink, 2); pmLine(c, 540 + mw, 745, 860, 745, ink, 2);
+    pmText(c, mid, 540, 752, pmFont(500, 20, PM_MONO), ink, 'center', 4.4);
+    // 재료 문단: 'INGREDIENTS' 뒤로 장비를 쉼표로 잇고, 줄이 넘치면 마지막을 '외 N개'로
+    var f = pmFont(700, 25, "'Nanum Myeongjo',serif"), maxW = 660, lh = 44, maxLines = 7;
+    var tokens = d.items.map(function(it) { return pmName(it) + ' ' + pmG(it[1]); });
+    var lines = [], cur = '', x0 = 210, firstIndent = 0;
+    c.font = pmFont(500, 20, PM_MONO); firstIndent = pmMeasure(c, 'INGREDIENTS', 4.4) + 18;
+    c.font = f;
+    var used = 0;
+    for (var k = 0; k < tokens.length; k++) {
+      var t = tokens[k] + (k < tokens.length - 1 ? ', ' : '.');
+      var limit = maxW - (lines.length === 0 ? firstIndent : 0);
+      if (pmMeasure(c, cur + t) > limit && cur) { lines.push(cur); cur = ''; if (lines.length === maxLines) break; }
+      cur += t; used = k + 1;
+    }
+    if (cur && lines.length < maxLines) lines.push(cur);
+    if (used < tokens.length) {
+      // 넘친 장비는 마지막 줄 끝을 덜어내고 '외 N개'로 맺는다
+      var lastIdx = lines.length - 1, parts = lines[lastIdx].split(', ');
+      var suffix = function() { return ' 외 ' + (tokens.length - used) + '개'; };
+      while (parts.length > 1 && pmMeasure(c, parts.join(', ') + suffix()) > maxW - (lastIdx === 0 ? firstIndent : 0)) { parts.pop(); used--; }
+      lines[lastIdx] = parts.join(', ').replace(/[,.\s]+$/, '') + suffix();
+    }
+    pmText(c, 'INGREDIENTS', x0, 828, pmFont(500, 20, PM_MONO), ink, 'left', 4.4);
+    lines.forEach(function(ln, i) { pmText(c, ln.trim(), x0 + (i === 0 ? firstIndent : 0), 830 + i * lh, f, ink); });
+    // 무게 숫자와 닿지 않게 왼쪽 글은 세 줄로 쌓는다
+    pmText(c, 'NET WT.', 210, 1160, pmFont(500, 22, PM_MONO), ink, 'left', 4.4);
+    pmText(c, d.count + ' ITEMS', 210, 1195, pmFont(500, 22, PM_MONO), ink, 'left', 4.4);
+    pmText(c, d.cls, 210, 1230, pmFont(500, 22, PM_MONO), ink, 'left', 4.4);
+    var kgW = pmText(c, 'kg', 870, 1226, '400 58px "DM Serif Display"', ink, 'right');
+    pmText(c, d.kg, 870 - kgW - 8, 1226, '400 130px "DM Serif Display"', ink, 'right', -2);
+  },
+  // 14 다꾸 노트: 모눈 노트, 분홍 체크, 얼굴 있는 텐트·산·별 스티커
+  note: function(c, d) {
+    var ink = '#262626', pink = '#ff7f9c', hi = '#ffd3dd';
+    c.fillStyle = '#fbfaf4'; c.fillRect(0, 0, 1080, 1440);
+    c.strokeStyle = 'rgba(90,140,200,0.16)'; c.lineWidth = 1.5;
+    for (var gx = 42; gx < 1080; gx += 44) { c.beginPath(); c.moveTo(gx, 0); c.lineTo(gx, 1440); c.stroke(); }
+    for (var gy = 42; gy < 1440; gy += 44) { c.beginPath(); c.moveTo(0, gy); c.lineTo(1080, gy); c.stroke(); }
+    c.save(); c.translate(90, 70); c.rotate(-12 * Math.PI / 180); c.globalAlpha = 0.88;
+    for (var tx = -120; tx < 120; tx += 28) { c.fillStyle = (tx / 28) % 2 ? '#ffdbe3' : '#ffc2cf'; c.fillRect(tx, -30, 28, 60); }
+    c.restore();
+    c.save(); c.translate(980, 100); c.rotate(9 * Math.PI / 180); c.globalAlpha = 0.88; c.fillStyle = '#bfe6d8'; c.fillRect(-120, -30, 240, 60); c.restore();
+    var tf = pmFont(700, 92, 'Gaegu');
+    c.font = tf; var tw = pmMeasure(c, 'my packing list');
+    c.fillStyle = hi; c.fillRect(96, 172, tw + 8, 30);
+    pmText(c, 'my packing list', 100, 192, tf, ink);
+    pmText(c, pmFit(c, [d.spot, d.date.slice(5), (d.elev || '').toLowerCase()].filter(Boolean).join(' · '), pmFont(400, 34, 'Gaegu'), 700), 102, 262, pmFont(400, 34, 'Gaegu'), '#5b5b5b');
+    var checks = ['M6 18 L14 27 L30 6', 'M5 17 L13 28 L31 8', 'M7 19 L15 26 L29 5'];
+    var items = d.items, max = 13, shown = items.length <= max ? items : items.slice(0, max - 1), rest = items.slice(shown.length);
+    var rows = shown.map(function(it) { return [pmName(it), pmG(it[1]), true]; });
+    if (rest.length) rows.push(['외 ' + rest.reduce(function(s, it) { return s + it[2]; }, 0) + '개', pmG(rest.reduce(function(s, it) { return s + it[1]; }, 0)), false]);
+    rows.forEach(function(r, i) {
+      var y = 328 + i * 57;
+      if (r[2]) {
+        c.save(); c.translate(96, y - 28); c.strokeStyle = ink; c.lineWidth = 2.5; pmRound(c, 2, 2, 32, 32, 5); c.stroke();
+        c.strokeStyle = pink; c.lineWidth = 4.5; c.lineCap = 'round'; c.lineJoin = 'round'; c.stroke(new Path2D(checks[i % 3])); c.restore();
+      }
+      var ww = pmText(c, r[1], 970, y, pmFont(700, 34, 'Gaegu'), r[2] ? ink : '#8a8a8a', 'right');
+      pmText(c, pmFit(c, r[0], pmFont(400, 36, 'Gaegu'), 970 - 150 - ww - 30), 150, y, pmFont(400, 36, 'Gaegu'), r[2] ? ink : '#8a8a8a');
+    });
+    pmText(c, 'total ♡', 966, 1124, pmFont(700, 40, 'Gaegu'), pink, 'right');
+    var kf = pmFont(700, 150, 'Gaegu'); c.font = kf; var kw = pmMeasure(c, d.kg + 'kg');
+    c.fillStyle = hi; c.fillRect(970 - kw - 12, 1236, kw + 24, 44);
+    pmText(c, d.kg + 'kg', 958, 1262, kf, ink, 'right');
+    var tent = [{ d: 'M60 14 Q64 12 68 18 L112 96 Q115 104 106 104 H14 Q5 104 8 96 L52 18 Q56 12 60 14 Z', outline: 20 }, { d: 'M60 14 Q64 12 68 18 L112 96 Q115 104 106 104 H14 Q5 104 8 96 L52 18 Q56 12 60 14 Z', fill: '#9fd8c4' },
+      { d: 'M60 40 L84 104 H36 Z', fill: '#fff6e8' }, { d: 'M60 14 V4 L76 9 L60 14 Z', fill: '#ffc94d', stroke: '#ffc94d', sw: 3 }].concat(pmFace(60, 66, 0.75));
+    var mt = [{ d: 'M10 104 Q8 98 12 92 L52 30 Q60 18 68 30 L108 92 Q112 98 110 104 Z', outline: 20 }, { d: 'M10 104 Q8 98 12 92 L52 30 Q60 18 68 30 L108 92 Q112 98 110 104 Z', fill: '#b9b2f0' },
+      { d: 'M44 44 L52 30 Q60 18 68 30 L76 44 Q70 50 64 44 Q60 52 56 44 Q50 50 44 44 Z', fill: '#ffffff' }].concat(pmFace(60, 74, 0.8));
+    var starD = 'M60 10 L74 42 L108 46 L82 68 L90 102 L60 84 L30 102 L38 68 L12 46 L46 42 Z';
+    var star = [{ d: starD, outline: 20 }, { d: starD, fill: '#ffd66b' }].concat(pmFace(60, 60, 0.6));
+    var heartD = 'M60 100 C20 74 10 52 22 36 C34 22 52 26 60 40 C68 26 86 22 98 36 C110 52 100 74 60 100 Z';
+    pmSticker(c, 850, 120, 150, 8, tent);
+    pmSticker(c, 120, 1120, 210, -8, mt);
+    pmSticker(c, 380, 1220, 120, 12, star);
+    pmSticker(c, 690, 110, 70, -10, [{ d: heartD, outline: 20 }, { d: heartD, fill: '#ffb3c4' }]);
+  },
+  // 장비 0개: 기록 카드(영수증 '세팅된 장비가 없습니다 · 0.00 KG' 대신 피드에 늘 있는 정보로)
+  note0: function(c, d, L) {
+    var ink = '#16160f', sub = 'rgba(22,22,15,0.55)';
+    c.fillStyle = '#eeebe3'; c.fillRect(0, 0, 1080, 1440);
+    var seed = 0; for (var i = 0; i < d.spot.length; i++) seed = (seed * 31 + d.spot.charCodeAt(i)) % 233280;
+    var r = seed || 4242, rnd = function() { r = (r * 9301 + 49297) % 233280; return r / 233280; };
+    var cx = 760 + rnd() * 120, cy = 450 + rnd() * 60;
+    c.save(); c.beginPath(); c.rect(0, 150, 1080, 560); c.clip(); c.strokeStyle = 'rgba(22,22,15,0.16)'; c.lineWidth = 2;
+    for (var k = 1; k <= 11; k++) {
+      c.beginPath();
+      for (var a = 0; a <= 64; a++) {
+        var t = a / 64 * Math.PI * 2, w = 1 + 0.12 * Math.sin(t * 3 + seed % 7) + 0.07 * Math.sin(t * 5 + k * 0.6);
+        var px = cx + Math.cos(t) * k * 46 * 1.5 * w, py = cy + Math.sin(t) * k * 46 * 0.8 * w;
+        if (a) c.lineTo(px, py); else c.moveTo(px, py);
+      }
+      c.closePath(); c.stroke();
+    }
+    c.restore();
+    pmText(c, 'FIELD NOTE', 72, 80, pmFont(500, 22, PM_MONO), ink, 'left', 4.8);
+    pmText(c, 'ROMANTIC ROUTE', 1008, 80, pmFont(500, 22, PM_MONO), ink, 'right', 4.8);
+    if (d.elev) {
+      pmText(c, 'ELEVATION', 76, 220, pmFont(500, 20, PM_MONO), sub, 'left', 4);
+      var ew = pmText(c, d.elev.replace(/M$/, ''), 72, 470, pmArch(300), ink, 'left', -2);
+      pmText(c, 'M', 72 + ew + 18, 470, pmArch(92), ink);
+    }
+    pmText(c, pmFit(c, d.spot || '나의 기록', pmFont(900, 128, PM_SANS), 936), 70, 760, pmFont(900, 128, PM_SANS), ink, 'left', -4);
+    if (d.region) pmText(c, d.region, 76, 818, pmFont(500, 30, PM_SANS), sub);
+    pmLine(c, 72, 900, 1008, 900, ink, 2);
+    if (d.memo) pmText(c, pmFit(c, d.memo, pmFont(700, 38, PM_SANS), 936), 72, 980, pmFont(700, 38, PM_SANS), ink, 'left', -1);
+    [['DATE', d.date.slice(5)], ['BY', d.by || '-'], ['PHOTOS', String(d.photos)], ['PLOGGING', d.plogging ? 'DONE' : '-']].forEach(function(col, i) {
+      var x = 72 + i * 239;
+      pmText(c, col[0], x, 1128, pmFont(500, 19, PM_MONO), sub, 'left', 3);
+      pmText(c, pmFit(c, col[1], pmFont(700, 25, PM_MONO), 220), x, 1170, pmFont(700, 25, PM_MONO), (col[0] === 'PLOGGING' && d.plogging) ? '#3d5a3a' : ink);
+    });
+    pmBarcode(c, 72, 1338, 180, 40, ink);
+    pmLogo(c, L.dark, 1008, 1378, 96);
+  }
+};
+
+// 글꼴(한글은 글자 조각으로 나뉘어 있어 실제 쓸 글자를 넘겨 받는다)과 로고를 받은 뒤 그린다
+function pamphletFontSpecs(d) {
+  var txt = [d.spot, d.region, d.by, d.memo, d.date, d.elev, d.cls, '외개 ×·→◂▸♡'].concat(d.items.map(function(it) { return it[0]; })).join(' ') + ' 0123456789KGkgABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz,.';
+  var fams = [pmFont(400, 24, PM_MONO), pmFont(500, 24, PM_MONO), pmFont(700, 24, PM_MONO), '400 24px "Nanum Gothic Coding"', '700 24px "Nanum Gothic Coding"',
+    pmFont(900, 40, PM_SANS), pmFont(700, 40, PM_SANS), pmFont(500, 40, PM_SANS), pmArch(100)];
+  if (d.t === 'receipt') fams.push('400 40px Yellowtail');
+  if (d.t === 'note') fams.push('400 40px Gaegu', '700 40px Gaegu');
+  if (d.t === 'label') fams.push('800 40px "Nanum Myeongjo"', '700 40px "Nanum Myeongjo"', '400 40px "DM Serif Display"', 'italic 400 40px "DM Serif Display"');
+  return { fams: fams, txt: txt };
+}
+function paintPamphletCanvas(cv) {
+  if (cv.getAttribute('data-drawn') === '1') return;
+  cv.setAttribute('data-drawn', '1');
+  var d;
+  try { d = JSON.parse(cv.getAttribute('data-pm') || '{}'); } catch (e) { return; }
+  if (!d || !PAMPHLET_DRAW[d.t]) return;
+  d.items = Array.isArray(d.items) ? d.items : [];
+  ensurePosterFonts();
+  ensurePamphletFonts();
+  var spec = pamphletFontSpecs(d);
+  var fontReady = (document.fonts && document.fonts.load)
+    ? Promise.resolve(window.__pmCssReady).then(function() {
+        return Promise.all(spec.fams.map(function(f) { return document.fonts.load(f, spec.txt).catch(function() {}); }));
+      })
+    : Promise.resolve();
+  var logos = Promise.all([pmLoadLogo('rs-logo-white.png'), pmLoadLogo('rs-logo-dark.png')]);
+  var wait = function(ms) { return new Promise(function(resolve) { setTimeout(resolve, ms); }); };
+  var draw = function() {
+    return logos.then(function(r) {
+      if (!cv.isConnected) return;
+      var c = cv.getContext('2d');
+      c.clearRect(0, 0, cv.width, cv.height);
+      try { PAMPHLET_DRAW[d.t](c, d, { white: r[0], dark: r[1] }); } catch (eDraw) { console.warn('[templates.js:paintPamphletCanvas]', eDraw); }
+      if (cv.closest && cv.closest('#packShareCaptureArea') && typeof scheduleReadyShotPrecapture === 'function') scheduleReadyShotPrecapture();
+    });
+  };
+  // 화면엔 1.2초 안에 먼저 그리고(빈 카드로 두지 않게), 글꼴이 다 오면 다시 그린다. 저장은 다시 그린 뒤를 기다린다
+  var settled = false;
+  fontReady.then(function() { settled = true; });
+  Promise.race([fontReady, wait(1200)]).then(function() { if (!settled) draw(); });
+  cv.__rsPaint = Promise.race([fontReady, wait(8000)]).then(draw);
+}
+function paintPamphletCanvases(root) {
+  var list = (root || document).querySelectorAll ? (root || document).querySelectorAll('canvas[data-rs-pamphlet]:not([data-drawn])') : [];
+  Array.prototype.forEach.call(list, paintPamphletCanvas);
+}
+(function watchPamphlets() {
+  if (window.__rsPamphletWatch || typeof MutationObserver === 'undefined') return;
+  window.__rsPamphletWatch = true;
+  var pending = false;
+  new MutationObserver(function() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function() { pending = false; paintPamphletCanvases(document); });
+  }).observe(document.documentElement, { childList: true, subtree: true });
+  paintPamphletCanvases(document);
+})();
 
 window.generateCardMarkup = generateCardMarkup;
 window.switchShareCardTemplate = switchShareCardTemplate;

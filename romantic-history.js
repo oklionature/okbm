@@ -4597,6 +4597,16 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
   }
 
+  // 박지 이름(또는 번호)으로 등록 박지 한 곳을 찾는다. 팸플릿 카드의 지역·해발에 쓴다(templates.js pamphletData)
+  window.okbmFindMasterSpot = function(rawSpotName, rawSpotId) {
+    var pool = okbmCollectMasterSpotPool();
+    if (!pool.length) return null;
+    var sid = String(rawSpotId || '').trim();
+    var found = sid ? okbmFindSpotInPoolById(pool, sid) : null;
+    if (!found && rawSpotName && window.isSpotRegisteredInMasterDB(rawSpotName)) found = window.okbmFindSpotByFocusQuery(pool, rawSpotName);
+    return found || null;
+  };
+
   window.isSpotRegisteredInMasterDB = function(rawSpotName) {
     if (!rawSpotName) return false;
     var compact = window.okbmCompactSpotFocusKey(rawSpotName);
