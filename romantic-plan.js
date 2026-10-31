@@ -15,75 +15,74 @@
     var style = document.createElement('style');
     style.id = 'romantic-plan-core-style';
     style.innerHTML = `
-      .weight-dashboard-strip {
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 6px !important;
-        height: 88px !important;
-        flex-shrink: 0 !important;
-        box-sizing: border-box !important;
-      }
-      .weight-pod-box {
-        background: rgba(255, 255, 255, 0.025) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 9px !important;
-        padding: 7px 9px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: space-between !important;
-        min-width: 0 !important;
-        box-sizing: border-box !important;
-      }
-      .weight-val-big {
-        font-family: 'Space Grotesk', 'JetBrains Mono', sans-serif !important;
-        font-size: 1.60rem !important;
-        font-weight: 900 !important;
-        line-height: 1 !important;
-        letter-spacing: -0.03em !important;
-        transition: color 0.2s ease !important;
-      }
-      .weight-bpl-badge {
-        font-size: 0.60rem !important;
-        font-weight: 800 !important;
-        padding: 1px 5px !important;
-        border-radius: 3px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        border: 1px solid transparent !important;
-        white-space: nowrap !important;
-      }
-      .weight-gauge-bg {
-        width: 100% !important;
-        height: 3px !important;
-        background: rgba(255, 255, 255, 0.06) !important;
-        border-radius: 2px !important;
-        overflow: hidden !important;
-      }
-      .weight-gauge-fill {
-        height: 100% !important;
-        width: 0% !important;
-        border-radius: 2px !important;
-        transition: width 0.25s ease, background-color 0.2s ease !important;
-      }
-      .gear-popover-sheet {
-        display: none;
-        position: absolute !important;
-        top: 138px !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        background: rgba(11, 15, 25, 0.98) !important;
-        border-top: 1.5px solid rgba(255, 255, 255, 0.15) !important;
-        border-radius: 14px 14px 0 0 !important;
-        z-index: 600 !important;
-        flex-direction: column !important;
-        padding: 12px !important;
-        box-sizing: border-box !important;
-        box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.95) !important;
-      }
+      /* 배낭 꾸리기(계산기) 화면: 플랜 일정 창과 같은 둥근 카드 · 중립 회색 · 하늘색 버튼 하나 (tokens.css 색) */
+      .pk-head { flex:0 0 auto; display:flex; flex-direction:column; gap:10px; padding:2px 0 4px; position:relative; z-index:20; }
+      .pk-trip { display:flex; align-items:center; gap:8px; min-height:36px; }
+      .pk-trip-spot { flex:1; min-width:0; display:flex; align-items:baseline; gap:8px; background:none; border:none; padding:4px 0; color:var(--tx-1, #f2f2f3); cursor:pointer; text-align:left; font-family:inherit; }
+      .pk-trip-date { flex-shrink:0; font-size:13px; font-weight:800; color:var(--tx-2, #d1d1d6); font-variant-numeric:tabular-nums; }
+      .pk-trip-name { min-width:0; font-size:17px; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .pk-trip-elev { flex-shrink:0; font-size:12px; font-weight:700; color:var(--tx-3, #8b8b93); }
+      .pk-trip-list { flex-shrink:0; height:32px; padding:0 12px; border-radius:999px; background:var(--bg-2, #17171b); border:none; color:var(--tx-2, #d1d1d6); font-size:12px; font-weight:800; cursor:pointer; font-family:inherit; }
+      .pk-card { background:#1a1c22; border-radius:18px; padding:14px 16px 12px; }
+      .pk-wrow { display:flex; align-items:baseline; gap:8px; }
+      .pk-kg b { font-size:34px; font-weight:900; letter-spacing:-0.03em; line-height:1; color:var(--tx-1, #f2f2f3); font-variant-numeric:tabular-nums; }
+      .pk-kg i { font-style:normal; font-size:16px; font-weight:800; margin-left:3px; color:var(--tx-2, #d1d1d6); }
+      .pk-g { font-size:12px; color:var(--tx-3, #8b8b93); font-weight:700; font-variant-numeric:tabular-nums; }
+      .pk-cls { margin-left:auto; align-self:center; font-size:12px; font-weight:800; padding:5px 10px; border-radius:999px; color:#34d399; background:rgba(52,211,153,0.12); white-space:nowrap; }
+      .pk-gauge { height:6px; border-radius:9px; background:var(--bg-3, #2a2a30); margin:12px 0 4px; overflow:hidden; }
+      .pk-gauge i { display:block; height:100%; width:0; border-radius:9px; background:#34d399; transition:width .25s ease, background-color .2s ease; }
+      .pk-marks { position:relative; height:14px; font-size:11px; color:var(--tx-3, #8b8b93); font-variant-numeric:tabular-nums; }
+      .pk-marks span { position:absolute; top:0; }
+      .pk-marks span:first-child { left:0; }
+      .pk-marks span:last-child { right:0; }
+      .pk-mark-ul { left:42.8%; transform:translateX(-50%); }
+      .pk-recent { margin-top:10px; padding-top:10px; border-top:1px solid var(--line, rgba(255,255,255,0.08)); display:flex; align-items:center; gap:6px; min-height:30px; cursor:pointer; }
+      .pk-recent-label { flex-shrink:0; font-size:12px; font-weight:800; color:var(--tx-3, #8b8b93); margin-right:2px; }
+      .pk-pill { min-width:0; max-width:120px; font-size:12px; font-weight:700; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); padding:6px 10px; border-radius:999px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .pk-pill.is-new { background:rgba(91,184,240,0.16); color:#5bb8f0; }
+      .pk-recent-all { margin-left:auto; flex-shrink:0; font-size:12px; font-weight:800; color:var(--tx-2, #d1d1d6); }
+      .pk-recent-empty { font-size:12px; color:var(--tx-3, #8b8b93); font-weight:600; }
+      .pk-search-row { display:flex; gap:8px; }
+      .pk-search { flex:1; min-width:0; height:42px; border-radius:12px; background:var(--bg-2, #17171b); display:flex; align-items:center; gap:8px; padding:0 12px; color:var(--tx-3, #8b8b93); box-sizing:border-box; }
+      .pk-search input { flex:1; min-width:0; height:100%; background:none; border:none; outline:none; color:var(--tx-1, #f2f2f3); font-size:14px; font-family:inherit; padding:0; }
+      .pk-search input::placeholder { color:var(--tx-3, #8b8b93); }
+      .pk-search button { flex-shrink:0; width:22px; height:22px; border-radius:50%; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-2, #d1d1d6); font-size:11px; cursor:pointer; align-items:center; justify-content:center; padding:0; }
+      .pk-add { flex-shrink:0; width:42px; height:42px; border-radius:12px; border:none; background:var(--bg-2, #17171b); color:var(--tx-2, #d1d1d6); font-size:22px; font-weight:500; cursor:pointer; line-height:1; }
+      .pk-chips { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; }
+      .pk-chips::-webkit-scrollbar { display:none; }
+      .pk-chip { flex:0 0 auto; height:34px; padding:0 14px; border-radius:999px; border:none; background:var(--bg-2, #17171b); color:var(--tx-2, #d1d1d6); font-size:13px; font-weight:800; white-space:nowrap; cursor:pointer; font-family:inherit; }
+      .pk-chip.is-on { background:#ffffff; color:#000000; }
+      .pk-shelf { flex:1 1 0%; min-height:0; overflow-y:auto; display:flex; flex-direction:column; margin-top:2px; }
+      .pk-shelf-sub { display:flex; justify-content:space-between; align-items:center; padding:8px 2px 4px; font-size:12px; font-weight:700; color:var(--tx-3, #8b8b93); }
+      .pk-shelf-empty { text-align:center; padding:48px 16px; color:var(--tx-3, #8b8b93); font-size:13px; line-height:1.6; }
+      .pk-shelf-empty button { margin-top:14px; height:40px; padding:0 18px; border-radius:12px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; }
+      .pk-meta { font-size:12px; color:var(--tx-3, #8b8b93); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-variant-numeric:tabular-nums; }
+      .pk-plus { width:34px; height:34px; border-radius:50%; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); font-size:20px; line-height:1; cursor:pointer; padding:0; }
+      .pk-step { display:flex; align-items:center; height:34px; border-radius:999px; background:rgba(91,184,240,0.16); color:#5bb8f0; }
+      .pk-step button { width:32px; height:34px; border:none; background:none; color:#5bb8f0; font-size:18px; font-weight:900; cursor:pointer; padding:0; }
+      .pk-step span { min-width:14px; text-align:center; font-size:14px; font-weight:900; font-variant-numeric:tabular-nums; }
+      .pk-dock { flex-shrink:0; display:flex; gap:8px; padding:10px 0 4px; border-top:1px solid var(--line, rgba(255,255,255,0.08)); background:#000000; }
+      .pk-dock-sub { flex-shrink:0; height:48px; padding:0 14px; border-radius:14px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:14px; font-weight:800; cursor:pointer; white-space:nowrap; font-family:inherit; }
+      .pk-dock-save { flex:1; min-width:0; height:48px; border-radius:14px; border:none; background:#5bb8f0; color:#00131f; font-size:15px; font-weight:900; cursor:pointer; white-space:nowrap; font-family:inherit; }
+      /* 담긴 장비 펼침 */
+      .pk-packed { display:none; position:absolute; inset:0; z-index:600; background:rgba(0,0,0,0.6); flex-direction:column; justify-content:flex-end; }
+      .pk-packed-panel { max-height:78%; background:#1a1c22; border-radius:22px 22px 0 0; padding:16px 0 8px; display:flex; flex-direction:column; box-shadow:0 -12px 35px rgba(0,0,0,0.6); }
+      .pk-packed-head { display:flex; align-items:baseline; gap:8px; padding:0 18px 10px; }
+      .pk-packed-head b { font-size:17px; font-weight:900; color:var(--tx-1, #f2f2f3); }
+      .pk-packed-head span { font-size:13px; font-weight:700; color:var(--tx-3, #8b8b93); font-variant-numeric:tabular-nums; }
+      .pk-packed-head button { margin-left:auto; align-self:center; width:32px; height:32px; border-radius:50%; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-2, #d1d1d6); font-size:14px; cursor:pointer; }
+      .pk-seg { display:flex; margin:0 18px 6px; background:var(--bg-1, #0f0f11); border-radius:12px; padding:3px; }
+      .pk-seg button { flex:1; height:34px; border-radius:10px; border:none; background:none; color:var(--tx-3, #8b8b93); font-size:13px; font-weight:800; cursor:pointer; font-family:inherit; }
+      .pk-seg button.is-on { background:var(--bg-3, #2a2a30); color:#ffffff; }
+      .pk-packed-list { flex:1; min-height:0; overflow-y:auto; }
+      .pk-packed-group { padding:12px 18px 4px; display:flex; justify-content:space-between; font-size:12px; font-weight:800; color:var(--tx-3, #8b8b93); font-variant-numeric:tabular-nums; }
+      .pk-it { display:flex; align-items:center; gap:12px; padding:11px 18px; border-bottom:1px solid var(--line, rgba(255,255,255,0.08)); }
+      .pk-it-n { flex:1; min-width:0; }
+      .pk-it-n b { display:block; font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .pk-it-new { font-size:11px; font-weight:800; color:#5bb8f0; margin-right:6px; }
+      .pk-it-w { flex-shrink:0; font-size:14px; font-weight:800; color:var(--tx-2, #d1d1d6); font-variant-numeric:tabular-nums; }
+      .pk-it-x { flex-shrink:0; width:32px; height:32px; border-radius:50%; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-2, #d1d1d6); font-size:18px; cursor:pointer; padding:0; }
+      .pk-packed-empty { text-align:center; padding:40px 0; color:var(--tx-3, #8b8b93); font-size:13px; }
       .calc-slide-sheet {
         position: fixed !important;
         left: 50% !important;
@@ -142,14 +141,14 @@
       }
 
       .gear-shelf-item-row {
-        border-radius: 8px !important;
-        padding: 7px 10px !important;
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        flex-shrink: 0 !important;
-        box-sizing: border-box !important;
-        transition: all 0.15s ease !important;
+        padding:12px 2px !important;
+        display:flex !important;
+        justify-content:space-between !important;
+        align-items:center !important;
+        gap:10px !important;
+        flex-shrink:0 !important;
+        box-sizing:border-box !important;
+        border-bottom:1px solid var(--line, rgba(255,255,255,0.08)) !important;
       }
     `;
     document.head.appendChild(style);
@@ -594,14 +593,15 @@
     pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px; flex-shrink:0; vertical-align:-1px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
     backpack: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px; flex-shrink:0;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>',
     reset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px; flex-shrink:0;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>',
-    starFilled: '<svg viewBox="0 0 24 24" fill="#fde047" stroke="#fde047" stroke-width="1" style="width:16px; height:16px; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
-    starOutline: '<svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" style="width:16px; height:16px; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    starFilled: '<svg viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" stroke-width="1" style="width:20px; height:20px; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    starOutline: '<svg viewBox="0 0 24 24" fill="none" stroke="#55555d" stroke-width="2" style="width:20px; height:20px; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
     cardCamera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px; flex-shrink:0;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
     presetStack: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px; flex-shrink:0;"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px; flex-shrink:0;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
   };
 
- window.__activeCalcCategoryTab = window.__activeCalcCategoryTab && window.__activeCalcCategoryTab !== 'fav' ? window.__activeCalcCategoryTab : 'all';
+  // 배낭 꾸리기는 별 누른 장비(즐겨찾기)부터 보여 준다. 즐겨찾기가 없으면 전체
+  window.__activeCalcCategoryTab = window.__activeCalcCategoryTab || ((window.favoriteGearSet && window.favoriteGearSet.size) ? 'fav' : 'all');
 
   window.setCalcCategoryTab = function(catId) {
     window.__activeCalcCategoryTab = catId;
@@ -977,7 +977,8 @@
             catId: cat.id,
             idx: idx,
             name: it.name || it.itemName,
-            weight: w
+            weight: w,
+            t: okbmPackedItemTime(it)
           });
         }
       });
@@ -994,109 +995,126 @@
     var safeCat = escapeHtml(catId || 'other');
     var safeGear = escapeHtml(gearName || '');
     var w = Number(weight || 0);
+    var addAttrs = 'data-cat="' + safeCat + '" data-gear="' + safeGear + '" data-weight="' + w + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.addGearToCategory(this.dataset.gear, Number(this.dataset.weight), event);"';
     if (count > 0) {
-      return '<div style="display:flex; align-items:center; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:14px; padding:1px 4px; gap:4px; height:24px;">' +
-        '<button type="button" data-cat="' + safeCat + '" data-gear="' + safeGear + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.decrementGearCount(this.dataset.gear);" style="background:none; border:none; color:#ffffff; font-size:0.85rem; font-weight:900; cursor:pointer; width:16px;">−</button>' +
-        '<span class="gear-shelf-count" style="font-size:0.72rem; font-weight:900; color:#ffffff; font-family:\'JetBrains Mono\', monospace; min-width:12px; text-align:center;">' + count + '</span>' +
-        '<button type="button" data-cat="' + safeCat + '" data-gear="' + safeGear + '" data-weight="' + w + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.addGearToCategory(this.dataset.gear, Number(this.dataset.weight));" style="background:none; border:none; color:#ffffff; font-size:0.85rem; font-weight:900; cursor:pointer; width:16px;">+</button>' +
+      return '<div class="pk-step">' +
+        '<button type="button" aria-label="하나 빼기" data-cat="' + safeCat + '" data-gear="' + safeGear + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.decrementGearCount(this.dataset.gear);">−</button>' +
+        '<span class="gear-shelf-count">' + count + '</span>' +
+        '<button type="button" aria-label="하나 더 담기" ' + addAttrs + '>+</button>' +
       '</div>';
     }
-    return '<button type="button" data-cat="' + safeCat + '" data-gear="' + safeGear + '" data-weight="' + w + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.addGearToCategory(this.dataset.gear, Number(this.dataset.weight));" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16); color:#ffffff; font-size:0.66rem; font-weight:800; padding:3px 9px; border-radius:6px; cursor:pointer;">+ 담기</button>';
+    return '<button type="button" class="pk-plus" aria-label="담기" ' + addAttrs + '>+</button>';
   }
+
+
+  // 장비 id('item_<시각>_…')에서 담은 시각을 읽는다. 시각이 없으면 0(맨 뒤)
+  function okbmPackedItemTime(it) {
+    var m = /^item_(\d{10,})/.exec(String((it && it.id) || ''));
+    return m ? Number(m[1]) : 0;
+  }
+
+  // 담긴 장비를 방금 담은 것부터 늘어놓는다(시각이 같으면 나중에 들어간 것이 앞)
+  function okbmPackedByRecent(items) {
+    return items.map(function(it, i) { return { it: it, i: i }; }).sort(function(a, b) {
+      return (b.it.t - a.it.t) || (b.i - a.i);
+    }).map(function(x) { return x.it; });
+  }
+
+  window.__okbmPackedSort = window.__okbmPackedSort || 'recent';
+
+  window.okbmTogglePackedList = function() {
+    var p = document.getElementById('calcPackedItemsPopover');
+    if (!p) return;
+    p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
+  };
+
+  window.okbmSetPackedSort = function(mode) {
+    window.__okbmPackedSort = mode;
+    window.refreshPlanPackedChrome();
+  };
 
   window.refreshPlanPackedChrome = function() {
     var packed = okbmCollectPackedGearItems();
     var allPackedItems = packed.items;
     var totalGrams = packed.totalGrams;
-    var totalKg = (totalGrams / 1000).toFixed(2);
     var kgEl = document.getElementById('planTotalWeightKgText');
     var gramsEl = document.getElementById('planTotalWeightGramsText');
     var gaugeEl = document.getElementById('planWeightGaugeFill');
     var bplBadge = document.getElementById('planBplStatusBadge');
     var recentGearBox = document.getElementById('planRecentGearBox');
-    var CATEGORY_PALETTE = PLAN_CATEGORY_PALETTE;
 
-    var weightTheme = {
-      color: '#2dd4bf',
-      badgeBg: 'rgba(45, 212, 191, 0.12)',
-      badgeBorder: 'rgba(45, 212, 191, 0.28)',
-      text: 'UL 초경량 (≤6kg)'
-    };
-    if (totalGrams > 14000) {
-      weightTheme = {
-        color: '#f87171',
-        badgeBg: 'rgba(248, 113, 113, 0.12)',
-        badgeBorder: 'rgba(248, 113, 113, 0.28)',
-        text: '헤비 (14kg+)'
-      };
-    } else if (totalGrams > 6000) {
-      weightTheme = {
-        color: '#f59e0b',
-        badgeBg: 'rgba(245, 158, 11, 0.12)',
-        badgeBorder: 'rgba(245, 158, 11, 0.28)',
-        text: '스탠다드 (6~14kg)'
-      };
-    }
+    // 등급 색은 tokens.css 상태색(쉬움 · 주의 · 어려움)
+    var weightTheme = { color: '#34d399', bg: 'rgba(52,211,153,0.12)', text: '초경량' };
+    if (totalGrams > 14000) weightTheme = { color: '#f43f5e', bg: 'rgba(244,63,94,0.12)', text: '헤비' };
+    else if (totalGrams > 6000) weightTheme = { color: '#fbbf24', bg: 'rgba(251,191,36,0.12)', text: '스탠다드' };
 
-    if (kgEl) {
-      kgEl.innerText = totalKg + ' kg';
-      kgEl.style.setProperty('color', weightTheme.color, 'important');
-    }
-    if (gramsEl) {
-      gramsEl.innerText = totalGrams.toLocaleString() + ' g';
-    }
+    if (kgEl) kgEl.textContent = (totalGrams / 1000).toFixed(2);
+    if (gramsEl) gramsEl.textContent = totalGrams.toLocaleString() + 'g';
     if (bplBadge) {
-      bplBadge.innerText = weightTheme.text;
-      bplBadge.style.setProperty('color', weightTheme.color, 'important');
-      bplBadge.style.setProperty('background', weightTheme.badgeBg, 'important');
-      bplBadge.style.setProperty('border-color', weightTheme.badgeBorder, 'important');
+      bplBadge.textContent = weightTheme.text;
+      bplBadge.style.color = weightTheme.color;
+      bplBadge.style.background = weightTheme.bg;
     }
     if (gaugeEl) {
-      gaugeEl.style.setProperty('width', Math.min(100, Math.round((totalGrams / 14000) * 100)) + '%', 'important');
-      gaugeEl.style.setProperty('background-color', weightTheme.color, 'important');
+      gaugeEl.style.width = Math.min(100, Math.round((totalGrams / 14000) * 100)) + '%';
+      gaugeEl.style.backgroundColor = weightTheme.color;
     }
 
+    var recent = okbmPackedByRecent(allPackedItems);
+
+    // 무게 카드 아래 '방금 담음': 최근 두 개 + 전체 개수
     if (recentGearBox) {
-      if (allPackedItems.length === 0) {
-        recentGearBox.innerHTML = '' +
-          '<div style="font-size:0.70rem; font-weight:800; color:#94a3b8;">담긴 장비</div>' +
-          '<div style="display:flex; flex-direction:column; justify-content:center; align-items:center; flex:1; color:#64748b; font-size:0.68rem; line-height:1.3;">' +
-            '<span>배낭 비어있음</span>' +
-            '<span style="font-size:0.58rem; color:#475569;">장비를 담아보세요</span>' +
-          '</div>';
+      if (recent.length === 0) {
+        recentGearBox.innerHTML = '<span class="pk-recent-empty">아직 담은 장비가 없어요</span>';
       } else {
-        var lastItem = allPackedItems[allPackedItems.length - 1];
-        var lastPal = CATEGORY_PALETTE[lastItem.catId] || { color: '#94a3b8' };
-        recentGearBox.innerHTML = '' +
-          '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-            '<span style="font-size:0.70rem; font-weight:800; color:#cbd5e1;">담긴 장비</span>' +
-            '<span style="font-size:0.62rem; font-weight:900; color:#ffffff; background:rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px; font-family:\'JetBrains Mono\', monospace;">' + allPackedItems.length + '개 ▾</span>' +
-          '</div>' +
-          '<div style="display:flex; flex-direction:column; gap:2px; min-width:0;">' +
-            '<div style="font-size:0.78rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(lastItem.name) + '</div>' +
-            '<div style="display:flex; justify-content:flex-end; align-items:baseline; font-family:\'JetBrains Mono\', monospace;">' +
-              '<span style="font-size:0.72rem; font-weight:900; color:' + lastPal.color + ';">' + lastItem.weight + 'g</span>' +
-            '</div>' +
-          '</div>';
+        recentGearBox.innerHTML = '<span class="pk-recent-label">방금 담음</span>' +
+          recent.slice(0, 2).map(function(it, i) {
+            return '<span class="pk-pill' + (i === 0 ? ' is-new' : '') + '">' + escapeHtml(it.name) + '</span>';
+          }).join('') +
+          '<span class="pk-recent-all">' + recent.length + '개 ›</span>';
       }
+    }
+
+    var summaryEl = document.getElementById('calcPackedItemsSummary');
+    if (summaryEl) summaryEl.textContent = allPackedItems.length ? (allPackedItems.length + '개 · ' + totalGrams.toLocaleString() + 'g') : '';
+
+    var sort = window.__okbmPackedSort;
+    var segEl = document.getElementById('calcPackedSortSeg');
+    if (segEl) {
+      segEl.innerHTML = [['recent', '담은 순서'], ['cat', '분류별'], ['heavy', '무거운 순']].map(function(o) {
+        return '<button type="button" class="' + (o[0] === sort ? 'is-on' : '') + '" data-sort="' + o[0] + '" onclick="window.okbmSetPackedSort(this.dataset.sort)">' + o[1] + '</button>';
+      }).join('');
     }
 
     var popoverListEl = document.getElementById('calcPackedItemsListContainer');
     if (popoverListEl) {
-      popoverListEl.innerHTML = allPackedItems.length === 0
-        ? '<div style="text-align:center; padding:35px 0; color:#64748b; font-size:0.75rem;">담긴 장비가 없습니다.</div>'
-        : allPackedItems.map(function(it) {
-          var pal = CATEGORY_PALETTE[it.catId] || { color: '#94a3b8' };
-          return '<div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-left:3.5px solid ' + pal.color + '; border-radius:7px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">' +
-            '<div style="flex:1; min-width:0; padding-right:8px;">' +
-              '<div style="font-size:0.80rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(it.name) + '</div>' +
-              '<div style="font-size:0.60rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace; margin-top:1px;">' + (it.weight / 1000).toFixed(2) + 'kg (' + it.weight + 'g)</div>' +
-            '</div>' +
-            '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
-              '<button type="button" data-cat="' + escapeHtml(it.catId) + '" data-gear="' + escapeHtml(it.name) + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.decrementGearCount(this.dataset.gear);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.72rem; font-weight:900; width:26px; height:26px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center;">−</button>' +
-            '</div>' +
-          '</div>';
+      var newest = recent[0];
+      var rowHtml = function(it, showCat) {
+        var label = (PLAN_CATEGORY_PALETTE[it.catId] || {}).label || '';
+        var isNew = it === newest && allPackedItems.length > 1;
+        var meta = (isNew ? '<span class="pk-it-new">방금</span>' : '') + (showCat ? escapeHtml(label) : '');
+        return '<div class="pk-it"><div class="pk-it-n"><b>' + escapeHtml(it.name) + '</b>' +
+            (meta ? '<div class="pk-meta">' + meta + '</div>' : '') + '</div>' +
+          '<span class="pk-it-w">' + it.weight.toLocaleString() + 'g</span>' +
+          '<button type="button" class="pk-it-x" aria-label="하나 빼기" data-cat="' + escapeHtml(it.catId) + '" data-gear="' + escapeHtml(it.name) + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.decrementGearCount(this.dataset.gear);">−</button></div>';
+      };
+      if (allPackedItems.length === 0) {
+        popoverListEl.innerHTML = '<div class="pk-packed-empty">담긴 장비가 없어요</div>';
+      } else if (sort === 'cat') {
+        var groups = [];
+        allPackedItems.forEach(function(it) {
+          var g = groups.length && groups[groups.length - 1].catId === it.catId ? groups[groups.length - 1] : null;
+          if (!g) { g = { catId: it.catId, items: [], grams: 0 }; groups.push(g); }
+          g.items.push(it); g.grams += it.weight;
+        });
+        popoverListEl.innerHTML = groups.map(function(g) {
+          return '<div class="pk-packed-group"><span>' + escapeHtml((PLAN_CATEGORY_PALETTE[g.catId] || {}).label || '') + '</span><span>' + g.grams.toLocaleString() + 'g</span></div>' +
+            g.items.map(function(it) { return rowHtml(it, false); }).join('');
         }).join('');
+      } else {
+        var list = sort === 'heavy' ? allPackedItems.slice().sort(function(a, b) { return b.weight - a.weight; }) : recent;
+        popoverListEl.innerHTML = list.map(function(it) { return rowHtml(it, true); }).join('');
+      }
     }
   };
 
@@ -1112,16 +1130,10 @@
       var catId = row.dataset.gearCat || row.getAttribute('data-gear-cat') || resolvePlanGearCategoryId(gearName);
       var count = (gearMap[catId] || []).filter(function(it) { return it && it.name === gearName; }).length;
       var isAdded = count > 0;
-      var pal = PLAN_CATEGORY_PALETTE[catId] || { color: '#94a3b8', border: 'rgba(255,255,255,0.12)' };
-      row.style.setProperty('background', isAdded ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.02)');
-      row.style.setProperty('border', isAdded ? ('1px solid ' + pal.border) : '1px solid rgba(255,255,255,0.08)');
-      row.style.setProperty('border-left', isAdded ? ('2px solid ' + pal.color) : '2px solid transparent', 'important');
 
       var starBtn = row.querySelector('.gear-shelf-star-btn');
       if (starBtn) starBtn.innerHTML = isFav ? PLAN_SVG.starFilled : PLAN_SVG.starOutline;
 
-      var nameEl = row.querySelector('.gear-shelf-name');
-      if (nameEl) nameEl.style.color = isAdded ? '#ffffff' : '#e2e8f0';
 
       var packSlot = row.querySelector('.gear-shelf-pack-slot');
       var weightBtn = row.querySelector('[data-weight]');
@@ -1235,6 +1247,7 @@
     if (tabsContainer) {
       var activeTab = window.__activeCalcCategoryTab;
       var catList = [
+        { id: 'fav', title: '★ 즐겨찾기' },
         { id: 'all', title: '전체' },
         { id: 'shelter', title: '텐트·타프' },
         { id: 'sleep', title: '침낭·매트' },
@@ -1248,17 +1261,7 @@
       ];
 
       tabsContainer.innerHTML = catList.map(function(c) {
-        var isActive = (c.id === activeTab);
-        var tTheme = CATEGORY_PALETTE[c.id] || { color: '#cbd5e1', border: 'rgba(255,255,255,0.12)' };
-        var btnBg = isActive ? tTheme.bg : 'rgba(255,255,255,0.03)';
-        var btnBorder = isActive ? tTheme.border : 'rgba(255,255,255,0.07)';
-        var btnColor = tTheme.color;
-
-        return `
-          <button type="button" data-okbm-arg="${escapeHtml(c.id)}" onclick="window.setCalcCategoryTab(this.dataset.okbmArg)" style="flex:0 0 76px !important; width:76px !important; min-width:76px !important; max-width:76px !important; height:30px !important; background:${btnBg}; border:1px solid ${btnBorder}; color:${btnColor}; font-size:0.67rem; font-weight:${isActive ? '900' : '700'}; padding:0 2px; border-radius:6px; white-space:nowrap; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; box-sizing:border-box; letter-spacing:-0.02em; transition:all 0.15s ease;">
-            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.title}</span>
-          </button>
-        `;
+        return '<button type="button" class="pk-chip' + (c.id === activeTab ? ' is-on' : '') + '" data-okbm-arg="' + escapeHtml(c.id) + '" onclick="window.setCalcCategoryTab(this.dataset.okbmArg)">' + c.title + '</button>';
       }).join('');
     }
 
@@ -1293,7 +1296,9 @@
         });
       });
 
-      if (curTab === 'all' || curTab === 'fav') {
+      if (curTab === 'fav') {
+        pool = allSource.filter(function(g) { return g && window.favoriteGearSet && window.favoriteGearSet.has(g.name); });
+      } else if (curTab === 'all') {
         pool = allSource;
       } else {
         pool = allSource.filter(function(g) { return (g.category_id || 'other') === curTab; });
@@ -1347,7 +1352,9 @@
       if (filtered.length === 0) {
         shelfContainer.onscroll = null; // 이전 목록의 추가 로딩 핸들러가 빈 결과 화면에 행을 붙이지 않도록
         shelfContainer.__okbmShelfKey = '';
-        shelfContainer.innerHTML = `<div style="text-align:center; padding:60px 0; color:#64748b; font-size:0.75rem;">일치하는 장비가 없습니다.<br>상단 검색어를 변경하거나 직접 등록해보세요.</div>`;
+        shelfContainer.innerHTML = (curTab === 'fav' && !cleanQ)
+          ? '<div class="pk-shelf-empty">별을 누른 장비가 여기 모여요.<br>전체에서 내 장비를 찾아 별을 눌러 보세요.<br><button type="button" onclick="window.setCalcCategoryTab(\'all\')">전체 장비 보기</button></div>'
+          : '<div class="pk-shelf-empty">맞는 장비가 없어요.<br>검색어를 바꾸거나 + 로 직접 등록해 보세요.</div>';
       } else {
         // 처음엔 40개만 그리고 스크롤 끝에서 80개씩 더 붙인다(검색 결과도 동일).
         // 같은 탭·검색어로 다시 그릴 때(카테고리 로딩, 장비 등록 등)는 보던 개수와 스크롤 위치를 유지한다.
@@ -1358,11 +1365,7 @@
         var initialLimit = Math.min(filtered.length, Math.max(40, keepShown));
         var renderItems = filtered.slice(0, initialLimit);
 
-        var guideHtml = `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:2px 4px 6px 4px; border-bottom:1px solid rgba(255,255,255,0.05); margin-bottom:6px;">
-            <span style="font-size:0.60rem; color:#64748b; font-weight:700;">전체 ${filtered.length}개 장비</span>
-          </div>
-        `;
+        var guideHtml = '<div class="pk-shelf-sub"><span>' + (curTab === 'fav' ? ('즐겨찾기 ' + filtered.length + '개 · 별을 누르면 여기 모여요') : ((cleanQ ? '찾은 장비 ' : '장비 ') + filtered.length.toLocaleString() + '개')) + '</span></div>';
 
         function renderRowHtml(g) {
           var targetCatId = g.category_id || 'other';
@@ -1372,24 +1375,19 @@
           var pal = CATEGORY_PALETTE[targetCatId] || { color: '#94a3b8', border: 'rgba(255,255,255,0.12)' };
           var safeGearName = escapeHtml(g.name);
 
-          var cardBorder = isAdded ? ('border:1px solid ' + pal.border + '; border-left:2px solid ' + pal.color + ';') : 'border:1px solid rgba(255,255,255,0.08); border-left:2px solid transparent;';
-          var cardBg = isAdded ? 'background:rgba(255,255,255,0.055);' : 'background:rgba(255,255,255,0.02);';
-
-          var deleteBtnHtml = g.isCustom ? ` · <button type="button" data-gear="${safeGearName}" onclick="event.stopPropagation(); window.deleteCustomGearCompletely(this.dataset.gear);" style="background:none; border:none; color:#fda4af; font-size:0.58rem; font-weight:700; cursor:pointer; padding:0; text-decoration:underline;">삭제</button>` : '';
+          var deleteBtnHtml = g.isCustom ? ` · <button type="button" data-gear="${safeGearName}" onclick="event.stopPropagation(); window.deleteCustomGearCompletely(this.dataset.gear);" style="background:none; border:none; color:var(--tx-3, #8b8b93); font-size:12px; font-weight:700; cursor:pointer; padding:0; text-decoration:underline; font-family:inherit;">삭제</button>` : '';
+          // 무게가 잘리지 않게 맨 앞에 둔다
+          var metaParts = [Number(g.weight || 0).toLocaleString() + 'g'].concat([pal.label || '', g.brand || ''].filter(Boolean).map(escapeHtml));
 
           return `
-            <div class="gear-shelf-item-row" data-gear-name="${safeGearName}" data-gear-cat="${escapeHtml(targetCatId)}" data-weight="${g.weight || 0}" style="${cardBg} ${cardBorder}">
-              <div style="min-width:0; flex:1; padding-right:8px; display:flex; align-items:center; gap:6px;">
-                <button type="button" class="gear-shelf-star-btn" data-gear="${safeGearName}" onclick="window.toggleFavoriteGear(this.dataset.gear, event);" style="background:none; border:none; cursor:pointer; padding:4px; min-width:28px; min-height:28px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-left:-2px;">
+            <div class="gear-shelf-item-row" data-gear-name="${safeGearName}" data-gear-cat="${escapeHtml(targetCatId)}" data-weight="${g.weight || 0}">
+              <div style="min-width:0; flex:1; display:flex; align-items:center; gap:8px;">
+                <button type="button" class="gear-shelf-star-btn" aria-label="즐겨찾기" data-gear="${safeGearName}" onclick="window.toggleFavoriteGear(this.dataset.gear, event);" style="background:none; border:none; cursor:pointer; padding:0; width:32px; height:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-left:-6px;">
                   ${isFav ? PLAN_SVG.starFilled : PLAN_SVG.starOutline}
                 </button>
                 <div style="min-width:0; flex:1; cursor:pointer;" onclick="if (!window.__longPressTriggered) window.openGearDetailFromEl(this);">
-                  <div class="gear-shelf-name" style="font-size:0.80rem; font-weight:800; color:${isAdded ? '#ffffff' : '#e2e8f0'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                    ${safeGearName}
-                  </div>
-                  <div style="font-size:0.58rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:1px;">
-                    <span style="color:${pal.color}; font-weight:700;">${escapeHtml(pal.label || '')}</span> · ${escapeHtml(g.brand || '')}${deleteBtnHtml} · ${(Number(g.weight || 0) / 1000).toFixed(2)}kg (${g.weight || 0}g)
-                  </div>
+                  <div class="gear-shelf-name" style="font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeGearName}</div>
+                  <div class="pk-meta">${metaParts.join(' · ')}${deleteBtnHtml}</div>
                 </div>
               </div>
 
@@ -4551,9 +4549,13 @@ window.saveCurrentPackingRecord = function() {
     var calcSpotName = (window.currentLuckySpot && window.currentLuckySpot.name) 
       ? window.currentLuckySpot.name 
       : (spotTitle && spotTitle !== '자유 일정' && !spotTitle.includes('출발 준비 완료') ? spotTitle : '장소 선택');
+    // 위쪽 일정 줄: '11.08 (일)' 꼴 날짜와 괄호 없는 고도
+    var calcDateParts = okbmPlanDateParts(activeDateStr);
+    var calcDateLabel = calcDateParts ? (calcDateParts.m + '.' + String(calcDateParts.d).padStart(2, '0') + ' (' + OKBM_PLAN_WD[new Date(calcDateParts.y, calcDateParts.m - 1, calcDateParts.d).getDay()] + ')') : escapeHtml(activeDateStr);
     var calcSpotElev = (window.currentLuckySpot && window.currentLuckySpot.elevation) 
       ? (String(window.currentLuckySpot.elevation).includes('m') ? ('(' + window.currentLuckySpot.elevation + ')') : ('(' + window.currentLuckySpot.elevation + 'm)')) 
       : '';
+    var calcSpotElevText = calcSpotElev.replace(/[()]/g, '');
 
  window.openCalcSpotSearchModal = function(e) {
    if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_pack_spot_search'); // 기능 사용 세기 (H8)
@@ -4728,103 +4730,64 @@ window.saveCurrentPackingRecord = function() {
 
   var calculatorViewHtml = `
       <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">
-        
-        <!-- 상단 컨트롤 헤더 -->
-        <div style="flex:0 0 auto !important; display:flex; flex-direction:column; padding:2px 0; box-sizing:border-box; gap:5px; flex-shrink:0; position:relative; z-index:20;">
-          
-          <!-- 1. 최상단 목적지 및 일정 브리핑 바 (높이 58px로 30% 증대 및 시인성 확보) -->
-          <div style="height:58px !important; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:0 12px; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box; flex-shrink:0;">
-            
-            <div onclick="window.openCalcSpotSearchModal(event);" style="display:flex; align-items:center; gap:10px; min-width:0; flex:1; cursor:pointer; height:100%; padding-right:8px;">
-              <span style="font-size:0.84rem; font-family:'Space Grotesk', sans-serif; font-weight:800; color:#cbd5e1; display:flex; align-items:center; gap:5px; flex-shrink:0;">
-                ${PLAN_SVG.calendar} <span>${activeDateStr}</span>
-              </span>
-              <div style="font-size:0.92rem; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                <span style="color:#94a3b8; display:inline-flex; align-items:center;">${PLAN_SVG.pin}</span>
-                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(calcSpotName)}</span>
-                ${calcSpotElev ? `<span style="font-size:0.75rem; color:#94a3b8; font-weight:700; flex-shrink:0;">${escapeHtml(calcSpotElev)}</span>` : ''}
-              </div>
-            </div>
-
-            <button type="button" onclick="window.togglePlanTripDateInlineDropdown(event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16); border-radius:7px; height:34px; padding:0 10px; font-size:0.75rem; font-weight:800; color:#cbd5e1; display:flex; align-items:center; gap:4px; cursor:pointer; flex-shrink:0;">
-              <span>목록</span>
-              <span style="font-size:0.68rem;">▾</span>
+        <!-- 상단: 일정 한 줄 · 무게 카드 · 검색 · 분류 칩 (플랜 일정 창과 같은 둥근 카드 모양) -->
+        <div class="pk-head">
+          <div class="pk-trip">
+            <button type="button" class="pk-trip-spot" onclick="window.openCalcSpotSearchModal(event);">
+              <span class="pk-trip-date">${calcDateLabel}</span>
+              <span class="pk-trip-name">${escapeHtml(calcSpotName)}</span>
+              ${calcSpotElevText ? `<span class="pk-trip-elev">${escapeHtml(calcSpotElevText)}</span>` : ''}
             </button>
+            <button type="button" class="pk-trip-list" onclick="window.togglePlanTripDateInlineDropdown(event);">일정 ▾</button>
           </div>
 
-          <!-- 1-1. 인라인 방문 일정 아코디언 드롭다운 (확장 높이 및 가독성 최적화) -->
-          <div id="calcTripDateDropdown" style="display:none; position:absolute; top:60px; left:0; right:0; z-index:700; background:#0b0f17; border:1.5px solid rgba(255,255,255,0.2); border-radius:10px; padding:10px; flex-direction:column; gap:6px; box-shadow:0 18px 45px rgba(0,0,0,0.96); box-sizing:border-box;"></div>
+          <!-- 다가오는 일정 고르기 -->
+          <div id="calcTripDateDropdown" style="display:none; position:absolute; top:44px; left:0; right:0; z-index:700; background:#1a1c22; border-radius:16px; padding:10px; flex-direction:column; gap:6px; box-shadow:0 18px 45px rgba(0,0,0,0.9); box-sizing:border-box;"></div>
 
-          <!-- 2. 대시보드 (5:5 완벽 좌우 분할, 높이 88px) -->
-          <div class="weight-dashboard-strip">
-            
-            <!-- 좌측 50% 박스 (무게 연산) -->
-            <div class="weight-pod-box">
-              <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                <span style="font-size:0.70rem; font-weight:800; color:#94a3b8;">배낭 총무게</span>
-                <span id="planTotalWeightGramsText" style="font-size:0.60rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">${totalGrams.toLocaleString()} g</span>
-              </div>
-              <span class="weight-val-big" id="planTotalWeightKgText">${totalKgStr} kg</span>
-              <div style="display:flex; flex-direction:column; gap:2px;">
-                <div id="planBplStatusBadge" class="weight-bpl-badge">${(totalGrams <= 6000) ? 'UL 초경량 (≤6kg)' : '스탠다드 (6~14kg)'}</div>
-                <div class="weight-gauge-bg">
-                  <div class="weight-gauge-fill" id="planWeightGaugeFill" style="width:${Math.min(100, Math.round((totalGrams / 14000) * 100))}%;"></div>
-                </div>
-              </div>
+          <!-- 무게 카드: 총무게 · 등급 · 눈금 · 방금 담은 장비 -->
+          <div class="pk-card">
+            <div class="pk-wrow">
+              <span class="pk-kg"><b id="planTotalWeightKgText">${totalKgStr}</b><i>kg</i></span>
+              <span id="planTotalWeightGramsText" class="pk-g">${totalGrams.toLocaleString()}g</span>
+              <span id="planBplStatusBadge" class="pk-cls">${totalGrams > 14000 ? '헤비' : (totalGrams > 6000 ? '스탠다드' : '초경량')}</span>
             </div>
-
-            <!-- 우측 50% 박스 (담긴 장비 뷰어 - 클릭 시 토글) -->
-            <div class="weight-pod-box" id="planRecentGearBox" onclick="var p=document.getElementById('calcPackedItemsPopover'); if(p){ p.style.display=(p.style.display==='flex'?'none':'flex'); }" style="cursor:pointer; background:rgba(255,255,255,0.035) !important;"></div>
-
+            <div class="pk-gauge"><i id="planWeightGaugeFill" style="width:${Math.min(100, Math.round((totalGrams / 14000) * 100))}%;"></i></div>
+            <div class="pk-marks"><span>0</span><span class="pk-mark-ul">6kg</span><span>14kg</span></div>
+            <div id="planRecentGearBox" class="pk-recent" onclick="window.okbmTogglePackedList();"></div>
           </div>
 
-          <!-- 3. 통합 검색창 및 직접 등록 버튼 바 -->
-          <div style="display:flex; gap:5px; align-items:center; width:100%; flex-shrink:0; box-sizing:border-box;">
-            <div style="height:34px !important; position:relative; flex:1; min-width:0; display:flex; align-items:center;">
-              <div style="position:absolute; left:9px; color:#64748b; display:flex; align-items:center; pointer-events:none;">
-                ${PLAN_SVG.search}
-              </div>
-              <input type="text" id="calcShelfSearchInput" placeholder="브랜드, 장비명 검색..." oninput="window.handleCalcShelfSearch(this.value)" style="width:100%; height:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:6px; color:#e2e8f0; font-size:0.75rem; padding:0 28px 0 28px; outline:none; box-sizing:border-box;" />
-              <button type="button" id="btnCalcSearchClear" onclick="window.clearCalcShelfSearch()" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.12); border:none; color:#cbd5e1; width:16px; height:16px; border-radius:50%; font-size:0.6rem; cursor:pointer; align-items:center; justify-content:center; padding:0;">✕</button>
-            </div>
-            <button type="button" onclick="window.openQuickGearRegisterModal()" style="height:34px !important; min-width:62px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#ffffff; font-size:0.70rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:0 8px;">
-              + 등록
-            </button>
+          <div class="pk-search-row">
+            <label class="pk-search">
+              ${PLAN_SVG.search}
+              <input type="text" id="calcShelfSearchInput" placeholder="장비 이름이나 브랜드" oninput="window.handleCalcShelfSearch(this.value)" />
+              <button type="button" id="btnCalcSearchClear" onclick="window.clearCalcShelfSearch()" aria-label="검색어 지우기" style="display:none;">✕</button>
+            </label>
+            <button type="button" class="pk-add" onclick="window.openQuickGearRegisterModal()" aria-label="장비 직접 등록">+</button>
           </div>
 
-          <!-- 4. 카테고리 탭 리본 (균등 76px 고정) -->
-          <div id="calcCategoryTabsBar" style="height:30px !important; display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; align-items:center; box-sizing:border-box; flex-shrink:0;"></div>
+          <div id="calcCategoryTabsBar" class="pk-chips"></div>
         </div>
 
-       <!-- 2-1. 담긴 장비 하단 펼침 명세 -->
-        <div id="calcPackedItemsPopover" class="gear-popover-sheet">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; flex-shrink:0;">
-            <span style="font-size:0.84rem; font-weight:900; color:rgba(241,245,249,0.92); display:flex; align-items:center; gap:5px;">
-              ${PLAN_SVG.backpack}
-              <span>담긴 장비 명세</span>
-            </span>
-            <button type="button" onclick="document.getElementById('calcPackedItemsPopover').style.display='none';" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+        <!-- 담긴 장비 펼침: 담은 순서 · 분류별 · 무거운 순 -->
+        <div id="calcPackedItemsPopover" class="pk-packed" onclick="if (event.target === this) this.style.display='none';">
+          <div class="pk-packed-panel">
+            <div class="pk-packed-head">
+              <b>담긴 장비</b><span id="calcPackedItemsSummary"></span>
+              <button type="button" onclick="document.getElementById('calcPackedItemsPopover').style.display='none';" aria-label="닫기">✕</button>
+            </div>
+            <div id="calcPackedSortSeg" class="pk-seg"></div>
+            <div id="calcPackedItemsListContainer" class="pk-packed-list"></div>
           </div>
-          <div id="calcPackedItemsListContainer" style="flex:1; overflow-y:auto; margin-top:8px; display:flex; flex-direction:column; gap:5px;"></div>
         </div>
 
-        <!-- 5. 화면 풀 장비 선반 -->
-        <div id="calcGearShelfList" style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; display:flex; flex-direction:column; gap:4px; padding-right:1px; margin-top:2px; margin-bottom:0 !important;"></div>
+        <!-- 장비 목록 -->
+        <div id="calcGearShelfList" class="pk-shelf"></div>
 
-        <!-- 6. 하단 3분할 액션 독 ([초기화] + [내 장비 세트] + [카드로 저장]) -->
-        <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.08); padding:6px 0 2px 0; margin:0 !important; display:grid; grid-template-columns:1fr 1.1fr 1.3fr; gap:5px; align-items:center; box-sizing:border-box;">
-          <button type="button" onclick="window.resetPlanCalculatorGears();" style="height:38px; background:rgba(244,63,94,0.06); border:1px solid rgba(244,63,94,0.2); color:#fda4af; font-size:0.72rem; font-weight:800; border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; white-space:nowrap; padding:0 2px;">
-            ${PLAN_SVG.reset}
-            <span>초기화</span>
-          </button>
-          <button type="button" data-metric-click="feat_gear_preset" onclick="window.openQuickPresetPicker();" style="height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; font-size:0.72rem; font-weight:800; border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; white-space:nowrap; padding:0 2px;">
-            ${PLAN_SVG.backpack}
-            <span>내 장비 세트</span>
-          </button>
-          <button type="button" onclick="window.saveCurrentPackingRecord();" style="height:38px; background:rgba(255,255,255,0.12) !important; border:1px solid rgba(255,255,255,0.2) !important; color:rgba(241,245,249,0.92) !important; font-size:0.72rem !important; font-weight:800 !important; border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; white-space:nowrap; padding:0 2px;">
-            ${PLAN_SVG.cardCamera}
-            <span>패킹 저장하기</span>
-          </button>
+        <!-- 아래 버튼: 초기화 · 내 장비 세트 · 패킹 저장하기 -->
+        <div class="pk-dock">
+          <button type="button" class="pk-dock-sub" onclick="window.resetPlanCalculatorGears();">초기화</button>
+          <button type="button" class="pk-dock-sub" data-metric-click="feat_gear_preset" onclick="window.openQuickPresetPicker();">내 장비 세트</button>
+          <button type="button" class="pk-dock-save" onclick="window.saveCurrentPackingRecord();">패킹 저장하기</button>
         </div>
 
         <!-- 7. 내 장비 세트 인라인 슬라이드 시트 -->
