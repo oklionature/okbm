@@ -2308,7 +2308,7 @@
     paintDealSurfaces();
   }
 
-  // ----- 소식 띠: 야영 금지·업데이트·공지. 여러 개면 5초마다 넘어간다 -----
+  // ----- 소식 띠: 야영 금지·업데이트·공지. 여러 개면 8초마다 넘어간다(대표님 10-31: 5초는 너무 빠름) -----
   const NEWS_KIND = { closure: '야영 금지', update: '업데이트', notice: '공지', magazine: '매거진' };
   const newsList = function () { return D.news.filter(function (n) { return n.kind !== 'magazine' && (n.is_active !== false || D.admin); }); };
   const magList = function () { return D.news.filter(function (n) { return n.kind === 'magazine' && (n.is_active !== false || D.admin); }); };
@@ -2343,7 +2343,7 @@
         newsAt = (newsAt + 1) % l.length;
         const card = el.querySelector('.hn-card');
         if (card) card.outerHTML = newsSlide(l[newsAt], newsAt, l.length);
-      }, 5000);
+      }, 8000);
     }
   }
 
