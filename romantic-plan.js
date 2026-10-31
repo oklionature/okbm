@@ -4893,37 +4893,38 @@ window.saveCurrentPackingRecord = function() {
           ${filterChipsHtml}
         </div>
 
-        <!-- 장비 목록 영역 -->
-        <div style="display:flex; flex-direction:column; flex:1;">
+        <!-- 장비 목록: 위 카드와 왼쪽 줄이 맞게 카드 한 장 안에 -->
+        <div style="display:flex; flex-direction:column; flex-shrink:0;">
           ${filteredFavGears.length === 0 ? `
             <div class="pk-shelf-empty">
               등록된 장비가 없습니다.<br>
               상단에서 직접 등록하거나 배낭계산기에서 ⭐을 눌러보세요.
             </div>
-          ` : filteredFavGears.map(function(g) {
+          ` : '<div class="pk-card" style="padding:0 14px;">' + filteredFavGears.map(function(g, gi) {
             var meta = gearMetaObj[g.name] || { purchaseDate: '', price: '', status: 'ok', memo: '' };
             var curStatus = meta.status || 'ok';
             var pal = CATEGORY_PALETTE[g.categoryId] || { color: '#94a3b8', label: '기타', border: 'rgba(255,255,255,0.12)' };
             var rawPrice = parseInt(String(meta.price || '').replace(/[^0-9]/g, ''), 10);
             var displayPrice = !isNaN(rawPrice) && rawPrice > 0 ? rawPrice.toLocaleString() : '';
             var safeGearNameAttr = escapeHtml(g.name);
-            var statusStyle = curStatus === 'repair' ? 'color:#f43f5e; background:rgba(244,63,94,0.12);' : (curStatus === 'sell' ? 'color:#fbbf24; background:rgba(251,191,36,0.12);' : 'color:var(--tx-2, #d1d1d6); background:var(--bg-2, #17171b);');
+            // '정상'은 조용한 회색 글자, 정비요망·방출예정만 색으로 알린다
+            var statusStyle = curStatus === 'repair' ? 'color:#f43f5e;' : (curStatus === 'sell' ? 'color:#fbbf24;' : 'color:var(--tx-3, #8b8b93);');
             var extra = [meta.purchaseDate ? escapeHtml(meta.purchaseDate) + ' 구매' : '', displayPrice ? '₩' + escapeHtml(displayPrice) : '', meta.memo ? escapeHtml(meta.memo) : ''].filter(Boolean).join(' · ');
 
             return `
-              <div class="my-gear-manage-card" data-gear-name="${safeGearNameAttr}" style="border-bottom:1px solid var(--line, rgba(255,255,255,0.08)); padding:10px 2px; box-sizing:border-box; width:100%;">
+              <div class="my-gear-manage-card" data-gear-name="${safeGearNameAttr}" style="${gi < filteredFavGears.length - 1 ? 'border-bottom:1px solid var(--line, rgba(255,255,255,0.08)); ' : ''}padding:11px 0; box-sizing:border-box; width:100%;">
                 <div onclick="window.openGearMetaEditSheet(this.dataset.gear)" data-gear="${safeGearNameAttr}" style="display:flex; align-items:center; gap:10px; width:100%; cursor:pointer;">
                   <div style="flex:1 1 0%; min-width:0;">
                     <div style="font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeGearNameAttr}</div>
                     <div class="pk-meta" style="margin-top:2px;">${escapeHtml(pal.label)} · ${escapeHtml(g.brand || '내 장비')} · ${(g.weight / 1000).toFixed(2)}kg</div>
                     ${extra ? `<div class="pk-meta" style="margin-top:1px;">${extra}</div>` : ''}
                   </div>
-                  <span style="font-size:11px; font-weight:800; padding:3px 8px; border-radius:999px; flex-shrink:0; ${statusStyle}">${curStatus === 'repair' ? '정비요망' : (curStatus === 'sell' ? '방출예정' : '정상')}</span>
+                  <span style="font-size:12px; font-weight:700; flex-shrink:0; ${statusStyle}">${curStatus === 'repair' ? '정비요망' : (curStatus === 'sell' ? '방출예정' : '정상')}</span>
                   <span style="color:var(--tx-4, #55555d); font-size:18px; flex-shrink:0; pointer-events:none;">›</span>
                 </div>
               </div>
             `;
-          }).join('')}
+          }).join('') + '</div>'}
         </div>
       </div>
     `;
