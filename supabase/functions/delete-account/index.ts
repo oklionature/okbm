@@ -87,16 +87,17 @@ function pushPhoto(out: Set<string>, value: unknown) {
   }
 }
 
-// 본인 피드·원정대·프로필·라운지 글에 저장된 R2 사진 URL만 모은다 (최대 200개, Worker 한도).
+// 본인 피드·원정대·프로필·라운지 글·수정 건의 근거에 저장된 R2 사진 URL만 모은다 (최대 200개, Worker 한도).
 async function collectUserPhotoUrls(admin: AdminClient, ids: string[]): Promise<string[]> {
   const out = new Set<string>();
   if (!ids.length) return [];
   try {
-    const [feeds, trips, users, loungePosts] = await Promise.all([
+    const [feeds, trips, users, loungePosts, corrections] = await Promise.all([
       admin.from("feeds").select("photos,photo,ready_shot_photo").in("user_id", ids),
       admin.from("trips").select("photos").in("host_id", ids),
       admin.from("users").select("photo_url,hero_cover_url").in("id", ids),
       admin.from("lounge_posts").select("photos").in("user_id", ids),
+      admin.from("spot_corrections").select("evidence_photos").in("user_id", ids),
     ]);
     for (const r of (feeds.data || []) as Record<string, unknown>[]) {
       pushPhoto(out, r.photos);
@@ -109,6 +110,7 @@ async function collectUserPhotoUrls(admin: AdminClient, ids: string[]): Promise<
       pushPhoto(out, r.hero_cover_url);
     }
     for (const r of (loungePosts.data || []) as Record<string, unknown>[]) pushPhoto(out, r.photos);
+    for (const r of (corrections.data || []) as Record<string, unknown>[]) pushPhoto(out, r.evidence_photos);
   } catch (e) {
     console.error("[delete-account] collect photos", e);
   }

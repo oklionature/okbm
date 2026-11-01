@@ -315,7 +315,7 @@
         bindLazy('openSpotReviewSheet', window.okbmEnsureLounge);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.10.1" defer></script>
+    <script src="romantic-sync.js?v=2.10.2" defer></script>
     <script src="romantic-history.js?v=2.8.44" defer></script>
     <script src="my-badges.js?v=14" defer></script>
     <script src="badge-ring.js?v=9" defer></script>
@@ -1538,6 +1538,27 @@
       <div class="custom-modal">
         <h3 id="modalTitle" style="display:flex; align-items:center; gap:6px;"></h3>
         <p id="modalNotice" style="font-size:0.74rem; color:var(--accent-amber); line-height:1.4; display:flex; align-items:center; gap:4px;"></p>
+        <!-- 📌 수정 건의 전용 근거 블록(사유·근거 링크·근거 사진). 수정 건의일 때만 보이고, 박지 정보 칸(modalSpotFields)은 접어 둔다.
+             동작은 map-main.js resetCorrectionEvidence()·initCorrectionEvidence()가 붙인다(인라인 핸들러 없음) -->
+        <div class="modal-field" id="modalFieldCorrectionReason" style="display:none; flex-direction:column; gap:8px; background:rgba(244,63,94,0.08); border:1.2px solid rgba(244,63,94,0.4); border-radius:8px; padding:10px;">
+          <div class="modal-field">
+            <label for="modalInputCorrectionReason" style="font-size:0.75rem; color:#fb7185; font-weight:800;">무엇이 달라졌나요?</label>
+            <textarea id="modalInputCorrectionReason" class="modal-input modal-textarea" rows="3" maxlength="500" placeholder="예: 10월에 가 보니 데크가 철거됐어요 / 입구에 야영 금지 현수막이 붙었어요" style="border-color:rgba(244,63,94,0.4); font-size:0.8rem; line-height:1.45;"></textarea>
+          </div>
+          <div class="modal-field">
+            <label for="modalInputEvidenceUrls">근거 링크 <span style="font-weight:600; color:var(--text-tertiary, #94a3b8);">(있으면, 한 줄에 하나)</span></label>
+            <textarea id="modalInputEvidenceUrls" class="modal-input modal-textarea" rows="2" placeholder="군청 공지, 뉴스, 블로그, 인스타 주소" style="font-size:0.78rem;"></textarea>
+          </div>
+          <div class="modal-field">
+            <label>근거 사진 <span style="font-weight:600; color:var(--text-tertiary, #94a3b8);">(있으면, 최대 3장)</span></label>
+            <div id="correctionPhotoRow" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <button type="button" id="correctionPhotoAddBtn" class="modal-btn" style="width:64px; height:64px; padding:0; border:1px dashed var(--border-hairline); background:var(--bg-base); color:var(--text-secondary); font-size:0.7rem; font-weight:700; display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;"><span style="font-size:1.2rem; line-height:1;">+</span><span>사진</span></button>
+            </div>
+            <input type="file" id="correctionPhotoInput" accept="image/*" multiple style="display:none;" />
+          </div>
+        </div>
+        <button type="button" id="modalSpotFieldsToggle" class="modal-btn" aria-expanded="false" aria-controls="modalSpotFields" style="display:none; width:100%; background:var(--bg-card); color:var(--text-secondary); border:1px solid var(--border-hairline); font-size:0.78rem; font-weight:700; padding:9px;">박지 정보도 직접 고치기 ▾</button>
+        <div id="modalSpotFields" style="display:flex; flex-direction:column; gap:9px;">
         <div class="modal-field"><label>1. 장소 이름 *</label><input type="text" id="modalInputName" class="modal-input" placeholder="스팟 또는 봉우리 명칭 입력" /></div>
         <div class="modal-field"><label>2. 세부 포인트</label><input type="text" id="modalInputSub" class="modal-input" placeholder="정상 데크, 능선 안부, 헬기장 등" /></div>
         <div class="modal-field">
@@ -1585,10 +1606,6 @@
           <div class="modal-field" style="flex: 1;"><label>12. 블로그 링크</label><input type="text" id="modalInputBlog" class="modal-input" placeholder="https://blog.naver.com/..." /></div>
           <div class="modal-field" style="flex: 1;"><label>13. 제보자 인스타/SNS</label><input type="text" id="modalInputAuthorSns" class="modal-input" placeholder="@아이디" /></div>
        </div>
-        <!-- 📌 수정 건의 전용 핵심 사유 입력 블록 -->
-        <div class="modal-field" id="modalFieldCorrectionReason" style="display:none; background:rgba(244,63,94,0.08); border:1.2px solid rgba(244,63,94,0.4); border-radius:8px; padding:8px; margin-top:2px;">
-          <label style="font-size:0.73rem; color:#fb7185; font-weight:800;">📌 핵심 수정 사유 (폐쇄, 데크 철거, 들머리 변경 등)</label>
-          <input type="text" id="modalInputCorrectionReason" class="modal-input" placeholder="예: 최근 데크 철거됨 / 텐트 피칭 금지 / 들머리 공사 중" style="margin-top:3px; border-color:rgba(244,63,94,0.4); font-size:0.78rem;" />
         </div>
         <div class="modal-btn-row">
           <button type="button" class="modal-btn modal-btn-cancel" onclick="closeCustomModal()">취소</button>
@@ -1621,7 +1638,7 @@
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.73"></script>
+       <script src="map-main.js?v=1.0.74"></script>
     <script src="photo-map.js?v=25" defer></script>
     <script src="spot-tips.js?v=10" defer></script>
     <script src="home-metrics.js?v=5" defer></script>

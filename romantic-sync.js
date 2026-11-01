@@ -12819,6 +12819,13 @@ window.saveProposalToSupabase = async function(proposalData, isCorrection) {
   if (isCorrection) {
     payload.orig_spot_id = String(proposalData.orig_spot_id || proposalData.origSpotId || '');
     payload.correction_reason = String(proposalData.correctionReason || proposalData.correction_reason || '');
+    // 근거 링크·사진(SUPABASE_H30_CORRECTION_EVIDENCE.sql). 없으면 칸을 아예 보내지 않는다
+    var evUrls = (Array.isArray(proposalData.evidenceUrls) ? proposalData.evidenceUrls : [])
+      .map(okbmSafeExternalUrl).filter(function(u) { return u !== '#'; }).slice(0, 5);
+    var evPhotos = (Array.isArray(proposalData.evidencePhotos) ? proposalData.evidencePhotos : [])
+      .map(okbmSafeImageUrl).filter(Boolean).slice(0, 3);
+    if (evUrls.length) payload.evidence_urls = evUrls;
+    if (evPhotos.length) payload.evidence_photos = evPhotos;
   }
 
   try {

@@ -6687,6 +6687,140 @@ var overlay = document.getElementById('customModalOverlay');
         }
       };
 
+      // 📎 수정 건의 근거(링크·사진). 둘 다 넣으면 좋고 없어도 접수된다(대표님 11-01).
+      // 박지 정보 13칸은 접어 두고, 제보자가 '박지 정보도 직접 고치기'를 누를 때만 펼친다.
+      var CORRECTION_PHOTO_MAX = 3;
+      var CORRECTION_LINK_MAX = 5;
+      var correctionEvidencePhotos = [];
+      var correctionPhotoUploading = 0;
+
+      function setSpotFieldsCollapsed(collapsed) {
+        var fields = document.getElementById('modalSpotFields');
+        var toggle = document.getElementById('modalSpotFieldsToggle');
+        if (fields) fields.style.display = collapsed ? 'none' : 'flex';
+        if (toggle) {
+          toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+          toggle.textContent = collapsed ? '박지 정보도 직접 고치기 ▾' : '박지 정보 접기 ▴';
+        }
+      }
+
+      function isSpotFieldsCollapsed() {
+        var fields = document.getElementById('modalSpotFields');
+        return Boolean(fields && fields.style.display === 'none');
+      }
+
+      function renderCorrectionPhotos() {
+        var row = document.getElementById('correctionPhotoRow');
+        var addBtn = document.getElementById('correctionPhotoAddBtn');
+        if (!row || !addBtn) return;
+        Array.prototype.slice.call(row.querySelectorAll('.correction-photo-thumb')).forEach(function(el) { el.remove(); });
+        correctionEvidencePhotos.forEach(function(url, idx) {
+          var cell = document.createElement('div');
+          cell.className = 'correction-photo-thumb';
+          cell.style.cssText = 'position:relative; width:64px; height:64px; border-radius:6px; overflow:hidden; background:var(--bg-base); border:1px solid var(--border-hairline);';
+          var img = document.createElement('img');
+          img.src = url;
+          img.alt = '근거 사진 ' + (idx + 1);
+          img.style.cssText = 'width:100%; height:100%; object-fit:cover; display:block;';
+          var del = document.createElement('button');
+          del.type = 'button';
+          del.setAttribute('aria-label', '근거 사진 ' + (idx + 1) + ' 빼기');
+          del.textContent = '×';
+          del.style.cssText = 'position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%; border:none; background:rgba(0,0,0,0.65); color:#fff; font-size:0.85rem; line-height:20px; padding:0; cursor:pointer;';
+          del.addEventListener('click', function() {
+            correctionEvidencePhotos.splice(idx, 1);
+            renderCorrectionPhotos();
+          });
+          cell.appendChild(img);
+          cell.appendChild(del);
+          row.insertBefore(cell, addBtn);
+        });
+        for (var i = 0; i < correctionPhotoUploading; i++) {
+          var wait = document.createElement('div');
+          wait.className = 'correction-photo-thumb';
+          wait.style.cssText = 'width:64px; height:64px; border-radius:6px; background:var(--bg-base); border:1px solid var(--border-hairline); display:flex; align-items:center; justify-content:center; font-size:0.62rem; color:var(--text-secondary);';
+          wait.textContent = '올리는 중';
+          row.insertBefore(wait, addBtn);
+        }
+        addBtn.style.display = (correctionEvidencePhotos.length + correctionPhotoUploading) >= CORRECTION_PHOTO_MAX ? 'none' : 'inline-flex';
+      }
+
+      // 사진 줄이기: lounge.js shrinkPhoto와 같은 캔버스 방식(긴 변 1600px, JPEG)
+      async function shrinkCorrectionPhoto(file) {
+        if (typeof createImageBitmap !== 'function') return null;
+        var bmp = null;
+        try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) { return null; }
+        var k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+        var w = Math.max(1, Math.round(bmp.width * k));
+        var h = Math.max(1, Math.round(bmp.height * k));
+        var cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        var ctx = cv.getContext('2d', { alpha: false });
+        if (!ctx) return null;
+        ctx.drawImage(bmp, 0, 0, w, h);
+        if (typeof bmp.close === 'function') bmp.close();
+        return new Promise(function(resolve) { cv.toBlob(function(b) { resolve(b || null); }, 'image/jpeg', 0.85); });
+      }
+
+      async function addCorrectionPhotos(fileList) {
+        var room = CORRECTION_PHOTO_MAX - correctionEvidencePhotos.length - correctionPhotoUploading;
+        var files = Array.prototype.slice.call(fileList || []).filter(function(f) { return f && /^image\//.test(f.type || 'image/'); });
+        if (files.length > room) showToast('근거 사진은 ' + CORRECTION_PHOTO_MAX + '장까지 올릴 수 있어요');
+        files = files.slice(0, Math.max(0, room));
+        if (!files.length) return;
+        correctionPhotoUploading += files.length;
+        renderCorrectionPhotos();
+        await Promise.all(files.map(async function(file) {
+          var url = '';
+          try {
+            var blob = await shrinkCorrectionPhoto(file);
+            if (blob && typeof window.okbmUploadImageBlob === 'function') url = await window.okbmUploadImageBlob(blob, 'photo');
+          } catch (e) { console.warn('[map-main.js:addCorrectionPhotos]', e); }
+          correctionPhotoUploading = Math.max(0, correctionPhotoUploading - 1);
+          if (url && window.okbmSafeImageUrl(url)) correctionEvidencePhotos.push(url);
+          else showToast('사진을 올리지 못했어요. 다른 사진을 골라 주세요');
+          renderCorrectionPhotos();
+        }));
+      }
+
+      function readCorrectionEvidenceUrls() {
+        var raw = document.getElementById('modalInputEvidenceUrls')?.value || '';
+        var out = [];
+        raw.split(/[\s,]+/).forEach(function(part) {
+          var u = part.trim();
+          if (!u) return;
+          if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+          var safe = window.okbmSafeExternalUrl(u);
+          if (safe !== '#' && out.indexOf(safe) === -1) out.push(safe);
+        });
+        return out.slice(0, CORRECTION_LINK_MAX);
+      }
+
+      function resetCorrectionEvidence() {
+        correctionEvidencePhotos = [];
+        correctionPhotoUploading = 0;
+        var urls = document.getElementById('modalInputEvidenceUrls');
+        if (urls) urls.value = '';
+        var toggle = document.getElementById('modalSpotFieldsToggle');
+        if (toggle) toggle.style.display = 'block';
+        setSpotFieldsCollapsed(true);
+        renderCorrectionPhotos();
+      }
+
+      (function initCorrectionEvidence() {
+        var addBtn = document.getElementById('correctionPhotoAddBtn');
+        var input = document.getElementById('correctionPhotoInput');
+        var toggle = document.getElementById('modalSpotFieldsToggle');
+        if (addBtn && input) {
+          addBtn.addEventListener('click', function() { input.click(); });
+          input.addEventListener('change', function() {
+            var files = input.files;
+            addCorrectionPhotos(files).finally(function() { input.value = ''; });
+          });
+        }
+        if (toggle) toggle.addEventListener('click', function() { setSpotFieldsCollapsed(!isSpotFieldsCollapsed()); });
+      })();
+
       // 📝 기존 등록 박지의 정보 수정 건의 전용 오픈 핸들러
       window.__isSpotCorrectionMode = false;
       window.__correctionTargetSpotId = null;
@@ -6735,11 +6869,12 @@ var overlay = document.getElementById('customModalOverlay');
 
         if (reasonBox) reasonBox.style.display = 'flex';
         if (reasonInput) reasonInput.value = '';
+        resetCorrectionEvidence();
 
         if (titleEl) titleEl.innerHTML = ICONS.EDIT + ` <span>[${escapeHtml(targetSpot.spot_main || targetSpot.name)}] 정보 수정 건의</span>`;
         if (noticeEl) {
           noticeEl.style.display = 'flex';
-          noticeEl.innerHTML = ICONS.ALERT_CARD + ` <span>폐쇄, 데크 철거, 들머리 변경 등 <strong>수정 사유</strong>를 적어주시면 신속히 반영됩니다.</span>`;
+          noticeEl.innerHTML = ICONS.ALERT_CARD + ` <span>달라진 점을 적어 주세요. <strong>사진이나 링크</strong>가 있으면 함께 올려 주시면 더 빨리 확인할 수 있어요.</span>`;
         }
         if (btnEl) btnEl.innerText = '수정 건의 접수하기';
       };
@@ -6752,10 +6887,11 @@ var overlay = document.getElementById('customModalOverlay');
         var reasonInput = document.getElementById('modalInputCorrectionReason');
         if (reasonBox) reasonBox.style.display = 'flex';
         if (reasonInput) reasonInput.value = '';
+        resetCorrectionEvidence();
         if (titleEl) titleEl.innerHTML = ICONS.EDIT + ' <span>[' + escapeHtml(spotName || '장소') + '] 정보 수정 건의</span>';
         if (noticeEl) {
           noticeEl.style.display = 'flex';
-          noticeEl.innerHTML = ICONS.ALERT_CARD + ' <span>폐쇄, 데크 철거, 들머리 변경 등 <strong>수정 사유</strong>를 적어주시면 신속히 반영됩니다.</span>';
+          noticeEl.innerHTML = ICONS.ALERT_CARD + ' <span>달라진 점을 적어 주세요. <strong>사진이나 링크</strong>가 있으면 함께 올려 주시면 더 빨리 확인할 수 있어요.</span>';
         }
         if (btnEl) btnEl.innerText = '수정 건의 접수하기';
         var overlay = document.getElementById('customModalOverlay');
@@ -7284,6 +7420,13 @@ var overlay = document.getElementById('customModalOverlay');
         // 인스타 게시물 링크는 관리자 등록·수정에서만 받는다(제보·수정건의에는 숨김)
         var instaField = document.getElementById('modalFieldInsta');
         if (instaField) instaField.style.display = (modalMode !== 'PROPOSAL' && isAdminMode) ? '' : 'none';
+        // 수정 건의 근거 칸이 숨겨진 창(새 제보·관리자 등록·검토)은 박지 정보 칸을 늘 펼친다
+        var reasonBoxEl = document.getElementById('modalFieldCorrectionReason');
+        if (!reasonBoxEl || reasonBoxEl.style.display === 'none') {
+          var spotToggle = document.getElementById('modalSpotFieldsToggle');
+          if (spotToggle) spotToggle.style.display = 'none';
+          setSpotFieldsCollapsed(false);
+        }
         overlay.style.setProperty('display', 'flex', 'important');
         overlay.style.setProperty('z-index', '999999', 'important');
         overlay.style.setProperty('opacity', '1', 'important');
@@ -7405,7 +7548,19 @@ var overlay = document.getElementById('customModalOverlay');
         const tName = document.getElementById('modalInputTrailheadName')?.value.trim();
         const entry = document.getElementById('modalInputEntry')?.value.trim();
         
-        if (!name || !entry) return alert('박지명과 들머리 주소를 입력해주세요.');
+        var isCorrectionProposal = modalMode === 'PROPOSAL' && Boolean(window.__isSpotCorrectionMode);
+        if (isCorrectionProposal) {
+          if (correctionPhotoUploading > 0) return showToast('사진을 올리는 중이에요. 잠시만 기다려 주세요');
+          var reasonText = (document.getElementById('modalInputCorrectionReason')?.value || '').trim();
+          if (!reasonText && !readCorrectionEvidenceUrls().length && !correctionEvidencePhotos.length && isSpotFieldsCollapsed()) {
+            document.getElementById('modalInputCorrectionReason')?.focus();
+            return alert('무엇이 달라졌는지 한 줄이라도 적어 주세요.');
+          }
+        }
+        if (!name || !entry) {
+          if (isCorrectionProposal) setSpotFieldsCollapsed(false);
+          return alert('박지명과 들머리 주소를 입력해주세요.');
+        }
 
         window.__isModalSubmitting = true;
         const submitBtn = document.getElementById('modalSubmitBtn');
@@ -7545,6 +7700,8 @@ var overlay = document.getElementById('customModalOverlay');
                 type: isCorrection ? 'correction' : 'proposal',
                 origSpotId: origSpotId,
                 correctionReason: correctionReason,
+                evidenceUrls: isCorrection ? readCorrectionEvidenceUrls() : [],
+                evidencePhotos: isCorrection ? correctionEvidencePhotos.slice(0, CORRECTION_PHOTO_MAX) : [],
                 region: region,
                 cityName: cityName,
                 spot_main: finalSpotMain, 
@@ -8087,6 +8244,28 @@ var overlay = document.getElementById('customModalOverlay');
         renderSpots(true);
       }
 
+      // 받은 함 카드의 수정 건의 근거: 링크는 새 창으로, 사진은 눌러서 원본 보기
+      function renderInboxEvidence(item) {
+        var urls = (Array.isArray(item && item.evidence_urls) ? item.evidence_urls : [])
+          .map(function(u) { return window.okbmSafeExternalUrl(u); }).filter(function(u) { return u !== '#'; });
+        var photos = (Array.isArray(item && item.evidence_photos) ? item.evidence_photos : [])
+          .map(function(u) { return window.okbmSafeImageUrl(u); }).filter(Boolean);
+        if (!urls.length && !photos.length) return '';
+        var html = '<div style="margin:6px 0 2px; display:flex; flex-direction:column; gap:6px;">';
+        if (urls.length) {
+          html += '<div style="display:flex; flex-direction:column; gap:3px; font-size:0.68rem;">' + urls.map(function(u) {
+            var label = u.replace(/^https?:\/\/(www\.)?/, '');
+            return '<a href="' + escapeHtml(u) + '" target="_blank" rel="noopener noreferrer" style="color:#7dd3fc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🔗 ' + escapeHtml(label) + '</a>';
+          }).join('') + '</div>';
+        }
+        if (photos.length) {
+          html += '<div style="display:flex; gap:6px;">' + photos.map(function(u, i) {
+            return '<a href="' + escapeHtml(u) + '" target="_blank" rel="noopener noreferrer" style="display:block; width:64px; height:64px; border-radius:6px; overflow:hidden; border:1px solid rgba(255,255,255,0.12);"><img src="' + escapeHtml(u) + '" alt="근거 사진 ' + (i + 1) + '" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;"></a>';
+          }).join('') + '</div>';
+        }
+        return html + '</div>';
+      }
+
       function normalizeInboxItem(row, isCorrection) {
         if (!row) return null;
         var clone = Object.assign({}, row);
@@ -8210,6 +8389,7 @@ var overlay = document.getElementById('customModalOverlay');
           var kindColor = item.type === 'correction' ? '#fb7185' : '#38bdf8';
           var coord = (item.lat && item.lng) ? (item.lat + ', ' + item.lng) : '좌표 없음';
           var reason = item.correctionReason || '';
+          var evidenceHtml = renderInboxEvidence(item);
           var when = formatWhen(item.created_at);
           var safeId = String(item.id || '').replace(/"/g, '');
           var actions = processed
@@ -8233,9 +8413,10 @@ var overlay = document.getElementById('customModalOverlay');
               escapeHtml(item.trailhead_addr || item.trailhead_name || '') + '<br>' +
               escapeHtml(coord) +
               (item.author || item.nickname ? '<br>제보: ' + escapeHtml(item.author || item.nickname) : '') +
-              (reason ? '<br>사유: ' + escapeHtml(reason) : '') +
+              (reason ? '<br>사유: <span style="white-space:pre-wrap;">' + escapeHtml(reason) + '</span>' : '') +
               (item.reject_reason ? '<br><span style="color:#fda4af;">반려 사유: ' + escapeHtml(item.reject_reason) + '</span>' : '') +
             '</div>' +
+            evidenceHtml +
             '<div class="admin-inbox-actions">' + actions + '</div>' +
           '</div>';
         };
