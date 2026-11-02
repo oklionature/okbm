@@ -6,7 +6,7 @@
 //   초보 가이드·박지 랭킹·자유게시판 바로가기는 그 밑 백패커 라운지(#okbmLoungeHome, lounge.js) 알약으로 옮겼다.
 // · 최근 다녀온 후기는 운영자 글을 빼고 회원이 공개한 글만, 다녀온 날짜가 최근인 것부터. 개수와 상관없이 바로가기 바로 밑(대표님 10-14).
 // · 굴업도 들어가기(2026-11-02, 관리자만): 바로가기 밑 띠. 누르면 로그인 토큰을 주소 뒤 #tok=로 붙여 같이 접속 게임(Cloudflare)을 연다.
-//   게임 서버가 그 토큰으로 회원·닉네임을 확인한다. 회원에게 열 때는 gulupdoVisible()만 바꾸면 된다.
+//   게임 서버가 그 토큰으로 회원·닉네임을 확인한다. 11-02부터 띠는 비로그인에게도 보이고 누르면 로그인 창.
 //   11-02: 회원 모두에게 연다. 들어갈 때 낭만 포인트 15점(섬 하루=실제 1시간에 한 번, 관리자 무료, 모자라면 못 들어감).
 //   입장권은 서버 함수 okbm_gulupdo_pass(SUPABASE_H36)로만 사고, 게임 서버도 같은 함수로 입장권이 있는지 본다.
 // · 인라인 핸들러 없음(이벤트 위임) → csp-extract 대상 아님.
@@ -141,10 +141,8 @@
 
   // ---------- 굴업도 들어가기(같이 접속 게임, 관리자 시험 중) ----------
   var GULUPDO_URL = 'https://gulupdo.ggumfree.workers.dev/';
-  function gulupdoVisible() {
-    if (window.__okbmIsAdmin === true) return true;
-    return typeof isUserLoggedIn !== 'function' || isUserLoggedIn();
-  }
+  // 11-02 대표님: 비로그인에게도 보이고, 누르면 로그인 창(openGulupdo)
+  function gulupdoVisible() { return true; }
   function paintGulupdo() {
     var quick = document.getElementById('homeQuickNav');
     var btn = document.getElementById('homeGulupdo');
@@ -170,14 +168,6 @@
     try { history.replaceState(history.state, '', location.pathname + location.search.replace(/([?&])go=gulupdo(&|$)/, '$1').replace(/[?&]$/, '') + location.hash); } catch (e) {}
     try { btn.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
     setTimeout(openGulupdo, 600);
-  }
-  // 로그인 안 한 채로 왔으면 띠가 안 생기니 로그인 창을 띄운다
-  function gulupdoArriveLogin() {
-    if (!gulupdoWanted || document.getElementById('homeGulupdo')) return;
-    if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn() && typeof window.openLoginModal === 'function') {
-      gulupdoWanted = false;
-      window.openLoginModal({ message: '로그인하면 굴업도로 떠날 수 있어요.' });
-    }
   }
   // 지금 접속 인원(11-02 대표님: '같이 접속' 대신 '지금 N명 접속'). 홈이 보이는 동안 30초마다
   var gulupdoCountT = 0;
@@ -216,7 +206,11 @@
     var done = function () { if (btn) btn.disabled = false; };
     Promise.resolve(client.auth.getSession()).then(function (res) {
       var ses = res && res.data && res.data.session;
-      if (!ses || !ses.access_token) { done(); return gulupdoToast('로그인한 뒤 들어갈 수 있어요.'); }
+      if (!ses || !ses.access_token) {
+        done();
+        if (typeof window.openLoginModal === 'function') return window.openLoginModal({ message: '로그인하면 굴업도로 떠날 수 있어요.' });
+        return gulupdoToast('로그인한 뒤 들어갈 수 있어요.');
+      }
       // 게임에는 로그인 표(1시간짜리)만 넘어가서, 오래된 표면 새로 받아 넘긴다(11-02: 잠깐 나갔다 오면 다시 못 붙던 원인)
       var fresh = ses.expires_at && ses.expires_at * 1000 - Date.now() > 50 * 60 * 1000;
       return (fresh || typeof client.auth.refreshSession !== 'function' ? Promise.resolve(ses) : Promise.resolve(client.auth.refreshSession()).then(function (r) {
@@ -455,7 +449,6 @@
     paintGulupdo();
     window.addEventListener('okbm_admin_flag', paintGulupdo);
     [2000, 6000, 15000].forEach(function (ms) { setTimeout(paintGulupdo, ms); });   // 로그인·프로필이 늦게 와도 다시 본다
-    setTimeout(gulupdoArriveLogin, 6000);
     var sec = document.getElementById('homeRecentReviews');
     if (sec) {
       sec.addEventListener('click', onQuickClick);
