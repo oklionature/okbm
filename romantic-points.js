@@ -7,6 +7,7 @@
 //   - 받는 순간 '+10 낭만 포인트' 작은 알림: 피드 저장·별 누름(window 함수를 감싼다)·댓글(feed-comments.js가 check를 부른다) 뒤에
 //     잔액을 다시 받아 늘어난 만큼 알린다. 상한을 채웠으면 '오늘 피드 포인트는 다 받았어요'.
 // · 출석: 로그인한 채 앱을 연 날 한 번 okbm_points_attend를 부른다(이 기기에서 그날 이미 불렀으면 안 부름).
+// · 내역은 '적립 내역 보기'를 눌러야 펼쳐지고 10건씩 '더 보기'(최대 50건, 11-02)
 // · 쓰는 곳(닉네임·굴업도 입장권·피드 테두리·프로필 테두리)은 2단계라 '포인트는 어디에 쓰나요?'를 눌러야 펼쳐지고 Coming soon으로만 보인다.
 // 인라인 onclick 없음(CSP).
 // =========================================================================
@@ -58,7 +59,7 @@
   var CAP = {};
   RULES.forEach(function (r) { if (r[3]) CAP[r[0]] = r[3]; });
 
-  var S = { data: null, at: 0, loading: null, balance: null, uid: '', capShown: {}, spendOpen: false };
+  var S = { data: null, at: 0, loading: null, balance: null, uid: '', capShown: {}, spendOpen: false, histOpen: false, histShow: 10 };
 
   var CSS = [
     '.pt-card{display:block;width:100%;text-align:left;color:#f2f2f3;font:inherit;cursor:pointer}',
@@ -100,6 +101,8 @@
     '.pt-fold{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:20px;padding:13px 0;border:0;border-top:1px solid var(--line,rgba(255,255,255,.08));border-bottom:1px solid var(--line,rgba(255,255,255,.08));background:none;color:var(--tx-2,#d1d1d6);font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer}',
     '.pt-fold i{font-style:normal;font-size:13px;color:var(--tx-3,#8b8b93)}',
     '.pt-spend .pt-li:first-child{border-top:0}',
+    '.pt-fold+.pt-fold{margin-top:0;border-top:0}',
+    '.pt-more{display:block;width:100%;margin-top:4px;padding:12px 0;border:0;border-top:1px solid var(--line,rgba(255,255,255,.08));background:none;color:var(--tx-2,#d1d1d6);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}',
     '.pt-lead{margin:14px 0 0;font-size:13px;color:var(--tx-2,#d1d1d6);line-height:1.55}'
   ].join('');
 
@@ -243,11 +246,13 @@
       }).join('') + '</div>';
     }
     var hist = d && Array.isArray(d.history) ? d.history : [];
-    h += '<div class="pt-sec">내역</div>';
-    h += hist.length ? hist.map(function (x) {
+    // 내역도 접어 두고, 펼치면 10건씩 더 본다(대표님 11-02: 끝도 없이 내려감)
+    h += '<button type="button" class="pt-fold" data-pt-hist="1" aria-expanded="' + (S.histOpen ? 'true' : 'false') + '">적립 내역 보기<i>' + (S.histOpen ? '접기' : '›') + '</i></button>';
+    if (!S.histOpen) return h;
+    h += hist.length ? hist.slice(0, S.histShow).map(function (x) {
       var dl = Number(x.d) || 0;
       return '<div class="pt-h"><span>' + esc(label(String(x.r || ''), x.d, x.n)) + '</span><small>' + esc(fmtTime(x.t)) + '</small><b' + (dl < 0 ? ' class="m"' : '') + '>' + (dl > 0 ? '+' : '') + num(dl) + '</b></div>';
-    }).join('') : '<div class="pt-empty">' + (d ? '아직 받은 포인트가 없어요.<br>피드를 올리거나 댓글·별을 남겨 보세요.' : '포인트를 받는 중이에요') + '</div>';
+    }).join('') + (hist.length > S.histShow ? '<button type="button" class="pt-more" data-pt-more="1">더 보기</button>' : '') : '<div class="pt-empty">' + (d ? '아직 받은 포인트가 없어요.<br>피드를 올리거나 댓글·별을 남겨 보세요.' : '포인트를 받는 중이에요') + '</div>';
     return h;
   }
   function openSheet() {
@@ -255,6 +260,8 @@
     metric('feat_points_open');
     var old = document.getElementById('okbmPointsAll');
     if (old) old.remove();
+    S.histOpen = false;
+    S.histShow = 10;
     var el = document.createElement('div');
     el.id = 'okbmPointsAll';
     el.className = 'pt-all';
@@ -280,6 +287,8 @@
     var t = e.target && e.target.closest ? e.target : null;
     if (!t) return;
     if (t.closest('[data-pt-spend]')) { S.spendOpen = !S.spendOpen; if (S.spendOpen) metric('feat_points_spend'); repaint(); return; }
+    if (t.closest('[data-pt-hist]')) { S.histOpen = !S.histOpen; S.histShow = 10; if (S.histOpen) metric('feat_points_hist'); repaint(); return; }
+    if (t.closest('[data-pt-more]')) { S.histShow += 10; repaint(); return; }
     if (t.closest('[data-pt-close]')) { var a = document.getElementById('okbmPointsAll'); if (a) a.remove(); return; }
     if (t.closest('[data-pt-open]')) { e.preventDefault(); openSheet(); }
   });
