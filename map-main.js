@@ -8851,6 +8851,14 @@ var overlay = document.getElementById('customModalOverlay');
             }).catch(function(err) { console.warn('[map-main.js:notice-news]', err); });
           });
         }
+        // "gulupdo"면 닫고 홈으로 가서 '굴업도로 떠나기'를 연다(home-layout.js gulupdoArrive)
+        if (actBtn && root.getAttribute('data-notice-action') === 'gulupdo') {
+          actBtn.hidden = false;
+          actBtn.addEventListener('click', function() {
+            closeNotice();
+            window.smoothNavigate('index.html?go=gulupdo');
+          });
+        }
         if (actBtn && root.getAttribute('data-notice-action') === 'photomap') {
           actBtn.hidden = false;
           actBtn.addEventListener('click', function() {

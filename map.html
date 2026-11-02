@@ -1615,8 +1615,8 @@
       </div>
     </div>
     <!-- 첫 알림창. 바꿀 때: notice/에 새 그림(820폭)을 넣고 data-notice-img·data-notice-id를 바꾼다.
-         버튼: data-notice-action="photomap"(사진 지도) | "news"(data-notice-news의 라운지 소식·매거진), 글자는 data-notice-label.
-         그림 원본: .claude/mockups/notice-closure/notice.html (2026-10-31 야영 금지 3곳) -->
+         버튼: data-notice-action="photomap"(사진 지도) | "news"(data-notice-news의 라운지 소식·매거진) | "gulupdo"(홈의 굴업도로 떠나기), 글자는 data-notice-label.
+         그림 원본: .claude/mockups/notice-gulupdo/notice.html (2026-11-02 굴업도 같이 접속, 게임 화면은 play.mjs로 찍음) -->
     <style>
       .okbm-spot-notice { position: fixed; inset: 0; z-index: 2147483647; background: rgba(0,0,0,.62); display: flex; justify-content: center; align-items: flex-start; padding: calc(var(--okbm-status-top, 12px) + 8px) 12px calc(8px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
       .okbm-spot-notice[hidden] { display: none !important; }
@@ -1629,17 +1629,17 @@
       .okbm-spot-notice-pad { height: 14px; }
       .okbm-spot-notice-x { position: absolute; top: 10px; right: 10px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.55); color: #fff; font-size: 15px; font-weight: 700; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
     </style>
-    <div id="okbmNewSpotNotice" class="okbm-spot-notice" data-notice-id="20261031-closure" data-notice-img="/notice/closure-1031.jpg" data-notice-action="news" data-notice-news="7fb7e538-6b95-469c-a081-8bb49d1387e3" data-notice-label="카드뉴스로 자세히 보기" hidden>
+    <div id="okbmNewSpotNotice" class="okbm-spot-notice" data-notice-id="20261102-gulupdo" data-notice-img="/notice/gulupdo-1102.jpg" data-notice-action="gulupdo" data-notice-label="굴업도로 떠나기" hidden>
       <div class="okbm-spot-notice-frame">
         <button type="button" id="okbmNewSpotNoticeClose" data-metric-click="feat_notice_close" class="okbm-spot-notice-x" aria-label="닫기">✕</button>
         <div class="okbm-spot-notice-scroll">
-          <img id="okbmNewSpotNoticeImg" alt="야영 금지: 매악산 국사봉 활공장, 장봉도 가막머리 해안절벽, 선자산 편백숲. 더 막히지 않게 LNT를 지켜 주세요. 쓰레기는 음식물까지 다 들고 내려오고, 산에서는 화기·흡연 금지, 해 뜨면 바로 정리, 인원은 소규모로.">
+          <img id="okbmNewSpotNoticeImg" alt="일상에 지친 날엔 굴업도로 떠나 보세요. 홈 화면에서 굴업도로 떠나기를 누르면, 낭만의 섬에서 지인들과 이야기 나누고 새 친구도 사귀어요. 굴업도에 안 가 봤다면 개머리언덕부터 코끼리바위까지 실제 섬 모습 그대로 미리 걸어 봐요.">
           <button type="button" id="okbmNoticeAction" data-metric-click="feat_notice_go" class="okbm-spot-notice-act" hidden>포토맵 채우러 가기</button>
           <div class="okbm-spot-notice-pad"></div>
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.74"></script>
+       <script src="map-main.js?v=1.0.75"></script>
     <script src="photo-map.js?v=25" defer></script>
     <script src="spot-tips.js?v=11" defer></script>
     <script src="home-metrics.js?v=5" defer></script>

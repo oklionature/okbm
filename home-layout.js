@@ -158,6 +158,26 @@
     btn.addEventListener('click', openGulupdo);
     quick.insertAdjacentElement('afterend', btn);
     gulupdoCount();
+    gulupdoArrive();
+  }
+  // 지도 첫 알림창 '굴업도로 떠나기'(index.html?go=gulupdo)로 왔으면 띠를 보여 주고 바로 들어가기를 누른 것처럼 연다
+  var gulupdoWanted = /[?&]go=gulupdo(&|$)/.test(location.search);
+  function gulupdoArrive() {
+    if (!gulupdoWanted) return;
+    var btn = document.getElementById('homeGulupdo');
+    if (!btn) return;
+    gulupdoWanted = false;
+    try { history.replaceState(history.state, '', location.pathname + location.search.replace(/([?&])go=gulupdo(&|$)/, '$1').replace(/[?&]$/, '') + location.hash); } catch (e) {}
+    try { btn.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+    setTimeout(openGulupdo, 600);
+  }
+  // 로그인 안 한 채로 왔으면 띠가 안 생기니 로그인 창을 띄운다
+  function gulupdoArriveLogin() {
+    if (!gulupdoWanted || document.getElementById('homeGulupdo')) return;
+    if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn() && typeof window.openLoginModal === 'function') {
+      gulupdoWanted = false;
+      window.openLoginModal({ message: '로그인하면 굴업도로 떠날 수 있어요.' });
+    }
   }
   // 지금 접속 인원(11-02 대표님: '같이 접속' 대신 '지금 N명 접속'). 홈이 보이는 동안 30초마다
   var gulupdoCountT = 0;
@@ -435,6 +455,7 @@
     paintGulupdo();
     window.addEventListener('okbm_admin_flag', paintGulupdo);
     [2000, 6000, 15000].forEach(function (ms) { setTimeout(paintGulupdo, ms); });   // 로그인·프로필이 늦게 와도 다시 본다
+    setTimeout(gulupdoArriveLogin, 6000);
     var sec = document.getElementById('homeRecentReviews');
     if (sec) {
       sec.addEventListener('click', onQuickClick);
