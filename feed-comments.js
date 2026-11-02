@@ -399,6 +399,7 @@
     if (state.replyTo) args.p_reply_to = state.replyTo.id;
     rpc('add_feed_comment', args).then(function (res) {
       ta.value = '';
+      if (window.okbmPoints) window.okbmPoints.check('comment'); // 낭만 포인트 알림 (H31)
       var wasReply = !!state.replyTo;
       setReplyTo(null);
       var count = (res && typeof res.comments_count === 'number') ? res.comments_count : state.rows.length + 1;

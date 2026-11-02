@@ -460,6 +460,8 @@
     feeds.forEach(function (f) { stars += Number(f.likes_count) || 0; comments += Number(f.comments_count) || 0; });
     var pc = pm.total ? Math.round(pm.filled / pm.total * 100) : 0;
     var h = '';
+    // 낭만 포인트 (romantic-points.js가 채운다. 로그인 안 했으면 숨는다)
+    h += '<div class="mr-card" id="mrPoints"></div>';
     // 내 포토맵 (예전 '지역 분포'를 대신한다: 도별 진행을 다 펼쳐 볼 수 있다)
     h += '<div class="mr-card"><div class="mr-h"><span class="mr-k">' + ICON.map + '내 포토맵</span><button type="button" class="mr-go" data-mr-act="photomap">포토맵 열기 ›</button></div>';
     if (pm.total) {
@@ -486,7 +488,7 @@
     var ys = yearOptions(feeds);
     // 기록이 오기 전에는 해를 정하지 않는다(빈 목록으로 '전체'가 굳지 않게)
     if (!S.ryear && ys.length) S.ryear = ys.indexOf(curYear()) >= 0 ? curYear() : ys[0];
-    if (!ys.length && S.feeds === null) { box.innerHTML = h; return; }
+    if (!ys.length && S.feeds === null) { box.innerHTML = h; if (window.okbmPoints) window.okbmPoints.card($('mrPoints')); return; }
     var y = S.ryear || 'all';
     var list = y === 'all' ? feeds : feeds.filter(function (f) { var d = feedDate(f); return d && String(d.getFullYear()) === y; });
     h += '<div class="mr-sec"><span>기록 분석</span><span class="mr-sel"><select data-mr-ryear aria-label="분석할 해">' +
@@ -545,6 +547,8 @@
         }).join('') + '</div>' : '') + '</div>';
     }
     box.innerHTML = h;
+    if (window.okbmPoints) window.okbmPoints.card($('mrPoints'));
+    else { var pb = $('mrPoints'); if (pb) pb.style.display = 'none'; }
     if (window.okbmBadges && S.feeds) {
       // 배지는 공개 피드만 센다(나만 보기로 올린 것은 빼고)
       window.okbmBadges.set(buildBadges(feeds.filter(function (f) { return f.is_published !== false; })), true);
