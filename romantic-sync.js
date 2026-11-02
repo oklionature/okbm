@@ -14340,6 +14340,8 @@ function okbmNotifRowHtml(r, unread) {
   }
   var when = okbmInboxAgo(r.created_at);
   var body = String(r.body || '').trim();
+  // 제보·수정 건의 채택/반려는 감사 인사·반려 사유를 끝까지 읽어야 해서 줄을 접지 않는다(대표님 11-02). 별·댓글 알림은 한 줄.
+  var fullBody = /^(proposal|correction)_/.test(String(r.kind || ''));
   // 쪽지 줄과 같은 밀어서 삭제 구조 (okbmBindNoteSwipeRows가 함께 묶는다)
   var safeNotifId = _escapeReportPropHtml(String(r.id || ''));
   var bg = unread ? '#0f0f11' : '#000000';
@@ -14352,7 +14354,7 @@ function okbmNotifRowHtml(r, unread) {
         left +
         '<div style="min-width:0; flex:1; font-size:13px; line-height:1.45; color:#d1d1d6;">' +
           '<div>' + okbmNotifTitleHtml(r.title, actor) + (when ? ' <span style="color:#8b8b93; font-size:12px; white-space:nowrap;">' + when + '</span>' : '') + '</div>' +
-          (body ? '<div style="color:#8b8b93; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + _escapeReportPropHtml(body) + '</div>' : '') +
+          (body ? '<div style="color:#8b8b93; margin-top:2px;' + (fullBody ? ' white-space:pre-wrap; word-break:keep-all; overflow-wrap:anywhere;' : ' overflow:hidden; text-overflow:ellipsis; white-space:nowrap;') + '">' + _escapeReportPropHtml(body) + '</div>' : '') +
         '</div>' +
         right +
       '</div>' +
