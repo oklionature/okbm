@@ -43,7 +43,7 @@
     ['닉네임 바꾸기', '300점', '처음 한 번은 무료예요'],
     ['피드 테두리', '', 'Coming soon'],
     ['프로필 테두리', '', 'Coming soon'],
-    ['굴업도 미리 체험 입장권', '', 'Coming soon']
+    ['굴업도 체험 입장권', '', 'Coming soon']
   ];
   var NAME = {};
   RULES.forEach(function (r) { NAME[r[0]] = r[1]; });
