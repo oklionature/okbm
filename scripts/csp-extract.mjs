@@ -159,7 +159,9 @@ const CONNECT_COMMON = [
   "data:", "blob:",                                      // 사진 압축·캡처 중간 결과
 ];
 const CONNECT_BY_PAGE = {
-  "index.html": [],
+  "index.html": [
+    "https://gulupdo.ggumfree.workers.dev",                // 굴업도 같이 접속 인원(홈 띠, 11-02)
+  ],
   "map.html": [
     "https://api.open-meteo.com",                          // 날씨·고도
     "https://noembed.com", "https://api.microlink.io",     // 링크 미리보기

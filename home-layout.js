@@ -168,7 +168,7 @@
     if (!document.hidden) {
       fetch(GULUPDO_URL + 'count', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
         var n = d && Number(d.n);
-        if (n >= 0 && document.getElementById('homeGulupdoN')) em.textContent = '지금 ' + n + '명 접속 중 · 15점';
+        if (n >= 0 && document.getElementById('homeGulupdoN')) em.textContent = '지금 ' + n + '명 접속 중 · 낭만 포인트 15점';
       }).catch(function () {});
     }
     gulupdoCountT = setTimeout(gulupdoCount, 30000);
