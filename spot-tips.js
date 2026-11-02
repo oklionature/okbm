@@ -370,6 +370,8 @@
       closeSheet();
       if (typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(12); } catch (err) {} }
       toast('고마워요! ' + shortName(spotOf(id)) + ' 후기에 쌓였어요.');
+      // 낭만 포인트 알림(H32): 후기 토스트와 겹치지 않게 조금 뒤에
+      if (window.okbmPoints) setTimeout(function () { window.okbmPoints.check(star ? 'review' : 'tip'); }, 1600);
       load(id, true);
       // 라운지 "박지 후기" 탭 등 다른 화면도 새로 받게 알린다
       try { window.dispatchEvent(new CustomEvent('okbm_spot_review_saved', { detail: { spotId: id } })); } catch (e2) {}

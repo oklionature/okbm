@@ -1779,6 +1779,7 @@
       const r = await q(c.rpc('okbm_poll_vote', { p_post_id: id, p_choice: i }));
       if (r && r.post_id) D.poll[id] = r;
       paintPoll(id);
+      if (window.okbmPoints) window.okbmPoints.check('vote'); // 낭만 포인트 알림 (H32)
     } catch (e) {
       console.warn('[lounge.js:votePoll]', e);
       const m = String((e && e.message) || e || '');
@@ -3378,6 +3379,7 @@
         D.comments[row.id] = [];
         D.likeChecked.add(row.id);
         if (row.category === 'poll') D.poll[row.id] = { post_id: row.id, total: 0, counts: null, mine: null, closed: false };
+        if (window.okbmPoints) window.okbmPoints.check('post'); // 낭만 포인트 알림 (H32)
       }
       closeSheet();
       toast(st.id ? '글을 고쳤어요' : (row.category === 'suggestion' ? '건의를 보냈어요. 답변이 달리면 알려 드릴게요' : row.category === 'poll' ? '설문을 올렸어요' : '글을 올렸어요'));
@@ -3413,6 +3415,7 @@
       if (!row) throw new Error('no_rows');
       (D.comments[pid] || (D.comments[pid] = [])).push(row);
       forEachPost(pid, function (p) { p.comments_count = (Number(p.comments_count) || 0) + 1; });
+      if (window.okbmPoints) window.okbmPoints.check('comment'); // 낭만 포인트 알림 (H32)
       input.value = '';
       tick();
       renderBoard();
@@ -3549,6 +3552,7 @@
       if (!Array.isArray(res.data) || !res.data.length) throw new Error('no_rows');
       closeSheet();
       toast(st.mine ? '후기를 고쳤어요' : '후기를 남겼어요. 고마워요');
+      if (!st.mine && window.okbmPoints) window.okbmPoints.check('review'); // 낭만 포인트 알림 (H32)
       afterReviewChange(st.spot_id);
     } catch (e) {
       console.warn('[lounge.js:saveReview]', e);
