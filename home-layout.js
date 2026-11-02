@@ -154,7 +154,7 @@
     btn.type = 'button';
     btn.id = 'homeGulupdo';
     btn.className = 'hq-isle okbm-press';
-    btn.innerHTML = '<b>굴업도로 떠나기</b><em id="homeGulupdoN">낭만 포인트 15점</em>';
+    btn.innerHTML = '<b>굴업도로 떠나기</b><em id="homeGulupdoN">접속 인원 확인 중</em>';
     btn.addEventListener('click', openGulupdo);
     quick.insertAdjacentElement('afterend', btn);
     gulupdoCount();
@@ -188,7 +188,7 @@
     if (!document.hidden) {
       fetch(GULUPDO_URL + 'count', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
         var n = d && Number(d.n);
-        if (n >= 0 && document.getElementById('homeGulupdoN')) em.textContent = '지금 ' + n + '명 접속 중 · 낭만 포인트 15점';
+        if (n >= 0 && document.getElementById('homeGulupdoN')) em.textContent = '지금 ' + n + '명 접속 중';   // 15점은 누르면 확인 창에 나와서 뺌(11-02 대표님)
       }).catch(function () {});
     }
     gulupdoCountT = setTimeout(gulupdoCount, 30000);
