@@ -782,7 +782,7 @@
       return;
     }
     document.getElementById('pointsSum').textContent = '지급 ' + num(d.total_given) + '점 · ' + num(d.members) + '명';
-    pointsOut.innerHTML = '<h3 class="pt-h3">오늘 많이 받은 사람 <span class="dim">(운영자 지급 빼고, 하루 최대 200점)</span></h3>' + pointRows(d.today, 'got', '+') +
+    pointsOut.innerHTML = '<h3 class="pt-h3">오늘 많이 받은 사람 <span class="dim">(운영자 지급·제보·수정 건의 빼고, 하루 최대 200점)</span></h3>' + pointRows(d.today, 'got', '+') +
       '<h3 class="pt-h3">잔액 상위 20명</h3>' + pointRows(d.top, 'bal', '');
   }
   async function openPointUser(id) {

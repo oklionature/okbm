@@ -4,6 +4,7 @@
 -- 왜: 대표님 11-02 — 장부(point_ledger)는 회원 아이디만 있어 누가 누군지 모르고, 직접 주거나 뺄 방법이 없었다.
 -- 어떻게(모두 관리자만, okbm_is_admin()):
 --   1) okbm_admin_points_overview(p_query): 비우면 잔액 상위 20명·오늘 많이 받은 10명·전체 지급 합계,
+--      '오늘 많이 받은'은 카드처럼 상한 없는 운영자 지급·제보·수정 건의를 뺀다(11-02 실제 확인 때 소급 1,300점이 1위로 떠서),
 --      닉네임을 넣으면 그 닉네임을 가진 회원(20명까지)과 잔액.
 --   2) okbm_admin_points_user(p_user_id): 한 회원의 닉네임·잔액·내역 100줄(사유 포함).
 --   3) okbm_admin_points_adjust(p_user_id, p_delta, p_note): 운영자 지급(+)·회수(−). 사유 필수, 한 번에 ±10,000까지.
@@ -41,7 +42,7 @@ BEGIN
     'today', (SELECT COALESCE(jsonb_agg(x ORDER BY x.got DESC), '[]'::jsonb) FROM (
       SELECT l.user_id AS id, u.nickname, sum(l.delta) AS got
         FROM public.point_ledger l LEFT JOIN public.users u ON u.id = l.user_id
-       WHERE l.delta > 0 AND l.reason <> 'admin' AND l.created_at >= public.okbm_point_day_start()
+       WHERE l.delta > 0 AND l.reason NOT IN ('admin', 'proposal', 'correction') AND l.created_at >= public.okbm_point_day_start()
        GROUP BY l.user_id, u.nickname ORDER BY sum(l.delta) DESC LIMIT 10) x)
   );
 END;
