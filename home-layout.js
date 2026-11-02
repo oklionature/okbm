@@ -44,6 +44,14 @@
       '.hq-btn em{font-style:normal;font-size:11.5px;font-weight:600;color:#8e8e93;white-space:nowrap}',
       '.hq-isle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:calc(100% - 28px);margin:2px 14px -6px;height:58px;padding:0 16px;border-radius:14px;background:#0c0d10;border:1px solid rgba(255,214,120,.25);color:#F2F3F5;font-family:inherit;cursor:pointer}',
       '.hq-isle:active{background:#16161a}',
+      // 홈 첫 알림창(지도 map.html의 .okbm-spot-notice와 같은 모양)
+      '.hn{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.62);display:flex;justify-content:center;align-items:flex-start;padding:calc(var(--okbm-status-top, 12px) + 8px) 12px calc(8px + env(safe-area-inset-bottom, 0px));box-sizing:border-box}',
+      '.hn-frame{position:relative;width:min(100%, 480px);max-height:100%;display:flex}',
+      '.hn-scroll{width:100%;max-height:100%;overflow:auto;-webkit-overflow-scrolling:touch;border-radius:14px;background:#000}',
+      '.hn-scroll img{display:block;width:100%;height:auto}',
+      '.hn-act{position:sticky;bottom:0;display:block;width:calc(100% - 32px);margin:0 16px;padding:15px 10px;box-shadow:0 -14px 18px 6px #000;border:0;border-radius:12px;background:#2f9e6a;color:#fff;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer}',
+      '.hn-pad{height:14px}',
+      '.hn-x{position:absolute;top:10px;right:10px;z-index:2;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:15px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
       '.hq-isle b{display:flex;align-items:center;gap:7px;font-size:16px;font-weight:800;letter-spacing:-.03em}',
       '.hq-isle i{font-style:normal;font-size:10.5px;font-weight:900;letter-spacing:.02em;color:#1a1206;background:#f5b94a;border-radius:5px;padding:3px 6px 2px;line-height:1}',
       '.hq-isle em{font-style:normal;font-size:12.5px;font-weight:700;color:#e0b45a;white-space:nowrap}',
@@ -183,6 +191,42 @@
       }).catch(function () {});
     }
     gulupdoCountT = setTimeout(gulupdoCount, 30000);
+  }
+  // ---------- 홈 첫 알림창(11-02 대표님: 지도 말고 낭만루터에서 뜨게) ----------
+  // 바꿀 때: notice/에 새 그림(820폭)을 넣고 HOME_NOTICE의 id·img·label을 바꾼다. 한 번 닫으면 같은 id는 다시 안 뜬다.
+  // 그림 원본: .claude/mockups/notice-gulupdo/notice.html
+  var HOME_NOTICE = {
+    id: '20261102-gulupdo',
+    img: '/notice/gulupdo-1102.jpg',
+    alt: '일상에 지친 날엔 굴업도로 떠나 보세요. 홈 화면에서 굴업도로 떠나기를 누르면, 낭만의 섬에서 지인들과 이야기 나누고 새 친구도 사귀어요. 굴업도에 안 가 봤다면 개머리언덕부터 코끼리바위까지 실제 섬 모습 그대로 미리 걸어 봐요.',
+    label: '굴업도로 떠나기'
+  };
+  function homeNotice() {
+    var key = 'okbm_home_notice_id';
+    try { if (localStorage.getItem(key) === HOME_NOTICE.id) return; } catch (e) { return; }
+    if (document.getElementById('okbmHomeNotice')) return;
+    var root = document.createElement('div');
+    root.id = 'okbmHomeNotice';
+    root.className = 'hn';
+    root.innerHTML = '<div class="hn-frame"><button type="button" class="hn-x" data-metric-click="feat_home_notice_close" aria-label="닫기">✕</button>' +
+      '<div class="hn-scroll"><img alt=""><button type="button" class="hn-act" data-metric-click="feat_home_notice_go"></button><div class="hn-pad"></div></div></div>';
+    var img = root.querySelector('img');
+    img.alt = HOME_NOTICE.alt;
+    img.addEventListener('error', function () { root.remove(); });
+    img.src = HOME_NOTICE.img + '?v=' + encodeURIComponent(HOME_NOTICE.id);
+    root.querySelector('.hn-act').textContent = HOME_NOTICE.label;
+    function close() {
+      try { localStorage.setItem(key, HOME_NOTICE.id); } catch (e) {}
+      root.remove();
+    }
+    root.querySelector('.hn-x').addEventListener('click', close);
+    root.querySelector('.hn-act').addEventListener('click', function () {
+      close();
+      var btn = document.getElementById('homeGulupdo');
+      try { if (btn) btn.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+      setTimeout(openGulupdo, 400);
+    });
+    document.body.appendChild(root);
   }
   function gulupdoToast(msg) { if (typeof showToast === 'function') showToast(msg, 'warn'); }
   // 앱은 Browser 창으로, 웹은 같은 탭으로 연다(포인트 확인을 기다린 뒤라 새 창은 팝업 차단에 걸린다)
@@ -450,6 +494,7 @@
     paintGulupdo();
     window.addEventListener('okbm_admin_flag', paintGulupdo);
     [2000, 6000, 15000].forEach(function (ms) { setTimeout(paintGulupdo, ms); });   // 로그인·프로필이 늦게 와도 다시 본다
+    homeNotice();
     var sec = document.getElementById('homeRecentReviews');
     if (sec) {
       sec.addEventListener('click', onQuickClick);

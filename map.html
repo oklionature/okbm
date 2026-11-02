@@ -1616,7 +1616,7 @@
     </div>
     <!-- 첫 알림창. 바꿀 때: notice/에 새 그림(820폭)을 넣고 data-notice-img·data-notice-id를 바꾼다.
          버튼: data-notice-action="photomap"(사진 지도) | "news"(data-notice-news의 라운지 소식·매거진) | "gulupdo"(홈의 굴업도로 떠나기), 글자는 data-notice-label.
-         그림 원본: .claude/mockups/notice-gulupdo/notice.html (2026-11-02 굴업도 같이 접속, 게임 화면은 play.mjs로 찍음) -->
+         data-notice-id가 비면 알림창을 안 띄운다. 11-02 굴업도 알림은 대표님 말씀으로 홈(home-layout.js HOME_NOTICE)으로 옮겨 지금은 꺼 둠. -->
     <style>
       .okbm-spot-notice { position: fixed; inset: 0; z-index: 2147483647; background: rgba(0,0,0,.62); display: flex; justify-content: center; align-items: flex-start; padding: calc(var(--okbm-status-top, 12px) + 8px) 12px calc(8px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
       .okbm-spot-notice[hidden] { display: none !important; }
@@ -1629,7 +1629,7 @@
       .okbm-spot-notice-pad { height: 14px; }
       .okbm-spot-notice-x { position: absolute; top: 10px; right: 10px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.55); color: #fff; font-size: 15px; font-weight: 700; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
     </style>
-    <div id="okbmNewSpotNotice" class="okbm-spot-notice" data-notice-id="20261102-gulupdo" data-notice-img="/notice/gulupdo-1102.jpg" data-notice-action="gulupdo" data-notice-label="굴업도로 떠나기" hidden>
+    <div id="okbmNewSpotNotice" class="okbm-spot-notice" data-notice-id="" data-notice-img="" data-notice-action="" data-notice-label="" hidden>
       <div class="okbm-spot-notice-frame">
         <button type="button" id="okbmNewSpotNoticeClose" data-metric-click="feat_notice_close" class="okbm-spot-notice-x" aria-label="닫기">✕</button>
         <div class="okbm-spot-notice-scroll">
