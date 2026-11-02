@@ -7784,7 +7784,8 @@ window._pastTripLinkUnregisteredRecordsToSpot = async function(spot, spotId, nam
     r.spot_id = id;
     r.unregisteredSpot = false;
     r.unregistered_spot = false;
-    var nextPublished = window._pastTripHasValidFieldPhotos(r);
+    // H35 '박지 생기면 공개'를 고른 글만 공개한다(뜻을 모르는 지난 글은 나만 보기 그대로)
+    var nextPublished = window._pastTripHasValidFieldPhotos(r) && r.wantPublic === true;
     r.isPublished = nextPublished;
     r.is_published = nextPublished;
     return true;
@@ -9581,6 +9582,8 @@ window.submitPastTripRegister = async function() {
     isDraft: false,
     isPublished: isUnregistered ? false : (photos.length > 0 && st.publishOff !== true),
     unregisteredSpot: isUnregistered,
+    // H35 박지가 없으면 스위치는 '박지 생기면 공개' 뜻으로 받는다(서버 want_public)
+    wantPublic: isUnregistered ? st.publishOff !== true : undefined,
     items: packedItems,
     photos: photos,
     youtube: ytUrl || '',
@@ -9815,9 +9818,15 @@ window._ptwSyncSwitch = function() {
   var sw = document.getElementById('pastTripPublishSwitch');
   if (!sw) return;
   var st = window.__pastTripRegisterState || {};
-  var can = window._pastTripPublishState() === 'ok';
+  var state = window._pastTripPublishState();
+  // 박지가 없을 때도 스위치를 살려 '박지 생기면 공개' 뜻을 받는다(H35). 사진이 없을 때만 잠근다.
+  var can = state === 'ok' || state === 'unregistered';
   sw.disabled = !can;
   sw.setAttribute('aria-checked', String(can && st.publishOff !== true));
+  var label = state === 'unregistered' ? '박지 생기면 공개' : '피드에 공개';
+  sw.setAttribute('aria-label', label);
+  var b = sw.parentElement ? sw.parentElement.querySelector('b') : null;
+  if (b) b.textContent = label;
 };
 (function() {
   var origHint = window._pastTripRenderPublishHint;
@@ -9827,7 +9836,11 @@ window._ptwSyncSwitch = function() {
     window._ptwSyncSwitch();
     var st = window.__pastTripRegisterState || {};
     var el = document.getElementById('pastTripPublishHint');
-    if (el && window._pastTripPublishState() === 'ok' && st.publishOff === true) {
+    if (el && window._pastTripPublishState() === 'unregistered') {
+      el.textContent = st.publishOff === true
+        ? '등록된 박지가 아니라서 나만 보기로 저장돼요. 나중에 박지로 등록돼도 공개하지 않아요.'
+        : '등록된 박지가 아니라서 지금은 나만 보기로 저장돼요. 이 장소가 박지로 등록되면 피드에 올라가요.';
+    } else if (el && window._pastTripPublishState() === 'ok' && st.publishOff === true) {
       el.textContent = '나만 보기로 저장돼요. 나중에 피드에 공개할 수 있어요.';
       el.style.color = '#94a3b8';
     } else if (el && window._pastTripPublishState() === 'ok') {
@@ -10168,7 +10181,8 @@ window._ptwShowDone = function(record, next) {
   var pub = record.isPublished === true;
   var photo = (record.photos || [])[0] || '';
   var st = window.__pastTripRegisterState || {};
-  var why = record.unregisteredSpot ? '등록된 박지가 아니라서 나만 보기로 저장했어요. 마이데이터에는 합산돼요.'
+  var why = record.unregisteredSpot ? ('등록된 박지가 아니라서 나만 보기로 저장했어요. 마이데이터에는 합산돼요.' +
+      (record.wantPublic === true ? ' 이 장소가 박지로 등록되면 피드에 올라가요.' : ''))
     : (!(record.photos || []).length ? '현장 사진이 없어서 나만 보기로 저장했어요. 사진을 넣으면 피드에 올라가요.'
     : (st.publishOff ? '나만 보기로 저장했어요. 나중에 피드에 공개할 수 있어요.' : ''));
   var spotShort = String(record.spot || '').replace(/\s*\(.*?\)/g, '').trim();

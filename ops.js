@@ -834,8 +834,50 @@
     });
   }
 
+  // 비공개 피드 (SUPABASE_H35_FEED_PRIVATE_REASON.sql). 관리자만 칸이 보인다.
+  // 비공개 이유(서버 트리거가 정함)와, 박지 없는 글이면 작성자의 '박지 생기면 공개' 뜻을 나눠 본다.
+  var privBox = document.getElementById('privBox');
+  var PRIV_NAME = { no_spot: '박지 없음', no_photo: '현장 사진 없음', self: '작성자가 끔', ready: '조건 갖춤, 아직 비공개' };
+  function privWant(r, w) {
+    if (r === 'self') return '';
+    if (w === true) return '<span class="ok">공개 원함</span>';
+    if (w === false) return '<span class="dim">공개 안 원함</span>';
+    return '<span class="dim">뜻 모름</span>';
+  }
+  async function loadPrivate() {
+    var r = await client.rpc('okbm_admin_private_feeds');
+    if (r.error || !privBox) return;
+    privBox.hidden = false;
+    var d = r.data || {};
+    var sums = {};
+    var total = 0;
+    (d.counts || []).forEach(function (c) {
+      var k = String(c.r || 'self');
+      sums[k] = sums[k] || { n: 0, yes: 0, no: 0, unk: 0 };
+      var n = Number(c.n) || 0;
+      sums[k].n += n;
+      total += n;
+      if (c.w === true) sums[k].yes += n; else if (c.w === false) sums[k].no += n; else sums[k].unk += n;
+    });
+    document.getElementById('privSum').textContent = num(total) + '개';
+    var order = ['no_spot', 'no_photo', 'ready', 'self'];
+    var head = '<table><tbody>' + order.filter(function (k) { return sums[k]; }).map(function (k) {
+      var x = sums[k];
+      var detail = k === 'self' ? '' : '공개 원함 ' + num(x.yes) + ' · 안 원함 ' + num(x.no) + ' · 모름 ' + num(x.unk);
+      return '<tr><td><b>' + esc(PRIV_NAME[k]) + '</b> <span class="dim">' + detail + '</span></td><td>' + num(x.n) + '개</td></tr>';
+    }).join('') + '</tbody></table>';
+    var rows = (d.rows || []).map(function (f) {
+      var k = String(f.r || 'self');
+      return '<tr><td>' + esc(f.spot || '(장소 없음)') + ' <span class="dim">· ' + esc(f.author || '') + ' · ' + esc(f.date || '') + ' · 사진 ' + num(f.pc) + '</span></td><td>' +
+        esc(PRIV_NAME[k] || k) + (privWant(k, f.w) ? '<br>' + privWant(k, f.w) : '') + '</td></tr>';
+    }).join('');
+    document.getElementById('privOut').innerHTML = head + '<h3 class="pt-h3">최근 비공개 100개</h3>' +
+      (rows ? '<table class="priv-list"><tbody>' + rows + '</tbody></table>' : '<p class="dim" style="font-size:12px">없어요</p>');
+  }
+
   loadActivity();
   loadPushCount();
   loadKakaoAlert();
   if (pointsBox) loadPoints('');
+  loadPrivate();
 })();

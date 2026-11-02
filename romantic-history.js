@@ -1693,6 +1693,8 @@
         feed_type: normalized.feedType || 'route',
         updated_at: new Date().toISOString()
       };
+      // H35: 박지 없는 글의 공개 뜻은 아는 기록만 보낸다. 비공개 이유(private_reason)는 서버 트리거가 정한다.
+      if (typeof normalized.wantPublic === 'boolean') payload.want_public = normalized.wantPublic;
       // H19: 플로깅 사진은 아는 기록만 보낸다(모르는 기록을 고칠 때 서버 값을 지우지 않게)
       if (normalized.ploggingPhoto !== undefined) {
         payload.plogging_photo = String(normalized.ploggingPhoto || '').indexOf('https://') === 0 ? String(normalized.ploggingPhoto) : null;
@@ -2403,6 +2405,8 @@ window.normalizeHistoryRecord = function(r, idx) {
       spotId: (r && (r.spotId || r.spot_id)) ? String(r.spotId || r.spot_id).trim() : '',
       memoMode: (r && (r.memoMode || r.memo_mode)) ? String(r.memoMode || r.memo_mode) : 'single',
       unregisteredSpot: Boolean(r && (r.unregisteredSpot === true || r.unregistered_spot === true)),
+      // H35 박지가 없을 때 작성자가 '박지 생기면 공개'를 골랐는지. 모르면 undefined로 두어 저장할 때 서버 값을 덮지 않는다.
+      wantPublic: (r && typeof (r.wantPublic !== undefined ? r.wantPublic : r.want_public) === 'boolean') ? (r.wantPublic !== undefined ? r.wantPublic : r.want_public) : undefined,
       items: cleanItems,
       photos: rawPhotos
     };
