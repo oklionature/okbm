@@ -7312,6 +7312,17 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       var sharedFeedId = params.get('feed');
       if (!sharedFeedId) return;
       setTimeout(function() {
+        // 연 뒤에는 주소에서 feed·comments를 지운다. 남겨 두면 탭을 다시 열 때마다 같은 글이 첫 장으로 뜬다
+        // (관리자가 운영 화면에서 연 비공개 글이 계속 뜨던 일, 11-03). 댓글 창은 그 전에 주소를 읽어 둔다(feed-comments.js).
+        try {
+          var cleanParams = new URLSearchParams(window.location.search);
+          cleanParams.delete('feed');
+          cleanParams.delete('comments');
+          var cleanQuery = cleanParams.toString();
+          if (window.history && typeof history.replaceState === 'function') {
+            history.replaceState(history.state, '', window.location.pathname + (cleanQuery ? '?' + cleanQuery : '') + (window.location.hash || ''));
+          }
+        } catch (eClean) {}
         if (typeof window.okbmOpenDirectFeed === 'function') {
           window.okbmOpenDirectFeed(sharedFeedId);
           return;
