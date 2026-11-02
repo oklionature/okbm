@@ -746,7 +746,96 @@
     kakaoStatus.textContent = r.error ? '보내지 못했어요 (' + r.error + ')' : '보냈어요. 카카오톡을 확인해 보세요.';
   });
 
+  // 낭만 포인트 (SUPABASE_H33_POINTS_ADMIN.sql). 관리자만 칸이 보인다.
+  // 위: 지급 합계·잔액 상위·오늘 많이 받은 사람(이상하게 많이 받는지 보기), 닉네임 찾기.
+  // 회원을 누르면 잔액·내역과 운영자 지급·회수(사유 필수)를 아래에 연다.
+  var pointsBox = document.getElementById('pointsBox');
+  var pointsOut = document.getElementById('pointsOut');
+  var pointsUser = document.getElementById('pointsUser');
+  var POINT_NAME = {
+    feed: '피드 올리기', plog: '플로깅 피드', comment: '댓글 쓰기', star_give: '별 누르기', star_get: '별 받기',
+    post: '게시판 글·투표', vote: '투표 참여', tip: '한 줄 후기', review: '별점 후기',
+    attend: '매일 출석', attend7: '7일 연속 출석', correction: '수정 건의 채택', proposal: '박지 제보 반영', admin: '운영자'
+  };
+  function pointLabel(r, d) {
+    if (r === 'admin') return d < 0 ? '운영자 회수' : '운영자 지급';
+    var x = /_x$/.test(r);
+    return (POINT_NAME[x ? r.slice(0, -2) : r] || r) + (x ? ' 취소' : '');
+  }
+  function pointTime(t) {
+    var d = new Date(t);
+    return isNaN(d.getTime()) ? '' : (d.getMonth() + 1) + '.' + d.getDate() + ' ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  }
+  function pointRows(list, valKey, valPrefix) {
+    if (!list || !list.length) return '<p class="dim" style="font-size:12px;padding:8px 0">아직 없어요</p>';
+    return '<table><tbody>' + list.map(function (u, i) {
+      return '<tr><td><button type="button" class="pt-u" data-pt-user="' + esc(u.id) + '">' + (i + 1) + '. ' + esc(u.nickname || u.id) + '</button></td><td>' + valPrefix + num(u[valKey]) + '점</td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+  async function loadPoints(query) {
+    var r = await client.rpc('okbm_admin_points_overview', { p_query: query || null });
+    if (r.error) { if (!query) return; pointsOut.innerHTML = '<p class="msg err">찾지 못했어요: ' + esc(r.error.message || '') + '</p>'; return; }
+    pointsBox.hidden = false;
+    var d = r.data || {};
+    if (query) {
+      pointsOut.innerHTML = '<h3 class="pt-h3">\'' + esc(query) + '\' 찾은 회원</h3>' + pointRows(d.found, 'bal', '');
+      return;
+    }
+    document.getElementById('pointsSum').textContent = '지급 ' + num(d.total_given) + '점 · ' + num(d.members) + '명';
+    pointsOut.innerHTML = '<h3 class="pt-h3">오늘 많이 받은 사람 <span class="dim">(운영자 지급 빼고, 하루 최대 200점)</span></h3>' + pointRows(d.today, 'got', '+') +
+      '<h3 class="pt-h3">잔액 상위 20명</h3>' + pointRows(d.top, 'bal', '');
+  }
+  async function openPointUser(id) {
+    pointsUser.innerHTML = '<p class="dim">불러오는 중…</p>';
+    var r = await client.rpc('okbm_admin_points_user', { p_user_id: id });
+    if (r.error) { pointsUser.innerHTML = '<p class="msg err">불러오지 못했어요: ' + esc(r.error.message || '') + '</p>'; return; }
+    var d = r.data || {};
+    pointsUser.innerHTML = '<div class="pt-card"><div class="pt-top"><b>' + esc(d.nickname || d.id) + '</b><span>' + num(d.balance) + '점</span><button type="button" data-pt-closeuser="1">닫기</button></div>' +
+      '<p class="dim pt-id">' + esc(d.id) + '</p>' +
+      '<label for="ptDelta">점수 (빼려면 앞에 -)</label><input id="ptDelta" type="number" inputmode="numeric" step="1" placeholder="예: 100 또는 -50" />' +
+      '<label for="ptNote">사유 (회원 내역에 보여요)</label><input id="ptNote" maxlength="100" placeholder="예: 11월 사진 이벤트 당첨" />' +
+      '<div class="row"><button type="button" data-pt-adjust="' + esc(d.id) + '">적용</button><span class="st" id="ptStatus"></span></div>' +
+      '<h3 class="pt-h3">내역 (최근 100줄)</h3>' +
+      ((d.history || []).length ? '<table><tbody>' + d.history.map(function (h) {
+        var dl = Number(h.d) || 0;
+        return '<tr><td>' + esc(pointLabel(String(h.r || ''), dl)) + (h.n ? ' <span class="dim">· ' + esc(h.n) + '</span>' : '') + '</td><td class="dim">' + esc(pointTime(h.t)) + '</td><td class="' + (dl < 0 ? 'warn' : 'ok') + '">' + (dl > 0 ? '+' : '') + num(dl) + '</td></tr>';
+      }).join('') + '</tbody></table>' : '<p class="dim" style="font-size:12px">내역이 없어요</p>') + '</div>';
+    pointsUser.scrollIntoView({ block: 'nearest' });
+  }
+  if (pointsBox) {
+    document.getElementById('ptSearch').addEventListener('click', function () {
+      var q = document.getElementById('ptQuery').value.trim();
+      pointsUser.innerHTML = '';
+      loadPoints(q);
+    });
+    document.getElementById('ptQuery').addEventListener('keydown', function (e) { if (e.key === 'Enter') document.getElementById('ptSearch').click(); });
+    pointsBox.addEventListener('click', async function (e) {
+      var u = e.target.closest('[data-pt-user]');
+      if (u) { openPointUser(u.getAttribute('data-pt-user')); return; }
+      if (e.target.closest('[data-pt-closeuser]')) { pointsUser.innerHTML = ''; return; }
+      var b = e.target.closest('[data-pt-adjust]');
+      if (!b) return;
+      var id = b.getAttribute('data-pt-adjust');
+      var delta = parseInt(document.getElementById('ptDelta').value, 10);
+      var note = document.getElementById('ptNote').value.trim();
+      var st = document.getElementById('ptStatus');
+      if (!delta || Math.abs(delta) > 10000) { st.textContent = '점수를 -10,000 ~ 10,000 사이로 적어 주세요 (0 빼고)'; return; }
+      if (!note) { st.textContent = '사유를 적어 주세요'; return; }
+      if (!confirm((delta > 0 ? num(delta) + '점을 줄까요?' : num(-delta) + '점을 뺄까요?') + '\n사유: ' + note)) return;
+      b.disabled = true;
+      st.textContent = '적용하는 중…';
+      var r = await client.rpc('okbm_admin_points_adjust', { p_user_id: id, p_delta: delta, p_note: note });
+      b.disabled = false;
+      if (r.error) { st.textContent = '적용하지 못했어요: ' + (r.error.message || ''); return; }
+      await openPointUser(id);
+      var st2 = document.getElementById('ptStatus');
+      if (st2) st2.textContent = '적용했어요. 잔액 ' + num(r.data && r.data.balance) + '점';
+      loadPoints('');
+    });
+  }
+
   loadActivity();
   loadPushCount();
   loadKakaoAlert();
+  if (pointsBox) loadPoints('');
 })();

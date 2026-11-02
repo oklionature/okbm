@@ -127,7 +127,8 @@
     Object.keys(t || {}).forEach(function (k) { s += Number(t[k]) || 0; });
     return s;
   }
-  function label(r) {
+  function label(r, d, n) {
+    if (r === 'admin') return (Number(d) < 0 ? '운영자 회수' : '운영자 지급') + (n ? ' · ' + n : '');
     var x = /_x$/.test(r);
     var base = x ? r.slice(0, -2) : r;
     return (NAME[base] || '낭만 포인트') + (x ? ' 취소' : '');
@@ -245,7 +246,7 @@
     h += '<div class="pt-sec">내역</div>';
     h += hist.length ? hist.map(function (x) {
       var dl = Number(x.d) || 0;
-      return '<div class="pt-h"><span>' + esc(label(String(x.r || ''))) + '</span><small>' + esc(fmtTime(x.t)) + '</small><b' + (dl < 0 ? ' class="m"' : '') + '>' + (dl > 0 ? '+' : '') + num(dl) + '</b></div>';
+      return '<div class="pt-h"><span>' + esc(label(String(x.r || ''), x.d, x.n)) + '</span><small>' + esc(fmtTime(x.t)) + '</small><b' + (dl < 0 ? ' class="m"' : '') + '>' + (dl > 0 ? '+' : '') + num(dl) + '</b></div>';
     }).join('') : '<div class="pt-empty">' + (d ? '아직 받은 포인트가 없어요.<br>피드를 올리거나 댓글·별을 남겨 보세요.' : '포인트를 받는 중이에요') + '</div>';
     return h;
   }

@@ -90,6 +90,17 @@
     .push button:disabled { opacity: .5; cursor: default; }
     .push .st { color: var(--tx-2); font-size: 12px; line-height: 1.5; }
     .seen-btn { background: none; border: 1px solid var(--line); color: var(--tx-2); border-radius: 10px; padding: 6px 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; margin-top: 12px; }
+    /* 낭만 포인트 */
+    .pt-find input { flex: 1; }
+    .pt-h3 { font-size: 13px; font-weight: 800; margin: 16px 0 4px; }
+    .pt-h3 .dim { font-weight: 600; font-size: 11px; }
+    .push .pt-u { background: none; border: 0; border-radius: 0; color: var(--tx-1); font: inherit; font-weight: 700; padding: 0; cursor: pointer; text-align: left; }
+    .pt-card { background: var(--raise); border-radius: 12px; padding: 12px; margin-top: 12px; }
+    .pt-top { display: flex; align-items: center; gap: 8px; }
+    .pt-top b { font-size: 15px; } .pt-top span { color: var(--accent); font-weight: 800; }
+    .push .pt-top button { margin-left: auto; background: none; color: var(--tx-2); border: 1px solid var(--line); padding: 5px 10px; }
+    .pt-id { font-size: 11px; margin-top: 2px; word-break: break-all; }
+    .pt-card td { font-size: 12px; } .pt-card td:nth-child(2) { white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -117,6 +128,15 @@
       <div class="row"><button type="button" id="kakaoLink">카카오톡 알림 연결</button><button type="button" id="kakaoTest" hidden>테스트 보내기</button><span class="st" id="kakaoStatus"></span></div>
     </div>
   </details>
+  <details class="fold push" id="pointsBox" hidden>
+    <summary>낭만 포인트 <span class="sum" id="pointsSum"></span></summary>
+    <div class="in">
+      <p class="sub">회원을 누르면 내역을 보고 포인트를 주거나 뺄 수 있어요. 사유는 회원의 내역에도 보여요.</p>
+      <div class="row pt-find"><input id="ptQuery" maxlength="40" placeholder="닉네임으로 찾기" /><button type="button" id="ptSearch">찾기</button></div>
+      <div id="pointsUser"></div>
+      <div id="pointsOut"></div>
+    </div>
+  </details>
   <div class="range" id="range">
     <button type="button" data-days="7" class="on">7일</button>
     <button type="button" data-days="14">14일</button>
@@ -125,6 +145,6 @@
   <div id="out"><p class="msg">불러오는 중…</p></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script>
-  <script src="ops.js?v=20"></script>
+  <script src="ops.js?v=21"></script>
 </body>
 </html>
