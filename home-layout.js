@@ -5,6 +5,8 @@
 // · 바로가기 세 칸(#homeQuickNav [data-quick], 2026-10-31): 레디샷 · 동행 구하기 · 후기 올리기. 누르면 그 화면으로 넘어간다.
 //   초보 가이드·박지 랭킹·자유게시판 바로가기는 그 밑 백패커 라운지(#okbmLoungeHome, lounge.js) 알약으로 옮겼다.
 // · 최근 다녀온 후기는 운영자 글을 빼고 회원이 공개한 글만, 다녀온 날짜가 최근인 것부터. 개수와 상관없이 바로가기 바로 밑(대표님 10-14).
+// · 굴업도 들어가기(2026-11-02, 관리자만): 바로가기 밑 띠. 누르면 로그인 토큰을 주소 뒤 #tok=로 붙여 같이 접속 게임(Cloudflare)을 연다.
+//   게임 서버가 그 토큰으로 회원·닉네임을 확인한다. 회원에게 열 때는 gulupdoVisible()만 바꾸면 된다.
 // · 인라인 핸들러 없음(이벤트 위임) → csp-extract 대상 아님.
 // · src 보간은 escapeHtml(okbmSafeImageUrl(...))만 (scripts/check-unsafe-url-interpolation.py).
 // =========================================================================
@@ -38,6 +40,10 @@
       '.hq-btn:active{background:#16161a}',
       '.hq-btn b{font-size:14px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}',
       '.hq-btn em{font-style:normal;font-size:11.5px;font-weight:600;color:#8e8e93;white-space:nowrap}',
+      '.hq-isle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:calc(100% - 28px);margin:8px 14px 0;height:46px;padding:0 14px;border-radius:14px;background:#0c0d10;border:1px solid rgba(255,214,120,.25);color:#F2F3F5;font-family:inherit;cursor:pointer}',
+      '.hq-isle:active{background:#16161a}',
+      '.hq-isle b{font-size:14px;font-weight:800;letter-spacing:-.03em}',
+      '.hq-isle em{font-style:normal;font-size:11.5px;font-weight:700;color:#e0b45a;white-space:nowrap}',
       // 백패커 라운지 칸 안 간격 (.hl-wrap 기본 28px보다 촘촘히)
       '#okbmLoungeHome{gap:14px}',
       '#okbmLoungeHome #homeDealStrip{margin:10px 14px 0}',
@@ -119,6 +125,39 @@
       window.openPastTripRegisterModal(e);
     }
     else if (kind === 'feed' && typeof window.navigateToDockTab === 'function') window.navigateToDockTab('history');
+  }
+
+  // ---------- 굴업도 들어가기(같이 접속 게임, 관리자 시험 중) ----------
+  var GULUPDO_URL = 'https://gulupdo.ggumfree.workers.dev/';
+  function gulupdoVisible() { return window.__okbmIsAdmin === true; }
+  function paintGulupdo() {
+    var quick = document.getElementById('homeQuickNav');
+    var btn = document.getElementById('homeGulupdo');
+    if (!quick || !gulupdoVisible()) { if (btn) btn.remove(); return; }
+    if (btn) return;
+    btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'homeGulupdo';
+    btn.className = 'hq-isle okbm-press';
+    btn.innerHTML = '<b>굴업도로 떠나기</b><em>같이 접속 · 관리자 시험 중</em>';
+    btn.addEventListener('click', openGulupdo);
+    quick.insertAdjacentElement('afterend', btn);
+  }
+  function openGulupdo() {
+    var client = window.supabaseClient;
+    var Browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+    var native = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+    // 웹은 누른 순간 새 창부터 열어 둔다(토큰을 기다린 뒤 열면 팝업 차단에 걸린다)
+    var win = native ? null : window.open('', '_blank');
+    var fail = function (msg) { if (win) try { win.close(); } catch (e) {} if (typeof showToast === 'function') showToast(msg, 'warn'); };
+    if (!client || !client.auth || typeof client.auth.getSession !== 'function') return fail('로그인 서버에 연결할 수 없습니다.');
+    Promise.resolve(client.auth.getSession()).then(function (res) {
+      var tok = res && res.data && res.data.session && res.data.session.access_token;
+      if (!tok) return fail('로그인한 뒤 들어갈 수 있어요.');
+      var url = GULUPDO_URL + '#tok=' + encodeURIComponent(tok);
+      if (native && Browser && typeof Browser.open === 'function') return Browser.open({ url: url });
+      if (win) { win.opener = null; win.location.href = url; } else window.location.href = url;
+    }).catch(function () { fail('잠시 뒤 다시 눌러 주세요.'); });
   }
 
   // ---------- 최근 다녀온 후기 ----------
@@ -309,6 +348,8 @@
     injectCss();
     var quick = document.getElementById('homeQuickNav');
     if (quick) quick.addEventListener('click', onQuickClick);
+    paintGulupdo();
+    window.addEventListener('okbm_admin_flag', paintGulupdo);
     var sec = document.getElementById('homeRecentReviews');
     if (sec) {
       sec.addEventListener('click', onQuickClick);
