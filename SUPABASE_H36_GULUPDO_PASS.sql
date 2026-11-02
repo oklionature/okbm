@@ -11,11 +11,16 @@
 --   p_buy=true : 없으면 15점을 빼고 입장권을 만든다. 잔액이 모자라면 빼지 않는다.
 --   돌려주는 값: { ok, admin, paid(이번에 뺐는지), has(이번 섬 하루 입장권 있음), balance, price, hour }
 --
--- 되돌리기: DROP FUNCTION public.okbm_gulupdo_pass(boolean);
+-- H36b(같은 날): p_rejoin 추가. 게임 서버가 다시 붙을 때 true로 부르면, 정시를 넘겨 10분 안이고 바로 전 시간 입장권이
+--   있으면 들여보낸다(9:58에 나갔다 10:02에 돌아와도 끊기지 않게). 사는 것(p_buy)은 그대로 이번 시간 기준.
+--   인자가 늘어 예전 함수(boolean 하나)를 지우고 다시 만든다(이름이 같은 두 함수가 있으면 호출이 헷갈림).
+--
+-- 되돌리기: DROP FUNCTION public.okbm_gulupdo_pass(boolean, boolean);
 --   (넣은 장부 줄은 남는다. 돌려주려면 운영자 지급으로)
 -- =========================================================================
 
-CREATE OR REPLACE FUNCTION public.okbm_gulupdo_pass(p_buy boolean DEFAULT false)
+DROP FUNCTION IF EXISTS public.okbm_gulupdo_pass(boolean);
+CREATE OR REPLACE FUNCTION public.okbm_gulupdo_pass(p_buy boolean DEFAULT false, p_rejoin boolean DEFAULT false)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_uid text := public.okbm_uid();
@@ -35,7 +40,10 @@ BEGIN
   SELECT COALESCE(u.is_admin, false) INTO v_admin FROM public.users u WHERE u.id = v_uid;
   IF v_admin IS NULL THEN RAISE EXCEPTION 'no member' USING ERRCODE = '28000'; END IF;
   SELECT COALESCE(sum(delta), 0) INTO v_bal FROM public.point_ledger WHERE user_id = v_uid;
-  v_has := v_admin OR EXISTS (SELECT 1 FROM public.point_ledger WHERE user_id = v_uid AND reason = 'gulupdo' AND ref_id = v_hour);
+  v_has := v_admin OR EXISTS (SELECT 1 FROM public.point_ledger WHERE user_id = v_uid AND reason = 'gulupdo' AND ref_id = v_hour)
+    OR (COALESCE(p_rejoin, false) AND extract(minute FROM now() AT TIME ZONE 'Asia/Seoul') < 10
+        AND EXISTS (SELECT 1 FROM public.point_ledger WHERE user_id = v_uid AND reason = 'gulupdo'
+                     AND ref_id = to_char((now() - interval '1 hour') AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD"T"HH24')));
 
   IF v_has OR NOT COALESCE(p_buy, false) THEN
     RETURN jsonb_build_object('ok', v_has, 'admin', v_admin, 'paid', false, 'has', v_has, 'balance', v_bal, 'price', v_price, 'hour', v_hour);
@@ -49,5 +57,5 @@ BEGIN
   RETURN jsonb_build_object('ok', true, 'admin', false, 'paid', true, 'has', true, 'balance', v_bal - v_price, 'price', v_price, 'hour', v_hour);
 END;
 $$;
-REVOKE ALL ON FUNCTION public.okbm_gulupdo_pass(boolean) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.okbm_gulupdo_pass(boolean) TO authenticated;
+REVOKE ALL ON FUNCTION public.okbm_gulupdo_pass(boolean, boolean) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.okbm_gulupdo_pass(boolean, boolean) TO authenticated;

@@ -180,8 +180,15 @@
     if (btn) btn.disabled = true;
     var done = function () { if (btn) btn.disabled = false; };
     Promise.resolve(client.auth.getSession()).then(function (res) {
-      var tok = res && res.data && res.data.session && res.data.session.access_token;
-      if (!tok) { done(); return gulupdoToast('로그인한 뒤 들어갈 수 있어요.'); }
+      var ses = res && res.data && res.data.session;
+      if (!ses || !ses.access_token) { done(); return gulupdoToast('로그인한 뒤 들어갈 수 있어요.'); }
+      // 게임에는 로그인 표(1시간짜리)만 넘어가서, 오래된 표면 새로 받아 넘긴다(11-02: 잠깐 나갔다 오면 다시 못 붙던 원인)
+      var fresh = ses.expires_at && ses.expires_at * 1000 - Date.now() > 50 * 60 * 1000;
+      return (fresh || typeof client.auth.refreshSession !== 'function' ? Promise.resolve(ses) : Promise.resolve(client.auth.refreshSession()).then(function (r) {
+        return (r && r.data && r.data.session) || ses;
+      }, function () { return ses; })).then(function (s2) { return s2.access_token; });
+    }).then(function (tok) {
+      if (!tok) return;
       return gulupdoPass(client, false).then(function (p) {
         done();
         if (p && p.ok) return gulupdoGo(tok);   // 관리자거나 이번 섬 하루 입장권이 이미 있음
