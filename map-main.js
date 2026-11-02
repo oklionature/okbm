@@ -8813,8 +8813,10 @@ var overlay = document.getElementById('customModalOverlay');
           try { return String(localStorage.getItem(storageKey) || ''); } catch (e) { return noticeId; }
         }
 
+        // id는 날짜로 시작해서, 더 새 알림을 이미 닫았으면 옛 알림도 안 띄운다
+        //   (11-02 굴업도 알림을 지도에서 잠깐 띄웠다 되돌려, 그걸 닫은 사람에게 10-31 알림이 다시 뜨지 않게)
         function showNotice() {
-          if (storedId() === noticeId) {
+          if (storedId() >= noticeId) {
             root.hidden = true;
             return;
           }
