@@ -6,9 +6,9 @@
 --   1) point_ledger: 장부. 지우지 않고 쌓기만 한다. 같은 (사람, 까닭, 대상)은 한 번만(유니크).
 --      되돌릴 때는 '까닭_x' 줄로 같은 점수를 뺀다. 한 번 되돌린 대상은 다시 받지 못한다(별 눌렀다 풀기 반복 막기).
 --      source는 free(활동)만 쓴다. 나중에 돈으로 팔게 되면 paid를 쓴다.
---   2) 점수표(하루 상한, 한국 시간 0시 기준)
---      피드 10(30) · 플로깅 피드 +10(20) · 댓글 2(20, 남의 피드·5자 이상·한 피드 1개) ·
---      별 누르기 1(20, 남의 피드) · 별 받기 1(20) · 출석 5(1번) · 7일 연속 +20 ·
+--   2) 점수표(하루 상한, 한국 시간 0시 기준) — 11-02 대표님 조정
+--      피드 10(30) · 플로깅 피드 +20(40) · 댓글 5(30=6개, 남의 피드·5자 이상·한 피드 1개) ·
+--      별 누르기 2(20=10번, 남의 피드) · 별 받기 1(20) · 출석 10(1번) · 7일 연속 +100 ·
 --      수정 건의 채택 30 · 박지 제보 반영 100
 --   3) 트리거가 feeds·feed_comments·feed_likes·spot_corrections·proposals 변화에 맞춰 주고 뺀다.
 --      화면은 장부에 직접 쓰지 못한다(RLS로 막고 함수로만).
@@ -96,7 +96,7 @@ $$;
 REVOKE ALL ON FUNCTION public.okbm_point_day_start(), public.okbm_point_award(text,text,text,integer,integer,text),
   public.okbm_point_revoke(text,text,text) FROM PUBLIC, anon, authenticated;
 
--- 3) 피드: 사진 있는 공개 피드 10(하루 30), 플로깅 사진이 있으면 +10(하루 20). 지우면 뺀다 -------------
+-- 3) 피드: 사진 있는 공개 피드 10(하루 30), 플로깅 사진이 있으면 +20(하루 40). 지우면 뺀다 -------------
 CREATE OR REPLACE FUNCTION public.okbm_points_on_feed()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
@@ -104,7 +104,7 @@ BEGIN
      AND jsonb_typeof(NEW.photos) = 'array' AND jsonb_array_length(NEW.photos) > 0 THEN
     PERFORM public.okbm_point_award(NEW.user_id, 'feed', NEW.id, 10, 30);
     IF btrim(COALESCE(NEW.plogging_photo, '')) <> '' THEN
-      PERFORM public.okbm_point_award(NEW.user_id, 'plog', NEW.id, 10, 20);
+      PERFORM public.okbm_point_award(NEW.user_id, 'plog', NEW.id, 20, 40);
     END IF;
   END IF;
   RETURN NULL;
@@ -126,7 +126,7 @@ DROP TRIGGER IF EXISTS trg_okbm_points_feed_del ON public.feeds;
 CREATE TRIGGER trg_okbm_points_feed_del AFTER DELETE ON public.feeds
   FOR EACH ROW EXECUTE FUNCTION public.okbm_points_on_feed_del();
 
--- 4) 댓글: 남의 피드에 5자 이상 2(하루 20), 한 피드에는 1개만. 받은 그 댓글을 지우면 뺀다 ------------
+-- 4) 댓글: 남의 피드에 5자 이상 5(하루 30), 한 피드에는 1개만. 받은 그 댓글을 지우면 뺀다 ------------
 CREATE OR REPLACE FUNCTION public.okbm_points_on_comment()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -135,7 +135,7 @@ BEGIN
   IF TG_OP = 'INSERT' THEN
     SELECT f.user_id INTO v_owner FROM public.feeds f WHERE f.id = NEW.feed_id;
     IF v_owner IS NOT NULL AND v_owner <> NEW.user_id AND char_length(btrim(COALESCE(NEW.body, ''))) >= 5 THEN
-      PERFORM public.okbm_point_award(NEW.user_id, 'comment', NEW.feed_id, 2, 20, NEW.id::text);
+      PERFORM public.okbm_point_award(NEW.user_id, 'comment', NEW.feed_id, 5, 30, NEW.id::text);
     END IF;
   ELSIF TG_OP = 'DELETE' THEN
     IF EXISTS (SELECT 1 FROM public.point_ledger l WHERE l.user_id = OLD.user_id AND l.reason = 'comment'
@@ -150,7 +150,7 @@ DROP TRIGGER IF EXISTS trg_okbm_points_comment ON public.feed_comments;
 CREATE TRIGGER trg_okbm_points_comment AFTER INSERT OR DELETE ON public.feed_comments
   FOR EACH ROW EXECUTE FUNCTION public.okbm_points_on_comment();
 
--- 5) 별: 누른 사람 1(하루 20), 받은 사람 1(하루 20). 남의 피드만. 풀면 둘 다 뺀다 -------------------
+-- 5) 별: 누른 사람 2(하루 20), 받은 사람 1(하루 20). 남의 피드만. 풀면 둘 다 뺀다 -------------------
 CREATE OR REPLACE FUNCTION public.okbm_points_on_like()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -159,7 +159,7 @@ BEGIN
   IF TG_OP = 'INSERT' THEN
     SELECT f.user_id INTO v_owner FROM public.feeds f WHERE f.id = NEW.feed_id;
     IF v_owner IS NOT NULL AND v_owner <> NEW.user_id THEN
-      PERFORM public.okbm_point_award(NEW.user_id, 'star_give', NEW.feed_id, 1, 20);
+      PERFORM public.okbm_point_award(NEW.user_id, 'star_give', NEW.feed_id, 2, 20);
       PERFORM public.okbm_point_award(v_owner, 'star_get', NEW.feed_id || ':' || NEW.user_id, 1, 20);
     END IF;
   ELSIF TG_OP = 'DELETE' THEN
@@ -223,7 +223,7 @@ REVOKE ALL ON FUNCTION public.okbm_points_on_feed(), public.okbm_points_on_feed_
   public.okbm_points_on_like(), public.okbm_points_on_correction(), public.okbm_points_on_proposal(),
   public.okbm_points_on_user_del() FROM PUBLIC, anon, authenticated;
 
--- 8) 출석: 앱을 연 날 5, 7일 연속이면 +20(그다음은 다시 7일 뒤) -------------------------------
+-- 8) 출석: 앱을 연 날 10, 7일 연속이면 +100(그다음은 다시 7일 뒤) -------------------------------
 CREATE OR REPLACE FUNCTION public.okbm_points_attend()
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
@@ -237,13 +237,13 @@ BEGIN
     RAISE EXCEPTION 'not authenticated' USING ERRCODE = '28000';
   END IF;
   PERFORM public.okbm_rpc_rate_limit('points_attend', 10);
-  v_got := public.okbm_point_award(v_uid, 'attend', v_day::text, 5, NULL);
+  v_got := public.okbm_point_award(v_uid, 'attend', v_day::text, 10, NULL);
   IF v_got > 0
      AND (SELECT count(*) FROM public.point_ledger WHERE user_id = v_uid AND reason = 'attend'
            AND ref_id IN (SELECT (v_day - g)::text FROM generate_series(0, 6) g)) = 7
      AND NOT EXISTS (SELECT 1 FROM public.point_ledger WHERE user_id = v_uid AND reason = 'attend7'
            AND ref_id IN (SELECT (v_day - g)::text FROM generate_series(1, 6) g)) THEN
-    v_bonus := public.okbm_point_award(v_uid, 'attend7', v_day::text, 20, NULL);
+    v_bonus := public.okbm_point_award(v_uid, 'attend7', v_day::text, 100, NULL);
   END IF;
   RETURN jsonb_build_object('gained', v_got + v_bonus, 'attend', v_got, 'streak_bonus', v_bonus);
 END;

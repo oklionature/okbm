@@ -3,52 +3,53 @@
 //
 // · 점수는 서버 트리거가 준다(피드·댓글·별·제보). 여기서는 보여 주기만 한다.
 //   - 낭만리포트 '리포트' 탭 맨 위 카드: 잔액, 오늘 받은 점수 / 하루 최대 (my-report.js renderReport가 card()를 부른다)
-//   - 카드를 누르면 '낭만 포인트' 창: 받는 법(오늘 채운 만큼 막대) · 쓰는 곳(곧 열림) · 내역
+//   - 카드를 누르면 '낭만 포인트' 창: 받는 법(오늘 채운 만큼 막대) · 쓰는 곳(접힘) · 내역
 //   - 받는 순간 '+10 낭만 포인트' 작은 알림: 피드 저장·별 누름(window 함수를 감싼다)·댓글(feed-comments.js가 check를 부른다) 뒤에
 //     잔액을 다시 받아 늘어난 만큼 알린다. 상한을 채웠으면 '오늘 피드 포인트는 다 받았어요'.
 // · 출석: 로그인한 채 앱을 연 날 한 번 okbm_points_attend를 부른다(이 기기에서 그날 이미 불렀으면 안 부름).
-// · 쓰는 곳(닉네임·상점 테두리·굴업도 입장권)은 2단계라 '곧 열려요'로만 보인다.
+// · 쓰는 곳(닉네임·피드 테두리·프로필 테두리)은 2단계라 '포인트는 어디에 쓰나요?'를 눌러야 펼쳐지고 Coming soon으로만 보인다.
 // 인라인 onclick 없음(CSP).
 // =========================================================================
 (function () {
   'use strict';
   if (window.okbmPoints) return;
 
-  // [까닭, 이름, 점수 글자, 하루 상한(점수, 없으면 0)]
+  // [까닭, 이름, 점수 글자, 하루 상한(점수, 없으면 0)] — 11-02 대표님 조정
   var RULES = [
     ['feed', '피드 올리기', '10', 30],
-    ['plog', '플로깅 피드', '+10', 20],
-    ['comment', '댓글 쓰기', '2', 20],
-    ['star_give', '별 누르기', '1', 20],
+    ['plog', '플로깅 피드', '+20', 40],
+    ['comment', '댓글 쓰기', '5', 30],
+    ['star_give', '별 누르기', '2', 20],
     ['star_get', '별 받기', '1', 20],
-    ['attend', '매일 출석', '5', 5],
-    ['attend7', '7일 연속 출석', '+20', 0],
+    ['attend', '매일 출석', '10', 10],
+    ['attend7', '7일 연속 출석', '+100', 0],
     ['correction', '수정 건의 채택', '30', 0],
     ['proposal', '박지 제보 반영', '100', 0]
   ];
+  // 설명은 옆 사람한테 말하듯(대표님 11-02: AI 말투 말고)
   var NOTE = {
-    feed: '사진 있는 공개 피드, 하루 3개까지',
-    plog: '플로깅 사진을 올린 피드, 하루 2개까지',
-    comment: '남의 피드에 5자 이상, 한 피드에 1개만',
-    star_give: '남의 피드에, 눌렀다 풀어도 한 번만',
-    star_get: '남이 내 피드에 누른 별',
-    attend: '로그인하고 앱을 연 날',
-    attend7: '7일째 되는 날',
-    correction: '관리자가 반영하면',
-    proposal: '새 박지로 등록되면'
+    feed: '다녀온 박지 사진을 올려 주세요. 하루 3개까지 쌓여요.',
+    plog: '주운 쓰레기 사진도 같이 올리면 더 드려요. 하루 2개까지예요.',
+    comment: '다른 분 피드에 댓글을 달아 주세요. 피드 하나에 한 번만, 하루 6개까지 쌓여요.',
+    star_give: '피드가 좋으면 별을 눌러 주세요. 게시물당 한 번만 체크돼요. 하루 10개까지예요.',
+    star_get: '내 피드에 별이 달리면 쌓여요.',
+    attend: '로그인하고 앱만 열어도 쌓여요.',
+    attend7: '7일 동안 하루도 안 빠지고 들어오면 드려요.',
+    correction: '박지 정보가 틀렸으면 알려 주세요. 고쳐지면 드려요.',
+    proposal: '나만 아는 박지를 알려 주세요. 등록되면 드려요.'
   };
-  var DAY_MAX = 115; // 피드 30 + 플로깅 20 + 댓글 20 + 별 20 + 받은 별 20 + 출석 5
+  var DAY_MAX = 150; // 피드 30 + 플로깅 40 + 댓글 30 + 별 20 + 받은 별 20 + 출석 10
   var SPEND = [
-    ['닉네임 바꾸기', '300', '첫 변경은 무료'],
-    ['상점 테두리', '300~1,500', '실적 배지 링과 따로'],
-    ['굴업도 미리 체험 입장권', '', '게임이 나오면']
+    ['닉네임 바꾸기', '300점', '처음 한 번은 무료예요'],
+    ['피드 테두리', '', 'Coming soon'],
+    ['프로필 테두리', '', 'Coming soon']
   ];
   var NAME = {};
   RULES.forEach(function (r) { NAME[r[0]] = r[1]; });
   var CAP = {};
   RULES.forEach(function (r) { if (r[3]) CAP[r[0]] = r[3]; });
 
-  var S = { data: null, at: 0, loading: null, balance: null, uid: '', capShown: {} };
+  var S = { data: null, at: 0, loading: null, balance: null, uid: '', capShown: {}, spendOpen: false };
 
   var CSS = [
     '.pt-card{display:block;width:100%;text-align:left;color:#f2f2f3;font:inherit;cursor:pointer}',
@@ -87,6 +88,9 @@
     '.pt-h b{flex:none;width:52px;text-align:right;font-weight:800;font-variant-numeric:tabular-nums;color:#fbbf24}',
     '.pt-h b.m{color:var(--tx-3,#8b8b93)}',
     '.pt-empty{padding:18px 0;text-align:center;font-size:13px;color:var(--tx-3,#8b8b93);line-height:1.6}',
+    '.pt-fold{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:20px;padding:13px 0;border:0;border-top:1px solid var(--line,rgba(255,255,255,.08));border-bottom:1px solid var(--line,rgba(255,255,255,.08));background:none;color:var(--tx-2,#d1d1d6);font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer}',
+    '.pt-fold i{font-style:normal;font-size:13px;color:var(--tx-3,#8b8b93)}',
+    '.pt-spend .pt-li:first-child{border-top:0}',
     '.pt-lead{margin:14px 0 0;font-size:13px;color:var(--tx-2,#d1d1d6);line-height:1.55}'
   ].join('');
 
@@ -213,7 +217,7 @@
   // ---------------------------------------------------------------- 전체 창
   function sheetHtml(d) {
     var today = d ? (d.today || {}) : {};
-    var h = '<p class="pt-lead">활동하면 서버가 바로 점수를 넣어 줘요. 글을 지우거나 별을 풀면 받은 점수도 빠져요. 하루는 밤 12시에 새로 시작해요.</p>';
+    var h = '<p class="pt-lead">피드 올리고, 댓글 달고, 별 누르면 포인트가 쌓여요. 글을 지우거나 별을 취소하면 그만큼 빠져요. 매일 밤 12시에 새로 시작해요.</p>';
     h += '<div class="pt-sec">받는 법<small>오늘 +' + num(todaySum(today)) + ' / ' + DAY_MAX + '</small></div>';
     h += RULES.map(function (r) {
       var got = Number(today[r[0]]) || 0;
@@ -221,10 +225,13 @@
       return '<div class="pt-li"><b>' + esc(r[1]) + '</b><span class="p">' + esc(r[2]) + '<small>' + esc(capTxt) + '</small></span><span>' + esc(NOTE[r[0]]) + '</span>' +
         (r[3] ? '<div class="pt-bar"><u style="width:' + Math.min(100, Math.round(got / r[3] * 100)) + '%"></u></div>' : '') + '</div>';
     }).join('');
-    h += '<div class="pt-sec">쓰는 곳<small>곧 열려요</small></div>';
-    h += SPEND.map(function (s) {
-      return '<div class="pt-li soon"><b>' + esc(s[0]) + '</b><span class="p">' + (s[1] ? esc(s[1]) + '점' : '') + '<small>준비 중</small></span><span>' + esc(s[2]) + '</span></div>';
-    }).join('');
+    // 쓰는 곳은 접어 두고 누르면 펼친다(대표님 11-02: 대놓고 보여 주지 말 것)
+    h += '<button type="button" class="pt-fold" data-pt-spend="1" aria-expanded="' + (S.spendOpen ? 'true' : 'false') + '">포인트는 어디에 쓰나요?<i>' + (S.spendOpen ? '접기' : '›') + '</i></button>';
+    if (S.spendOpen) {
+      h += '<div class="pt-spend">' + SPEND.map(function (x) {
+        return '<div class="pt-li soon"><b>' + esc(x[0]) + '</b><span class="p">' + esc(x[1]) + '</span><span>' + esc(x[2]) + '</span></div>';
+      }).join('') + '</div>';
+    }
     var hist = d && Array.isArray(d.history) ? d.history : [];
     h += '<div class="pt-sec">내역</div>';
     h += hist.length ? hist.map(function (x) {
@@ -262,6 +269,7 @@
   document.addEventListener('click', function (e) {
     var t = e.target && e.target.closest ? e.target : null;
     if (!t) return;
+    if (t.closest('[data-pt-spend]')) { S.spendOpen = !S.spendOpen; if (S.spendOpen) metric('feat_points_spend'); repaint(); return; }
     if (t.closest('[data-pt-close]')) { var a = document.getElementById('okbmPointsAll'); if (a) a.remove(); return; }
     if (t.closest('[data-pt-open]')) { e.preventDefault(); openSheet(); }
   });
