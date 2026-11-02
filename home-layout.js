@@ -7,6 +7,7 @@
 // · 최근 다녀온 후기는 운영자 글을 빼고 회원이 공개한 글만, 다녀온 날짜가 최근인 것부터. 개수와 상관없이 바로가기 바로 밑(대표님 10-14).
 // · 굴업도 들어가기(2026-11-02, 관리자만): 바로가기 밑 띠. 누르면 로그인 토큰을 주소 뒤 #tok=로 붙여 같이 접속 게임(Cloudflare)을 연다.
 //   게임 서버가 그 토큰으로 회원·닉네임을 확인한다. 회원에게 열 때는 gulupdoVisible()만 바꾸면 된다.
+//   11-02: 관리자 + 같이 시험할 회원(GULUPDO_TESTERS 닉네임)에게만 보인다. 서버(gulupdo Worker TESTERS)도 같은 명단으로만 들인다.
 // · 인라인 핸들러 없음(이벤트 위임) → csp-extract 대상 아님.
 // · src 보간은 escapeHtml(okbmSafeImageUrl(...))만 (scripts/check-unsafe-url-interpolation.py).
 // =========================================================================
@@ -129,7 +130,14 @@
 
   // ---------- 굴업도 들어가기(같이 접속 게임, 관리자 시험 중) ----------
   var GULUPDO_URL = 'https://gulupdo.ggumfree.workers.dev/';
-  function gulupdoVisible() { return window.__okbmIsAdmin === true; }
+  var GULUPDO_TESTERS = ['구름따라'];
+  function gulupdoVisible() {
+    if (window.__okbmIsAdmin === true) return true;
+    if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) return false;
+    var nick = '';
+    try { nick = String((JSON.parse(localStorage.getItem('user_profile') || 'null') || {}).nickname || '').trim(); } catch (e) {}
+    return GULUPDO_TESTERS.indexOf(nick) !== -1;
+  }
   function paintGulupdo() {
     var quick = document.getElementById('homeQuickNav');
     var btn = document.getElementById('homeGulupdo');
@@ -350,6 +358,7 @@
     if (quick) quick.addEventListener('click', onQuickClick);
     paintGulupdo();
     window.addEventListener('okbm_admin_flag', paintGulupdo);
+    [2000, 6000, 15000].forEach(function (ms) { setTimeout(paintGulupdo, ms); });   // 로그인·프로필이 늦게 와도 다시 본다
     var sec = document.getElementById('homeRecentReviews');
     if (sec) {
       sec.addEventListener('click', onQuickClick);
