@@ -42,10 +42,11 @@
       '.hq-btn:active{background:#16161a}',
       '.hq-btn b{font-size:14px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}',
       '.hq-btn em{font-style:normal;font-size:11.5px;font-weight:600;color:#8e8e93;white-space:nowrap}',
-      '.hq-isle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:calc(100% - 28px);margin:8px 14px 0;height:46px;padding:0 14px;border-radius:14px;background:#0c0d10;border:1px solid rgba(255,214,120,.25);color:#F2F3F5;font-family:inherit;cursor:pointer}',
+      '.hq-isle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:calc(100% - 28px);margin:2px 14px -6px;height:58px;padding:0 16px;border-radius:14px;background:#0c0d10;border:1px solid rgba(255,214,120,.25);color:#F2F3F5;font-family:inherit;cursor:pointer}',
       '.hq-isle:active{background:#16161a}',
-      '.hq-isle b{font-size:14px;font-weight:800;letter-spacing:-.03em}',
-      '.hq-isle em{font-style:normal;font-size:11.5px;font-weight:700;color:#e0b45a;white-space:nowrap}',
+      '.hq-isle b{display:flex;align-items:center;gap:7px;font-size:16px;font-weight:800;letter-spacing:-.03em}',
+      '.hq-isle i{font-style:normal;font-size:10.5px;font-weight:900;letter-spacing:.02em;color:#1a1206;background:#f5b94a;border-radius:5px;padding:3px 6px 2px;line-height:1}',
+      '.hq-isle em{font-style:normal;font-size:12.5px;font-weight:700;color:#e0b45a;white-space:nowrap}',
       '.gq-wrap{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);padding:0 12px calc(env(safe-area-inset-bottom) + 84px)}',
       '.gq{width:100%;max-width:420px;border-radius:18px;background:#16171b;border:1px solid rgba(255,255,255,.08);color:#F2F3F5;padding:20px 18px 16px}',
       '.gq h3{margin:0 0 8px;font-size:17px;font-weight:800;letter-spacing:-.02em}',
@@ -152,7 +153,7 @@
     btn.type = 'button';
     btn.id = 'homeGulupdo';
     btn.className = 'hq-isle okbm-press';
-    btn.innerHTML = '<b>굴업도로 떠나기</b><em id="homeGulupdoN">접속 인원 확인 중</em>';
+    btn.innerHTML = '<b><i>NEW</i>굴업도로 떠나기</b><em id="homeGulupdoN">접속 인원 확인 중</em>';
     btn.addEventListener('click', openGulupdo);
     quick.insertAdjacentElement('afterend', btn);
     gulupdoCount();
