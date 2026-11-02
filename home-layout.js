@@ -154,9 +154,24 @@
     btn.type = 'button';
     btn.id = 'homeGulupdo';
     btn.className = 'hq-isle okbm-press';
-    btn.innerHTML = '<b>굴업도로 떠나기</b><em>같이 접속 · 낭만 포인트 15점</em>';
+    btn.innerHTML = '<b>굴업도로 떠나기</b><em id="homeGulupdoN">낭만 포인트 15점</em>';
     btn.addEventListener('click', openGulupdo);
     quick.insertAdjacentElement('afterend', btn);
+    gulupdoCount();
+  }
+  // 지금 접속 인원(11-02 대표님: '같이 접속' 대신 '지금 N명 접속'). 홈이 보이는 동안 30초마다
+  var gulupdoCountT = 0;
+  function gulupdoCount() {
+    clearTimeout(gulupdoCountT);
+    var em = document.getElementById('homeGulupdoN');
+    if (!em) return;
+    if (!document.hidden) {
+      fetch(GULUPDO_URL + 'count', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+        var n = d && Number(d.n);
+        if (n >= 0 && document.getElementById('homeGulupdoN')) em.textContent = '지금 ' + n + '명 접속 중 · 15점';
+      }).catch(function () {});
+    }
+    gulupdoCountT = setTimeout(gulupdoCount, 30000);
   }
   function gulupdoToast(msg) { if (typeof showToast === 'function') showToast(msg, 'warn'); }
   // 앱은 Browser 창으로, 웹은 같은 탭으로 연다(포인트 확인을 기다린 뒤라 새 창은 팝업 차단에 걸린다)
