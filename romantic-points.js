@@ -50,12 +50,13 @@
   var DAY_MAX = 200; // 피드 30 + 플로깅 40 + 댓글 30 + 별 20 + 받은 별 20 + 게시판 글 10 + 투표 10 + 한 줄 15 + 별점 15 + 출석 10
   var SPEND = [
     ['닉네임 바꾸기', '300점', '처음 한 번은 무료예요'],
-    ['굴업도 체험 입장권', '', 'Coming soon'],
+    ['굴업도 같이 접속', '10점', '섬 하루(1시간)에 한 번', true],
     ['피드 테두리', '', 'Coming soon'],
     ['프로필 테두리', '', 'Coming soon']
   ];
   var NAME = {};
   RULES.forEach(function (r) { NAME[r[0]] = r[1]; });
+  NAME.gulupdo = '굴업도 같이 접속'; // 쓴 내역(H36, 11-02)
   var CAP = {};
   RULES.forEach(function (r) { if (r[3]) CAP[r[0]] = r[3]; });
 
@@ -242,7 +243,7 @@
     h += '<button type="button" class="pt-fold" data-pt-spend="1" aria-expanded="' + (S.spendOpen ? 'true' : 'false') + '">포인트는 어디에 쓰나요?<i>' + (S.spendOpen ? '접기' : '›') + '</i></button>';
     if (S.spendOpen) {
       h += '<div class="pt-spend">' + SPEND.map(function (x) {
-        return '<div class="pt-li soon"><b>' + esc(x[0]) + '</b><span class="p">' + esc(x[1]) + '</span><span>' + esc(x[2]) + '</span></div>';
+        return '<div class="pt-li' + (x[3] ? '' : ' soon') + '"><b>' + esc(x[0]) + '</b><span class="p">' + esc(x[1]) + '</span><span>' + esc(x[2]) + '</span></div>';
       }).join('') + '</div>';
     }
     var hist = d && Array.isArray(d.history) ? d.history : [];

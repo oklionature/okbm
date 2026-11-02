@@ -7,7 +7,8 @@
 // · 최근 다녀온 후기는 운영자 글을 빼고 회원이 공개한 글만, 다녀온 날짜가 최근인 것부터. 개수와 상관없이 바로가기 바로 밑(대표님 10-14).
 // · 굴업도 들어가기(2026-11-02, 관리자만): 바로가기 밑 띠. 누르면 로그인 토큰을 주소 뒤 #tok=로 붙여 같이 접속 게임(Cloudflare)을 연다.
 //   게임 서버가 그 토큰으로 회원·닉네임을 확인한다. 회원에게 열 때는 gulupdoVisible()만 바꾸면 된다.
-//   11-02: 관리자 + 같이 시험할 회원(GULUPDO_TESTERS 닉네임)에게만 보인다. 서버(gulupdo Worker TESTERS)도 같은 명단으로만 들인다.
+//   11-02: 회원 모두에게 연다. 들어갈 때 낭만 포인트 10점(섬 하루=실제 1시간에 한 번, 관리자 무료, 모자라면 못 들어감).
+//   입장권은 서버 함수 okbm_gulupdo_pass(SUPABASE_H36)로만 사고, 게임 서버도 같은 함수로 입장권이 있는지 본다.
 // · 인라인 핸들러 없음(이벤트 위임) → csp-extract 대상 아님.
 // · src 보간은 escapeHtml(okbmSafeImageUrl(...))만 (scripts/check-unsafe-url-interpolation.py).
 // =========================================================================
@@ -45,6 +46,16 @@
       '.hq-isle:active{background:#16161a}',
       '.hq-isle b{font-size:14px;font-weight:800;letter-spacing:-.03em}',
       '.hq-isle em{font-style:normal;font-size:11.5px;font-weight:700;color:#e0b45a;white-space:nowrap}',
+      '.gq-wrap{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);padding:0 12px calc(env(safe-area-inset-bottom) + 84px)}',
+      '.gq{width:100%;max-width:420px;border-radius:18px;background:#16171b;border:1px solid rgba(255,255,255,.08);color:#F2F3F5;padding:20px 18px 16px}',
+      '.gq h3{margin:0 0 8px;font-size:17px;font-weight:800;letter-spacing:-.02em}',
+      '.gq p{margin:0 0 8px;font-size:14px;line-height:1.55;color:#C8CCD3}',
+      '.gq p b{color:#e0b45a}',
+      '.gq .gq-s{font-size:12.5px;color:#8e8e93}',
+      '.gq-b{display:flex;gap:8px;margin-top:14px}',
+      '.gq-b button{flex:1;height:46px;border-radius:13px;border:1px solid rgba(255,255,255,.12);background:#202227;color:#F2F3F5;font:inherit;font-size:14.5px;font-weight:800;cursor:pointer}',
+      '.gq-b button.on{background:#e0b45a;border-color:#e0b45a;color:#16171b}',
+      '.gq-b button:disabled{opacity:.6}',
       // 백패커 라운지 칸 안 간격 (.hl-wrap 기본 28px보다 촘촘히)
       '#okbmLoungeHome{gap:14px}',
       '#okbmLoungeHome #homeDealStrip{margin:10px 14px 0}',
@@ -130,13 +141,9 @@
 
   // ---------- 굴업도 들어가기(같이 접속 게임, 관리자 시험 중) ----------
   var GULUPDO_URL = 'https://gulupdo.ggumfree.workers.dev/';
-  var GULUPDO_TESTERS = ['구름따라'];
   function gulupdoVisible() {
     if (window.__okbmIsAdmin === true) return true;
-    if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) return false;
-    var nick = '';
-    try { nick = String((JSON.parse(localStorage.getItem('user_profile') || 'null') || {}).nickname || '').trim(); } catch (e) {}
-    return GULUPDO_TESTERS.indexOf(nick) !== -1;
+    return typeof isUserLoggedIn !== 'function' || isUserLoggedIn();
   }
   function paintGulupdo() {
     var quick = document.getElementById('homeQuickNav');
@@ -147,25 +154,72 @@
     btn.type = 'button';
     btn.id = 'homeGulupdo';
     btn.className = 'hq-isle okbm-press';
-    btn.innerHTML = '<b>굴업도로 떠나기</b><em>같이 접속 · 관리자 시험 중</em>';
+    btn.innerHTML = '<b>굴업도로 떠나기</b><em>같이 접속 · 낭만 포인트 10점</em>';
     btn.addEventListener('click', openGulupdo);
     quick.insertAdjacentElement('afterend', btn);
   }
-  function openGulupdo() {
-    var client = window.supabaseClient;
+  function gulupdoToast(msg) { if (typeof showToast === 'function') showToast(msg, 'warn'); }
+  // 앱은 Browser 창으로, 웹은 같은 탭으로 연다(포인트 확인을 기다린 뒤라 새 창은 팝업 차단에 걸린다)
+  function gulupdoGo(tok) {
+    var url = GULUPDO_URL + '#tok=' + encodeURIComponent(tok);
     var Browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
     var native = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
-    // 웹은 누른 순간 새 창부터 열어 둔다(토큰을 기다린 뒤 열면 팝업 차단에 걸린다)
-    var win = native ? null : window.open('', '_blank');
-    var fail = function (msg) { if (win) try { win.close(); } catch (e) {} if (typeof showToast === 'function') showToast(msg, 'warn'); };
-    if (!client || !client.auth || typeof client.auth.getSession !== 'function') return fail('로그인 서버에 연결할 수 없습니다.');
+    if (native && Browser && typeof Browser.open === 'function') Browser.open({ url: url });
+    else window.location.href = url;
+  }
+  function gulupdoPass(client, buy) {
+    return Promise.resolve(client.rpc('okbm_gulupdo_pass', { p_buy: !!buy })).then(function (r) {
+      if (r && r.error) throw r.error;
+      return r && r.data;
+    });
+  }
+  function openGulupdo() {
+    var client = window.supabaseClient;
+    if (!client || !client.auth || typeof client.auth.getSession !== 'function' || typeof client.rpc !== 'function') return gulupdoToast('로그인 서버에 연결할 수 없습니다.');
+    var btn = document.getElementById('homeGulupdo');
+    if (btn) btn.disabled = true;
+    var done = function () { if (btn) btn.disabled = false; };
     Promise.resolve(client.auth.getSession()).then(function (res) {
       var tok = res && res.data && res.data.session && res.data.session.access_token;
-      if (!tok) return fail('로그인한 뒤 들어갈 수 있어요.');
-      var url = GULUPDO_URL + '#tok=' + encodeURIComponent(tok);
-      if (native && Browser && typeof Browser.open === 'function') return Browser.open({ url: url });
-      if (win) { win.opener = null; win.location.href = url; } else window.location.href = url;
-    }).catch(function () { fail('잠시 뒤 다시 눌러 주세요.'); });
+      if (!tok) { done(); return gulupdoToast('로그인한 뒤 들어갈 수 있어요.'); }
+      return gulupdoPass(client, false).then(function (p) {
+        done();
+        if (p && p.ok) return gulupdoGo(tok);   // 관리자거나 이번 섬 하루 입장권이 이미 있음
+        gulupdoSheet(p || {}, function () {
+          return gulupdoPass(client, true).then(function (q) {
+            if (q && q.ok) return gulupdoGo(tok);
+            gulupdoToast(q && q.short ? '낭만 포인트가 모자라요.' : '잠시 뒤 다시 눌러 주세요.');
+          });
+        });
+      });
+    }).catch(function () { done(); gulupdoToast('잠시 뒤 다시 눌러 주세요.'); });
+  }
+  // 확인 창: 포인트가 있으면 '10점 쓰고 들어가기', 모자라면 모으는 법만
+  function gulupdoSheet(p, onBuy) {
+    var price = Number(p.price) || 10, bal = Math.max(0, Number(p.balance) || 0), short = bal < price;
+    var old = document.getElementById('gulupdoSheet'); if (old) old.remove();
+    var wrap = document.createElement('div');
+    wrap.id = 'gulupdoSheet';
+    wrap.className = 'gq-wrap';
+    wrap.innerHTML = '<div class="gq" role="dialog" aria-modal="true" aria-labelledby="gqTitle">' +
+      '<h3 id="gqTitle">' + (short ? '낭만 포인트가 모자라요' : '굴업도로 떠날까요?') + '</h3>' +
+      '<p>' + (short
+        ? '같이 접속하려면 낭만 포인트 ' + price + '점이 필요해요. 지금 ' + bal + '점이에요.<br>피드 올리기·댓글·출석으로 모을 수 있어요.'
+        : '낭만 포인트 <b>' + price + '점</b>을 쓰고 굴업도로 떠나요.<br>지금 ' + bal + '점 → ' + (bal - price) + '점') + '</p>' +
+      (short ? '' : '<p class="gq-s">한 번 들어가면 이번 섬 하루(매시 정각까지) 동안은 다시 들어와도 빠지지 않아요.</p>') +
+      '<div class="gq-b">' + (short
+        ? '<button type="button" data-gq="x" class="on">닫기</button>'
+        : '<button type="button" data-gq="x">취소</button><button type="button" data-gq="buy" class="on">' + price + '점 쓰고 들어가기</button>') +
+      '</div></div>';
+    document.body.appendChild(wrap);
+    wrap.addEventListener('click', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('[data-gq]') : null;
+      if (e.target === wrap || (b && b.getAttribute('data-gq') === 'x')) return wrap.remove();
+      if (b && b.getAttribute('data-gq') === 'buy') {
+        b.disabled = true; b.textContent = '들어가는 중…';
+        Promise.resolve(onBuy()).catch(function () { gulupdoToast('잠시 뒤 다시 눌러 주세요.'); }).then(function () { wrap.remove(); });
+      }
+    });
   }
 
   // ---------- 최근 다녀온 후기 ----------

@@ -755,7 +755,7 @@
   var POINT_NAME = {
     feed: '피드 올리기', plog: '플로깅 피드', comment: '댓글 쓰기', star_give: '별 누르기', star_get: '별 받기',
     post: '게시판 글·투표', vote: '투표 참여', tip: '한 줄 후기', review: '별점 후기',
-    attend: '매일 출석', attend7: '7일 연속 출석', correction: '수정 건의 채택', proposal: '박지 제보 반영', admin: '운영자'
+    attend: '매일 출석', attend7: '7일 연속 출석', correction: '수정 건의 채택', proposal: '박지 제보 반영', admin: '운영자', gulupdo: '굴업도 같이 접속'
   };
   function pointLabel(r, d) {
     if (r === 'admin') return d < 0 ? '운영자 회수' : '운영자 지급';
