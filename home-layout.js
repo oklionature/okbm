@@ -43,7 +43,7 @@
       '.hq-btn:active{background:#16161a}',
       '.hq-btn b{font-size:14px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}',
       '.hq-btn em{font-style:normal;font-size:11.5px;font-weight:600;color:#8e8e93;white-space:nowrap}',
-      '.hq-isle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:calc(100% - 28px);margin:2px 14px -6px;height:58px;padding:0 16px;border-radius:14px;background:#0c0d10;border:1px solid rgba(255,214,120,.25);color:#F2F3F5;font-family:inherit;cursor:pointer}',
+      '.hq-isle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:calc(100% - 28px);margin:2px 14px -6px;height:62px;padding:0 14px;border-radius:14px;background:#0c0d10;border:1px solid rgba(255,214,120,.25);color:#F2F3F5;font-family:inherit;cursor:pointer}',
       '.hq-isle:active{background:#16161a}',
       // 홈 첫 알림창(지도 map.html의 .okbm-spot-notice와 같은 모양)
       '.hn{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.62);display:flex;justify-content:center;align-items:flex-start;padding:calc(var(--okbm-status-top, 12px) + 8px) 12px calc(8px + env(safe-area-inset-bottom, 0px));box-sizing:border-box}',
@@ -53,7 +53,7 @@
       '.hn-act{position:sticky;bottom:0;display:block;width:calc(100% - 32px);margin:0 16px;padding:15px 10px;box-shadow:0 -14px 18px 6px #000;border:0;border-radius:12px;background:#2f9e6a;color:#fff;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer}',
       '.hn-pad{height:14px}',
       '.hn-x{position:absolute;top:10px;right:10px;z-index:2;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:15px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
-      '.hq-isle b{display:flex;align-items:center;gap:7px;font-size:16px;font-weight:800;letter-spacing:-.03em}',
+      '.hq-isle b{display:flex;align-items:center;gap:7px;font-size:18.5px;font-weight:800;letter-spacing:-.03em}',
       '.hq-isle i{font-style:normal;font-size:10.5px;font-weight:900;letter-spacing:.02em;color:#1a1206;background:#f5b94a;border-radius:5px;padding:3px 6px 2px;line-height:1}',
       '.hq-isle em{font-style:normal;font-size:12.5px;font-weight:700;color:#e0b45a;white-space:nowrap}',
       '.gq-wrap{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);padding:0 12px calc(env(safe-area-inset-bottom) + 84px)}',
@@ -162,7 +162,7 @@
     btn.type = 'button';
     btn.id = 'homeGulupdo';
     btn.className = 'hq-isle okbm-press';
-    btn.innerHTML = '<b><i>NEW</i>굴업도 미리 체험하기</b><em id="homeGulupdoN">접속 인원 확인 중</em>';
+    btn.innerHTML = '<b><i>NEW</i>온라인 굴업도로 떠나기</b><em id="homeGulupdoN">접속 인원 확인 중</em>';
     btn.addEventListener('click', openGulupdo);
     quick.insertAdjacentElement('afterend', btn);
     gulupdoCount();
@@ -297,7 +297,7 @@
     wrap.className = 'gq-wrap';
     wrap.innerHTML = '<div class="gq" role="dialog" aria-modal="true" aria-labelledby="gqTitle">' +
       '<h3 id="gqTitle">굴업도는 앱에서만 열려요</h3>' +
-      '<p>낭만루트 앱을 받고 홈의 \'굴업도 미리 체험하기\'를 눌러 주세요.</p>' +
+      '<p>낭만루트 앱을 받고 홈의 \'온라인 굴업도로 떠나기\'를 눌러 주세요.</p>' +
       '<div class="gq-b"><button type="button" data-gq="x">닫기</button><button type="button" data-gq="store" class="on">앱 받으러 가기</button></div></div>';
     document.body.appendChild(wrap);
     wrap.addEventListener('click', function (e) {
