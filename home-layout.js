@@ -265,14 +265,14 @@
     w.appendChild(f); document.body.appendChild(w); document.documentElement.style.overflow = 'hidden';
     try { history.pushState({ gulupdo: 1 }, ''); window.addEventListener('popstate', onBack); } catch (e) {}
   }
-  // 게임 사진 '폰에 저장'(11-03 대표님: 앱에서 눌러도 반응 없고 저장 안 됨): 틀 안에서 공유 창이 막히면 게임이 사진을 넘기고, 여기(앱 화면)서 공유 창을 연다.
+  // 게임 사진 '공유하기'(11-03 대표님: 앱에서 눌러도 반응 없고 저장 안 됨 → 공유 창 하나로): 틀 안에서 공유 창이 막히면 게임이 사진을 넘기고, 여기(앱 화면)서 공유 창을 연다.
   // 답: ok(저장·공유함) · cancel(닫음) · unsupported(이 앱 화면엔 공유 창이 없음, 안드로이드 앱) · fail
   function gulupdoSave(d, f) {
     var reply = function (r) { try { f.contentWindow.postMessage({ gulupdo: 'saved', id: d.id, r: r }, '*'); } catch (e) {} };
-    // 안드로이드 앱 0.9.2부터: 앱이 직접 사진첩('사진/낭만루트')에 저장한다(웹뷰엔 공유 창이 없어서)
+    // 안드로이드 앱 0.9.2부터: 웹뷰엔 공유 창이 없어서 앱이 휴대폰 공유 창(인스타·카톡·텔레그램 등)을 연다(11-03 대표님: '공유하기' 하나로)
     var PS = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PhotoSave;
-    if (PS && typeof PS.save === 'function' && window.Capacitor.isPluginAvailable && window.Capacitor.isPluginAvailable('PhotoSave')) {
-      Promise.resolve(PS.save({ data: String(d.src).split(',')[1] || '', name: d.name })).then(function () { reply('ok'); }, function () { reply('fail'); });
+    if (PS && typeof PS.share === 'function' && window.Capacitor.isPluginAvailable && window.Capacitor.isPluginAvailable('PhotoSave')) {
+      Promise.resolve(PS.share({ data: String(d.src).split(',')[1] || '', name: d.name })).then(function () { reply('ok'); }, function () { reply('fail'); });
       return;
     }
     try {
