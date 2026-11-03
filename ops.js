@@ -521,6 +521,14 @@
     return /^https:\/\//i.test(s) ? s : '#';
   }
 
+  // 안드로이드 앱은 새 창 링크(target=_blank)를 앱 화면이 아닌 따로 뜨는 팝업 창에 연다(카카오 로그인용).
+  // 거기선 앱이 아닌 웹으로 떠 '앱 받으러 가기'가 덮이고, 뒤로가기로 닫은 뒤 다음 누름이 가끔 사라졌다(대표님 11-03).
+  // 그래서 앱에서는 우리 화면(피드·박지)을 지금 화면에서 열고, 뒤로가기로 운영자 창에 돌아오게 한다. 웹은 예전처럼 새 탭.
+  var IN_APP = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+  function innerTarget() {
+    return IN_APP ? '' : ' target="_blank" rel="noopener"';
+  }
+
   function linkRow(l) {
     var title = String(l.title || '').trim() || String(l.url || '').replace(/^https?:\/\//, '');
     var rep = Number(l.reports || 0);
@@ -531,7 +539,7 @@
         (l.hidden ? ' · <span class="warn">숨김</span>' : '') + '</div>' +
       '<div class="b">' +
         '<a href="' + esc(safeUrl(l.url)) + '" target="_blank" rel="noopener noreferrer">링크 열기</a>' +
-        '<a href="map.html?id=' + encodeURIComponent(l.spot_id) + '" target="_blank" rel="noopener">박지 열기</a>' +
+        '<a href="map.html?id=' + encodeURIComponent(l.spot_id) + '"' + innerTarget() + '>박지 열기</a>' +
         '<button type="button" data-link-act="' + (l.hidden ? 'show' : 'hide') + '" data-id="' + esc(l.id) + '">' + (l.hidden ? '다시 보이기' : '숨김') + '</button>' +
         '<button type="button" class="red" data-link-act="delete" data-id="' + esc(l.id) + '">삭제</button>' +
       '</div></div>';
@@ -542,8 +550,8 @@
       '<div class="m">' + esc(f.author || '') + ' · ' + esc(when(f.created_at)) + ' · ' + (f.is_published ? '공개' : '<span class="dim">비공개</span>') + ' · ' +
         (f.linked ? '<span class="ok">✓ 박지 연결: ' + esc(f.spot_name || f.spot_id) + '</span>' : '<span class="warn">✗ 박지 연결 안 됨</span>') + '</div>' +
       '<div class="b">' +
-        '<a href="index.html?feed=' + encodeURIComponent(f.id) + '" target="_blank" rel="noopener">피드 열기</a>' +
-        (f.linked ? '<a href="map.html?id=' + encodeURIComponent(f.spot_id) + '" target="_blank" rel="noopener">박지 열기</a>' : '') +
+        '<a href="index.html?feed=' + encodeURIComponent(f.id) + '"' + innerTarget() + '>피드 열기</a>' +
+        (f.linked ? '<a href="map.html?id=' + encodeURIComponent(f.spot_id) + '"' + innerTarget() + '>박지 열기</a>' : '') +
       '</div></div>';
   }
 
