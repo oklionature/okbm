@@ -251,7 +251,13 @@
     f.style.cssText = 'position:absolute;left:0;right:0;top:var(--okbm-status-top, env(safe-area-inset-top));width:100%;height:calc(100% - var(--okbm-status-top, env(safe-area-inset-top)) - env(safe-area-inset-bottom, 0px));border:0;display:block;';
     var dock = document.getElementById('romanticMasterBottomDock');   // 아래 메뉴바는 맨 위층이라 게임 위로 비쳐서, 여는 동안 숨긴다
     if (dock) dock.style.setProperty('display', 'none', 'important');
-    var close = function () { if (!w.parentNode) return; if (!confirm('굴업도에서 나갈까요?')) return; w.remove(); document.documentElement.style.overflow = ''; if (dock) dock.style.removeProperty('display'); window.removeEventListener('popstate', onBack); window.removeEventListener('message', onMsg); gulupdoCount(); };
+    // 11-03 대표님: 앱을 뒤로 보내도 게임 노래가 계속 남 → 앱이 가려지면 게임에 '멈춤', 돌아오면 '다시'를 알린다(게임이 소리를 멈추고 켠다)
+    var post = function (k) { try { f.contentWindow.postMessage({ gulupdo: k }, '*'); } catch (e) {} };
+    var onVis = function () { post(document.hidden ? 'pause' : 'resume'); };
+    document.addEventListener('visibilitychange', onVis);
+    var App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App, appL = null;
+    if (App && typeof App.addListener === 'function') { try { Promise.resolve(App.addListener('appStateChange', function (st) { post(st && st.isActive ? 'resume' : 'pause'); })).then(function (h) { appL = h; }); } catch (e) {} }
+    var close = function () { if (!w.parentNode) return; if (!confirm('굴업도에서 나갈까요?')) return; w.remove(); document.documentElement.style.overflow = ''; if (dock) dock.style.removeProperty('display'); window.removeEventListener('popstate', onBack); window.removeEventListener('message', onMsg); document.removeEventListener('visibilitychange', onVis); if (appL && appL.remove) appL.remove(); gulupdoCount(); };
     var onBack = function () { if (w.parentNode) { history.pushState({ gulupdo: 1 }, ''); close(); } };   // 안드로이드 뒤로 가기도 닫기로
     // 닫기는 게임 오른쪽 위 '나가기'(게임이 알려 줌)·안드로이드 뒤로 가기
     var onMsg = function (e) { if (e.source === f.contentWindow && e.data && e.data.gulupdo === 'close') close(); };
