@@ -326,17 +326,18 @@
     wrap.innerHTML = '<div class="gq" role="dialog" aria-modal="true" aria-labelledby="gqTitle">' +
       '<h3 id="gqTitle">' + (short ? '낭만 포인트가 모자라요' : '굴업도로 떠날까요?') + '</h3>' +
       '<p>' + (short
-        ? '같이 접속하려면 낭만 포인트 ' + price + '점이 필요해요. 지금 ' + bal + '점이에요.<br>피드 올리기·댓글·출석으로 모을 수 있어요.'
+        ? '같이 접속하려면 낭만 포인트 ' + price + '점이 필요해요. 지금 ' + bal + '점이에요.<br>낭만 포인트는 피드 올리기, 댓글, 별 누르기, 출석, 설문 참여 등으로 모을 수 있어요.'
         : '낭만 포인트 <b>' + price + '점</b>을 쓰고 굴업도로 떠나요.<br>지금 ' + bal + '점 → ' + (bal - price) + '점') + '</p>' +
-      (short ? '' : '<p class="gq-s">한 번 들어가면 이번 섬 하루(매시 정각까지) 동안은 다시 들어와도 빠지지 않아요.</p>') +
+      (short ? '<p class="gq-s">자세한 받는 법은 낭만리포트 › 낭만 포인트에서 볼 수 있어요.</p>' : '<p class="gq-s">한 번 들어가면 이번 섬 하루(매시 정각까지) 동안은 다시 들어와도 빠지지 않아요.</p>') +
       '<div class="gq-b">' + (short
-        ? '<button type="button" data-gq="x" class="on">닫기</button>'
+        ? '<button type="button" data-gq="x">닫기</button><button type="button" data-gq="pt" class="on">받는 법 보기</button>'
         : '<button type="button" data-gq="x">취소</button><button type="button" data-gq="buy" class="on">' + price + '점 쓰고 들어가기</button>') +
       '</div></div>';
     document.body.appendChild(wrap);
     wrap.addEventListener('click', function (e) {
       var b = e.target && e.target.closest ? e.target.closest('[data-gq]') : null;
       if (e.target === wrap || (b && b.getAttribute('data-gq') === 'x')) return wrap.remove();
+      if (b && b.getAttribute('data-gq') === 'pt') { wrap.remove(); if (window.okbmPoints && typeof window.okbmPoints.open === 'function') window.okbmPoints.open(); return; }   // 11-03 대표님: 자세히 어디서 보는지
       if (b && b.getAttribute('data-gq') === 'buy') {
         b.disabled = true; b.textContent = '들어가는 중…';
         Promise.resolve(onBuy()).catch(function () { gulupdoToast('잠시 뒤 다시 눌러 주세요.'); }).then(function () { wrap.remove(); });
