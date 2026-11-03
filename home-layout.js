@@ -194,15 +194,25 @@
   }
   // ---------- 홈 첫 알림창(11-02 대표님: 지도 말고 낭만루터에서 뜨게) ----------
   // 바꿀 때: notice/에 새 그림(820폭)을 넣고 HOME_NOTICE의 id·img·label을 바꾼다. 한 번 닫으면 같은 id는 다시 안 뜬다.
-  // 그림 원본: .claude/mockups/notice-gulupdo/notice.html
+  // 그림 원본: .claude/mockups/app-launch/ad.html?v=notice (11-03 앱 정식 출시, 이전: notice-gulupdo/notice.html)
   var HOME_NOTICE = {
-    id: '20261102-gulupdo',
-    img: '/notice/gulupdo-1102.jpg',
-    alt: '일상에 지친 날엔 굴업도로 떠나 보세요. 홈 화면에서 굴업도로 떠나기를 누르면, 낭만의 섬에서 지인들과 이야기 나누고 새 친구도 사귀어요. 굴업도에 안 가 봤다면 개머리언덕부터 코끼리바위까지 실제 섬 모습 그대로 미리 걸어 봐요.',
-    label: '굴업도로 떠나기'
+    id: '20261103-app',
+    img: '/notice/app-launch-1103.jpg',
+    alt: '낭만루트 드디어 정식 출시! 이제 편하게 앱으로 떠나요. 안드로이드는 Google Play, 아이폰은 App Store에서 낭만루트를 검색하세요. 앱 안에서 굴업도 미리 체험도 할 수 있어요.',
+    label: '앱 받으러 가기'
   };
+  var STORE_PLAY = 'https://play.google.com/store/apps/details?id=com.romanticroute.app';
+  var STORE_APPLE = 'https://apps.apple.com/kr/app/id6824809664';
+  // 아이폰·아이패드는 앱스토어, 그 밖(안드로이드·PC)은 구글 플레이
+  function storeUrl() {
+    var ua = navigator.userAgent || '';
+    var ios = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    return ios ? STORE_APPLE : STORE_PLAY;
+  }
   function homeNotice() {
     var key = 'okbm_home_notice_id';
+    // 앱 안에서는 이미 앱이라 출시 알림을 안 띄운다
+    if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) return;
     try { if (localStorage.getItem(key) === HOME_NOTICE.id) return; } catch (e) { return; }
     if (document.getElementById('okbmHomeNotice')) return;
     var root = document.createElement('div');
@@ -222,9 +232,7 @@
     root.querySelector('.hn-x').addEventListener('click', close);
     root.querySelector('.hn-act').addEventListener('click', function () {
       close();
-      var btn = document.getElementById('homeGulupdo');
-      try { if (btn) btn.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
-      setTimeout(openGulupdo, 400);
+      window.location.href = storeUrl();
     });
     document.body.appendChild(root);
   }
