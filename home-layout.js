@@ -7,7 +7,7 @@
 // · 최근 다녀온 후기는 운영자 글을 빼고 회원이 공개한 글만, 다녀온 날짜가 최근인 것부터. 개수와 상관없이 바로가기 바로 밑(대표님 10-14).
 // · 굴업도 들어가기(2026-11-02, 관리자만): 바로가기 밑 띠. 누르면 로그인 토큰을 주소 뒤 #tok=로 붙여 같이 접속 게임(Cloudflare)을 연다.
 //   게임 서버가 그 토큰으로 회원·닉네임을 확인한다. 11-02부터 띠는 비로그인에게도 보이고 누르면 로그인 창.
-//   11-02: 회원 모두에게 연다. 들어갈 때 낭만 포인트 15점(섬 하루=실제 1시간에 한 번, 관리자 무료, 모자라면 못 들어감).
+//   11-02: 회원 모두에게 연다. 들어갈 때 낭만 포인트 15점(낸 때부터 1시간 동안 다시 들어와도 무료 — 11-03 H38, 관리자 무료, 모자라면 못 들어감).
 //   입장권은 서버 함수 okbm_gulupdo_pass(SUPABASE_H36)로만 사고, 게임 서버도 같은 함수로 입장권이 있는지 본다.
 //   11-03: 앱에서만. 웹은 띠를 누르면 앱 받기 안내, 게임 서버도 낭만루트 틀(iframe)이 아닌 요청엔 안내 화면만 준다.
 // · 인라인 핸들러 없음(이벤트 위임) → csp-extract 대상 아님.
@@ -329,7 +329,7 @@
       if (!tok) return;
       return gulupdoPass(client, false).then(function (p) {
         done();
-        if (p && p.ok) return gulupdoGo(tok);   // 관리자거나 이번 섬 하루 입장권이 이미 있음
+        if (p && p.ok) return gulupdoGo(tok);   // 관리자거나 1시간 안에 산 입장권이 있음
         gulupdoSheet(p || {}, function () {
           return gulupdoPass(client, true).then(function (q) {
             if (q && q.ok) return gulupdoGo(tok);
@@ -351,7 +351,7 @@
       '<p>' + (short
         ? '같이 접속하려면 낭만 포인트 ' + price + '점이 필요해요. 지금 ' + bal + '점이에요.<br>낭만 포인트는 피드 올리기, 댓글, 별 누르기, 출석, 설문 참여 등으로 모을 수 있어요.'
         : '낭만 포인트 <b>' + price + '점</b>을 쓰고 굴업도로 떠나요.<br>지금 ' + bal + '점 → ' + (bal - price) + '점') + '</p>' +
-      (short ? '<p class="gq-s">자세한 받는 법은 낭만리포트 › 낭만 포인트에서 볼 수 있어요.</p>' : '<p class="gq-s">한 번 들어가면 이번 섬 하루(매시 정각까지) 동안은 다시 들어와도 빠지지 않아요.</p>') +
+      (short ? '<p class="gq-s">자세한 받는 법은 낭만리포트 › 낭만 포인트에서 볼 수 있어요.</p>' : '<p class="gq-s">한 번 들어가면 1시간 동안은 다시 들어와도 빠지지 않아요.</p>') +   // 11-03 대표님: 정각 기준 → 낸 때부터 1시간(SUPABASE_H38)
       '<div class="gq-b">' + (short
         ? '<button type="button" data-gq="x">닫기</button><button type="button" data-gq="pt" class="on">받는 법 보기</button>'
         : '<button type="button" data-gq="x">취소</button><button type="button" data-gq="buy" class="on">' + price + '점 쓰고 들어가기</button>') +
