@@ -11904,6 +11904,39 @@ function okbmBindNativeOAuthReturn() {
   }
 }
 
+// 앱(Capacitor)에서 바깥 링크 열기(11-03 대표님: 박지 창 유튜브·블로그 링크가 앱에서 안 눌림).
+// 앱 웹뷰는 target="_blank" 링크와 window.open을 그냥 무시해서(아이폰), 낭만루트 밖 주소는 Browser 플러그인(앱 안 사파리·크롬 창)으로 연다.
+// 낭만루트 안 주소·로그인 주소(okbmOpenOAuthUrl이 직접 연다)는 건드리지 않는다.
+function okbmNativeExternalUrl(raw) {
+  var u;
+  try { u = new URL(String(raw || ''), location.href); } catch (e) { return ''; }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
+  if (u.hostname === location.hostname || /(^|\.)romanticroute\.kr$/.test(u.hostname)) return '';
+  return u.href;
+}
+function okbmBindNativeExternalLinks() {
+  if (!okbmIsCapacitorNative() || window.__okbmNativeLinksBound) return;
+  var Browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+  if (!Browser || typeof Browser.open !== 'function') return;
+  window.__okbmNativeLinksBound = true;
+  var open = function(url) { Browser.open({ url: url }).catch(function() {}); };
+  document.addEventListener('click', function(e) {
+    if (e.defaultPrevented) return;
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a || a.hasAttribute('download')) return;
+    var url = okbmNativeExternalUrl(a.getAttribute('href'));
+    if (!url) return;
+    e.preventDefault();
+    open(url);
+  });
+  var origOpen = window.open;
+  window.open = function(url) {
+    var ext = okbmNativeExternalUrl(url);
+    if (ext) { open(ext); return null; }
+    return origOpen.apply(window, arguments);
+  };
+}
+
 async function okbmOpenOAuthUrl(url) {
   if (!okbmIsCapacitorNative()) {
     window.location.assign(url);
@@ -12659,6 +12692,7 @@ async function loginWithGoogle() {
 window.loginWithGoogle = loginWithGoogle;
 
 okbmBindNativeOAuthReturn();
+okbmBindNativeExternalLinks();
 okbmConsumeNaverOAuthCallback().then(function(consumedNaver) {
   if (!consumedNaver) okbmInitSupabaseOAuthBridge();
 }).catch(function() {
