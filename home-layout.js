@@ -240,10 +240,26 @@
   // 앱은 Browser 창으로, 웹은 같은 탭으로 연다(포인트 확인을 기다린 뒤라 새 창은 팝업 차단에 걸린다)
   function gulupdoGo(tok) {
     var url = GULUPDO_URL + '#tok=' + encodeURIComponent(tok);
-    var Browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
     var native = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
-    if (native && Browser && typeof Browser.open === 'function') Browser.open({ url: url });
-    else window.location.href = url;
+    // 11-03 대표님: 앱에서 바깥 브라우저로 열면 주소창이 뜸 → 앱 화면 위에 꽉 차게 띄우고 [×]로 닫는다(웹은 예전처럼 넘어가고, 게임이 시작하기 때 전체 화면을 청한다)
+    if (native) return gulupdoFrame(url);
+    window.location.href = url;
+  }
+  function gulupdoFrame(url) {
+    if (document.getElementById('gulupdoFrame')) return;
+    var w = document.createElement('div'); w.id = 'gulupdoFrame';
+    w.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#0e1420;';
+    var f = document.createElement('iframe'); f.src = url; f.title = '굴업도'; f.setAttribute('allow', 'autoplay; fullscreen; clipboard-write');
+    f.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;';
+    var x = document.createElement('button'); x.type = 'button'; x.setAttribute('aria-label', '굴업도 닫기'); x.textContent = '×';
+    x.style.cssText = 'position:absolute;left:12px;bottom:calc(env(safe-area-inset-bottom) + 176px);z-index:2;width:34px;height:34px;border-radius:17px;border:0;background:rgba(20,24,34,.55);color:#fff;font-size:22px;line-height:34px;padding:0;';
+    var dock = document.getElementById('romanticMasterBottomDock');   // 아래 메뉴바는 맨 위층이라 게임 위로 비쳐서, 여는 동안 숨긴다
+    if (dock) dock.style.setProperty('display', 'none', 'important');
+    var close = function () { if (!w.parentNode) return; if (!confirm('굴업도에서 나갈까요?')) return; w.remove(); document.documentElement.style.overflow = ''; if (dock) dock.style.removeProperty('display'); window.removeEventListener('popstate', onBack); gulupdoCount(); };
+    var onBack = function () { if (w.parentNode) { history.pushState({ gulupdo: 1 }, ''); close(); } };   // 안드로이드 뒤로 가기도 닫기로
+    x.addEventListener('click', function () { close(); });
+    w.appendChild(f); w.appendChild(x); document.body.appendChild(w); document.documentElement.style.overflow = 'hidden';
+    try { history.pushState({ gulupdo: 1 }, ''); window.addEventListener('popstate', onBack); } catch (e) {}
   }
   function gulupdoPass(client, buy) {
     return Promise.resolve(client.rpc('okbm_gulupdo_pass', { p_buy: !!buy })).then(function (r) {
