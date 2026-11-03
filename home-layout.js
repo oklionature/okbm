@@ -9,6 +9,7 @@
 //   게임 서버가 그 토큰으로 회원·닉네임을 확인한다. 11-02부터 띠는 비로그인에게도 보이고 누르면 로그인 창.
 //   11-02: 회원 모두에게 연다. 들어갈 때 낭만 포인트 15점(섬 하루=실제 1시간에 한 번, 관리자 무료, 모자라면 못 들어감).
 //   입장권은 서버 함수 okbm_gulupdo_pass(SUPABASE_H36)로만 사고, 게임 서버도 같은 함수로 입장권이 있는지 본다.
+//   11-03: 앱에서만. 웹은 띠를 누르면 앱 받기 안내, 게임 서버도 낭만루트 틀(iframe)이 아닌 요청엔 안내 화면만 준다.
 // · 인라인 핸들러 없음(이벤트 위임) → csp-extract 대상 아님.
 // · src 보간은 escapeHtml(okbmSafeImageUrl(...))만 (scripts/check-unsafe-url-interpolation.py).
 // =========================================================================
@@ -237,13 +238,9 @@
     document.body.appendChild(root);
   }
   function gulupdoToast(msg) { if (typeof showToast === 'function') showToast(msg, 'warn'); }
-  // 앱은 Browser 창으로, 웹은 같은 탭으로 연다(포인트 확인을 기다린 뒤라 새 창은 팝업 차단에 걸린다)
   function gulupdoGo(tok) {
-    var url = GULUPDO_URL + '#tok=' + encodeURIComponent(tok);
-    var native = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
-    // 11-03 대표님: 앱에서 바깥 브라우저로 열면 주소창이 뜸 → 앱 화면 위에 꽉 차게 띄우고 [×]로 닫는다(웹은 예전처럼 넘어가고, 게임이 시작하기 때 전체 화면을 청한다)
-    if (native) return gulupdoFrame(url);
-    window.location.href = url;
+    // 11-03 대표님: 앱에서 바깥 브라우저로 열면 주소창이 뜸 → 앱 화면 위에 꽉 차게 띄운다. 웹은 openGulupdo에서 앱 안내로 막힘
+    gulupdoFrame(GULUPDO_URL + '#tok=' + encodeURIComponent(tok));
   }
   function gulupdoFrame(url) {
     if (document.getElementById('gulupdoFrame')) return;
@@ -268,7 +265,26 @@
       return r && r.data;
     });
   }
+  // 11-03 대표님: 굴업도는 앱에서만. 웹은 띠는 두고 누르면 앱 받기 안내(포인트도 안 뺌). 게임 서버도 낭만루트 앱 틀이 아니면 화면을 안 준다
+  function isNativeApp() { return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()); }
+  function gulupdoAppOnly() {
+    var old = document.getElementById('gulupdoSheet'); if (old) old.remove();
+    var wrap = document.createElement('div');
+    wrap.id = 'gulupdoSheet';
+    wrap.className = 'gq-wrap';
+    wrap.innerHTML = '<div class="gq" role="dialog" aria-modal="true" aria-labelledby="gqTitle">' +
+      '<h3 id="gqTitle">굴업도는 앱에서만 열려요</h3>' +
+      '<p>낭만루트 앱을 받고 홈의 \'굴업도 미리 체험하기\'를 눌러 주세요.</p>' +
+      '<div class="gq-b"><button type="button" data-gq="x">닫기</button><button type="button" data-gq="store" class="on">앱 받으러 가기</button></div></div>';
+    document.body.appendChild(wrap);
+    wrap.addEventListener('click', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('[data-gq]') : null;
+      if (e.target === wrap || (b && b.getAttribute('data-gq') === 'x')) return wrap.remove();
+      if (b && b.getAttribute('data-gq') === 'store') { wrap.remove(); window.location.href = storeUrl(); }
+    });
+  }
   function openGulupdo() {
+    if (!isNativeApp()) return gulupdoAppOnly();
     var client = window.supabaseClient;
     if (!client || !client.auth || typeof client.auth.getSession !== 'function' || typeof client.rpc !== 'function') return gulupdoToast('로그인 서버에 연결할 수 없습니다.');
     var btn = document.getElementById('homeGulupdo');
