@@ -246,7 +246,7 @@
     if (document.getElementById('gulupdoFrame')) return;
     var w = document.createElement('div'); w.id = 'gulupdoFrame';
     w.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#0e1420;';
-    var f = document.createElement('iframe'); f.src = url; f.title = '굴업도'; f.setAttribute('allow', 'autoplay; fullscreen; clipboard-write');
+    var f = document.createElement('iframe'); f.src = url; f.title = '굴업도'; f.setAttribute('allow', 'autoplay; fullscreen; clipboard-write; web-share');   // web-share: 게임 사진 '폰에 저장'(11-03)
     // 틀 안(iframe)에선 게임이 상태바 높이를 못 받아 '건너뛰기' 등이 시계·안테나와 겹침 → 틀을 상태바 아래·홈 막대 위로(앱의 --okbm-status-top: 안드로이드는 최소 32px, 11-03 대표님)
     f.style.cssText = 'position:absolute;left:0;right:0;top:var(--okbm-status-top, env(safe-area-inset-top));width:100%;height:calc(100% - var(--okbm-status-top, env(safe-area-inset-top)) - env(safe-area-inset-bottom, 0px));border:0;display:block;';
     var dock = document.getElementById('romanticMasterBottomDock');   // 아래 메뉴바는 맨 위층이라 게임 위로 비쳐서, 여는 동안 숨긴다
@@ -260,10 +260,21 @@
     var close = function () { if (!w.parentNode) return; if (!confirm('굴업도에서 나갈까요?')) return; w.remove(); document.documentElement.style.overflow = ''; if (dock) dock.style.removeProperty('display'); window.removeEventListener('popstate', onBack); window.removeEventListener('message', onMsg); document.removeEventListener('visibilitychange', onVis); if (appL && appL.remove) appL.remove(); gulupdoCount(); };
     var onBack = function () { if (w.parentNode) { history.pushState({ gulupdo: 1 }, ''); close(); } };   // 안드로이드 뒤로 가기도 닫기로
     // 닫기는 게임 오른쪽 위 '나가기'(게임이 알려 줌)·안드로이드 뒤로 가기
-    var onMsg = function (e) { if (e.source === f.contentWindow && e.data && e.data.gulupdo === 'close') close(); };
+    var onMsg = function (e) { if (e.source !== f.contentWindow || !e.data) return; if (e.data.gulupdo === 'close') close(); else if (e.data.gulupdo === 'save') gulupdoSave(e.data, f); };
     window.addEventListener('message', onMsg);
     w.appendChild(f); document.body.appendChild(w); document.documentElement.style.overflow = 'hidden';
     try { history.pushState({ gulupdo: 1 }, ''); window.addEventListener('popstate', onBack); } catch (e) {}
+  }
+  // 게임 사진 '폰에 저장'(11-03 대표님: 앱에서 눌러도 반응 없고 저장 안 됨): 틀 안에서 공유 창이 막히면 게임이 사진을 넘기고, 여기(앱 화면)서 공유 창을 연다.
+  // 답: ok(저장·공유함) · cancel(닫음) · unsupported(이 앱 화면엔 공유 창이 없음, 안드로이드 앱) · fail
+  function gulupdoSave(d, f) {
+    var reply = function (r) { try { f.contentWindow.postMessage({ gulupdo: 'saved', id: d.id, r: r }, '*'); } catch (e) {} };
+    try {
+      var bin = atob(String(d.src).split(',')[1] || ''), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      var file = new File([u], d.name || 'gulupdo.jpg', { type: 'image/jpeg' });
+      if (!(navigator.canShare && navigator.canShare({ files: [file] }))) return reply('unsupported');
+      navigator.share({ files: [file] }).then(function () { reply('ok'); }, function (e) { reply(e && e.name === 'AbortError' ? 'cancel' : 'fail'); });
+    } catch (e) { reply('fail'); }
   }
   function gulupdoPass(client, buy) {
     return Promise.resolve(client.rpc('okbm_gulupdo_pass', { p_buy: !!buy })).then(function (r) {
