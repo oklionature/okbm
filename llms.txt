@@ -4,12 +4,12 @@
 
 낭만루트는 자연에서 하룻밤을 보내는 백패커를 위한 국내 아웃도어 서비스입니다. 전국 백패킹 박지를 지역별로 정리하고 고도, 난이도, 거리, 지형을 함께 보여 줍니다. 박지 목록은 운영진과 회원 제보로 만들고 국립·도립·군립공원 안의 장소는 야영이 금지라 싣지 않습니다. 정확한 좌표와 들머리, 코스는 장소 보존을 위해 로그인한 회원에게만 공개합니다.
 
-- 기준일: 2026-10-31
-- 공개 박지: 428곳
+- 기준일: 2026-11-03
+- 공개 박지: 432곳
 
 ## 주요 페이지
 
-- [전국 백패킹 박지 목록](https://romanticroute.kr/spot/): 지역별 박지 428곳
+- [전국 백패킹 박지 목록](https://romanticroute.kr/spot/): 지역별 박지 432곳
 - [전국 백패킹 박지 통계](https://romanticroute.kr/stats/): 지역별·높이별·거리별·난이도별 박지 수 (매일 갱신)
 - [낭만루트 지도](https://romanticroute.kr/map.html): 박지 위치·들머리·코스 (로그인 회원 공개)
 - [개인정보처리방침](https://romanticroute.kr/privacy.html)
@@ -17,12 +17,12 @@
 
 ## 지역별 박지
 
-- [서울·인천 백패킹 33곳](https://romanticroute.kr/region/seoul-incheon/)
+- [서울·인천 백패킹 34곳](https://romanticroute.kr/region/seoul-incheon/)
 - [경기 백패킹 89곳](https://romanticroute.kr/region/gyeonggi/)
-- [강원 백패킹 65곳](https://romanticroute.kr/region/gangwon/)
+- [강원 백패킹 66곳](https://romanticroute.kr/region/gangwon/)
 - [충북 백패킹 25곳](https://romanticroute.kr/region/chungbuk/)
-- [충남 백패킹 25곳](https://romanticroute.kr/region/chungnam/)
-- [전북 백패킹 29곳](https://romanticroute.kr/region/jeonbuk/)
+- [충남 백패킹 26곳](https://romanticroute.kr/region/chungnam/)
+- [전북 백패킹 30곳](https://romanticroute.kr/region/jeonbuk/)
 - [전남 백패킹 50곳](https://romanticroute.kr/region/jeonnam/)
 - [경북 백패킹 53곳](https://romanticroute.kr/region/gyeongbuk/)
 - [경남 백패킹 55곳](https://romanticroute.kr/region/gyeongnam/)
@@ -30,12 +30,12 @@
 
 ## 테마별 박지
 
-- [초보 백패킹 160곳](https://romanticroute.kr/theme/beginner/): 난이도가 쉬움(1~2/5)이고 들머리에서 1km 안쪽만 걸으면 닿는 박지 160곳을 모았어요.
-- [퇴근박 백패킹 176곳](https://romanticroute.kr/theme/afterwork/): 난이도 보통(3/5) 이하에 들머리에서 1.5km 안쪽이라 퇴근하고 바로 떠나기 좋은 박지 176곳이에요.
+- [초보 백패킹 161곳](https://romanticroute.kr/theme/beginner/): 난이도가 쉬움(1~2/5)이고 들머리에서 1km 안쪽만 걸으면 닿는 박지 161곳을 모았어요.
+- [퇴근박 백패킹 178곳](https://romanticroute.kr/theme/afterwork/): 난이도 보통(3/5) 이하에 들머리에서 1.5km 안쪽이라 퇴근하고 바로 떠나기 좋은 박지 178곳이에요.
 - [섬 백패킹 90곳](https://romanticroute.kr/theme/island/): 섬에 있는 백패킹 박지 90곳을 모았어요.
 - [해변 백패킹 62곳](https://romanticroute.kr/theme/beach/): 바다를 앞에 둔 해변·해수욕장·해안 박지 62곳을 모았어요.
-- [데크 백패킹 231곳](https://romanticroute.kr/theme/deck/): 나무 데크가 있는 박지 231곳을 모았어요.
-- [돌박지 백패킹 98곳](https://romanticroute.kr/theme/rock/): 암릉이나 너럭바위처럼 바위 위에 텐트를 설치하는 박지 98곳이에요.
+- [데크 백패킹 234곳](https://romanticroute.kr/theme/deck/): 나무 데크가 있는 박지 234곳을 모았어요.
+- [돌박지 백패킹 100곳](https://romanticroute.kr/theme/rock/): 암릉이나 너럭바위처럼 바위 위에 텐트를 설치하는 박지 100곳이에요.
 - [계곡 백패킹 18곳](https://romanticroute.kr/theme/valley/): 계곡을 끼고 있는 박지 18곳을 모았어요.
 - [오지 백패킹 21곳](https://romanticroute.kr/theme/remote/): 난이도 어려움(4~5/5)에 들머리에서 2km 넘게 걸어야 닿는 박지 21곳이에요. 백패킹 경험을 쌓은 뒤에 도전하길 권해요.
 
@@ -61,12 +61,12 @@
 - [포항 백패킹 13곳](https://romanticroute.kr/city/pohang/)
 - [용인 백패킹 11곳](https://romanticroute.kr/city/yongin/)
 - [가평 백패킹 9곳](https://romanticroute.kr/city/gapyeong/)
+- [강화 백패킹 9곳](https://romanticroute.kr/city/ganghwa/)
 - [여수 백패킹 9곳](https://romanticroute.kr/city/yeosu/)
-- [강화 백패킹 8곳](https://romanticroute.kr/city/ganghwa/)
+- [평창 백패킹 9곳](https://romanticroute.kr/city/pyeongchang/)
 - [정선 백패킹 8곳](https://romanticroute.kr/city/jeongseon/)
 - [진안 백패킹 8곳](https://romanticroute.kr/city/jinan/)
 - [통영 백패킹 8곳](https://romanticroute.kr/city/tongyeong/)
-- [평창 백패킹 8곳](https://romanticroute.kr/city/pyeongchang/)
 - [거제 백패킹 7곳](https://romanticroute.kr/city/geoje/)
 - [양평 백패킹 7곳](https://romanticroute.kr/city/yangpyeong/)
 - [창원 백패킹 7곳](https://romanticroute.kr/city/changwon/)
@@ -110,6 +110,7 @@
 - [부산 강서구 백패킹 3곳](https://romanticroute.kr/city/busan-gangseogu/)
 - [부안 백패킹 3곳](https://romanticroute.kr/city/buan/)
 - [삼척 백패킹 3곳](https://romanticroute.kr/city/samcheok/)
+- [서산 백패킹 3곳](https://romanticroute.kr/city/seosan/)
 - [순천 백패킹 3곳](https://romanticroute.kr/city/suncheon/)
 - [안성 백패킹 3곳](https://romanticroute.kr/city/anseong/)
 - [여주 백패킹 3곳](https://romanticroute.kr/city/yeoju/)
@@ -132,8 +133,8 @@
 - [단양 백패킹 2곳](https://romanticroute.kr/city/danyang/)
 - [당진 백패킹 2곳](https://romanticroute.kr/city/dangjin/)
 - [문경 백패킹 2곳](https://romanticroute.kr/city/mungyeong/)
-- [서산 백패킹 2곳](https://romanticroute.kr/city/seosan/)
 - [수원 백패킹 2곳](https://romanticroute.kr/city/suwon/)
+- [순창 백패킹 2곳](https://romanticroute.kr/city/sunchang/)
 - [시흥 백패킹 2곳](https://romanticroute.kr/city/siheung/)
 - [아산 백패킹 2곳](https://romanticroute.kr/city/asan/)
 - [안양 백패킹 2곳](https://romanticroute.kr/city/anyang/)
