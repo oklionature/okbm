@@ -236,7 +236,7 @@
           } else {
             var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
             var targetKey = window.SUPABASE_ANON_KEY || '';
-            var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at';
+            var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at,camp_status_photos,camp_status_credit';
             var res = await fetch(targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
               headers: { 'apikey': targetKey, 'Authorization': 'Bearer ' + targetKey, 'Content-Type': 'application/json' }
             });
@@ -300,6 +300,8 @@
                 camp_status: String(row.camp_status || '').trim(),
                 camp_status_note: String(row.camp_status_note || '').trim(),
                 camp_status_at: row.camp_status_at || null,
+                camp_status_photos: Array.isArray(row.camp_status_photos) ? row.camp_status_photos.slice(0, 3) : [],
+                camp_status_credit: String(row.camp_status_credit || '').trim(),
                 searchCount: 0,
                 sheetIndex: idx,
                 created_at: row.created_at || null
@@ -1980,6 +1982,31 @@ function updateSmartResetButtons() {
         '</div>';
       }
 
+      // 금지 근거 사진(H37 camp_status_photos)과 '사진 제보 ○○님'. 수정 건의를 야영금지로 채택할 때 고른 사진이다.
+      function campBanPhotos(spot) {
+        return (Array.isArray(spot && spot.camp_status_photos) ? spot.camp_status_photos : [])
+          .map(function(u) { return okbmSafeImageUrl(u); }).filter(Boolean).slice(0, 3);
+      }
+      function campBanPhotosHtml(spot) {
+        var photos = campBanPhotos(spot);
+        if (!photos.length) return '';
+        var sId = escapeHtml(String(spot.id || ''));
+        var credit = String(spot.camp_status_credit || '').trim();
+        return '<div style="margin-top:8px; display:grid; grid-template-columns:repeat(' + photos.length + ', 1fr); gap:6px;">' +
+          photos.map(function(u, i) {
+            return '<button type="button" data-id="' + sId + '" data-idx="' + i + '" onclick="event.stopPropagation(); window.openCampBanPhoto(this.dataset.id, this.dataset.idx)" aria-label="금지 근거 사진 ' + (i + 1) + ' 크게 보기" style="display:block; width:100%; aspect-ratio:' + (photos.length === 1 ? '4 / 3' : '1 / 1') + '; padding:0; border-radius:8px; overflow:hidden; border:1px solid rgba(244,63,94,0.45); background:#1f1115; cursor:zoom-in;"><img src="' + escapeHtml(u) + '" alt="금지 근거 사진 ' + (i + 1) + '" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;"></button>';
+          }).join('') +
+        '</div>' +
+        (credit ? '<div style="margin-top:4px; text-align:right; font-size:0.68rem; color:#fda4af;">사진 제보 ' + escapeHtml(credit) + '님</div>' : '');
+      }
+      window.openCampBanPhoto = function(spotId, idx) {
+        var sId = String(spotId || '').trim();
+        var spot = (spots || []).find(function(s) { return String(s.id).trim() === sId; });
+        if (!spot) return;
+        var credit = String(spot.camp_status_credit || '').trim();
+        window.okbmOpenPhotoViewer(campBanPhotos(spot), idx, '야영금지 근거' + (credit ? ' · 사진 제보 ' + credit + '님' : ''));
+      };
+
       function campBanBannerHtml(spot) {
         if (!isCampBanned(spot)) return '';
         var rules = [
@@ -1997,21 +2024,32 @@ function updateSmartResetButtons() {
         return '<div style="margin:6px 0 4px; padding:11px 12px; border-radius:10px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.45); color:#fecdd3; font-size:0.74rem; line-height:1.45;">' +
           '<div style="font-weight:900; color:#fb7185; font-size:0.9rem;">🚫 야영이 금지되었습니다</div>' +
           campBanReasonHtml(spot, 'margin-top:6px; font-size:0.8rem;') +
+          campBanPhotosHtml(spot) +
           '<div style="margin-top:8px; font-size:0.84rem; font-weight:800;">소중한 박지를 보호하기 위해 LNT 원칙을 꼭 지켜주세요.</div>' +
           list +
         '</div>';
       }
 
-      window.setSpotCampBan = async function(spotId, banned, note) {
+      // evidence: { photos: [R2 주소], credit: 제보자 닉네임 } — 검수함에서 수정 건의를 채택할 때만 넘긴다
+      window.setSpotCampBan = async function(spotId, banned, note, evidence) {
         var sId = String(spotId || '').trim();
         var spot = (spots || []).find(function(s) { return String(s.id).trim() === sId; });
         if (!spot) return false;
         var cfg = getSupabaseRestConfig();
         var headers = (typeof window.okbmWriteHeaders === 'function') ? window.okbmWriteHeaders({ Prefer: 'return=minimal' }) : null;
         if (!cfg.url || !headers) return false;
+        var evPhotos = (evidence && Array.isArray(evidence.photos) ? evidence.photos : [])
+          .map(function(u) { return okbmSafeImageUrl(u); }).filter(Boolean).slice(0, 3);
+        var evCredit = evPhotos.length ? String((evidence && evidence.credit) || '').trim().slice(0, 40) : '';
         var payload = banned
-          ? { camp_status: 'banned', camp_status_note: String(note || '').trim().slice(0, 200) || null, camp_status_at: new Date().toISOString().slice(0, 10) }
-          : { camp_status: null, camp_status_note: null, camp_status_at: null };
+          ? {
+              camp_status: 'banned',
+              camp_status_note: String(note || '').trim().slice(0, 200) || null,
+              camp_status_at: new Date().toISOString().slice(0, 10),
+              camp_status_photos: evPhotos.length ? evPhotos : null,
+              camp_status_credit: evCredit || null
+            }
+          : { camp_status: null, camp_status_note: null, camp_status_at: null, camp_status_photos: null, camp_status_credit: null };
         try {
           var res = await fetch(cfg.url + '/rest/v1/spots?id=eq.' + encodeURIComponent(sId), {
             method: 'PATCH',
@@ -5268,6 +5306,65 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         el.remove();
         if (typeof window.unregisterModalClose === 'function') window.unregisterModalClose('okbmInstaViewer');
       };
+      // 사진 크게 보기 창: 검수함 근거 사진·야영금지 근거 사진. 여러 장이면 좌우 단추나 밀어서 넘긴다.
+      window.okbmOpenPhotoViewer = function(urls, startIndex, caption) {
+        var list = (Array.isArray(urls) ? urls : []).map(function(u) { return okbmSafeImageUrl(u); }).filter(Boolean);
+        if (!list.length) return;
+        var idx = Math.max(0, Math.min(list.length - 1, parseInt(startIndex, 10) || 0));
+        window.okbmClosePhotoViewer();
+        var overlay = document.createElement('div');
+        overlay.id = 'okbmPhotoViewer';
+        overlay.style.cssText = 'position:fixed; inset:0; z-index:2147483647; background:rgba(0,0,0,0.92); display:flex; flex-direction:column; padding:calc(10px + env(safe-area-inset-top, 0px)) 10px calc(14px + env(safe-area-inset-bottom, 0px)); box-sizing:border-box;';
+        var navBtn = 'width:40px; height:40px; border-radius:50%; border:none; background:rgba(255,255,255,0.14); color:#ffffff; font-size:1rem; font-weight:900; cursor:pointer;';
+        overlay.innerHTML =
+          '<div style="display:flex; align-items:center; justify-content:space-between; flex-shrink:0; min-height:36px;">' +
+            '<span class="js-photo-count" style="font-size:0.78rem; font-weight:800; color:#cbd5e1;"></span>' +
+            '<button type="button" class="js-photo-close" aria-label="닫기" style="width:36px; height:36px; border-radius:50%; border:none; background:rgba(255,255,255,0.14); color:#ffffff; font-size:0.95rem; font-weight:900; cursor:pointer;">✕</button>' +
+          '</div>' +
+          '<div class="js-photo-stage" style="flex:1; min-height:0; display:flex; align-items:center; justify-content:center; touch-action:pan-y;">' +
+            '<img class="js-photo-img" alt="" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:6px; display:block;">' +
+          '</div>' +
+          (caption ? '<div style="flex-shrink:0; margin-top:8px; text-align:center; font-size:0.74rem; color:#cbd5e1;">' + escapeHtml(caption) + '</div>' : '') +
+          (list.length > 1
+            ? '<div style="flex-shrink:0; display:flex; justify-content:center; gap:28px; margin-top:10px;">' +
+                '<button type="button" class="js-photo-prev" aria-label="이전 사진" style="' + navBtn + '">◀</button>' +
+                '<button type="button" class="js-photo-next" aria-label="다음 사진" style="' + navBtn + '">▶</button>' +
+              '</div>'
+            : '');
+        var img = overlay.querySelector('.js-photo-img');
+        var count = overlay.querySelector('.js-photo-count');
+        var show = function(i) {
+          idx = (i + list.length) % list.length;
+          img.src = list[idx];
+          img.alt = '사진 ' + (idx + 1);
+          count.textContent = list.length > 1 ? (idx + 1) + ' / ' + list.length : '';
+        };
+        overlay.querySelector('.js-photo-close').onclick = window.okbmClosePhotoViewer;
+        var prev = overlay.querySelector('.js-photo-prev');
+        var next = overlay.querySelector('.js-photo-next');
+        if (prev) prev.onclick = function() { show(idx - 1); };
+        if (next) next.onclick = function() { show(idx + 1); };
+        var stage = overlay.querySelector('.js-photo-stage');
+        stage.onclick = function(e) { if (e.target === stage) window.okbmClosePhotoViewer(); };
+        var startX = null;
+        stage.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, { passive: true });
+        stage.addEventListener('touchend', function(e) {
+          if (startX == null || list.length < 2) return;
+          var dx = e.changedTouches[0].clientX - startX;
+          startX = null;
+          if (Math.abs(dx) > 40) show(dx < 0 ? idx + 1 : idx - 1);
+        });
+        show(idx);
+        document.body.appendChild(overlay);
+        if (typeof window.registerModalOpen === 'function') window.registerModalOpen('okbmPhotoViewer', window.okbmClosePhotoViewer);
+      };
+      window.okbmClosePhotoViewer = function() {
+        var el = document.getElementById('okbmPhotoViewer');
+        if (!el) return;
+        el.remove();
+        if (typeof window.unregisterModalClose === 'function') window.unregisterModalClose('okbmPhotoViewer');
+      };
+
       window.addEventListener('message', function(e) {
         if (e.origin !== 'https://www.instagram.com') return;
         var data = e.data;
@@ -8269,12 +8366,20 @@ var overlay = document.getElementById('customModalOverlay');
           }).join('') + '</div>';
         }
         if (photos.length) {
+          var safeId = escapeHtml(String(item.id || ''));
           html += '<div style="display:flex; gap:6px;">' + photos.map(function(u, i) {
-            return '<a href="' + escapeHtml(u) + '" target="_blank" rel="noopener noreferrer" style="display:block; width:64px; height:64px; border-radius:6px; overflow:hidden; border:1px solid rgba(255,255,255,0.12);"><img src="' + escapeHtml(u) + '" alt="근거 사진 ' + (i + 1) + '" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;"></a>';
+            return '<button type="button" data-id="' + safeId + '" data-idx="' + i + '" onclick="window.openInboxEvidencePhoto(this.dataset.id, this.dataset.idx)" aria-label="근거 사진 ' + (i + 1) + ' 크게 보기" style="display:block; width:88px; height:88px; padding:0; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.18); background:#111827; cursor:zoom-in;"><img src="' + escapeHtml(u) + '" alt="근거 사진 ' + (i + 1) + '" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;"></button>';
           }).join('') + '</div>';
         }
         return html + '</div>';
       }
+
+      window.openInboxEvidencePhoto = function(id, idx) {
+        var item = findAdminInboxItem(id, 'correction');
+        if (!item) return;
+        var who = item.author || item.nickname || '';
+        window.okbmOpenPhotoViewer(item.evidence_photos, idx, who ? '근거 사진 · 제보 ' + who : '근거 사진');
+      };
 
       function normalizeInboxItem(row, isCorrection) {
         if (!row) return null;
@@ -8518,6 +8623,65 @@ var overlay = document.getElementById('customModalOverlay');
         await window.renderAdminSpotInboxList();
       };
 
+      // 야영금지 채택 창: 정보창에 붙일 근거 사진을 고르고(기본 전부), 제보 사유를 다듬어 금지 사유로 넣는다.
+      // 고르면 { note, photos, credit }, 취소하면 null
+      function askCampBanEvidence(item, spot) {
+        return new Promise(function(resolve) {
+          var photos = (Array.isArray(item.evidence_photos) ? item.evidence_photos : [])
+            .map(function(u) { return okbmSafeImageUrl(u); }).filter(Boolean).slice(0, 3);
+          var credit = String(item.author || item.nickname || '').trim();
+          var old = document.getElementById('okbmCampBanAsk');
+          if (old) old.remove();
+          var overlay = document.createElement('div');
+          overlay.id = 'okbmCampBanAsk';
+          overlay.style.cssText = 'position:fixed; inset:0; z-index:2147483646; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center; padding:calc(12px + env(safe-area-inset-top, 0px)) 16px calc(12px + env(safe-area-inset-bottom, 0px)); box-sizing:border-box;';
+          var photoHtml = photos.length
+            ? '<div style="margin-top:12px; font-size:0.76rem; font-weight:800; color:#e2e8f0;">정보창에 붙일 근거 사진</div>' +
+              '<div style="margin-top:2px; font-size:0.66rem; color:#94a3b8;">얼굴·차 번호판이 보이는 사진은 빼 주세요. 누르면 크게 봅니다.</div>' +
+              '<div style="margin-top:8px; display:flex; gap:8px;">' + photos.map(function(u, i) {
+                return '<div style="width:88px; flex-shrink:0;">' +
+                  '<button type="button" class="js-ban-zoom" data-idx="' + i + '" aria-label="사진 ' + (i + 1) + ' 크게 보기" style="display:block; width:88px; height:88px; padding:0; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.18); background:#111827; cursor:zoom-in;"><img src="' + escapeHtml(u) + '" alt="근거 사진 ' + (i + 1) + '" style="width:100%; height:100%; object-fit:cover; display:block;"></button>' +
+                  '<label style="display:flex; align-items:center; gap:5px; margin-top:5px; font-size:0.72rem; font-weight:700; color:#e2e8f0; cursor:pointer;"><input type="checkbox" class="js-ban-pick" data-idx="' + i + '" checked style="width:16px; height:16px; accent-color:#e11d48;">붙이기</label>' +
+                '</div>';
+              }).join('') + '</div>' +
+              (credit ? '<div style="margin-top:6px; font-size:0.66rem; color:#fda4af;">정보창에 \'사진 제보 ' + escapeHtml(credit) + '님\'으로 표시됩니다.</div>' : '')
+            : '<div style="margin-top:12px; font-size:0.72rem; color:#94a3b8;">이 건의에는 근거 사진이 없습니다.</div>';
+          overlay.innerHTML =
+            '<div style="width:100%; max-width:400px; max-height:100%; overflow-y:auto; background:#0c1017; border:1px solid rgba(244,63,94,0.45); border-radius:14px; padding:16px; box-sizing:border-box; box-shadow:0 12px 40px rgba(0,0,0,0.5);">' +
+              '<div style="font-size:0.92rem; font-weight:900; color:#fb7185;">야영금지로 채택</div>' +
+              '<div style="margin-top:4px; font-size:0.78rem; font-weight:700; color:#ffffff;">' + escapeHtml(spot.spot_main || spot.name || '') + (spot.spot_sub ? ' · ' + escapeHtml(spot.spot_sub) : '') + '</div>' +
+              '<div style="margin-top:4px; font-size:0.66rem; color:#94a3b8;">뷰·유튜브 등 상세 내용이 가려지고 금지 안내와 근거, LNT 원칙만 보입니다.</div>' +
+              '<div style="margin-top:12px; font-size:0.76rem; font-weight:800; color:#e2e8f0;">금지 사유 <span style="font-weight:600; color:#94a3b8;">(정보창에 그대로 보임 · 200자)</span></div>' +
+              '<textarea class="js-ban-note" maxlength="200" rows="3" style="margin-top:6px; width:100%; box-sizing:border-box; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:#111827; color:#ffffff; font-size:0.8rem; line-height:1.45; resize:vertical;"></textarea>' +
+              photoHtml +
+              '<div style="margin-top:16px; display:flex; gap:8px;">' +
+                '<button type="button" class="js-ban-cancel" style="flex:1; height:42px; border-radius:9px; border:none; background:rgba(255,255,255,0.10); color:#e2e8f0; font-size:0.8rem; font-weight:800; cursor:pointer;">취소</button>' +
+                '<button type="button" class="js-ban-ok" style="flex:2; height:42px; border-radius:9px; border:none; background:#be123c; color:#ffffff; font-size:0.8rem; font-weight:900; cursor:pointer;">야영금지로 채택</button>' +
+              '</div>' +
+            '</div>';
+          // 제보 사유는 value로 넣어야 줄바꿈·따옴표가 그대로 들어간다
+          overlay.querySelector('.js-ban-note').value = String(item.correctionReason || '').trim().slice(0, 200);
+          var finish = function(result) {
+            overlay.remove();
+            if (typeof window.unregisterModalClose === 'function') window.unregisterModalClose('okbmCampBanAsk');
+            resolve(result);
+          };
+          overlay.querySelectorAll('.js-ban-zoom').forEach(function(btn) {
+            btn.onclick = function() { window.okbmOpenPhotoViewer(photos, btn.dataset.idx, credit ? '근거 사진 · 제보 ' + credit : '근거 사진'); };
+          });
+          overlay.querySelector('.js-ban-cancel').onclick = function() { finish(null); };
+          overlay.querySelector('.js-ban-ok').onclick = function() {
+            var picked = [];
+            overlay.querySelectorAll('.js-ban-pick').forEach(function(cb) {
+              if (cb.checked) picked.push(photos[parseInt(cb.dataset.idx, 10)]);
+            });
+            finish({ note: overlay.querySelector('.js-ban-note').value.trim().slice(0, 200), photos: picked.filter(Boolean), credit: credit });
+          };
+          document.body.appendChild(overlay);
+          if (typeof window.registerModalOpen === 'function') window.registerModalOpen('okbmCampBanAsk', function() { finish(null); });
+        });
+      }
+
       window.banSpotFromCorrection = async function(id) {
         var item = findAdminInboxItem(id, 'correction');
         if (!item) return;
@@ -8527,8 +8691,9 @@ var overlay = document.getElementById('customModalOverlay');
           showToast('원래 장소를 찾을 수 없습니다.');
           return;
         }
-        if (!confirm('[' + (spot.spot_main || spot.name || origId) + ']을(를) 야영금지로 표시할까요?\n뷰·유튜브 등 상세 내용이 가려지고 금지 안내와 LNT 원칙만 보입니다.')) return;
-        var ok = await window.setSpotCampBan(origId, true);
+        var choice = await askCampBanEvidence(item, spot);
+        if (!choice) return;
+        var ok = await window.setSpotCampBan(origId, true, choice.note, { photos: choice.photos, credit: choice.credit });
         if (ok && typeof window.updateAdminSpotInboxStatus === 'function') {
           await window.updateAdminSpotInboxStatus(item.id, true, '반영완료', { approved_spot_id: origId });
           if (typeof window.notifyProposalDecision === 'function') {

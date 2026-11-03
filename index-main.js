@@ -4647,7 +4647,7 @@ var adBannersHtml = `
 
       try {
         var supaSpots = null;
-        var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at';
+        var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at,camp_status_photos,camp_status_credit';
 
         if (typeof window.fetchMasterSpotsFromSupabase === 'function') {
           var fetched = await window.fetchMasterSpotsFromSupabase(!!isForce);
@@ -4706,6 +4706,8 @@ var adBannersHtml = `
               camp_status: String(row.camp_status || '').trim(),
               camp_status_note: String(row.camp_status_note || '').trim(),
               camp_status_at: row.camp_status_at || null,
+              camp_status_photos: Array.isArray(row.camp_status_photos) ? row.camp_status_photos.slice(0, 3) : [],
+              camp_status_credit: String(row.camp_status_credit || '').trim(),
               mediaUrls: row.mediaUrls || '',
               lat: row.campsite_lat || row.lat || '',
               lng: row.campsite_lng || row.lng || ''
