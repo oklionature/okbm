@@ -3436,6 +3436,15 @@ function updateSmartResetButtons() {
         return 'https://instagram.com/oklionnature';
       }
 
+      // 정보창 '제보 ○○' 단추. 회원 계정 없는 '관리자' 박지는 프로필 대신 대표 인스타로 보낸다(대표님 11-04).
+      window.okbmOpenSpotAuthor = function(authorName, userId) {
+        if (String(authorName || '').trim() === '관리자' && !String(userId || '').trim()) {
+          try { window.open('https://instagram.com/oklionnature', '_blank', 'noopener,noreferrer'); } catch (e) { console.warn('[map.html:okbmOpenSpotAuthor]', e); }
+          return;
+        }
+        if (typeof window.openUserFeedCollectionModal === 'function') window.openUserFeedCollectionModal(authorName, userId);
+      };
+
       function generateDetailContentHtml(spot, isMobileSheet = false) {
         const sId = String(spot.id).trim();
         const isMember = isUserLoggedIn();
@@ -3516,7 +3525,7 @@ function updateSmartResetButtons() {
                 var authorName = rawAuthor || '오라네';
 
                 return `
-                  <button type="button" data-author="${escapeHtml(authorName)}" data-user-id="${escapeHtml(authorUserId)}" onclick="event.stopPropagation(); if(typeof window.openUserFeedCollectionModal==='function'){ window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId); }" style="display:inline-flex; align-items:center; gap:4px; background:rgba(251,191,36,0.10); border:1px solid rgba(251,191,36,0.38); padding:2px 8px; border-radius:12px; cursor:pointer; flex-shrink:0; margin-left:auto;" title="등록자 정보 보기">
+                  <button type="button" data-author="${escapeHtml(authorName)}" data-user-id="${escapeHtml(authorUserId)}" onclick="event.stopPropagation(); window.okbmOpenSpotAuthor(this.dataset.author, this.dataset.userId);" style="display:inline-flex; align-items:center; gap:4px; background:rgba(251,191,36,0.10); border:1px solid rgba(251,191,36,0.38); padding:2px 8px; border-radius:12px; cursor:pointer; flex-shrink:0; margin-left:auto;" title="등록자 정보 보기">
                     <span style="font-size:0.63rem; color:#f59e0b; font-weight:800;">제보</span>
                     <span style="font-size:0.70rem; color:#fde047; font-weight:900;">${escapeHtml(authorName)}</span>
                   </button>
