@@ -4903,6 +4903,16 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         }
 
         var pool = (typeof spots !== 'undefined' && Array.isArray(spots)) ? spots : [];
+
+        // '홍천 팔봉산'처럼 시·군 글자 없이 다른 지역 이름이 산 이름 앞에 붙어 있으면 다른 산이다(서산 팔봉산에 붙던 것, 11-03)
+        var mainPos = feedNorm.indexOf(main.replace(/\s+/g, ''));
+        var feedHead = mainPos > 0 ? feedNorm.slice(0, mainPos) : '';
+        if (feedHead) {
+          for (var c = 0; c < pool.length; c++) {
+            var oc = okbmPlaceCoreName((pool[c] && (pool[c].cityName || pool[c].city_name)) || '');
+            if (oc && oc.length >= 2 && oc !== cityCore && oc !== regionCore && feedHead.indexOf(oc) !== -1) return false;
+          }
+        }
         var mainKey = main.replace(/\s+/g, '').toLowerCase();
         var feedLower = feedNorm.toLowerCase();
 
