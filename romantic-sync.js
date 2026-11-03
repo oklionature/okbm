@@ -11919,7 +11919,12 @@ function okbmBindNativeExternalLinks() {
   var Browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
   if (!Browser || typeof Browser.open !== 'function') return;
   window.__okbmNativeLinksBound = true;
-  var open = function(url) { Browser.open({ url: url }).catch(function() {}); };
+  // 유튜브는 앱 안 창 대신 유튜브 앱으로(11-03 대표님: 앱 안 창에선 '앱 열기'가 먹통이고 아이폰 앱이 세로 고정이라 가로로 못 봄).
+  // 앱 밖 주소로 페이지를 옮기면 Capacitor가 이동을 막고 휴대폰에 넘긴다 → 유튜브 앱이 있으면 앱, 없으면 사파리·크롬.
+  var open = function(url) {
+    if (/(^|\.)(youtube\.com|youtu\.be)$/i.test(new URL(url).hostname)) { location.assign(url); return; }
+    Browser.open({ url: url }).catch(function() {});
+  };
   document.addEventListener('click', function(e) {
     if (e.defaultPrevented) return;
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
