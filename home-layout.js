@@ -269,6 +269,12 @@
   // 답: ok(저장·공유함) · cancel(닫음) · unsupported(이 앱 화면엔 공유 창이 없음, 안드로이드 앱) · fail
   function gulupdoSave(d, f) {
     var reply = function (r) { try { f.contentWindow.postMessage({ gulupdo: 'saved', id: d.id, r: r }, '*'); } catch (e) {} };
+    // 안드로이드 앱 0.9.2부터: 앱이 직접 사진첩('사진/낭만루트')에 저장한다(웹뷰엔 공유 창이 없어서)
+    var PS = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PhotoSave;
+    if (PS && typeof PS.save === 'function' && window.Capacitor.isPluginAvailable && window.Capacitor.isPluginAvailable('PhotoSave')) {
+      Promise.resolve(PS.save({ data: String(d.src).split(',')[1] || '', name: d.name })).then(function () { reply('ok'); }, function () { reply('fail'); });
+      return;
+    }
     try {
       var bin = atob(String(d.src).split(',')[1] || ''), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
       var file = new File([u], d.name || 'gulupdo.jpg', { type: 'image/jpeg' });
