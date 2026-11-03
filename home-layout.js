@@ -161,7 +161,7 @@
     btn.type = 'button';
     btn.id = 'homeGulupdo';
     btn.className = 'hq-isle okbm-press';
-    btn.innerHTML = '<b><i>NEW</i>굴업도로 떠나기</b><em id="homeGulupdoN">접속 인원 확인 중</em>';
+    btn.innerHTML = '<b><i>NEW</i>굴업도 미리 체험하기</b><em id="homeGulupdoN">접속 인원 확인 중</em>';
     btn.addEventListener('click', openGulupdo);
     quick.insertAdjacentElement('afterend', btn);
     gulupdoCount();
