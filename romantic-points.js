@@ -293,6 +293,11 @@
     if (t.closest('[data-pt-close]')) { var a = document.getElementById('okbmPointsAll'); if (a) a.remove(); return; }
     if (t.closest('[data-pt-open]')) { e.preventDefault(); openSheet(); }
   });
+  // 아래 메뉴바를 누르면 포인트 화면을 닫는다(11-03 대표님: 피드·플랜은 같은 페이지 안 탭 전환이라 맨 위층인 이 화면이 그대로 덮고 있었음)
+  document.addEventListener('click', function (e) {
+    if (!e.target || !e.target.closest || !e.target.closest('#romanticMasterBottomDock')) return;
+    var a = document.getElementById('okbmPointsAll'); if (a) a.remove();
+  }, true);
   document.addEventListener('keydown', function (e) {
     if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.hasAttribute && e.target.hasAttribute('data-pt-open')) { e.preventDefault(); openSheet(); }
   });
