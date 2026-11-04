@@ -2576,7 +2576,8 @@ async function okbmAdminSendNotice(userId, action, tType, relatedId, title, reas
   if (!targetUrl || !headers) return false;
   var what = tType === 'feed' ? '피드' : OKBM_REPORT_TYPES[okbmReportType(tType)].label;
   var name = String(title || '').trim().slice(0, 40);
-  var head = name ? '[' + name + '] ' : '';
+  // 피드 제목은 이미 "[동두천시] 마차산 …"처럼 괄호로 시작해서 한 번 더 감싸지 않는다
+  var head = name ? (name.charAt(0) === '[' ? name + ' · ' : '[' + name + '] ') : '';
   var row;
   if (action === 'dismiss') {
     row = { kind: 'admin_report_dismissed', title: '신고한 글을 확인했어요', body: head + '신고한 글을 확인했는데 규칙 위반이 아니라 그대로 뒀어요. 알려 주셔서 고마워요.' };
