@@ -188,7 +188,7 @@
     if (!document.hidden) {
       fetch(GULUPDO_URL + 'count', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
         var n = d && Number(d.n);
-        if (n >= 0 && document.getElementById('homeGulupdoN')) em.textContent = n > 0 ? '지금 ' + n + '명 접속 중' : '서버 원활';   // 15점은 누르면 확인 창에 나와서 뺌(11-02 대표님). 11-03 대표님: 0명이면 아무도 없어 보여 안 들어올 수 있음 → '서버 원활'
+        if (n >= 0 && document.getElementById('homeGulupdoN')) em.textContent = n >= 10 ? '지금 ' + n + '명 접속 중' : '서버 원활';   // 15점은 누르면 확인 창에 나와서 뺌(11-02 대표님). 11-03 대표님: 0명이면 아무도 없어 보여 안 들어올 수 있음 → '서버 원활'. 11-04 대표님: 10명 미만도 '서버 원활', 10명부터 숫자
       }).catch(function () {});
     }
     gulupdoCountT = setTimeout(gulupdoCount, 30000);
