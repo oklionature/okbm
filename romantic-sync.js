@@ -2561,9 +2561,9 @@ window.okbmAdminInspectDeleteFeed = async function(feedId, targetType, notice) {
   window.closeOpenUgcFeedModals({});
   if (typeof window.rerenderCommunityFeedsNow === 'function') window.rerenderCommunityFeedsNow();
   var sentDel = notice ? await okbmAdminSendNotice(notice.owner, 'delete', tType, sId, notice.title, notice.reason) : false;
-  await Promise.all(reporters.map(function(u) { return okbmAdminSendNotice(u, 'report_delete', tType, sId, notice && notice.title, ''); }));
+  var paidDel = await okbmAdminNotifyReporters(reporters, 'delete', tType, sId, notice && notice.title, notice && notice.reward);
   await window.okbmRenderAdminReportInspectorList();
-  if (typeof showToast === 'function') showToast(notice && !sentDel ? '삭제했지만 글쓴이 알림은 보내지 못했어요.' : (notice ? '삭제하고 글쓴이·신고한 사람에게 알렸어요.' : '삭제했습니다.'), notice && !sentDel ? 'warn' : 'success', 2000);
+  if (typeof showToast === 'function') showToast(notice && !sentDel ? '삭제했지만 글쓴이 알림은 보내지 못했어요.' : (notice ? '삭제하고 글쓴이·신고한 사람에게 알렸어요.' + (paidDel ? ' 보상 ' + paidDel + '명.' : '') : '삭제했습니다.'), notice && !sentDel ? 'warn' : 'success', 2000);
 };
 
 // 검수함 처리 알림(user_notifications, 관리자 INSERT는 RLS가 허용). kind는 admin_ 로 시작한다.
@@ -2581,6 +2581,9 @@ async function okbmAdminSendNotice(userId, action, tType, relatedId, title, reas
   var row;
   if (action === 'dismiss') {
     row = { kind: 'admin_report_dismissed', title: '신고한 글을 확인했어요', body: head + '신고한 글을 확인했는데 규칙 위반이 아니라 그대로 뒀어요. 알려 주셔서 고마워요.' };
+  } else if (action === 'reward_hide' || action === 'reward_delete') {
+    // 신고 보상 100점과 함께 가는 알림(대표님 11-04 B안을 사유와 상관없이 쓰게 일반화)
+    row = { kind: 'admin_report_reward', title: '고마운 마음을 낭만 포인트 100점으로 드려요', body: head + '신고해 주신 글을 확인해 ' + (action === 'reward_hide' ? '비공개로 바꿨어요' : '삭제했어요') + '. 함께 지켜 주셔서 고마워요.' };
   } else if (action === 'report_hide' || action === 'report_delete') {
     // 신고한 사람에게 가는 처리 결과(대표님 11-04: 검수함에서 처리하면 신고한 사람도 결과를 알게)
     row = { kind: 'admin_report_actioned', title: '신고한 글을 처리했어요', body: head + '신고해 주신 글을 ' + (action === 'report_hide' ? '비공개로 바꿨어요' : '삭제했어요') + '. 알려 주셔서 고마워요.' };
@@ -2604,6 +2607,28 @@ async function okbmAdminSendNotice(userId, action, tType, relatedId, title, reas
     console.warn('[romantic-sync.js:okbmAdminSendNotice]', e);
     return false;
   }
+}
+
+// 신고한 사람들에게 처리 결과를 알린다. reward면 낭만 포인트 100점(운영자 지급, H33)을 먼저 주고 보상 알림을 보낸다.
+// 지급이 안 되면 보상 없이 결과 알림만 보낸다. 지급한 사람 수를 돌려준다.
+async function okbmAdminNotifyReporters(reporters, act, tType, id, title, reward) {
+  var paid = 0;
+  await Promise.all((reporters || []).map(async function(u) {
+    var ok = false;
+    if (reward && window.supabaseClient && typeof window.supabaseClient.rpc === 'function') {
+      try {
+        var name = String(title || '').trim().slice(0, 40);
+        var adj = await window.supabaseClient.rpc('okbm_admin_points_adjust', { p_user_id: u, p_delta: 100, p_note: '신고 보상' + (name ? '(' + name + ')' : '') });
+        ok = !adj.error;
+        if (adj.error) console.warn('[romantic-sync.js:okbmAdminNotifyReporters points]', adj.error);
+      } catch (e) {
+        console.warn('[romantic-sync.js:okbmAdminNotifyReporters points]', e);
+      }
+    }
+    if (ok) paid++;
+    await okbmAdminSendNotice(u, (ok ? 'reward_' : 'report_') + act, tType, id, title, '');
+  }));
+  return paid;
 }
 
 // 그 글에 아직 처리 안 된 신고를 한 사람들(중복 없이). 비공개·삭제 결과를 알리려고 처리 전에 모은다.
@@ -2640,6 +2665,8 @@ window.okbmAdminInspectAskReason = function(btn) {
     '<span style="font-size:0.90rem; font-weight:900; color:#ffffff;">' + (isHide ? '비공개로 전환' : '게시글 즉시 삭제') + '</span>' +
     '<p style="font-size:0.72rem; color:#94a3b8; line-height:1.45; margin:0;">적은 사유는 글쓴이에게 알림으로 가요.</p>' +
     '<textarea maxlength="200" rows="3" placeholder="사유를 적어 주세요" style="width:100%; box-sizing:border-box; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.18); border-radius:10px; color:#e2e8f0; font-size:16px; line-height:1.45; padding:10px 12px; resize:none; font-family:inherit;"></textarea>' +
+    // 신고 보상(대표님 11-04): 신고한 사람마다 낭만 포인트 100점 + 보상 알림
+    '<label style="display:flex; align-items:center; gap:8px; font-size:0.76rem; color:#e2e8f0; font-weight:700; cursor:pointer;"><input type="checkbox" data-x="reward" checked style="width:18px; height:18px; accent-color:#f87171;">신고한 사람에게 낭만 포인트 100점 드리기</label>' +
     '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">' +
       '<button type="button" data-x="cancel" style="height:40px; background:rgba(255,255,255,0.06); border:none; border-radius:10px; color:#94a3b8; font-size:0.80rem; font-weight:800; cursor:pointer;">취소</button>' +
       '<button type="button" data-x="ok" style="height:40px; background:#f87171; border:none; border-radius:10px; color:#0b0b0b; font-size:0.80rem; font-weight:900; cursor:pointer;">' + (isHide ? '비공개로 바꾸기' : '삭제하기') + '</button>' +
@@ -2653,7 +2680,7 @@ window.okbmAdminInspectAskReason = function(btn) {
     var reason = ta.value.trim();
     if (!reason) { if (typeof showToast === 'function') showToast('사유를 적어 주세요.', 'info', 1800); ta.focus(); return; }
     sheet.remove();
-    var notice = { owner: d.owner, title: d.title, reason: reason };
+    var notice = { owner: d.owner, title: d.title, reason: reason, reward: !!sheet.querySelector('[data-x="reward"]').checked };
     if (isHide) window.okbmAdminInspectHideFeed(d.feedId, notice);
     else window.okbmAdminInspectDeleteFeed(d.feedId, d.targetType, notice);
   };
@@ -2697,9 +2724,9 @@ window.okbmAdminInspectHideFeed = async function(feedId, notice) {
   }
   if (typeof window.rerenderCommunityFeedsNow === 'function') window.rerenderCommunityFeedsNow();
   var sent = await okbmAdminSendNotice(notice && notice.owner, 'hide', 'feed', sId, notice && notice.title, notice && notice.reason);
-  await Promise.all(reporters.map(function(u) { return okbmAdminSendNotice(u, 'report_hide', 'feed', sId, notice && notice.title, ''); }));
+  var paidHide = await okbmAdminNotifyReporters(reporters, 'hide', 'feed', sId, notice && notice.title, notice && notice.reward);
   await window.okbmRenderAdminReportInspectorList();
-  if (typeof showToast === 'function') showToast(sent ? '비공개로 바꾸고 글쓴이·신고한 사람에게 알렸어요.' : '비공개로 바꿨지만 글쓴이 알림은 보내지 못했어요.', sent ? 'success' : 'warn', 2000);
+  if (typeof showToast === 'function')  showToast(sent ? '비공개로 바꾸고 글쓴이·신고한 사람에게 알렸어요.' + (paidHide ? ' 보상 ' + paidHide + '명.' : '') : '비공개로 바꿨지만 글쓴이 알림은 보내지 못했어요.', sent ? 'success' : 'warn', 2000);
 };
 
 window.okbmAdminInspectDismissReport = async function(reportId, meta) {
