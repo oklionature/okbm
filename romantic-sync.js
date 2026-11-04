@@ -12145,8 +12145,27 @@ function okbmBindNativeExternalLinks() {
   window.__okbmNativeLinksBound = true;
   // 유튜브는 앱 안 창 대신 유튜브 앱으로(11-03 대표님: 앱 안 창에선 '앱 열기'가 먹통이고 아이폰 앱이 세로 고정이라 가로로 못 봄).
   // 앱 밖 주소로 페이지를 옮기면 Capacitor가 이동을 막고 휴대폰에 넘긴다 → 유튜브 앱이 있으면 앱, 없으면 사파리·크롬.
+  // 11-05: https 주소로 옮기면 앱 안 창으로 열리는 기기가 있어(앱 열기·확대 먹통), 유튜브 앱 주소(youtube:// · vnd.youtube:)로 직접 넘긴다.
+  // 1.5초 안에 앱이 안 떠서 화면이 그대로면(유튜브 앱 없음) 예전처럼 https로 넘긴다.
+  var openYouTube = function(url) {
+    var u = new URL(url), id = '';
+    var m = u.pathname.match(/^\/(?:shorts|live|embed|v)\/([\w-]{11})/);
+    if (u.hostname.replace(/^www\./, '') === 'youtu.be') id = u.pathname.slice(1, 12);
+    else id = u.searchParams.get('v') || (m ? m[1] : '');
+    if (!/^[\w-]{11}$/.test(id)) { location.assign(url); return; }
+    var plat = window.Capacitor && typeof window.Capacitor.getPlatform === 'function' ? window.Capacitor.getPlatform() : '';
+    var scheme = plat === 'android' ? ('vnd.youtube:' + id) : ('youtube://www.youtube.com/watch?v=' + id);
+    var left = false;
+    var onHide = function() { if (document.hidden) left = true; };
+    document.addEventListener('visibilitychange', onHide);
+    location.href = scheme;
+    setTimeout(function() {
+      document.removeEventListener('visibilitychange', onHide);
+      if (!left && !document.hidden) location.assign('https://www.youtube.com/watch?v=' + id);
+    }, 1500);
+  };
   var open = function(url) {
-    if (/(^|\.)(youtube\.com|youtu\.be)$/i.test(new URL(url).hostname)) { location.assign(url); return; }
+    if (/(^|\.)(youtube\.com|youtu\.be)$/i.test(new URL(url).hostname)) { openYouTube(url); return; }
     Browser.open({ url: url }).catch(function() {});
   };
   document.addEventListener('click', function(e) {
