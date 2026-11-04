@@ -3697,6 +3697,7 @@
         e.preventDefault();
         const yid = youtubeId('https://youtu.be/' + String(t.dataset.yt || ''));
         if (!yid) break;
+        if (window.okbmOpenYouTubeOutside && window.okbmOpenYouTubeOutside(yid)) break;   // 앱이면 유튜브 앱으로(11-05)
         if (item && !item.classList.contains('open')) {
           if (item.parentElement) {
             Array.prototype.forEach.call(item.parentElement.children, function (n) {
@@ -3726,6 +3727,7 @@
         const box = t.closest('[data-yt]');
         const yid = box ? youtubeId('https://youtu.be/' + box.dataset.yt) : '';
         if (!yid) break;
+        if (window.okbmOpenYouTubeOutside && window.okbmOpenYouTubeOutside(yid)) break;   // 앱이면 유튜브 앱으로(11-05)
         box.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + yid + '?autoplay=1&playsinline=1&rel=0" title="YouTube 영상" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
         break;
       }

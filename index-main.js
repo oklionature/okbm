@@ -2178,7 +2178,29 @@ var adBannersHtml = `
 
       var rawId = item.videoId || extractYouTubeVideoId(item.videoUrl);
       var embedUrl = rawId ? ('https://www.youtube-nocookie.com/embed/' + rawId + '?playsinline=1&rel=0&autoplay=0') : '';
-      if (iframe) iframe.src = embedUrl;
+      // 앱(Capacitor)에선 임베드 대신 '유튜브 앱에서 보기' 판을 깐다: 임베드 창엔 앱 열기·전체 화면이 안 먹는다(11-05 대표님).
+      var playerBox = document.getElementById('videoModalPlayerBox');
+      var appOpen = document.getElementById('videoModalAppOpen');
+      var inApp = !!(rawId && typeof okbmIsCapacitorNative === 'function' && okbmIsCapacitorNative());
+      if (inApp && playerBox) {
+        if (!appOpen) {
+          appOpen = document.createElement('button');
+          appOpen.type = 'button';
+          appOpen.id = 'videoModalAppOpen';
+          appOpen.setAttribute('aria-label', '유튜브 앱에서 보기');
+          appOpen.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; border:0; padding:0; margin:0; cursor:pointer; z-index:2; background:#000 center/cover no-repeat; display:flex; align-items:center; justify-content:center;';
+          appOpen.innerHTML = '<span style="display:flex; align-items:center; gap:8px; padding:10px 16px; border-radius:999px; background:rgba(12,16,23,0.82); color:#fff; font-size:0.86rem; font-weight:800;"><svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="#fff"><polygon points="8 5 19 12 8 19 8 5"/></svg>유튜브 앱에서 보기</span>';
+          appOpen.addEventListener('click', function() { if (window.okbmOpenYouTubeOutside) window.okbmOpenYouTubeOutside(appOpen.dataset.vid); });
+          playerBox.appendChild(appOpen);
+        }
+        appOpen.dataset.vid = rawId;
+        appOpen.style.backgroundImage = 'url(https://img.youtube.com/vi/' + rawId + '/hqdefault.jpg)';
+        appOpen.style.display = 'flex';
+        if (iframe) iframe.src = '';
+      } else {
+        if (appOpen) appOpen.style.display = 'none';
+        if (iframe) iframe.src = embedUrl;
+      }
       if (modal) modal.style.display = 'flex';
     }
 
