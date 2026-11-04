@@ -258,12 +258,56 @@
     var App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App, appL = null;
     if (App && typeof App.addListener === 'function') { try { Promise.resolve(App.addListener('appStateChange', function (st) { post(st && st.isActive ? 'resume' : 'pause'); })).then(function (h) { appL = h; }); } catch (e) {} }
     var close = function () { if (!w.parentNode) return; if (!confirm('굴업도에서 나갈까요?')) return; w.remove(); document.documentElement.style.overflow = ''; if (dock) dock.style.removeProperty('display'); window.removeEventListener('popstate', onBack); window.removeEventListener('message', onMsg); document.removeEventListener('visibilitychange', onVis); if (appL && appL.remove) appL.remove(); gulupdoCount(); };
-    var onBack = function () { if (w.parentNode) { history.pushState({ gulupdo: 1 }, ''); close(); } };   // 안드로이드 뒤로 가기도 닫기로
+    var onBack = function () { if (!w.parentNode) return; history.pushState({ gulupdo: 1 }, ''); if (w.dataset.under) { var L = gulupdoOver(w).filter(function (n) { return !/^gulupdoSheet/.test(n.id); }); if (L.length) L[L.length - 1].remove(); return; } close(); };   // 프로필 창이 위에 있으면 뒤로 가기는 그 창만 닫는다   // 안드로이드 뒤로 가기도 닫기로
     // 닫기는 게임 오른쪽 위 '나가기'(게임이 알려 줌)·안드로이드 뒤로 가기
-    var onMsg = function (e) { if (e.source !== f.contentWindow || !e.data) return; if (e.data.gulupdo === 'close') close(); else if (e.data.gulupdo === 'save') gulupdoSave(e.data, f); };
+    var onMsg = function (e) { if (e.source !== f.contentWindow || !e.data) return; if (e.data.gulupdo === 'close') close(); else if (e.data.gulupdo === 'save') gulupdoSave(e.data, f); else if (e.data.gulupdo === 'profile') gulupdoProfile(e.data, w); };
     window.addEventListener('message', onMsg);
     w.appendChild(f); document.body.appendChild(w); document.documentElement.style.overflow = 'hidden';
     try { history.pushState({ gulupdo: 1 }, ''); window.addEventListener('popstate', onBack); } catch (e) {}
+  }
+  // 11-04 대표님: 게임에서 상대를 눌러 [프로필 보기] → 앱 프로필 창(피드에서 이름 누르면 뜨는 그 창)을 게임 위에 띄운다.
+  // 게임 틀이 맨 위층이라, 그동안 새로 뜬 창들 바로 아래로 틀을 내리고, 그 창들이 다 닫히면 다시 맨 위로
+  function gulupdoOver(w) {
+    var before = w._before || [];
+    return Array.prototype.filter.call(document.body.children, function (n) {
+      if (n === w || before.indexOf(n) >= 0) return false;
+      var s = getComputedStyle(n); return s.position === 'fixed' && s.display !== 'none' && s.visibility !== 'hidden' && n.getBoundingClientRect().height > 0;   // 빈 알림 상자(높이 0)는 안 셈
+    });
+  }
+  function gulupdoProfile(d, w) {
+    if (!d.uid || w.dataset.under || typeof window.openUserFeedCollectionModal !== 'function') return;
+    w._before = Array.prototype.slice.call(document.body.children); w.dataset.under = '1';
+    var t0 = Date.now(), seen = false;
+    window.openUserFeedCollectionModal(String(d.nick || ''), String(d.uid)); gulupdoSheet(w);
+    (function tick() {
+      if (!w.parentNode) return;
+      gulupdoSheet(w);
+      var L = gulupdoOver(w);
+      if (L.length) { seen = true; var z = Math.min.apply(null, L.map(function (n) { return parseInt(getComputedStyle(n).zIndex, 10) || 1000; })); w.style.zIndex = String(Math.max(1, z - 1)); }
+      else if (seen || Date.now() - t0 > 8000) { w.style.zIndex = '2147483647'; delete w.dataset.under; w._before = null; return; }
+      setTimeout(tick, 400);
+    })();
+  }
+  // 11-04 대표님(시안 A): 게임 위에선 프로필을 화면 아래 반쪽 창으로. 위쪽엔 게임이 어둡게 보이고, 오른쪽 위 X나 어두운 곳을 누르면 닫힘.
+  // 프로필 창(romantic-history.js)은 그대로 두고 자리만 바꾼다. 프로필 창이 메뉴바를 다시 켜므로(ensureMasterBottomDock) 게임 동안엔 계속 숨긴다
+  function gulupdoSheet(w) {
+    var dock = document.getElementById('romanticMasterBottomDock'); if (dock) dock.style.setProperty('display', 'none', 'important');
+    var m = document.getElementById('userFeedCollectionModal'), bg = document.getElementById('gulupdoSheetBg'), x = document.getElementById('gulupdoSheetX');
+    if (!m) { if (bg) bg.remove(); if (x) x.remove(); return; }
+    var z = parseInt(getComputedStyle(m).zIndex, 10) || 2147483642;
+    if (!m.dataset.gsheet) {
+      m.dataset.gsheet = '1';
+      [['top', '44%'], ['bottom', '0'], ['border-radius', '16px 16px 0 0'], ['overflow', 'hidden']].forEach(function (p) { m.style.setProperty(p[0], p[1], 'important'); });
+    }
+    var shut = function () { gulupdoOver(w).forEach(function (n) { n.remove(); }); };
+    if (!bg) { bg = document.createElement('div'); bg.id = 'gulupdoSheetBg'; bg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);'; bg.onclick = shut; document.body.appendChild(bg); }
+    if (!x) {
+      x = document.createElement('button'); x.id = 'gulupdoSheetX'; x.type = 'button'; x.setAttribute('aria-label', '닫기'); x.onclick = shut;
+      x.style.cssText = 'position:fixed;right:12px;top:calc(44% - 48px);width:38px;height:38px;padding:0;border:0;border-radius:50%;background:#f2e6c9;box-shadow:0 2px 8px rgba(0,0,0,.35);display:grid;place-items:center;cursor:pointer;';
+      x.innerHTML = '<svg viewBox="0 0 12 12" width="14" height="14" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="#1b2233" stroke-width="2" stroke-linecap="round"/></svg>';
+      document.body.appendChild(x);
+    }
+    bg.style.zIndex = String(z - 1); x.style.zIndex = String(z + 1);
   }
   // 게임 사진 '공유하기'(11-03 대표님: 앱에서 눌러도 반응 없고 저장 안 됨 → 공유 창 하나로): 틀 안에서 공유 창이 막히면 게임이 사진을 넘기고, 여기(앱 화면)서 공유 창을 연다.
   // 답: ok(저장·공유함) · cancel(닫음) · unsupported(이 앱 화면엔 공유 창이 없음, 안드로이드 앱) · fail
