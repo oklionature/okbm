@@ -2333,9 +2333,9 @@ window.okbmRenderAdminReportInspectorList = async function() {
     var preview = { feed: {}, lounge_post: {}, lounge_comment: {}, spot_review: {} };
     var previewSpecs = [
       ['feed', 'feeds', 'id,spot,user_id', function(f) { return { title: String(f.spot || '').trim(), uid: String(f.user_id || '') }; }],
-      ['lounge_post', 'lounge_posts', 'id,title,body,nickname', function(f) { return { title: String(f.title || '').trim(), body: String(f.body || '').trim(), who: f.nickname }; }],
-      ['lounge_comment', 'lounge_post_comments', 'id,post_id,body,nickname', function(f) { return { title: String(f.body || '').trim(), postId: String(f.post_id || ''), who: f.nickname }; }],
-      ['spot_review', 'comments', 'id,spot_id,rating,text,nickname', function(f) { return { title: '★' + (f.rating || '') + ' ' + String(f.text || '').trim(), spotId: String(f.spot_id || ''), who: f.nickname }; }]
+      ['lounge_post', 'lounge_posts', 'id,title,body,nickname,user_id', function(f) { return { title: String(f.title || '').trim(), body: String(f.body || '').trim(), who: f.nickname, uid: String(f.user_id || '') }; }],
+      ['lounge_comment', 'lounge_post_comments', 'id,post_id,body,nickname,user_id', function(f) { return { title: String(f.body || '').trim(), postId: String(f.post_id || ''), who: f.nickname, uid: String(f.user_id || '') }; }],
+      ['spot_review', 'comments', 'id,spot_id,rating,text,nickname,user_id', function(f) { return { title: '★' + (f.rating || '') + ' ' + String(f.text || '').trim(), spotId: String(f.spot_id || ''), who: f.nickname, uid: String(f.user_id || '') }; }]
     ];
     await Promise.all(previewSpecs.map(async function(spec) {
       var ids = idsByType[spec[0]];
@@ -2394,6 +2394,9 @@ window.okbmRenderAdminReportInspectorList = async function() {
       var reason = String((r && (r.reason_label || r.reason)) || '').trim();
       var title = (info && info.title) || (tType === 'feed' ? fid : '(이미 지워진 ' + OKBM_REPORT_TYPES[tType].label + ')');
       var when = okbmFormatReportTime(r && r.created_at);
+      // 비공개·삭제 때 글쓴이에게 알림을 보내려고 글쓴이 id와 제목을 단추에 싣는다
+      var ownerId = String((r && r.reported_user_id) || (info && info.uid) || '').trim();
+      var actData = ' data-feed-id="' + okbmEscapeUgcAttr(fid) + '" data-target-type="' + okbmEscapeUgcAttr(tType) + '" data-owner="' + okbmEscapeUgcAttr(ownerId) + '" data-title="' + okbmEscapeUgcAttr(title) + '"';
       // 열람: 피드는 피드 창, 라운지 글·댓글은 라운지 창의 그 글, 박지 후기는 지도에서 그 박지
       var openId = tType === 'lounge_comment' ? ((info && info.postId) || '') : (tType === 'spot_review' ? ((info && info.spotId) || '') : fid);
       var openLabel = tType === 'feed' ? '피드 열람' : (tType === 'spot_review' ? '박지 열기' : '글 열람');
@@ -2411,10 +2414,14 @@ window.okbmRenderAdminReportInspectorList = async function() {
         (r && r.reporter_id ? '<div style="font-size:0.66rem; color:#fca5a5; margin-top:3px;">신고한 사람: ' + okbmEscapeUgcAttr(nickOf(r.reporter_id)) + '</div>' : '') +
         (fid && (info || tType === 'feed') && title !== fid ? '<div style="font-size:0.58rem; color:#64748b; margin-top:2px; font-family:var(--font-mono);">' + okbmEscapeUgcAttr(fid) + '</div>' : '') +
         (when ? '<div style="font-size:0.62rem; color:#64748b; margin-top:4px;">' + when + '</div>' : '') +
-        '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:10px;">' +
+        '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px;">' +
           '<button type="button" data-feed-id="' + okbmEscapeUgcAttr(openId) + '" data-target-type="' + okbmEscapeUgcAttr(tType) + '" onclick="window.okbmAdminInspectOpenFeed(this.dataset.feedId, this.dataset.targetType);" style="' + btn + '"' + (openId ? '' : ' disabled') + '>' + openLabel + '</button>' +
-          '<button type="button" data-feed-id="' + okbmEscapeUgcAttr(fid) + '" data-target-type="' + okbmEscapeUgcAttr(tType) + '" onclick="window.okbmAdminInspectDeleteFeed(this.dataset.feedId, this.dataset.targetType);" style="' + btn + '">게시글 즉시 삭제</button>' +
-          '<button type="button" data-report-id="' + okbmEscapeUgcAttr(rid) + '" onclick="window.okbmAdminInspectDismissReport(this.dataset.reportId);" style="' + btn + '">신고 기각</button>' +
+          // 비공개는 공개/비공개가 있는 피드만(라운지 글·후기는 삭제만)
+          (tType === 'feed'
+            ? '<button type="button" data-act="hide"' + actData + ' onclick="window.okbmAdminInspectAskReason(this);" style="' + btn + '">비공개로 전환</button>'
+            : '<span></span>') +
+          '<button type="button" data-act="delete"' + actData + ' onclick="window.okbmAdminInspectAskReason(this);" style="' + btn + '">게시글 즉시 삭제</button>' +
+          '<button type="button" data-report-id="' + okbmEscapeUgcAttr(rid) + '" data-reporter="' + okbmEscapeUgcAttr((r && r.reporter_id) || '') + '" data-title="' + okbmEscapeUgcAttr(title) + '" data-target-type="' + okbmEscapeUgcAttr(tType) + '" onclick="window.okbmAdminInspectDismissReport(this.dataset.reportId, this.dataset);" style="' + btn + '">신고 기각</button>' +
         '</div>' +
       '</div>';
     }).join('');
@@ -2467,12 +2474,14 @@ window.okbmAdminInspectOpenFeed = async function(feedId, targetType) {
   }
 };
 
-window.okbmAdminInspectDeleteFeed = async function(feedId, targetType) {
+window.okbmAdminInspectDeleteFeed = async function(feedId, targetType, notice) {
   if (!(await window.okbmRefreshAdminFlagFromServer())) return;
   var sId = String(feedId || '').trim();
   if (!sId) return;
   var tType = okbmReportType(targetType);
-  if (!confirm('이 ' + OKBM_REPORT_TYPES[tType].label + '을(를) 삭제할까요?')) return;
+  // 검수함 사유 창(okbmAdminInspectAskReason)에서 오면 이미 확인을 받았다
+  if (!notice && !confirm('이 ' + OKBM_REPORT_TYPES[tType].label + '을(를) 삭제할까요?')) return;
+  var reporters = notice ? await okbmAdminPendingReporters(tType, sId) : [];
 
   var del = { ok: false };
   if (tType !== 'feed') {
@@ -2551,11 +2560,148 @@ window.okbmAdminInspectDeleteFeed = async function(feedId, targetType) {
   }
   window.closeOpenUgcFeedModals({});
   if (typeof window.rerenderCommunityFeedsNow === 'function') window.rerenderCommunityFeedsNow();
+  var sentDel = notice ? await okbmAdminSendNotice(notice.owner, 'delete', tType, sId, notice.title, notice.reason) : false;
+  await Promise.all(reporters.map(function(u) { return okbmAdminSendNotice(u, 'report_delete', tType, sId, notice && notice.title, ''); }));
   await window.okbmRenderAdminReportInspectorList();
-  if (typeof showToast === 'function') showToast('삭제했습니다.', 'success', 1600);
+  if (typeof showToast === 'function') showToast(notice && !sentDel ? '삭제했지만 글쓴이 알림은 보내지 못했어요.' : (notice ? '삭제하고 글쓴이·신고한 사람에게 알렸어요.' : '삭제했습니다.'), notice && !sentDel ? 'warn' : 'success', 2000);
 };
 
-window.okbmAdminInspectDismissReport = async function(reportId) {
+// 검수함 처리 알림(user_notifications, 관리자 INSERT는 RLS가 허용). kind는 admin_ 로 시작한다.
+// 문구(대표님 11-04 A안): "운영팀이 내 피드를 비공개로 바꿨어요" / "[제목] 피드가 운영 규칙에 맞지 않아 비공개로 바꿨어요. 사유: …"
+async function okbmAdminSendNotice(userId, action, tType, relatedId, title, reason) {
+  var uid = String(userId || '').trim();
+  if (!uid) return false;
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var headers = okbmWriteRestHeaders({ Prefer: 'return=minimal' });
+  if (!targetUrl || !headers) return false;
+  var what = tType === 'feed' ? '피드' : OKBM_REPORT_TYPES[okbmReportType(tType)].label;
+  var name = String(title || '').trim().slice(0, 40);
+  var head = name ? '[' + name + '] ' : '';
+  var row;
+  if (action === 'dismiss') {
+    row = { kind: 'admin_report_dismissed', title: '신고한 글을 확인했어요', body: head + '신고한 글을 확인했는데 규칙 위반이 아니라 그대로 뒀어요. 알려 주셔서 고마워요.' };
+  } else if (action === 'report_hide' || action === 'report_delete') {
+    // 신고한 사람에게 가는 처리 결과(대표님 11-04: 검수함에서 처리하면 신고한 사람도 결과를 알게)
+    row = { kind: 'admin_report_actioned', title: '신고한 글을 처리했어요', body: head + '신고해 주신 글을 ' + (action === 'report_hide' ? '비공개로 바꿨어요' : '삭제했어요') + '. 알려 주셔서 고마워요.' };
+  } else {
+    var done = action === 'hide' ? '비공개로 바꿨어요' : '삭제했어요';
+    row = { kind: action === 'hide' ? 'admin_feed_hidden' : 'admin_content_deleted', title: '운영팀이 내 ' + what + '을(를) ' + done, body: head + what + '이(가) 운영 규칙에 맞지 않아 ' + done.replace('어요', '어요.') + ' 사유: ' + String(reason || '').trim() };
+  }
+  row.title = row.title.replace('피드을(를)', '피드를').replace('글을(를)', '글을').replace('댓글을(를)', '댓글을').replace('후기을(를)', '후기를');
+  row.body = row.body.replace('피드이(가)', '피드가').replace('글이(가)', '글이').replace('댓글이(가)', '댓글이').replace('후기이(가)', '후기가');
+  row.id = 'adm_' + action + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+  row.user_id = uid;
+  row.related_id = String(relatedId || '');
+  row.related_spot_id = '';
+  row.related_spot_name = '';
+  row.is_read = false;
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/user_notifications', { method: 'POST', headers: headers, body: JSON.stringify(row) });
+    if (!res.ok) console.warn('[romantic-sync.js:okbmAdminSendNotice]', res.status, await res.text());
+    return res.ok;
+  } catch (e) {
+    console.warn('[romantic-sync.js:okbmAdminSendNotice]', e);
+    return false;
+  }
+}
+
+// 그 글에 아직 처리 안 된 신고를 한 사람들(중복 없이). 비공개·삭제 결과를 알리려고 처리 전에 모은다.
+async function okbmAdminPendingReporters(tType, id) {
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  if (!targetUrl || !id) return [];
+  var typeFilter = okbmReportType(tType) === 'feed' ? 'or=(target_type.eq.feed,target_type.is.null)&' : 'target_type=eq.' + encodeURIComponent(tType) + '&';
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/feed_reports?' + typeFilter + 'feed_id=eq.' + encodeURIComponent(id) + '&status=eq.pending&select=reporter_id', { headers: okbmUgcRestHeaders() });
+    var rows = res.ok ? await res.json() : [];
+    var out = [];
+    (Array.isArray(rows) ? rows : []).forEach(function(r) {
+      var u = String((r && r.reporter_id) || '').trim();
+      if (u && out.indexOf(u) === -1) out.push(u);
+    });
+    return out;
+  } catch (e) {
+    console.warn('[romantic-sync.js:okbmAdminPendingReporters]', e);
+    return [];
+  }
+}
+
+// 비공개·삭제 전에 사유를 꼭 받는다(대표님 11-04). 사유는 글쓴이 알림에 들어간다.
+window.okbmAdminInspectAskReason = function(btn) {
+  var d = (btn && btn.dataset) || {};
+  var isHide = d.act === 'hide';
+  var old = document.getElementById('adminReasonSheet');
+  if (old) old.remove();
+  var sheet = document.createElement('div');
+  sheet.id = 'adminReasonSheet';
+  sheet.style.cssText = 'position:fixed; inset:0; z-index:2147483646 !important; background:rgba(0,0,0,0.78); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+  sheet.onclick = function(e) { if (e.target === sheet) sheet.remove(); };
+  sheet.innerHTML = '<div style="width:100%; max-width:340px; background:#080b11; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:16px; box-sizing:border-box; display:flex; flex-direction:column; gap:10px;">' +
+    '<span style="font-size:0.90rem; font-weight:900; color:#ffffff;">' + (isHide ? '비공개로 전환' : '게시글 즉시 삭제') + '</span>' +
+    '<p style="font-size:0.72rem; color:#94a3b8; line-height:1.45; margin:0;">적은 사유는 글쓴이에게 알림으로 가요.</p>' +
+    '<textarea maxlength="200" rows="3" placeholder="사유를 적어 주세요" style="width:100%; box-sizing:border-box; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.18); border-radius:10px; color:#e2e8f0; font-size:16px; line-height:1.45; padding:10px 12px; resize:none; font-family:inherit;"></textarea>' +
+    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">' +
+      '<button type="button" data-x="cancel" style="height:40px; background:rgba(255,255,255,0.06); border:none; border-radius:10px; color:#94a3b8; font-size:0.80rem; font-weight:800; cursor:pointer;">취소</button>' +
+      '<button type="button" data-x="ok" style="height:40px; background:#f87171; border:none; border-radius:10px; color:#0b0b0b; font-size:0.80rem; font-weight:900; cursor:pointer;">' + (isHide ? '비공개로 바꾸기' : '삭제하기') + '</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(sheet);
+  var ta = sheet.querySelector('textarea');
+  ta.focus();
+  sheet.querySelector('[data-x="cancel"]').onclick = function() { sheet.remove(); };
+  sheet.querySelector('[data-x="ok"]').onclick = function() {
+    var reason = ta.value.trim();
+    if (!reason) { if (typeof showToast === 'function') showToast('사유를 적어 주세요.', 'info', 1800); ta.focus(); return; }
+    sheet.remove();
+    var notice = { owner: d.owner, title: d.title, reason: reason };
+    if (isHide) window.okbmAdminInspectHideFeed(d.feedId, notice);
+    else window.okbmAdminInspectDeleteFeed(d.feedId, d.targetType, notice);
+  };
+};
+
+// 피드를 비공개(is_published=false)로 바꾸고, 그 피드 신고를 처리됨으로 닫고, 글쓴이에게 알린다
+window.okbmAdminInspectHideFeed = async function(feedId, notice) {
+  if (!(await window.okbmRefreshAdminFlagFromServer())) return;
+  var sId = String(feedId || '').trim();
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  if (!sId || !targetUrl) return;
+  var reporters = await okbmAdminPendingReporters('feed', sId);
+  try {
+    var hHeaders = okbmWriteRestHeaders({ Prefer: 'return=representation' });
+    if (!hHeaders) return;
+    var res = await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
+      method: 'PATCH', headers: hHeaders, body: JSON.stringify({ is_published: false })
+    });
+    var rows = res.ok ? await res.json() : [];
+    if (!res.ok || !Array.isArray(rows) || !rows.length) {
+      if (typeof showToast === 'function') showToast('비공개로 바꾸지 못했어요.', 'error');
+      return;
+    }
+    var rHeaders = okbmWriteRestHeaders({ Prefer: 'return=minimal' });
+    if (rHeaders) {
+      await fetch(targetUrl + '/rest/v1/feed_reports?target_type=eq.feed&feed_id=eq.' + encodeURIComponent(sId) + '&status=eq.pending', {
+        method: 'PATCH', headers: rHeaders, body: JSON.stringify({ status: 'resolved' })
+      });
+    }
+  } catch (e) {
+    console.warn('[romantic-sync.js:okbmAdminInspectHideFeed]', e);
+    if (typeof showToast === 'function') showToast('비공개로 바꾸지 못했어요.', 'error');
+    return;
+  }
+  // 홈·피드 목록에서도 뺀다(삭제와 같은 정리)
+  if (Array.isArray(window.__allLoadedFeeds)) {
+    window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) { return f && String(f.id || '').trim() !== sId; });
+  }
+  if (typeof window.okbmFilterHomeFeedPool === 'function') {
+    window.okbmFilterHomeFeedPool(function(f) { return f && String(f.id || '').trim() !== sId; });
+  }
+  if (typeof window.rerenderCommunityFeedsNow === 'function') window.rerenderCommunityFeedsNow();
+  var sent = await okbmAdminSendNotice(notice && notice.owner, 'hide', 'feed', sId, notice && notice.title, notice && notice.reason);
+  await Promise.all(reporters.map(function(u) { return okbmAdminSendNotice(u, 'report_hide', 'feed', sId, notice && notice.title, ''); }));
+  await window.okbmRenderAdminReportInspectorList();
+  if (typeof showToast === 'function') showToast(sent ? '비공개로 바꾸고 글쓴이·신고한 사람에게 알렸어요.' : '비공개로 바꿨지만 글쓴이 알림은 보내지 못했어요.', sent ? 'success' : 'warn', 2000);
+};
+
+window.okbmAdminInspectDismissReport = async function(reportId, meta) {
   if (!(await window.okbmRefreshAdminFlagFromServer())) return;
   var sId = String(reportId || '').trim();
   if (!sId) return;
@@ -2582,6 +2728,11 @@ window.okbmAdminInspectDismissReport = async function(reportId) {
     return;
   }
 
+  // 신고한 사람에게 결과를 알린다(대표님 11-04: 기각은 신고한 사람에게만)
+  if (meta && meta.reporter) {
+    var sentDis = await okbmAdminSendNotice(meta.reporter, 'dismiss', meta.targetType, String(meta.reportId || sId), meta.title, '');
+    if (typeof showToast === 'function') showToast(sentDis ? '기각하고 신고한 사람에게 알렸어요.' : '기각했지만 알림은 보내지 못했어요.', sentDis ? 'success' : 'warn', 2000);
+  }
   await window.okbmRenderAdminReportInspectorList();
   if (typeof window.syncMyFeedReportsFromServer === 'function') {
     try { await window.syncMyFeedReportsFromServer(); } catch (e) {}
@@ -14405,7 +14556,7 @@ function okbmNotifRowHtml(r, unread) {
   var canOpen = Boolean(loungePostId || feedOpenId);
   var actor = okbmNotifActorId(r);
   var left;
-  if (kind === 'lounge_reply') {
+  if (kind === 'lounge_reply' || kind.indexOf('admin_') === 0) {
     left = '<span style="width:44px; height:44px; border-radius:50%; background:#17171b; flex-shrink:0; display:grid; place-items:center; overflow:hidden;"><img src="logo.png" alt="" style="width:28px; height:28px; object-fit:contain;"></span>';
   } else if (actor) {
     // 얼굴을 누르면 게시물이 아니라 그 사람 피드 모아보기(okbmBindNotifRowOpen)
@@ -14425,7 +14576,7 @@ function okbmNotifRowHtml(r, unread) {
   var when = okbmInboxAgo(r.created_at);
   var body = String(r.body || '').trim();
   // 제보·수정 건의 채택/반려는 감사 인사·반려 사유를 끝까지 읽어야 해서 줄을 접지 않는다(대표님 11-02). 별·댓글 알림은 한 줄.
-  var fullBody = /^(proposal|correction)_/.test(String(r.kind || ''));
+  var fullBody = /^(proposal|correction|admin)_/.test(String(r.kind || ''));
   // 쪽지 줄과 같은 밀어서 삭제 구조 (okbmBindNoteSwipeRows가 함께 묶는다)
   var safeNotifId = _escapeReportPropHtml(String(r.id || ''));
   var bg = unread ? '#0f0f11' : '#000000';
