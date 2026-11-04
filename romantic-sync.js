@@ -12138,14 +12138,6 @@ function okbmNativeExternalUrl(raw) {
   if (u.hostname === location.hostname || /(^|\.)romanticroute\.kr$/.test(u.hostname)) return '';
   return u.href;
 }
-// 앱(Capacitor)에서 유튜브 영상을 앱 안 임베드 창 대신 유튜브 앱으로 연다(11-05 대표님: 정보창 유튜브 창에서 앱 열기·전체 화면이 안 됨).
-// 임베드 창은 앱 웹뷰 안에 갇혀 '앱에서 열기'가 없고 전체 화면·가로 보기도 막혀서, 앱일 때만 앱 밖으로 넘긴다. 웹은 그대로 임베드.
-function okbmOpenYouTubeOutside(id) {
-  if (!okbmIsCapacitorNative() || !/^[\w-]{11}$/.test(String(id || ''))) return false;
-  location.assign('https://www.youtube.com/watch?v=' + id);
-  return true;
-}
-window.okbmOpenYouTubeOutside = okbmOpenYouTubeOutside;
 function okbmBindNativeExternalLinks() {
   if (!okbmIsCapacitorNative() || window.__okbmNativeLinksBound) return;
   var Browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
