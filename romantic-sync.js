@@ -1956,7 +1956,11 @@ window.openFeedReportModal = function(feedId, userId, targetType) {
   modal.style.cssText = 'position:fixed; inset:0; z-index:2147483646 !important; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
   modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
 
+  // '기타'는 바로 보내지 않고 아래 적는 칸을 연다(대표님 11-04: 기타 신고는 사유를 알 수 없음)
   var reasonBtns = reasons.map(function(r) {
+    if (r.id === 'other') {
+      return '<button type="button" onclick="var b=document.getElementById(\'feedReportOtherBox\'); b.style.display=\'flex\'; b.querySelector(\'textarea\').focus();" style="width:100%; height:42px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#e2e8f0; font-size:0.82rem; font-weight:800; cursor:pointer; text-align:left; padding:0 14px;">' + okbmEscapeUgcAttr(r.label) + '</button>';
+    }
     return '<button type="button" data-reason="' + okbmEscapeUgcAttr(r.id) + '" data-label="' + okbmEscapeUgcAttr(r.label) + '" data-feed-id="' + okbmEscapeUgcAttr(sFeedId) + '" data-user-id="' + okbmEscapeUgcAttr(userId) + '" data-target-type="' + okbmEscapeUgcAttr(tType) + '" onclick="window.submitFeedReport(this.dataset.feedId, this.dataset.reason, this.dataset.label, this.dataset.userId, this.dataset.targetType);" style="width:100%; height:42px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#e2e8f0; font-size:0.82rem; font-weight:800; cursor:pointer; text-align:left; padding:0 14px;">' + okbmEscapeUgcAttr(r.label) + '</button>';
   }).join('');
 
@@ -1967,6 +1971,10 @@ window.openFeedReportModal = function(feedId, userId, targetType) {
     '</div>' +
     '<p style="font-size:0.72rem; color:#94a3b8; line-height:1.45; margin:0;">신고 사유를 선택해주세요. 접수된 내용은 24시간 이내에 검토됩니다.</p>' +
     '<div style="display:flex; flex-direction:column; gap:6px;">' + reasonBtns + '</div>' +
+    '<div id="feedReportOtherBox" style="display:none; flex-direction:column; gap:6px;">' +
+      '<textarea maxlength="200" rows="3" placeholder="어떤 점이 문제인지 적어 주세요" style="width:100%; box-sizing:border-box; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.18); border-radius:10px; color:#e2e8f0; font-size:16px; line-height:1.45; padding:10px 12px; resize:none; font-family:inherit;"></textarea>' +
+      '<button type="button" data-feed-id="' + okbmEscapeUgcAttr(sFeedId) + '" data-user-id="' + okbmEscapeUgcAttr(userId) + '" data-target-type="' + okbmEscapeUgcAttr(tType) + '" onclick="var t=document.querySelector(\'#feedReportOtherBox textarea\').value.trim(); if(!t){ if(typeof showToast===\'function\') showToast(\'어떤 점이 문제인지 적어 주세요.\', \'info\', 1800); return; } window.submitFeedReport(this.dataset.feedId, \'other\', \'기타: \' + t, this.dataset.userId, this.dataset.targetType);" style="width:100%; height:42px; background:#f87171; border:none; border-radius:10px; color:#0b0b0b; font-size:0.84rem; font-weight:900; cursor:pointer;">신고하기</button>' +
+    '</div>' +
   '</div>';
 
   document.body.appendChild(modal);
@@ -2036,7 +2044,7 @@ window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId
     reporter_id: reporterId || null,
     reported_user_id: String(userId || '').trim() || null,
     reason: String(reasonCode || 'other'),
-    reason_label: String(reasonLabel || reasonCode || '기타'),
+    reason_label: String(reasonLabel || reasonCode || '기타').slice(0, 210),
     feed_url: directFeedUrl,
     status: 'pending'
   };
