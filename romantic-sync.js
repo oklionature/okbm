@@ -2301,7 +2301,7 @@ window.okbmRenderAdminReportInspectorList = async function() {
   }
 
   try {
-    var res = await fetch(targetUrl + '/rest/v1/feed_reports?status=eq.pending&select=id,feed_id,target_type,reason,reason_label,created_at,feed_url&order=created_at.desc', {
+    var res = await fetch(targetUrl + '/rest/v1/feed_reports?status=eq.pending&select=id,feed_id,target_type,reason,reason_label,reporter_id,reported_user_id,created_at,feed_url&order=created_at.desc', {
       headers: okbmUgcRestHeaders()
     });
     if (!res.ok) {
@@ -2324,7 +2324,7 @@ window.okbmRenderAdminReportInspectorList = async function() {
     var inListOf = function(ids) { return ids.map(function(id) { return '"' + String(id).replace(/"/g, '') + '"'; }).join(','); };
     var preview = { feed: {}, lounge_post: {}, lounge_comment: {}, spot_review: {} };
     var previewSpecs = [
-      ['feed', 'feeds', 'id,spot', function(f) { return { title: String(f.spot || '').trim() }; }],
+      ['feed', 'feeds', 'id,spot,user_id', function(f) { return { title: String(f.spot || '').trim(), uid: String(f.user_id || '') }; }],
       ['lounge_post', 'lounge_posts', 'id,title,body,nickname', function(f) { return { title: String(f.title || '').trim(), body: String(f.body || '').trim(), who: f.nickname }; }],
       ['lounge_comment', 'lounge_post_comments', 'id,post_id,body,nickname', function(f) { return { title: String(f.body || '').trim(), postId: String(f.post_id || ''), who: f.nickname }; }],
       ['spot_review', 'comments', 'id,spot_id,rating,text,nickname', function(f) { return { title: '★' + (f.rating || '') + ' ' + String(f.text || '').trim(), spotId: String(f.spot_id || ''), who: f.nickname }; }]
@@ -2346,6 +2346,37 @@ window.okbmRenderAdminReportInspectorList = async function() {
       }
     }));
 
+    // 신고한 사람·신고당한 사람 닉네임(관리자는 RLS상 users를 읽을 수 있음)
+    var nickById = {};
+    var userIds = [];
+    rows.forEach(function(r) {
+      var info0 = preview[okbmReportType(r && r.target_type)][String((r && r.feed_id) || '').trim()];
+      [r && r.reporter_id, r && r.reported_user_id, info0 && info0.uid].forEach(function(u) {
+        var su = String(u || '').trim();
+        if (su && userIds.indexOf(su) === -1) userIds.push(su);
+      });
+    });
+    if (userIds.length) {
+      try {
+        var uRes = await fetch(targetUrl + '/rest/v1/users?id=in.(' + inListOf(userIds) + ')&select=id,nickname', {
+          headers: okbmUgcRestHeaders()
+        });
+        if (uRes.ok) {
+          var uRows = await uRes.json();
+          (Array.isArray(uRows) ? uRows : []).forEach(function(u) {
+            if (u && u.id) nickById[String(u.id)] = String(u.nickname || '').trim();
+          });
+        }
+      } catch (eNick) {
+        console.warn('[romantic-sync.js:okbmRenderAdminReportInspectorList nick]', eNick);
+      }
+    }
+    var nickOf = function(id) {
+      var sid = String(id || '').trim();
+      if (!sid) return '';
+      return nickById[sid] || ('(탈퇴했거나 모르는 회원 ' + okbmMaskUserId(sid) + ')');
+    };
+
     var btn = 'height:32px; padding:0 8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#e2e8f0; font-size:0.62rem; font-weight:800; cursor:pointer;';
     listEl.innerHTML = rows.map(function(r) {
       var rid = String((r && r.id) || '').trim();
@@ -2365,7 +2396,11 @@ window.okbmRenderAdminReportInspectorList = async function() {
         '</div>' +
         '<div style="font-size:0.68rem; color:#94a3b8; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + okbmEscapeUgcAttr(title) + '</div>' +
         (info && info.body ? '<div style="font-size:0.64rem; color:#64748b; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + okbmEscapeUgcAttr(info.body) + '</div>' : '') +
-        (info && info.who ? '<div style="font-size:0.60rem; color:#64748b; margin-top:2px;">작성: ' + okbmEscapeUgcAttr(info.who) + '</div>' : '') +
+        (function() {
+          var author = (info && info.who) || nickOf((r && r.reported_user_id) || (info && info.uid));
+          return author ? '<div style="font-size:0.60rem; color:#64748b; margin-top:2px;">작성: ' + okbmEscapeUgcAttr(author) + '</div>' : '';
+        })() +
+        (r && r.reporter_id ? '<div style="font-size:0.66rem; color:#fca5a5; margin-top:3px;">신고한 사람: ' + okbmEscapeUgcAttr(nickOf(r.reporter_id)) + '</div>' : '') +
         (fid && (info || tType === 'feed') && title !== fid ? '<div style="font-size:0.58rem; color:#64748b; margin-top:2px; font-family:var(--font-mono);">' + okbmEscapeUgcAttr(fid) + '</div>' : '') +
         (when ? '<div style="font-size:0.62rem; color:#64748b; margin-top:4px;">' + when + '</div>' : '') +
         '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-top:10px;">' +

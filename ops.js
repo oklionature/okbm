@@ -568,7 +568,7 @@
       '<button type="button" class="kpi" data-act-tab="links" data-act-jump="1"><b class="' + (newLinks.length ? 'warn' : '') + '">' + num(newLinks.length) + '</b><span>새 크리에이터 링크 ›</span></button>' +
       '<button type="button" class="kpi" data-act-tab="feeds" data-act-jump="1"><b class="' + (newFeeds.length ? 'warn' : '') + '">' + num(newFeeds.length) + '</b><span>새 피드 ›</span></button>' +
       '<a class="kpi" href="map.html?open=admin_inbox"><b class="' + (d.inbox_pending ? 'warn' : '') + '">' + num(d.inbox_pending) + '</b><span>장소 검수 대기 ›<br>검수함에서 처리하면 줄어요</span></a>' +
-      '<div class="kpi"><b class="' + (d.reports_pending ? 'warn' : '') + '">' + num(d.reports_pending) + '</b><span>신고 대기<br>신고 검수함에서 처리하면 줄어요</span></div>' +
+      '<a class="kpi" href="index.html?open=admin_reports"><b class="' + (d.reports_pending ? 'warn' : '') + '">' + num(d.reports_pending) + '</b><span>신고 대기 ›<br>신고 검수함에서 처리하면 줄어요</span></a>' +
       '</div>';
     html += '<div class="tabs" id="actTabs"><button type="button" data-act-tab="links" class="' + (actTab === 'links' ? 'on' : '') + '">크리에이터 링크 ' + num(newLinks.length) + '</button>' +
       '<button type="button" data-act-tab="feeds" class="' + (actTab === 'feeds' ? 'on' : '') + '">새 피드 ' + num(newFeeds.length) + '</button></div>';

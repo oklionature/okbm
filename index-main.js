@@ -4593,6 +4593,22 @@ var adBannersHtml = `
             }
           }, 16);
         }
+      } else if (openParam === 'admin_reports') {
+        // 운영자 창(ops.html)의 '신고 대기' 칸에서 온 경우: 신고 검수함을 연다(관리자 확인은 검수함이 서버로 한다)
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        releaseGuard();
+        var pollCountReports = 0;
+        var reportsPoll = setInterval(function() {
+          pollCountReports++;
+          if (typeof window.openAdminReportInspector === 'function' && window.supabaseClient) {
+            clearInterval(reportsPoll);
+            window.openAdminReportInspector();
+          } else if (pollCountReports > 100) {
+            clearInterval(reportsPoll);
+          }
+        }, 100);
       } else {
         releaseGuard();
       }
