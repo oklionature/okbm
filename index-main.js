@@ -4594,7 +4594,8 @@ var adBannersHtml = `
           }, 16);
         }
       } else if (openParam === 'admin_reports') {
-        // 운영자 창(ops.html)의 '신고 대기' 칸에서 온 경우: 신고 검수함을 연다(관리자 확인은 검수함이 서버로 한다)
+        // 운영자 창(ops.html)의 '신고 대기' 칸에서 온 경우: 신고 검수함을 연다.
+        // 로그인 확인이 끝나기 전에 열면 관리자 확인이 실패해 그냥 닫히므로, 로그인 부팅이 관리자로 표시한 뒤(__okbmIsAdmin) 연다
         if (window.history && window.history.replaceState) {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
@@ -4602,10 +4603,10 @@ var adBannersHtml = `
         var pollCountReports = 0;
         var reportsPoll = setInterval(function() {
           pollCountReports++;
-          if (typeof window.openAdminReportInspector === 'function' && window.supabaseClient) {
+          if (typeof window.openAdminReportInspector === 'function' && window.__okbmIsAdmin === true) {
             clearInterval(reportsPoll);
             window.openAdminReportInspector();
-          } else if (pollCountReports > 100) {
+          } else if (pollCountReports > 150) {
             clearInterval(reportsPoll);
           }
         }, 100);
