@@ -1103,6 +1103,12 @@
     function handleHeroNavClick(e) {
       if (e) e.stopPropagation();
       var record = window.currentHeroRecord;
+      // 박지 번호가 있으면 번호로 연다. 이름은 괄호(세부 박지)를 빼고 넘기므로 같은 산에 박지가 둘이면(광석산 550·552) 지도가 못 고른다
+      var spotId = record ? String(record.spotId || record.spot_id || '').trim() : '';
+      if (spotId) {
+        location.href = 'map.html?id=' + encodeURIComponent(spotId);
+        return;
+      }
       var spotName = (record && (record.spot || record.spotName)) ? (record.spot || record.spotName) : '대관령 선자령';
       location.href = 'map.html?spot=' + encodeURIComponent(spotName.replace(/\s*\(.*?\)/g, ''));
     }
