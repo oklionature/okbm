@@ -278,10 +278,10 @@
     if (!d.uid || w.dataset.under || typeof window.openUserFeedCollectionModal !== 'function') return;
     w._before = Array.prototype.slice.call(document.body.children); w.dataset.under = '1';
     var t0 = Date.now(), seen = false;
-    window.openUserFeedCollectionModal(String(d.nick || ''), String(d.uid)); gulupdoSheet(w);
+    window.openUserFeedCollectionModal(String(d.nick || ''), String(d.uid)); gulupdoProfSheet(w);
     (function tick() {
       if (!w.parentNode) return;
-      gulupdoSheet(w);
+      gulupdoProfSheet(w);
       var L = gulupdoOver(w);
       if (L.length) { seen = true; var z = Math.min.apply(null, L.map(function (n) { return parseInt(getComputedStyle(n).zIndex, 10) || 1000; })); w.style.zIndex = String(Math.max(1, z - 1)); }
       else if (seen || Date.now() - t0 > 8000) { w.style.zIndex = '2147483647'; delete w.dataset.under; w._before = null; return; }
@@ -290,7 +290,8 @@
   }
   // 11-04 대표님(시안 A): 게임 위에선 프로필을 화면 아래 반쪽 창으로. 위쪽엔 게임이 어둡게 보이고, 오른쪽 위 X나 어두운 곳을 누르면 닫힘.
   // 프로필 창(romantic-history.js)은 그대로 두고 자리만 바꾼다. 프로필 창이 메뉴바를 다시 켜므로(ensureMasterBottomDock) 게임 동안엔 계속 숨긴다
-  function gulupdoSheet(w) {
+  // 11-05: 입장권 확인 창 gulupdoSheet(p, onBuy)와 이름이 같아 뒤의 것이 이 함수를 덮어써서, 프로필이 반쪽이 아닌 전체 창으로 뜨고 입장권 창이 뒤에서 계속 다시 생겼다 → 이름을 나눔
+  function gulupdoProfSheet(w) {
     var dock = document.getElementById('romanticMasterBottomDock'); if (dock) dock.style.setProperty('display', 'none', 'important');
     var m = document.getElementById('userFeedCollectionModal'), bg = document.getElementById('gulupdoSheetBg'), x = document.getElementById('gulupdoSheetX');
     if (!m) { if (bg) bg.remove(); if (x) x.remove(); return; }
