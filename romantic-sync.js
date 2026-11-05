@@ -518,8 +518,29 @@ function okbmSafeExternalUrl(url) {
   }
 }
 
+// 화면에 보여 줄 사진만 R2 개발용 주소(pub-….r2.dev, 캐시 없음·속도 제한, 한 장 1~9초)를
+// img.romanticroute.kr(같은 R2 버킷, Cloudflare 캐시, 0.5~0.9초)로 바꿔 받는다(대표님 11-05).
+// 저장·비교에 쓰는 주소는 그대로 r2.dev로 둔다. 못 받으면 okbmImageRetryOriginal로 원래 주소를 한 번 더 받는다.
+var OKBM_R2_PUBLIC_BASE = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
+var OKBM_IMG_FAST_BASE = 'https://img.romanticroute.kr/';
+function okbmFastImageUrl(url) {
+  var safe = okbmSafeImageUrl(url);
+  if (safe.indexOf(OKBM_R2_PUBLIC_BASE) === 0) return OKBM_IMG_FAST_BASE + safe.slice(OKBM_R2_PUBLIC_BASE.length);
+  return safe;
+}
+function okbmImageRetryOriginal(img) {
+  if (!img || img.__okbmTriedOriginal) return false;
+  var src = String(img.getAttribute('src') || '');
+  if (src.indexOf(OKBM_IMG_FAST_BASE) !== 0 || src.indexOf(OKBM_IMG_FAST_BASE + 'cdn-cgi/') === 0) return false;
+  img.__okbmTriedOriginal = true;
+  img.src = OKBM_R2_PUBLIC_BASE + src.slice(OKBM_IMG_FAST_BASE.length);
+  return true;
+}
+
 window.okbmNormalizeUserBio = okbmNormalizeUserBio;
 window.okbmSafeImageUrl = okbmSafeImageUrl;
+window.okbmFastImageUrl = okbmFastImageUrl;
+window.okbmImageRetryOriginal = okbmImageRetryOriginal;
 window.okbmSafeExternalUrl = okbmSafeExternalUrl;
 
 // =========================================================================

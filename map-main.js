@@ -135,6 +135,10 @@
       var okbmSafeImageUrl = function(url) {
         return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
       };
+      // 화면에 보여 줄 사진은 img.romanticroute.kr로(romantic-sync.js okbmFastImageUrl)
+      var okbmFastImageUrl = function(url) {
+        return (typeof window.okbmFastImageUrl === 'function') ? window.okbmFastImageUrl(url) : okbmSafeImageUrl(url);
+      };
       var okbmSafeExternalUrl = function(url) {
         return (typeof window.okbmSafeExternalUrl === 'function') ? window.okbmSafeExternalUrl(url) : '#';
       };
@@ -6304,7 +6308,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         var slidesHtml = photos.map(function(pUrl) {
           return `
             <div style="flex:0 0 100%; width:100%; height:100%; scroll-snap-align:start; scroll-snap-stop:always; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center; box-sizing:border-box;">
-              <img class="reel-photo-target map-feed-photo" src="${escapeHtml(okbmSafeImageUrl(pUrl))}" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" style="max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; object-position:center center; display:block; background:#000;" />
+              <img class="reel-photo-target map-feed-photo" src="${escapeHtml(okbmFastImageUrl(pUrl))}" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="if (window.okbmImageRetryOriginal && window.okbmImageRetryOriginal(this)) return; this.onerror=null; this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" style="max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; object-position:center center; display:block; background:#000;" />
             </div>
           `;
         }).join('');

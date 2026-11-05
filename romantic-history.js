@@ -695,6 +695,10 @@
   var okbmSafeImageUrl = function(url) {
     return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
   };
+  // 화면에 보여 줄 사진은 img.romanticroute.kr로(romantic-sync.js okbmFastImageUrl)
+  var okbmFastImageUrl = function(url) {
+    return (typeof window.okbmFastImageUrl === 'function') ? window.okbmFastImageUrl(url) : okbmSafeImageUrl(url);
+  };
   var okbmSafeExternalUrl = function(url) {
     return (typeof window.okbmSafeExternalUrl === 'function') ? window.okbmSafeExternalUrl(url) : '#';
   };
@@ -867,7 +871,13 @@
   };
 
   window.handleFeedImageError = function(img) {
-    if (!img || img.__handledVideoStill) return;
+    if (!img) return;
+    // img.romanticroute.kr에서 못 받으면 원래 r2.dev 주소로 한 번 더 받는다
+    if (window.okbmImageRetryOriginal && window.okbmImageRetryOriginal(img)) {
+      img.onerror = function() { this.onerror = null; window.handleFeedImageError(this); };
+      return;
+    }
+    if (img.__handledVideoStill) return;
     img.__handledVideoStill = true;
 
     var src = img.getAttribute('src') || '';
@@ -2473,7 +2483,9 @@ window.normalizeHistoryRecord = function(r, idx) {
     for (var i = 0; i < imgs.length; i++) {
       if (String(imgs[i].getAttribute('data-user-avatar-id') || '') !== uid) continue;
       var imgEl = imgs[i];
-      if (imgEl.getAttribute('src') !== src) imgEl.setAttribute('src', src);
+      // 피드 글쓴이 동그라미도 원본(약 145KB) 대신 댓글·후기와 같은 96px 사진을 받는다(같은 주소라 Cloudflare 줄이기 횟수도 늘지 않음)
+      var smallSrc = okbmSmallAvatarUrl(src) || src;
+      if (imgEl.getAttribute('src') !== smallSrc) imgEl.setAttribute('src', smallSrc);
       imgEl.style.position = 'absolute';
       imgEl.style.inset = '0';
       imgEl.style.width = '100%';
@@ -2488,6 +2500,12 @@ window.normalizeHistoryRecord = function(r, idx) {
         if (placeholder) placeholder.style.display = 'none';
       }
       imgEl.onerror = function() {
+        // 작은 사진을 못 받으면 원본 주소로 한 번 더
+        if (!this.__okbmTriedOriginal && this.getAttribute('src') !== src) {
+          this.__okbmTriedOriginal = true;
+          this.setAttribute('src', src);
+          return;
+        }
         this.onerror = null;
         this.style.display = 'none';
         var holder = this.parentElement;
@@ -4827,7 +4845,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
       return '<div style="width:100%; display:flex; flex-direction:column; background:#000000;">' +
         '<div style="width:100%; overflow:hidden; background:#000000; position:relative; display:flex; align-items:center; justify-content:center;">' +
-          '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" loading="lazy" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
+          '<img class="reel-photo-target" src="' + escapeHtml(okbmFastImageUrl(pUrl)) + '" loading="lazy" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
           (photosList.length > 1 ? '<span style="position:absolute; top:10px; right:10px; background:#0c1017; color:#ffffff; font-size:0.62rem; font-weight:800; font-family:\'Space Grotesk\', sans-serif; padding:2px 7px; border-radius:10px; border:1px solid rgba(255,255,255,0.15);">' + (pIdx + 1) + ' / ' + photosList.length + '</span>' : '') +
         '</div>' +
         memoMarkup +
@@ -4840,7 +4858,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var ploggingSectionHtml = plogPhoto.indexOf('https://') === 0
       ? '<div class="okbm-plog-sec" style="width:100%; display:flex; flex-direction:column; background:#000000;">' +
           '<div style="width:100%; overflow:hidden; background:#000000; position:relative; display:flex; align-items:center; justify-content:center;">' +
-            '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(plogPhoto)) + '" alt="플로깅 인증 사진" loading="lazy" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
+            '<img class="reel-photo-target" src="' + escapeHtml(okbmFastImageUrl(plogPhoto)) + '" alt="플로깅 인증 사진" loading="lazy" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
             '<span class="okbm-plog-pill" style="position:absolute; top:10px; left:10px; display:inline-flex; align-items:center; gap:5px; padding:5px 10px 5px 8px; border-radius:999px; background:rgba(4,30,20,0.82); border:1px solid rgba(52,211,153,0.45); color:#a7f3d0; font-size:0.72rem; font-weight:800;">' + plogIcon + '플로깅 인증</span>' +
           '</div>' +
           '<div style="padding:10px 14px 14px 14px; background:#080b11; border-bottom:1px solid rgba(255,255,255,0.06); font-size:0.80rem; color:#cbd5e1; line-height:1.55;"><b style="color:#6ee7b7; font-weight:800;">플로깅했어요</b> · 박지 주변 쓰레기를 주워 왔어요.</div>' +
@@ -8184,7 +8202,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     var horizontalSlidesHtml = mediaItems.map(function(pUrl) {
       return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-        '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
+        '<img class="reel-photo-target" src="' + escapeHtml(okbmFastImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
       '</div>';
     }).join('');
 
@@ -8218,7 +8236,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var normalizePhotoSrc = function(u) {
       var raw = String(u || '').trim();
       if (!raw) return '';
-      if (typeof okbmSafeImageUrl === 'function') return String(okbmSafeImageUrl(raw) || '').trim();
+      // 화면 주소(img.romanticroute.kr)·원래 주소(r2.dev)를 같은 것으로 보게 화면 주소로 맞춘다
+      if (typeof okbmFastImageUrl === 'function') return String(okbmFastImageUrl(raw) || '').trim();
       return raw;
     };
     var existingSrcs = Array.prototype.map.call(front.querySelectorAll('.reel-horizontal-track .reel-photo-target'), function(img) {
@@ -8544,7 +8563,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var targetAvatarUrl = (typeof window.resolveUserMasterPhoto === 'function')
       ? window.resolveUserMasterPhoto(recordUserId, authorName, avatarFallback)
       : (avatarFallback || '');
-    targetAvatarUrl = okbmAvatarDisplayUrl(targetAvatarUrl);
+    targetAvatarUrl = okbmSmallAvatarUrl(targetAvatarUrl);
 
     var hasValidImg = Boolean(targetAvatarUrl);
     var avatarImgStyle = 'position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1;';
@@ -8620,7 +8639,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     } else {
       horizontalSlidesHtml = mediaItems.map(function(pUrl) {
         return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-          '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
+          '<img class="reel-photo-target" src="' + escapeHtml(okbmFastImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
         '</div>';
       }).join('');
     }
