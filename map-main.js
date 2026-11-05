@@ -701,7 +701,7 @@
         if (!spot) return '';
         return [
           spot.trailhead_addr || '', spot.entryPoint || '', spot.desc_summary || '', spot.desc || '',
-          spot.mediaUrls || '', spot.author_sns_url || spot.authorSnsUrl || '',
+          spot.mediaUrls || '', spot.author_sns_url || spot.authorSnsUrl || '', spot.gpxUrl || '',
           [].concat(spot.youtubeUrls || []).join(' '), [].concat(spot.blogUrls || []).join(' '),
           spot.__detailLoaded ? '1' : '0', spot.__detailTier || '', spot.__detailLimited || '', spot.__detailError || ''
         ].join('\u0001');
@@ -3608,7 +3608,7 @@ function updateSmartResetButtons() {
                     <span class="lock-sub-text">등록자의 링크와 K-LNT 서약 후 상세 목적지, 코스 안내가 열립니다</span>
                   </div>` : ''}
 
-                ${spot.gpxUrl ? `
+                ${spot.gpxUrl && isUnlocked ? `
                   <button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
                     ${ICONS.HIKING} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : '등산로 GPX 코스선 지도에 표시'}
                   </button>

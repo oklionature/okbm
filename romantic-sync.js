@@ -3942,6 +3942,7 @@ window.stripSpotDetailFields = function(spot) {
   delete out.entryPoint;
   delete out.author_sns_url;
   delete out.authorSnsUrl;
+  out.gpxUrl = '';
   var brief = String(out.view_brief || '').trim();
   if (brief) {
     out.desc_summary = brief;
@@ -4067,6 +4068,9 @@ window.mergeSpotDetailInto = function(spot, detail) {
   spot.instaUrls = media.instaUrls;
   spot.author_sns_url = String(detail.author_sns_url || '').trim();
   spot.authorSnsUrl = spot.author_sns_url;
+  // GPX 등산로 선(H43): 회원에게만 온다. R2 gpx/ 주소만 받는다.
+  var gpx = String(detail.gpx_url || '').trim();
+  spot.gpxUrl = /^https:\/\/pub-13ec7c39d2394ecc879bb2ed4b86a43c\.r2\.dev\/gpx\/[A-Za-z0-9\/_.-]+\.gpx$/.test(gpx) ? gpx : '';
   // 'guest'면 비회원용 요약만 받은 상태. 로그인 후 다시 받는다. (E1 이전 서버는 tier 없음 = 전체)
   spot.__detailTier = detail.tier === 'guest' ? 'guest' : 'member';
   // E2: 회원 한도 초과면 'daily' | 'minute'. 이때 값은 비회원용 요약과 같다.
