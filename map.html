@@ -802,8 +802,8 @@
 
       /* 4단계 요약 카드 */
       .summary-block-wrap { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; width: 100%; }
-      .summary-card { background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 7px; padding: 7px 9px; font-size: 0.77rem; line-height: 1.45; color: var(--text-primary); }
-      .summary-card-view { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
+      .summary-card { background: #14161b; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 7px; padding: 7px 9px; font-size: 0.77rem; line-height: 1.45; color: var(--text-primary); }
+      .summary-card-view { border-left: 3px solid rgba(255, 255, 255, 0.06); background: #14161b; }
       .summary-card-view .summary-card-body {
         display: block;
         overflow: visible;
@@ -819,9 +819,9 @@
         word-break: keep-all;
         overflow-wrap: break-word;
       }
-      .summary-card-access { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
-      .summary-card-pitch { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
-      .summary-card-tip { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
+      .summary-card-access { border-left: 3px solid rgba(255, 255, 255, 0.06); background: #14161b; }
+      .summary-card-pitch { border-left: 3px solid rgba(255, 255, 255, 0.06); background: #14161b; }
+      .summary-card-tip { border-left: 3px solid rgba(255, 255, 255, 0.06); background: #14161b; }
       .summary-card-title { font-weight: 800; font-size: 0.73rem; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
 
       /* 들머리 & 내비 모듈 */
@@ -919,7 +919,7 @@
       .mobile-bottom-sheet {
         display: flex; position: fixed; left: 0; right: 0; width: 100%;
         bottom: calc(56px + env(safe-area-inset-bottom, 0px)); height: 50vh; height: 50dvh; max-height: 50vh; max-height: 50dvh;
-        background: #0c1017 !important; border-top: 1.5px solid var(--border-titanium) !important; border-radius: 18px 18px 0 0;
+        background: #0c0d10 !important; border-top: 1.5px solid var(--border-titanium) !important; border-radius: 18px 18px 0 0; /* 남색 #0c1017 → 낭만플랜 다가오는 일정과 같은 무채색(11-05 시안 A) */
         z-index: var(--z-bottomsheet); box-shadow: 0 -8px 24px rgba(0,0,0,0.45);
         transform: translateY(105%); transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
         flex-direction: column; overflow: hidden; pointer-events: none !important;
@@ -932,7 +932,7 @@
         top: 12px;
         right: 12px;
         z-index: 60;
-        background: #0c1017;
+        background: #0c0d10;
         border: 1px solid rgba(255, 255, 255, 0.14);
         width: 30px;
         height: 30px;
@@ -950,7 +950,7 @@
         background: rgba(255, 255, 255, 0.12);
         color: #ffffff;
       }
-      .sheet-content { flex: 1 1 0%; min-height: 0; overflow-y: auto; padding: 12px 12px 16px 12px; display: flex; flex-direction: column; gap: 3px; width: 100%; contain: content; background: #0c1017; }
+      .sheet-content { flex: 1 1 0%; min-height: 0; overflow-y: auto; padding: 12px 12px 16px 12px; display: flex; flex-direction: column; gap: 3px; width: 100%; contain: content; background: #0c0d10; }
 
       /* 찜하기 / 다녀왔음 버튼 */
       .user-action-grid-3 { display: flex; gap: 4px; width: 100%; margin: 2px 0; }
@@ -1668,7 +1668,7 @@
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.93"></script>
+       <script src="map-main.js?v=1.0.94"></script>
     <script src="photo-map.js?v=25" defer></script>
     <script src="spot-tips.js?v=11" defer></script>
     <script src="home-metrics.js?v=5" defer></script>
