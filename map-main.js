@@ -3393,6 +3393,8 @@ function updateSmartResetButtons() {
             setGpxGuide('아직 길에서 멀리 있어요(' + gpxDistanceText(near.dist) + '). 들머리 근처에서 다시 확인해 주세요', '');
             return;
           }
+          // 산길이 보이게 확대한다(이미 더 가까이 보고 있으면 그대로)
+          if (map.getLevel() > 5) map.setLevel(5, { animate: false });
           map.panTo(loc);
           if (acc > GPX_BAD_ACCURACY_M) {
             setGpxGuide('위치가 정확하지 않아요(±' + gpxDistanceText(acc) + '). 하늘이 트인 곳에서 다시 확인해 주세요', 'warn');
