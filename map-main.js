@@ -3556,7 +3556,10 @@ function updateSmartResetButtons() {
       // 휴대폰 정보창(#mobileBottomSheet)이 onclick에서 stopPropagation을 해서 버블 단계로는 못 받는다. 캡처 단계로 받는다
       document.addEventListener('click', function(e) {
         var btn = e.target && e.target.closest ? e.target.closest('[data-gpx-send]') : null;
-        if (btn) openGpxSendModal(btn.getAttribute('data-gpx-send'));
+        if (!btn) return;
+        // 이름 줄의 'GPX 구해요'는 누르면 지도를 박지로 옮기는 줄 안에 있어서 그 동작은 막는다
+        if (btn.classList.contains('gpx-wanted-badge')) { e.stopPropagation(); e.preventDefault(); }
+        openGpxSendModal(btn.getAttribute('data-gpx-send'));
       }, true);
 
       // 남이 보낸 GPX는 처음 켤 때 5점을 내고 연다(등록자는 2점, 화면엔 '소정의 포인트'로만 알린다). SUPABASE_H46
@@ -3895,6 +3898,7 @@ function updateSmartResetButtons() {
                 <span class="${diffClass}">${escapeHtml(cleanMainName)}</span>
                 ${spot.elevation ? '<span style="font-size:0.76rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">' + ICONS.MOUNTAIN + escapeHtml(okbmSpotElevLabel(spot.elevation)) + '</span>' : ''}
                 ${getSpotStatusBadges(spot)}
+                ${!spot.gpxUrl && spot.__detailTier === 'member' ? `<button type="button" class="gpx-wanted-badge" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_wanted">${ICONS.GPX_TRACK}<span>GPX 구해요</span></button>` : ''}
               </div>
               <div class="js-spot-title-actions" style="display:flex; align-items:center; gap:6px; flex-shrink:0;" onclick="event.stopPropagation();">${closeBtn}</div>
             </div>
