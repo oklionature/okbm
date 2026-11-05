@@ -3872,10 +3872,11 @@ function updateSmartResetButtons() {
                   </button>
                   ${spot.gpxCredit ? `<div class="gpx-credit-line">${escapeHtml(spot.gpxCredit)}님이 보내 준 길이에요</div>` : ''}
                 ` : ''}
-                ${!spot.gpxUrl && spot.__detailTier === 'member' ? `
-                  <button type="button" class="btn-gpx-send" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_send_open">${ICONS.HIKING} 이 박지 등산 기록(GPX) 보내기 · 50점</button>
-                ` : ''}
               </div>
+
+              ${!spot.gpxUrl && spot.__detailTier === 'member' ? `
+                <button type="button" class="btn-gpx-send" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_send_open">${ICONS.HIKING} 이 박지 등산 기록(GPX) 보내기 · 50점</button>
+              ` : ''}
 
               <div class="summary-block-wrap">
                 ${summary.pitch ? `
