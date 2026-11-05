@@ -16,7 +16,8 @@ HREF_RE = re.compile(r"""href\s*=\s*(?:"\s*\+|'\s*\+|["']\$\{)""", re.IGNORECASE
 # 반드시 거치는지 확인하고 이유를 적을 것.
 #   tripCreatePhotoSrc (index.html): 로컬 미리보기 blob: 외에는 okbmSafeImageUrl 결과만 반환
 #   okbmFastImageUrl (romantic-sync.js): okbmSafeImageUrl 결과에서 r2.dev 앞부분만 img.romanticroute.kr로 바꿈
-SAFE_IMAGE_WRAPPERS = ("okbmSafeImageUrl", "tripCreatePhotoSrc", "okbmFastImageUrl")
+#   okbmViewImageUrl (index-main.js): 전역 이름이 겹치지 않게 둔 okbmFastImageUrl 래퍼
+SAFE_IMAGE_WRAPPERS = ("okbmSafeImageUrl", "tripCreatePhotoSrc", "okbmFastImageUrl", "okbmViewImageUrl")
 SRC_OK_RE = re.compile(
     r"""src\s*=\s*(?:"\s*\+|'\s*\+|["']\$\{)\s*escapeHtml\s*\(\s*(?:"""
     + "|".join(SAFE_IMAGE_WRAPPERS)

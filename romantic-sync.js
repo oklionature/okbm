@@ -541,6 +541,12 @@ window.okbmNormalizeUserBio = okbmNormalizeUserBio;
 window.okbmSafeImageUrl = okbmSafeImageUrl;
 window.okbmFastImageUrl = okbmFastImageUrl;
 window.okbmImageRetryOriginal = okbmImageRetryOriginal;
+// 어느 화면이든 img.romanticroute.kr 사진을 못 받으면 원래 주소로 한 번 더 받는다.
+// 다시 받는 동안에는 그 사진의 onerror(슬라이드 지우기 등)가 돌지 않게 여기서 멈춘다.
+document.addEventListener('error', function(e) {
+  var t = e.target;
+  if (t && t.tagName === 'IMG' && okbmImageRetryOriginal(t)) e.stopPropagation();
+}, true);
 window.okbmSafeExternalUrl = okbmSafeExternalUrl;
 
 // =========================================================================

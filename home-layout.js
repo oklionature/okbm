@@ -30,6 +30,10 @@
   var okbmSafeImageUrl = function (u) {
     return typeof window.okbmSafeImageUrl === 'function' ? window.okbmSafeImageUrl(u) : '';
   };
+  // 화면에 보여 줄 사진은 img.romanticroute.kr로(romantic-sync.js okbmFastImageUrl)
+  var okbmFastImageUrl = function (u) {
+    return typeof window.okbmFastImageUrl === 'function' ? window.okbmFastImageUrl(u) : okbmSafeImageUrl(u);
+  };
 
   // ---------- 모양 ----------
   function injectCss() {
@@ -481,7 +485,7 @@
     var spot = String(f.spot || '').replace(/\s*\(.*?\)/g, '').trim() || '백패킹 필드';
     var memo = String(f.oneLineMemo || f.memo || '').replace(/\s+/g, ' ').trim();
     return '<button type="button" class="hr-card okbm-press" data-recent-id="' + escapeHtml(f.id) + '" aria-label="' + escapeHtml(spot + ' 후기 보기') + '">' +
-      '<div class="hr-ph">' + (photo ? '<img src="' + escapeHtml(okbmSafeImageUrl(photo)) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">' : '') + '</div>' +
+      '<div class="hr-ph">' + (photo ? '<img src="' + escapeHtml(okbmFastImageUrl(photo)) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">' : '') + '</div>' +
       '<div class="hr-bd"><div class="hr-who"><span>' + escapeHtml(f.author) + '</span><span>' + escapeHtml(shortDate(f)) + '</span></div>' +
       '<div class="hr-sp">' + escapeHtml(spot) + '</div>' +
       '<div class="hr-mm">' + escapeHtml(memo) + '</div></div></button>';

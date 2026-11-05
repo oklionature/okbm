@@ -22,6 +22,8 @@
     });
   };
   const okbmSafeImageUrl = typeof window.okbmSafeImageUrl === 'function' ? window.okbmSafeImageUrl : function () { return ''; };
+  // 화면에 보여 줄 사진은 img.romanticroute.kr로(romantic-sync.js okbmFastImageUrl)
+  const okbmFastImageUrl = function (u) { return typeof window.okbmFastImageUrl === 'function' ? window.okbmFastImageUrl(u) : okbmSafeImageUrl(u); };
   const okbmSafeExternalUrl = typeof window.okbmSafeExternalUrl === 'function' ? window.okbmSafeExternalUrl : function () { return '#'; };
   const esc = escapeHtml;
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -1115,7 +1117,7 @@
     const poster = ig ? '' : okbmSafeImageUrl(e.poster_url);
     const kv = function (k, val) { return val ? '<div class="lm-kv"><span>' + k + '</span><b>' + esc(val) + '</b></div>' : ''; };
     const body = `<div class="lmx-in">
-      ${poster ? `<img class="lm-poster" src="${escapeHtml(okbmSafeImageUrl(e.poster_url))}" alt="" loading="lazy" decoding="async">` : ''}
+      ${poster ? `<img class="lm-poster" src="${escapeHtml(okbmFastImageUrl(e.poster_url))}" alt="" loading="lazy" decoding="async">` : ''}
       ${e.subtitle ? `<div class="lm-rs" style="margin:0 0 6px">${esc(e.subtitle)}</div>` : ''}
       ${kv('일정', v.dateText + ' (' + v.weekday + ')')}${ap ? kv('신청', [ap.open ? whenText(ap.open, false) + ' 오픈' : '', ap.close ? untilText(ap.close, false) : ''].filter(Boolean).join(' ~ ')) : ''}${kv('장소', place)}${kv('주최', e.host)}${kv('참가', e.fee)}
       ${e.description ? `<p class="lm-desc">${esc(e.description)}</p>` : ''}
@@ -1504,7 +1506,7 @@
   function ytBlock(id) {
     const watch = 'https://www.youtube.com/watch?v=' + id;
     const img = 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg';
-    return `<a class="lm-yt" href="${escapeHtml(okbmSafeExternalUrl(watch))}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(okbmSafeImageUrl(img))}" alt="" loading="lazy" decoding="async"><span>YouTube에서 보기</span></a>`;
+    return `<a class="lm-yt" href="${escapeHtml(okbmSafeExternalUrl(watch))}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(okbmFastImageUrl(img))}" alt="" loading="lazy" decoding="async"><span>YouTube에서 보기</span></a>`;
   }
   function sourceMark(text) {
     const src = guideSource(text);
@@ -1667,7 +1669,7 @@
   }
   function tipPoster(yid) {
     const img = 'https://i.ytimg.com/vi/' + yid + '/hqdefault.jpg';
-    return `<button type="button" class="lm-tv-play" data-a="tip-play" aria-label="영상 재생"><img src="${escapeHtml(okbmSafeImageUrl(img))}" alt="" loading="lazy" decoding="async"><span class="lm-tv-btn" aria-hidden="true"></span></button>`;
+    return `<button type="button" class="lm-tv-play" data-a="tip-play" aria-label="영상 재생"><img src="${escapeHtml(okbmFastImageUrl(img))}" alt="" loading="lazy" decoding="async"><span class="lm-tv-btn" aria-hidden="true"></span></button>`;
   }
   function resetTipVideo(item) {
     const box = item && item.querySelector('[data-yt]');
@@ -1856,7 +1858,7 @@
         <div class="lm-who">${whoName(p.nickname, p.user_id)}<span>${esc(ago(p.created_at))}</span><span>· ${esc(CAT_LABEL[p.category] || '')}</span></div>
         <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}</div>${p.body ? `<div class="lm-bd">${bodyHtml(p.body)}</div>` : ''}
         ${p.category === 'poll' ? pollHtml(p) : ''}
-        ${photos.length ? `<div class="lm-photos ${photos.length > 1 ? 'multi' : ''}">${photos.map(function (u) { return `<img src="${escapeHtml(okbmSafeImageUrl(u))}" alt="" loading="lazy" decoding="async">`; }).join('')}</div>` : ''}
+        ${photos.length ? `<div class="lm-photos ${photos.length > 1 ? 'multi' : ''}">${photos.map(function (u) { return `<img src="${escapeHtml(okbmFastImageUrl(u))}" alt="" loading="lazy" decoding="async">`; }).join('')}</div>` : ''}
         ${p.is_private ? `<div class="lm-private">${ico(P.lock, 13)}나와 운영팀만 볼 수 있어요 · 댓글 ${cc}</div>`
           : `<div class="lm-acts">${likeBtn(p)}<span class="lm-act">${ico(P.chat, 17)}<span>${cc}</span></span></div>`}
       </div></div>`;
@@ -2475,7 +2477,7 @@
     el.hidden = false;
     el.innerHTML = '<div class="hm-head">낭만 매거진</div><div class="hm-rail">' + list.map(function (n) {
       const cover = newsImgs(n)[0];
-      return `<button type="button" class="hm-card" data-a="news" data-v="${esc(n.id)}" aria-label="${esc(n.title)}">${cover ? `<img src="${escapeHtml(okbmSafeImageUrl(cover))}" alt="" loading="lazy" decoding="async">` : ''}<span>${n.is_active === false ? '<em>숨김</em>' : ''}${esc(n.title)}</span></button>`;
+      return `<button type="button" class="hm-card" data-a="news" data-v="${esc(n.id)}" aria-label="${esc(n.title)}">${cover ? `<img src="${escapeHtml(okbmFastImageUrl(cover))}" alt="" loading="lazy" decoding="async">` : ''}<span>${n.is_active === false ? '<em>숨김</em>' : ''}${esc(n.title)}</span></button>`;
     }).join('') + (D.admin ? '<button type="button" class="hm-card add" data-a="new-news" data-v="magazine">' + ico(P.plus, 20) + '<span>매거진 올리기</span></button>' : '') + '</div>';
   }
   // 소식·매거진 보기 (아래에서 올라오는 창). 사진이 여러 장이면 옆으로 넘긴다
@@ -2485,7 +2487,7 @@
     const imgs = newsImgs(n);
     const link = n.link_url && HTTPS_RE.test(n.link_url) ? n.link_url : '';
     openSheet(`<p class="lm-ssub" style="margin:0 0 4px">${esc(NEWS_KIND[n.kind] || '소식')} · ${esc(ago(n.created_at))}</p><h3 id="loungeSheetTitle">${esc(n.title)}</h3>
-      ${imgs.length ? `<div class="hm-view">${imgs.map(function (u, i) { return `<img src="${escapeHtml(okbmSafeImageUrl(u))}" alt="${esc(n.title)} ${i + 1}/${imgs.length}" loading="lazy" decoding="async">`; }).join('')}</div>${imgs.length > 1 ? `<p class="lm-hint" style="text-align:center">옆으로 넘겨 보세요 · ${imgs.length}장</p>` : ''}` : ''}
+      ${imgs.length ? `<div class="hm-view">${imgs.map(function (u, i) { return `<img src="${escapeHtml(okbmFastImageUrl(u))}" alt="${esc(n.title)} ${i + 1}/${imgs.length}" loading="lazy" decoding="async">`; }).join('')}</div>${imgs.length > 1 ? `<p class="lm-hint" style="text-align:center">옆으로 넘겨 보세요 · ${imgs.length}장</p>` : ''}` : ''}
       ${n.body ? `<p class="lm-desc">${bodyHtml(n.body)}</p>` : ''}
       ${link ? `<a class="lm-btn main" style="display:flex;align-items:center;justify-content:center;margin-top:16px;text-decoration:none" href="${escapeHtml(okbmSafeExternalUrl(link))}" target="_blank" rel="noopener noreferrer">자세히 보기</a>` : ''}
       ${D.admin ? `<div class="lmx-links" style="margin-top:14px"><button type="button" data-a="edit-news" data-v="${esc(n.id)}">수정</button><button type="button" class="red" data-a="del-news" data-v="${esc(n.id)}">삭제</button></div>` : ''}`,
@@ -2893,7 +2895,7 @@
         ${field('lmEvIg', '인스타 게시물 링크', inp('lmEvIg', 'instagram_url', e && eventIgUrl(e), 'type="url" inputmode="url" maxlength="300" placeholder="https://www.instagram.com/p/…"'))}
         <p class="lm-hint">신청 페이지와 인스타 게시물은 같이 넣을 수 있어요. 인스타는 앱 안에서 열려요.</p>
         <span class="lm-lbl">포스터</span>
-        <img class="lm-prev" data-prev alt="포스터 미리보기" ${e && okbmSafeImageUrl(e.poster_url) ? `src="${escapeHtml(okbmSafeImageUrl(e.poster_url))}"` : 'hidden'}>
+        <img class="lm-prev" data-prev alt="포스터 미리보기" ${e && okbmSafeImageUrl(e.poster_url) ? `src="${escapeHtml(okbmFastImageUrl(e.poster_url))}"` : 'hidden'}>
         <div style="display:flex;gap:18px;align-items:center"><label class="lm-file">${ico(P.img, 18)}<span data-poster-label>${e && e.poster_url ? '다른 사진으로' : '사진 고르기'}</span><input type="file" accept="image/*,.heic,.heif" data-file hidden></label>
           <button type="button" class="lm-file" style="color:var(--sub)" data-a="poster-clear" ${e && e.poster_url ? '' : 'hidden'}>빼기</button></div>
         ${field('lmEvDesc', '설명', '<textarea class="lm-ta" id="lmEvDesc" name="description" maxlength="2000" placeholder="어떤 행사인가요? 준비물·주의할 점도 적어 주세요">' + esc(e && e.description) + '</textarea>')}
@@ -3307,7 +3309,7 @@
     const list = SH.photos || [];
     return list.map(function (ph, i) {
       if (ph.uploading) return '<div class="lm-thumb" aria-label="사진 올리는 중">올리는 중…</div>';
-      return `<div class="lm-thumb"><img src="${escapeHtml(okbmSafeImageUrl(ph.url))}" alt="" decoding="async"><button type="button" data-a="photo-del" data-v="${i}" aria-label="사진 ${i + 1} 빼기">${ico(P.x, 14)}</button></div>`;
+      return `<div class="lm-thumb"><img src="${escapeHtml(okbmFastImageUrl(ph.url))}" alt="" decoding="async"><button type="button" data-a="photo-del" data-v="${i}" aria-label="사진 ${i + 1} 빼기">${ico(P.x, 14)}</button></div>`;
     }).join('');
   }
   // 투표 보기 칸 (2~5개). 3번째부터 뺄 수 있다

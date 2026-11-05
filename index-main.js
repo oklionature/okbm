@@ -93,6 +93,10 @@
     var okbmSafeImageUrl = function(url) {
       return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
     };
+    // 화면에 보여 줄 사진은 img.romanticroute.kr로(romantic-sync.js okbmFastImageUrl). 전역이라 이름을 달리 둔다
+    var okbmViewImageUrl = function(url) {
+      return (typeof window.okbmFastImageUrl === 'function') ? window.okbmFastImageUrl(url) : okbmSafeImageUrl(url);
+    };
     var okbmSafeExternalUrl = function(url) {
       return (typeof window.okbmSafeExternalUrl === 'function') ? window.okbmSafeExternalUrl(url) : '#';
     };
@@ -655,7 +659,7 @@
         return `
           <div data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId)" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; box-sizing:border-box; transition:transform 0.15s ease;">
             <div style="width:100%; aspect-ratio:4/3; position:relative; background:#000; overflow:hidden;">
-              <img src="${escapeHtml(okbmSafeImageUrl(item.photoUrl))}" alt="${escapeHtml(sName)}" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;" />
+              <img src="${escapeHtml(okbmViewImageUrl(item.photoUrl))}" alt="${escapeHtml(sName)}" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;" />
               <div style="position:absolute; bottom:6px; right:6px; background:#0c1017; color:#fde047; font-size:0.58rem; font-weight:900; font-family:var(--font-en); padding:2px 6px; border-radius:4px; border:1px solid rgba(253,224,71,0.35);">${escapeHtml(badgeText)}</div>
             </div>
             <div style="padding:9px 10px 10px 10px; display:flex; flex-direction:column; gap:3px; box-sizing:border-box;">
@@ -795,7 +799,7 @@
         return `
           <div class="n-trailer-card" data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId)" style="width:118px !important; flex-shrink:0; cursor:pointer;">
             <div class="n-trailer-thumb">
-              <img src="${escapeHtml(okbmSafeImageUrl(item.photoUrl))}" alt="${escapeHtml(sName)}" loading="lazy" decoding="async" />
+              <img src="${escapeHtml(okbmViewImageUrl(item.photoUrl))}" alt="${escapeHtml(sName)}" loading="lazy" decoding="async" />
               <div class="n-trailer-weight-chip">${escapeHtml(badgeText)}</div>
             </div>
             <div class="n-trailer-info">
@@ -985,7 +989,7 @@
       var slidesHtml = photosList.map(function(u) {
         return `
           <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000;">
-            <img src="${escapeHtml(okbmSafeImageUrl(u))}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.96) contrast(1.04);" />
+            <img src="${escapeHtml(okbmViewImageUrl(u))}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.96) contrast(1.04);" />
             <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 25%, transparent 70%, rgba(0,0,0,0.75) 100%); pointer-events:none;"></div>
           </div>
         `;
@@ -1225,7 +1229,7 @@
 
           return '<div data-feed-id="' + fId + '" onclick="window.closeTripAuthorProfile(); if(typeof openSecretSpotHeroViewer===\'function\') openSecretSpotHeroViewer(this.dataset.feedId);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer;">' +
             '<div style="width:100%; aspect-ratio:1/1; position:relative; background:#000; overflow:hidden;">' +
-              '<img src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" alt="' + escapeHtml(sName) + '" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
+              '<img src="' + escapeHtml(okbmViewImageUrl(photoUrl)) + '" alt="' + escapeHtml(sName) + '" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
               '<div style="position:absolute; bottom:5px; right:5px; background:#0c1017; color:#34d399; font-size:0.56rem; font-weight:900; font-family:var(--font-en); padding:1.5px 5px; border-radius:4px; border:1px solid rgba(52,211,153,0.3);">' + escapeHtml(wText) + '</div>' +
             '</div>' +
             '<div style="padding:7px 8px; display:flex; flex-direction:column; gap:2px; box-sizing:border-box;">' +
@@ -1510,7 +1514,7 @@
         var isFirst = (pIdx === 0);
         var loadingAttr = isFirst ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
         return '<div class="hero-slide-item" style="flex:0 0 100%; width:100%; height:100%; min-width:100%; position:relative; overflow:hidden; background:#000000;">' +
-          '<img src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" referrerpolicy="no-referrer" ' + loadingAttr + ' decoding="async" onerror="window.handleHeroSlideImgError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.95) contrast(1.04); display:block;" />' +
+          '<img src="' + escapeHtml(okbmViewImageUrl(pUrl)) + '" referrerpolicy="no-referrer" ' + loadingAttr + ' decoding="async" onerror="window.handleHeroSlideImgError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.95) contrast(1.04); display:block;" />' +
           '<div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 28%, transparent 80%, rgba(0,0,0,0.35) 100%); pointer-events:none; z-index:2;"></div>' +
         '</div>';
       }).join('');
@@ -2018,7 +2022,7 @@
         return `
           <div class="n-video-single-card" data-okbm-idx="${Number(idx)}" onclick="openVideoDetailModal(Number(this.dataset.okbmIdx))">
             <div class="n-video-thumb-box">
-              <img src="${escapeHtml(okbmSafeImageUrl(thumb))}" alt="${escapeHtml(spotTitle)}" loading="lazy" />
+              <img src="${escapeHtml(okbmViewImageUrl(thumb))}" alt="${escapeHtml(spotTitle)}" loading="lazy" />
               <div class="n-video-play-icon">
                 <div class="n-video-play-btn-circle">▶</div>
               </div>
@@ -2877,7 +2881,7 @@ var adBannersHtml = `
                     ${photoList.map(function(pUrl) {
                       return `
                         <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; min-width:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#070a12;">
-                          <img src="${escapeHtml(okbmSafeImageUrl(pUrl))}" alt="Cover" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.96) contrast(1.04);" />
+                          <img src="${escapeHtml(okbmViewImageUrl(pUrl))}" alt="Cover" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.96) contrast(1.04);" />
                           <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.15) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.4) 100%); pointer-events:none;"></div>
                         </div>
                       `;
