@@ -4083,10 +4083,9 @@ function updateSmartResetButtons() {
 
                 ${spot.gpxUrl && isUnlocked ? `
                   <button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
-                    ${ICONS.GPX_TRACK} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : '등산로 GPX 코스 지도에 표시'}
+                    ${ICONS.GPX_TRACK} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : (spot.gpxCredit ? escapeHtml(spot.gpxCredit) + '님이 등록하신 GPX 확인하기' : '등산로 GPX 코스 지도에 표시')}
                   </button>
                   ${isGpxActive ? `<button type="button" class="btn-gpx-send" data-gpx-export="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" data-metric-click="feat_spot_gpx_export_open">${ICONS.GPX_TRACK} 내 등산 앱으로 보내기 (가민·트랭글)</button>` : ''}
-                  ${spot.gpxCredit ? `<div class="gpx-credit-line">${escapeHtml(spot.gpxCredit)}님이 보내 준 길이에요</div>` : ''}
                 ` : ''}
               </div>
 
