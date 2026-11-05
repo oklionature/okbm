@@ -3904,9 +3904,9 @@ window.syncUserDataToCloud = syncUserDataToCloud;
 
 // 홈/지도 핀용 공개 컬럼. 들머리 주소(trailhead_addr)·author_sns_url은 제외.
 // 소개는 앞 80자만(H15 view_brief_short를 view_brief라는 이름으로 받는다). 전체 글은 정보창 상세·okbmFetchSpotBrief로 따로 받는다.
-window.SPOTS_MAP_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at,camp_status_photos,camp_status_credit';
+window.SPOTS_MAP_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at,camp_status_photos,camp_status_credit,camp_type';
 // H9: 비회원 목록에는 좌표·들머리 이름이 없다(서버도 막는다). 핀 좌표는 get_spot_pins로 지도 범위만큼만 받는다.
-window.SPOTS_GUEST_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,terrain,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at,camp_status_photos,camp_status_credit';
+window.SPOTS_GUEST_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,terrain,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at,camp_status_photos,camp_status_credit,camp_type';
 window.OKBM_KOREA_BOUNDS = { minLat: 32.8, minLng: 124.3, maxLat: 38.9, maxLng: 132.0 };
 window.FEEDS_HOME_SELECT = 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,instagram,likes_count,is_published,feed_type,created_at,items,template_id';
 
@@ -4051,6 +4051,7 @@ window.normalizeSpotMapRow = function(row) {
     camp_status_at: row.camp_status_at || null,
     camp_status_photos: Array.isArray(row.camp_status_photos) ? row.camp_status_photos.slice(0, 3) : [],
     camp_status_credit: String(row.camp_status_credit || '').trim(),
+    camp_type: String(row.camp_type || '').trim(),
     mediaUrls: row.mediaUrls || row.mediaurls || ''
   };
   // 비회원이 받은 대략 좌표면 그 칸 크기(도). 0이면 정확한 좌표.
@@ -13139,6 +13140,7 @@ window.saveProposalToSupabase = async function(proposalData, isCorrection) {
     authorsnsurl: String(proposalData.authorsnsurl || proposalData.authorSnsUrl || ''),
     coursetype: String(proposalData.coursetype || proposalData.courseType || ''),
     terrain: String(proposalData.terrain || ''),
+    camp_type: (proposalData.camp_type === '유료' || proposalData.camp_type === '무료') ? proposalData.camp_type : '',
     difficulty: String(proposalData.difficulty || ''),
     distance_km: String(proposalData.distance_km || ''),
     status: String(proposalData.status || 'pending'),

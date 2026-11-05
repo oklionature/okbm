@@ -506,6 +506,9 @@
     }
 
     function feedMatchesSecretSpotTheme(feed, themeKey, spotPool) {
+      // 야영장(H51 camp_type)은 박지 자랑 자리인 테마 줄에 넣지 않는다(대표님 11-05: 플랜B로 물러서 보여 주기)
+      var campSpot = findThemeSpotMaster(feed, spotPool);
+      if (campSpot && String(campSpot.camp_type || '').trim()) return false;
       if (!themeKey || themeKey === 'all') return true;
       var flags = getSecretSpotThemeFlags(feed, spotPool);
       if (themeKey === 'baekbo') return flags.isBaekbo;
@@ -4674,7 +4677,7 @@ var adBannersHtml = `
 
       try {
         var supaSpots = null;
-        var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at,camp_status_photos,camp_status_credit';
+        var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at,camp_status_photos,camp_status_credit,camp_type';
 
         if (typeof window.fetchMasterSpotsFromSupabase === 'function') {
           var fetched = await window.fetchMasterSpotsFromSupabase(!!isForce);
@@ -4735,6 +4738,7 @@ var adBannersHtml = `
               camp_status_at: row.camp_status_at || null,
               camp_status_photos: Array.isArray(row.camp_status_photos) ? row.camp_status_photos.slice(0, 3) : [],
               camp_status_credit: String(row.camp_status_credit || '').trim(),
+              camp_type: String(row.camp_type || '').trim(),
               mediaUrls: row.mediaUrls || '',
               lat: row.campsite_lat || row.lat || '',
               lng: row.campsite_lng || row.lng || ''

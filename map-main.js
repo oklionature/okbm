@@ -240,7 +240,7 @@
           } else {
             var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
             var targetKey = window.SUPABASE_ANON_KEY || '';
-            var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at,camp_status_photos,camp_status_credit';
+            var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,view_brief:view_brief_short,camp_status,camp_status_note,camp_status_at,camp_status_photos,camp_status_credit,camp_type';
             var res = await fetch(targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
               headers: { 'apikey': targetKey, 'Authorization': 'Bearer ' + targetKey, 'Content-Type': 'application/json' }
             });
@@ -306,6 +306,7 @@
                 camp_status_at: row.camp_status_at || null,
                 camp_status_photos: Array.isArray(row.camp_status_photos) ? row.camp_status_photos.slice(0, 3) : [],
                 camp_status_credit: String(row.camp_status_credit || '').trim(),
+                camp_type: String(row.camp_type || '').trim(),
                 searchCount: 0,
                 sheetIndex: idx,
                 created_at: row.created_at || null
@@ -944,15 +945,66 @@
       }
       window.closePcSlidingDrawer = closePcSlidingDrawer;
 
+    // 야영장 분류(H51 spots.camp_type): '' 일반 박지 / '유료' 유료 야영장 / '무료' 무료 야영장
+      function spotCampType(spot) {
+        var t = String((spot && (spot.camp_type || spot.campType)) || '').trim();
+        return (t === '유료' || t === '무료') ? t : '';
+      }
+      window.spotCampType = spotCampType;
+
+      // 제보 창 '7-1. 장소 종류'. 유료 야영장을 고르면 [주의/팁] 안내가 요금·예약으로 바뀐다
+      var MODAL_TIP_PLACEHOLDER = '';
+      function setModalCampType(value) {
+        var v = (value === '유료' || value === '무료') ? value : '';
+        document.querySelectorAll('#modalCampTypeSeg [data-camp-type]').forEach(function(b) {
+          var on = b.getAttribute('data-camp-type') === v;
+          b.classList.toggle('on', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        var tip = document.getElementById('modalInputDescTip');
+        if (tip) {
+          if (!MODAL_TIP_PLACEHOLDER) MODAL_TIP_PLACEHOLDER = tip.getAttribute('placeholder') || '';
+          tip.setAttribute('placeholder', v === '유료' ? '요금·예약 방법을 적어 주세요 (예약 사이트, 1박 요금 등)' : MODAL_TIP_PLACEHOLDER);
+        }
+      }
+      function readModalCampType() {
+        var on = document.querySelector('#modalCampTypeSeg [data-camp-type].on');
+        var v = on ? on.getAttribute('data-camp-type') : '';
+        return (v === '유료' || v === '무료') ? v : '';
+      }
+      document.addEventListener('click', function(e) {
+        var b = e.target && e.target.closest ? e.target.closest('#modalCampTypeSeg [data-camp-type]') : null;
+        if (b) setModalCampType(b.getAttribute('data-camp-type'));
+      });
+
     var markerImageCache = new Map();
-      function createPureSvgMarkerImage(difficulty = 3, banned = false) {
+      function createPureSvgMarkerImage(difficulty = 3, banned = false, campType = '') {
         const d = parseInt(difficulty, 10) || 3;
         const colorKey = banned ? 'ban' : (d <= 2 ? 'easy' : (d >= 4 ? 'hard' : 'mid'));
         const isMobile = window.innerWidth <= 768;
-        const cacheKey = colorKey + '_' + (isMobile ? 'm' : 'p');
+        // 야영장은 박지 핀의 70% 크기 하늘색 텐트 핀(유료=채움, 무료=흰 바탕 테두리). 박지가 주인공이라 한 발 물러서 보이게 한다(대표님 11-05)
+        const camp = !banned && (campType === '유료' || campType === '무료') ? campType : '';
+        const cacheKey = (camp ? 'camp' + camp : colorKey) + '_' + (isMobile ? 'm' : 'p');
 
         if (markerImageCache.has(cacheKey)) {
           return markerImageCache.get(cacheKey);
+        }
+        if (camp) {
+          const cw = isMobile ? 21 : 24, ch = isMobile ? 27 : 30;
+          const paid = camp === '유료';
+          const body = paid ? '#0ea5e9' : '#ffffff', edge = paid ? '#ffffff' : '#0ea5e9', tent = paid ? '#ffffff' : '#0ea5e9', door = paid ? '#0ea5e9' : '#ffffff';
+          const campSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="' + cw + '" height="' + ch + '">' +
+            '<ellipse cx="14" cy="34" rx="6" ry="1.8" fill="rgba(0,0,0,0.3)"/>' +
+            '<path fill="' + body + '" stroke="' + edge + '" stroke-width="' + (paid ? '1.8' : '2.2') + '" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>' +
+            '<path d="M14 7.5 L7.5 19 H20.5 Z" fill="' + tent + '"/><path d="M14 13 L11.8 19 H16.2 Z" fill="' + door + '"/>' +
+          '</svg>';
+          const campImg = new kakao.maps.MarkerImage(
+            'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(campSvg),
+            new kakao.maps.Size(cw, ch),
+            { offset: new kakao.maps.Point(cw / 2, ch) }
+          );
+          limitedMapSet(markerImageCache, cacheKey, campImg, 100);
+          return campImg;
         }
 
         const color = colorKey === 'ban' ? '#64748b' : (colorKey === 'easy' ? '#10b981' : (colorKey === 'hard' ? '#f43f5e' : '#f59e0b'));
@@ -1380,7 +1432,7 @@
       // 난이도·장소·내 기록을 한 판에서 고른다. 한 묶음에 하나씩, 고른 것을 다시 누르면 풀린다.
       const MAP_FILTER_GROUPS = [
         { key: 'diff', title: '난이도', opts: [['BEGINNER', '백보킹'], ['EASY', '쉬움'], ['MID', '보통'], ['HARD', '어려움']] },
-        { key: 'terrain', title: '장소', opts: [['데크', '데크'], ['노지', '노지'], ['암릉', '암릉'], ['섬', '섬'], ['해변', '해변'], ['계곡', '계곡'], ['동굴', '동굴']] },
+        { key: 'terrain', title: '장소', opts: [['BAKJI_ONLY', '박지만'], ['데크', '데크'], ['노지', '노지'], ['암릉', '암릉'], ['섬', '섬'], ['해변', '해변'], ['계곡', '계곡'], ['동굴', '동굴'], ['CAMP_PAID', '유료 야영장'], ['CAMP_FREE', '무료 야영장']] },
         { key: 'status', title: '내 기록', opts: [['BOOKMARK', '찜한 곳'], ['VISITED', '다녀온 곳']] }
       ];
       var mapFilterDraft = null;
@@ -1513,7 +1565,8 @@
           });
     
         } else if (currentMasterTab === 'TERRAIN') {
-          [{ key: 'ALL', label: '전체' }, { key: '데크', label: `${ICONS.DECK}데크` }, { key: '암릉', label: `${ICONS.ROCK}암릉` }, { key: '노지', label: `${ICONS.SOIL}노지` }, { key: '해변', label: `${ICONS.BEACH}해변` }, { key: '섬', label: `${ICONS.ISLAND}섬` }, { key: '계곡', label: `${ICONS.VALLEY}계곡` }, { key: '동굴', label: `${ICONS.CAVE}동굴` }].forEach(t => {
+          [{ key: 'ALL', label: '전체' }, { key: 'BAKJI_ONLY', label: '박지만' }, { key: '데크', label: `${ICONS.DECK}데크` }, { key: '암릉', label: `${ICONS.ROCK}암릉` }, { key: '노지', label: `${ICONS.SOIL}노지` }, { key: '해변', label: `${ICONS.BEACH}해변` }, { key: '섬', label: `${ICONS.ISLAND}섬` }, { key: '계곡', label: `${ICONS.VALLEY}계곡` }, { key: '동굴', label: `${ICONS.CAVE}동굴` }, { key: 'CAMP_PAID', label: '유료 야영장', sep: true }, { key: 'CAMP_FREE', label: '무료 야영장' }].forEach(t => {
+            if (t.sep) { const bar = document.createElement('span'); bar.className = 'filter-chip-sep'; container.appendChild(bar); }
             const btn = document.createElement('button');
             btn.className = `filter-chip ${currentTerrainFilter === t.key ? 'active' : ''}`;
             btn.innerHTML = t.label;
@@ -1891,10 +1944,12 @@ function updateSmartResetButtons() {
           const regKey = normalizeTo10Regions(spot.region);
           if (currentRegionFilter !== 'ALL' && regKey !== (currentRegionFilter === '서울인천' ? '서울/인천' : currentRegionFilter)) return false;
         } else if (currentMasterTab === 'TERRAIN') {
-          if (currentTerrainFilter !== 'ALL' && !(spot.terrain || []).some(t => t.includes(currentTerrainFilter))) return false;
+          const campHit = campFilterMatches(spot, currentTerrainFilter);
+          if (campHit !== null) { if (!campHit) return false; }
+          else if (currentTerrainFilter !== 'ALL' && !(spot.terrain || []).some(t => t.includes(currentTerrainFilter))) return false;
         } else if (currentMasterTab === 'COURSE') {
           if (currentCourseFilter === 'BEGINNER' && !isBeginnerCourseSpot(spot)) return false;
-          if (currentCourseFilter === 'HOT' && getSpotViews(spot) < 5) return false;
+          if (currentCourseFilter === 'HOT' && (getSpotViews(spot) < 5 || spotCampType(spot))) return false;
           if (currentCourseFilter === 'NEW' && !spot.isNew) return false;
         } else if (currentMasterTab === 'MY') {
           if (currentMyFilter === 'ALL' && (!userBookmarks.has(sId) && !userVisited.has(sId))) return false;
@@ -1907,7 +1962,7 @@ function updateSmartResetButtons() {
       // 목록에서 고른 조건을 사람 말로(없으면 ''). 필터 버튼 숫자와 필터 판 안내에 쓴다.
       function listFilterLabel() {
         if (currentMasterTab === 'REGION') return currentRegionFilter !== 'ALL' ? currentRegionFilter : '';
-        if (currentMasterTab === 'TERRAIN') return currentTerrainFilter !== 'ALL' ? currentTerrainFilter : '';
+        if (currentMasterTab === 'TERRAIN') return currentTerrainFilter !== 'ALL' ? (CAMP_FILTER_LABELS[currentTerrainFilter] || currentTerrainFilter) : '';
         if (currentMasterTab === 'COURSE') return ({ BEGINNER: '초보 코스', HOT: '인기', NEW: '신규' })[currentCourseFilter] || '';
         if (currentMasterTab === 'MY') return ({ ALL: '마이보관', BOOKMARK: '찜', VISITED: '클리어' })[currentMyFilter] || '마이보관';
         return '';
@@ -1915,6 +1970,15 @@ function updateSmartResetButtons() {
 
       // 지도 필터(난이도·장소·내 기록) 판정. renderSpots와 필터 판의 "N곳 보기" 개수가 같은 규칙을 쓴다.
       // 난이도 BEGINNER = 백보킹(초보 코스). 상태의 HOT·NEW·BEGINNER는 예전 값이 남아 있을 때를 위해 둔다.
+      // 장소 필터의 야영장 칸(H51). 야영장 키가 아니면 null을 돌려 지형 판정으로 넘긴다.
+      var CAMP_FILTER_LABELS = { BAKJI_ONLY: '박지만', CAMP_PAID: '유료 야영장', CAMP_FREE: '무료 야영장' };
+      function campFilterMatches(spot, key) {
+        if (key === 'BAKJI_ONLY') return !spotCampType(spot);
+        if (key === 'CAMP_PAID') return spotCampType(spot) === '유료';
+        if (key === 'CAMP_FREE') return spotCampType(spot) === '무료';
+        return null;
+      }
+
       function hudFilterMatches(spot, diff, status, terrain) {
         const sId = String(spot.id).trim();
         const diffNum = parseInt(spot.difficulty, 10) || 3;
@@ -1927,11 +1991,13 @@ function updateSmartResetButtons() {
         if (status !== 'ALL') {
           if (status === 'BOOKMARK' && !userBookmarks.has(sId)) return false;
           if (status === 'VISITED' && !userVisited.has(sId)) return false;
-          if (status === 'HOT' && getSpotViews(spot) < 5) return false;
+          if (status === 'HOT' && (getSpotViews(spot) < 5 || spotCampType(spot))) return false;
           if (status === 'NEW' && !spot.isNew) return false;
           if (status === 'BEGINNER' && !isBeginnerCourseSpot(spot)) return false;
         }
-        if (terrain !== 'ALL') {
+        const campHit = campFilterMatches(spot, terrain);
+        if (campHit !== null) { if (!campHit) return false; }
+        else if (terrain !== 'ALL') {
           const tList = spot.terrain || [];
           const combinedDesc = ((spot.desc || '') + ' ' + (spot.name || '')).toLowerCase();
           if (terrain === '동굴') {
@@ -6842,10 +6908,10 @@ var liveSearchTimer = null;
           if (!spotNativeMarkerMap.has(sId) && map) {
             const marker = new kakao.maps.Marker({
               position: latlng, 
-              image: createPureSvgMarkerImage(spot.difficulty, isCampBanned(spot)), 
+              image: createPureSvgMarkerImage(spot.difficulty, isCampBanned(spot), spotCampType(spot)), 
               clickable: true,
               draggable: String(window.__adminPinMoveSpotId || '').trim() === sId,
-              zIndex: 9999
+              zIndex: spotCampType(spot) ? 9000 : 9999
             });
             kakao.maps.event.addListener(marker, 'click', function(mouseEvent) {
               if (isPickingLocationMode) {
@@ -6863,6 +6929,7 @@ var liveSearchTimer = null;
             marker.__okbmPosKey = lat.toFixed(6) + ',' + lng.toFixed(6);
             marker.__okbmDiff = spot.difficulty;
             marker.__okbmBan = isCampBanned(spot);
+            marker.__okbmCamp = spotCampType(spot);
             spotNativeMarkerMap.set(sId, marker);
           } else {
             const existingMarker = spotNativeMarkerMap.get(sId);
@@ -6881,10 +6948,13 @@ var liveSearchTimer = null;
                 if (lbl) lbl.setPosition(freshLatLng);
               }
               const banned = isCampBanned(spot);
-              if (existingMarker.__okbmDiff !== spot.difficulty || existingMarker.__okbmBan !== banned) {
+              const campType = spotCampType(spot);
+              if (existingMarker.__okbmDiff !== spot.difficulty || existingMarker.__okbmBan !== banned || existingMarker.__okbmCamp !== campType) {
                 existingMarker.__okbmDiff = spot.difficulty;
                 existingMarker.__okbmBan = banned;
-                existingMarker.setImage(createPureSvgMarkerImage(spot.difficulty, banned));
+                existingMarker.__okbmCamp = campType;
+                existingMarker.setImage(createPureSvgMarkerImage(spot.difficulty, banned, campType));
+                if (typeof existingMarker.setZIndex === 'function') existingMarker.setZIndex(campType ? 9000 : 9999);
               }
             }
           }
@@ -7183,6 +7253,7 @@ var liveSearchTimer = null;
           var chk = document.getElementById(chkId);
           if (chk) chk.checked = (chkId === 'chkDeck');
         });
+        setModalCampType('');
 
         var authorInput = document.getElementById('modalInputAuthorSns');
         if (authorInput) { authorInput.value = ''; }
@@ -7657,6 +7728,7 @@ var overlay = document.getElementById('customModalOverlay');
           campsite_lat: parseFloat(spot.lat) || 0,
           campsite_lng: parseFloat(spot.lng) || 0,
           terrain: Array.isArray(spot.terrain) ? spot.terrain.join(', ') : String(spot.terrain || ''),
+          camp_type: spotCampType(spot),
           trailhead_name: spot.trailhead_name || '',
           trailhead_addr: spot.trailhead_addr || spot.entryPoint || '',
           difficulty: String(spot.difficulty || '3'),
@@ -8014,6 +8086,7 @@ var overlay = document.getElementById('customModalOverlay');
           var chk = document.getElementById(chkId);
           if (chk) chk.checked = terrainText.indexOf(terrainMap[chkId]) !== -1;
         });
+        setModalCampType(source.camp_type || source.campType || '');
 
         var diffSelect = document.getElementById('modalSelectDiff');
         if (diffSelect) diffSelect.value = String(source.difficulty || '3');
@@ -8270,6 +8343,7 @@ var overlay = document.getElementById('customModalOverlay');
           if (document.getElementById('chkValley')?.checked) terrainList.push('계곡');
           if (document.getElementById('chkCave')?.checked) terrainList.push('동굴');
           if (terrainList.length === 0) terrainList.push('데크');
+          const campType = readModalCampType();
 
          // 🌐 마스터 시트(시트1)와 100% 동일한 권역/시군구 및 풀네임 자동 정밀 추출
           const detected = detectRegionAndCity(lat, lng, name, entry);
@@ -8316,6 +8390,7 @@ var overlay = document.getElementById('customModalOverlay');
                 if ((orig.spot_sub || '') !== sub) diffNotes.push(`• 세부포인트: "${orig.spot_sub || '없음'}" ➔ "${sub || '없음'}"`);
                 if ((orig.trailhead_addr || orig.entryPoint || '') !== entry) diffNotes.push(`• 들머리주소: "${orig.trailhead_addr || ''}" ➔ "${entry}"`);
                 if (parseFloat(orig.lat) !== parseFloat(lat) || parseFloat(orig.lng) !== parseFloat(lng)) diffNotes.push(`• 핀위치 변경됨`);
+                if (spotCampType(orig) !== campType) diffNotes.push(`• 장소 종류: "${spotCampType(orig) ? spotCampType(orig) + ' 야영장' : '일반 박지'}" ➔ "${campType ? campType + ' 야영장' : '일반 박지'}"`);
               }
 
               var headerNotice = '';
@@ -8372,6 +8447,7 @@ var overlay = document.getElementById('customModalOverlay');
                 blogUrl: blogUrl || '', 
                 authorSnsUrl: authorSnsUrl || '', 
                 courseType: courseType,
+                camp_type: campType,
                 date: (typeof getFormattedNow === 'function') ? getFormattedNow() : new Date().toLocaleDateString(),
                 status: isCorrection ? '수정건의대기' : '검수대기',
                 author: reporter.nickname,
@@ -8480,6 +8556,7 @@ var overlay = document.getElementById('customModalOverlay');
 
             Object.assign(target, {
               name: name,
+              camp_type: campType,
               spot_main: name,
               spot_sub: sub,
               fullName: fullName,
