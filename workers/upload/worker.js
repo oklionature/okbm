@@ -13,6 +13,10 @@
 //   REQUIRE_AUTH             "false"(전환기: 토큰 있으면 검증, 없으면 통과) / "true"(토큰 필수)
 //   DELETE_SECRET            (secret) delete-account Edge Function이 사진 삭제를 요청할 때 쓰는 비밀값
 //
+// GPX 등산로: POST /gpx  Authorization: Bearer <로그인 토큰>  본문 = GPX 파일 그대로 (2026-11-05, TASK_GPX.md)
+//   좌표(위도·경도)만 남긴 새 GPX로 다시 써서 gpx/<회원>/<uuid>.gpx에 둔다. 기록 시각·기기·작성자 정보는 저장하지 않는다.
+//   성공: 200 { "status": "SUCCESS", "url": ..., "points": 점 수, "km": 길이 }
+//
 // 사진 삭제: POST /delete  Authorization: Bearer <DELETE_SECRET>  { "urls": ["https://pub-.../key", ...] }
 //   공개 도메인 아래의 키만 지운다. 최대 200개.
 // =========================================================================
@@ -153,6 +157,89 @@ async function handleDelete(req, env) {
   return reply(req, { status: "SUCCESS", deleted: unique.length });
 }
 
+// ---- GPX ----
+const GPX_MAX_BYTES = 3 * 1024 * 1024;
+const GPX_MIN_POINTS = 20;
+const GPX_MAX_POINTS = 5000;   // 넘으면 고르게 줄인다
+const GPX_MAX_KM = 80;
+
+// trkpt(기록) 또는 rtept(경로)의 lat/lon 속성만 읽는다. 속성 순서는 앱마다 다르다.
+function gpxPoints(text) {
+  const pts = [];
+  for (const tag of ["trkpt", "rtept"]) {
+    const re = new RegExp("<" + tag + "\\b([^>]*)>", "g");
+    let m;
+    while ((m = re.exec(text)) && pts.length < 200000) {
+      const lat = parseFloat((m[1].match(/\blat\s*=\s*["']([-\d.]+)["']/) || [])[1]);
+      const lon = parseFloat((m[1].match(/\blon\s*=\s*["']([-\d.]+)["']/) || [])[1]);
+      if (Number.isFinite(lat) && Number.isFinite(lon)) pts.push([lat, lon]);
+    }
+    if (pts.length) break;
+  }
+  return pts;
+}
+
+function gpxLengthKm(pts) {
+  let m = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const ky = 110540, kx = 111320 * Math.cos(pts[i][0] * Math.PI / 180);
+    const dy = (pts[i][0] - pts[i - 1][0]) * ky, dx = (pts[i][1] - pts[i - 1][1]) * kx;
+    m += Math.sqrt(dx * dx + dy * dy);
+  }
+  return m / 1000;
+}
+
+// 우리나라 안(제주·울릉·독도 포함) 좌표인지
+function inKorea(p) {
+  return p[0] >= 33 && p[0] <= 38.7 && p[1] >= 124.5 && p[1] <= 132;
+}
+
+function cleanGpx(pts) {
+  let list = pts;
+  if (list.length > GPX_MAX_POINTS) {
+    const step = list.length / GPX_MAX_POINTS;
+    const out = [];
+    for (let i = 0; i < GPX_MAX_POINTS - 1; i++) out.push(list[Math.floor(i * step)]);
+    out.push(list[list.length - 1]);
+    list = out;
+  }
+  const rows = list.map((p) => `<trkpt lat="${p[0].toFixed(6)}" lon="${p[1].toFixed(6)}"/>`);
+  return { pts: list, text: '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="romanticroute" xmlns="http://www.topografix.com/GPX/1/1">\n<trk><trkseg>\n' + rows.join("\n") + "\n</trkseg></trk>\n</gpx>\n" };
+}
+
+async function handleGpx(req, env) {
+  const origin = req.headers.get("Origin") || "";
+  if (origin && !isAllowedOrigin(origin)) return fail(req, "origin_not_allowed", 403);
+  // GPX는 전환기 설정과 관계없이 로그인 회원만 받는다
+  const { user } = await verifyUser(req, env);
+  if (!user) return fail(req, "login_required", 401);
+
+  const declared = Number(req.headers.get("Content-Length") || "0");
+  if (declared > GPX_MAX_BYTES) return fail(req, "too_large", 413);
+  const buf = new Uint8Array(await req.arrayBuffer());
+  if (!buf.length) return fail(req, "empty_body", 400);
+  if (buf.length > GPX_MAX_BYTES) return fail(req, "too_large", 413);
+
+  const text = new TextDecoder("utf-8", { fatal: false }).decode(buf);
+  if (!/<gpx\b/i.test(text)) return fail(req, "not_gpx", 415);
+  const pts = gpxPoints(text);
+  if (pts.length < GPX_MIN_POINTS) return fail(req, "too_few_points", 422);
+  if (pts.some((p) => !inKorea(p))) return fail(req, "outside_korea", 422);
+  const km = gpxLengthKm(pts);
+  if (km > GPX_MAX_KM) return fail(req, "too_long", 422);
+
+  const clean = cleanGpx(pts);
+  const owner = String(user.id).replace(/[^A-Za-z0-9-]/g, "");
+  const key = `gpx/${owner}/${crypto.randomUUID()}.gpx`;
+  const bucket = bucketOf(env);
+  if (await bucket.head(key)) return fail(req, "conflict", 409);
+  await bucket.put(key, clean.text, {
+    httpMetadata: { contentType: "application/gpx+xml", cacheControl: "public, max-age=31536000, immutable" },
+    customMetadata: { owner, uploadedAt: new Date().toISOString(), points: String(clean.pts.length) },
+  });
+  return reply(req, { status: "SUCCESS", url: `${publicBase(env)}/${key}`, points: clean.pts.length, km: Math.round(km * 10) / 10 });
+}
+
 // 사이트의 CSP 위반 신고(csp-report.js)를 Worker 로그에 남긴다. 저장·응답 내용 없음.
 async function handleCspReport(req) {
   const origin = req.headers.get("Origin") || "";
@@ -181,6 +268,7 @@ export default {
     const url = new URL(req.url);
     if (url.pathname === "/delete") return handleDelete(req, env);
     if (url.pathname === "/csp-report") return handleCspReport(req);
+    if (url.pathname === "/gpx") return handleGpx(req, env);
 
     const origin = req.headers.get("Origin") || "";
     if (origin && !isAllowedOrigin(origin)) return fail(req, "origin_not_allowed", 403);

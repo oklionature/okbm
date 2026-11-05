@@ -1,0 +1,17 @@
+# romantic-upload-worker 운영 설정 (2026-11-05, 운영 버전 5f5a0f39의 설정을 wrangler versions view로 확인해 맞춤)
+# 배포: 저장소 밖 환경 변수 문제로 `env -u CLOUDFLARE_API_TOKEN npx --yes wrangler@4 deploy` (이 폴더에서)
+# DELETE_SECRET은 비밀값(secret)이라 여기 없다. 배포해도 그대로 남는다.
+
+name = "romantic-upload-worker"
+main = "worker.js"
+compatibility_date = "2026-09-26"
+
+[[r2_buckets]]
+binding = "MY_BUCKET"
+bucket_name = "romanticroute"
+
+[vars]
+PUBLIC_BASE_URL = "https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev"
+SUPABASE_URL = "https://qnumfecythtqtrxeasys.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_PKEidTwAKB7cuXReKSEnKw_VgNvSojA"
+REQUIRE_AUTH = "true"
