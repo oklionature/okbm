@@ -12188,9 +12188,11 @@ function okbmBindNativeExternalLinks() {
   // 플랫폼마다 '앱 밖' 창을 여는 길이 전혀 다르다.
   //
   // · 안드로이드: 사용자 터치 제스처에서 <a target="_blank">를 그대로 두면(preventDefault X)
-  //   안드로이드 WebView가 WebChromeClient.onCreateWindow를 발동한다. Capacitor의 그 핸들러는
-  //   HitTestResult에서 터치한 위치의 링크 URL을 꺼내 Intent.ACTION_VIEW로 바로 날린다 → 유튜브 앱이
-  //   App Link로 등록돼 있으면 유튜브 앱에서(전체화면·앱 열기 다 됨), 아니면 '진짜 Chrome' 외부 창(Custom Tabs 아님).
+  //   안드로이드 WebView가 WebChromeClient.onCreateWindow를 발동한다. 이 핸들러는 Capacitor가 아니라
+  //   앱 본체 MainActivity(~/Desktop/my-app)에 있다. 0.9.2까지는 카카오 로그인용으로 모든 새 창을 앱 안 팝업에
+  //   열어서 유튜브도 팝업에 갇혔다(전체화면·앱 열기 안 됨, 11-06 확인). 0.9.3부터는 로그인 창(카카오·네이버 등)만
+  //   팝업으로 열고 나머지는 Intent.ACTION_VIEW로 밖에 넘긴다 → 유튜브 앱(깔려 있으면) 아니면 기본 브라우저.
+  //   그래서 이 고침은 0.9.3 앱으로 업데이트한 사람부터 먹힌다.
   //   11-05 3차 보고: location.href = httpsUrl 폴백도 안 먹힘(안드로이드 WebView가 스크립트 유발 네비게이션을
   //   shouldOverrideUrlLoading 안 거치고 그냥 앱 안 WebView에서 로드하는 경우가 있음). 그래서 click을 가로채지 않고
   //   WebView에 맡기는 쪽으로 간다. vnd.youtube: 스킴, Browser.open(Custom Tabs)은 둘 다 전체화면 안 돼서 안 쓴다.
