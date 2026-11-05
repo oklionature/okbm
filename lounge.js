@@ -64,9 +64,8 @@
     return TAB_ORDER[i];
   }
   // 사는이야기(life)는 글이 없어 투표(poll) 칸으로 바꿨다. 옛 life 글이 남아 있어도 이름은 보인다 (SUPABASE_H25)
-  // gpx: GPX 승인 소식이 모이는 칸(SUPABASE_H49, 대표님 11-05 '다녀온 GPX 공유', 설문·투표 다음)
-  const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['poll', '설문·투표'], ['gpx', '다녀온 GPX 공유'], ['suggestion', '건의']];
-  const CAT_LABEL = { backpacking: '백패킹이야기', life: '사는이야기', poll: '설문·투표', gpx: '다녀온 GPX 공유', suggestion: '건의' };
+  const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['poll', '설문·투표'], ['suggestion', '건의']];
+  const CAT_LABEL = { backpacking: '백패킹이야기', life: '사는이야기', poll: '설문·투표', suggestion: '건의' };
   const GEAR_CAT = { shelter: '텐트', sleep: '침낭', pack: '배낭', food: '식량', kitchen: '조리', wear: '의류', electronics: '전자', camp: '캠프', other: '기타' };
   const HOME_N = 3;
   const POST_PAGE = 20;
@@ -450,6 +449,7 @@
       '.hm-view::-webkit-scrollbar{display:none}',
       '.hm-view img{flex:none;width:100%;height:auto;border-radius:12px;scroll-snap-align:center;background:#17171b}',
       '.lm-tchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.lm-tchips span{font-size:11px;font-weight:700;color:var(--tx);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:2px 8px}',
+      '.lm-gpxtag{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.06);color:#e5e7eb;font-size:10.5px;font-weight:800;vertical-align:middle}',
       '.lm-tchips.lg{margin:4px 0 6px}.lm-tchips.lg span{font-size:12px;padding:3px 9px}',
       '#okbmLoungeHome .lmh-empty{height:192px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:12.5px;color:var(--sub);text-align:center}',
       '.lm-sk{height:64px;border-bottom:1px solid var(--div);display:flex;align-items:center;gap:16px}',
@@ -924,6 +924,9 @@
     if (!more) {
       const t = await q(c.rpc('okbm_recent_spot_tips', { p_spot_id: null, p_limit: 30, p_before: null })).catch(function () { return null; });
       D.tipsRecent = (t && Array.isArray(t.rows)) ? t.rows : [];
+      // GPX 등록 소식도 최근 후기에 섞는다 (SUPABASE_H50)
+      const g = await q(c.rpc('okbm_recent_gpx_news', { p_limit: 20 })).catch(function () { return null; });
+      D.gpxNews = Array.isArray(g) ? g : [];
     }
   }
   async function loadComments(postId) {
@@ -1968,8 +1971,19 @@
         : (D.admin ? `<button type="button" style="font-weight:600;color:#ff6b6b" data-a="del-tip" data-v="${esc(t.spot_id)}" data-uid="${esc(t.user_id)}">삭제 (운영팀)</button>` : '')}</div>
       </div></div>`;
   }
+  // GPX 등록 소식 (대표님 11-05: 자유게시판 대신 박지 후기에). 누르면 그 박지를 지도에서 연다
+  function gpxNewsItem(g) {
+    const s = spotById(g.spot_id);
+    if (!s || hidden({ id: 'gpx_' + g.id, user_id: g.user_id })) return '';
+    const nick = String(g.nickname || '').trim() || '낭만루터';
+    return `<div class="lm-post" style="cursor:default"><div class="lm-lcol">${avUser(g.nickname, g.user_id)}</div><div class="lm-rb">
+      <div class="lm-who">${whoName(g.nickname, g.user_id)}<span>${esc(ago(g.reviewed_at))}</span></div>
+      <div class="lm-rs" style="margin-top:1px"><button type="button" data-a="spot" data-v="${esc(g.spot_id)}" style="color:var(--sub)">${esc(spotName(s))}</button> <span class="lm-gpxtag">GPX 등록</span></div>
+      <div class="lm-bd">${esc(nick)}님이 ${esc(spotName(s))} GPX를 등록해 주셨어요. 이제 정보창에서 자세한 GPX 경로를 확인할 수 있어요.</div>
+      </div></div>`;
+  }
   // 별점 후기 + 팁을 날짜순으로 섞는다. 같은 사람·같은 박지면 별점 후기 밑에 그 사람 칩을 붙인다
-  function mixedReviewList(reviews, tipRows, inSpot) {
+  function mixedReviewList(reviews, tipRows, inSpot, gpxNews) {
     const byKey = {};
     (tipRows || []).forEach(function (t) { byKey[tipKey(t.spot_id, t.user_id)] = t; });
     const used = {};
@@ -1982,6 +1996,7 @@
       if (used[tipKey(t.spot_id, t.user_id)]) return;
       items.push({ at: t.updated_at, html: tipRowItem(t, inSpot) });
     });
+    (gpxNews || []).forEach(function (g) { items.push({ at: g.reviewed_at, html: gpxNewsItem(g) }); });
     return items.sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); }).map(function (x) { return x.html; }).join('');
   }
   function reviewItem(r, inSpot, chips) {
@@ -2050,7 +2065,7 @@
     } else if (D.recentTier !== 'member') {
       h += '<div class="lm-empty">후기는 로그인하면 볼 수 있어요<br><button type="button" class="lm-btn sm main" style="margin:14px auto 0;width:100%;max-width:220px" data-a="login">로그인</button></div>';
     } else {
-      const items = mixedReviewList(D.recent, D.tipsRecent || [], false);
+      const items = mixedReviewList(D.recent, D.tipsRecent || [], false, D.gpxNews || []);
       h += items || '<div class="lm-empty">아직 후기가 없어요</div>';
       if (!D.recentDone && D.recent.length) h += '<button type="button" class="lmh-more" data-a="more-reviews">더 보기' + ico(P.chevR, 16) + '</button>';
     }

@@ -9107,7 +9107,7 @@ var overlay = document.getElementById('customModalOverlay');
               var sp = (spots || []).find(function(s) { return String(s.id).trim() === String(row.spot_id); });
               if (sp) sp.__detailLoaded = false;
             }
-            showToast(approve ? ('승인했어요' + (out && out.points ? ' · ' + out.points + '점 지급' : '') + (out && out.post ? ' · 라운지에 소식 글을 올렸어요' : '')) : '반려했어요');
+            showToast(approve ? ('승인했어요' + (out && out.points ? ' · ' + out.points + '점 지급' : '')) : '반려했어요');
           } catch (err) {
             showToast('처리하지 못했어요: ' + err.message);
           }
