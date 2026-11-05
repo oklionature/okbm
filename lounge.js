@@ -747,7 +747,7 @@
   }
 
   // ---------- 데이터 (window.supabaseClient, RLS가 권한을 가른다) ----------
-  const POST_COLS = 'id,user_id,nickname,category,title,body,photos,is_private,likes_count,comments_count,created_at,poll_options,poll_ends_at';
+  const POST_COLS = 'id,user_id,nickname,category,title,body,photos,is_private,likes_count,comments_count,created_at,poll_options,poll_ends_at,is_pinned';
   const postsBy = {}; // cat → { rows, done, loading }
 
   async function q(builder) {
@@ -813,7 +813,13 @@
       } else {
         // 새로 받을 때도 끼워 넣은 글(알림으로 연 옛 글)은 남긴다
         const extra = st.rows.filter(function (p) { return p.__extra && !list.some(function (x) { return x.id === p.id; }); });
-        st.rows = list.concat(extra);
+        // 고정한 글(H52)은 첫 쪽에 없어도 따로 받아 맨 위에 둔다. 더 보기 기준(cursor)은 건드리지 않는다
+        let pinB = c.from('lounge_posts').select(POST_COLS).eq('is_pinned', true).order('created_at', { ascending: false }).limit(5);
+        if (key !== 'all') pinB = pinB.eq('category', key);
+        const pinned = (await q(pinB).catch(function () { return []; })) || [];
+        const pinExtra = (Array.isArray(pinned) ? pinned : []).filter(function (p) { return !list.some(function (x) { return x.id === p.id; }) && !extra.some(function (x) { return x.id === p.id; }); })
+          .map(function (p) { return Object.assign(p, { __extra: true }); });
+        st.rows = list.concat(extra, pinExtra);
       }
       if (list.length) st.cursor = list[list.length - 1].created_at;
       st.done = list.length < POST_PAGE;
@@ -927,7 +933,7 @@
       const t = await q(c.rpc('okbm_recent_spot_tips', { p_spot_id: null, p_limit: 30, p_before: null })).catch(function () { return null; });
       D.tipsRecent = (t && Array.isArray(t.rows)) ? t.rows : [];
       // GPX 등록 소식도 최근 후기에 섞는다 (SUPABASE_H50)
-      const g = await q(c.rpc('okbm_recent_gpx_news', { p_limit: 20 })).catch(function () { return null; });
+      const g = await q(c.rpc('okbm_recent_gpx_news', { p_limit: 50 })).catch(function () { return null; });
       D.gpxNews = Array.isArray(g) ? g : [];
     }
   }
@@ -991,9 +997,12 @@
       }, 100);
     });
   }
+  // 고정한 글(H52)이 맨 위, 나머지는 받은 순서 그대로
   const visiblePosts = function (cat) {
     const st = postsBy[cat || 'all'];
-    return st ? st.rows.filter(function (p) { return !hidden(p); }) : [];
+    if (!st) return [];
+    const list = st.rows.filter(function (p) { return !hidden(p); });
+    return list.filter(function (p) { return p.is_pinned; }).concat(list.filter(function (p) { return !p.is_pinned; }));
   };
   function findPost(id) {
     const keys = Object.keys(postsBy);
@@ -1712,7 +1721,7 @@
   function postRow(p) {
     return `<button type="button" class="lm-row lmh-row" data-a="lounge" data-v="2" data-id="${esc(p.id)}" aria-label="${esc(p.title + ', 라운지에서 열기')}">
       <div class="lmh-av">${av(p.nickname, p.user_id)}</div>
-      <div class="lm-rb"><div class="lm-rt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}</div>
+      <div class="lm-rb"><div class="lm-rt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}${p.is_pinned ? '<span class="lm-tag">고정</span>' : ''}</div>
         <div class="lm-rs fx"><span>${esc([p.nickname, ago(p.created_at), CAT_LABEL[p.category]].filter(Boolean).join(' · '))}</span>${postPhotos(p).length ? ico(P.img, 13) : ''}</div></div>
       <span class="lmh-meta">${p.is_private ? ico(P.lock, 14) : ico(P.chat, 15) + (Number(p.comments_count) || 0)}</span></button>`;
   }
@@ -1856,7 +1865,7 @@
       <div class="lm-lcol">${avUser(p.nickname, p.user_id)}${cc ? '<div class="lm-thread"></div>' : ''}</div>
       <div class="lm-rb">
         <div class="lm-who">${whoName(p.nickname, p.user_id)}<span>${esc(ago(p.created_at))}</span><span>· ${esc(CAT_LABEL[p.category] || '')}</span></div>
-        <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}</div>${p.body ? `<div class="lm-bd">${bodyHtml(p.body)}</div>` : ''}
+        <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}${p.is_pinned ? '<span class="lm-tag">고정</span>' : ''}</div>${p.body ? `<div class="lm-bd">${bodyHtml(p.body)}</div>` : ''}
         ${p.category === 'poll' ? pollHtml(p) : ''}
         ${photos.length ? `<div class="lm-photos ${photos.length > 1 ? 'multi' : ''}">${photos.map(function (u) { return `<img src="${escapeHtml(okbmFastImageUrl(u))}" alt="" loading="lazy" decoding="async">`; }).join('')}</div>` : ''}
         ${p.is_private ? `<div class="lm-private">${ico(P.lock, 13)}나와 운영팀만 볼 수 있어요 · 댓글 ${cc}</div>`
@@ -1864,6 +1873,7 @@
       </div></div>`;
     const links = [];
     if (own) links.push(`<button type="button" data-a="edit-post" data-v="${esc(p.id)}">수정</button>`);
+    if (D.admin && !p.is_private) links.push(`<button type="button" data-a="pin-post" data-v="${esc(p.id)}">${p.is_pinned ? '고정 풀기' : '게시판 맨 위 고정'}</button>`);
     if (own || D.admin) links.push(`<button type="button" class="red" data-a="del-post" data-v="${esc(p.id)}">삭제${D.admin && !own ? ' (운영팀)' : ''}</button>`);
     if (!own) links.push(ugcBtn('lounge_post', p.id, p.user_id, p.nickname));
     const body = `<div class="lmx-in ind">${commentsHtml(p)}${composeHtml(p)}
@@ -2052,12 +2062,16 @@
       if (!top.length) return homeEmpty('아직 박지 후기가 없어요', 3, '라운지 열기');
       return top.slice(0, HOME_N).map(function (r) { return bestRow(r, false); }).join('') + moreBtn(3, '최근 후기까지 전체 보기');
     }
-    // 작은 탭 세 개: 처음엔 최근 후기. 랭킹이 화면을 다 채워 최근 후기가 묻혔다
-    const view = S.revView === 'top' || S.revView === 'many' ? S.revView : 'recent';
-    let h = '<div class="lm-seg" role="tablist">' + [['recent', '최근 후기'], ['top', '평점순'], ['many', '후기 많은 순']].map(function (t) {
+    // 작은 탭 네 개: 처음엔 최근 후기. 랭킹이 화면을 다 채워 최근 후기가 묻혔다. GPX 등록은 대표님 11-05에 더함
+    const view = S.revView === 'top' || S.revView === 'many' || S.revView === 'gpx' ? S.revView : 'recent';
+    let h = '<div class="lm-seg" role="tablist">' + [['recent', '최근 후기'], ['top', '평점순'], ['many', '후기 많은 순'], ['gpx', 'GPX 등록']].map(function (t) {
       return '<button type="button" role="tab" data-a="rev-view" data-v="' + t[0] + '" class="' + (view === t[0] ? 'on' : '') + '" aria-selected="' + (view === t[0]) + '">' + t[1] + '</button>';
     }).join('') + '</div>';
-    if (view !== 'recent') {
+    if (view === 'gpx') {
+      // GPX 등록 소식은 최근 후기와 같이 받는다(loadRecentReviews, SUPABASE_H50 okbm_recent_gpx_news)
+      if (D.recent === null) h += '<div class="lm-empty" data-recent>불러오는 중…</div>';
+      else h += (D.gpxNews || []).map(gpxNewsItem).join('') || '<div class="lm-empty">아직 등록된 GPX가 없어요</div>';
+    } else if (view !== 'recent') {
       const rank = (D.rank || []).filter(function (r) { return spotById(r.spot_id); });
       if (D.rank === null) h += '<div class="lm-empty">불러오는 중…</div>';
       else if (!rank.length) h += '<div class="lm-empty">아직 박지 후기가 없어요</div>';
@@ -3807,6 +3821,20 @@
         t.disabled = true;
         loadRecentReviews(true).then(function () { rerenderPane(3); }).catch(function (err) { console.warn('[lounge.js:more-reviews]', err); toast('더 불러오지 못했어요', true); t.disabled = false; });
         break;
+      // 운영팀: 게시판 글 맨 위 고정/풀기 (H52, 트리거가 운영팀만 바꾸게 막는다)
+      case 'pin-post': {
+        const p = findPost(v);
+        const c = sb();
+        if (!p || !c || !D.admin) break;
+        const next = !p.is_pinned;
+        q(c.from('lounge_posts').update({ is_pinned: next }).eq('id', v).select('id,is_pinned')).then(function (rows) {
+          if (!Array.isArray(rows) || !rows.length || rows[0].is_pinned !== next) throw new Error('no_rows');
+          forEachPost(v, function (x) { x.is_pinned = next; });
+          toast(next ? '게시판 맨 위에 고정했어요' : '고정을 풀었어요');
+          renderBoard();
+        }).catch(function (err) { console.warn('[lounge.js:pin-post]', err); toast('바꾸지 못했어요. 관리자 로그인을 확인해 주세요', true); });
+        break;
+      }
       case 'del-post': {
         const p = findPost(v);
         if (!p) break;
@@ -3893,9 +3921,9 @@
         break;
       case 'rev-spot': showSpotReviews(v); break;
       case 'rev-view':
-        S.revView = v === 'top' || v === 'many' ? v : 'recent';
+        S.revView = v === 'top' || v === 'many' || v === 'gpx' ? v : 'recent';
         rerenderPane(3);
-        if (S.revView === 'recent') ensureRecent(); else ensureRank();
+        if (S.revView === 'recent' || S.revView === 'gpx') ensureRecent(); else ensureRank();
         break;
       case 'rev-band':
         S.revBand = v || 'all';
