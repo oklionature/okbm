@@ -701,7 +701,7 @@
         if (!spot) return '';
         return [
           spot.trailhead_addr || '', spot.entryPoint || '', spot.desc_summary || '', spot.desc || '',
-          spot.mediaUrls || '', spot.author_sns_url || spot.authorSnsUrl || '', spot.gpxUrl || '',
+          spot.mediaUrls || '', spot.author_sns_url || spot.authorSnsUrl || '', spot.gpxUrl || '', spot.gpxCredit || '',
           [].concat(spot.youtubeUrls || []).join(' '), [].concat(spot.blogUrls || []).join(' '),
           spot.__detailLoaded ? '1' : '0', spot.__detailTier || '', spot.__detailLimited || '', spot.__detailError || ''
         ].join('\u0001');
@@ -3436,6 +3436,21 @@ function updateSmartResetButtons() {
         if (document.visibilityState === 'visible' && gpxTrack) checkGpxPosition(false);
       });
 
+      function parseGpxPoints(gpxText) {
+        const xml = new DOMParser().parseFromString(gpxText, 'text/xml');
+        const pts = [];
+        ['trkpt', 'rtept'].forEach(function(tag) {
+          if (pts.length) return;
+          const nodes = xml.getElementsByTagName(tag);
+          for (let i = 0; i < nodes.length; i++) {
+            const lat = parseFloat(nodes[i].getAttribute('lat'));
+            const lon = parseFloat(nodes[i].getAttribute('lon'));
+            if (!isNaN(lat) && !isNaN(lon)) pts.push([lat, lon]);
+          }
+        });
+        return pts;
+      }
+
       async function toggleGpxTrack(spotId, gpxUrl) {
         const sId = String(spotId).trim();
         if (currentGpxPolyline && activeGpxSpotId === sId) {
@@ -3458,17 +3473,7 @@ function updateSmartResetButtons() {
           const res = await fetch(gpxUrl.trim());
           if (!res.ok) throw new Error('GPX fetch failed');
           const gpxText = await res.text();
-          const xml = new DOMParser().parseFromString(gpxText, 'text/xml');
-          const pts = [];
-          ['trkpt', 'rtept'].forEach(function(tag) {
-            if (pts.length) return;
-            const nodes = xml.getElementsByTagName(tag);
-            for (let i = 0; i < nodes.length; i++) {
-              const lat = parseFloat(nodes[i].getAttribute('lat'));
-              const lon = parseFloat(nodes[i].getAttribute('lon'));
-              if (!isNaN(lat) && !isNaN(lon)) pts.push([lat, lon]);
-            }
-          });
+          const pts = parseGpxPoints(gpxText);
           if (pts.length < 2) throw new Error('No coordinates found in GPX');
 
           drawGpxPath(sId, pts);
@@ -3769,6 +3774,7 @@ function updateSmartResetButtons() {
                   <button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
                     ${ICONS.HIKING} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : '등산로 GPX 코스선 지도에 표시'}
                   </button>
+                  ${spot.gpxCredit ? `<div class="gpx-credit-line">${escapeHtml(spot.gpxCredit)}님이 보내 준 길이에요</div>` : ''}
                 ` : ''}
               </div>
 
@@ -8648,6 +8654,7 @@ var overlay = document.getElementById('customModalOverlay');
         var done = items.filter(function(it) { return !isPendingInboxStatus(it.status); });
         if (!items.length) {
           listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">접수된 제보/수정 건의가 없습니다.</div>';
+          renderAdminGpxInbox(listEl);
           return;
         }
 
@@ -8706,7 +8713,120 @@ var overlay = document.getElementById('customModalOverlay');
           '<div style="font-size:0.72rem; font-weight:800; color:#a7f3d0; margin:0 0 8px;">대기 ' + pending.length + '건 · 최신 등록순</div>' +
           (pending.length ? pending.map(function(it) { return renderCard(it, false); }).join('') : '<div style="margin-bottom:14px; color:#64748b;">대기 건이 없습니다.</div>') +
           (done.length ? '<div style="font-size:0.72rem; font-weight:800; color:#94a3b8; margin:16px 0 8px;">처리됨 ' + done.length + '건</div>' + done.map(function(it) { return renderCard(it, true); }).join('') : '');
+        renderAdminGpxInbox(listEl);
       };
+
+      // GPX 등산로 검수 (SUPABASE_H44). 장소 검수함 맨 위에 붙인다. 승인하면 박지에 선·보낸 사람이 붙고 50점이 들어간다.
+      async function adminGpxRpc(name, body) {
+        var cfg = getSupabaseRestConfig();
+        var tok = (typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || '';
+        var res = await fetch(cfg.url + '/rest/v1/rpc/' + name, {
+          method: 'POST',
+          headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + (tok || cfg.key), 'Content-Type': 'application/json' },
+          body: JSON.stringify(body || {})
+        });
+        var data = await res.json().catch(function() { return null; });
+        if (!res.ok) throw new Error((data && data.message) || ('HTTP ' + res.status));
+        return data;
+      }
+
+      async function renderAdminGpxInbox(listEl) {
+        var box = document.createElement('div');
+        box.id = 'adminGpxInbox';
+        box.textContent = 'GPX 불러오는 중';
+        box.style.cssText = 'margin-bottom:14px; color:#94a3b8;';
+        var old = document.getElementById('adminGpxInbox');
+        if (old) old.remove();
+        listEl.insertBefore(box, listEl.firstChild);
+        var rows = [];
+        try { rows = await adminGpxRpc('okbm_admin_gpx_list'); } catch (e) {
+          box.textContent = 'GPX 목록을 불러오지 못했어요: ' + e.message;
+          return;
+        }
+        if (!Array.isArray(rows)) rows = [];
+        var pending = rows.filter(function(r) { return r.status === '검수대기'; });
+        var done = rows.filter(function(r) { return r.status !== '검수대기'; });
+        var card = function(r) {
+          var id = String(r.id).replace(/[^0-9]/g, '');
+          var when = r.created_at ? String(r.created_at).slice(5, 16).replace('T', ' ') : '';
+          var acts = '<button type="button" data-gpx-admin="preview" data-id="' + id + '" style="background:rgba(255,255,255,0.08); color:#e2e8f0;">지도에서 보기</button>';
+          if (r.status === '검수대기') {
+            acts += '<button type="button" data-gpx-admin="approve" data-id="' + id + '" style="background:#059669; color:#fff;">승인(50점)</button>' +
+              '<button type="button" data-gpx-admin="reject" data-id="' + id + '" style="background:#be123c; color:#fff;">반려</button>';
+          }
+          return '<div class="admin-inbox-card">' +
+            '<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">' +
+              '<span style="font-size:0.62rem; font-weight:900; color:#f97316; border:1px solid #f9731655; border-radius:4px; padding:1px 6px;">GPX</span>' +
+              '<span style="font-size:0.62rem; color:#94a3b8;">' + escapeHtml(r.status || '') + '</span>' +
+              (when ? '<span style="font-size:0.62rem; color:#64748b; margin-left:auto;">' + escapeHtml(when) + '</span>' : '') +
+            '</div>' +
+            '<h4>' + escapeHtml(r.spot_name || ('박지 ' + r.spot_id)) + '</h4>' +
+            '<div class="admin-inbox-meta">' +
+              '보낸 사람: ' + escapeHtml(r.nickname || r.user_id || '') + '<br>' +
+              '점 ' + escapeHtml(String(r.points || 0)) + '개 · ' + escapeHtml(String(r.km || 0)) + 'km' +
+              (r.spot_gpx_url ? '<br><span style="color:#fbbf24;">이미 선이 있는 박지예요. 승인하면 바뀌어요.</span>' : '') +
+              (r.note ? '<br>메모: <span style="white-space:pre-wrap;">' + escapeHtml(r.note) + '</span>' : '') +
+              (r.reject_reason ? '<br><span style="color:#fda4af;">반려 사유: ' + escapeHtml(r.reject_reason) + '</span>' : '') +
+            '</div>' +
+            '<div class="admin-inbox-actions">' + acts + '</div>' +
+          '</div>';
+        };
+        box.style.cssText = 'margin-bottom:14px;';
+        box.innerHTML = '<div style="font-size:0.72rem; font-weight:800; color:#fdba74; margin:0 0 8px;">GPX 등산로 대기 ' + pending.length + '건</div>' +
+          (pending.length ? pending.map(card).join('') : '<div style="margin-bottom:8px; color:#64748b;">대기 중인 GPX가 없어요.</div>') +
+          (done.length ? '<details style="margin-bottom:6px;"><summary style="font-size:0.72rem; font-weight:800; color:#94a3b8; cursor:pointer;">GPX 처리됨 ' + done.length + '건(30일)</summary>' + done.map(card).join('') + '</details>' : '');
+        box.addEventListener('click', async function(e) {
+          var btn = e.target && e.target.closest ? e.target.closest('[data-gpx-admin]') : null;
+          if (!btn) return;
+          var row = rows.find(function(r) { return String(r.id) === btn.getAttribute('data-id'); });
+          if (!row) return;
+          var act = btn.getAttribute('data-gpx-admin');
+          if (act === 'preview') return previewAdminGpx(row);
+          var approve = act === 'approve';
+          var reason = null;
+          if (approve) {
+            if (!confirm((row.spot_name || '이 박지') + '에 이 GPX를 붙이고 ' + (row.nickname || '보낸 분') + '님께 50점을 줄까요?')) return;
+          } else {
+            reason = prompt('반려 사유를 적어 주세요(보낸 분이 볼 수 있어요)', '');
+            if (reason === null) return;
+          }
+          btn.disabled = true;
+          try {
+            var out = await adminGpxRpc('okbm_admin_gpx_review', { p_id: Number(row.id), p_approve: approve, p_reason: reason });
+            if (approve) {
+              if (window.__spotDetailCache) Object.keys(window.__spotDetailCache).forEach(function(k) { if (k.split(':')[0] === String(row.spot_id)) delete window.__spotDetailCache[k]; });
+              var sp = (spots || []).find(function(s) { return String(s.id).trim() === String(row.spot_id); });
+              if (sp) sp.__detailLoaded = false;
+            }
+            showToast(approve ? ('승인했어요' + (out && out.points ? ' · ' + out.points + '점 지급' : '')) : '반려했어요');
+          } catch (err) {
+            showToast('처리하지 못했어요: ' + err.message);
+          }
+          renderAdminGpxInbox(listEl);
+        });
+      }
+
+      // 검수함을 닫고 그 GPX 선을 지도에 그린다(휴대폰에 저장하지 않는 미리보기)
+      async function previewAdminGpx(row) {
+        if (!isKakaoMapReady()) return showToast('지도를 아직 불러오지 못했습니다.');
+        try {
+          var res = await fetch(row.gpx_url);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          var pts = parseGpxPoints(await res.text());
+          if (pts.length < 2) throw new Error('좌표 없음');
+          var modal = document.getElementById('adminSpotInboxModal');
+          if (modal) modal.remove();
+          drawGpxPath(String(row.spot_id), pts);
+          var bounds = new kakao.maps.LatLngBounds();
+          pts.forEach(function(p) { bounds.extend(new kakao.maps.LatLng(p[0], p[1])); });
+          var sp = (spots || []).find(function(s) { return String(s.id).trim() === String(row.spot_id); });
+          if (sp && sp.lat && sp.lng) bounds.extend(new kakao.maps.LatLng(sp.lat, sp.lng));
+          map.setBounds(bounds);
+          showToast('미리보기 선이에요. 박지 핀과 이어지는지 보세요');
+        } catch (err) {
+          showToast('GPX를 불러오지 못했어요: ' + err.message);
+        }
+      }
 
       function findAdminInboxItem(id, type) {
         var list = window.__adminSpotInboxCache || [];
