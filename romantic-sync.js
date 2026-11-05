@@ -12177,25 +12177,50 @@ function okbmBindNativeExternalLinks() {
   var Browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
   if (!Browser || typeof Browser.open !== 'function') return;
   window.__okbmNativeLinksBound = true;
+  // window.open 원본을 미리 잡아 둔다. 아래 override보다 먼저 저장해야 유튜브 폴백에서 override를 거치지 않는다.
+  var origOpen = window.open;
+  var getPlat = function() {
+    try { return window.Capacitor && typeof window.Capacitor.getPlatform === 'function' ? window.Capacitor.getPlatform() : ''; }
+    catch (e) { return ''; }
+  };
+  // 유튜브 앱이 없을 때 쓰는 폴백. 플랫폼마다 '앱 밖' 창을 여는 길이 다르다.
+  // · iOS: JS window.open(https) → Capacitor WKWebView의 createWebViewWith 델리게이트가 UIApplication.open으로
+  //   진짜 사파리에 넘긴다 → '앱 열기'·'전체 화면' 다 된다. Browser.open(SFSafariViewController)은 앱 안 창이라 그 둘이 막혀 안 쓴다.
+  // · 안드로이드: window.open은 WebChromeClient.onCreateWindow가 HitTestResult로 URL을 꺼내는데,
+  //   JS에서 부른 호출은 그게 비어 있어 아무 일도 안 한다. 그래서 Browser.open(Chrome Custom Tabs)으로 간다.
+  //   Custom Tabs는 iOS SFSafariViewController와 달리 HTML5 전체화면을 지원하고,
+  //   유튜브 사이트의 '앱 열기' 버튼은 Intent로 유튜브 앱에 정상 넘긴다.
+  var openYouTubeFallbackHttps = function(httpsUrl) {
+    if (getPlat() === 'android') {
+      Browser.open({ url: httpsUrl }).catch(function() {});
+      return;
+    }
+    try { origOpen.call(window, httpsUrl, '_blank', 'noopener,noreferrer'); }
+    catch (e) { Browser.open({ url: httpsUrl }).catch(function() {}); }
+  };
   // 유튜브는 앱 안 창 대신 유튜브 앱으로(11-03 대표님: 앱 안 창에선 '앱 열기'가 먹통이고 아이폰 앱이 세로 고정이라 가로로 못 봄).
   // 앱 밖 주소로 페이지를 옮기면 Capacitor가 이동을 막고 휴대폰에 넘긴다 → 유튜브 앱이 있으면 앱, 없으면 사파리·크롬.
   // 11-05: https 주소로 옮기면 앱 안 창으로 열리는 기기가 있어(앱 열기·확대 먹통), 유튜브 앱 주소(youtube:// · vnd.youtube:)로 직접 넘긴다.
-  // 1.5초 안에 앱이 안 떠서 화면이 그대로면(유튜브 앱 없음) 예전처럼 https로 넘긴다.
+  // 1.5초 안에 앱이 안 떠서 화면이 그대로면(유튜브 앱 없음) https로 넘기되,
+  // location.assign은 앱 안 웹뷰가 그 자리에서 유튜브로 바뀌어 '앱 열기'·'전체 화면'이 또 막혀서(11-05 2차)
+  // 플랫폼별로 iOS는 window.open(createWebViewWith → 진짜 사파리), 안드로이드는 Browser.open(Chrome Custom Tabs)로 넘긴다.
   var openYouTube = function(url) {
     var u = new URL(url), id = '';
     var m = u.pathname.match(/^\/(?:shorts|live|embed|v)\/([\w-]{11})/);
     if (u.hostname.replace(/^www\./, '') === 'youtu.be') id = u.pathname.slice(1, 12);
     else id = u.searchParams.get('v') || (m ? m[1] : '');
-    if (!/^[\w-]{11}$/.test(id)) { location.assign(url); return; }
-    var plat = window.Capacitor && typeof window.Capacitor.getPlatform === 'function' ? window.Capacitor.getPlatform() : '';
-    var scheme = plat === 'android' ? ('vnd.youtube:' + id) : ('youtube://www.youtube.com/watch?v=' + id);
+    if (!/^[\w-]{11}$/.test(id)) { openYouTubeFallbackHttps(url); return; }
+    var httpsUrl = 'https://www.youtube.com/watch?v=' + id;
+    var scheme = getPlat() === 'android' ? ('vnd.youtube:' + id) : ('youtube://www.youtube.com/watch?v=' + id);
     var left = false;
     var onHide = function() { if (document.hidden) left = true; };
     document.addEventListener('visibilitychange', onHide);
     location.href = scheme;
     setTimeout(function() {
       document.removeEventListener('visibilitychange', onHide);
-      if (!left && !document.hidden) location.assign('https://www.youtube.com/watch?v=' + id);
+      if (left || document.hidden) return;
+      // 유튜브 앱이 없음 → 플랫폼별 폴백으로 '앱 밖' 창에 넘긴다
+      openYouTubeFallbackHttps(httpsUrl);
     }, 1500);
   };
   var open = function(url) {
@@ -12211,7 +12236,6 @@ function okbmBindNativeExternalLinks() {
     e.preventDefault();
     open(url);
   });
-  var origOpen = window.open;
   window.open = function(url) {
     var ext = okbmNativeExternalUrl(url);
     if (ext) { open(ext); return null; }
