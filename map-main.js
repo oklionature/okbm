@@ -3547,7 +3547,7 @@ function updateSmartResetButtons() {
         if (btn) openGpxSendModal(btn.getAttribute('data-gpx-send'));
       });
 
-      // 남이 보낸 GPX는 처음 켤 때 5점을 내고(보낸 분께 5점) 연다. SUPABASE_H46
+      // 남이 보낸 GPX는 처음 켤 때 5점을 내고 연다(등록자는 2점, 화면엔 '소정의 포인트'로만 알린다). SUPABASE_H46
       // 포인트가 모자라면 그냥 연다: 단추가 들머리 관문(등록자 인스타·링크를 한 번 거침) 뒤에만 있어서다(대표님 11-05, 나중에 광고 자리)
       async function gpxUseRpc(sId, mode) {
         var tok = typeof window.okbmUploadAccessToken === 'function' ? await window.okbmUploadAccessToken() : '';
@@ -3576,7 +3576,7 @@ function updateSmartResetButtons() {
             '<button type="button" class="okbm-gpx-send-go" data-gpx-use="go">5점 쓰고 열기</button>' +
             '<p class="okbm-gpx-send-note"></p>' +
           '</div>';
-          wrap.querySelector('.okbm-gpx-send-help').textContent = (info.owner ? info.owner + '님이' : '다른 분이') + ' 보내 준 등산로예요. 5점을 쓰면 열리고, 그 5점은 보낸 분께 가요.';
+          wrap.querySelector('.okbm-gpx-send-help').textContent = (info.owner ? info.owner + '님이' : '다른 분이') + ' 보내 준 등산로예요. 5점이 차감되고 등록자에게 소정의 포인트가 갑니다.';
           wrap.querySelector('.okbm-gpx-send-note').textContent = '지금 ' + (info.balance || 0) + '점 · 한 번 열면 이 박지 길은 계속 볼 수 있어요.';
           var done = function(v) { wrap.remove(); resolve(v); };
           wrap.addEventListener('click', function(e) {
@@ -3600,7 +3600,7 @@ function updateSmartResetButtons() {
           }
           var out = await gpxUseRpc(sId, mode);
           if (!out.ok) { showToast('길을 열지 못했어요. 다시 시도해 주세요'); return false; }
-          if (out.paid) showToast('5점을 썼어요. 보낸 분께 5점이 갔어요');
+          if (out.paid) showToast('5점이 차감됐어요');
           if (typeof window.okbmMetric === 'function') window.okbmMetric(mode === 'link' ? 'feat_gpx_use_free' : 'feat_gpx_use_points', 'event');
           return true;
         } catch (err) {

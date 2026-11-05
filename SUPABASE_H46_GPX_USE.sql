@@ -1,5 +1,6 @@
--- H46: GPX는 쓰는 사람이 5점을 내고 보낸 사람이 5점을 받는다 (2026-11-05, 대표님)
--- 회원이 보낸(승인된) GPX 선을 처음 켤 때: 켜는 사람 -5점(reason 'gpx_use'), 보낸 사람 +5점(reason 'gpx_open').
+-- H46: GPX는 쓰는 사람이 5점을 내고 보낸 사람은 2점을 받는다 (2026-11-05, 대표님)
+-- 회원이 보낸(승인된) GPX 선을 처음 켤 때: 켜는 사람 -5점(reason 'gpx_use'), 보낸 사람 +2점(reason 'gpx_open').
+-- 받는 점수가 내는 점수보다 적어야 포인트가 쌓이기만 하지 않고 줄어 값이 생긴다(대표님 11-05). 화면에는 '소정의 포인트'로만 알리고 2점은 밝히지 않는다.
 -- 포인트가 5점보다 적으면 그냥 연다(mode 'link'). 선 단추가 들머리 관문(등록자 인스타·링크를 한 번 거침) 뒤에만 있어서다. 나중에 광고 자리. 이때는 빼지도 주지도 않는다.
 -- 박지마다 처음 한 번만(spot_gpx_unlocks에 남김). 공식 GPX(보낸 사람 없음)·내가 보낸 선·관리자는 무료.
 -- H45 okbm_gpx_opened(빼지 않고 주기만 함)는 지운다.
@@ -23,6 +24,7 @@ CREATE OR REPLACE FUNCTION public.okbm_gpx_use(p_spot_id text, p_mode text DEFAU
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   c_price constant integer := 5;
+  c_reward constant integer := 2;
   v_uid text := public.okbm_uid();
   v_spot text := btrim(COALESCE(p_spot_id, ''));
   v_owner text;
@@ -62,7 +64,7 @@ BEGIN
   INSERT INTO public.point_ledger (user_id, delta, reason, ref_id, note)
   VALUES (v_uid, -c_price, 'gpx_use', v_spot, 'GPX 열기')
   ON CONFLICT (user_id, reason, ref_id) DO NOTHING;
-  PERFORM public.okbm_point_award(v_owner, 'gpx_open', v_spot || ':' || v_uid, c_price, NULL, NULL);
+  PERFORM public.okbm_point_award(v_owner, 'gpx_open', v_spot || ':' || v_uid, c_reward, NULL, NULL);
   INSERT INTO public.spot_gpx_unlocks (user_id, spot_id, how) VALUES (v_uid, v_spot, 'points') ON CONFLICT DO NOTHING;
   RETURN jsonb_build_object('ok', true, 'paid', true, 'balance', v_bal - c_price, 'owner', v_owner_nick);
 END;
