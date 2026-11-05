@@ -3897,22 +3897,6 @@ function updateSmartResetButtons() {
               </button>
             </div>`}
 
-            ${/* GPX 등록·선 켜기: 박지 후기 칸 아래(대표님 11-05). 후기 칸은 spot-tips.js가 찜하기 줄 바로 뒤에 끼워 넣으므로 여기 두면 그 아래에 온다 */ ''}
-            ${!isCampBanned(spot) && isMember && spot.gpxUrl && isUnlocked ? `
-              <div class="gpx-spot-block">
-                <button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
-                  ${ICONS.GPX_TRACK} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : '등산로 GPX 코스선 지도에 표시'}
-                </button>
-                ${spot.gpxCredit ? `<div class="gpx-credit-line">${escapeHtml(spot.gpxCredit)}님이 보내 준 길이에요</div>` : ''}
-              </div>
-            ` : ''}
-            ${!isCampBanned(spot) && !spot.gpxUrl && spot.__detailTier === 'member' ? `
-              <div class="gpx-spot-block">
-                <button type="button" class="btn-gpx-send" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_send_open">${ICONS.GPX_TRACK} 이 장소 GPX 등록하기</button>
-                <div class="gpx-credit-line">다른 낭만루터 분들에게 큰 도움이 됩니다. 소정의 포인트도 드려요.</div>
-              </div>
-            ` : ''}
-
             ${isCampBanned(spot) ? '' : !isMember ? `
               <div class="guest-member-lock-card">
                 <div style="font-size:0.88rem; font-weight:800; color:var(--accent-amber); display:flex; align-items:center; gap:4px;">${ICONS.LOCK} 낭만 회원 전용 정보 안내</div>
@@ -3949,8 +3933,18 @@ function updateSmartResetButtons() {
                     <span class="lock-sub-text">등록자의 링크와 K-LNT 서약 후 상세 목적지, 코스 안내가 열립니다</span>
                   </div>` : ''}
 
+                ${spot.gpxUrl && isUnlocked ? `
+                  <button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
+                    ${ICONS.GPX_TRACK} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : '등산로 GPX 코스선 지도에 표시'}
+                  </button>
+                  ${spot.gpxCredit ? `<div class="gpx-credit-line">${escapeHtml(spot.gpxCredit)}님이 보내 준 길이에요</div>` : ''}
+                ` : ''}
               </div>
 
+              ${!spot.gpxUrl && spot.__detailTier === 'member' ? `
+                <button type="button" class="btn-gpx-send" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_send_open">${ICONS.GPX_TRACK} 이 장소 GPX 등록하기</button>
+                <div class="gpx-credit-line">다른 낭만루터 분들에게 큰 도움이 됩니다. 소정의 포인트도 드려요.</div>
+              ` : ''}
 
               <div class="summary-block-wrap">
                 ${summary.pitch ? `
