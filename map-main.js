@@ -3649,6 +3649,61 @@ function updateSmartResetButtons() {
         }
       }
 
+      // 연 등산로를 가민 커넥트·트랭글 같은 등산 앱으로 넘긴다(11-05 대표님: 지도 선 말고 받아 가는 길도).
+      // 선을 켠 박지(5점 관문을 지난 뒤)에서만 단추가 보인다.
+      // 휴대폰 브라우저: 파일 공유창(iOS 사파리) → 안 되면 파일로 저장(안드로이드 크롬은 .gpx를 공유창에 못 싣는다).
+      // 앱: 웹뷰가 공유창·내려받기를 못 해서 바깥 브라우저 창으로 파일을 연다(거기서 저장·앱으로 열기).
+      async function exportGpxTrack(spotId, gpxUrl) {
+        const sId = String(spotId).trim();
+        const url = String(gpxUrl || '').trim();
+        if (!url || activeGpxSpotId !== sId) return;
+        const spot = (spots || []).find(function(s) { return String(s.id).trim() === sId; }) || {};
+        const fileName = '낭만루트_' + String(spot.name || sId).replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 40) + '.gpx';
+        if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_gpx_export', 'event');
+
+        const isNativeApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+        if (isNativeApp) {
+          const Browser = window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+          if (Browser && typeof Browser.open === 'function') {
+            Browser.open({ url: url }).catch(function() { showToast('GPX 파일을 열지 못했어요. 잠시 뒤 다시 해 주세요'); });
+            showToast('열린 창에서 파일을 저장하거나 등산 앱으로 열어 주세요');
+            return;
+          }
+        }
+
+        let blob;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error('GPX fetch failed');
+          blob = new Blob([await res.text()], { type: 'application/gpx+xml' });
+        } catch (err) {
+          showToast('GPX 파일을 불러오지 못했어요. 잠시 뒤 다시 해 주세요', { html: ICONS.ALERT_CARD });
+          return;
+        }
+        try {
+          const file = new File([blob], fileName, { type: 'application/gpx+xml' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: fileName });
+            return;
+          }
+        } catch (err) {
+          if (err && err.name === 'AbortError') return;
+        }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function() { URL.revokeObjectURL(a.href); }, 10000);
+        showToast('GPX 파일을 저장했어요. 다운로드에서 등산 앱으로 열어 주세요');
+      }
+
+      document.addEventListener('click', function(e) {
+        var btn = e.target && e.target.closest ? e.target.closest('[data-gpx-export]') : null;
+        if (btn) exportGpxTrack(btn.getAttribute('data-gpx-export'), btn.getAttribute('data-url'));
+      }, true);
+
       function parseStructuredSummary(rawText) {
         if (!rawText) return { view: '', access: '', pitch: '', tip: '', hasParsed: false };
         // DB 구형 태그 [박지/피칭] → 표시/저장 표준 [장소/피칭] 으로 통일 인식
@@ -3937,6 +3992,7 @@ function updateSmartResetButtons() {
                   <button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
                     ${ICONS.GPX_TRACK} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : '등산로 GPX 코스선 지도에 표시'}
                   </button>
+                  ${isGpxActive ? `<button type="button" class="btn-gpx-send" data-gpx-export="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" data-metric-click="feat_spot_gpx_export_open">${ICONS.GPX_TRACK} 내 등산 앱으로 보내기 (가민·트랭글)</button>` : ''}
                   ${spot.gpxCredit ? `<div class="gpx-credit-line">${escapeHtml(spot.gpxCredit)}님이 보내 준 길이에요</div>` : ''}
                 ` : ''}
               </div>
