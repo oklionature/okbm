@@ -7644,13 +7644,13 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     return window.__okbmVaultBootPromise;
   };
 
-  // 낭만 피드에 최신 글 5개마다 예전 글 1개를 끼운다.
+  // 낭만 피드에 최신 글 2개마다 예전 글 1개를 끼운다(대표님 11-05, 전에는 5개마다).
   // 예전 글 = 다녀온 날짜가 90일 넘은 공개 글. 좋아요·댓글이 많을수록 자주 뽑히고, 같은 날엔 모두 같은 순서(날짜를 씨앗으로).
   // 가벼운 목록(id·날짜·좋아요)으로 고른 뒤 고른 글만 통째로 받는다. 고른 id는 하루 동안 저장해 목록을 다시 받지 않는다.
-  var OLD_PICK_EVERY = 5;
+  var OLD_PICK_EVERY = 2;
   var OLD_PICK_MIN_AGE_DAYS = 90;
-  var OLD_PICK_POOL = 20;
-  var OLD_PICK_STORE_KEY = 'okbm_old_picks_v1';
+  var OLD_PICK_POOL = 40; // 2개마다라 하루 뽑는 예전 글도 늘린다(최신 80개까지 채움)
+  var OLD_PICK_STORE_KEY = 'okbm_old_picks_v2'; // 개수를 늘려 오늘 저장한 20개 목록을 새로 뽑게
   window.__okbmOldPickRows = window.__okbmOldPickRows || [];
   window.__okbmOldPickIds = window.__okbmOldPickIds || new Set();
 
@@ -9096,7 +9096,7 @@ window.renderHistoryStage = function(isLoading, opts) {
 
     currentList = sortDescFn(currentList);
 
-    // 최신 글 5개마다 예전 글 1개. 예전 글은 최신순 자리에서 빼고 뽑힌 순서대로 끼운다.
+    // 최신 글 2개마다 예전 글 1개. 예전 글은 최신순 자리에서 빼고 뽑힌 순서대로 끼운다.
     if (oldPickIds.size) {
       var pickById = {};
       var chronoList = [];
@@ -9228,7 +9228,7 @@ window.renderHistoryStage = function(isLoading, opts) {
       var existingCards = reelContainer.querySelectorAll('.reel-page-snap:not([data-vault-intro])');
       var startIdx = existingCards.length;
 
-      // 예전 글로 이미 끼웠거나 끼울 글은 최신순 자리에서 빼고, 이어서 5개마다 하나씩 끼운다
+      // 예전 글로 이미 끼웠거나 끼울 글은 최신순 자리에서 빼고, 이어서 2개마다 하나씩 끼운다
       var appendPickIds = window.__okbmOldPickIds || new Set();
       if (appendPickIds.size) {
         var shownIds = new Set();
