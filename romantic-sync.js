@@ -12231,6 +12231,9 @@ function okbmBindNativeExternalLinks() {
     if (isYouTubeHost(url)) { openYouTube(url); return; }
     Browser.open({ url: url }).catch(function() {});
   };
+  // 캡처 단계로 받는다. 지도 정보창(#mobileBottomSheet)·프로필 SNS 단추 등이 onclick에서 stopPropagation을 해서
+  // 버블 단계로는 못 받아, 아이폰 정보창 유튜브가 앱 열기(youtube://)를 건너뛰고 바로 사파리로 갔다(11-06 시뮬레이터 확인).
+  // 산림청 지도 링크([data-fire-map])는 map-main.js가 먼저 캡처해 preventDefault하므로 아래 defaultPrevented에서 빠진다.
   document.addEventListener('click', function(e) {
     if (e.defaultPrevented) return;
     var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
@@ -12246,7 +12249,7 @@ function okbmBindNativeExternalLinks() {
     }
     e.preventDefault();
     open(url);
-  });
+  }, true);
   window.open = function(url) {
     var ext = okbmNativeExternalUrl(url);
     if (ext) { open(ext); return null; }
