@@ -863,40 +863,39 @@
       .btn-quick-login-unlock { background: var(--accent-fill); border: 1px solid var(--accent-fill); color: var(--on-accent); border-radius: 8px; font-weight: 800; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 
       .btn-gpx-track-toggle {
-        width: 100%; background: rgba(13, 148, 136, 0.2); border: 1.5px solid #14b8a6; color: var(--accent-teal);
-        font-size: 0.74rem; font-weight: 800; padding: 7px 10px; border-radius: 7px; cursor: pointer;
+        width: 100%; background: var(--bg-2); border: 1px solid var(--line-strong); color: var(--tx-1);
+        font-size: var(--fs-body); font-weight: 700; padding: 8px 10px; border-radius: 8px; cursor: pointer;
         display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 4px;
       }
-      .btn-gpx-track-toggle.active { background: #f97316; border-color: #ea580c; color: #fff; box-shadow: 0 0 12px rgba(249, 115, 22, 0.6); }
-      .gpx-credit-line { font-size: 0.66rem; color: #9ca3af; text-align: center; margin-top: 3px; }
-      .btn-gpx-send { width: 100%; background: transparent; border: 1.5px dashed rgba(249, 115, 22, 0.7); color: #fdba74; font-size: 0.72rem; font-weight: 800; padding: 7px 10px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; margin: 6px 0 2px; box-sizing: border-box; }
+      .btn-gpx-track-toggle.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+      .gpx-credit-line { font-size: var(--fs-caption); color: var(--tx-3); text-align: center; margin-top: 4px; }
+      .btn-gpx-send { width: 100%; background: transparent; border: 1px solid var(--line-strong); color: var(--tx-2); font-size: var(--fs-meta); font-weight: 600; padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; margin: 6px 0 2px; box-sizing: border-box; }
       /* GPX 보내기 창 (map-main.js openGpxSendModal) */
-      .okbm-gpx-send { position: fixed; inset: 0; z-index: 2147483640; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box; }
-      .okbm-gpx-send-box { width: min(100%, 400px); background: #0f141c; color: #e5e7eb; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 14px 16px 12px; box-sizing: border-box; }
-      .okbm-gpx-send-head { display: flex; align-items: center; justify-content: space-between; font-size: 0.95rem; }
-      .okbm-gpx-send-head button { background: none; border: 0; color: #9ca3af; font-size: 1.05rem; cursor: pointer; padding: 4px 6px; }
-      .okbm-gpx-send-spot { margin-top: 2px; font-size: 0.78rem; font-weight: 800; color: #fdba74; }
-      .okbm-gpx-send-help { font-size: 0.76rem; line-height: 1.5; color: #cbd5e1; margin: 8px 0 10px; }
-      .okbm-gpx-send-file { display: block; position: relative; text-align: center; border: 1.5px dashed #f97316; border-radius: 10px; padding: 11px; font-size: 0.82rem; font-weight: 800; color: #fdba74; cursor: pointer; }
+      .okbm-gpx-send { position: fixed; inset: 0; z-index: 2147483640; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; box-sizing: border-box; }
+      .okbm-gpx-send-box { width: 100%; max-width: 480px; background: var(--bg-1); color: var(--tx-1); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+      .okbm-gpx-send-head { display: flex; align-items: center; justify-content: space-between; font-size: var(--fs-section); }
+      .okbm-gpx-send-head button { background: none; border: 0; color: var(--tx-3); font-size: 1rem; cursor: pointer; padding: 6px 8px; }
+      .okbm-gpx-send-spot { margin-top: 2px; font-size: var(--fs-meta); color: var(--tx-3); }
+      .okbm-gpx-send-help { font-size: var(--fs-body); line-height: 1.55; color: var(--tx-2); margin: 10px 0 12px; }
+      .okbm-gpx-send-file { display: block; position: relative; text-align: center; background: var(--bg-2); border: 1px dashed var(--line-strong); border-radius: 10px; padding: 12px; font-size: var(--fs-body); font-weight: 700; color: var(--tx-1); cursor: pointer; }
       .okbm-gpx-send-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-      .okbm-gpx-send-picked { font-size: 0.72rem; color: #a7f3d0; margin: 6px 0 0; word-break: break-all; }
-      .okbm-gpx-send textarea { width: 100%; box-sizing: border-box; margin-top: 10px; min-height: 58px; background: rgba(255,255,255,0.04); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 0.78rem; resize: vertical; }
-      .okbm-gpx-send-consent { display: flex; gap: 8px; align-items: flex-start; font-size: 0.76rem; line-height: 1.45; color: #e5e7eb; margin-top: 10px; cursor: pointer; }
-      .okbm-gpx-send-consent input { margin-top: 2px; flex: none; width: 16px; height: 16px; }
-      .okbm-gpx-send-msg { min-height: 1.2em; font-size: 0.74rem; color: #fda4af; margin: 8px 0 6px; }
-      .okbm-gpx-send-go { width: 100%; background: #f97316; color: #fff; border: 0; border-radius: 10px; padding: 11px; font-size: 0.88rem; font-weight: 900; cursor: pointer; }
-      .okbm-gpx-send-go:disabled { opacity: 0.55; cursor: default; }
-      .okbm-gpx-send-note { font-size: 0.68rem; color: #9ca3af; text-align: center; margin: 8px 0 0; }
-      /* GPX 길 안내 줄 (map-main.js checkGpxPosition) */
-      .okbm-gpx-guide { position: fixed; left: 50%; transform: translateX(-50%); top: calc(var(--okbm-status-top, 12px) + 58px); z-index: 899; width: min(92vw, 440px); background: rgba(15, 20, 28, 0.94); border: 1.5px solid #f97316; border-radius: 12px; padding: 8px 10px 6px; color: #f3f4f6; box-shadow: 0 6px 18px rgba(0,0,0,0.45); box-sizing: border-box; }
-      .okbm-gpx-guide[data-tone="ok"] { border-color: #10b981; }
-      .okbm-gpx-guide[data-tone="warn"] { border-color: #f59e0b; }
-      .okbm-gpx-guide[data-tone="off"] { border-color: #ef4444; background: rgba(69, 10, 10, 0.95); }
+      .okbm-gpx-send-picked { font-size: var(--fs-meta); color: var(--tx-3); margin: 6px 0 0; word-break: break-all; }
+      .okbm-gpx-send textarea { width: 100%; box-sizing: border-box; margin-top: 10px; min-height: 60px; background: var(--bg-2); color: var(--tx-1); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; font: inherit; font-size: 16px; resize: vertical; }
+      .okbm-gpx-send-consent { display: flex; gap: 8px; align-items: flex-start; font-size: var(--fs-body); line-height: 1.45; color: var(--tx-2); margin-top: 12px; cursor: pointer; }
+      .okbm-gpx-send-consent input { margin-top: 1px; flex: none; width: 18px; height: 18px; accent-color: var(--accent-fill); }
+      .okbm-gpx-send-msg { min-height: 1.2em; font-size: var(--fs-meta); color: var(--danger); margin: 8px 0 6px; }
+      .okbm-gpx-send-go { width: 100%; background: var(--accent-fill); color: var(--on-accent); border: 0; border-radius: 10px; padding: 13px; font-size: var(--fs-title); font-weight: 700; cursor: pointer; }
+      .okbm-gpx-send-go:disabled { opacity: 0.5; cursor: default; }
+      .okbm-gpx-send-note { font-size: var(--fs-meta); color: var(--tx-3); text-align: center; margin: 10px 0 0; }
+      /* GPX 길 안내 줄 (map-main.js checkGpxPosition). 상태는 글자색만 바꾼다 */
+      .okbm-gpx-guide { position: fixed; left: 50%; transform: translateX(-50%); top: calc(var(--okbm-status-top, 12px) + 58px); z-index: 899; width: min(calc(100vw - 24px), 440px); background: rgba(15, 15, 17, 0.94); border: 1px solid var(--line-strong); border-radius: 12px; padding: 9px 10px 7px 12px; color: var(--tx-1); box-shadow: 0 6px 18px rgba(0,0,0,0.45); box-sizing: border-box; }
+      .okbm-gpx-guide[data-tone="warn"] .okbm-gpx-guide-text { color: var(--warn); }
+      .okbm-gpx-guide[data-tone="off"] .okbm-gpx-guide-text { color: var(--danger); }
       .okbm-gpx-guide-main { display: flex; align-items: center; gap: 8px; }
-      .okbm-gpx-guide-text { flex: 1; font-size: 0.86rem; font-weight: 800; line-height: 1.35; }
-      .okbm-gpx-guide-btn { flex: none; background: #f97316; color: #fff; border: 0; border-radius: 8px; padding: 6px 9px; font-size: 0.76rem; font-weight: 800; cursor: pointer; }
-      .okbm-gpx-guide-x { flex: none; background: transparent; color: #9ca3af; border: 0; font-size: 1rem; padding: 4px 6px; cursor: pointer; }
-      .okbm-gpx-guide-note { margin-top: 3px; font-size: 0.68rem; color: #9ca3af; }
+      .okbm-gpx-guide-text { flex: 1; font-size: var(--fs-body); font-weight: 700; line-height: 1.4; }
+      .okbm-gpx-guide-btn { flex: none; background: var(--bg-3); color: var(--tx-1); border: 0; border-radius: 8px; padding: 7px 10px; font-size: var(--fs-meta); font-weight: 700; cursor: pointer; }
+      .okbm-gpx-guide-x { flex: none; background: transparent; color: var(--tx-3); border: 0; font-size: 1rem; padding: 4px 6px; cursor: pointer; }
+      .okbm-gpx-guide-note { margin-top: 3px; font-size: var(--fs-caption); color: var(--tx-3); }
 
       .sheet-title-row { display: flex; align-items: center; justify-content: space-between; width: 100%; padding-bottom: 4px; border-bottom: 1px solid var(--border-hairline); cursor: pointer; }
       .compact-title { font-size: 1.12rem !important; font-weight: 900 !important; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -1669,7 +1668,7 @@
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.86"></script>
+       <script src="map-main.js?v=1.0.87"></script>
     <script src="photo-map.js?v=25" defer></script>
     <script src="spot-tips.js?v=11" defer></script>
     <script src="home-metrics.js?v=5" defer></script>

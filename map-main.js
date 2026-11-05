@@ -8856,7 +8856,7 @@ var overlay = document.getElementById('customModalOverlay');
           }
           return '<div class="admin-inbox-card">' +
             '<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">' +
-              '<span style="font-size:0.62rem; font-weight:900; color:#f97316; border:1px solid #f9731655; border-radius:4px; padding:1px 6px;">GPX</span>' +
+              '<span style="font-size:0.62rem; font-weight:800; color:var(--tx-2); border:1px solid var(--line-strong); border-radius:4px; padding:1px 6px;">GPX</span>' +
               '<span style="font-size:0.62rem; color:#94a3b8;">' + escapeHtml(r.status || '') + '</span>' +
               (when ? '<span style="font-size:0.62rem; color:#64748b; margin-left:auto;">' + escapeHtml(when) + '</span>' : '') +
             '</div>' +
@@ -8864,7 +8864,7 @@ var overlay = document.getElementById('customModalOverlay');
             '<div class="admin-inbox-meta">' +
               '보낸 사람: ' + escapeHtml(r.nickname || r.user_id || '') + '<br>' +
               '점 ' + escapeHtml(String(r.points || 0)) + '개 · ' + escapeHtml(String(r.km || 0)) + 'km' +
-              (r.spot_gpx_url ? '<br><span style="color:#fbbf24;">이미 선이 있는 박지예요. 승인하면 바뀌어요.</span>' : '') +
+              (r.spot_gpx_url ? '<br><span style="color:var(--warn);">이미 선이 있는 박지예요. 승인하면 바뀌어요.</span>' : '') +
               (r.note ? '<br>메모: <span style="white-space:pre-wrap;">' + escapeHtml(r.note) + '</span>' : '') +
               (r.reject_reason ? '<br><span style="color:#fda4af;">반려 사유: ' + escapeHtml(r.reject_reason) + '</span>' : '') +
             '</div>' +
@@ -8872,7 +8872,7 @@ var overlay = document.getElementById('customModalOverlay');
           '</div>';
         };
         box.style.cssText = 'margin-bottom:14px;';
-        box.innerHTML = '<div style="font-size:0.72rem; font-weight:800; color:#fdba74; margin:0 0 8px;">GPX 등산로 대기 ' + pending.length + '건</div>' +
+        box.innerHTML = '<div style="font-size:0.72rem; font-weight:800; color:var(--tx-2); margin:0 0 8px;">GPX 등산로 대기 ' + pending.length + '건</div>' +
           (pending.length ? pending.map(card).join('') : '<div style="margin-bottom:8px; color:#64748b;">대기 중인 GPX가 없어요.</div>') +
           (done.length ? '<details style="margin-bottom:6px;"><summary style="font-size:0.72rem; font-weight:800; color:#94a3b8; cursor:pointer;">GPX 처리됨 ' + done.length + '건(30일)</summary>' + done.map(card).join('') + '</details>' : '');
         box.addEventListener('click', async function(e) {
