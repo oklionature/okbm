@@ -413,6 +413,8 @@
         CAMP: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M3 19C4 9 9 4 12 4s8 5 9 15z"/><path d="M12 4v15M3 19h18M7 19c2-5 3-9 5-15M17 19c-2-5-3-9-5-15"/></svg>`,
         MOUNTAIN: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#10b981;"><polygon points="2 20 8.5 7 15 17 22 20 2 20" fill="rgba(16,185,129,0.45)" stroke="#10b981" stroke-width="1.6"/><polygon points="8.5 7 10.5 11 6.5 11" fill="#6ee7b7"/><polygon points="17 11 19 14.5 15 14.5" fill="#a7f3d0"/></svg>`,
         PIN: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/></svg>`,
+        // GPX: GPS 점을 이은 기록선(대표님 11-05 고름 C)
+        GPX_TRACK: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M4 19l5-6 4 3 7-10"/><circle cx="4" cy="19" r="1.6"/><circle cx="9" cy="13" r="1.6"/><circle cx="13" cy="16" r="1.6"/><circle cx="20" cy="6" r="1.6"/></svg>`,
         HIKING: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M4 2l16 20M20 2L4 22M3 19h4M17 19h4M3 5h3M18 5h3"/></svg>`,
         DRONE: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><rect x="9" y="9" width="6" height="6" rx="1.5"/><path d="M9 9L4 4M15 9l5-5M9 15l-5 5M15 15l5 5"/><circle cx="4" cy="4" r="2.5"/><circle cx="20" cy="4" r="2.5"/><circle cx="4" cy="20" r="2.5"/><circle cx="20" cy="20" r="2.5"/></svg>`,
         
@@ -3933,14 +3935,14 @@ function updateSmartResetButtons() {
 
                 ${spot.gpxUrl && isUnlocked ? `
                   <button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
-                    ${ICONS.HIKING} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : '등산로 GPX 코스선 지도에 표시'}
+                    ${ICONS.GPX_TRACK} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : '등산로 GPX 코스선 지도에 표시'}
                   </button>
                   ${spot.gpxCredit ? `<div class="gpx-credit-line">${escapeHtml(spot.gpxCredit)}님이 보내 준 길이에요</div>` : ''}
                 ` : ''}
               </div>
 
               ${!spot.gpxUrl && spot.__detailTier === 'member' ? `
-                <button type="button" class="btn-gpx-send" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_send_open">${ICONS.HIKING} 이 장소 GPX 등록하기</button>
+                <button type="button" class="btn-gpx-send" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_send_open">${ICONS.GPX_TRACK} 이 장소 GPX 등록하기</button>
                 <div class="gpx-credit-line">다른 낭만루터 분들에게 큰 도움이 됩니다. 소정의 포인트도 드려요.</div>
               ` : ''}
 
