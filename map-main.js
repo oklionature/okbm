@@ -3547,17 +3547,66 @@ function updateSmartResetButtons() {
         if (btn) openGpxSendModal(btn.getAttribute('data-gpx-send'));
       });
 
-      function notifyGpxOpened(sId) {
-        if (typeof window.okbmUploadAccessToken !== 'function') return;
-        window.okbmUploadAccessToken().then(function(tok) {
-          if (!tok) return;
-          var cfg = getSupabaseRestConfig();
-          return fetch(cfg.url + '/rest/v1/rpc/okbm_gpx_opened', {
-            method: 'POST',
-            headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ p_spot_id: sId })
+      // 남이 보낸 GPX는 처음 켤 때 5점을 내고(보낸 분께 5점) 연다. SUPABASE_H46
+      // 포인트가 모자라면 그냥 연다: 단추가 들머리 관문(등록자 인스타·링크를 한 번 거침) 뒤에만 있어서다(대표님 11-05, 나중에 광고 자리)
+      async function gpxUseRpc(sId, mode) {
+        var tok = typeof window.okbmUploadAccessToken === 'function' ? await window.okbmUploadAccessToken() : '';
+        if (!tok) throw new Error('login');
+        var cfg = getSupabaseRestConfig();
+        var res = await fetch(cfg.url + '/rest/v1/rpc/okbm_gpx_use', {
+          method: 'POST',
+          headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_spot_id: sId, p_mode: mode })
+        });
+        var data = await res.json().catch(function() { return null; });
+        if (!res.ok || !data) throw new Error((data && data.message) || ('HTTP ' + res.status));
+        return data;
+      }
+
+      function gpxUseSheet(info) {
+        return new Promise(function(resolve) {
+          var old = document.getElementById('okbmGpxUse');
+          if (old) old.remove();
+          var wrap = document.createElement('div');
+          wrap.id = 'okbmGpxUse';
+          wrap.className = 'okbm-gpx-send';
+          wrap.innerHTML = '<div class="okbm-gpx-send-box" role="dialog" aria-modal="true" aria-labelledby="okbmGpxUseTitle">' +
+            '<div class="okbm-gpx-send-head"><strong id="okbmGpxUseTitle">이 길을 열까요?</strong><button type="button" data-gpx-use="close" aria-label="닫기">✕</button></div>' +
+            '<p class="okbm-gpx-send-help"></p>' +
+            '<button type="button" class="okbm-gpx-send-go" data-gpx-use="go">5점 쓰고 열기</button>' +
+            '<p class="okbm-gpx-send-note"></p>' +
+          '</div>';
+          wrap.querySelector('.okbm-gpx-send-help').textContent = (info.owner ? info.owner + '님이' : '다른 분이') + ' 보내 준 등산로예요. 5점을 쓰면 열리고, 그 5점은 보낸 분께 가요.';
+          wrap.querySelector('.okbm-gpx-send-note').textContent = '지금 ' + (info.balance || 0) + '점 · 한 번 열면 이 박지 길은 계속 볼 수 있어요.';
+          var done = function(v) { wrap.remove(); resolve(v); };
+          wrap.addEventListener('click', function(e) {
+            if (e.target === wrap) return done(false);
+            var btn = e.target && e.target.closest ? e.target.closest('[data-gpx-use]') : null;
+            if (btn) done(btn.getAttribute('data-gpx-use') === 'go');
           });
-        }).catch(function(e) { console.warn('[map-main.js:notifyGpxOpened]', e); });
+          document.body.appendChild(wrap);
+        });
+      }
+
+      // 열어도 되면 true
+      async function gpxUseGate(sId) {
+        try {
+          var info = await gpxUseRpc(sId, 'check');
+          if (info.ok) return true;
+          var mode = 'link';
+          if (!info.short) {
+            if (!(await gpxUseSheet(info))) return false;
+            mode = 'points';
+          }
+          var out = await gpxUseRpc(sId, mode);
+          if (!out.ok) { showToast('길을 열지 못했어요. 다시 시도해 주세요'); return false; }
+          if (out.paid) showToast('5점을 썼어요. 보낸 분께 5점이 갔어요');
+          if (typeof window.okbmMetric === 'function') window.okbmMetric(mode === 'link' ? 'feat_gpx_use_free' : 'feat_gpx_use_points', 'event');
+          return true;
+        } catch (err) {
+          showToast(String(err && err.message) === 'login' ? '로그인한 뒤 열 수 있어요' : '길을 열지 못했어요. 잠시 뒤 다시 해 주세요');
+          return false;
+        }
       }
 
       async function toggleGpxTrack(spotId, gpxUrl) {
@@ -3578,6 +3627,8 @@ function updateSmartResetButtons() {
           return;
         }
 
+        if (!(await gpxUseGate(sId))) return;
+
         try {
           const res = await fetch(gpxUrl.trim());
           if (!res.ok) throw new Error('GPX fetch failed');
@@ -3587,8 +3638,6 @@ function updateSmartResetButtons() {
 
           drawGpxPath(sId, pts);
           saveGpxActive(sId, gpxUrl.trim(), pts);
-          // 다른 회원이 보낸 선이면 보낸 분께 5점(한 사람이 한 박지에 한 번, SUPABASE_H45). 결과는 기다리지 않는다
-          notifyGpxOpened(sId);
           showToast('등산로 선을 켰어요. 화면을 다시 켤 때마다 길 위 내 위치를 알려 드려요', { html: ICONS.HIKING });
           refreshCurrentSpotPopup();
           checkGpxPosition(true);

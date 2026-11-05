@@ -98,6 +98,8 @@
     ['feat_gpx_guide_offroute', '정보창', 'GPX 길 안내: 길 벗어남 경고'],
     ['feat_spot_gpx_send_open', '정보창', 'GPX 보내기 창 열기'],
     ['feat_spot_gpx_send', '정보창', 'GPX 보내기 누름'],
+    ['feat_gpx_use_points', '정보창', '남의 GPX 5점 쓰고 열기'],
+    ['feat_gpx_use_free', '정보창', '남의 GPX 포인트 모자라 그냥 열기'],
     ['feat_spot_media', '정보창', '유튜브·블로그·인스타 탭'],
     ['feat_spot_insta_view', '정보창', '인스타 게시물 크게 보기'],
     ['feat_spot_creator_link', '정보창', '영상·글 링크 알려 주기'],
