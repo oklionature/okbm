@@ -2019,6 +2019,83 @@ function updateSmartResetButtons() {
         '</div>';
       }
 
+      // 산불조심기간 입산통제 띠(대표님 11-05 시안 v5·v4). 철마다 산림청 '입산 가능 지역 안내' 지도에 박지 좌표를 맞대 본
+      // 결과를 spot_fire_closures(SUPABASE_I1)에서 받는다. 오늘이 기간 안인 줄만 받아서 기간이 지나면 띠가 저절로 사라진다.
+      // level: in·edge(통제구역 안·경계) → 강한 띠, near(200m 안) → 약한 띠. 자리는 이름 줄 바로 아래(야영금지 띠 자리)
+      var FIRE_CLOSURE_MAP_URL = 'https://hiking.kworks.co.kr/';
+      var fireClosures = null; // 박지 번호 → { level, starts_on, ends_on }
+
+      function fireClosureDateLabel(ymd) {
+        var m = String(ymd || '').match(/^\d{4}-(\d{2})-(\d{2})/);
+        return m ? (Number(m[1]) + '월 ' + Number(m[2]) + '일') : '';
+      }
+
+      function fireClosureBandHtml(sId) {
+        var c = fireClosures && fireClosures[sId];
+        if (!c) return '';
+        var dot = '<span style="width:6px; height:6px; border-radius:50%; background:#fbbf24; flex-shrink:0;"></span>';
+        var line = 'display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:2px;';
+        var link = '<a href="' + FIRE_CLOSURE_MAP_URL + '" target="_blank" rel="noopener" data-fire-map style="display:inline-flex; align-items:center; gap:2px; flex-shrink:0; color:#fbbf24; font-size:12px; font-weight:600; text-decoration:none;">산림청 지도 보기' +
+          '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>';
+        var card = '<div style="margin:6px 0; padding:10px 12px; border-radius:12px; background:#17171b; border:1px solid rgba(255,255,255,0.08); font-size:12.5px; line-height:1.5; word-break:keep-all;">';
+        if (c.level === 'near') {
+          return card +
+            '<div style="display:flex; align-items:center; gap:6px; font-size:13.5px; font-weight:700; color:#f2f2f3;">' + dot + '근처가 입산통제구역이에요</div>' +
+            '<div style="margin-top:5px; color:#8b8b93;">' + fireClosureDateLabel(c.ends_on) + '까지 오르는 길이 막혔을 수 있어요.</div>' +
+            '<div style="' + line + ' color:#8b8b93;"><span>들머리에서 가는 길을 확인하세요.</span>' + link + '</div>' +
+          '</div>';
+        }
+        return card +
+          '<div style="display:flex; align-items:center; gap:6px;">' + dot +
+            '<span style="font-size:14px; font-weight:700; color:#fbbf24;">입산통제구역</span>' +
+            '<span style="font-size:12.5px; font-weight:600; color:#fbbf24;">(산불조심기간)</span>' +
+            '<span style="margin-left:auto; font-size:12px; font-weight:600; color:#f2f2f3; white-space:nowrap;">' + fireClosureDateLabel(c.starts_on) + ' ~ ' + fireClosureDateLabel(c.ends_on) + '</span>' +
+          '</div>' +
+          '<div style="margin-top:5px; color:#d1d1d6;">산림청 지도에서 이 박지가 입산통제구역으로 나와요.</div>' +
+          '<div style="' + line + ' color:#d1d1d6;"><span>들어가면 과태료 10만 원이에요.</span>' + link + '</div>' +
+        '</div>';
+      }
+
+      // 정보창에는 자리만 두고, 자료가 늦게 와도 받은 뒤 채운다
+      function fireClosureSlotHtml(spot) {
+        if (!spot || isCampBanned(spot)) return '';
+        var sId = escapeHtml(String(spot.id || '').trim());
+        return '<div data-fire-band="' + sId + '">' + fireClosureBandHtml(String(spot.id || '').trim()) + '</div>';
+      }
+
+      async function loadFireClosures() {
+        try {
+          var today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10); // 한국 날짜
+          var cfg = getSupabaseRestConfig();
+          var res = await fetch(cfg.url + '/rest/v1/spot_fire_closures?select=spot_id,level,starts_on,ends_on' +
+            '&starts_on=lte.' + today + '&ends_on=gte.' + today, {
+            headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key }
+          });
+          if (!res.ok) return;
+          var rows = await res.json();
+          var map = {};
+          (Array.isArray(rows) ? rows : []).forEach(function(r) { map[String(r.spot_id).trim()] = r; });
+          fireClosures = map;
+          document.querySelectorAll('[data-fire-band]').forEach(function(el) {
+            el.innerHTML = fireClosureBandHtml(el.getAttribute('data-fire-band'));
+          });
+        } catch (e) {}
+      }
+      loadFireClosures();
+
+      // 앱(웹뷰)은 새 창을 못 열어서 바깥 브라우저로 연다. 정보창이 stopPropagation을 해서 캡처 단계로 받는다
+      document.addEventListener('click', function(e) {
+        var a = e.target && e.target.closest ? e.target.closest('[data-fire-map]') : null;
+        if (!a) return;
+        e.stopPropagation();
+        var Browser = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+        var isNativeApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+        if (isNativeApp && Browser && typeof Browser.open === 'function') {
+          e.preventDefault();
+          Browser.open({ url: FIRE_CLOSURE_MAP_URL }).catch(function() {});
+        }
+      }, true);
+
       // evidence: { photos: [R2 주소], credit: 제보자 닉네임 } — 검수함에서 수정 건의를 채택할 때만 넘긴다
       window.setSpotCampBan = async function(spotId, banned, note, evidence) {
         var sId = String(spotId || '').trim();
@@ -3904,6 +3981,7 @@ function updateSmartResetButtons() {
             </div>
             ${adminTopActions}
             ${campBanBannerHtml(spot)}
+            ${fireClosureSlotHtml(spot)}
 
             ${isCampBanned(spot) ? '' : `
           <!-- 2행: 좌측 세부 포인트 ── 우측 등록자(구형: 오라네) + SNS 미니 아이콘 -->
