@@ -3,7 +3,7 @@
 -- 1) spots.gpx_url 칸을 더한다. anon·authenticated에게 칸 읽기 권한을 주지 않는다(선이 들머리 위치를 드러내므로).
 -- 2) get_spot_detail이 회원(tier member)에게만 gpx_url을 같이 돌려준다. 나머지는 DB에 걸려 있던 정의 그대로다.
 --    화면은 들머리 관문(7원칙 동의)을 통과한 박지에서만 단추를 보인다.
--- 3) 시험: 이천 원적산 원적봉(18)·천덕봉(571)에 트랭글 종주 기록(R2 gpx/official/wonjeok-trangle.gpx)을 넣는다.
+-- 3) 시험: 이천 원적산 원적봉(18)·천덕봉(571)에 트랭글 종주 기록을 좌표만 남겨(기록 시각·기기 번호·통신사 정보 삭제) R2 gpx/official/wonjeok-jongju.gpx로 넣는다.
 -- 파일은 R2 버킷 romanticroute의 gpx/ 아래에 둔다. 자세한 설계는 TASK_GPX.md.
 -- 적용: Supabase 대시보드 SQL 편집기에서 이 파일 전체를 한 번 실행. 여러 번 실행해도 된다.
 
@@ -18,5 +18,5 @@ DECLARE c_member_per_minute constant integer := 20; c_guest_per_minute constant 
 REVOKE ALL ON FUNCTION public.get_spot_detail(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_spot_detail(text) TO anon, authenticated, service_role;
 
-UPDATE public.spots SET gpx_url = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/gpx/official/wonjeok-trangle.gpx'
+UPDATE public.spots SET gpx_url = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/gpx/official/wonjeok-jongju.gpx'
  WHERE id IN ('18', '571');
