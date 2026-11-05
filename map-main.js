@@ -3451,6 +3451,102 @@ function updateSmartResetButtons() {
         return pts;
       }
 
+      // GPX 보내기 (TASK_GPX 4단계): 업로드 Worker POST /gpx(좌표만 남김) → okbm_submit_gpx(검수 대기, SUPABASE_H44)
+      var GPX_SEND_ERRORS = {
+        not_gpx: 'GPX 파일이 아니에요. 등산 앱에서 GPX로 내보낸 파일을 골라 주세요',
+        too_few_points: '기록이 너무 짧아요. 들머리부터 박지까지 걸은 기록을 골라 주세요',
+        outside_korea: '우리나라 밖 좌표가 들어 있어요',
+        too_long: '80km보다 긴 기록은 받지 않아요. 박지 구간만 잘라 주세요',
+        too_large: '파일이 너무 커요(3MB까지)',
+        login_required: '로그인이 풀렸어요. 다시 로그인해 주세요',
+        invalid_session: '로그인이 풀렸어요. 다시 로그인해 주세요',
+        'already pending': '이 박지에 보낸 기록이 아직 검수 중이에요',
+        'too many pending': '검수 중인 기록이 5개라 더 보낼 수 없어요. 검수가 끝나면 보내 주세요',
+        'consent required': '내 기록이라는 확인에 체크해 주세요'
+      };
+
+      function openGpxSendModal(spotId) {
+        var sId = String(spotId || '').trim();
+        var spot = (spots || []).find(function(s) { return String(s.id).trim() === sId; });
+        if (!spot) return;
+        var old = document.getElementById('okbmGpxSend');
+        if (old) old.remove();
+        var wrap = document.createElement('div');
+        wrap.id = 'okbmGpxSend';
+        wrap.className = 'okbm-gpx-send';
+        wrap.innerHTML = '<div class="okbm-gpx-send-box" role="dialog" aria-modal="true" aria-labelledby="okbmGpxSendTitle">' +
+          '<div class="okbm-gpx-send-head"><strong id="okbmGpxSendTitle">등산 기록(GPX) 보내기</strong><button type="button" data-gpx-send-act="close" aria-label="닫기">✕</button></div>' +
+          '<div class="okbm-gpx-send-spot"></div>' +
+          '<p class="okbm-gpx-send-help">트랭글·램블러·가민 같은 등산 앱에서 이 박지에 다녀온 기록을 GPX 파일로 내보내 골라 주세요. 기록 시각과 기기 정보는 지우고 길(좌표)만 받아요.</p>' +
+          '<label class="okbm-gpx-send-file"><input type="file" data-gpx-send-file><span>GPX 파일 고르기</span></label>' +
+          '<div class="okbm-gpx-send-picked"></div>' +
+          '<textarea data-gpx-send-note maxlength="300" placeholder="길 안내에 도움이 될 메모(선택). 예: 출렁다리 지나 왼쪽 능선길"></textarea>' +
+          '<label class="okbm-gpx-send-consent"><input type="checkbox" data-gpx-send-consent> 내가 직접 다녀온 기록이고, 낭만루트 지도에 써도 괜찮아요</label>' +
+          '<div class="okbm-gpx-send-msg" aria-live="polite"></div>' +
+          '<button type="button" class="okbm-gpx-send-go" data-gpx-send-act="go" data-metric-click="feat_spot_gpx_send">보내기</button>' +
+          '<p class="okbm-gpx-send-note">검수 뒤 박지에 붙으면 낭만 포인트 50점을 드려요.</p>' +
+        '</div>';
+        wrap.querySelector('.okbm-gpx-send-spot').textContent = spot.fullName || spot.name || '';
+        var fileInput = wrap.querySelector('[data-gpx-send-file]');
+        var msg = wrap.querySelector('.okbm-gpx-send-msg');
+        var goBtn = wrap.querySelector('.okbm-gpx-send-go');
+        fileInput.addEventListener('change', function() {
+          var f = fileInput.files && fileInput.files[0];
+          wrap.querySelector('.okbm-gpx-send-picked').textContent = f ? f.name : '';
+          msg.textContent = '';
+        });
+        var close = function() { wrap.remove(); };
+        wrap.addEventListener('click', async function(e) {
+          if (e.target === wrap) return close();
+          var btn = e.target && e.target.closest ? e.target.closest('[data-gpx-send-act]') : null;
+          if (!btn) return;
+          if (btn.getAttribute('data-gpx-send-act') === 'close') return close();
+          var f = fileInput.files && fileInput.files[0];
+          if (!f) { msg.textContent = 'GPX 파일을 골라 주세요'; return; }
+          if (!wrap.querySelector('[data-gpx-send-consent]').checked) { msg.textContent = GPX_SEND_ERRORS['consent required']; return; }
+          goBtn.disabled = true;
+          msg.textContent = '보내는 중…';
+          try {
+            await sendGpxForSpot(sId, f, wrap.querySelector('[data-gpx-send-note]').value);
+            msg.textContent = '';
+            wrap.querySelector('.okbm-gpx-send-box').innerHTML = '<div class="okbm-gpx-send-head"><strong>보냈어요</strong><button type="button" data-gpx-send-act="close" aria-label="닫기">✕</button></div>' +
+              '<p class="okbm-gpx-send-help">검수 뒤 박지에 붙으면 낭만 포인트 50점을 드려요. 고마워요!</p>';
+          } catch (err) {
+            var code = String((err && err.message) || '');
+            msg.textContent = GPX_SEND_ERRORS[code] || ('보내지 못했어요. 잠시 뒤 다시 해 주세요(' + code + ')');
+            goBtn.disabled = false;
+          }
+        });
+        document.body.appendChild(wrap);
+      }
+
+      async function sendGpxForSpot(sId, file, note) {
+        if (file.size > 3 * 1024 * 1024) throw new Error('too_large');
+        var tok = typeof window.okbmUploadAccessToken === 'function' ? await window.okbmUploadAccessToken() : '';
+        if (!tok) throw new Error('login_required');
+        var up = await fetch((window.OKBM_CF_UPLOAD_URL || 'https://romantic-upload-worker.ggumfree.workers.dev') + '/gpx', {
+          method: 'POST', headers: { Authorization: 'Bearer ' + tok }, body: file
+        });
+        var upJson = await up.json().catch(function() { return null; });
+        if (!up.ok || !upJson || upJson.status !== 'SUCCESS') throw new Error((upJson && upJson.error) || ('upload_' + up.status));
+        var cfg = getSupabaseRestConfig();
+        var res = await fetch(cfg.url + '/rest/v1/rpc/okbm_submit_gpx', {
+          method: 'POST',
+          headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_spot_id: sId, p_gpx_url: upJson.url, p_points: upJson.points, p_km: upJson.km, p_note: String(note || '').slice(0, 300), p_source: 'spot', p_consent: true })
+        });
+        if (!res.ok) {
+          var body = await res.json().catch(function() { return null; });
+          throw new Error((body && body.message) || ('submit_' + res.status));
+        }
+        return true;
+      }
+
+      document.addEventListener('click', function(e) {
+        var btn = e.target && e.target.closest ? e.target.closest('[data-gpx-send]') : null;
+        if (btn) openGpxSendModal(btn.getAttribute('data-gpx-send'));
+      });
+
       async function toggleGpxTrack(spotId, gpxUrl) {
         const sId = String(spotId).trim();
         if (currentGpxPolyline && activeGpxSpotId === sId) {
@@ -3775,6 +3871,9 @@ function updateSmartResetButtons() {
                     ${ICONS.HIKING} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : '등산로 GPX 코스선 지도에 표시'}
                   </button>
                   ${spot.gpxCredit ? `<div class="gpx-credit-line">${escapeHtml(spot.gpxCredit)}님이 보내 준 길이에요</div>` : ''}
+                ` : ''}
+                ${!spot.gpxUrl && spot.__detailTier === 'member' ? `
+                  <button type="button" class="btn-gpx-send" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_send_open">${ICONS.HIKING} 이 박지 등산 기록(GPX) 보내기 · 50점</button>
                 ` : ''}
               </div>
 
