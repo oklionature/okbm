@@ -3484,7 +3484,7 @@ function updateSmartResetButtons() {
           '<label class="okbm-gpx-send-consent"><input type="checkbox" data-gpx-send-consent> 내가 직접 다녀온 기록이고, 낭만루트 지도에 써도 괜찮아요</label>' +
           '<div class="okbm-gpx-send-msg" aria-live="polite"></div>' +
           '<button type="button" class="okbm-gpx-send-go" data-gpx-send-act="go" data-metric-click="feat_spot_gpx_send">보내기</button>' +
-          '<p class="okbm-gpx-send-note">검수 뒤 박지에 등록되면 감사한 마음을 담아 낭만 포인트 50점을 드려요.</p>' +
+          '<p class="okbm-gpx-send-note">검수 뒤 박지에 등록되면 감사한 마음을 담아 낭만 포인트 50점을 드려요.<br>다른 분이 내 GPX를 사용하면 추가로 포인트를 드려요.</p>' +
         '</div>';
         wrap.querySelector('.okbm-gpx-send-spot').textContent = spot.fullName || spot.name || '';
         var fileInput = wrap.querySelector('[data-gpx-send-file]');
@@ -3510,7 +3510,7 @@ function updateSmartResetButtons() {
             await sendGpxForSpot(sId, f, wrap.querySelector('[data-gpx-send-note]').value);
             msg.textContent = '';
             wrap.querySelector('.okbm-gpx-send-box').innerHTML = '<div class="okbm-gpx-send-head"><strong>보냈어요</strong><button type="button" data-gpx-send-act="close" aria-label="닫기">✕</button></div>' +
-              '<p class="okbm-gpx-send-help">검수 뒤 박지에 등록되면 감사한 마음을 담아 낭만 포인트 50점을 드려요.</p>';
+              '<p class="okbm-gpx-send-help">검수 뒤 박지에 등록되면 감사한 마음을 담아 낭만 포인트 50점을 드려요.<br>다른 분이 내 GPX를 사용하면 추가로 포인트를 드려요.</p>';
           } catch (err) {
             var code = String((err && err.message) || '');
             msg.textContent = GPX_SEND_ERRORS[code] || ('보내지 못했어요. 잠시 뒤 다시 해 주세요(' + code + ')');
@@ -3547,6 +3547,19 @@ function updateSmartResetButtons() {
         if (btn) openGpxSendModal(btn.getAttribute('data-gpx-send'));
       });
 
+      function notifyGpxOpened(sId) {
+        if (typeof window.okbmUploadAccessToken !== 'function') return;
+        window.okbmUploadAccessToken().then(function(tok) {
+          if (!tok) return;
+          var cfg = getSupabaseRestConfig();
+          return fetch(cfg.url + '/rest/v1/rpc/okbm_gpx_opened', {
+            method: 'POST',
+            headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p_spot_id: sId })
+          });
+        }).catch(function(e) { console.warn('[map-main.js:notifyGpxOpened]', e); });
+      }
+
       async function toggleGpxTrack(spotId, gpxUrl) {
         const sId = String(spotId).trim();
         if (currentGpxPolyline && activeGpxSpotId === sId) {
@@ -3574,6 +3587,8 @@ function updateSmartResetButtons() {
 
           drawGpxPath(sId, pts);
           saveGpxActive(sId, gpxUrl.trim(), pts);
+          // 다른 회원이 보낸 선이면 보낸 분께 5점(한 사람이 한 박지에 한 번, SUPABASE_H45). 결과는 기다리지 않는다
+          notifyGpxOpened(sId);
           showToast('등산로 선을 켰어요. 화면을 다시 켤 때마다 길 위 내 위치를 알려 드려요', { html: ICONS.HIKING });
           refreshCurrentSpotPopup();
           checkGpxPosition(true);
