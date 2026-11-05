@@ -3484,7 +3484,7 @@ function updateSmartResetButtons() {
           '<label class="okbm-gpx-send-consent"><input type="checkbox" data-gpx-send-consent> 내가 직접 다녀온 기록이고, 낭만루트 지도에 써도 괜찮아요</label>' +
           '<div class="okbm-gpx-send-msg" aria-live="polite"></div>' +
           '<button type="button" class="okbm-gpx-send-go" data-gpx-send-act="go" data-metric-click="feat_spot_gpx_send">보내기</button>' +
-          '<p class="okbm-gpx-send-note">검수 뒤 박지에 붙으면 낭만 포인트 50점을 드려요.</p>' +
+          '<p class="okbm-gpx-send-note">검수 뒤 박지에 등록되면 감사한 마음을 담아 낭만 포인트 50점을 드려요.</p>' +
         '</div>';
         wrap.querySelector('.okbm-gpx-send-spot').textContent = spot.fullName || spot.name || '';
         var fileInput = wrap.querySelector('[data-gpx-send-file]');
@@ -3510,7 +3510,7 @@ function updateSmartResetButtons() {
             await sendGpxForSpot(sId, f, wrap.querySelector('[data-gpx-send-note]').value);
             msg.textContent = '';
             wrap.querySelector('.okbm-gpx-send-box').innerHTML = '<div class="okbm-gpx-send-head"><strong>보냈어요</strong><button type="button" data-gpx-send-act="close" aria-label="닫기">✕</button></div>' +
-              '<p class="okbm-gpx-send-help">검수 뒤 박지에 붙으면 낭만 포인트 50점을 드려요. 고마워요!</p>';
+              '<p class="okbm-gpx-send-help">검수 뒤 박지에 등록되면 감사한 마음을 담아 낭만 포인트 50점을 드려요.</p>';
           } catch (err) {
             var code = String((err && err.message) || '');
             msg.textContent = GPX_SEND_ERRORS[code] || ('보내지 못했어요. 잠시 뒤 다시 해 주세요(' + code + ')');
