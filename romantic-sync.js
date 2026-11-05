@@ -12183,35 +12183,38 @@ function okbmBindNativeExternalLinks() {
     try { return window.Capacitor && typeof window.Capacitor.getPlatform === 'function' ? window.Capacitor.getPlatform() : ''; }
     catch (e) { return ''; }
   };
-  // 유튜브 앱이 없을 때 쓰는 폴백. 플랫폼마다 '앱 밖' 창을 여는 길이 다르다.
-  // · iOS: JS window.open(https) → Capacitor WKWebView의 createWebViewWith 델리게이트가 UIApplication.open으로
-  //   진짜 사파리에 넘긴다 → '앱 열기'·'전체 화면' 다 된다. Browser.open(SFSafariViewController)은 앱 안 창이라 그 둘이 막혀 안 쓴다.
-  // · 안드로이드: window.open은 WebChromeClient.onCreateWindow가 HitTestResult로 URL을 꺼내는데,
-  //   JS에서 부른 호출은 그게 비어 있어 아무 일도 안 한다. 그래서 Browser.open(Chrome Custom Tabs)으로 간다.
-  //   Custom Tabs는 iOS SFSafariViewController와 달리 HTML5 전체화면을 지원하고,
-  //   유튜브 사이트의 '앱 열기' 버튼은 Intent로 유튜브 앱에 정상 넘긴다.
-  var openYouTubeFallbackHttps = function(httpsUrl) {
-    if (getPlat() === 'android') {
-      Browser.open({ url: httpsUrl }).catch(function() {});
-      return;
-    }
-    try { origOpen.call(window, httpsUrl, '_blank', 'noopener,noreferrer'); }
-    catch (e) { Browser.open({ url: httpsUrl }).catch(function() {}); }
-  };
-  // 유튜브는 앱 안 창 대신 유튜브 앱으로(11-03 대표님: 앱 안 창에선 '앱 열기'가 먹통이고 아이폰 앱이 세로 고정이라 가로로 못 봄).
-  // 앱 밖 주소로 페이지를 옮기면 Capacitor가 이동을 막고 휴대폰에 넘긴다 → 유튜브 앱이 있으면 앱, 없으면 사파리·크롬.
-  // 11-05: https 주소로 옮기면 앱 안 창으로 열리는 기기가 있어(앱 열기·확대 먹통), 유튜브 앱 주소(youtube:// · vnd.youtube:)로 직접 넘긴다.
-  // 1.5초 안에 앱이 안 떠서 화면이 그대로면(유튜브 앱 없음) https로 넘기되,
-  // location.assign은 앱 안 웹뷰가 그 자리에서 유튜브로 바뀌어 '앱 열기'·'전체 화면'이 또 막혀서(11-05 2차)
-  // 플랫폼별로 iOS는 window.open(createWebViewWith → 진짜 사파리), 안드로이드는 Browser.open(Chrome Custom Tabs)로 넘긴다.
+  // 유튜브는 '앱 안 창'이 아니라 '앱 밖' 창(유튜브 앱 or 외부 브라우저)으로 열어야 한다.
+  // 안 그러면 유튜브 쪽에서 '앱 열기'·'전체 화면'을 막는다(iOS SFSafariViewController·Chrome Custom Tabs 둘 다 전체화면 제한).
+  // 플랫폼마다 '앱 밖' 창을 여는 길이 전혀 다르다.
+  //
+  // · 안드로이드: location.href = httpsUrl 로 바로 넘기면 Capacitor의 shouldOverrideUrlLoading이
+  //   외부 호스트라고 판단해 Intent.ACTION_VIEW를 날린다 → 유튜브 앱이 App Link로 등록돼 있으면
+  //   유튜브 앱에서 열리고(전체화면·다 됨), 아니면 '진짜 Chrome' 외부 창에서 열린다(Custom Tabs 아님).
+  //   vnd.youtube: 스킴은 유튜브 앱 Intent 필터가 그 포맷을 안 받는 버전이 있어서(11-05: 설치돼 있어도 안 뜨는 보고) 안 쓴다.
+  //   Browser.open(Chrome Custom Tabs)도 안 쓴다(11-05 2차 보고: Custom Tabs 안 유튜브 모바일 웹 전체화면 안 됨).
+  // · iOS: youtube:// 스킴으로 유튜브 앱을 시도하고, 1.5초 안에 앱이 안 뜨면(앱 없음) origOpen(window.open 원본)으로
+  //   진짜 사파리에 넘긴다. Capacitor WKWebView의 createWebViewWith 델리게이트가 JS window.open(http(s))을 받아
+  //   UIApplication.open으로 외부 Safari를 띄운다. Browser.open(SFSafariViewController)은 전체화면 막혀 안 쓴다.
   var openYouTube = function(url) {
     var u = new URL(url), id = '';
     var m = u.pathname.match(/^\/(?:shorts|live|embed|v)\/([\w-]{11})/);
     if (u.hostname.replace(/^www\./, '') === 'youtu.be') id = u.pathname.slice(1, 12);
     else id = u.searchParams.get('v') || (m ? m[1] : '');
-    if (!/^[\w-]{11}$/.test(id)) { openYouTubeFallbackHttps(url); return; }
-    var httpsUrl = 'https://www.youtube.com/watch?v=' + id;
-    var scheme = getPlat() === 'android' ? ('vnd.youtube:' + id) : ('youtube://www.youtube.com/watch?v=' + id);
+    var httpsUrl = /^[\w-]{11}$/.test(id) ? ('https://www.youtube.com/watch?v=' + id) : url;
+
+    if (getPlat() === 'android') {
+      // 안드로이드: Capacitor가 외부 Intent로 날린다. 유튜브 앱 or 외부 Chrome에서 열린다.
+      location.href = httpsUrl;
+      return;
+    }
+
+    // iOS: 유튜브 앱 시도 → 1.5초 폴백 window.open(진짜 사파리)
+    if (!/^[\w-]{11}$/.test(id)) {
+      try { origOpen.call(window, httpsUrl, '_blank', 'noopener,noreferrer'); }
+      catch (e) { Browser.open({ url: httpsUrl }).catch(function() {}); }
+      return;
+    }
+    var scheme = 'youtube://www.youtube.com/watch?v=' + id;
     var left = false;
     var onHide = function() { if (document.hidden) left = true; };
     document.addEventListener('visibilitychange', onHide);
@@ -12219,8 +12222,8 @@ function okbmBindNativeExternalLinks() {
     setTimeout(function() {
       document.removeEventListener('visibilitychange', onHide);
       if (left || document.hidden) return;
-      // 유튜브 앱이 없음 → 플랫폼별 폴백으로 '앱 밖' 창에 넘긴다
-      openYouTubeFallbackHttps(httpsUrl);
+      try { origOpen.call(window, httpsUrl, '_blank', 'noopener,noreferrer'); }
+      catch (e) { Browser.open({ url: httpsUrl }).catch(function() {}); }
     }, 1500);
   };
   var open = function(url) {
