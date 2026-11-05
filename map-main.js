@@ -3542,10 +3542,11 @@ function updateSmartResetButtons() {
         return true;
       }
 
+      // 휴대폰 정보창(#mobileBottomSheet)이 onclick에서 stopPropagation을 해서 버블 단계로는 못 받는다. 캡처 단계로 받는다
       document.addEventListener('click', function(e) {
         var btn = e.target && e.target.closest ? e.target.closest('[data-gpx-send]') : null;
         if (btn) openGpxSendModal(btn.getAttribute('data-gpx-send'));
-      });
+      }, true);
 
       // 남이 보낸 GPX는 처음 켤 때 5점을 내고 연다(등록자는 2점, 화면엔 '소정의 포인트'로만 알린다). SUPABASE_H46
       // 포인트가 모자라면 그냥 연다: 단추가 들머리 관문(등록자 인스타·링크를 한 번 거침) 뒤에만 있어서다(대표님 11-05, 나중에 광고 자리)
@@ -3939,7 +3940,8 @@ function updateSmartResetButtons() {
               </div>
 
               ${!spot.gpxUrl && spot.__detailTier === 'member' ? `
-                <button type="button" class="btn-gpx-send" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_send_open">${ICONS.HIKING} 이 박지 등산 기록(GPX) 보내기 · 50점</button>
+                <button type="button" class="btn-gpx-send" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_send_open">${ICONS.HIKING} 이 장소 GPX 등록하기</button>
+                <div class="gpx-credit-line">다른 낭만루터 분들에게 큰 도움이 됩니다. 소정의 포인트도 드려요.</div>
               ` : ''}
 
               <div class="summary-block-wrap">
