@@ -126,6 +126,10 @@
       '.stp-chip{height:32px;padding:0 12px;border-radius:999px;border:1px solid #262c3b;background:#141824;color:#cfd4df;font-size:0.76rem;font-weight:800;cursor:pointer;font-family:inherit}',
       '.stp-chip.on{background:#fff;color:#000;border-color:#fff}',
       '.stp-inp{width:100%;box-sizing:border-box;min-height:64px;margin-top:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.05);color:#fff;padding:10px 12px;font-size:0.84rem;font-family:inherit;outline:none;resize:none;line-height:1.45}',
+      '.stp-gpx{margin-top:12px}.stp-gpx-file{display:flex;align-items:center;justify-content:center;height:40px;border-radius:10px;border:1px dashed rgba(255,255,255,0.22);color:#e2e8f0;font-size:0.78rem;font-weight:800;cursor:pointer}.stp-gpx-file input{display:none}',
+      '.stp-gpx-picked{font-size:0.70rem;color:#cbd5e1;margin-top:5px;overflow-wrap:anywhere}.stp-gpx-picked:empty{display:none}',
+      '.stp-gpx-consent{display:flex;gap:6px;align-items:flex-start;font-size:0.70rem;color:#cbd5e1;line-height:1.4;margin-top:6px}.stp-gpx-consent[hidden]{display:none}.stp-gpx-consent input{margin:2px 0 0;flex:none}',
+      '.stp-gpx-note{font-size:0.66rem;color:#94a3b8;margin-top:5px;line-height:1.4}',
       '.stp-row{display:flex;gap:8px;margin-top:14px}.stp-row button{flex:1;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e2e8f0;font-size:0.84rem;font-weight:900;cursor:pointer;font-family:inherit}',
       '.stp-row button.p{background:#5bb8f0;border-color:#5bb8f0;color:#001521}.stp-row button:disabled{opacity:.55}'
     ].join('\n');
@@ -229,6 +233,16 @@
     sheet = null; dim = null;
     setTimeout(function () { if (s) s.remove(); if (d) d.remove(); }, 300);
   }
+  // GPX 첨부 (TASK_GPX ①, 대표님 11-05 문구 A): 선이 없는 박지에서만 보인다. 선이 있으면 받지 않는다(박지 하나에 선 하나)
+  function gpxHtml(id) {
+    var s = spotOf(id);
+    if (!s || String(s.gpxUrl || '').trim() || typeof window.sendGpxForSpot !== 'function') return '';
+    return '<div class="stp-g stp-gpx"><small>GPX 파일 있으세요? <i>선택</i></small>' +
+      '<label class="stp-gpx-file"><input type="file" data-stp-gpx-file><span>GPX 파일 고르기</span></label>' +
+      '<div class="stp-gpx-picked"></div>' +
+      '<label class="stp-gpx-consent" hidden><input type="checkbox" data-stp-gpx-consent> 내가 직접 다녀온 기록이고, 낭만루트 지도에 써도 괜찮아요</label>' +
+      '<div class="stp-gpx-note">다른 낭만루터 분들에게 큰 도움이 됩니다. 소정의 포인트도 드려요.</div></div>';
+  }
   function openSheet(id, fromVisit) {
     if (!loggedIn()) { if (typeof window.openLoginModal === 'function') window.openLoginModal(); return; }
     injectCss();
@@ -258,6 +272,7 @@
             g.tips.map(function (k) { return '<button type="button" class="stp-chip' + (picked.indexOf(k) !== -1 ? ' on' : '') + '" data-stp-chip="' + esc(k) + '">' + esc(k) + '</button>'; }).join('') + '</div></div>';
         }).join('') +
         '<textarea class="stp-inp" maxlength="300" rows="2" placeholder="한 줄 남기기 (안 써도 돼요)">' + esc(text) + '</textarea>' +
+        gpxHtml(id) +
       '</div>' +
       '<div class="stp-row"><button type="button" data-stp="skip">다음에</button><button type="button" class="p" data-stp="save">남기기</button></div>';
     document.body.appendChild(dim);
@@ -266,6 +281,12 @@
     setTimeout(function () { if (sheet) sheet.classList.add('on'); }, 20);
     dim.addEventListener('click', closeSheet);
     sheet.addEventListener('click', onSheetClick);
+    var gpxIn = sheet.querySelector('[data-stp-gpx-file]');
+    if (gpxIn) gpxIn.addEventListener('change', function () {
+      var f = gpxIn.files && gpxIn.files[0];
+      sheet.querySelector('.stp-gpx-picked').textContent = f ? f.name : '';
+      sheet.querySelector('.stp-gpx-consent').hidden = !f;
+    });
   }
   // 플로깅 사진 보기: 같은 아래 창에 사진 칸. 누르면 그 피드를 연다
   function openPlogSheet(id) {
@@ -357,19 +378,36 @@
     var tips = Array.prototype.map.call(sheet.querySelectorAll('.stp-chip.on'), function (c) { return c.getAttribute('data-stp-chip'); });
     var text = String((sheet.querySelector('.stp-inp') || {}).value || '').trim();
     var star = sheetStar;
-    if (!tips.length && !text && !star) { toast('별점이나 팁을 하나 고르거나 한 줄을 적어 주세요.', 'warn'); return; }
+    var gpxIn = sheet.querySelector('[data-stp-gpx-file]');
+    var gpxFile = gpxIn && gpxIn.files && gpxIn.files[0];
+    if (!tips.length && !text && !star && !gpxFile) { toast('별점이나 팁을 하나 고르거나 한 줄을 적어 주세요.', 'warn'); return; }
+    if (gpxFile && !sheet.querySelector('[data-stp-gpx-consent]').checked) { toast('내 기록이라는 확인에 체크해 주세요', 'warn'); return; }
     btn.disabled = true;
     var jobs = [];
     if (star) {
       jobs.push(saveReview(id, star, text.slice(0, 1000)));
       if (tips.length) jobs.push(rpc('okbm_save_spot_tips', { p_spot_id: id, p_tips: tips, p_note: '' }));
-    } else {
+    } else if (tips.length || text) {
       jobs.push(rpc('okbm_save_spot_tips', { p_spot_id: id, p_tips: tips, p_note: text.slice(0, 60) }));
     }
+    // GPX는 후기와 따로 보낸다. GPX가 안 돼도 후기는 남긴다
+    var gpxMsg = '';
+    if (gpxFile) {
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_spot_gpx_send_review');
+      jobs.push(window.sendGpxForSpot(id, gpxFile, text, 'review').then(function () {
+        gpxMsg = 'GPX도 보냈어요. 검수 뒤 등록되면 포인트를 드려요.';
+      }, function (err) {
+        var code = String((err && err.message) || '');
+        var known = window.OKBM_GPX_SEND_ERRORS || {};
+        gpxMsg = 'GPX는 보내지 못했어요. ' + (known[code] || '잠시 뒤 정보창에서 다시 보내 주세요');
+      }));
+    }
+    var hasReview = !!(tips.length || text || star);
     Promise.all(jobs).then(function () {
       closeSheet();
       if (typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(12); } catch (err) {} }
-      toast('고마워요! ' + shortName(spotOf(id)) + ' 후기에 쌓였어요.');
+      if (!hasReview) { toast(gpxMsg, gpxMsg.indexOf('못') !== -1 ? 'warn' : 'success'); load(id, true); return; }
+      toast('고마워요! ' + shortName(spotOf(id)) + ' 후기에 쌓였어요.' + (gpxMsg ? ' ' + gpxMsg : ''));
       // 낭만 포인트 알림(H32): 후기 토스트와 겹치지 않게 조금 뒤에
       if (window.okbmPoints) setTimeout(function () { window.okbmPoints.check(star ? 'review' : 'tip'); }, 1600);
       load(id, true);

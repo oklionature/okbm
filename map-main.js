@@ -3464,8 +3464,10 @@ function updateSmartResetButtons() {
         invalid_session: '로그인이 풀렸어요. 다시 로그인해 주세요',
         'already pending': '이 박지에 보낸 기록이 아직 검수 중이에요',
         'too many pending': '검수 중인 기록이 5개라 더 보낼 수 없어요. 검수가 끝나면 보내 주세요',
-        'consent required': '내 기록이라는 확인에 체크해 주세요'
+        'consent required': '내 기록이라는 확인에 체크해 주세요',
+        'spot has gpx': '이 박지에는 이미 등산로가 등록돼 있어요'
       };
+      window.OKBM_GPX_SEND_ERRORS = GPX_SEND_ERRORS;  // 후기 창(spot-tips.js)도 같은 문구를 쓴다
 
       function openGpxSendModal(spotId) {
         var sId = String(spotId || '').trim();
@@ -3522,7 +3524,7 @@ function updateSmartResetButtons() {
         document.body.appendChild(wrap);
       }
 
-      async function sendGpxForSpot(sId, file, note) {
+      async function sendGpxForSpot(sId, file, note, source) {
         if (file.size > 3 * 1024 * 1024) throw new Error('too_large');
         var tok = typeof window.okbmUploadAccessToken === 'function' ? await window.okbmUploadAccessToken() : '';
         if (!tok) throw new Error('login_required');
@@ -3535,7 +3537,7 @@ function updateSmartResetButtons() {
         var res = await fetch(cfg.url + '/rest/v1/rpc/okbm_submit_gpx', {
           method: 'POST',
           headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p_spot_id: sId, p_gpx_url: upJson.url, p_points: upJson.points, p_km: upJson.km, p_note: String(note || '').slice(0, 300), p_source: 'spot', p_consent: true })
+          body: JSON.stringify({ p_spot_id: sId, p_gpx_url: upJson.url, p_points: upJson.points, p_km: upJson.km, p_note: String(note || '').slice(0, 300), p_source: source || 'spot', p_consent: true })
         });
         if (!res.ok) {
           var body = await res.json().catch(function() { return null; });
