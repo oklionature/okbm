@@ -3326,6 +3326,8 @@ function updateSmartResetButtons() {
       // 화면을 다시 켤 때마다 위치를 한 번 받아 선 위 어디쯤인지(길에서 떨어진 거리, 박지까지 길 따라 남은 거리)를 보여 주고,
       // 50m 넘게 벗어났으면 진동과 빨간 줄로 알린다. 화면이 꺼져 있는 동안 위치를 계속 따라가지는 않는다.
       var GPX_ACTIVE_KEY = 'okbm_gpx_active';
+      // 길 안내 줄의 ✕는 안내 줄만 닫는다(선은 그대로). 다시 켤 때까지 위치 확인·진동도 멈춘다(대표님 11-05)
+      var GPX_GUIDE_HIDDEN_KEY = 'okbm_gpx_guide_hidden';
       var GPX_OFF_ROUTE_M = 50;
       var GPX_FAR_M = 5000;          // 이보다 멀면 아직 산에 안 간 것으로 보고 경고하지 않는다
       var GPX_BAD_ACCURACY_M = 150;  // 위치 오차가 이보다 크면 길 위치를 말하지 않는다(안드로이드 앱은 대략 위치)
@@ -3405,7 +3407,17 @@ function updateSmartResetButtons() {
         currentGpxPolyline = null;
         activeGpxSpotId = null;
         gpxTrack = null;
-        try { localStorage.removeItem(GPX_ACTIVE_KEY); } catch (e) {}
+        try { localStorage.removeItem(GPX_ACTIVE_KEY); localStorage.removeItem(GPX_GUIDE_HIDDEN_KEY); } catch (e) {}
+        var bar = document.getElementById('okbmGpxGuide');
+        if (bar) bar.remove();
+      }
+
+      function isGpxGuideHidden() {
+        try { return localStorage.getItem(GPX_GUIDE_HIDDEN_KEY) === '1'; } catch (e) { return false; }
+      }
+
+      function hideGpxGuide() {
+        try { localStorage.setItem(GPX_GUIDE_HIDDEN_KEY, '1'); } catch (e) {}
         var bar = document.getElementById('okbmGpxGuide');
         if (bar) bar.remove();
       }
@@ -3418,12 +3430,12 @@ function updateSmartResetButtons() {
         bar.className = 'okbm-gpx-guide';
         bar.innerHTML = '<div class="okbm-gpx-guide-main"><span class="okbm-gpx-guide-text"></span>' +
           '<button type="button" class="okbm-gpx-guide-btn" data-gpx-act="check" data-metric-click="feat_gpx_guide_check">다시 확인</button>' +
-          '<button type="button" class="okbm-gpx-guide-x" data-gpx-act="off" data-metric-click="feat_gpx_guide_off" aria-label="등산로 선 끄기">✕</button></div>' +
+          '<button type="button" class="okbm-gpx-guide-x" data-gpx-act="off" data-metric-click="feat_gpx_guide_off" aria-label="길 안내 닫기">✕</button></div>' +
           '<div class="okbm-gpx-guide-note">보조 안내예요. 표지판과 함께 보세요.</div>';
         bar.addEventListener('click', function(e) {
           var btn = e.target && e.target.closest ? e.target.closest('[data-gpx-act]') : null;
           if (!btn) return;
-          if (btn.getAttribute('data-gpx-act') === 'off') { clearGpxGuide(); refreshCurrentSpotPopup(); }
+          if (btn.getAttribute('data-gpx-act') === 'off') hideGpxGuide();
           else checkGpxPosition(true);
         });
         document.body.appendChild(bar);
@@ -3431,6 +3443,7 @@ function updateSmartResetButtons() {
       }
 
       function setGpxGuide(text, tone) {
+        if (isGpxGuideHidden()) return;
         var bar = gpxGuideBar();
         bar.setAttribute('data-tone', tone || '');
         bar.querySelector('.okbm-gpx-guide-text').textContent = text;
@@ -3457,7 +3470,7 @@ function updateSmartResetButtons() {
 
       // force: '다시 확인' 단추. 화면을 켤 때는 15초 안에 다시 묻지 않는다.
       function checkGpxPosition(force) {
-        if (!gpxTrack || !isKakaoMapReady() || gpxCheckBusy) return;
+        if (!gpxTrack || !isKakaoMapReady() || gpxCheckBusy || isGpxGuideHidden()) return;
         if (!force && Date.now() - gpxLastCheckAt < 15000) return;
         gpxCheckBusy = true;
         gpxLastCheckAt = Date.now();
@@ -3732,6 +3745,7 @@ function updateSmartResetButtons() {
 
           drawGpxPath(sId, pts);
           saveGpxActive(sId, gpxUrl.trim(), pts);
+          try { localStorage.removeItem(GPX_GUIDE_HIDDEN_KEY); } catch (e) {}
           showToast('등산로 선을 켰어요. 화면을 다시 켤 때마다 길 위 내 위치를 알려 드려요', { html: ICONS.HIKING });
           refreshCurrentSpotPopup();
           checkGpxPosition(true);
@@ -4083,7 +4097,7 @@ function updateSmartResetButtons() {
 
                 ${spot.gpxUrl && isUnlocked ? `
                   <button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
-                    ${ICONS.GPX_TRACK} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : (spot.gpxCredit ? escapeHtml(spot.gpxCredit) + '님이 등록하신 GPX 확인하기' : '등산로 GPX 코스 지도에 표시')}
+                    ${ICONS.GPX_TRACK} ${isGpxActive ? '지도에서 등산로 선 지우기' : (spot.gpxCredit ? escapeHtml(spot.gpxCredit) + '님이 등록하신 GPX 확인하기' : '등산로 GPX 코스 지도에 표시')}
                   </button>
                   ${isGpxActive ? `<button type="button" class="btn-gpx-send" data-gpx-export="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" data-metric-click="feat_spot_gpx_export_open">${ICONS.GPX_TRACK} 내 등산 앱으로 보내기 (가민·트랭글)</button>` : ''}
                 ` : ''}
