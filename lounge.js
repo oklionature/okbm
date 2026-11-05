@@ -64,8 +64,9 @@
     return TAB_ORDER[i];
   }
   // 사는이야기(life)는 글이 없어 투표(poll) 칸으로 바꿨다. 옛 life 글이 남아 있어도 이름은 보인다 (SUPABASE_H25)
-  const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['poll', '설문·투표'], ['suggestion', '건의']];
-  const CAT_LABEL = { backpacking: '백패킹이야기', life: '사는이야기', poll: '설문·투표', suggestion: '건의' };
+  // gpx: GPX 승인 소식이 모이는 칸(SUPABASE_H49, 대표님 11-05 '다녀온 GPX 공유', 설문·투표 다음)
+  const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['poll', '설문·투표'], ['gpx', '다녀온 GPX 공유'], ['suggestion', '건의']];
+  const CAT_LABEL = { backpacking: '백패킹이야기', life: '사는이야기', poll: '설문·투표', gpx: '다녀온 GPX 공유', suggestion: '건의' };
   const GEAR_CAT = { shelter: '텐트', sleep: '침낭', pack: '배낭', food: '식량', kitchen: '조리', wear: '의류', electronics: '전자', camp: '캠프', other: '기타' };
   const HOME_N = 3;
   const POST_PAGE = 20;
