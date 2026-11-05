@@ -871,8 +871,8 @@
       .gpx-credit-line { font-size: var(--fs-caption); color: var(--tx-3); text-align: center; margin-top: 4px; }
       .btn-gpx-send { width: 100%; background: transparent; border: 1px solid var(--line-strong); color: var(--tx-2); font-size: var(--fs-meta); font-weight: 600; padding: 8px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; margin: 6px 0 2px; box-sizing: border-box; }
       /* GPX 보내기 창 (map-main.js openGpxSendModal) */
-      .okbm-gpx-send { position: fixed; inset: 0; z-index: 2147483640; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; box-sizing: border-box; }
-      .okbm-gpx-send-box { width: 100%; max-width: 480px; background: var(--bg-1); color: var(--tx-1); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+      .okbm-gpx-send { position: fixed; top: 0; left: 0; right: 0; bottom: calc(56px + env(safe-area-inset-bottom, 0px)); z-index: 2147483640; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; justify-content: center; box-sizing: border-box; } /* 하단 탭(56px) 위에서 올라온다 */
+      .okbm-gpx-send-box { width: 100%; max-width: 480px; background: var(--bg-1); color: var(--tx-1); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; padding: 16px; max-height: 100%; overflow-y: auto; box-sizing: border-box; }
       .okbm-gpx-send-head { display: flex; align-items: center; justify-content: space-between; font-size: var(--fs-section); }
       .okbm-gpx-send-head button { background: none; border: 0; color: var(--tx-3); font-size: 1rem; cursor: pointer; padding: 6px 8px; }
       .okbm-gpx-send-spot { margin-top: 2px; font-size: var(--fs-meta); color: var(--tx-3); }
@@ -1668,7 +1668,7 @@
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.89"></script>
+       <script src="map-main.js?v=1.0.90"></script>
     <script src="photo-map.js?v=25" defer></script>
     <script src="spot-tips.js?v=11" defer></script>
     <script src="home-metrics.js?v=5" defer></script>
