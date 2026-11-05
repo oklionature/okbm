@@ -2404,7 +2404,15 @@
     if (key === 'board' || key === 'poll') {
       const st = postsBy[key === 'poll' ? 'poll' : 'all'];
       if (!st) return '<div class="hh-empty">불러오는 중…</div>';
-      const list = visiblePosts(key === 'poll' ? 'poll' : 'all').filter(function (p) { return !p.is_private; }).slice(0, HOME_N);
+      let list = visiblePosts(key === 'poll' ? 'poll' : 'all').filter(function (p) { return !p.is_private; });
+      // 게시판 칸은 가장 최근 설문·투표 하나를 맨 위에, 나머지 두 줄은 일반 글(대표님 11-05)
+      if (key === 'board') {
+        const poll = list.find(function (p) { return p.category === 'poll'; })
+          || visiblePosts('poll').find(function (p) { return !p.is_private; });
+        const rest = list.filter(function (p) { return p.category !== 'poll'; });
+        list = poll ? [poll].concat(rest) : rest;
+      }
+      list = list.slice(0, HOME_N);
       const rows = list.map(function (p) {
         const poll = p.category === 'poll';
         const r = D.poll[p.id];
