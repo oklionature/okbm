@@ -12187,26 +12187,25 @@ function okbmBindNativeExternalLinks() {
   // 안 그러면 유튜브 쪽에서 '앱 열기'·'전체 화면'을 막는다(iOS SFSafariViewController·Chrome Custom Tabs 둘 다 전체화면 제한).
   // 플랫폼마다 '앱 밖' 창을 여는 길이 전혀 다르다.
   //
-  // · 안드로이드: location.href = httpsUrl 로 바로 넘기면 Capacitor의 shouldOverrideUrlLoading이
-  //   외부 호스트라고 판단해 Intent.ACTION_VIEW를 날린다 → 유튜브 앱이 App Link로 등록돼 있으면
-  //   유튜브 앱에서 열리고(전체화면·다 됨), 아니면 '진짜 Chrome' 외부 창에서 열린다(Custom Tabs 아님).
-  //   vnd.youtube: 스킴은 유튜브 앱 Intent 필터가 그 포맷을 안 받는 버전이 있어서(11-05: 설치돼 있어도 안 뜨는 보고) 안 쓴다.
-  //   Browser.open(Chrome Custom Tabs)도 안 쓴다(11-05 2차 보고: Custom Tabs 안 유튜브 모바일 웹 전체화면 안 됨).
+  // · 안드로이드: 사용자 터치 제스처에서 <a target="_blank">를 그대로 두면(preventDefault X)
+  //   안드로이드 WebView가 WebChromeClient.onCreateWindow를 발동한다. Capacitor의 그 핸들러는
+  //   HitTestResult에서 터치한 위치의 링크 URL을 꺼내 Intent.ACTION_VIEW로 바로 날린다 → 유튜브 앱이
+  //   App Link로 등록돼 있으면 유튜브 앱에서(전체화면·앱 열기 다 됨), 아니면 '진짜 Chrome' 외부 창(Custom Tabs 아님).
+  //   11-05 3차 보고: location.href = httpsUrl 폴백도 안 먹힘(안드로이드 WebView가 스크립트 유발 네비게이션을
+  //   shouldOverrideUrlLoading 안 거치고 그냥 앱 안 WebView에서 로드하는 경우가 있음). 그래서 click을 가로채지 않고
+  //   WebView에 맡기는 쪽으로 간다. vnd.youtube: 스킴, Browser.open(Custom Tabs)은 둘 다 전체화면 안 돼서 안 쓴다.
   // · iOS: youtube:// 스킴으로 유튜브 앱을 시도하고, 1.5초 안에 앱이 안 뜨면(앱 없음) origOpen(window.open 원본)으로
   //   진짜 사파리에 넘긴다. Capacitor WKWebView의 createWebViewWith 델리게이트가 JS window.open(http(s))을 받아
   //   UIApplication.open으로 외부 Safari를 띄운다. Browser.open(SFSafariViewController)은 전체화면 막혀 안 쓴다.
+  var isYouTubeHost = function(url) {
+    try { return /(^|\.)(youtube\.com|youtu\.be)$/i.test(new URL(url).hostname); } catch (e) { return false; }
+  };
   var openYouTube = function(url) {
     var u = new URL(url), id = '';
     var m = u.pathname.match(/^\/(?:shorts|live|embed|v)\/([\w-]{11})/);
     if (u.hostname.replace(/^www\./, '') === 'youtu.be') id = u.pathname.slice(1, 12);
     else id = u.searchParams.get('v') || (m ? m[1] : '');
     var httpsUrl = /^[\w-]{11}$/.test(id) ? ('https://www.youtube.com/watch?v=' + id) : url;
-
-    if (getPlat() === 'android') {
-      // 안드로이드: Capacitor가 외부 Intent로 날린다. 유튜브 앱 or 외부 Chrome에서 열린다.
-      location.href = httpsUrl;
-      return;
-    }
 
     // iOS: 유튜브 앱 시도 → 1.5초 폴백 window.open(진짜 사파리)
     if (!/^[\w-]{11}$/.test(id)) {
@@ -12227,7 +12226,7 @@ function okbmBindNativeExternalLinks() {
     }, 1500);
   };
   var open = function(url) {
-    if (/(^|\.)(youtube\.com|youtu\.be)$/i.test(new URL(url).hostname)) { openYouTube(url); return; }
+    if (isYouTubeHost(url)) { openYouTube(url); return; }
     Browser.open({ url: url }).catch(function() {});
   };
   document.addEventListener('click', function(e) {
@@ -12236,6 +12235,13 @@ function okbmBindNativeExternalLinks() {
     if (!a || a.hasAttribute('download')) return;
     var url = okbmNativeExternalUrl(a.getAttribute('href'));
     if (!url) return;
+    // 안드로이드 + 유튜브: WebChromeClient.onCreateWindow의 HitTestResult로 외부 Intent가 발동되도록
+    // target="_blank"만 보장하고 click을 그대로 둔다(preventDefault X). JS 폴백은 안드로이드 WebView에서
+    // 스크립트 유발 네비게이션을 WebView 안에 가둬 버리는 경우가 있어서 못 쓴다.
+    if (getPlat() === 'android' && isYouTubeHost(url)) {
+      if (a.getAttribute('target') !== '_blank') a.setAttribute('target', '_blank');
+      return;
+    }
     e.preventDefault();
     open(url);
   });
