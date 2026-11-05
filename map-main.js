@@ -1121,6 +1121,7 @@
           kakao.maps.event.addListener(map, 'click', handleMapClick);
 
           initMapLongPressProposalEngine(container);
+          restoreGpxActive();
 
          if (spots && spots.length > 0) {
             spots = spots.filter(s => s && s.lat && s.lng && !BLOCKED_SPOT_IDS.has(String(s.id).trim()));
@@ -1475,27 +1476,13 @@
 
       function locateUserPosition(e) {
         if (e) e.stopPropagation();
-        // 앱 안에서는 기기 위치 기능을 쓴다. 웹 위치 기능을 쓰면 아이폰이 앱 허락 창 뒤에 사이트 허락 창을 한 번 더 띄운다.
-        const nativeGeo = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation;
-        const useNativeGeo = !!(nativeGeo && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
-        if (!useNativeGeo && !navigator.geolocation) return showToast('위치 서비스를 지원하지 않습니다.', { html: ICONS.ALERT_CARD });
-        const getPosition = (onOk, onFail) => {
-          // 안드로이드 앱은 대략 위치 권한만 받는다(구글 플레이 위치 정책, 2027-01-27). 아이폰은 그대로 정확한 위치.
-          const highAccuracy = !(typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() === 'android');
-          if (useNativeGeo) nativeGeo.getCurrentPosition({ enableHighAccuracy: highAccuracy, timeout: 15000 }).then(onOk, onFail);
-          else navigator.geolocation.getCurrentPosition(onOk, onFail);
-        };
-        getPosition((pos) => {
+        getDevicePosition((pos) => {
           if (!map) return;
           const loc = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
-          if (!userLocationOverlay) {
-            const el = document.createElement('div');
-            el.style.cssText = 'width:20px; height:20px; border-radius:50%; background:#0284c7; border:3px solid #fff; box-shadow:0 0 16px rgba(56,189,248,1);';
-            userLocationOverlay = new kakao.maps.CustomOverlay({ map, position: loc, content: el, zIndex: 9999 });
-          } else { userLocationOverlay.setPosition(loc); userLocationOverlay.setMap(map); }
+          showUserLocationDot(loc);
           map.setLevel(7, { animate: true }); map.panTo(loc);
           showToast('현재 내 위치로 이동했습니다', { html: ICONS.PIN });
-        }, () => showToast('GPS 권한을 허용해주세요', { html: ICONS.ALERT_CARD }));
+        }, (err) => showToast(err === 'unsupported' ? '위치 서비스를 지원하지 않습니다.' : 'GPS 권한을 허용해주세요', { html: ICONS.ALERT_CARD }));
       }
 
       function switchMasterTab(tabName) {
@@ -3254,12 +3241,203 @@ function updateSmartResetButtons() {
         }, true);
       }
 
+      // GPX 길 안내 (11-05): 켜 둔 선은 휴대폰에 저장해 앱·사이트를 다시 열어도 남는다(데이터가 안 터져도 선은 그린다).
+      // 화면을 다시 켤 때마다 위치를 한 번 받아 선 위 어디쯤인지(길에서 떨어진 거리, 박지까지 길 따라 남은 거리)를 보여 주고,
+      // 50m 넘게 벗어났으면 진동과 빨간 줄로 알린다. 화면이 꺼져 있는 동안 위치를 계속 따라가지는 않는다.
+      var GPX_ACTIVE_KEY = 'okbm_gpx_active';
+      var GPX_OFF_ROUTE_M = 50;
+      var GPX_FAR_M = 5000;          // 이보다 멀면 아직 산에 안 간 것으로 보고 경고하지 않는다
+      var GPX_BAD_ACCURACY_M = 150;  // 위치 오차가 이보다 크면 길 위치를 말하지 않는다(안드로이드 앱은 대략 위치)
+      var gpxTrack = null;           // { pts: [[lat, lng], ...], cum: [누적 m], spotAlong: m | null }
+      var gpxCheckBusy = false, gpxLastCheckAt = 0;
+
+      function gpxMeters(lat0) {
+        return { y: 110540, x: 111320 * Math.cos(lat0 * Math.PI / 180) };
+      }
+
+      function buildGpxTrack(pts) {
+        var k = gpxMeters(pts[0][0]);
+        var cum = [0];
+        for (var i = 1; i < pts.length; i++) {
+          var dx = (pts[i][1] - pts[i - 1][1]) * k.x, dy = (pts[i][0] - pts[i - 1][0]) * k.y;
+          cum.push(cum[i - 1] + Math.sqrt(dx * dx + dy * dy));
+        }
+        return { pts: pts, cum: cum, k: k, spotAlong: null };
+      }
+
+      // 선에서 가장 가까운 점: dist(m), along(시작부터 길 따라 m), lat/lng
+      function nearestOnGpx(track, lat, lng) {
+        var pts = track.pts, k = track.k, best = null;
+        for (var i = 1; i < pts.length; i++) {
+          var ax = pts[i - 1][1] * k.x, ay = pts[i - 1][0] * k.y, bx = pts[i][1] * k.x, by = pts[i][0] * k.y;
+          var px = lng * k.x, py = lat * k.y, vx = bx - ax, vy = by - ay;
+          var len2 = vx * vx + vy * vy;
+          var t = len2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / len2)) : 0;
+          var cx = ax + vx * t, cy = ay + vy * t;
+          var d = Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
+          if (!best || d < best.dist) best = { dist: d, along: track.cum[i - 1] + Math.sqrt(len2) * t, lat: cy / k.y, lng: cx / k.x };
+        }
+        return best;
+      }
+
+      function gpxDirectionWord(fromLat, fromLng, toLat, toLng) {
+        var k = gpxMeters(fromLat);
+        var deg = (Math.atan2((toLng - fromLng) * k.x, (toLat - fromLat) * k.y) * 180 / Math.PI + 360) % 360;
+        return ['북쪽', '북동쪽', '동쪽', '남동쪽', '남쪽', '남서쪽', '서쪽', '북서쪽'][Math.round(deg / 45) % 8];
+      }
+
+      function gpxDistanceText(m) {
+        return m >= 1000 ? (m / 1000).toFixed(1) + 'km' : Math.round(m) + 'm';
+      }
+
+      function drawGpxPath(sId, pts) {
+        if (currentGpxPolyline) currentGpxPolyline.setMap(null);
+        currentGpxPolyline = new kakao.maps.Polyline({
+          map: map,
+          path: pts.map(function(p) { return new kakao.maps.LatLng(p[0], p[1]); }),
+          strokeWeight: 4.5,
+          strokeColor: '#f97316',
+          strokeOpacity: 0.9,
+          strokeStyle: 'solid'
+        });
+        activeGpxSpotId = sId;
+        gpxTrack = buildGpxTrack(pts);
+        gpxTrack.spotId = sId;
+      }
+
+      // 박지 목록이 늦게 오면(저장된 선 복원) 박지 위치를 확인할 때 찾는다
+      function gpxSpotAlong() {
+        if (!gpxTrack) return null;
+        if (gpxTrack.spotAlong == null && !gpxTrack.spotFound) {
+          var spot = (spots || []).find(function(s) { return String(s.id).trim() === gpxTrack.spotId; });
+          if (spot && spot.lat && spot.lng) {
+            gpxTrack.spotFound = true;
+            var near = nearestOnGpx(gpxTrack, Number(spot.lat), Number(spot.lng));
+            if (near && near.dist <= 300) gpxTrack.spotAlong = near.along;
+          }
+        }
+        return gpxTrack.spotAlong;
+      }
+
+      function clearGpxGuide() {
+        if (currentGpxPolyline) currentGpxPolyline.setMap(null);
+        currentGpxPolyline = null;
+        activeGpxSpotId = null;
+        gpxTrack = null;
+        try { localStorage.removeItem(GPX_ACTIVE_KEY); } catch (e) {}
+        var bar = document.getElementById('okbmGpxGuide');
+        if (bar) bar.remove();
+      }
+
+      function gpxGuideBar() {
+        var bar = document.getElementById('okbmGpxGuide');
+        if (bar) return bar;
+        bar = document.createElement('div');
+        bar.id = 'okbmGpxGuide';
+        bar.className = 'okbm-gpx-guide';
+        bar.innerHTML = '<div class="okbm-gpx-guide-main"><span class="okbm-gpx-guide-text"></span>' +
+          '<button type="button" class="okbm-gpx-guide-btn" data-gpx-act="check" data-metric-click="feat_gpx_guide_check">다시 확인</button>' +
+          '<button type="button" class="okbm-gpx-guide-x" data-gpx-act="off" data-metric-click="feat_gpx_guide_off" aria-label="등산로 선 끄기">✕</button></div>' +
+          '<div class="okbm-gpx-guide-note">보조 안내예요. 표지판과 함께 보세요.</div>';
+        bar.addEventListener('click', function(e) {
+          var btn = e.target && e.target.closest ? e.target.closest('[data-gpx-act]') : null;
+          if (!btn) return;
+          if (btn.getAttribute('data-gpx-act') === 'off') { clearGpxGuide(); refreshCurrentSpotPopup(); }
+          else checkGpxPosition(true);
+        });
+        document.body.appendChild(bar);
+        return bar;
+      }
+
+      function setGpxGuide(text, tone) {
+        var bar = gpxGuideBar();
+        bar.setAttribute('data-tone', tone || '');
+        bar.querySelector('.okbm-gpx-guide-text').textContent = text;
+      }
+
+      // 앱 안에서는 기기 위치 기능을 쓴다. 웹 위치 기능을 쓰면 아이폰이 앱 허락 창 뒤에 사이트 허락 창을 한 번 더 띄운다.
+      function getDevicePosition(onOk, onFail) {
+        const nativeGeo = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation;
+        const useNativeGeo = !!(nativeGeo && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+        if (!useNativeGeo && !navigator.geolocation) return onFail('unsupported');
+        // 안드로이드 앱은 대략 위치 권한만 받는다(구글 플레이 위치 정책, 2027-01-27). 아이폰은 그대로 정확한 위치.
+        const highAccuracy = !(useNativeGeo && typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() === 'android');
+        if (useNativeGeo) nativeGeo.getCurrentPosition({ enableHighAccuracy: highAccuracy, timeout: 15000 }).then(onOk, onFail);
+        else navigator.geolocation.getCurrentPosition(onOk, onFail, { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 });
+      }
+
+      function showUserLocationDot(loc) {
+        if (!userLocationOverlay) {
+          const el = document.createElement('div');
+          el.style.cssText = 'width:20px; height:20px; border-radius:50%; background:#0284c7; border:3px solid #fff; box-shadow:0 0 16px rgba(56,189,248,1);';
+          userLocationOverlay = new kakao.maps.CustomOverlay({ map, position: loc, content: el, zIndex: 9999 });
+        } else { userLocationOverlay.setPosition(loc); userLocationOverlay.setMap(map); }
+      }
+
+      // force: '다시 확인' 단추. 화면을 켤 때는 15초 안에 다시 묻지 않는다.
+      function checkGpxPosition(force) {
+        if (!gpxTrack || !isKakaoMapReady() || gpxCheckBusy) return;
+        if (!force && Date.now() - gpxLastCheckAt < 15000) return;
+        gpxCheckBusy = true;
+        gpxLastCheckAt = Date.now();
+        setGpxGuide('내 위치 확인 중…', '');
+        getDevicePosition(function(pos) {
+          gpxCheckBusy = false;
+          if (!gpxTrack) return;
+          var lat = pos.coords.latitude, lng = pos.coords.longitude, acc = Number(pos.coords.accuracy) || 0;
+          var loc = new kakao.maps.LatLng(lat, lng);
+          showUserLocationDot(loc);
+          var near = nearestOnGpx(gpxTrack, lat, lng);
+          if (!near) return;
+          if (near.dist > GPX_FAR_M) {
+            setGpxGuide('아직 길에서 멀리 있어요(' + gpxDistanceText(near.dist) + '). 들머리 근처에서 다시 확인해 주세요', '');
+            return;
+          }
+          map.panTo(loc);
+          if (acc > GPX_BAD_ACCURACY_M) {
+            setGpxGuide('위치가 정확하지 않아요(±' + gpxDistanceText(acc) + '). 하늘이 트인 곳에서 다시 확인해 주세요', 'warn');
+            return;
+          }
+          var spotAlong = gpxSpotAlong();
+          var left = spotAlong != null ? Math.abs(spotAlong - near.along) : null;
+          var leftText = left != null ? (left < 30 ? ' · 박지에 거의 다 왔어요' : ' · 박지까지 길 따라 ' + gpxDistanceText(left)) : '';
+          if (near.dist > GPX_OFF_ROUTE_M) {
+            setGpxGuide('길에서 ' + gpxDistanceText(near.dist) + ' 벗어났어요 · 길은 ' + gpxDirectionWord(lat, lng, near.lat, near.lng) + '에 있어요', 'off');
+            if (typeof triggerHaptic === 'function') triggerHaptic(400);
+            else if (navigator.vibrate) navigator.vibrate([300, 120, 300]);
+            if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_gpx_guide_offroute', 'event');
+          } else {
+            setGpxGuide('길 위에 있어요' + leftText, 'ok');
+          }
+        }, function() {
+          gpxCheckBusy = false;
+          setGpxGuide('위치를 받지 못했어요. 위치 권한을 확인해 주세요', 'warn');
+        });
+      }
+
+      function saveGpxActive(sId, url, pts) {
+        try {
+          localStorage.setItem(GPX_ACTIVE_KEY, JSON.stringify({ id: sId, url: url, pts: pts.map(function(p) { return [+p[0].toFixed(6), +p[1].toFixed(6)]; }) }));
+        } catch (e) { console.warn('[map-main.js:saveGpxActive]', e); }
+      }
+
+      // 지도가 준비되면 저장해 둔 선을 다시 그린다(파일을 다시 받지 않는다)
+      function restoreGpxActive() {
+        var saved = null;
+        try { saved = JSON.parse(localStorage.getItem(GPX_ACTIVE_KEY) || 'null'); } catch (e) {}
+        if (!saved || !saved.id || !Array.isArray(saved.pts) || saved.pts.length < 2 || !isKakaoMapReady()) return;
+        drawGpxPath(String(saved.id), saved.pts);
+        checkGpxPosition(true);
+      }
+
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible' && gpxTrack) checkGpxPosition(false);
+      });
+
       async function toggleGpxTrack(spotId, gpxUrl) {
         const sId = String(spotId).trim();
         if (currentGpxPolyline && activeGpxSpotId === sId) {
-          currentGpxPolyline.setMap(null);
-          currentGpxPolyline = null;
-          activeGpxSpotId = null;
+          clearGpxGuide();
           refreshCurrentSpotPopup();
           return;
         }
@@ -3275,50 +3453,27 @@ function updateSmartResetButtons() {
         }
 
         try {
-          let fetchTargetUrl = gpxUrl.trim();
-          if (fetchTargetUrl.includes('drive.google.com')) {
-            const idMatch = fetchTargetUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/) || fetchTargetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-            if (idMatch && idMatch[1]) fetchTargetUrl = `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
-          }
-
-          const res = await fetch(fetchTargetUrl);
+          const res = await fetch(gpxUrl.trim());
           if (!res.ok) throw new Error('GPX fetch failed');
           const gpxText = await res.text();
           const xml = new DOMParser().parseFromString(gpxText, 'text/xml');
-          const trkpts = xml.getElementsByTagName('trkpt');
-
-          const path = [];
-          for (let i = 0; i < trkpts.length; i++) {
-            const lat = parseFloat(trkpts[i].getAttribute('lat'));
-            const lon = parseFloat(trkpts[i].getAttribute('lon'));
-            if (!isNaN(lat) && !isNaN(lon)) {
-              path.push(new kakao.maps.LatLng(lat, lon));
+          const pts = [];
+          ['trkpt', 'rtept'].forEach(function(tag) {
+            if (pts.length) return;
+            const nodes = xml.getElementsByTagName(tag);
+            for (let i = 0; i < nodes.length; i++) {
+              const lat = parseFloat(nodes[i].getAttribute('lat'));
+              const lon = parseFloat(nodes[i].getAttribute('lon'));
+              if (!isNaN(lat) && !isNaN(lon)) pts.push([lat, lon]);
             }
-          }
-
-          if (path.length === 0) {
-            const rtepts = xml.getElementsByTagName('rtept');
-            for (let j = 0; j < rtepts.length; j++) {
-              const rLat = parseFloat(rtepts[j].getAttribute('lat'));
-              const rLon = parseFloat(rtepts[j].getAttribute('lon'));
-              if (!isNaN(rLat) && !isNaN(rLon)) path.push(new kakao.maps.LatLng(rLat, rLon));
-            }
-          }
-
-          if (path.length === 0) throw new Error('No coordinates found in GPX');
-
-          if (currentGpxPolyline) currentGpxPolyline.setMap(null);
-          currentGpxPolyline = new kakao.maps.Polyline({
-            map: map,
-            path: path,
-            strokeWeight: 4.5,
-            strokeColor: '#f97316',
-            strokeOpacity: 0.9,
-            strokeStyle: 'solid'
           });
-          activeGpxSpotId = sId;
-          showToast('지도에 등산로 코스선(주황색)이 표시되었습니다!', { html: ICONS.HIKING });
+          if (pts.length < 2) throw new Error('No coordinates found in GPX');
+
+          drawGpxPath(sId, pts);
+          saveGpxActive(sId, gpxUrl.trim(), pts);
+          showToast('등산로 선을 켰어요. 화면을 다시 켤 때마다 길 위 내 위치를 알려 드려요', { html: ICONS.HIKING });
           refreshCurrentSpotPopup();
+          checkGpxPosition(true);
         } catch (err) {
           showToast('등산로 파일을 불러올 수 없습니다.', { html: ICONS.ALERT_CARD });
         }

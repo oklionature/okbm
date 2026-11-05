@@ -868,6 +868,16 @@
         display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 4px;
       }
       .btn-gpx-track-toggle.active { background: #f97316; border-color: #ea580c; color: #fff; box-shadow: 0 0 12px rgba(249, 115, 22, 0.6); }
+      /* GPX 길 안내 줄 (map-main.js checkGpxPosition) */
+      .okbm-gpx-guide { position: fixed; left: 50%; transform: translateX(-50%); top: calc(var(--okbm-status-top, 12px) + 58px); z-index: 899; width: min(92vw, 440px); background: rgba(15, 20, 28, 0.94); border: 1.5px solid #f97316; border-radius: 12px; padding: 8px 10px 6px; color: #f3f4f6; box-shadow: 0 6px 18px rgba(0,0,0,0.45); box-sizing: border-box; }
+      .okbm-gpx-guide[data-tone="ok"] { border-color: #10b981; }
+      .okbm-gpx-guide[data-tone="warn"] { border-color: #f59e0b; }
+      .okbm-gpx-guide[data-tone="off"] { border-color: #ef4444; background: rgba(69, 10, 10, 0.95); }
+      .okbm-gpx-guide-main { display: flex; align-items: center; gap: 8px; }
+      .okbm-gpx-guide-text { flex: 1; font-size: 0.86rem; font-weight: 800; line-height: 1.35; }
+      .okbm-gpx-guide-btn { flex: none; background: #f97316; color: #fff; border: 0; border-radius: 8px; padding: 6px 9px; font-size: 0.76rem; font-weight: 800; cursor: pointer; }
+      .okbm-gpx-guide-x { flex: none; background: transparent; color: #9ca3af; border: 0; font-size: 1rem; padding: 4px 6px; cursor: pointer; }
+      .okbm-gpx-guide-note { margin-top: 3px; font-size: 0.68rem; color: #9ca3af; }
 
       .sheet-title-row { display: flex; align-items: center; justify-content: space-between; width: 100%; padding-bottom: 4px; border-bottom: 1px solid var(--border-hairline); cursor: pointer; }
       .compact-title { font-size: 1.12rem !important; font-weight: 900 !important; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -1640,7 +1650,7 @@
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.80"></script>
+       <script src="map-main.js?v=1.0.81"></script>
     <script src="photo-map.js?v=25" defer></script>
     <script src="spot-tips.js?v=11" defer></script>
     <script src="home-metrics.js?v=5" defer></script>
