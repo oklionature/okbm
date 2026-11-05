@@ -3524,7 +3524,8 @@ function updateSmartResetButtons() {
         document.body.appendChild(wrap);
       }
 
-      async function sendGpxForSpot(sId, file, note, source) {
+      // 업로드 Worker에 올리고 { url, points, km, tok }을 돌려준다. 새 박지 제보는 여기까지만 하고 주소를 제보에 담는다(SUPABASE_H48)
+      async function uploadGpxFile(file) {
         if (file.size > 3 * 1024 * 1024) throw new Error('too_large');
         var tok = typeof window.okbmUploadAccessToken === 'function' ? await window.okbmUploadAccessToken() : '';
         if (!tok) throw new Error('login_required');
@@ -3533,6 +3534,12 @@ function updateSmartResetButtons() {
         });
         var upJson = await up.json().catch(function() { return null; });
         if (!up.ok || !upJson || upJson.status !== 'SUCCESS') throw new Error((upJson && upJson.error) || ('upload_' + up.status));
+        return { url: upJson.url, points: upJson.points, km: upJson.km, tok: tok };
+      }
+
+      async function sendGpxForSpot(sId, file, note, source) {
+        var upJson = await uploadGpxFile(file);
+        var tok = upJson.tok;
         var cfg = getSupabaseRestConfig();
         var res = await fetch(cfg.url + '/rest/v1/rpc/okbm_submit_gpx', {
           method: 'POST',
@@ -7174,6 +7181,7 @@ var liveSearchTimer = null;
           var profileInsta = window.okbmProfileInstagramForForm();
           if (profileInsta) authorSnsInput.value = profileInsta;
         }
+        resetModalGpxField();
 var overlay = document.getElementById('customModalOverlay');
         if (overlay) {
           overlay.style.setProperty('display', 'flex', 'important');
@@ -7919,12 +7927,37 @@ var overlay = document.getElementById('customModalOverlay');
         if (reasonInput) reasonInput.value = source.correctionReason || source.correction_reason || '';
       }
 
+      // GPX 첨부 칸(TASK_GPX ③): 제보·수정건의 창에서만. 수정건의는 그 박지에 선이 없을 때만(박지 하나에 선 하나)
+      function resetModalGpxField() {
+        var box = document.getElementById('modalFieldGpx');
+        if (!box) return;
+        var show = modalMode === 'PROPOSAL';
+        if (show && window.__isSpotCorrectionMode) {
+          var oid = String(window.__correctionTargetSpotId || '').trim();
+          var orig = (spots || []).find(function(s) { return String(s.id).trim() === oid; });
+          show = !(orig && String(orig.gpxUrl || '').trim());
+        }
+        box.style.display = show ? '' : 'none';
+        var inp = document.getElementById('modalInputGpx');
+        if (inp) inp.value = '';
+        document.getElementById('modalGpxPicked').textContent = '';
+        document.getElementById('modalGpxConsentRow').hidden = true;
+        document.getElementById('modalGpxConsent').checked = false;
+      }
+      document.addEventListener('change', function(e) {
+        if (!e.target || e.target.id !== 'modalInputGpx') return;
+        var f = e.target.files && e.target.files[0];
+        document.getElementById('modalGpxPicked').textContent = f ? f.name : '';
+        document.getElementById('modalGpxConsentRow').hidden = !f;
+      });
+
       function showCustomModalOverlay() {
         var overlay = document.getElementById('customModalOverlay');
         if (!overlay) return;
         // 인스타 게시물 링크는 관리자 등록·수정에서만 받는다(제보·수정건의에는 숨김)
         var instaField = document.getElementById('modalFieldInsta');
         if (instaField) instaField.style.display = (modalMode !== 'PROPOSAL' && isAdminMode) ? '' : 'none';
+        resetModalGpxField();
         // 수정 건의 근거 칸이 숨겨진 창(새 제보·관리자 등록·검토)은 박지 정보 칸을 늘 펼친다
         var reasonBoxEl = document.getElementById('modalFieldCorrectionReason');
         if (!reasonBoxEl || reasonBoxEl.style.display === 'none') {
@@ -8169,6 +8202,14 @@ var overlay = document.getElementById('customModalOverlay');
               }
               var finalSpotMain = name;
 
+              var gpxBox = document.getElementById('modalFieldGpx');
+              var gpxIn = document.getElementById('modalInputGpx');
+              var gpxFile = gpxBox && gpxBox.style.display !== 'none' && gpxIn && gpxIn.files && gpxIn.files[0];
+              if (gpxFile && !document.getElementById('modalGpxConsent').checked) {
+                showToast(GPX_SEND_ERRORS['consent required']);
+                return;
+              }
+
               // 🔍 수정 사유 및 변경 대조(Diff) 자동 추출
               var diffNotes = [];
               var correctionReason = (document.getElementById('modalInputCorrectionReason')?.value || '').trim();
@@ -8242,6 +8283,36 @@ var overlay = document.getElementById('customModalOverlay');
                 user_id: curUserId
               };
 
+              // GPX: 실패해도 제보는 그대로 받는다
+              var gpxMsg = '';
+              if (gpxFile) {
+                if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_spot_gpx_send_proposal', 'event');
+                try {
+                  if (isCorrection) {
+                    await sendGpxForSpot(origSpotId, gpxFile, correctionReason, 'proposal');
+                  } else {
+                    var gpxUp = await uploadGpxFile(gpxFile);
+                    propRecord.gpx_url = gpxUp.url;
+                    propRecord.gpx_points = gpxUp.points;
+                    propRecord.gpx_km = gpxUp.km;
+                  }
+                  gpxMsg = '\n\nGPX도 함께 받았어요. 검수 뒤 등록되면 포인트를 드려요.';
+                } catch (gpxErr) {
+                  var gpxCode = String((gpxErr && gpxErr.message) || '');
+                  gpxMsg = '\n\nGPX는 보내지 못했어요. ' + (GPX_SEND_ERRORS[gpxCode] || '박지가 등록된 뒤 정보창에서 다시 보내 주세요');
+                }
+              } else if (window.__currentEditingProposalId && !isCorrection) {
+                // 등록 전 제보를 고칠 때 먼저 보낸 GPX는 그대로 둔다
+                var prevProp = ((window.RomanticVault && window.RomanticVault.read) ? window.RomanticVault.read('okbm_my_proposals', []) : safeGetJSON('okbm_my_proposals', [])).find(function(p) {
+                  return p && String(p.id) === String(propId);
+                });
+                if (prevProp && prevProp.gpx_url) {
+                  propRecord.gpx_url = prevProp.gpx_url;
+                  propRecord.gpx_points = prevProp.gpx_points;
+                  propRecord.gpx_km = prevProp.gpx_km;
+                }
+              }
+
               if (typeof window.saveProposalToSupabase === 'function') {
                 try {
                   await window.saveProposalToSupabase(propRecord, isCorrection);
@@ -8277,9 +8348,9 @@ var overlay = document.getElementById('customModalOverlay');
               window.__correctionTargetSpotId = null;
 
               triggerHaptic(15);
-              alert(isCorrection 
+              alert((isCorrection 
                 ? '소중한 정보 수정 건의가 접수되었습니다!\n관리자 검토 후 지도에 신속히 반영하겠습니다. 감사합니다!' 
-                : '소중한 장소 제보가 접수되었습니다!\n관리자 검토 전까지 [낭만리포트]에서 언제든 수정할 수 있습니다.');
+                : '소중한 장소 제보가 접수되었습니다!\n관리자 검토 전까지 [낭만리포트]에서 언제든 수정할 수 있습니다.') + gpxMsg);
             } catch (e) { alert('제보 접수 중 통신 오류가 발생했습니다.'); }
           } else if (modalMode === 'ADD' || modalMode === 'EDIT' || modalMode === 'ADMIN_APPLY') {
             if (!checkAdminAuthorization()) {
@@ -8374,6 +8445,14 @@ var overlay = document.getElementById('customModalOverlay');
               await window.updateAdminSpotInboxStatus(inboxItem.id, inboxItem.type === 'correction', newStatus, saved ? { approved_spot_id: String(target.id) } : null);
               if (saved && typeof window.notifyProposalDecision === 'function') {
                 await window.notifyProposalDecision(inboxItem, newStatus, String(target.id));
+              }
+              if (saved && inboxItem.type !== 'correction' && inboxItem.gpx_url) {
+                try {
+                  var gpxSubId = await adminGpxRpc('okbm_admin_gpx_from_proposal', { p_proposal_id: String(inboxItem.id), p_spot_id: String(target.id) });
+                  if (gpxSubId) showToast('제보와 같이 온 GPX를 GPX 검수함에 올렸어요');
+                } catch (gpxErr) {
+                  showToast('제보 GPX를 검수함에 옮기지 못했어요: ' + gpxErr.message);
+                }
               }
             }
             window.__adminApplyingInboxItem = null;

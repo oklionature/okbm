@@ -13128,6 +13128,11 @@ window.saveProposalToSupabase = async function(proposalData, isCorrection) {
       .map(okbmSafeImageUrl).filter(Boolean).slice(0, 3);
     if (evUrls.length) payload.evidence_urls = evUrls;
     if (evPhotos.length) payload.evidence_photos = evPhotos;
+  } else if (proposalData.gpx_url) {
+    // 제보와 같이 올린 GPX(SUPABASE_H48). 박지로 반영할 때 GPX 검수함으로 옮긴다
+    payload.gpx_url = String(proposalData.gpx_url);
+    payload.gpx_points = parseInt(proposalData.gpx_points, 10) || null;
+    payload.gpx_km = parseFloat(proposalData.gpx_km) || null;
   }
 
   try {

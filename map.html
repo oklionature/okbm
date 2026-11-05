@@ -315,7 +315,7 @@
         bindLazy('openSpotReviewSheet', window.okbmEnsureLounge);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.10.15" defer></script>
+    <script src="romantic-sync.js?v=2.10.16" defer></script>
     <script src="romantic-history.js?v=2.8.46" defer></script>
     <script src="my-badges.js?v=14" defer></script>
     <script src="romantic-points.js?v=17" defer></script>
@@ -868,6 +868,14 @@
         display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; box-sizing: border-box;
       }
       .btn-gpx-track-toggle.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+      .modal-gpx-file { display: flex; align-items: center; justify-content: center; min-height: 42px; border-radius: 8px; border: 1px dashed var(--line-strong); color: var(--tx-1); font-size: var(--fs-meta); font-weight: 700; cursor: pointer; }
+      .modal-gpx-file input { display: none; }
+      .modal-gpx-picked { font-size: var(--fs-caption); color: var(--tx-2); margin-top: 5px; overflow-wrap: anywhere; }
+      .modal-gpx-picked:empty { display: none; }
+      .modal-gpx-consent { display: flex; gap: 6px; align-items: flex-start; font-size: var(--fs-caption); color: var(--tx-2); line-height: 1.4; margin-top: 6px; }
+      .modal-gpx-consent[hidden] { display: none; }
+      .modal-gpx-consent input { margin: 2px 0 0; flex: none; }
+      .modal-gpx-note { font-size: var(--fs-caption); color: var(--tx-3); margin-top: 5px; line-height: 1.4; }
       .gpx-credit-line { font-size: var(--fs-caption); color: var(--tx-3); text-align: center; margin-top: 4px; }
       .btn-gpx-send { width: 100%; background: transparent; border: 1px solid var(--line-strong); color: var(--tx-2); font-size: var(--fs-meta); font-weight: 600; padding: 8px 10px; min-height: 42px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 6px 0 2px; box-sizing: border-box; } /* 높이 32.5px → 42px(대표님 11-05: 30% 높이기) */
       /* GPX 보내기 창 (map-main.js openGpxSendModal) */
@@ -1635,6 +1643,14 @@
           <div class="modal-field" style="flex: 1;"><label>12. 블로그 링크</label><input type="text" id="modalInputBlog" class="modal-input" placeholder="https://blog.naver.com/..." /></div>
           <div class="modal-field" style="flex: 1;"><label>13. 제보자 인스타/SNS</label><input type="text" id="modalInputAuthorSns" class="modal-input" placeholder="@아이디" /></div>
        </div>
+        <!-- GPX 첨부(대표님 11-05 문구 A): 제보·수정건의 창에서만, 선이 없는 박지일 때만 보인다 -->
+        <div class="modal-field modal-gpx-field" id="modalFieldGpx" style="display:none;">
+          <label>14. GPX 파일 있으세요? (선택)</label>
+          <label class="modal-gpx-file"><input type="file" id="modalInputGpx"><span>GPX 파일 고르기</span></label>
+          <div class="modal-gpx-picked" id="modalGpxPicked"></div>
+          <label class="modal-gpx-consent" id="modalGpxConsentRow" hidden><input type="checkbox" id="modalGpxConsent"> 내가 직접 다녀온 기록이고, 낭만루트 지도에 써도 괜찮아요</label>
+          <div class="modal-gpx-note">다른 낭만루터 분들에게 큰 도움이 됩니다. 소정의 포인트도 드려요.</div>
+        </div>
         </div>
         <div class="modal-btn-row">
           <button type="button" class="modal-btn modal-btn-cancel" onclick="closeCustomModal()">취소</button>
@@ -1668,7 +1684,7 @@
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.98"></script>
+       <script src="map-main.js?v=1.0.99"></script>
     <script src="photo-map.js?v=25" defer></script>
     <script src="spot-tips.js?v=12" defer></script>
     <script src="home-metrics.js?v=5" defer></script>
