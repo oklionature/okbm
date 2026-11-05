@@ -2153,11 +2153,9 @@ function updateSmartResetButtons() {
 
       function getSpotStatusBadges(spot) {
         let html = campBanBadgeHtml(spot);
+        // 최단·HOT·NEW는 뺐다(대표님 11-05: 이름 줄이 넘쳐 'GPX 구해요'가 아래로 떨어짐). 목록의 NEW 거르기는 그대로
         if (isBeginnerCourseSpot(spot)) html += `<span class="badge-status" style="background:rgba(16,185,129,0.16); color:#6ee7b7; border:1px solid rgba(16,185,129,0.35);">${ICONS.MOUNTAIN}초보</span>`;
-        else if (spot.courseType === '최단') html += `<span class="badge-status" style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.35);">${ICONS.FAST}최단</span>`;
         else if (spot.courseType === '종주') html += `<span class="badge-status" style="background:rgba(168,85,247,0.16); color:#a855f7; border:1px solid rgba(168,85,247,0.35);">${ICONS.HIKING}종주</span>`;
-        if (getSpotViews(spot) >= 5) html += `<span class="badge-status badge-hot">HOT</span>`;
-        if (spot.isNew) html += `<span class="badge-status badge-new">NEW</span>`;
         return html;
       }
 
