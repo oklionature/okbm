@@ -2525,6 +2525,7 @@ CREATE TABLE IF NOT EXISTS public.lounge_deals (
   posted_on date,
   sort integer NOT NULL DEFAULT 0,
   is_active boolean NOT NULL DEFAULT true,
+  is_pinned boolean NOT NULL DEFAULT false, -- H42: 홈·할인 탭 맨 위 고정
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT lounge_deals_dates_chk CHECK (end_date IS NULL OR start_date IS NULL OR end_date >= start_date)

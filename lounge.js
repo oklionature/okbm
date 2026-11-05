@@ -1205,9 +1205,10 @@
     if (dealPhase(d) === 'ongoing' && !d.end_date && d.posted_on && addDaysKey(d.posted_on, 14) < t) return false;
     return true;
   }
-  // 진행중은 마감이 가까운 것부터(마감일 없는 글은 아래), 예정은 시작이 가까운 것부터. 같으면 번호(sort) 순.
+  // 고정한 글이 맨 위. 그다음 진행중은 마감이 가까운 것부터(마감일 없는 글은 아래), 예정은 시작이 가까운 것부터. 같으면 번호(sort) 순.
   function sortDeals(list, key) {
     return list.slice().sort(function (a, b) {
+      if (!!a.is_pinned !== !!b.is_pinned) return a.is_pinned ? -1 : 1;
       const ka = a[key] ? String(a[key]) : '9999-99-99';
       const kb = b[key] ? String(b[key]) : '9999-99-99';
       if (ka !== kb) return ka < kb ? -1 : 1;
@@ -1220,9 +1221,18 @@
   function upcomingDeals() {
     return sortDeals((D.deals || []).filter(function (d) { return dealAlive(d) && dealPhase(d) === 'upcoming'; }), 'start_date');
   }
+  // 홈 칸: 고정한 글(예정 포함)을 먼저, 그다음 곧 오픈·진행중
+  function homeDealList() {
+    const top = soonDeals().concat(ongoingDeals());
+    const pinned = top.concat(upcomingDeals().filter(function (d) { return !dealSoon(d); })).filter(function (d) { return d.is_pinned; });
+    return pinned.concat(top.filter(function (d) { return !d.is_pinned; }));
+  }
   // 곧 오픈(7일 안)은 시작 시각이 가까운 순
   function soonDeals() {
-    return upcomingDeals().filter(dealSoon).sort(function (a, b) { return dealStartAt(a) - dealStartAt(b); });
+    return upcomingDeals().filter(dealSoon).sort(function (a, b) {
+      if (!!a.is_pinned !== !!b.is_pinned) return a.is_pinned ? -1 : 1;
+      return dealStartAt(a) - dealStartAt(b);
+    });
   }
   function dealMark(d) {
     const s = String(d.summary || '');
@@ -1399,12 +1409,12 @@
     const shown = postText || String(d.summary || '').trim();
     const line = dealLine(d, true);
     const head =`<button type="button" class="lm-row lmh-row" data-a="x" aria-expanded="false"><div class="lm-date"><b>${esc(dealMark(d))}</b></div>
-      <div class="lm-rb"><div class="lm-rt">${esc(d.title)}${D.admin && !d.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc(d.summary)}</div>${line ? '<div class="lm-ap' + (dayDiff(dealSoon(d) ? dealStartAt(d) : dealEndAt(d)) <= 1 ? ' hot' : '') + '">' + esc(line) + '</div>' : ''}</div><span class="lm-dd">${dealMetaHtml(d)}</span></button>`;
+      <div class="lm-rb"><div class="lm-rt">${esc(d.title)}${d.is_pinned ? '<span class="lm-tag">고정</span>' : ''}${D.admin && !d.is_active ? '<span class="lm-tag">숨김</span>' : ''}</div><div class="lm-rs">${esc(d.summary)}</div>${line ? '<div class="lm-ap' + (dayDiff(dealSoon(d) ? dealStartAt(d) : dealEndAt(d)) <= 1 ? ' hot' : '') + '">' + esc(line) + '</div>' : ''}</div><span class="lm-dd">${dealMetaHtml(d)}</span></button>`;
     const body = `<div class="lmx-in">
       ${shown ? `<p class="lm-desc" style="margin:0">${esc(shown)}</p>` : ''}
       ${ig ? `<div class="lm-ig" data-kind="${esc(ig.kind)}" data-code="${esc(ig.code)}"></div>` : ''}
       ${web ? `<div class="lmx-btns">${webBtn(web, '글 보기', !ig)}</div>` : ''}
-      ${adminLinks([['edit-deal', '수정', 'adm', d.id], ['hide-deal', d.is_active ? '숨기기' : '다시 보이기', 'adm', d.id], ['del-deal', '삭제', 'red', d.id]])}
+      ${adminLinks([['edit-deal', '수정', 'adm', d.id], ['pin-deal', d.is_pinned ? '고정 풀기' : '홈 상단 고정', 'adm', d.id], ['hide-deal', d.is_active ? '숨기기' : '다시 보이기', 'adm', d.id], ['del-deal', '삭제', 'red', d.id]])}
     </div>`;
     return fold(d.id, head, body);
   }
@@ -1413,14 +1423,19 @@
     const soon = soonDeals();
     const later = upcomingDeals().filter(function (d) { return !dealSoon(d); });
     if (!full) {
-      const list = soon.concat(now).slice(0, HOME_N);
+      const list = homeDealList().slice(0, HOME_N);
       if (!list.length && !later.length) return homeEmpty('진행중인 할인이 없어요', TAB_DEAL, '라운지 열기');
       return (list.length ? list : later.slice(0, HOME_N)).map(dealItem).join('') + moreBtn(TAB_DEAL, '할인 ' + (now.length + soon.length + later.length) + '개 전체 보기');
     }
+    // 고정한 글은 갈래와 상관없이 맨 위에 한 번만
+    const pinned = soon.concat(now, later).filter(function (d) { return d.is_pinned; });
+    const rest = function (list) { return list.filter(function (d) { return !d.is_pinned; }); };
     let h = `<div class="lm-head">진행중<br><em>${now.length}</em>개가 있어요</div>`;
-    if (soon.length) h += '<div class="lmh-cap">곧 오픈</div>' + soon.map(dealItem).join('') + '<div class="lmh-cap">진행중</div>';
-    h += now.length ? now.map(dealItem).join('') : '<div class="lm-empty">진행중인 할인이 없어요</div>';
-    if (later.length) h += '<div class="lmh-cap">예정</div>' + later.map(dealItem).join('');
+    if (pinned.length) h += pinned.map(dealItem).join('');
+    if (rest(soon).length) h += '<div class="lmh-cap">곧 오픈</div>' + rest(soon).map(dealItem).join('') + '<div class="lmh-cap">진행중</div>';
+    else if (pinned.length && rest(now).length) h += '<div class="lmh-cap">진행중</div>';
+    h += rest(now).length ? rest(now).map(dealItem).join('') : (pinned.length ? '' : '<div class="lm-empty">진행중인 할인이 없어요</div>');
+    if (rest(later).length) h += '<div class="lmh-cap">예정</div>' + rest(later).map(dealItem).join('');
     if (D.admin) h += '<button type="button" class="lmh-cta adm" data-a="new-deal">' + ico(P.plus, 18) + '할인 등록</button>';
     return h;
   }
@@ -2290,8 +2305,8 @@
     if (!strip) return;
     if (D.status !== 'ready') { strip.hidden = true; strip.innerHTML = ''; return; }
     const evs = D.fail[0] ? [] : homeEventList();
-    // 곧 오픈하는 할인이 진행중보다 위
-    const now = D.fail[TAB_DEAL] ? [] : soonDeals().concat(ongoingDeals());
+    // 고정한 할인, 곧 오픈, 진행중 순
+    const now = D.fail[TAB_DEAL] ? [] : homeDealList();
     const dealN = now.length;
     if (!evs.length && !dealN) { strip.hidden = true; strip.innerHTML = ''; return; }
     strip.hidden = false;
@@ -2961,7 +2976,7 @@
         ${field('lmDlLink', '글 링크', inp('lmDlLink', 'link_url', d && dealWebUrl(d), 'type="url" inputmode="url" maxlength="500" placeholder="https:// 블로그·안내 글"'))}
         ${field('lmDlBody', '내용', '<textarea class="lm-ta" id="lmDlBody" name="body" maxlength="2000" placeholder="펼치면 보이는 안내. 비워 두면 한 줄 요약만 보여요.">' + esc(d && d.body) + '</textarea>')}
         ${field('lmDlSort', '순서 (작을수록 위)', inp('lmDlSort', 'sort', d ? d.sort : 0, 'type="number" inputmode="numeric" min="-999" max="999"'))}
-        <div style="margin-top:10px">${sw('is_active', '모두에게 보이기', d ? d.is_active !== false : true)}</div>
+        <div style="margin-top:10px">${sw('is_pinned', '홈 맨 위에 고정', d ? !!d.is_pinned : false)}${sw('is_active', '모두에게 보이기', d ? d.is_active !== false : true)}</div>
         <button type="submit" class="lm-btn main">${d ? '저장' : '등록하기'}</button>
       </form>`;
   }
@@ -2969,7 +2984,7 @@
     if (!D.admin) return;
     openSheet(dealFormHtml(d), {
       kind: 'deal', id: d ? d.id : null, posted_on: d && d.posted_on ? d.posted_on : null,
-      sw: { is_active: d ? d.is_active !== false : true }
+      sw: { is_pinned: d ? !!d.is_pinned : false, is_active: d ? d.is_active !== false : true }
     });
   }
   async function saveDeal(f) {
@@ -2993,7 +3008,7 @@
       start_date: start, end_date: end, start_time: start ? startT : null, end_time: end ? endT : null,
       posted_on: end ? null : ((prev && prev.posted_on) || st.posted_on || todayKey()),
       sort: Math.max(-999, Math.min(999, parseInt(val('sort'), 10) || 0)),
-      is_active: !!st.sw.is_active
+      is_pinned: !!st.sw.is_pinned, is_active: !!st.sw.is_active
     };
     const bad = function (name, msg) { toast(msg, true); if (f.elements[name]) f.elements[name].focus(); };
     if (!row.title) return bad('title', '제목을 적어 주세요');
@@ -3909,6 +3924,7 @@
       case 'del-event': deleteEvent(v); break;
       case 'new-deal': openDealForm(null); break;
       case 'edit-deal': openDealForm(findDeal(v)); break;
+      case 'pin-deal': { const dl = findDeal(v); if (dl) patchRow('lounge_deals', v, { is_pinned: !dl.is_pinned }, dl.is_pinned ? '고정을 풀었어요' : '홈 맨 위에 고정했어요'); break; }
       case 'hide-deal': { const dl = findDeal(v); if (dl) patchRow('lounge_deals', v, { is_active: !dl.is_active }, dl.is_active ? '숨겼어요. 관리자에게만 보여요' : '다시 보이게 했어요'); break; }
       case 'del-deal': deleteRow('lounge_deals', v, '이 할인을 삭제할까요?').then(function (ok) { if (ok) reloadAdminData('lounge_deals'); }); break;
       case 'new-guide': openGuideForm(null, 'kit'); break;
