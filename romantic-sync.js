@@ -12196,9 +12196,10 @@ function okbmBindNativeExternalLinks() {
   //   11-05 3차 보고: location.href = httpsUrl 폴백도 안 먹힘(안드로이드 WebView가 스크립트 유발 네비게이션을
   //   shouldOverrideUrlLoading 안 거치고 그냥 앱 안 WebView에서 로드하는 경우가 있음). 그래서 click을 가로채지 않고
   //   WebView에 맡기는 쪽으로 간다. vnd.youtube: 스킴, Browser.open(Custom Tabs)은 둘 다 전체화면 안 돼서 안 쓴다.
-  // · iOS: youtube:// 스킴으로 유튜브 앱을 시도하고, 1.5초 안에 앱이 안 뜨면(앱 없음) origOpen(window.open 원본)으로
-  //   진짜 사파리에 넘긴다. Capacitor WKWebView의 createWebViewWith 델리게이트가 JS window.open(http(s))을 받아
-  //   UIApplication.open으로 외부 Safari를 띄운다. Browser.open(SFSafariViewController)은 전체화면 막혀 안 쓴다.
+  // · iOS: 누른 그 순간(사용자 제스처 안) origOpen(window.open 원본)으로 https 주소를 연다. Capacitor WKWebView의
+  //   createWebViewWith가 받아 UIApplication.open으로 넘기고, iOS가 유니버설 링크로 유튜브 앱(깔려 있으면) 아니면
+  //   진짜 사파리를 띄운다. 11-06 시뮬레이터 확인: 예전 youtube:// 스킴 + 1.5초 폴백은 앱이 없을 때 타이머 안 window.open이
+  //   막혀 아무 일도 안 일어났고, 앱이 있어도 '열려고 합니다' 확인 창이 떴다. Browser.open(SFSafariViewController)은 전체화면 막혀 안 쓴다.
   var isYouTubeHost = function(url) {
     try { return /(^|\.)(youtube\.com|youtu\.be)$/i.test(new URL(url).hostname); } catch (e) { return false; }
   };
@@ -12209,30 +12210,15 @@ function okbmBindNativeExternalLinks() {
     else id = u.searchParams.get('v') || (m ? m[1] : '');
     var httpsUrl = /^[\w-]{11}$/.test(id) ? ('https://www.youtube.com/watch?v=' + id) : url;
 
-    // iOS: 유튜브 앱 시도 → 1.5초 폴백 window.open(진짜 사파리)
-    if (!/^[\w-]{11}$/.test(id)) {
-      try { origOpen.call(window, httpsUrl, '_blank', 'noopener,noreferrer'); }
-      catch (e) { Browser.open({ url: httpsUrl }).catch(function() {}); }
-      return;
-    }
-    var scheme = 'youtube://www.youtube.com/watch?v=' + id;
-    var left = false;
-    var onHide = function() { if (document.hidden) left = true; };
-    document.addEventListener('visibilitychange', onHide);
-    location.href = scheme;
-    setTimeout(function() {
-      document.removeEventListener('visibilitychange', onHide);
-      if (left || document.hidden) return;
-      try { origOpen.call(window, httpsUrl, '_blank', 'noopener,noreferrer'); }
-      catch (e) { Browser.open({ url: httpsUrl }).catch(function() {}); }
-    }, 1500);
+    try { origOpen.call(window, httpsUrl, '_blank', 'noopener,noreferrer'); }
+    catch (e) { Browser.open({ url: httpsUrl }).catch(function() {}); }
   };
   var open = function(url) {
     if (isYouTubeHost(url)) { openYouTube(url); return; }
     Browser.open({ url: url }).catch(function() {});
   };
   // 캡처 단계로 받는다. 지도 정보창(#mobileBottomSheet)·프로필 SNS 단추 등이 onclick에서 stopPropagation을 해서
-  // 버블 단계로는 못 받아, 아이폰 정보창 유튜브가 앱 열기(youtube://)를 건너뛰고 바로 사파리로 갔다(11-06 시뮬레이터 확인).
+  // 버블 단계로는 못 받아, 정보창 링크가 이 가로채기를 아예 거치지 않았다(11-06 시뮬레이터 확인).
   // 산림청 지도 링크([data-fire-map])는 map-main.js가 먼저 캡처해 preventDefault하므로 아래 defaultPrevented에서 빠진다.
   document.addEventListener('click', function(e) {
     if (e.defaultPrevented) return;
