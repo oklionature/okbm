@@ -2113,9 +2113,9 @@ var adBannersHtml = item.channelName ? `
   <div style="display:flex; align-items:center; gap:10px;">
     ${chImg ? `<img src="${escapeHtml(chImg)}" alt="${escapeHtml(item.channelName)}" loading="lazy" referrerpolicy="no-referrer" style="width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0; background:var(--bg-3);" />` : ''}
     <div style="flex:1; min-width:0; font-size:var(--fs-title); font-weight:800; color:var(--tx-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.channelName)}</div>
-    ${item.channelUrl ? `<a href="${escapeHtml(item.channelUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:var(--fs-meta); font-weight:800; color:var(--tx-1); border:1px solid var(--line-strong); border-radius:8px; padding:6px 11px; text-decoration:none; flex-shrink:0;">채널 보기</a>` : ''}
   </div>
   ${item.channelDesc ? `<div onclick="this.style.webkitLineClamp='unset'; this.style.display='block';" style="font-size:var(--fs-body); line-height:1.6; color:var(--tx-2); white-space:pre-line; word-break:keep-all; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden; cursor:pointer;">${escapeHtml(item.channelDesc)}</div>` : ''}
+  ${item.channelUrl ? `<a href="${escapeHtml(item.channelUrl)}" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:center; gap:8px; height:44px; border-radius:10px; background:#ff0000; color:#ffffff; font-size:var(--fs-body); font-weight:800; text-decoration:none;"><svg viewBox="0 0 28 20" style="width:24px; height:17px; flex-shrink:0;" aria-hidden="true"><rect width="28" height="20" rx="5" fill="#ffffff"/><path d="M11.2 5.6v8.8l7.6-4.4z" fill="#ff0000"/></svg><span>유튜브 채널 보기</span></a>` : ''}
 </div>
 ` : '';
 
