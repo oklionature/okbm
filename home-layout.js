@@ -593,7 +593,7 @@
     if (t.closest('#homeTogetherTrip') && typeof window.openTripJoinListModal === 'function') window.openTripJoinListModal();
   }
 
-  // ---------- 헤더의 "이주의 인기 스팟": 헤더는 따라 내려오므로, 인기 스팟 사진이 화면에 있을 때만 보인다 ----------
+  // ---------- 헤더의 "이주의 인기 피드": 헤더는 따라 내려오므로, 인기 스팟 사진이 화면에 있을 때만 보인다 ----------
   function watchHeroPick() {
     var pick = document.querySelector('.hh-pick');
     var card = document.getElementById('instaMainCard');

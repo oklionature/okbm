@@ -8,7 +8,7 @@
   var SUPABASE_ANON_KEY = 'sb_publishable_PKEidTwAKB7cuXReKSEnKw_VgNvSojA';
 
   var SECTION_LABELS = {
-    hero: '이주의 인기 스팟',
+    hero: '이주의 인기 피드',
     hero_detail: '└ 자세히보기',
     hero_gear: '└ 장비 세팅보기',
     theme: '테마 스팟',
