@@ -7,6 +7,12 @@
     window.okbmSeoulDayKey = function() {
       return new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
     };
+    // 서울 기준 이번 주 월요일 날짜. 홈 인기 스팟은 한 주 동안 같은 10곳을 건다
+    window.okbmSeoulWeekKey = function() {
+      var d = new Date(Date.now() + 9 * 3600 * 1000);
+      d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+      return 'w' + d.toISOString().slice(0, 10);
+    };
     window.okbmDailyOrder = function(list, keyOf, salt) {
       var day = window.okbmSeoulDayKey() + '|' + String(salt || '');
       var score = function(k) {
@@ -22,8 +28,9 @@
     };
     // 날마다 바뀌는 무작위 순서인데, 무게(별 수)가 클수록 앞에 올 확률이 높다.
     // 별이 없는 글도 뽑힐 수 있게 무게는 별 수 + 1. (가중 무작위 정렬: -ln(u)/무게가 작은 순)
-    window.okbmDailyWeightedOrder = function(list, keyOf, weightOf, salt) {
-      var day = window.okbmSeoulDayKey() + '|' + String(salt || '');
+    // period가 'week'면 날마다가 아니라 주마다 바뀐다
+    window.okbmDailyWeightedOrder = function(list, keyOf, weightOf, salt, period) {
+      var day = (period === 'week' ? window.okbmSeoulWeekKey() : window.okbmSeoulDayKey()) + '|' + String(salt || '');
       var unit = function(k) {
         var h = 2166136261;
         var str = day + '|' + k;
@@ -1459,6 +1466,18 @@
       return !(typeof window.isFeedHiddenByUgc === 'function' && window.isFeedHiddenByUgc(f));
     }
 
+    // 홈 첫 화면에는 글이 열 자를 넘는 후기만 건다('1'처럼 성의 없는 글은 빼기, 대표님 11-07).
+    // 한 줄 메모와 사진별 메모 중 가장 긴 것으로 잰다(띄어쓰기는 한 칸으로)
+    function okbmHeroMemoOk(f) {
+      var texts = [f && f.memo, f && f.oneLineMemo].concat(getRecordPhotoMemos(f));
+      var longest = 0;
+      texts.forEach(function(t) {
+        var n = String(t || '').replace(/\s+/g, ' ').trim().length;
+        if (n > longest) longest = n;
+      });
+      return longest > 10;
+    }
+
     // 박지 목록이 늦게 오면 박지를 못 찾아 찜 수가 빠지므로, 목록이 온 뒤 home-layout.js가 한 번 더 부른다
     window.okbmRefreshHeroStat = function() {
       var rec = window.currentHeroRecord;
@@ -1470,7 +1489,7 @@
 
     function renderCurrentHeroCard() {
       var records = (window.heroTopRecords || []).filter(function(f) {
-        return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f);
+        return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f);
       });
       if (records.length !== (window.heroTopRecords || []).length) {
         window.heroTopRecords = records;
@@ -1491,6 +1510,10 @@
           if (emptyAuthor) emptyAuthor.innerText = '낭만백패커';
           if (emptyQuote) emptyQuote.innerText = '자연 속에서 비화식으로 즐기는 조용한 하룻밤';
           if (emptyIndicator) emptyIndicator.innerText = '(0/0)';
+          var emptyBars = document.getElementById('heroStoryBars');
+          var emptyChip = document.getElementById('heroProfileChip');
+          if (emptyBars) emptyBars.innerHTML = '';
+          if (emptyChip) emptyChip.hidden = true;
           var emptyStage = document.querySelector('.insta-stage-wrap');
           if (emptyStage) emptyStage.classList.add('okbm-hero-loading');
           window.currentHeroRecord = null;
@@ -1521,7 +1544,7 @@
         var loadingAttr = isFirst ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
         return '<div class="hero-slide-item" style="flex:0 0 100%; width:100%; height:100%; min-width:100%; position:relative; overflow:hidden; background:#000000;">' +
           '<img src="' + escapeHtml(okbmViewImageUrl(pUrl)) + '" referrerpolicy="no-referrer" ' + loadingAttr + ' decoding="async" onerror="window.handleHeroSlideImgError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.95) contrast(1.04); display:block;" />' +
-          '<div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 28%, transparent 80%, rgba(0,0,0,0.35) 100%); pointer-events:none; z-index:2;"></div>' +
+          '<div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 20%, transparent 32%, transparent 80%, rgba(0,0,0,0.35) 100%); pointer-events:none; z-index:2;"></div>' +
         '</div>';
       }).join('');
       // 같은 카드·같은 사진으로 다시 그릴 때(캐시 → 네트워크 재적용, 별점 반영 등)는 슬라이드를 새로 만들지 않는다.
@@ -1555,6 +1578,8 @@
       if (indicatorEl) indicatorEl.innerText = '(' + (window.currentHeroCardIndex + 1) + '/' + records.length + ')';
       // 카드의 "후기 N · 찜 N" (home-layout.js가 숫자를 받아 채운다)
       window.okbmRefreshHeroStat();
+      renderHeroStoryBars(records.length, window.currentHeroCardIndex);
+      renderHeroProfileChip(record);
 
       window.refreshHeroDotsCount = function() {
         var track = document.getElementById('heroPhotoSwipeTrack');
@@ -1611,6 +1636,69 @@
       window.refreshHeroDotsCount();
     }
 
+    // 스토리 막대: 지난 칸은 꽉, 지금 칸은 자동 넘김(initHeroAutoAdvance)이 채운다
+    function renderHeroStoryBars(total, idx) {
+      var bars = document.getElementById('heroStoryBars');
+      if (!bars) return;
+      if (total <= 1) { bars.innerHTML = ''; return; }
+      var html = '';
+      for (var i = 0; i < total; i++) {
+        html += i < idx ? '<i class="done"></i>' : (i === idx ? '<i class="now"><b></b></i>' : '<i></i>');
+      }
+      bars.innerHTML = html;
+    }
+
+    // '2026-10-16' 같은 기록 날짜 → '10월 16일'(올해가 아니면 연도도)
+    function okbmHeroDateLabel(rec) {
+      var parts = String((rec && rec.date) || '').match(/\d+/g);
+      if (!parts || parts.length < 3) return '';
+      var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
+      if (!y || !m || !d) return '';
+      var nowY = parseInt(window.okbmSeoulDayKey().slice(0, 4), 10);
+      return (y !== nowY ? y + '년 ' : '') + m + '월 ' + d + '일';
+    }
+
+    // 올린 사람 프로필: 로그인 사진(없으면 사람 그림)·닉네임·날짜. 사진은 resolveUserMasterPhoto가 받아
+    // img[data-user-avatar-small]에 칠한다(romantic-history.js는 늦게 올 수 있어 몇 번 다시 해 본다)
+    function renderHeroProfileChip(rec, tries) {
+      var chip = document.getElementById('heroProfileChip');
+      if (!chip || !rec) return;
+      var uid = String(rec.userId || rec.user_id || '').trim();
+      var nickEl = document.getElementById('heroProfileNick');
+      var dateEl = document.getElementById('heroProfileDate');
+      var img = document.getElementById('heroProfileImg');
+      if (nickEl) nickEl.textContent = rec.author || '낭만백패커';
+      if (dateEl) dateEl.textContent = okbmHeroDateLabel(rec);
+      chip.setAttribute('aria-label', (rec.author || '낭만백패커') + ' 프로필 보기');
+      chip.hidden = false;
+      if (!img) return;
+      var icon = img.parentElement && img.parentElement.querySelector('.avatar-placeholder-svg');
+      if (img.getAttribute('data-user-avatar-small') !== uid) {
+        img.setAttribute('data-user-avatar-small', uid);
+        img.removeAttribute('src');
+        img.style.display = 'none';
+        if (icon) icon.style.display = 'block';
+      }
+      if (!uid) return;
+      if (typeof window.resolveUserMasterPhoto !== 'function') {
+        if ((tries || 0) < 10) setTimeout(function() {
+          if (window.currentHeroRecord === rec) renderHeroProfileChip(rec, (tries || 0) + 1);
+        }, 600);
+        return;
+      }
+      var known = window.resolveUserMasterPhoto(uid, rec.author || '', '');
+      if (known && typeof window.okbmPaintUserAvatarNodes === 'function') window.okbmPaintUserAvatarNodes(uid, known);
+    }
+
+    (function bindHeroProfileChip() {
+      var chip = document.getElementById('heroProfileChip');
+      if (!chip) return;
+      chip.addEventListener('click', function(e) {
+        if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_hero_profile');
+        window.openHeroAuthorCollection(e);
+      });
+    })();
+
     // 🧭 [피드 전환 엔진]
     window.navigateHeroFeed = function(delta, e) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
@@ -1648,6 +1736,7 @@
 
    window.handleHeroTouchEnd = function(e) {
       if (!e.changedTouches || e.changedTouches.length !== 1) return;
+      if (e.target && e.target.closest && e.target.closest('#heroProfileChip')) return;
       var diffX = Math.abs(e.changedTouches[0].clientX - heroTouchStartX);
       var diffY = Math.abs(e.changedTouches[0].clientY - heroTouchStartY);
       var elapsed = Date.now() - heroTouchStartTime;
@@ -1678,7 +1767,7 @@
 
     function initHeroGestureEngine() {}
 
-    // 히어로 카드 자동 넘김: 카드 안에 표시를 더하지 않고 다음 박지가 있다는 걸 알린다(6초마다 다음 박지).
+    // 히어로 카드 자동 넘김: 6초마다 다음 박지. 위 스토리 막대 지금 칸이 같은 시간만큼 차오른다.
     // 카드가 화면에 반 넘게 보이고, 다른 창에 가리지 않고, 10초 안에 손대지 않았을 때만 넘긴다.
     // 기기에서 '동작 줄이기'를 켰으면 넘기지 않는다
     (function initHeroAutoAdvance() {
@@ -1688,7 +1777,7 @@
       if (!card) return;
       var memo = document.getElementById('heroMemoBox');
       var track = document.getElementById('heroPhotoSwipeTrack');
-      var lastTouch = 0, shownAt = Date.now(), lastIdx = -1, inView = false;
+      var TICK = 500, lastTouch = 0, elapsed = 0, lastIdx = -1, inView = false;
       var touched = function() { lastTouch = Date.now(); };
       [card, memo].forEach(function(el) {
         if (!el) return;
@@ -1712,19 +1801,27 @@
         var hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
         return !!(hit && card.contains(hit));
       }
+      // 스토리 막대 지금 칸을 지난 시간만큼 채운다. 손대고 있는 동안은 멈춰 있다
+      function paintBar() {
+        var bar = document.querySelector('#heroStoryBars .now b');
+        if (bar) bar.style.width = Math.min(100, elapsed / INTERVAL * 100) + '%';
+      }
       setInterval(function() {
         // 손으로 넘겼거나 카드가 바뀌면 그때부터 다시 센다
-        if (window.currentHeroCardIndex !== lastIdx) { lastIdx = window.currentHeroCardIndex; shownAt = Date.now(); }
+        if (window.currentHeroCardIndex !== lastIdx) { lastIdx = window.currentHeroCardIndex; elapsed = 0; }
         if (!canAdvance()) {
           // 안 보이던 동안은 세지 않는다(다시 보이자마자 넘어가지 않게)
-          if (!inView || document.visibilityState !== 'visible') shownAt = Date.now();
+          if (!inView || document.visibilityState !== 'visible') elapsed = 0;
+          paintBar();
           return;
         }
-        if (Date.now() - shownAt >= INTERVAL && typeof window.navigateHeroFeed === 'function') {
-          shownAt = Date.now();
+        elapsed += TICK;
+        if (elapsed >= INTERVAL && typeof window.navigateHeroFeed === 'function') {
+          elapsed = 0;
           window.navigateHeroFeed(1);
         }
-      }, 500);
+        paintBar();
+      }, TICK);
     })();
 
     function initSmartHeaderScrollEngine() {
@@ -1890,14 +1987,14 @@
 
         var photoFeedsOnly = allCleanFeeds.filter(function(f) {
           try {
-            return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f);
+            return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f);
           } catch (e2) {
             return false;
           }
         });
 
         var heroKeyOf = function(f) { return f ? String(f.id || ((f.spot || '') + '_' + (f.date || ''))) : ''; };
-        // 인기 글(좋아요 순 30개) 안에서 날마다 다른 10개를 다른 순서로 보여 준다.
+        // 인기 글(좋아요 순 30개) 안에서 주마다 다른 10개를 다른 순서로 보여 준다(대표님 11-07: 일주일 동안 걸림).
         // 별이 많은 글일수록 뽑히고 앞에 올 확률이 높다. 같은 박지는 이름이 달라도 별이 가장 많은 글 하나만 남긴 뒤 섞는다.
         var heroSpotPool = getThemeSpotPool();
         var seenHeroSpots = {};
@@ -1910,7 +2007,7 @@
         });
         var nextHeroRecords = window.okbmDailyWeightedOrder(heroOnePerSpot, heroKeyOf, function(f) {
           return (f && f.likes != null) ? f.likes : (f && f.likes_count) || 0;
-        }, 'hero').slice(0, 10);
+        }, 'hero', 'week').slice(0, 10);
         var prevHeroKeys = (window.heroTopRecords || []).map(heroKeyOf).join('|');
         var nextHeroKeys = nextHeroRecords.map(heroKeyOf).join('|');
         window.__allLoadedFeeds = allCleanFeeds;

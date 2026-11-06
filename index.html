@@ -1381,6 +1381,30 @@
     }
 
     /* 설명 칸: 낭만플랜 '다가오는 일정' 카드와 같은 무채색 (2026-10-31, 예전엔 파란빛 남색 #0a0e17) */
+    /* 히어로 스토리 막대와 올린 사람 프로필(2026-11-07). 금 고리·별 휘장은 인기 스팟에 오른 표시 */
+    .hero-bars { position: absolute; z-index: 13; top: 8px; left: 10px; right: 10px; display: flex; gap: 3px; pointer-events: none; }
+    .hero-bars i { flex: 1; height: 2.5px; border-radius: 2px; background: rgba(255,255,255,0.32); overflow: hidden; }
+    .hero-bars i.done { background: rgba(255,255,255,0.92); }
+    .hero-bars i b { display: block; height: 100%; width: 0; background: #fff; transition: width 0.5s linear; }
+    @media (prefers-reduced-motion: reduce) { .hero-bars i.now b { width: 100%; transition: none; } }
+    .hero-pc { position: absolute; z-index: 13; top: 20px; left: 12px; max-width: calc(100% - 24px); display: flex; align-items: center; gap: 10px;
+      padding: 0; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .hero-pc[hidden] { display: none; }
+    .hero-pc:active { opacity: 0.8; }
+    .hero-av { flex: none; position: relative; width: 44px; height: 44px; border-radius: 50%; padding: 2px; box-sizing: border-box;
+      background: conic-gradient(from 210deg, #7a5a1f, #c9a24a 12%, #fff4c8 22%, #e9c874 32%, #8a6a2a 48%, #d8b45c 62%, #fff1bf 72%, #b88a35 86%, #7a5a1f);
+      box-shadow: 0 0 0 1px rgba(255,224,150,0.28), 0 0 14px rgba(240,196,92,0.35), 0 2px 8px rgba(0,0,0,0.6); }
+    .hero-av-ph { position: relative; display: block; width: 100%; height: 100%; border-radius: 50%; overflow: hidden; box-sizing: border-box;
+      background: var(--bg-3); border: 2px solid #000; }
+    .hero-av-ph svg { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%); }
+    .hero-av-ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
+    .hero-crest { position: absolute; right: -3px; bottom: -3px; width: 17px; height: 17px; border-radius: 50%; box-sizing: border-box;
+      display: grid; place-items: center; border: 1.5px solid #000; background: linear-gradient(145deg, #fff1bf, #d8b45c 55%, #8a6a2a); }
+    .hero-crest svg { width: 9px; height: 9px; }
+    .hero-who { min-width: 0; display: grid; gap: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.6); }
+    .hero-who b { font-size: 15px; font-weight: 900; letter-spacing: -0.02em; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hero-who em { font-style: normal; font-size: var(--fs-meta); font-weight: 700; color: var(--tx-2); font-variant-numeric: tabular-nums; }
+    .hero-who em:empty { display: none; }
     .insta-glass-memo {
       background: #0c0d10 !important;
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -1824,7 +1848,8 @@
     }
     .okbm-hero-loading #heroMainTitle { flex: 0 1 58%; height: 18px; }
     .okbm-hero-loading #btnHeroAuthorFeed,
-    .okbm-hero-loading #heroCardIndexIndicator { visibility: hidden; }
+    .okbm-hero-loading #heroStoryBars,
+    .okbm-hero-loading #heroProfileChip { visibility: hidden; }
     .okbm-hero-loading .okbm-memo-link { pointer-events: none; }
     .okbm-hero-loading .hm-more { visibility: hidden; }
     /* 빈 화면: 아이콘 + 한 줄 + (필요하면) 다음 행동 버튼 */
@@ -2286,7 +2311,7 @@
         </div>
         <h1 class="brand-title" style="margin:0;">낭만루트</h1>
       </a>
-      <span class="hh-pick">이주의 인기 스팟 <span id="heroCardIndexIndicator">(1/10)</span></span>
+      <span class="hh-pick">이주의 인기 스팟</span>
     </div>
   </header>
  <main class="netflix-feed-container notranslate">
@@ -2304,6 +2329,14 @@
 
     <!-- 🔘 사진 속 마이크로 도트 인디케이터 (터치 간섭 0%, 터치 통과) -->
     <div id="heroDotsWrapper" style="position:absolute; bottom:12px; left:0; right:0; display:flex; justify-content:center; align-items:center; gap:4px; height:8px; z-index:12; pointer-events:none;"></div>
+
+    <!-- 스토리 막대(2026-11-07): 위 막대 = 인기 박지 10곳, 지금 칸은 자동 넘김 시간만큼 차오른다. 아래 점 = 이 글 사진 수.
+         그 밑은 올린 사람 프로필(로그인 사진·닉네임·날짜). 누르면 프로필 창. 그리기·동작은 index-main.js -->
+    <div id="heroStoryBars" class="hero-bars" aria-hidden="true"></div>
+    <button type="button" id="heroProfileChip" class="hero-pc" hidden>
+      <span class="hero-av"><span class="hero-av-ph"><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><img id="heroProfileImg" alt="" decoding="async"></span><span class="hero-crest"><svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7L12 17.3 5.8 20.9l1.6-7L2 9.2l7.1-.6z" fill="#1a1204"/></svg></span></span>
+      <span class="hero-who"><b id="heroProfileNick"></b><em id="heroProfileDate"></em></span>
+    </button>
   </div>
 
 <!-- 하단 글래스 메모: 칸 어디를 눌러도 자세히보기(index-main.js bindHeroMemoLink). 장비 세팅보기는 장비를 올린 글이 거의 없어 뺐다 -->
@@ -2596,7 +2629,7 @@ window.okbmIsHomePublicFeed = function(f) {
   <script src="home-layout.js?v=50"></script>
   <script src="readyshot-quick.js?v=1.0.1" defer></script>
   <script src="spot-tips.js?v=12" defer></script>
-  <script src="index-main.js?v=1.0.44"></script>
+  <script src="index-main.js?v=1.0.45"></script>
   <script src="home-metrics.js?v=5" defer></script>
   <script src="home-screen-guide.js?v=4" defer></script>
 
