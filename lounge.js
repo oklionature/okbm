@@ -52,6 +52,7 @@
     cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
     pack: '<path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/>',
     tent: '<path d="M2 20h20M4 20l8-15 8 15M12 13l-3 7M12 13l3 7"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
     ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'
   };
 
@@ -90,6 +91,7 @@
     tipsRecent: null, // 최근 팁(칩·한 줄) — 박지 후기 탭에서 별점 후기와 섞는다 (SUPABASE_G4)
     news: [], // 소식(야영 금지·업데이트·공지)·매거진 (SUPABASE_H28 lounge_news). 홈 라운지 맨 위 띠와 아래 매거진 줄
     poll: {}, // 투표 결과 {글id: {total, counts|null, mine, closed}} (SUPABASE_H25 okbm_poll_results)
+    top3: {}, // TOP 3 설문 결과 {글id: {total, mine|null, leader|null, top|null, closed}} (SUPABASE_I6 okbm_top3_results)
   };
   // 화면 상태. tab = 홈 탭, wtab = 라운지 창 탭 (서로 따로 기억), revSpot = 후기 탭을 한 박지로 좁힘
   // revView: 박지 후기 창의 작은 탭 'recent'(최근 후기, 처음) | 'top'(평점순) | 'many'(후기 많은 순)
@@ -618,6 +620,42 @@
       '.lm-pbar span{font-weight:600}.lm-pbar.mine span{font-weight:800}',
       '.lm-pbar b{flex:none;font-weight:800;font-variant-numeric:tabular-nums}',
       '.lm-pmeta{margin-top:2px;font-size:11.5px;color:var(--sub)}',
+      // TOP 3 설문 (I6): 1·2·3위 칸 → 올린 뒤 순위표
+      '.lm-t3{margin-top:10px;display:flex;flex-direction:column;gap:8px;cursor:auto}',
+      '.lm-t3r{display:flex;align-items:center;gap:10px}',
+      '.lm-t3n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;color:#111}',
+      '.lm-t3n.n1{background:#f5b93a}.lm-t3n.n2{background:#c7c9d1}.lm-t3n.n3{background:#d08a4e}',
+      '.lm-t3in{flex:1;min-width:0;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 4px 0 12px;border-radius:12px;border:1.5px solid #34343a;background:#1c1c20}',
+      '.lm-t3in>svg{flex:none;color:var(--sub)}',
+      '.lm-t3in span{flex:0 0 auto;min-width:0;max-width:72%;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.lm-t3in small{flex:1 1 auto;min-width:0;font-size:12px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.lm-t3in button{flex:none;width:36px;height:36px;display:grid;place-items:center;color:var(--sub)}',
+      '.lm-t3in input{flex:1;min-width:0;height:42px;padding:0;background:none;border:0;border-radius:0;outline:none!important;box-shadow:none!important;color:inherit;font:inherit;font-size:16px}',
+      '.lm-t3in input::placeholder{color:var(--sub);font-size:14px}',
+      '.lm-t3in:focus-within{border-color:var(--blue)}',
+      '.lm-t3sg{margin:-2px 0 2px 38px;border-radius:12px;background:#26262c;overflow:hidden}',
+      '.lm-t3sg button{width:100%;display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 14px;font-size:13.5px;text-align:left}',
+      '.lm-t3sg button+button{border-top:1px solid var(--div)}',
+      '.lm-t3sg b{flex:1;min-width:0;font-weight:700}.lm-t3sg small{flex:none;max-width:45%;color:var(--sub);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.lm-t3sg .own{color:var(--sub);font-size:12.5px}',
+      '.lm-t3tease{font-size:12.5px;line-height:1.5;color:var(--sub)}.lm-t3tease b{color:#f5b93a;font-weight:800}',
+      '.lm-t3go{display:flex;gap:8px}.lm-t3go .lm-btn{flex:1;margin:0}',
+      '.lm-t3mine{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--sub)}',
+      '.lm-t3mine b{min-width:0;color:var(--tx);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.lm-t3mine button{flex:none;margin-left:auto;min-height:32px;padding:0 4px;color:var(--blue);font-weight:700;font-size:12.5px}',
+      '.lm-t3rk{display:flex;align-items:center;gap:10px;padding:9px 2px;border-top:1px solid var(--div)}',
+      '.lm-t3rk .no{flex:none;width:22px;text-align:center;font-size:15px;font-weight:800;color:var(--sub);font-variant-numeric:tabular-nums}',
+      '.lm-t3rk.r1 .no{color:#f5b93a}.lm-t3rk.r2 .no{color:#c7c9d1}.lm-t3rk.r3 .no{color:#d08a4e}',
+      '.lm-t3rk .bd{flex:1;min-width:0}',
+      '.lm-t3rk .nm{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;min-width:0}',
+      '.lm-t3rk .nm span{flex:0 0 auto;min-width:0;max-width:72%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.lm-t3rk .nm small{flex:0 1 auto;min-width:0;font-weight:500;font-size:12px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.lm-t3rk .me{flex:none;font-size:10.5px;font-weight:800;color:var(--blue);background:color-mix(in srgb,var(--blue) 16%,transparent);border-radius:5px;padding:1px 5px}',
+      '.lm-t3rk .bar{height:5px;margin-top:6px;border-radius:3px;background:#26262c;overflow:hidden}',
+      '.lm-t3rk .bar i{display:block;height:100%;border-radius:3px;background:var(--blue)}.lm-t3rk.r1 .bar i{background:#f5b93a}',
+      '.lm-t3rk .sub{margin-top:4px;font-size:11.5px;color:var(--sub)}',
+      '.lm-t3rk .pt{flex:none;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}',
+      '.lm-t3more{min-height:42px;border-radius:12px;border:1px solid #34343a;font-size:13px;font-weight:700}',
       '.lm-popt-in{display:flex;align-items:center;gap:6px}.lm-popt-in .lm-in{flex:1;min-width:0}',
       '.lm-popt-in button{flex:none;width:32px;height:32px;display:grid;place-items:center;color:var(--sub)}',
       '.lm-private{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:11.5px;color:var(--sub)}',
@@ -785,7 +823,7 @@
   }
 
   // ---------- 데이터 (window.supabaseClient, RLS가 권한을 가른다) ----------
-  const POST_COLS = 'id,user_id,nickname,category,title,body,photos,is_private,likes_count,comments_count,created_at,poll_options,poll_ends_at,is_pinned,gear_kind,gear_id,gear_name,gear_cat';
+  const POST_COLS = 'id,user_id,nickname,category,title,body,photos,is_private,likes_count,comments_count,created_at,poll_options,poll_ends_at,poll_kind,poll_source,is_pinned,gear_kind,gear_id,gear_name,gear_cat';
   const postsBy = {}; // cat → { rows, done, loading }
 
   async function q(builder) {
@@ -896,14 +934,21 @@
     } catch (e) { console.warn('[lounge.js:loadMyLikes]', e); }
   }
   // 투표 결과: 참여 수는 누구나, 보기별 수는 내가 했거나 마감된 투표만 온다. 실패해도 목록은 보여 준다
+  // TOP 3 설문은 따로 받는다: 참여 수·1위는 누구나, 전체 순위는 내가 답했거나 마감된 것만 (I6)
   async function loadPolls(rows) {
     const c = sb();
-    const ids = rows.filter(function (p) { return p.category === 'poll'; }).map(function (p) { return p.id; });
-    if (!c || !ids.length) return;
-    try {
-      const res = await q(c.rpc('okbm_poll_results', { p_ids: ids }));
-      (Array.isArray(res) ? res : []).forEach(function (r) { if (r && r.post_id) D.poll[r.post_id] = r; });
-    } catch (e) { console.warn('[lounge.js:loadPolls]', e); }
+    const polls = rows.filter(function (p) { return p.category === 'poll'; });
+    const ids = polls.filter(function (p) { return p.poll_kind !== 'top3'; }).map(function (p) { return p.id; });
+    const t3 = polls.filter(function (p) { return p.poll_kind === 'top3'; }).map(function (p) { return p.id; });
+    if (!c) return;
+    await Promise.all([
+      ids.length ? q(c.rpc('okbm_poll_results', { p_ids: ids })).then(function (res) {
+        (Array.isArray(res) ? res : []).forEach(function (r) { if (r && r.post_id) D.poll[r.post_id] = r; });
+      }).catch(function (e) { console.warn('[lounge.js:loadPolls]', e); }) : null,
+      t3.length ? q(c.rpc('okbm_top3_results', { p_ids: t3 })).then(function (res) {
+        (Array.isArray(res) ? res : []).forEach(function (r) { if (r && r.post_id) D.top3[r.post_id] = r; });
+      }).catch(function (e) { console.warn('[lounge.js:loadTop3]', e); }) : null
+    ]);
   }
   // 목록에 없는 글 하나 (알림·신고 검수에서 열 때). 없으면 null
   async function loadPostById(id) {
@@ -1773,6 +1818,7 @@
 
   // 자유게시판 (P3는 읽기. 쓰기·좋아요·댓글 쓰기는 P4)
   const catLabel = function (p) {
+    if (p.category === 'poll' && p.poll_kind === 'top3') return '설문·TOP 3';
     if (p.category !== 'gear') return CAT_LABEL[p.category] || '';
     const k = GEAR_KIND.find(function (x) { return x[0] === p.gear_kind; });
     // 장비를 안 고른 글은 이름표가 없으니 종류를 같이 적는다 (I3)
@@ -1892,6 +1938,196 @@
       pollBusy.delete(id);
     }
   }
+  // ----- TOP 3 설문 (I6) -----
+  // 올린 사람은 질문만, 참여자가 1·2·3위를 박지·장비 목록에서 고르거나 직접 적는다. 1위만 적어도 된다.
+  // 답하기 전엔 참여 수와 지금 1위만, 올리면 1위 3점·2위 2점·3위 1점 합으로 매긴 순위표가 보인다.
+  // T3: 글마다 화면 상태 {edit: 내 답 고치는 중, slots: 고른 답 [{key,label}|null]×3, q: 칸에 친 글 ×3, all: 순위 다 보기}
+  const T3 = {};
+  const T3_SHOW = 7;
+  function t3State(id) {
+    return T3[id] || (T3[id] = { edit: false, slots: [null, null, null], q: ['', '', ''], all: false });
+  }
+  // 답 열쇠 → 화면 이름. 박지는 지역을 앞에, 부제(개머리언덕 등)를 옆에 붙인다
+  function t3Item(key, label) {
+    const k = String(key || '');
+    if (k.indexOf('s:') === 0) {
+      const s = spotById(k.slice(2));
+      const region = s ? spotRegion(s) : '';
+      return { name: (region ? region + ' ' : '') + label, sub: s ? String(s.spot_sub || '').trim() : '' };
+    }
+    if (k.indexOf('g:') === 0) return { name: gearShort(label), sub: '' };
+    return { name: String(label || ''), sub: '' };
+  }
+  function t3Short(x) { return String(x.key || '').indexOf('g:') === 0 ? gearShort(x.label) : String(x.label || ''); }
+  function top3Html(p) {
+    const r = D.top3[p.id] || {};
+    const st = t3State(p.id);
+    const closed = !!r.closed || !!(p.poll_ends_at && new Date(p.poll_ends_at) <= Date.now());
+    const mine = Array.isArray(r.mine) && r.mine.length ? r.mine : null;
+    const inner = !closed && (!mine || st.edit) ? t3FormHtml(p, r, st, mine) : t3RankHtml(p, r, st, mine, closed);
+    return `<div class="lm-t3" data-t3="${esc(p.id)}">${inner}</div>`;
+  }
+  function t3FormHtml(p, r, st, mine) {
+    const id = esc(p.id), src = p.poll_source;
+    const icon = src === 'gear' ? P.tent : P.pin;
+    const rows = [0, 1, 2].map(function (i) {
+      const n = `<span class="lm-t3n n${i + 1}">${i + 1}</span>`;
+      const sl = st.slots[i];
+      if (sl) {
+        const it = t3Item(sl.key, sl.label);
+        return `<div class="lm-t3r">${n}<div class="lm-t3in">${sl.key ? ico(icon, 16) : ''}<span>${esc(it.name)}</span>${it.sub ? `<small>${esc(it.sub)}</small>` : ''}<button type="button" data-a="t3-clear" data-v="${id}" data-i="${i}" aria-label="${i + 1}위 지우기">${ico(P.x, 16)}</button></div></div>`;
+      }
+      const ph = src === 'free' ? (i ? '안 적어도 돼요' : '1위를 적어 주세요')
+        : (src === 'gear' ? '장비 찾기' : '박지 찾기') + (i ? ' · 안 적어도 돼요' : '');
+      return `<div class="lm-t3r">${n}<div class="lm-t3in">${src === 'free' ? '' : ico(P.search, 16)}<input data-t3-q data-post="${id}" data-i="${i}" maxlength="40" value="${esc(st.q[i])}" placeholder="${esc(ph)}" aria-label="${i + 1}위" enterkeyhint="done" autocomplete="off"></div></div><div class="lm-t3sg" data-t3-sg="${i}" hidden></div>`;
+    }).join('');
+    const total = Number(r.total) || 0;
+    const left = pollLeft(p, false);
+    const lead = r.leader ? t3Item(r.leader.key, r.leader.label).name : '';
+    const tease = mine ? '고친 답은 바로 순위에 들어가요'
+      : lead ? `지금 1위는 <b>${esc(lead)}</b> · ${total}명 참여${left ? ' · ' + esc(left) : ''} · 올리면 전체 순위가 보여요`
+        : `첫 답을 남겨 주세요. 올리면 순위가 보여요${left ? ' · ' + esc(left) : ''}`;
+    return `${rows}<div class="lm-t3tease">${tease}</div>
+      <div class="lm-t3go">${mine ? `<button type="button" class="lm-btn sm" data-a="t3-cancel" data-v="${id}">취소</button>` : ''}<button type="button" class="lm-btn sm main" data-a="t3-submit" data-v="${id}">${mine ? '고치기' : '올리기'}</button></div>`;
+  }
+  function t3RankHtml(p, r, st, mine, closed) {
+    const id = esc(p.id);
+    const total = Number(r.total) || 0;
+    const myRank = {};
+    (mine || []).forEach(function (m) { myRank[m.key] = m.rank; });
+    const mineLine = mine ? `<div class="lm-t3mine">내 답 <b>${mine.map(function (m) { return m.rank + ' ' + esc(t3Short(m)); }).join(' · ')}</b>${closed ? '' : `<button type="button" data-a="t3-edit" data-v="${id}">고치기</button>`}</div>` : '';
+    const meta = `<div class="lm-pmeta">${esc([total + '명 참여', pollLeft(p, closed)].filter(Boolean).join(' · '))} · 1위 3점, 2위 2점, 3위 1점으로 매겨요</div>`;
+    const top = Array.isArray(r.top) ? r.top : null;
+    if (!top) return mineLine + meta;
+    if (!top.length) return mineLine + '<div class="lm-pmeta">아직 답이 없어요</div>' + meta;
+    const max = Math.max(1, Number(top[0].score) || 1);
+    const rows = (st.all ? top : top.slice(0, T3_SHOW)).map(function (x, i) {
+      const it = t3Item(x.key, x.label);
+      const me = myRank[x.key];
+      const firsts = Number(x.firsts) || 0;
+      return `<div class="lm-t3rk r${i + 1}"><span class="no">${i + 1}</span><div class="bd">
+        <div class="nm"><span>${esc(it.name)}</span>${it.sub ? `<small>${esc(it.sub)}</small>` : ''}${me ? `<span class="me">내 ${me}위</span>` : ''}</div>
+        <div class="bar"><i style="width:${Math.max(4, Math.round((Number(x.score) || 0) * 100 / max))}%"></i></div>${firsts ? `<div class="sub">${firsts}명이 1위로 꼽음</div>` : ''}</div><span class="pt">${Number(x.score) || 0}점</span></div>`;
+    }).join('');
+    const more = !st.all && top.length > T3_SHOW
+      ? `<button type="button" class="lm-t3more" data-a="t3-more" data-v="${id}">전체 순위 보기 · ${top.length}${p.poll_source === 'spot' ? '곳' : '개'}</button>` : '';
+    return mineLine + rows + more + meta;
+  }
+  function paintTop3(id, focusI) {
+    const p = findPost(id);
+    if (!p || !layer) return;
+    layer.querySelectorAll('[data-t3]').forEach(function (el) { if (el.dataset.t3 === String(id)) el.outerHTML = top3Html(p); });
+    if (focusI == null) return;
+    layer.querySelectorAll('[data-t3]').forEach(function (el) {
+      if (el.dataset.t3 !== String(id) || !el.offsetParent) return;
+      const inp = el.querySelector('[data-t3-q][data-i="' + focusI + '"]') || el.querySelector('[data-t3-q]');
+      if (inp) inp.focus();
+    });
+  }
+  // 칸에 치면 목록에서 찾아 아래에 띄운다. 목록에 없으면 친 글 그대로 적을 수 있다
+  function t3Suggest(input) {
+    const id = input.dataset.post, i = Number(input.dataset.i);
+    const p = findPost(id);
+    const st = t3State(id);
+    st.q[i] = input.value;
+    const box = input.closest('.lm-t3') && input.closest('.lm-t3').querySelector('[data-t3-sg="' + i + '"]');
+    if (!p || !box) return;
+    const qv = input.value.trim();
+    if (p.poll_source === 'free' || !qv) { box.hidden = true; box.innerHTML = ''; return; }
+    const pick = function (key, label, name, sub, icon) {
+      return `<button type="button" data-a="t3-pick" data-v="${esc(id)}" data-i="${i}" data-k="${esc(key)}" data-l="${esc(label)}">${ico(icon, 15)}<b>${esc(name)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</button>`;
+    };
+    const own = `<button type="button" data-a="t3-pick" data-v="${esc(id)}" data-i="${i}" data-k="" data-l="${esc(qv)}"><span class="own">목록에 없어요 · "${esc(qv)}"로 적기</span></button>`;
+    if (p.poll_source === 'spot') {
+      const needle = qv.toLowerCase().replace(/\s+/g, '');
+      const hits = spotList().filter(function (s) {
+        return s && s.id != null && spotName(s) && (spotRegion(s) + spotName(s) + String(s.spot_sub || '')).toLowerCase().replace(/\s+/g, '').indexOf(needle) !== -1;
+      }).slice(0, 6);
+      box.innerHTML = hits.map(function (s) {
+        return pick('s:' + s.id, spotName(s), (spotRegion(s) ? spotRegion(s) + ' ' : '') + spotName(s), String(s.spot_sub || '').trim(), P.pin);
+      }).join('') + own;
+      box.hidden = false;
+      return;
+    }
+    const words = qv.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!(Array.isArray(window.GEARS_MASTER) && window.GEARS_MASTER.length)) { box.innerHTML = '<button type="button" disabled><span class="own">장비 목록을 불러오는 중…</span></button>'; box.hidden = false; }
+    ensureGears().then(function (all) {
+      if (!box.isConnected || input.value.trim() !== qv) return; // 그 사이 검색어가 바뀜
+      const hits = [];
+      for (let k = 0; k < all.length && hits.length < 6; k++) {
+        const g = all[k];
+        if (!g || !g.item_name || g.id == null) continue;
+        const hay = (String(g.item_name) + ' ' + String(g.brand || '')).toLowerCase();
+        if (words.every(function (w) { return hay.indexOf(w) !== -1; })) hits.push(g);
+      }
+      box.innerHTML = hits.map(function (g) {
+        return pick('g:' + g.id, String(g.item_name), gearShort(g.item_name), GEAR_CAT[g.category_id] || '', P.tent);
+      }).join('') + own;
+      box.hidden = false;
+    });
+  }
+  function t3Pick(id, i, key, label) {
+    const st = t3State(id);
+    const norm = function (x) { return x.key || 't:' + String(x.label).toLowerCase().replace(/\s+/g, ''); };
+    const cand = { key: String(key || ''), label: String(label || '').trim().slice(0, 40) };
+    if (!cand.label) return;
+    if (st.slots.some(function (x, j) { return x && j !== i && norm(x) === norm(cand); })) { toast('이미 적은 답이에요', true); return; }
+    st.slots[i] = cand;
+    st.q[i] = '';
+    const next = [0, 1, 2].find(function (j) { return !st.slots[j]; });
+    paintTop3(id, next == null ? null : next);
+  }
+  const t3Busy = new Set();
+  async function submitTop3(id) {
+    if (needLogin('로그인하면 답할 수 있어요')) return;
+    const c = sb();
+    if (!c || t3Busy.has(id)) return;
+    const st = t3State(id);
+    const answers = [];
+    [0, 1, 2].forEach(function (i) {
+      const sl = st.slots[i];
+      const typed = String(st.q[i] || '').trim().slice(0, 40);
+      if (sl) answers.push({ key: sl.key, label: sl.label });
+      else if (typed) answers.push({ key: '', label: typed }); // 목록에서 안 고르고 친 글은 직접 적은 답으로
+    });
+    if (!answers.length) { toast('1위를 적어 주세요', true); return; }
+    const keys = answers.map(function (x) { return x.key || 't:' + x.label.toLowerCase().replace(/\s+/g, ''); });
+    if (new Set(keys).size !== keys.length) { toast('같은 답이 두 번 있어요', true); return; }
+    t3Busy.add(id);
+    tick();
+    try {
+      const r = await q(c.rpc('okbm_top3_submit', { p_post_id: id, p_answers: answers }));
+      if (r && r.post_id) D.top3[id] = r;
+      T3[id] = { edit: false, slots: [null, null, null], q: ['', '', ''], all: false };
+      paintTop3(id);
+      paintHub();
+      if (window.okbmPoints) window.okbmPoints.check('vote'); // 처음 답하면 투표 참여 포인트 (H32·I6)
+    } catch (e) {
+      console.warn('[lounge.js:submitTop3]', e);
+      const m = String((e && e.message) || e || '');
+      if (/poll_closed/.test(m)) { D.top3[id] = Object.assign({}, D.top3[id], { closed: true }); paintTop3(id); }
+      toast(/poll_closed/.test(m) ? '마감된 설문이에요' : /login_required/.test(m) ? '로그인하면 답할 수 있어요'
+        : /duplicate_answer/.test(m) ? '같은 답이 두 번 있어요' : /invalid_answer/.test(m) ? '답을 다시 확인해 주세요'
+          : writeErr(e, '올리지 못했어요. 잠시 뒤 다시 해 주세요'), true);
+    } finally {
+      t3Busy.delete(id);
+    }
+  }
+  function editTop3(id) {
+    const r = D.top3[id] || {};
+    const st = t3State(id);
+    st.edit = true;
+    st.slots = [null, null, null];
+    st.q = ['', '', ''];
+    (Array.isArray(r.mine) ? r.mine : []).forEach(function (m) {
+      const i = Number(m.rank) - 1;
+      if (i < 0 || i > 2) return;
+      const p = findPost(id);
+      if (p && p.poll_source === 'free') st.q[i] = String(m.label || '');
+      else st.slots[i] = { key: String(m.key || '').indexOf('t:') === 0 ? '' : String(m.key || ''), label: String(m.label || '') };
+    });
+    paintTop3(id);
+  }
   // 댓글 입력: 회원만. 건의 글은 작성자·운영팀만 보이므로 RLS가 나머지를 막는다
   function composeHtml(p) {
     if (!loggedIn()) return '<button type="button" class="lmx-login" data-a="need-login">로그인하고 댓글 달기</button>';
@@ -1943,7 +2179,7 @@
       <div class="lm-rb">
         <div class="lm-who">${whoName(p.nickname, p.user_id)}<span>${esc(ago(p.created_at))}</span><span>· ${esc(catLabel(p))}</span></div>
         <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}${p.is_pinned ? '<span class="lm-tag">고정</span>' : ''}</div>${p.body ? `<div class="lm-bd">${bodyHtml(p.body)}</div>` : ''}
-        ${p.category === 'poll' ? pollHtml(p) : ''}
+        ${p.category === 'poll' ? (p.poll_kind === 'top3' ? top3Html(p) : pollHtml(p)) : ''}
         ${p.category === 'gear' && p.gear_name ? gearChip(p) : ''}
         ${photos.length ? `<div class="lm-photos ${photos.length > 1 ? 'multi' : ''}">${photos.map(function (u) { return `<img src="${escapeHtml(okbmFastImageUrl(u))}" alt="" loading="lazy" decoding="async">`; }).join('')}</div>` : ''}
         ${p.is_private ? `<div class="lm-private">${ico(P.lock, 13)}나와 운영팀만 볼 수 있어요 · 댓글 ${cc}</div>`
@@ -2534,7 +2770,7 @@
       + (writeLabel ? '<button type="button" class="hh-write" data-a="new-post" data-v="' + writeV + '">' + ico(P.plus, 14) + esc(writeLabel) + '</button>' : '') + '</div>';
   };
   function hubRow(attrs, tag, title, meta) {
-    const gold = tag === '후기' || tag === '장비';
+    const gold = tag === '후기' || tag === '장비' || tag === 'TOP 3';
     return `<button type="button" class="hh-row" ${attrs}><span class="hh-x">${tag ? `<i${gold ? ' class="gold"' : ''}>${esc(tag)}</i>` : ''}${esc(title)}</span>${meta ? `<small>${esc(meta)}</small>` : ''}</button>`;
   }
   function hubBody(key) {
@@ -2560,9 +2796,12 @@
       list = list.slice(0, HUB_N);
       const rows = list.map(function (p) {
         const poll = p.category === 'poll';
-        const r = D.poll[p.id];
-        const meta = poll ? (r ? (Number(r.total) || 0) + '명 참여' : '참여하기') : [p.nickname, Number(p.comments_count) ? '댓글 ' + p.comments_count : ''].filter(Boolean).join(' · ');
-        return hubRow('data-a="lounge" data-v="2" data-id="' + esc(p.id) + '"', poll ? '설문' : p.category === 'gear' ? '장비' : '', p.title, meta);
+        const top3 = poll && p.poll_kind === 'top3';
+        const r = top3 ? D.top3[p.id] : D.poll[p.id];
+        // TOP 3는 참여 수 옆에 지금 1위를 붙인다 (I6)
+        const meta = top3 ? (r ? [(Number(r.total) || 0) + '명', r.leader ? '1위 ' + t3Short(r.leader) : ''].filter(Boolean).join(' · ') : '참여하기')
+          : poll ? (r ? (Number(r.total) || 0) + '명 참여' : '참여하기') : [p.nickname, Number(p.comments_count) ? '댓글 ' + p.comments_count : ''].filter(Boolean).join(' · ');
+        return hubRow('data-a="lounge" data-v="2" data-id="' + esc(p.id) + '"', top3 ? 'TOP 3' : poll ? '설문' : p.category === 'gear' ? '장비' : '', p.title, meta);
       }).join('');
       return (rows || '<div class="hh-empty">' + (key === 'poll' ? '첫 설문을 올려 보세요' : '첫 글을 기다리고 있어요') + '</div>')
         + (key === 'poll' ? hubFoot('data-a="hub-all" data-v="poll"', '설문 전체 보기', 'poll', '설문 만들기') : hubFoot('data-a="hub-all" data-v="all"', '게시판 전체 보기', '', '글쓰기'));
@@ -3447,18 +3686,33 @@
   function pollOptHtml(i, value) {
     return `<div class="lm-popt-in">${inp('lmPollOpt' + i, 'opt', value, 'maxlength="40" placeholder="보기 ' + (i + 1) + '"')}${i >= 2 ? `<button type="button" data-a="poll-del" aria-label="보기 ${i + 1} 빼기">${ico(P.x, 16)}</button>` : ''}</div>`;
   }
+  // 설문 방식: 보기 고르기(H25) | TOP 3 적기(I6, 보기 없이 참여자가 1·2·3위를 적음)
+  const POLL_KINDS = [['choice', '보기 고르기'], ['top3', 'TOP 3 적기']];
+  const POLL_SRCS = [['spot', '박지 목록'], ['gear', '장비 목록'], ['free', '직접 적기']];
+  const chipRadio = function (list, cur, act, label) {
+    return '<div class="lm-chipline" role="radiogroup" aria-label="' + label + '">' + list.map(function (d) {
+      const on = d[0] === cur;
+      return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="' + act + '" data-v="' + d[0] + '">' + esc(d[1]) + '</button>';
+    }).join('') + '</div>';
+  };
   function pollFieldsHtml(p, cat) {
-    if (p) return p.category === 'poll' ? '<p class="lm-hint">보기와 마감은 올린 뒤에 바꿀 수 없어요.</p>' : '';
+    if (p) return p.category === 'poll' ? '<p class="lm-hint">' + (p.poll_kind === 'top3' ? '답 고르는 곳' : '보기') + '와 마감은 올린 뒤에 바꿀 수 없어요.</p>' : '';
     return `<div data-poll-fields ${cat === 'poll' ? '' : 'hidden'}>
-        <span class="lm-lbl">보기 <b aria-hidden="true">*</b> <span style="font-weight:600">2~5개</span></span>
-        <div data-popts>${pollOptHtml(0, '')}${pollOptHtml(1, '')}</div>
-        <button type="button" class="lm-file" data-a="poll-add">${ico(P.plus, 18)}<span>보기 추가</span></button>
+        <span class="lm-lbl">방식</span>
+        ${chipRadio(POLL_KINDS, 'choice', 'poll-kind', '설문 방식')}
+        <div data-poll-choice>
+          <span class="lm-lbl">보기 <b aria-hidden="true">*</b> <span style="font-weight:600">2~5개</span></span>
+          <div data-popts>${pollOptHtml(0, '')}${pollOptHtml(1, '')}</div>
+          <button type="button" class="lm-file" data-a="poll-add">${ico(P.plus, 18)}<span>보기 추가</span></button>
+          <p class="lm-hint">한 사람이 하나를 골라요. 마감 전엔 바꿀 수 있고, 결과는 고른 뒤에 보여요. 누가 뭘 골랐는지는 안 보여요.</p>
+        </div>
+        <div data-poll-top3 hidden>
+          <span class="lm-lbl">답은 어디서 고르나요</span>
+          ${chipRadio(POLL_SRCS, 'spot', 'poll-src', '답 고르는 곳')}
+          <p class="lm-hint">보기는 안 만들어도 돼요. 참여자가 1·2·3위를 목록에서 고르거나 직접 적어요(1위만 적어도 돼요). 1위 3점, 2위 2점, 3위 1점으로 순위를 매기고, 답한 사람에게 바로 보여요.</p>
+        </div>
         <span class="lm-lbl">마감</span>
-        <div class="lm-chipline" role="radiogroup" aria-label="마감">${POLL_ENDS.map(function (d) {
-          const on = d[0] === '7';
-          return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="poll-end" data-v="' + d[0] + '">' + esc(d[1]) + '</button>';
-        }).join('')}</div>
-        <p class="lm-hint">한 사람이 하나를 골라요. 마감 전엔 바꿀 수 있고, 결과는 고른 뒤에 보여요. 누가 뭘 골랐는지는 안 보여요.</p>
+        ${chipRadio(POLL_ENDS, '7', 'poll-end', '마감')}
       </div>`;
   }
   // 장비 말머리: 질문|후기와 장비 고르기. 장비 목록(gears_master)에서 찾고, 없으면 적은 이름 그대로 (I2)
@@ -3534,7 +3788,7 @@
     if (needLogin('로그인하면 글을 쓸 수 있어요')) return;
     if (p && !isMine(p.user_id)) return;
     const cat = p ? p.category : (cat0 || (S.cat !== 'all' ? S.cat : 'backpacking'));
-    const st = { kind: 'post', id: p ? p.id : null, cat: cat, pollDays: 7, photos: postPhotos(p || {}).map(function (u) { return { url: u }; }),
+    const st = { kind: 'post', id: p ? p.id : null, cat: cat, pollDays: 7, pollKind: 'choice', pollSource: 'spot', photos: postPhotos(p || {}).map(function (u) { return { url: u }; }),
       gkind: (pre && pre.kind) || S.gkind, gear: (pre && pre.gear) || null,
       gcat: (pre && pre.gear && pre.gear.cat) || (S.gcat !== 'all' ? S.gcat : null) };
     const prev = SH;
@@ -3589,7 +3843,11 @@
         row0.gear_name = String(st.gear.name).slice(0, 120);
       }
     }
-    if (!st.id && st.cat === 'poll') {
+    if (!st.id && st.cat === 'poll' && st.pollKind === 'top3') {
+      row0.poll_kind = 'top3';
+      row0.poll_source = POLL_SRCS.some(function (x) { return x[0] === st.pollSource; }) ? st.pollSource : 'spot';
+      row0.poll_ends_at = st.pollDays ? new Date(Date.now() + st.pollDays * 86400000).toISOString() : null;
+    } else if (!st.id && st.cat === 'poll') {
       const opts = Array.prototype.map.call(f.querySelectorAll('[name="opt"]'), function (el) { return String(el.value || '').trim(); }).filter(Boolean);
       if (opts.length < 2) { toast('보기를 2개 이상 적어 주세요', true); return; }
       if (new Set(opts).size !== opts.length) { toast('같은 보기가 있어요', true); return; }
@@ -3614,7 +3872,8 @@
         if (!postsBy.all) postsBy.all = { rows: [row], done: true, loading: false };
         D.comments[row.id] = [];
         D.likeChecked.add(row.id);
-        if (row.category === 'poll') D.poll[row.id] = { post_id: row.id, total: 0, counts: null, mine: null, closed: false };
+        if (row.category === 'poll' && row.poll_kind === 'top3') D.top3[row.id] = { post_id: row.id, total: 0, mine: null, leader: null, top: [], closed: false };
+        else if (row.category === 'poll') D.poll[row.id] = { post_id: row.id, total: 0, counts: null, mine: null, closed: false };
         if (window.okbmPoints) window.okbmPoints.check('post'); // 낭만 포인트 알림 (H32)
       }
       closeSheet();
@@ -3990,6 +4249,9 @@
   function onClick(e) {
     const t = e.target.closest('[data-a]');
     if (!t || t.disabled) return;
+    // TOP 3 칸 안의 빈 곳·입력 칸을 눌러도 글이 접히거나 펼쳐지지 않게 (I6)
+    const t3box = e.target.closest('.lm-t3');
+    if (t3box && !t3box.contains(t)) return;
     const dealStrip = document.getElementById('homeDealStrip');
     if (!((home && home.contains(t)) || (layer && layer.contains(t)) || (dealStrip && dealStrip.contains(t)))) return;
     const a = t.dataset.a, v = t.dataset.v;
@@ -4209,6 +4471,26 @@
         break;
       }
       case 'poll-vote': votePoll(v, Number(t.dataset.i)); break;
+      case 't3-pick': t3Pick(v, Number(t.dataset.i), t.dataset.k, t.dataset.l); break;
+      case 't3-clear': { const st = t3State(v), i = Number(t.dataset.i); st.slots[i] = null; st.q[i] = ''; paintTop3(v, i); break; }
+      case 't3-submit': submitTop3(v); break;
+      case 't3-edit': editTop3(v); break;
+      case 't3-cancel': t3State(v).edit = false; paintTop3(v); break;
+      case 't3-more': t3State(v).all = true; paintTop3(v); break;
+      case 'poll-kind': {
+        if (SH.kind !== 'post') break;
+        SH.pollKind = v === 'top3' ? 'top3' : 'choice';
+        t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+        sheet.querySelector('[data-poll-choice]').hidden = SH.pollKind === 'top3';
+        sheet.querySelector('[data-poll-top3]').hidden = SH.pollKind !== 'top3';
+        break;
+      }
+      case 'poll-src': {
+        if (SH.kind !== 'post') break;
+        SH.pollSource = v;
+        t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+        break;
+      }
       case 'poll-add': {
         const box = sheet && sheet.querySelector('[data-popts]');
         if (!box) break;
@@ -4388,6 +4670,7 @@
   }
   function onInput(e) {
     const t = e.target;
+    if (t.hasAttribute && t.hasAttribute('data-t3-q')) { t3State(t.dataset.post).q[Number(t.dataset.i)] = t.value; clearTimeout(searchTimer); searchTimer = setTimeout(function () { t3Suggest(t); }, 120); return; }
     if (!sheet || !sheet.contains(t)) return;
     if (t.dataset.about != null && SH.items && SH.items[Number(t.dataset.about)]) SH.items[Number(t.dataset.about)].about = t.value;
     else if (t.dataset.link != null && SH.items && SH.items[Number(t.dataset.link)]) SH.items[Number(t.dataset.link)].link_url = t.value.trim();
@@ -4437,7 +4720,7 @@
     clearTimeout(reloadTimer);
     reloadTimer = setTimeout(function () {
       Object.keys(postsBy).forEach(function (k) { delete postsBy[k]; });
-      if (uidChanged) { D.recent = null; D.comments = {}; D.liked.clear(); D.likeChecked.clear(); D.spotRev = null; D.poll = {}; }
+      if (uidChanged) { D.recent = null; D.comments = {}; D.liked.clear(); D.likeChecked.clear(); D.spotRev = null; D.poll = {}; D.top3 = {}; Object.keys(T3).forEach(function (k) { delete T3[k]; }); }
       D.pastEvents = null;
       loadTabs().then(function (r) {
         D.status = r.every(function (x) { return x.status === 'rejected'; }) ? 'error' : 'ready';
