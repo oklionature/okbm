@@ -51,7 +51,7 @@
     pin: '<path d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="10" r="2.5"/>',
     cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
     pack: '<path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/>',
-    tent: '<path d="M3 20L12 4l9 16H3z"/><path d="M12 20v-6"/>',
+    tent: '<path d="M2 20h20M4 20l8-15 8 15M12 13l-3 7M12 13l3 7"/>',
     ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'
   };
 
@@ -578,6 +578,9 @@
       '.lm-seg button{height:36px;border-radius:8px;font-size:13.5px;font-weight:700;color:var(--sub);transition:background .15s,color .15s}',
       '.lm-seg button.on{background:#2e2e35;color:var(--tx)}',
       '.lm-sheet .lm-seg{background:#26262c}.lm-sheet .lm-seg button.on{background:#3a3a42}',
+      '.lm-segn{margin-left:5px;font-variant-numeric:tabular-nums}',
+      '.lm-in[hidden]{display:none}',
+      '.lm-sheet .lmh-cta{background:#26262c}.lm-sheet .lmh-cta:active{background:#303038}',
       '.lm-gtabs{display:flex;gap:16px;overflow-x:auto;margin-top:8px;padding:0 2px;scrollbar-width:none}',
       '.lm-gtabs::-webkit-scrollbar{display:none}',
       '.lm-gtabs button{flex:none;height:36px;font-size:13px;font-weight:700;color:var(--sub);border-bottom:2px solid transparent}',
@@ -1965,7 +1968,7 @@
   const segHtml = function (a, cur, label, counts) {
     return '<div class="lm-seg" role="radiogroup" aria-label="' + label + '">' + GEAR_KIND.map(function (k) {
       const on = k[0] === cur;
-      return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="' + a + '" data-v="' + k[0] + '">' + esc(k[1]) + (counts ? ' <span data-n="' + k[0] + '">' + (counts[k[0]] == null ? '' : counts[k[0]]) + '</span>' : '') + '</button>';
+      return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="' + a + '" data-v="' + k[0] + '">' + esc(k[1]) + (counts ? '<span class="lm-segn" data-gn="' + k[0] + '">' + (counts[k[0]] == null ? '' : counts[k[0]]) + '</span>' : '') + '</button>';
     }).join('') + '</div>';
   };
   function gearSubHtml() {
@@ -3647,7 +3650,7 @@
     if (!postsBy[st.key]) return;
     const rows = visiblePosts(st.key);
     GEAR_KIND.forEach(function (k) {
-      const n = sheet.querySelector('[data-n="' + k[0] + '"]');
+      const n = sheet.querySelector('[data-gn="' + k[0] + '"]');
       if (n) n.textContent = String(rows.filter(function (p) { return p.gear_kind === k[0]; }).length);
     });
     const list = rows.filter(function (p) { return p.gear_kind === st.gk; });
