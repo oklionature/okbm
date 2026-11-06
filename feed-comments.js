@@ -80,7 +80,7 @@
       '.okbm-cmt-preview span{color:#94a3b8;}' +
       // 아래 메뉴 줄(56px) 위에서 끝난다(박지 바꾸기 창과 같은 자리)
       '#okbmCommentSheet{position:fixed;top:0;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom,8px));z-index:2147483646;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;justify-content:center;}' +
-      '#okbmCommentSheet .cm-box{width:100%;max-width:440px;height:64vh;height:64dvh;max-height:100%;background:#0c1017;border-top:1px solid rgba(255,255,255,0.14);' +
+      '#okbmCommentSheet .cm-box{width:100%;max-width:440px;height:64vh;height:64dvh;max-height:100%;background:#000000;border-top:1px solid rgba(255,255,255,0.14);' +
         'border-radius:18px 18px 0 0;box-sizing:border-box;display:flex;flex-direction:column;}' +
       '#okbmCommentSheet .cm-grip{width:38px;height:4px;border-radius:2px;background:rgba(255,255,255,0.22);margin:8px auto 0;}' +
       '#okbmCommentSheet .cm-h{display:flex;justify-content:space-between;align-items:center;padding:10px 16px 8px;border-bottom:1px solid rgba(255,255,255,0.06);}' +
