@@ -73,3 +73,6 @@ UPDATE public.featured_videos SET channel_name = $c$오라네의 낭만루트$c$
  박지 지도 · 영상 속 그 장소 → romanticroute.kr
  인스타그램 → @romanticroutekr
 문의 → (ggumfree@kakao.com)$c$ WHERE video_id = 'gH3yAInFJDs';
+
+-- 11-06 대표님: 오지브로(단양 올산) 영상은 뺀다. 지우지 않고 숨김 (실행 완료)
+UPDATE public.featured_videos SET is_active = false WHERE video_id = 'WXAxnGCm_f8';
