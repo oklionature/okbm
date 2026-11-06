@@ -3624,7 +3624,7 @@
       <label class="lm-lbl" for="lmGearTerm" style="margin-top:20px">중고 시세 보러 가기 · 검색어</label>
       ${inp('lmGearTerm', 'term', term, 'data-gear-term maxlength="60" enterkeyhint="done"')}
       <div class="lm-mkt">${MARKETS.map(function (m) {
-        return `<a class="lm-out" data-mk="${m[0]}" href="${escapeHtml(marketUrl(m, term))}" target="_blank" rel="noopener noreferrer"><i style="background:${m[4]}">${m[3]}</i><span><b>${m[1]}</b><small>${m[2]}</small></span>${ico(P.ext, 16)}</a>`;
+        return `<a class="lm-out" data-mk="${m[0]}" href="${escapeHtml(okbmSafeExternalUrl(marketUrl(m, term)))}" target="_blank" rel="noopener noreferrer"><i style="background:${m[4]}">${m[3]}</i><span><b>${m[1]}</b><small>${m[2]}</small></span>${ico(P.ext, 16)}</a>`;
       }).join('')}</div>
       <p class="lm-hint">가격은 각 사이트에서 직접 확인해요. 낭만루트는 거래에 끼지 않아요.</p>
       <span class="lm-lbl" style="margin-top:22px">이 장비 이야기</span>
