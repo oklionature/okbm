@@ -2050,13 +2050,11 @@ function updateSmartResetButtons() {
         var photos = campBanPhotos(spot);
         if (!photos.length) return '';
         var sId = escapeHtml(String(spot.id || ''));
-        var credit = String(spot.camp_status_credit || '').trim();
         return '<div style="margin-top:8px; display:grid; grid-template-columns:repeat(' + photos.length + ', 1fr); gap:6px;">' +
           photos.map(function(u, i) {
             return '<button type="button" data-id="' + sId + '" data-idx="' + i + '" onclick="event.stopPropagation(); window.openCampBanPhoto(this.dataset.id, this.dataset.idx)" aria-label="금지 근거 사진 ' + (i + 1) + ' 크게 보기" style="display:block; width:100%; aspect-ratio:' + (photos.length === 1 ? '4 / 3' : '1 / 1') + '; padding:0; border-radius:8px; overflow:hidden; border:1px solid rgba(244,63,94,0.45); background:#1f1115; cursor:zoom-in;"><img src="' + escapeHtml(u) + '" alt="금지 근거 사진 ' + (i + 1) + '" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;"></button>';
           }).join('') +
-        '</div>' +
-        (credit ? '<div style="margin-top:4px; text-align:right; font-size:0.68rem; color:#fda4af;">사진 제보 ' + escapeHtml(credit) + '님</div>' : '');
+        '</div>';
       }
       window.openCampBanPhoto = function(spotId, idx) {
         var sId = String(spotId || '').trim();
@@ -2080,8 +2078,13 @@ function updateSmartResetButtons() {
         var list = rules.map(function(r) {
           return '<div style="margin-top:6px;"><div style="font-weight:800; color:#fecdd3;">' + r[0] + '</div><div style="color:#fda4af;">' + r[1] + '</div></div>';
         }).join('');
+        // 제보한 사람의 앱 아이디는 제목 줄 오른쪽에 둔다(대표님 11-07). 사진이 없어도 보인다.
+        var credit = String(spot.camp_status_credit || '').trim();
         return '<div style="margin:6px 0 4px; padding:11px 12px; border-radius:10px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.45); color:#fecdd3; font-size:0.74rem; line-height:1.45;">' +
-          '<div style="font-weight:900; color:#fb7185; font-size:0.9rem;">🚫 야영이 금지되었습니다</div>' +
+          '<div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">' +
+            '<div style="font-weight:900; color:#fb7185; font-size:0.9rem; flex-shrink:0;">🚫 야영이 금지되었습니다</div>' +
+            (credit ? '<div style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.7rem; font-weight:700; color:#fda4af;">제보 ' + escapeHtml(credit) + '</div>' : '') +
+          '</div>' +
           campBanReasonHtml(spot, 'margin-top:6px; font-size:0.8rem;') +
           campBanPhotosHtml(spot) +
           '<div style="margin-top:8px; font-size:0.84rem; font-weight:800;">소중한 박지를 보호하기 위해 LNT 원칙을 꼭 지켜주세요.</div>' +
