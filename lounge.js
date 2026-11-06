@@ -1853,7 +1853,11 @@
     }
     const yid = youtubeId(url);
     if (yid) {
-      return '<a class="lm-link" data-a="body-yt" data-yt="' + esc(yid) + '" data-short="' + (/\/shorts\//.test(url) ? '1' : '0') + '" href="' + escapeHtml(okbmSafeExternalUrl(url)) + '">' + esc(url) + '</a>';
+      // 챕터 타임스탬프(?t=24, &t=1m43s, &start=103)가 있으면 iframe에서 그 지점부터 재생 (대표님 11-06: 한 영상 두 챕터로 '만든 이유'·'사용방법' 고정글)
+      const tm = String(url).match(/[?&](?:t|start)=(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/);
+      let tSec = 0;
+      if (tm) tSec = (Number(tm[1]) || 0) * 3600 + (Number(tm[2]) || 0) * 60 + (Number(tm[3]) || 0);
+      return '<a class="lm-link" data-a="body-yt" data-yt="' + esc(yid) + '" data-short="' + (/\/shorts\//.test(url) ? '1' : '0') + '"' + (tSec > 0 ? ' data-t="' + tSec + '"' : '') + ' href="' + escapeHtml(okbmSafeExternalUrl(url)) + '">' + esc(url) + '</a>';
     }
     return '<a class="lm-out" href="' + escapeHtml(okbmSafeExternalUrl(url)) + '" target="_blank" rel="noopener noreferrer">' + esc(url) + '</a>';
   }
@@ -2500,9 +2504,14 @@
     if (!n) return;
     const imgs = newsImgs(n);
     const link = n.link_url && HTTPS_RE.test(n.link_url) ? n.link_url : '';
+    // 본문 끝 줄이 유튜브 주소면 위쪽에 큰 썸네일을 두고 누르면 그 자리에서 재생 (대표님 11-06: 낭만매거진 '낭만루트 사용·만든 이유' 영상을 한 번 눌러 바로 보게)
+    const tp = tipParts(n.body);
+    const video = tp.yid ? `<div class="lm-tv${tp.short ? ' short' : ''}" data-yt="${esc(tp.yid)}" style="margin:0 0 12px">${tipPoster(tp.yid)}</div>` : '';
+    const bodyText = tp.yid ? tp.text : (n.body || '');
     openSheet(`<p class="lm-ssub" style="margin:0 0 4px">${esc(NEWS_KIND[n.kind] || '소식')} · ${esc(ago(n.created_at))}</p><h3 id="loungeSheetTitle">${esc(n.title)}</h3>
+      ${video}
       ${imgs.length ? `<div class="hm-view">${imgs.map(function (u, i) { return `<img src="${escapeHtml(okbmFastImageUrl(u))}" alt="${esc(n.title)} ${i + 1}/${imgs.length}" loading="lazy" decoding="async">`; }).join('')}</div>${imgs.length > 1 ? `<p class="lm-hint" style="text-align:center">옆으로 넘겨 보세요 · ${imgs.length}장</p>` : ''}` : ''}
-      ${n.body ? `<p class="lm-desc">${bodyHtml(n.body)}</p>` : ''}
+      ${bodyText ? `<p class="lm-desc">${bodyHtml(bodyText)}</p>` : ''}
       ${link ? `<a class="lm-btn main" style="display:flex;align-items:center;justify-content:center;margin-top:16px;text-decoration:none" href="${escapeHtml(okbmSafeExternalUrl(link))}" target="_blank" rel="noopener noreferrer">자세히 보기</a>` : ''}
       ${D.admin ? `<div class="lmx-links" style="margin-top:14px"><button type="button" data-a="edit-news" data-v="${esc(n.id)}">수정</button><button type="button" class="red" data-a="del-news" data-v="${esc(n.id)}">삭제</button></div>` : ''}`,
     { kind: 'news-view', id: n.id });
@@ -3773,7 +3782,8 @@
         frame.title = 'YouTube 영상';
         frame.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture; fullscreen');
         frame.allowFullscreen = true;
-        frame.src = 'https://www.youtube-nocookie.com/embed/' + yid + '?autoplay=1&playsinline=1&rel=0';
+        const tSec = Number(t.dataset.t) || 0;
+        frame.src = 'https://www.youtube-nocookie.com/embed/' + yid + '?autoplay=1&playsinline=1&rel=0' + (tSec > 0 ? '&start=' + tSec : '');
         box.appendChild(frame);
         break;
       }
