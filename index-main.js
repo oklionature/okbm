@@ -1682,6 +1682,32 @@
       if (known && typeof window.okbmPaintUserAvatarNodes === 'function') window.okbmPaintUserAvatarNodes(uid, known);
     }
 
+    // 제목 옆 회색 i: 누르면 뽑는 기준 말풍선, 다른 곳을 누르거나 화면을 내리면 닫는다
+    (function bindHeroPickInfo() {
+      var btn = document.getElementById('heroPickInfo');
+      var tip = document.getElementById('heroPickTip');
+      if (!btn || !tip) return;
+      // 머리 줄(overflow:hidden, 높이 47px)이 말풍선을 잘라서 body로 옮기고 i 단추 바로 아래에 둔다
+      document.body.appendChild(tip);
+      var setOpen = function(open) {
+        if (open) {
+          var r = btn.getBoundingClientRect();
+          tip.style.top = Math.round(r.bottom + 6) + 'px';
+          tip.style.right = Math.max(12, Math.round(window.innerWidth - r.right)) + 'px';
+        }
+        tip.hidden = !open;
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        setOpen(tip.hidden);
+      });
+      document.addEventListener('click', function(e) {
+        if (!tip.hidden && !tip.contains(e.target)) setOpen(false);
+      });
+      window.addEventListener('scroll', function() { if (!tip.hidden) setOpen(false); }, { passive: true });
+    })();
+
     (function bindHeroProfileChip() {
       var chip = document.getElementById('heroProfileChip');
       if (!chip) return;
