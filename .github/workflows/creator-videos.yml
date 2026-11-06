@@ -1,0 +1,32 @@
+name: creator-videos
+
+# 홈 '낭만! 크리에이터의 그 장소' 줄을 매주 바꾼다 (대표님 11-06).
+# 지난 7일 크리에이터 유튜브 등록 순 4명의 최근 영상을 앞에 두고, 감사 알림과 관리자 요약 알림을 보낸다.
+# 손으로 돌릴 때 dry_run을 켜면 무엇을 할지만 보여 준다.
+on:
+  schedule:
+    - cron: "0 0 * * 1"  # 매주 월요일 한국 시각 오전 9시
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "미리보기만 (바꾸지 않음)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: creator-videos
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Update creator videos
+        run: python3 scripts/weekly-creator-videos.py ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}
+        env:
+          SUPABASE_URL: https://qnumfecythtqtrxeasys.supabase.co
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
