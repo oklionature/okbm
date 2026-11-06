@@ -7,7 +7,7 @@
     window.okbmSeoulDayKey = function() {
       return new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
     };
-    // 서울 기준 이번 주 월요일 날짜. 홈 인기 스팟은 한 주 동안 같은 10곳을 건다
+    // 서울 기준 이번 주 월요일 날짜. 홈 인기 스팟은 한 주 동안 같은 5곳을 건다
     window.okbmSeoulWeekKey = function() {
       var d = new Date(Date.now() + 9 * 3600 * 1000);
       d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
@@ -1994,7 +1994,7 @@
         });
 
         var heroKeyOf = function(f) { return f ? String(f.id || ((f.spot || '') + '_' + (f.date || ''))) : ''; };
-        // 인기 글(좋아요 순 30개) 안에서 주마다 다른 10개를 다른 순서로 보여 준다(대표님 11-07: 일주일 동안 걸림).
+        // 인기 글(좋아요 순 30개) 안에서 주마다 다른 5개를 다른 순서로 보여 준다(대표님 11-07: 일주일 동안 걸림, 10개는 많아 5개).
         // 별이 많은 글일수록 뽑히고 앞에 올 확률이 높다. 같은 박지는 이름이 달라도 별이 가장 많은 글 하나만 남긴 뒤 섞는다.
         var heroSpotPool = getThemeSpotPool();
         var seenHeroSpots = {};
@@ -2007,7 +2007,7 @@
         });
         var nextHeroRecords = window.okbmDailyWeightedOrder(heroOnePerSpot, heroKeyOf, function(f) {
           return (f && f.likes != null) ? f.likes : (f && f.likes_count) || 0;
-        }, 'hero', 'week').slice(0, 10);
+        }, 'hero', 'week').slice(0, 5);
         var prevHeroKeys = (window.heroTopRecords || []).map(heroKeyOf).join('|');
         var nextHeroKeys = nextHeroRecords.map(heroKeyOf).join('|');
         window.__allLoadedFeeds = allCleanFeeds;
