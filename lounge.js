@@ -431,7 +431,7 @@
       '#okbmHomeNews .hn-dots{position:absolute;right:14px;top:17px;display:flex;gap:4px}#okbmHomeNews .hn-dots i{width:5px;height:5px;border-radius:50%;background:#3a3a40}#okbmHomeNews .hn-dots i.on{background:#f2f2f7}',
       '#okbmHomeNews .hn-add{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;font-size:12px;font-weight:800;color:var(--sub);padding:2px 0}',
       '#okbmHomeHub{padding:0 14px}',
-      '#okbmHomeHub .hh-chips{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:4px}',
+      '#okbmHomeHub .hh-chips{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:4px}',
       '#okbmHomeHub .hh-chips button{display:flex;align-items:center;justify-content:center;min-width:0;padding:0 4px;height:34px;border-radius:17px;background:#1c1c20;color:#c7c7cc;font-size:12.5px;font-weight:700;white-space:nowrap;transition:background .15s,color .15s}',
       '#okbmHomeHub .hh-chips button.on{background:var(--tx);color:#000}',
       '#okbmHomeHub .hh-row{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 2px;border-top:1px solid rgba(255,255,255,.07);text-align:left;color:var(--tx)}',
@@ -439,9 +439,13 @@
       '#okbmHomeHub .hh-row:active{opacity:.6}',
       '#okbmHomeHub .hh-x{min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
       '#okbmHomeHub .hh-x i{font-style:normal;font-size:11.5px;font-weight:800;color:var(--blue);margin-right:6px}',
+      '#okbmHomeHub .hh-x i.gold{color:var(--star)}',
+      // 큰 글쓰기 단추 대신 목록 밑 얇은 한 줄: 왼쪽 전체 보기, 오른쪽 작은 글쓰기 (대표님 11-07 A안)
+      '#okbmHomeHub .hh-foot{display:flex;justify-content:space-between;align-items:center;height:44px;padding:0 2px;border-top:1px solid rgba(255,255,255,.07)}',
+      '#okbmHomeHub .hh-all{display:inline-flex;align-items:center;gap:2px;height:44px;font-size:13px;font-weight:700;color:var(--sub)}',
+      '#okbmHomeHub .hh-write{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 12px;border-radius:16px;background:#1c1c20;font-size:12.5px;font-weight:700;color:var(--tx)}',
+      '#okbmHomeHub .hh-write:active,#okbmHomeHub .hh-all:active{opacity:.6}',
       '#okbmHomeHub .hh-row small{flex:none;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}',
-      '#okbmHomeHub .hh-cta{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;height:42px;margin-top:6px;border-radius:12px;background:#1c1c20;font-size:13.5px;font-weight:700;color:var(--tx)}',
-      '#okbmHomeHub .hh-cta:active{background:#26262b}',
       '#okbmHomeHub .hh-empty{padding:28px 0 22px;text-align:center;font-size:13px;color:var(--sub)}',
       '#okbmHomeMag .hm-head{padding:0 14px;margin-bottom:10px;font-size:var(--fs-title,16px);font-weight:900;color:var(--tx)}',
       '#okbmHomeMag .hm-rail{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 14px;scroll-snap-type:x proximity}',
@@ -832,7 +836,7 @@
   function scopeQuery(b, key) {
     if (key === 'all') return b;
     const k = key.split('|');
-    if (k[0] === 'gear') {
+    if (k[0] === 'gear' && k.length > 1) {
       b = b.eq('category', 'gear').eq('gear_kind', k[1]);
       return k[2] && k[2] !== 'all' ? b.eq('gear_cat', k[2]) : b;
     }
@@ -2523,12 +2527,25 @@
   }
 
   // ----- 알약 네 개: 게시판 · 설문·투표 · 후기·랭킹 · 초보 가이드. 칸마다 세 줄 -----
-  const HUB = [['board', '게시판'], ['poll', '설문·투표'], ['review', '후기·랭킹'], ['guide', '초보 가이드']];
+  const HUB = [['board', '게시판'], ['gear', '장비'], ['poll', '설문·투표'], ['review', '후기·랭킹'], ['guide', '초보 가이드']];
+  const HUB_N = 5; // 홈 알약 칸 줄 수 (대표님 11-07: 3 → 5)
+  const hubFoot = function (allAttrs, allLabel, writeV, writeLabel) {
+    return '<div class="hh-foot"><button type="button" class="hh-all" ' + allAttrs + '>' + esc(allLabel) + ico(P.chevR, 15) + '</button>'
+      + (writeLabel ? '<button type="button" class="hh-write" data-a="new-post" data-v="' + writeV + '">' + ico(P.plus, 14) + esc(writeLabel) + '</button>' : '') + '</div>';
+  };
   function hubRow(attrs, tag, title, meta) {
-    return `<button type="button" class="hh-row" ${attrs}><span class="hh-x">${tag ? `<i>${esc(tag)}</i>` : ''}${esc(title)}</span>${meta ? `<small>${esc(meta)}</small>` : ''}</button>`;
+    const gold = tag === '후기' || tag === '장비';
+    return `<button type="button" class="hh-row" ${attrs}><span class="hh-x">${tag ? `<i${gold ? ' class="gold"' : ''}>${esc(tag)}</i>` : ''}${esc(title)}</span>${meta ? `<small>${esc(meta)}</small>` : ''}</button>`;
   }
   function hubBody(key) {
     if (D.status !== 'ready') return '<div class="hh-empty">불러오는 중…</div>';
+    if (key === 'gear') { // 장비 말머리 글: 질문·후기 꼬리표, 오른쪽에 종류 (I2)
+      if (!postsBy.gear) return '<div class="hh-empty">불러오는 중…</div>';
+      const rows = visiblePosts('gear').slice(0, HUB_N).map(function (p) {
+        return hubRow('data-a="lounge" data-v="2" data-id="' + esc(p.id) + '"', p.gear_kind === 'review' ? '후기' : '질문', p.title, GEAR_CAT[p.gear_cat] || '');
+      }).join('');
+      return (rows || '<div class="hh-empty">첫 장비 질문을 올려 보세요</div>') + hubFoot('data-a="hub-all" data-v="gear"', '장비 전체 보기', 'gear', '질문하기');
+    }
     if (key === 'board' || key === 'poll') {
       const st = postsBy[key === 'poll' ? 'poll' : 'all'];
       if (!st) return '<div class="hh-empty">불러오는 중…</div>';
@@ -2540,34 +2557,33 @@
         const rest = list.filter(function (p) { return p.category !== 'poll'; });
         list = poll ? [poll].concat(rest) : rest;
       }
-      list = list.slice(0, HOME_N);
+      list = list.slice(0, HUB_N);
       const rows = list.map(function (p) {
         const poll = p.category === 'poll';
         const r = D.poll[p.id];
         const meta = poll ? (r ? (Number(r.total) || 0) + '명 참여' : '참여하기') : [p.nickname, Number(p.comments_count) ? '댓글 ' + p.comments_count : ''].filter(Boolean).join(' · ');
-        return hubRow('data-a="lounge" data-v="2" data-id="' + esc(p.id) + '"', poll ? '설문' : '', p.title, meta);
+        return hubRow('data-a="lounge" data-v="2" data-id="' + esc(p.id) + '"', poll ? '설문' : p.category === 'gear' ? '장비' : '', p.title, meta);
       }).join('');
       return (rows || '<div class="hh-empty">' + (key === 'poll' ? '첫 설문을 올려 보세요' : '첫 글을 기다리고 있어요') + '</div>')
-        + '<button type="button" class="hh-cta" data-a="new-post" data-v="' + (key === 'poll' ? 'poll' : '') + '">' + ico(P.plus, 16) + (key === 'poll' ? '설문 만들기' : '글쓰기') + '</button>';
+        + (key === 'poll' ? hubFoot('data-a="hub-all" data-v="poll"', '설문 전체 보기', 'poll', '설문 만들기') : hubFoot('data-a="hub-all" data-v="all"', '게시판 전체 보기', '', '글쓰기'));
     }
     if (key === 'review') {
-      const top = D.top.filter(function (r) { return spotById(r.spot_id); }).slice(0, HOME_N);
+      const top = D.top.filter(function (r) { return spotById(r.spot_id); }).slice(0, HUB_N);
       const rows = top.map(function (r) {
         const s = spotById(r.spot_id);
         return hubRow('data-a="spot" data-v="' + esc(r.spot_id) + '"', '★ ' + Number(r.avg_rating || 0).toFixed(1), spotName(s), [spotRegion(s), '후기 ' + (Number(r.review_count) || 0)].filter(Boolean).join(' · '));
       }).join('');
-      return (rows || '<div class="hh-empty">아직 박지 후기가 없어요</div>')
-        + '<button type="button" class="hh-cta" data-a="lounge" data-v="3">평점순·후기 많은 순 전체 보기' + ico(P.chevR, 16) + '</button>';
+      return (rows || '<div class="hh-empty">아직 박지 후기가 없어요</div>') + hubFoot('data-a="lounge" data-v="3"', '후기·랭킹 전체 보기', '', '');
     }
     const tipList = tips();
     const daily = typeof window.okbmDailyOrder === 'function' ? window.okbmDailyOrder(tipList, function (t) { return t.id; }, 'guides') : tipList;
-    const rows = daily.slice(0, HOME_N).concat(kits().slice(0, Math.max(0, HOME_N - daily.length)));
+    const rows = daily.slice(0, HUB_N).concat(kits().slice(0, Math.max(0, HUB_N - daily.length)));
     const html = rows.map(function (t) {
       const note = t.kind === 'kit' ? '장비' : (TIP_NOTES.indexOf(t.note) >= 0 ? t.note : '팁');
       return hubRow('data-a="lounge" data-v="1" data-id="' + esc(t.id) + '"', note, t.title, '');
     }).join('');
     return (html || '<div class="hh-empty">초보 가이드를 준비하고 있어요</div>')
-      + '<button type="button" class="hh-cta" data-a="lounge" data-v="1">가이드 ' + (tips().length + kits().length) + '편 전체 보기' + ico(P.chevR, 16) + '</button>';
+      + hubFoot('data-a="lounge" data-v="1"', '가이드 ' + (tips().length + kits().length) + '편 전체 보기', '', '');
   }
   function paintHub() {
     const el = document.getElementById('okbmHomeHub');
@@ -4140,13 +4156,24 @@
       }
       // 회원 쓰기
       case 'need-login': needLogin(); break;
-      case 'new-post': openPostForm(null, v === 'poll' ? 'poll' : null); break;
+      case 'new-post': openPostForm(null, v === 'poll' || v === 'gear' ? v : null); break;
+      // 홈 알약 '전체 보기': 그 말머리를 고른 채로 자유게시판을 연다
+      case 'hub-all': {
+        S.cat = v === 'gear' || v === 'poll' ? v : 'all';
+        if (v === 'gear') { S.gkind = 'question'; S.gcat = 'all'; }
+        const key = boardKey();
+        if (!postsBy[key]) loadPosts(key).then(renderBoardList).catch(function (err) { console.warn('[lounge.js:hub-all]', err); delete postsBy[key]; });
+        rerenderPane(2);
+        openLoungeWindow(2, null, t);
+        break;
+      }
       // 홈 라운지 알약: 설문·투표는 처음 누를 때 투표 글만 받는다
       case 'hub': {
         S.hub = v;
         paintHub();
         tick();
         if (v === 'poll' && !postsBy.poll) loadPosts('poll').then(paintHub).catch(function (err) { console.warn('[lounge.js:hub]', err); delete postsBy.poll; });
+        if (v === 'gear' && !postsBy.gear) loadPosts('gear').then(paintHub).catch(function (err) { console.warn('[lounge.js:hub]', err); delete postsBy.gear; });
         break;
       }
       case 'news': openNews(v); break;
