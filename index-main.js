@@ -2046,8 +2046,8 @@
         modal.onclick = function(e) { if (e.target === modal) closeVideoDetailModal(); };
         modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000050 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; box-sizing:border-box;';
         modal.innerHTML = `
-          <div id="videoDetailSheet" style="width:100% !important; max-width:480px !important; height:100% !important; max-height:100% !important; background:#0a0e17; border-radius:0 !important; border:none !important; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; margin:0 auto; box-sizing:border-box; transform:translateZ(0);">
-            <div style="width:100%; padding:10px 14px 8px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); box-sizing:border-box; z-index:60;" onclick="event.stopPropagation();">
+          <div id="videoDetailSheet" style="width:100% !important; max-width:480px !important; height:100% !important; max-height:100% !important; background:var(--bg-1); border-radius:0 !important; border:none !important; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; margin:0 auto; box-sizing:border-box; transform:translateZ(0);">
+            <div style="width:100%; padding:10px 14px 8px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:var(--bg-0); border-bottom:1px solid var(--line); box-sizing:border-box; z-index:60;" onclick="event.stopPropagation();">
               <div style="display:flex; align-items:center; gap:6px;">
                 <span style="font-size:1.0rem;"><svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></span>
                 <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">크리에이터의 그 장소</span>
@@ -2105,58 +2105,43 @@
      if (bodySlot) {
       
 // 영상 창 아래: 장비·음식·의류 안내 대신 유튜브 채널 사진·이름·소개글 (대표님 11-06)
+// 색은 tokens.css만 쓴다: 바탕 bg-2 카드, 글자 tx-1~3, 채운 단추는 accent-fill 하나
+var cardCss = 'background:var(--bg-2); border:1px solid var(--line); border-radius:14px; padding:12px 14px;';
 var chImg = String(item.channelImg || '').replace(/=s\d+-c-k/, '=s176-c-k');
 var adBannersHtml = item.channelName ? `
-<div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:12px 14px; margin-top:4px; display:flex; flex-direction:column; gap:10px;">
+<div style="${cardCss} display:flex; flex-direction:column; gap:10px;">
   <div style="display:flex; align-items:center; gap:10px;">
-    ${chImg ? `<img src="${escapeHtml(chImg)}" alt="${escapeHtml(item.channelName)}" loading="lazy" referrerpolicy="no-referrer" style="width:46px; height:46px; border-radius:50%; object-fit:cover; flex-shrink:0; background:#1e293b;" />` : ''}
-    <div style="flex:1; min-width:0;">
-      <div style="font-size:0.9rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.channelName)}</div>
-      ${item.creator ? `<div style="font-size:0.66rem; color:#94a3b8; margin-top:2px;">낭만루트 크리에이터 · ${escapeHtml(item.creator)}</div>` : ''}
-    </div>
-    ${item.channelUrl ? `<a href="${escapeHtml(item.channelUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:0.72rem; font-weight:900; color:#000000; background:#ffffff; border-radius:8px; padding:6px 11px; text-decoration:none; flex-shrink:0;">채널 보기</a>` : ''}
+    ${chImg ? `<img src="${escapeHtml(chImg)}" alt="${escapeHtml(item.channelName)}" loading="lazy" referrerpolicy="no-referrer" style="width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0; background:var(--bg-3);" />` : ''}
+    <div style="flex:1; min-width:0; font-size:var(--fs-title); font-weight:800; color:var(--tx-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.channelName)}</div>
+    ${item.channelUrl ? `<a href="${escapeHtml(item.channelUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:var(--fs-meta); font-weight:800; color:var(--tx-1); border:1px solid var(--line-strong); border-radius:8px; padding:6px 11px; text-decoration:none; flex-shrink:0;">채널 보기</a>` : ''}
   </div>
-  ${item.channelDesc ? `<div class="okbm-ch-desc" onclick="this.style.webkitLineClamp='unset'; this.style.display='block';" style="font-size:0.76rem; line-height:1.55; color:#cbd5e1; white-space:pre-line; word-break:keep-all; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden; cursor:pointer;">${escapeHtml(item.channelDesc)}</div>` : ''}
+  ${item.channelDesc ? `<div onclick="this.style.webkitLineClamp='unset'; this.style.display='block';" style="font-size:var(--fs-body); line-height:1.6; color:var(--tx-2); white-space:pre-line; word-break:keep-all; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden; cursor:pointer;">${escapeHtml(item.channelDesc)}</div>` : ''}
 </div>
 ` : '';
 
+        var spotMeta = [cityName, elevStr ? ('해발 ' + elevStr) : '', subPoint].filter(Boolean).join(' · ');
         bodySlot.innerHTML = isGear ? `
-          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:4px;">
-            <span style="font-size:0.65rem; color:#cbd5e1; font-weight:800; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); padding:1.5px 6px; border-radius:4px; width:fit-content;">🎒 기어 랩 가이드</span>
-            <div style="font-size:1.05rem; font-weight:900; color:#fff;">${escapeHtml(item.title || '추천 기어 세팅')}</div>
-            <div style="font-size:0.75rem; color:#94a3b8; line-height:1.45; margin-top:2px;">${escapeHtml(item.viewDesc || '영상 속 추천 장비 조합과 실전 패킹 팁을 확인하세요.')}</div>
+          <div style="${cardCss} display:flex; flex-direction:column; gap:4px;">
+            <div style="font-size:var(--fs-section); font-weight:800; color:var(--tx-1);">${escapeHtml(item.title || '추천 기어 세팅')}</div>
+            <div style="font-size:var(--fs-body); color:var(--tx-2); line-height:1.5;">${escapeHtml(item.viewDesc || '영상 속 추천 장비 조합과 실전 패킹 팁을 확인하세요.')}</div>
           </div>
           ${adBannersHtml}
         ` : `
-          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <div style="${cardCss} display:flex; justify-content:space-between; align-items:center; gap:10px;">
             <div style="flex:1; min-width:0;">
-              <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
-                <span style="font-size:0.70rem; font-weight:800; color:#cbd5e1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px;">${escapeHtml(cityName)}</span>
-                <span style="font-size:1.05rem; font-weight:900; color:#ffffff;">${escapeHtml(mainName)}</span>
-                ${elevStr ? `<span style="font-size:0.78rem; color:#94a3b8; font-weight:800;">(${escapeHtml(elevStr)})</span>` : ''}
-              </div>
-              ${subPoint ? `<div style="font-size:0.68rem; color:#cbd5e1; font-weight:700; margin-top:2px;">  <svg viewBox="0 0 24 24" style="width:12px; height:12px; stroke:#38bdf8; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; vertical-align:-1.5px; margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${escapeHtml(subPoint)}</div>` : ''}
+              <div style="font-size:var(--fs-section); font-weight:800; color:var(--tx-1);">${escapeHtml(mainName)}</div>
+              ${spotMeta ? `<div style="font-size:var(--fs-meta); color:var(--tx-3); margin-top:3px; font-variant-numeric:tabular-nums;">${escapeHtml(spotMeta)}</div>` : ''}
             </div>
-            <button type="button" class="js-open-map-spot" data-close-modal="video" data-spot="${escapeHtml(navTargetSpot)}" style="background:#ffffff; color:#000000; border:none; border-radius:8px; padding:6px 12px; font-size:0.75rem; font-weight:900; cursor:pointer; flex-shrink:0; display:flex; align-items:center; gap:4px;">
-              <span>장소확인</span>
-            </button>
+            <button type="button" class="js-open-map-spot" data-close-modal="video" data-spot="${escapeHtml(navTargetSpot)}" style="background:var(--accent-fill); color:var(--on-accent); border:none; border-radius:8px; padding:8px 13px; font-size:var(--fs-meta); font-weight:800; cursor:pointer; flex-shrink:0;">장소확인</button>
           </div>
 
           ${onlyViewText ? `
-            <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-left:3px solid rgba(255,255,255,0.6); border-radius:8px; padding:10px 12px; font-size:0.78rem; line-height:1.55; color:#cbd5e1; margin-top:6px;">
-              <div style="font-weight:900; font-size:0.73rem; color:#ffffff; margin-bottom:3px; display:flex; align-items:center; gap:5px;">
-                <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:#34d399; stroke-width:2.2; flex-shrink:0;"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
-                <span>[영상 속 스팟 뷰 & 특징]</span>
-              </div>
-              <div${window.okbmSpotBriefAttr ? window.okbmSpotBriefAttr(matched) : ''}>${escapeHtml(onlyViewText)}</div>
+            <div style="${cardCss}">
+              <div style="font-size:var(--fs-meta); font-weight:700; color:var(--tx-3); margin-bottom:6px;">뷰 & 특징</div>
+              <div${window.okbmSpotBriefAttr ? window.okbmSpotBriefAttr(matched) : ''} style="font-size:var(--fs-body); line-height:1.6; color:var(--tx-2); word-break:keep-all;">${escapeHtml(onlyViewText)}</div>
             </div>` : ''}
 
           ${adBannersHtml}
-
-          <div style="border-radius:12px; border:1px dashed rgba(255,255,255,0.1); background:rgba(255,255,255,0.015); padding:10px 12px; text-align:center; margin-top:4px; display:flex; align-items:center; justify-content:center; gap:5px;">
-            <svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:none; stroke:#94a3b8; stroke-width:2; flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <span style="font-size:0.65rem; color:#94a3b8;">상세 들머리 주소(네비) 및 코스는 <strong>장소확인(전국지도)</strong>에서 확인 가능합니다.</span>
-          </div>
         `;
       }
 
