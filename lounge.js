@@ -2504,13 +2504,13 @@
     if (!n) return;
     const imgs = newsImgs(n);
     const link = n.link_url && HTTPS_RE.test(n.link_url) ? n.link_url : '';
-    // 본문 끝 줄이 유튜브 주소면 표지 바로 아래에 '유튜브에서 보기' 버튼을 두고, 본문은 그 밑으로 (대표님 11-06: 썸네일 밑에 유튜브 링크 바로, 설명은 그 밑으로)
+    // 본문 끝 줄이 유튜브 주소면 표지 대신 '영상 속 그 장소' 창처럼 유튜브 플레이어를 맨 위에 바로 띄우고 설명은 그 밑으로 (대표님 11-06). 표지는 홈 카드에만 쓴다
     const tp = tipParts(n.body);
-    const ytBtn = tp.yid ? `<a class="lm-btn main" style="display:flex;align-items:center;justify-content:center;gap:8px;margin:14px 0 0;text-decoration:none;background:#ff0033;color:#fff" href="https://youtu.be/${esc(tp.yid)}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" style="display:inline-block;width:0;height:0;border-style:solid;border-width:7px 0 7px 12px;border-color:transparent transparent transparent #fff;margin-right:2px"></span>유튜브에서 보기</a>` : '';
+    const player = tp.yid ? `<div style="width:100%;aspect-ratio:${tp.short ? '9/16' : '16/9'};${tp.short ? 'max-width:300px;margin:0 auto;' : ''}border-radius:12px;overflow:hidden;background:#000"><iframe title="YouTube 영상" src="https://www.youtube-nocookie.com/embed/${esc(tp.yid)}?playsinline=1&rel=0&autoplay=0" style="display:block;width:100%;height:100%;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>` : '';
     const bodyText = tp.yid ? tp.text : (n.body || '');
     openSheet(`<p class="lm-ssub" style="margin:0 0 4px">${esc(NEWS_KIND[n.kind] || '소식')} · ${esc(ago(n.created_at))}</p><h3 id="loungeSheetTitle">${esc(n.title)}</h3>
-      ${imgs.length ? `<div class="hm-view">${imgs.map(function (u, i) { return `<img src="${escapeHtml(okbmFastImageUrl(u))}" alt="${esc(n.title)} ${i + 1}/${imgs.length}" loading="lazy" decoding="async">`; }).join('')}</div>${imgs.length > 1 ? `<p class="lm-hint" style="text-align:center">옆으로 넘겨 보세요 · ${imgs.length}장</p>` : ''}` : ''}
-      ${ytBtn}
+      ${player}
+      ${!player && imgs.length ? `<div class="hm-view">${imgs.map(function (u, i) { return `<img src="${escapeHtml(okbmFastImageUrl(u))}" alt="${esc(n.title)} ${i + 1}/${imgs.length}" loading="lazy" decoding="async">`; }).join('')}</div>${imgs.length > 1 ? `<p class="lm-hint" style="text-align:center">옆으로 넘겨 보세요 · ${imgs.length}장</p>` : ''}` : ''}
       ${bodyText ? `<p class="lm-desc" style="margin-top:14px">${bodyHtml(bodyText)}</p>` : ''}
       ${link ? `<a class="lm-btn main" style="display:flex;align-items:center;justify-content:center;margin-top:16px;text-decoration:none" href="${escapeHtml(okbmSafeExternalUrl(link))}" target="_blank" rel="noopener noreferrer">자세히 보기</a>` : ''}
       ${D.admin ? `<div class="lmx-links" style="margin-top:14px"><button type="button" data-a="edit-news" data-v="${esc(n.id)}">수정</button><button type="button" class="red" data-a="del-news" data-v="${esc(n.id)}">삭제</button></div>` : ''}`,
