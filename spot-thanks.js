@@ -149,13 +149,14 @@
     });
   }
 
+  // 휴대폰 정보창(#mobileBottomSheet)이 onclick에서 stopPropagation을 해서 버블 단계로는 못 받는다. 캡처 단계로 받는다
   document.addEventListener('click', function (e) {
     var el = e.target && e.target.closest && e.target.closest('[data-okbm-thanks-send]');
     if (!el) return;
     e.preventDefault();
     e.stopPropagation();
     send(el);
-  });
+  }, true);
 
   window.okbmThanksSlotHtml = slotHtml;
   window.okbmThanksFill = fill;
