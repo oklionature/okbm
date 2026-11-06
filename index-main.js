@@ -119,7 +119,10 @@
             var sheet = document.getElementById('tripDetailSheetModal');
             if (sheet) sheet.remove();
           }
-          location.href = 'map.html?spot=' + encodeURIComponent(mapSpot.dataset.spot || '');
+          // 박지 번호가 있으면 번호로 연다. 이름만 넘기면 '무의도'처럼 이름이 겹치는 박지 중 다른 곳이 열린다
+          location.href = mapSpot.dataset.spotId
+            ? 'map.html?id=' + encodeURIComponent(mapSpot.dataset.spotId)
+            : 'map.html?spot=' + encodeURIComponent(mapSpot.dataset.spot || '');
         }
       }, true);
     }
@@ -2139,7 +2142,7 @@ var adBannersHtml = item.channelName ? `
               <div style="font-size:var(--fs-section); font-weight:800; color:var(--tx-1);">${escapeHtml(mainName)}</div>
               ${spotMeta ? `<div style="font-size:var(--fs-meta); color:var(--tx-3); margin-top:3px; font-variant-numeric:tabular-nums;">${escapeHtml(spotMeta)}</div>` : ''}
             </div>
-            <button type="button" class="js-open-map-spot" data-close-modal="video" data-spot="${escapeHtml(navTargetSpot)}" style="background:var(--accent-fill); color:var(--on-accent); border:none; border-radius:8px; padding:8px 13px; font-size:var(--fs-meta); font-weight:800; cursor:pointer; flex-shrink:0;">장소확인</button>
+            <button type="button" class="js-open-map-spot" data-close-modal="video" data-spot="${escapeHtml(navTargetSpot)}" data-spot-id="${escapeHtml(matched && matched.id != null ? String(matched.id) : '')}" style="background:var(--accent-fill); color:var(--on-accent); border:none; border-radius:8px; padding:8px 13px; font-size:var(--fs-meta); font-weight:800; cursor:pointer; flex-shrink:0;">장소확인</button>
           </div>
 
           ${onlyViewText ? `
