@@ -2050,7 +2050,7 @@
             <div style="width:100%; padding:10px 14px 8px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:var(--bg-0); border-bottom:1px solid var(--line); box-sizing:border-box; z-index:60;" onclick="event.stopPropagation();">
               <div style="display:flex; align-items:center; gap:6px;">
                 <span style="font-size:1.0rem;"><svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></span>
-                <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">크리에이터의 그 장소</span>
+                <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">낭만 크리에이터의 그 장소</span>
               </div>
               <button type="button" onclick="closeVideoDetailModal()" style="background:rgba(255, 255, 255, 0.08); border:1px solid rgba(255, 255, 255, 0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.95rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">✕</button>
             </div>
@@ -2113,9 +2113,9 @@ var adBannersHtml = item.channelName ? `
   <div style="display:flex; align-items:center; gap:10px;">
     ${chImg ? `<img src="${escapeHtml(chImg)}" alt="${escapeHtml(item.channelName)}" loading="lazy" referrerpolicy="no-referrer" style="width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0; background:var(--bg-3);" />` : ''}
     <div style="flex:1; min-width:0; font-size:var(--fs-title); font-weight:800; color:var(--tx-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.channelName)}</div>
+    ${item.channelUrl ? `<a href="${escapeHtml(item.channelUrl)}" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:6px; height:34px; padding:0 12px; border-radius:9px; background:#ff0000; color:#ffffff; font-size:var(--fs-meta); font-weight:800; text-decoration:none; flex-shrink:0;"><svg viewBox="0 0 28 20" style="width:20px; height:14px; flex-shrink:0;" aria-label="YouTube"><rect width="28" height="20" rx="5" fill="#ffffff"/><path d="M11.2 5.6v8.8l7.6-4.4z" fill="#ff0000"/></svg><span>채널 구경 가기</span></a>` : ''}
   </div>
   ${item.channelDesc ? `<div onclick="this.style.webkitLineClamp='unset'; this.style.display='block';" style="font-size:var(--fs-body); line-height:1.6; color:var(--tx-2); white-space:pre-line; word-break:keep-all; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden; cursor:pointer;">${escapeHtml(item.channelDesc)}</div>` : ''}
-  ${item.channelUrl ? `<a href="${escapeHtml(item.channelUrl)}" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:center; gap:8px; height:44px; border-radius:10px; background:#ff0000; color:#ffffff; font-size:var(--fs-body); font-weight:800; text-decoration:none;"><svg viewBox="0 0 28 20" style="width:24px; height:17px; flex-shrink:0;" aria-hidden="true"><rect width="28" height="20" rx="5" fill="#ffffff"/><path d="M11.2 5.6v8.8l7.6-4.4z" fill="#ff0000"/></svg><span>유튜브 채널 보기</span></a>` : ''}
 </div>
 ` : '';
 
