@@ -388,9 +388,10 @@
       });
     }).catch(function () { done(); gulupdoToast('잠시 뒤 다시 눌러 주세요.'); });
   }
-  // 확인 창: 포인트가 있으면 '10점 쓰고 들어가기', 모자라면 모으는 법만
+  // 확인 창: 처음 한 번은 무료, 두 번째부터 15점. 포인트가 모자라면 받는 법만(11-06 대표님)
   function gulupdoSheet(p, onBuy) {
-    var price = Number(p.price) || 15, bal = Math.max(0, Number(p.balance) || 0), short = bal < price;
+    var price = Number(p.price) || 15, bal = Math.max(0, Number(p.balance) || 0);
+    var firstFree = !!p.first_free, short = !firstFree && bal < price;
     var old = document.getElementById('gulupdoSheet'); if (old) old.remove();
     var wrap = document.createElement('div');
     wrap.id = 'gulupdoSheet';
@@ -399,11 +400,13 @@
       '<h3 id="gqTitle">' + (short ? '낭만 포인트가 모자라요' : '굴업도로 떠날까요?') + '</h3>' +
       '<p>' + (short
         ? '같이 접속하려면 낭만 포인트 ' + price + '점이 필요해요. 지금 ' + bal + '점이에요.<br>낭만 포인트는 피드 올리기, 댓글, 별 누르기, 출석, 설문 참여 등으로 모을 수 있어요.'
-        : '낭만 포인트 <b>' + price + '점</b>을 쓰고 굴업도로 떠나요.<br>지금 ' + bal + '점 → ' + (bal - price) + '점') + '</p>' +
-      (short ? '<p class="gq-s">자세한 받는 법은 낭만리포트 › 낭만 포인트에서 볼 수 있어요.</p>' : '<p class="gq-s">한 번 들어가면 1시간 동안은 다시 들어와도 빠지지 않아요.</p>') +   // 11-03 대표님: 정각 기준 → 낸 때부터 1시간(SUPABASE_H38)
+        : firstFree
+          ? '처음은 <b>무료</b>예요! 낭만 포인트는 빠지지 않아요.<br>다음부터는 낭만 포인트 ' + price + '점이 빠져요.'
+          : '낭만 포인트 <b>' + price + '점</b>을 쓰고 굴업도로 떠나요.<br>지금 ' + bal + '점 → ' + (bal - price) + '점') + '</p>' +
+      (short ? '<p class="gq-s">자세한 받는 법은 낭만리포트 › 낭만 포인트에서 볼 수 있어요.</p>' : '<p class="gq-s">한 번 들어가면 1시간 동안은 다시 들어와도 빠지지 않아요.</p>') +
       '<div class="gq-b">' + (short
         ? '<button type="button" data-gq="x">닫기</button><button type="button" data-gq="pt" class="on">받는 법 보기</button>'
-        : '<button type="button" data-gq="x">취소</button><button type="button" data-gq="buy" class="on">' + price + '점 쓰고 들어가기</button>') +
+        : '<button type="button" data-gq="x">취소</button><button type="button" data-gq="buy" class="on">' + (firstFree ? '무료로 들어가기' : price + '점 쓰고 들어가기') + '</button>') +
       '</div></div>';
     document.body.appendChild(wrap);
     wrap.addEventListener('click', function (e) {
