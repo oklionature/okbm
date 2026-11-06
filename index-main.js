@@ -2178,31 +2178,46 @@ var adBannersHtml = item.channelName ? `
       var body = document.getElementById('videoModalScrollBody');
       if (!body || body.__okbmSwipeBound) return;
       body.__okbmSwipeBound = true;
-      var sx = 0, sy = 0, tracking = false;
+      // 손가락을 따라 옆으로 움직이고, 70px 넘게 끌었다 놓으면 넘긴다. 장소확인·채널 구경 가기 단추에서 시작하면 끌지 않는다.
+      var sx = 0, sy = 0, dx = 0, mode = '';
+      function slideTo(x, ms) {
+        body.style.transition = ms ? ('transform ' + ms + 'ms cubic-bezier(0.16, 1, 0.3, 1), opacity ' + ms + 'ms ease') : 'none';
+        body.style.transform = x ? ('translateX(' + x + 'px)') : '';
+        body.style.opacity = x ? String(Math.max(0.35, 1 - Math.abs(x) / 500)) : '';
+      }
       body.addEventListener('touchstart', function(e) {
-        if (e.touches.length !== 1) { tracking = false; return; }
-        sx = e.touches[0].clientX; sy = e.touches[0].clientY; tracking = true;
+        mode = '';
+        if (e.touches.length !== 1 || (e.target.closest && e.target.closest('a, button'))) { mode = 'off'; return; }
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0;
       }, { passive: true });
-      body.addEventListener('touchend', function(e) {
-        if (!tracking) return;
-        tracking = false;
-        var t = e.changedTouches[0];
-        var dx = t.clientX - sx, dy = t.clientY - sy;
-        if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      body.addEventListener('touchmove', function(e) {
+        if (mode === 'off' || mode === 'y') return;
+        var mx = e.touches[0].clientX - sx, my = e.touches[0].clientY - sy;
+        if (!mode) {
+          if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+          mode = Math.abs(mx) > Math.abs(my) ? 'x' : 'y';
+          if (mode === 'y') return;
+        }
+        var n = (window.VIDEO_DATABASE || []).length;
+        var atEdge = (mx > 0 && window.__okbmVideoIdx <= 0) || (mx < 0 && window.__okbmVideoIdx >= n - 1);
+        dx = atEdge ? mx * 0.25 : mx; // 처음·끝에서는 조금만 끌리게
+        slideTo(dx, 0);
+      }, { passive: true });
+      body.addEventListener('touchend', function() {
+        if (mode !== 'x') { mode = ''; return; }
+        mode = '';
         var n = (window.VIDEO_DATABASE || []).length;
         var next = window.__okbmVideoIdx + (dx < 0 ? 1 : -1);
-        if (next < 0 || next >= n) return;
-        body.scrollTop = 0;
-        body.style.transition = 'none';
-        body.style.transform = 'translateX(' + (dx < 0 ? 36 : -36) + 'px)';
-        body.style.opacity = '0.4';
-        openVideoDetailModal(next).then(function() {
-          requestAnimationFrame(function() {
-            body.style.transition = 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease';
-            body.style.transform = 'translateX(0)';
-            body.style.opacity = '1';
+        if (Math.abs(dx) < 70 || next < 0 || next >= n) { slideTo(0, 220); return; }
+        var w = body.clientWidth || 360;
+        slideTo(dx < 0 ? -w : w, 160);
+        setTimeout(function() {
+          body.scrollTop = 0;
+          openVideoDetailModal(next).then(function() {
+            slideTo(dx < 0 ? w * 0.3 : -w * 0.3, 0);
+            requestAnimationFrame(function() { requestAnimationFrame(function() { slideTo(0, 240); }); });
           });
-        });
+        }, 150);
       }, { passive: true });
     }
 
