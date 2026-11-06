@@ -2047,6 +2047,7 @@
       if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_video_open'); // 기능 사용 세기 (H8)
       var db = window.VIDEO_DATABASE || [];
       var item = (typeof idxOrUrl === 'number') ? (db[idxOrUrl] || db[0]) : (db.find(function(v) { return v.videoUrl === idxOrUrl || v.videoId === idxOrUrl; }) || db[0]);
+      window.__okbmVideoIdx = Math.max(0, db.indexOf(item));
 
       var modal = document.getElementById('videoDetailModal');
       if (!modal) {
@@ -2161,6 +2162,48 @@ var adBannersHtml = item.channelName ? `
       var embedUrl = rawId ? ('https://www.youtube-nocookie.com/embed/' + rawId + '?playsinline=1&rel=0&autoplay=0') : '';
       if (iframe) iframe.src = embedUrl;
       if (modal) modal.style.display = 'flex';
+      okbmBindVideoSwipe(modal, db.length);
+    }
+
+    // 영상 창에서 좌우로 밀면 앞뒤 영상으로 넘어간다 (대표님 11-06: 닫고 다음 카드를 누르지 않게).
+    // 플레이어(유튜브 iframe) 위는 터치를 받을 수 없어 그 아래 박지·채널 칸에서 민다.
+    function okbmBindVideoSwipe(modal, total) {
+      var titleSpan = modal && modal.querySelector('#videoDetailSheet span[style*="font-weight:900"]');
+      if (titleSpan && !document.getElementById('videoModalCounter')) {
+        titleSpan.insertAdjacentHTML('afterend', '<span id="videoModalCounter" style="font-size:var(--fs-meta); font-weight:700; color:var(--tx-3); margin-left:4px; font-variant-numeric:tabular-nums;"></span>');
+      }
+      var counter = document.getElementById('videoModalCounter');
+      if (counter) counter.textContent = total > 1 ? ((window.__okbmVideoIdx + 1) + ' / ' + total) : '';
+
+      var body = document.getElementById('videoModalScrollBody');
+      if (!body || body.__okbmSwipeBound) return;
+      body.__okbmSwipeBound = true;
+      var sx = 0, sy = 0, tracking = false;
+      body.addEventListener('touchstart', function(e) {
+        if (e.touches.length !== 1) { tracking = false; return; }
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY; tracking = true;
+      }, { passive: true });
+      body.addEventListener('touchend', function(e) {
+        if (!tracking) return;
+        tracking = false;
+        var t = e.changedTouches[0];
+        var dx = t.clientX - sx, dy = t.clientY - sy;
+        if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+        var n = (window.VIDEO_DATABASE || []).length;
+        var next = window.__okbmVideoIdx + (dx < 0 ? 1 : -1);
+        if (next < 0 || next >= n) return;
+        body.scrollTop = 0;
+        body.style.transition = 'none';
+        body.style.transform = 'translateX(' + (dx < 0 ? 36 : -36) + 'px)';
+        body.style.opacity = '0.4';
+        openVideoDetailModal(next).then(function() {
+          requestAnimationFrame(function() {
+            body.style.transition = 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease';
+            body.style.transform = 'translateX(0)';
+            body.style.opacity = '1';
+          });
+        });
+      }, { passive: true });
     }
 
     function closeVideoDetailModal() {
