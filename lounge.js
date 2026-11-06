@@ -50,7 +50,9 @@
     x: '<path d="M6 6l12 12M18 6L6 18"/>',
     pin: '<path d="M12 22s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="10" r="2.5"/>',
     cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
-    pack: '<path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/>'
+    pack: '<path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/>',
+    tent: '<path d="M3 20L12 4l9 16H3z"/><path d="M12 20v-6"/>',
+    ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'
   };
 
   const TABS = ['이번 달 행사', '초보 가이드', '자유게시판', '박지 후기', '장비 세일 소식'];
@@ -66,9 +68,12 @@
     return TAB_ORDER[i];
   }
   // 사는이야기(life)는 글이 없어 투표(poll) 칸으로 바꿨다. 옛 life 글이 남아 있어도 이름은 보인다 (SUPABASE_H25)
-  const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['poll', '설문·투표'], ['suggestion', '건의']];
-  const CAT_LABEL = { backpacking: '백패킹이야기', life: '사는이야기', poll: '설문·투표', suggestion: '건의' };
+  const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['gear', '장비'], ['poll', '설문·투표'], ['suggestion', '건의']];
+  const CAT_LABEL = { backpacking: '백패킹이야기', life: '사는이야기', gear: '장비', poll: '설문·투표', suggestion: '건의' };
   const GEAR_CAT = { shelter: '텐트', sleep: '침낭', pack: '배낭', food: '식량', kitchen: '조리', wear: '의류', electronics: '전자', camp: '캠프', other: '기타' };
+  // 장비 말머리 (SUPABASE_I2): 질문·후기를 나눠 보고, 종류 줄로 거른다
+  const GEAR_KIND = [['question', '질문'], ['review', '후기']];
+  const GEAR_TABS = [['all', '전체'], ['shelter', '텐트'], ['sleep', '침낭·매트'], ['pack', '배낭'], ['kitchen', '조리'], ['wear', '의류'], ['electronics', '전자'], ['camp', '캠프'], ['food', '식량'], ['other', '기타']];
   const HOME_N = 3;
   const POST_PAGE = 20;
   const AV_COLORS = ['#7dd3fc', '#fda4af', '#86efac', '#fcd34d', '#c4b5fd', '#fdba74', '#a5b4fc', '#f9a8d4', '#99f6e4'];
@@ -90,7 +95,7 @@
   // revView: 박지 후기 창의 작은 탭 'recent'(최근 후기, 처음) | 'top'(평점순) | 'many'(후기 많은 순)
   // revBand: 평점순에서 고른 점수대 'all' | '45'(4.5 이상) | '4'(4점대) | '3'(3점대) | 'low'(3점 미만)
   // hub: 홈 라운지 알약 'board' | 'poll' | 'review' | 'guide'
-  const S = { tab: 0, wtab: 0, cat: 'all', revSpot: null, revView: 'recent', revBand: 'all', hub: 'board' };
+  const S = { tab: 0, wtab: 0, cat: 'all', gkind: 'question', gcat: 'all', revSpot: null, revView: 'recent', revBand: 'all', hub: 'board' };
   let timeSig = ''; // 신청·오픈 상태 요약 (renderAll·timeTick)
 
   // ---------- 날짜 ----------
@@ -568,6 +573,32 @@
       '.lm-cats{display:flex;gap:8px;overflow-x:auto;margin:16px 0 2px;scrollbar-width:none}',
       '.lm-cats button{flex:none;display:inline-flex;align-items:center;gap:4px;height:34px;padding:0 14px;border-radius:17px;background:#1c1c20;font-size:13.5px;font-weight:700;color:#c7c7cc;transition:background .15s,color .15s}',
       '.lm-cats button.on{background:var(--tx);color:#000}',
+      // 장비 말머리 (I2): 질문|후기 두 칸, 그 밑 종류 줄, 글 속 장비 이름표, 장비 모아 보기 시트
+      '.lm-seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:12px;padding:3px;border-radius:11px;background:#1c1c20}',
+      '.lm-seg button{height:36px;border-radius:8px;font-size:13.5px;font-weight:700;color:var(--sub);transition:background .15s,color .15s}',
+      '.lm-seg button.on{background:#2e2e35;color:var(--tx)}',
+      '.lm-sheet .lm-seg{background:#26262c}.lm-sheet .lm-seg button.on{background:#3a3a42}',
+      '.lm-gtabs{display:flex;gap:16px;overflow-x:auto;margin-top:8px;padding:0 2px;scrollbar-width:none}',
+      '.lm-gtabs::-webkit-scrollbar{display:none}',
+      '.lm-gtabs button{flex:none;height:36px;font-size:13px;font-weight:700;color:var(--sub);border-bottom:2px solid transparent}',
+      '.lm-gtabs button.on{color:var(--tx);border-bottom-color:var(--tx)}',
+      '.lm-gchip{max-width:100%;margin-top:8px;height:32px;padding:0 10px 0 8px;border-radius:8px;background:#17171b;border:1px solid rgba(255,255,255,.12);display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--tx)}',
+      '.lm-gchip span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.lm-gchip svg{flex:none;color:var(--sub)}.lm-gchip svg:first-child{color:var(--star)}',
+      '.lm-gchip:active{background:#26262c}',
+      '.lm-gmeta{margin:0;font-size:13px;color:var(--sub)}',
+      '.lm-mkt{display:flex;flex-direction:column;gap:8px;margin-top:10px}',
+      '.lm-mkt a.lm-out{height:52px;padding:0 14px;border-radius:12px;background:#26262c;color:var(--tx);text-decoration:none;display:flex;align-items:center;gap:12px}',
+      '.lm-mkt a.lm-out:active{background:#303038}',
+      '.lm-mkt i{flex:none;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-style:normal;font-size:14px;font-weight:800;color:#fff}',
+      '.lm-mkt span{flex:1;min-width:0}.lm-mkt b{display:block;font-size:14px;font-weight:700}.lm-mkt small{display:block;font-size:11.5px;color:var(--sub)}',
+      '.lm-mkt svg{flex:none;color:var(--sub)}',
+      '.lm-gl{width:100%;display:block;text-align:left;padding:12px 0;border-bottom:1px solid var(--div)}',
+      '.lm-gl:last-child{border-bottom:0}',
+      '.lm-gl b{display:block;font-size:14px;font-weight:800;line-height:1.45}.lm-gl small{display:block;margin-top:2px;font-size:12px;color:var(--sub)}',
+      '.lm-gpick{display:flex;align-items:center;gap:10px;margin-top:6px;padding:10px 4px 10px 12px;border-radius:12px;background:#26262c}',
+      '.lm-gpick span{flex:1;min-width:0}.lm-gpick b{display:block;font-size:14px;font-weight:700;line-height:1.4}.lm-gpick small{display:block;font-size:11.5px;color:var(--sub)}',
+      '.lm-gpick button{flex:none;width:44px;height:44px;display:grid;place-items:center;color:var(--sub)}',
       // 투표: 보기 버튼 → 고른 뒤 막대
       '.lm-poll{margin-top:10px;display:flex;flex-direction:column;gap:6px}',
       '.lm-popt{width:100%;min-height:42px;padding:9px 14px;border-radius:12px;border:1.5px solid #34343a;font-size:14px;font-weight:700;text-align:left;line-height:1.4;transition:border-color .15s,background .15s}',
@@ -747,7 +778,7 @@
   }
 
   // ---------- 데이터 (window.supabaseClient, RLS가 권한을 가른다) ----------
-  const POST_COLS = 'id,user_id,nickname,category,title,body,photos,is_private,likes_count,comments_count,created_at,poll_options,poll_ends_at,is_pinned';
+  const POST_COLS = 'id,user_id,nickname,category,title,body,photos,is_private,likes_count,comments_count,created_at,poll_options,poll_ends_at,is_pinned,gear_kind,gear_id,gear_name,gear_cat';
   const postsBy = {}; // cat → { rows, done, loading }
 
   async function q(builder) {
@@ -792,6 +823,22 @@
       .order('sort', { ascending: true }).order('created_at', { ascending: false }).limit(60));
     D.news = Array.isArray(rows) ? rows : [];
   }
+  // 게시판 칸 열쇠: 'all' · 분류 · 'gear|질문후기|종류'(장비 말머리) · 'gearof|id:장비id' 또는 'gearof|n:이름'(장비 모아 보기)
+  function boardKey() { return S.cat === 'gear' ? 'gear|' + S.gkind + '|' + S.gcat : S.cat; }
+  function gearOfKey(p) { return 'gearof|' + (p.gear_id ? 'id:' + p.gear_id : 'n:' + p.gear_name); }
+  function scopeQuery(b, key) {
+    if (key === 'all') return b;
+    const k = key.split('|');
+    if (k[0] === 'gear') {
+      b = b.eq('category', 'gear').eq('gear_kind', k[1]);
+      return k[2] && k[2] !== 'all' ? b.eq('gear_cat', k[2]) : b;
+    }
+    if (k[0] === 'gearof') {
+      const v = key.slice(7);
+      return v.indexOf('id:') === 0 ? b.eq('gear_id', v.slice(3)) : b.eq('category', 'gear').eq('gear_name', v.slice(2));
+    }
+    return b.eq('category', key);
+  }
   async function loadPosts(cat, more) {
     const c = sb();
     if (!c) throw new Error('no_client');
@@ -801,7 +848,7 @@
     st.loading = true;
     try {
       let b = c.from('lounge_posts').select(POST_COLS).order('created_at', { ascending: false }).limit(POST_PAGE);
-      if (key !== 'all') b = b.eq('category', key);
+      b = scopeQuery(b, key);
       // 더 보기 기준은 서버가 준 마지막 줄. 알림으로 끼워 넣은 옛 글·방금 쓴 글이 기준을 옮기지 않게 따로 둔다
       if (more && st.cursor) b = b.lt('created_at', st.cursor);
       const rows = await q(b);
@@ -815,7 +862,7 @@
         const extra = st.rows.filter(function (p) { return p.__extra && !list.some(function (x) { return x.id === p.id; }); });
         // 고정한 글(H52)은 첫 쪽에 없어도 따로 받아 맨 위에 둔다. 더 보기 기준(cursor)은 건드리지 않는다
         let pinB = c.from('lounge_posts').select(POST_COLS).eq('is_pinned', true).order('created_at', { ascending: false }).limit(5);
-        if (key !== 'all') pinB = pinB.eq('category', key);
+        pinB = scopeQuery(pinB, key);
         const pinned = (await q(pinB).catch(function () { return []; })) || [];
         const pinExtra = (Array.isArray(pinned) ? pinned : []).filter(function (p) { return !list.some(function (x) { return x.id === p.id; }) && !extra.some(function (x) { return x.id === p.id; }); })
           .map(function (p) { return Object.assign(p, { __extra: true }); });
@@ -1718,11 +1765,29 @@
   }
 
   // 자유게시판 (P3는 읽기. 쓰기·좋아요·댓글 쓰기는 P4)
+  const catLabel = function (p) {
+    if (p.category !== 'gear') return CAT_LABEL[p.category] || '';
+    const k = GEAR_KIND.find(function (x) { return x[0] === p.gear_kind; });
+    return '장비 ' + (k ? k[1] : '');
+  };
+  // 장비 이름: 목록 이름 끝의 영문 괄호를 떼고 보여 준다. 검색어는 '초경량·텐트' 같은 흔한 말도 뗀다
+  const gearShort = function (name) {
+    const s = String(name || '').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+    return s || String(name || '').trim();
+  };
+  const GEAR_STOP = new Set(['초경량', '백패킹', '백패킹텐트', '텐트', '1인용', '2인용', '3인용', '4인용', '3계절용', '4계절용', '3-4계절용']);
+  const gearTerm = function (name) {
+    const s = gearShort(name);
+    return s.split(' ').filter(function (w) { return !GEAR_STOP.has(w); }).join(' ') || s;
+  };
+  const gearChip = function (p) {
+    return `<button type="button" class="lm-gchip" data-a="gear-open" data-v="${esc(p.id)}" aria-label="${esc(gearShort(p.gear_name) + ', 이 장비 글과 중고 시세 보기')}">${ico(P.tent, 15)}<span>${esc(gearShort(p.gear_name))}</span>${ico(P.chevR, 14)}</button>`;
+  };
   function postRow(p) {
     return `<button type="button" class="lm-row lmh-row" data-a="lounge" data-v="2" data-id="${esc(p.id)}" aria-label="${esc(p.title + ', 라운지에서 열기')}">
       <div class="lmh-av">${av(p.nickname, p.user_id)}</div>
       <div class="lm-rb"><div class="lm-rt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}${p.is_pinned ? '<span class="lm-tag">고정</span>' : ''}</div>
-        <div class="lm-rs fx"><span>${esc([p.nickname, ago(p.created_at), CAT_LABEL[p.category]].filter(Boolean).join(' · '))}</span>${postPhotos(p).length ? ico(P.img, 13) : ''}</div></div>
+        <div class="lm-rs fx"><span>${esc([p.nickname, ago(p.created_at), catLabel(p)].filter(Boolean).join(' · '))}</span>${postPhotos(p).length ? ico(P.img, 13) : ''}</div></div>
       <span class="lmh-meta">${p.is_private ? ico(P.lock, 14) : ico(P.chat, 15) + (Number(p.comments_count) || 0)}</span></button>`;
   }
   // 본인 판단은 romantic-sync.js isCurrentUserId(아이디 표기 차이를 맞춤)
@@ -1868,9 +1933,10 @@
     const head = `<div class="lm-post" data-a="x" role="button" tabindex="0" aria-expanded="false">
       <div class="lm-lcol">${avUser(p.nickname, p.user_id)}${cc ? '<div class="lm-thread"></div>' : ''}</div>
       <div class="lm-rb">
-        <div class="lm-who">${whoName(p.nickname, p.user_id)}<span>${esc(ago(p.created_at))}</span><span>· ${esc(CAT_LABEL[p.category] || '')}</span></div>
+        <div class="lm-who">${whoName(p.nickname, p.user_id)}<span>${esc(ago(p.created_at))}</span><span>· ${esc(catLabel(p))}</span></div>
         <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}${p.is_pinned ? '<span class="lm-tag">고정</span>' : ''}</div>${p.body ? `<div class="lm-bd">${bodyHtml(p.body)}</div>` : ''}
         ${p.category === 'poll' ? pollHtml(p) : ''}
+        ${p.category === 'gear' && p.gear_name ? gearChip(p) : ''}
         ${photos.length ? `<div class="lm-photos ${photos.length > 1 ? 'multi' : ''}">${photos.map(function (u) { return `<img src="${escapeHtml(okbmFastImageUrl(u))}" alt="" loading="lazy" decoding="async">`; }).join('')}</div>` : ''}
         ${p.is_private ? `<div class="lm-private">${ico(P.lock, 13)}나와 운영팀만 볼 수 있어요 · 댓글 ${cc}</div>`
           : `<div class="lm-acts">${likeBtn(p)}<span class="lm-act">${ico(P.chat, 17)}<span>${cc}</span></span></div>`}
@@ -1885,13 +1951,34 @@
     return fold(p.id, head, body);
   }
   function boardListHtml() {
-    const list = visiblePosts(S.cat);
-    const st = postsBy[S.cat];
+    const key = boardKey();
+    const list = visiblePosts(key);
+    const st = postsBy[key];
     if (!st) return '<div class="lm-empty">불러오는 중…</div>';
-    let h = list.length ? list.map(postItem).join('') : '<div class="lm-empty">' + (S.cat === 'suggestion' ? '내가 쓴 건의가 없어요' : '첫 글을 기다리고 있어요') + '</div>';
+    const empty = S.cat === 'suggestion' ? '내가 쓴 건의가 없어요'
+      : S.cat === 'gear' ? (S.gkind === 'review' ? '아직 장비 후기가 없어요' : '아직 장비 질문이 없어요') : '첫 글을 기다리고 있어요';
+    let h = list.length ? list.map(postItem).join('') : '<div class="lm-empty">' + empty + '</div>';
     if (!st.done && st.rows.length) h += '<button type="button" class="lmh-more" data-a="more-posts">더 보기' + ico(P.chevR, 16) + '</button>';
     return h;
   }
+  // 장비 말머리를 고르면 '질문|후기' 두 칸과 종류 줄이 나온다 (I2)
+  const segHtml = function (a, cur, label, counts) {
+    return '<div class="lm-seg" role="radiogroup" aria-label="' + label + '">' + GEAR_KIND.map(function (k) {
+      const on = k[0] === cur;
+      return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="' + a + '" data-v="' + k[0] + '">' + esc(k[1]) + (counts ? ' <span data-n="' + k[0] + '">' + (counts[k[0]] == null ? '' : counts[k[0]]) + '</span>' : '') + '</button>';
+    }).join('') + '</div>';
+  };
+  function gearSubHtml() {
+    return '<div data-gear-sub' + (S.cat === 'gear' ? '' : ' hidden') + '>' + segHtml('gkind', S.gkind, '질문·후기')
+      + '<div class="lm-gtabs" role="radiogroup" aria-label="장비 종류">' + GEAR_TABS.map(function (c) {
+        const on = c[0] === S.gcat;
+        return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="gcat" data-v="' + c[0] + '">' + esc(c[1]) + '</button>';
+      }).join('') + '</div></div>';
+  }
+  const ctaLabel = function () {
+    if (S.cat !== 'gear') return '글쓰기';
+    return S.gkind === 'review' ? '장비 후기 쓰기' : '장비 질문하기';
+  };
   function paneBoard(full) {
     if (!full) {
       const list = visiblePosts('all').slice(0, HOME_N);
@@ -1901,7 +1988,8 @@
     return '<div class="lm-cats">' + CATS.map(function (c) {
       return '<button type="button" data-a="cat" data-v="' + c[0] + '" class="' + (S.cat === c[0] ? 'on' : '') + '">' + (c[0] === 'suggestion' ? ico(P.lock, 13) : '') + esc(c[1]) + '</button>';
     }).join('') + '</div>'
-      + '<button type="button" class="lmh-cta" data-a="new-post">' + ico(P.plus, 18) + '글쓰기</button>'
+      + gearSubHtml()
+      + '<button type="button" class="lmh-cta" data-a="new-post">' + ico(P.plus, 18) + '<span data-cta-lbl>' + esc(ctaLabel()) + '</span></button>'
       + '<div class="lmh-list">' + boardListHtml() + '</div>'
       + '<p class="lm-hint" style="margin-top:20px">건의는 나와 운영팀만 볼 수 있어요. 답변이 달리면 알림으로 알려 드려요.</p>';
   }
@@ -3324,7 +3412,7 @@
   // =====================================================================
   // 회원 쓰기 (P4): 글·사진·댓글·좋아요·박지 후기. 권한은 RLS, 닉네임·개수는 서버 트리거가 채운다
   // =====================================================================
-  const POST_CATS = [['backpacking', '백패킹이야기'], ['poll', '설문·투표'], ['suggestion', '건의']];
+  const POST_CATS = [['backpacking', '백패킹이야기'], ['gear', '장비'], ['poll', '설문·투표'], ['suggestion', '건의']];
   const POLL_ENDS = [['1', '1일'], ['3', '3일'], ['7', '7일'], ['0', '마감 없음']];
 
   // ----- 글 쓰기·고치기 -----
@@ -3353,6 +3441,47 @@
         <p class="lm-hint">한 사람이 하나를 골라요. 마감 전엔 바꿀 수 있고, 결과는 고른 뒤에 보여요. 누가 뭘 골랐는지는 안 보여요.</p>
       </div>`;
   }
+  // 장비 말머리: 질문|후기와 장비 고르기. 장비 목록(gears_master)에서 찾고, 없으면 적은 이름 그대로 (I2)
+  function gearPickHtml(st) {
+    const g = st.gear;
+    if (!g) return '';
+    const meta = [GEAR_CAT[g.cat] || '기타', g.weight_g ? (g.weight_g / 1000).toFixed(2) + 'kg' : (g.id ? '' : '목록에 없는 장비')].filter(Boolean).join(' · ');
+    let h = `<div class="lm-gpick"><span><b>${esc(gearShort(g.name))}</b><small>${esc(meta)}</small></span><button type="button" data-a="gear-unpick" aria-label="장비 다시 고르기">${ico(P.x, 18)}</button></div>`;
+    if (!g.id) { // 목록에 없는 장비는 종류를 직접 고른다
+      h += '<span class="lm-lbl">종류</span><div class="lm-chipline" role="radiogroup" aria-label="장비 종류">' + GEAR_TABS.slice(1).map(function (c) {
+        const on = c[0] === g.cat;
+        return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="pgcat" data-v="' + c[0] + '">' + esc(c[1]) + '</button>';
+      }).join('') + '</div>';
+    }
+    return h;
+  }
+  function gearFieldsHtml(p, cat, st) {
+    if (p) return p.category === 'gear' ? '<p class="lm-hint">' + esc(catLabel(p) + ' · ' + gearShort(p.gear_name)) + '. 장비와 질문·후기는 올린 뒤에 바꿀 수 없어요.</p>' : '';
+    return `<div data-gear-fields ${cat === 'gear' ? '' : 'hidden'}>
+        ${segHtml('pgkind', st.gkind, '질문·후기')}
+        <label class="lm-lbl" for="lmGearQ">어떤 장비예요? <b aria-hidden="true">*</b></label>
+        <div data-gear-pick>${gearPickHtml(st)}</div>
+        <input class="lm-in" id="lmGearQ" data-gear-q placeholder="장비 이름으로 찾기 (예: 호넷)"${st.gear ? ' hidden' : ''}>
+        <div class="lm-sugg" data-gear-sugg hidden></div>
+      </div>`;
+  }
+  function paintGearPick() {
+    if (!sheet || SH.kind !== 'post') return;
+    const box = sheet.querySelector('[data-gear-pick]');
+    if (box) box.innerHTML = gearPickHtml(SH);
+    const qi = sheet.querySelector('[data-gear-q]');
+    if (qi) {
+      qi.hidden = !!SH.gear;
+      if (!SH.gear) { qi.value = ''; qi.focus({ preventScroll: true }); }
+    }
+    tick();
+  }
+  function pickGear(g) {
+    SH.gear = g;
+    const sg = sheet && sheet.querySelector('[data-gear-sugg]');
+    if (sg) { sg.hidden = true; sg.innerHTML = ''; }
+    paintGearPick();
+  }
   function postFormHtml(p, cat) {
     const poll = cat === 'poll';
     return `<h3 id="loungeSheetTitle">${p ? '글 고치기' : '새 글'}</h3>
@@ -3363,6 +3492,7 @@
         }).join('')}</div>
         <p class="lm-hint" data-private-note ${cat === 'suggestion' ? '' : 'hidden'}>건의는 나와 운영팀만 볼 수 있어요. 답변이 달리면 알림으로 알려 드려요.</p>
         ${p ? '<p class="lm-hint">분류는 올린 뒤에 바꿀 수 없어요.</p>' : ''}
+        ${gearFieldsHtml(p, cat, SH)}
         <label class="lm-lbl" for="lmPostTitle"><span data-title-lbl>${poll ? '질문' : '제목'}</span> <b aria-hidden="true">*</b></label>${inp('lmPostTitle', 'title', p && p.title, 'maxlength="80" required data-autofocus placeholder="' + (poll ? '무엇을 물어볼까요?' : '제목') + '"')}
         ${pollFieldsHtml(p, cat)}
         ${field('lmPostBody', poll ? '설명 (선택)' : '내용', '<textarea class="lm-ta" id="lmPostBody" name="body" maxlength="3000" placeholder="' + (poll ? '덧붙일 말이 있으면 적어요' : '어떤 이야기를 나눌까요?') + '" style="min-height:' + (poll ? 72 : 140) + 'px">' + esc(p && p.body) + '</textarea>')}
@@ -3372,11 +3502,12 @@
         <button type="submit" class="lm-btn main">${p ? '저장' : '올리기'}</button>
       </form>`;
   }
-  function openPostForm(p, cat0) {
+  function openPostForm(p, cat0, pre) {
     if (needLogin('로그인하면 글을 쓸 수 있어요')) return;
     if (p && !isMine(p.user_id)) return;
     const cat = p ? p.category : (cat0 || (S.cat !== 'all' ? S.cat : 'backpacking'));
-    const st = { kind: 'post', id: p ? p.id : null, cat: cat, pollDays: 7, photos: postPhotos(p || {}).map(function (u) { return { url: u }; }) };
+    const st = { kind: 'post', id: p ? p.id : null, cat: cat, pollDays: 7, photos: postPhotos(p || {}).map(function (u) { return { url: u }; }),
+      gkind: (pre && pre.kind) || S.gkind, gear: (pre && pre.gear) || null };
     const prev = SH;
     SH = st; // thumbsHtml이 SH를 읽는다
     const html = postFormHtml(p, cat);
@@ -3420,6 +3551,13 @@
     if (st.photos.some(function (ph) { return ph.uploading; })) { toast('사진을 올리는 중이에요. 잠시 뒤 다시 눌러 주세요', true); return; }
     const photos = st.photos.map(function (ph) { return ph.url; }).filter(function (u) { return okbmSafeImageUrl(u); }).slice(0, 5);
     const row0 = { user_id: me, category: st.cat, title: title, body: body, photos: photos };
+    if (!st.id && st.cat === 'gear') {
+      if (!st.gear) { toast('어떤 장비인지 골라 주세요', true); const qi = f.querySelector('[data-gear-q]'); if (qi) qi.focus(); return; }
+      row0.gear_kind = st.gkind === 'review' ? 'review' : 'question';
+      row0.gear_id = st.gear.id || null;
+      row0.gear_name = String(st.gear.name).slice(0, 120);
+      row0.gear_cat = GEAR_CAT[st.gear.cat] ? st.gear.cat : 'other';
+    }
     if (!st.id && st.cat === 'poll') {
       const opts = Array.prototype.map.call(f.querySelectorAll('[name="opt"]'), function (el) { return String(el.value || '').trim(); }).filter(Boolean);
       if (opts.length < 2) { toast('보기를 2개 이상 적어 주세요', true); return; }
@@ -3438,7 +3576,9 @@
       if (st.id) {
         forEachPost(row.id, function (p) { Object.assign(p, row); });
       } else {
-        ['all', row.category].forEach(function (k) { if (postsBy[k]) postsBy[k].rows.unshift(Object.assign({}, row)); });
+        const keys = ['all', row.category];
+        if (row.category === 'gear') keys.push('gear|' + row.gear_kind + '|all', 'gear|' + row.gear_kind + '|' + row.gear_cat, gearOfKey(row));
+        keys.forEach(function (k) { if (postsBy[k]) postsBy[k].rows.unshift(Object.assign({}, row)); });
         if (!postsBy.all) postsBy.all = { rows: [row], done: true, loading: false };
         D.comments[row.id] = [];
         D.likeChecked.add(row.id);
@@ -3448,7 +3588,12 @@
       closeSheet();
       toast(st.id ? '글을 고쳤어요' : (row.category === 'suggestion' ? '건의를 보냈어요. 답변이 달리면 알려 드릴게요' : row.category === 'poll' ? '설문을 올렸어요' : '글을 올렸어요'));
       if (!st.id && S.cat !== 'all' && S.cat !== row.category) S.cat = 'all';
+      if (!st.id && S.cat === 'gear') { // 올린 글이 보이는 칸으로
+        S.gkind = row.gear_kind;
+        if (S.gcat !== row.gear_cat) S.gcat = 'all';
+      }
       renderBoard();
+      if (!postsBy[boardKey()]) loadPosts(boardKey()).then(renderBoardList).catch(function (err) { console.warn('[lounge.js:savePost]', err); });
       if (win && !st.id) {
         winTo(2);
         const posted = paneByTab(2);
@@ -3459,6 +3604,73 @@
       toast(writeErr(e), true);
       if (btn.isConnected) btn.disabled = false;
     }
+  }
+
+  // ----- 장비 모아 보기 (I2) -----
+  // 시세는 서버에 두지 않는다. 검색어를 장비 이름으로 채운 번개장터·당근·초캠장터 검색으로 이어 준다(초캠장터는 카페 회원만 보임)
+  const MARKETS = [
+    ['bunjang', '번개장터', '전국 중고 매물', '번', '#e8322d', 'https://m.bunjang.co.kr/search/products?q='],
+    ['daangn', '당근', '동네 직거래 매물', '당', '#ff6f0f', 'https://www.daangn.com/kr/buy-sell/?search='],
+    ['chocam', '초캠장터', '네이버 카페 회원만 볼 수 있어요', 'N', '#03c75a', 'https://m.cafe.naver.com/ca-fe/web/cafes/20486145/search/articles?query=']
+  ];
+  const marketUrl = function (m, term) { return m[5] + encodeURIComponent(term); };
+  function gearSheetHtml(st) {
+    const p = st.post, term = gearTerm(p.gear_name);
+    return `<h3 id="loungeSheetTitle">${esc(gearShort(p.gear_name))}</h3>
+      <p class="lm-gmeta" data-gear-meta>${esc(GEAR_CAT[p.gear_cat] || '장비')}</p>
+      <label class="lm-lbl" for="lmGearTerm" style="margin-top:20px">중고 시세 보러 가기 · 검색어</label>
+      ${inp('lmGearTerm', 'term', term, 'data-gear-term maxlength="60" enterkeyhint="done"')}
+      <div class="lm-mkt">${MARKETS.map(function (m) {
+        return `<a class="lm-out" data-mk="${m[0]}" href="${escapeHtml(marketUrl(m, term))}" target="_blank" rel="noopener noreferrer"><i style="background:${m[4]}">${m[3]}</i><span><b>${m[1]}</b><small>${m[2]}</small></span>${ico(P.ext, 16)}</a>`;
+      }).join('')}</div>
+      <p class="lm-hint">가격은 각 사이트에서 직접 확인해요. 낭만루트는 거래에 끼지 않아요.</p>
+      <span class="lm-lbl" style="margin-top:22px">이 장비 이야기</span>
+      ${segHtml('gsk', st.gk, '질문·후기', {})}
+      <div data-gear-list><div class="lm-empty">불러오는 중…</div></div>
+      <button type="button" class="lmh-cta" data-a="gear-write">${ico(P.plus, 18)}<span data-gw-lbl>${st.gk === 'review' ? '이 장비 후기 쓰기' : '이 장비 질문하기'}</span></button>`;
+  }
+  function paintMarketLinks(v) {
+    if (!sheet || SH.kind !== 'gear') return;
+    const term = String(v || '').trim() || gearTerm(SH.post.gear_name);
+    sheet.querySelectorAll('[data-mk]').forEach(function (a) {
+      const m = MARKETS.find(function (x) { return x[0] === a.dataset.mk; });
+      if (m) a.href = marketUrl(m, term);
+    });
+  }
+  function paintGearList() {
+    if (!sheet || SH.kind !== 'gear') return;
+    const st = SH, box = sheet.querySelector('[data-gear-list]');
+    if (!box) return;
+    const lbl = sheet.querySelector('[data-gw-lbl]');
+    if (lbl) lbl.textContent = st.gk === 'review' ? '이 장비 후기 쓰기' : '이 장비 질문하기';
+    if (st.err) { box.innerHTML = '<div class="lm-empty">불러오지 못했어요</div>'; return; }
+    if (!postsBy[st.key]) return;
+    const rows = visiblePosts(st.key);
+    GEAR_KIND.forEach(function (k) {
+      const n = sheet.querySelector('[data-n="' + k[0] + '"]');
+      if (n) n.textContent = String(rows.filter(function (p) { return p.gear_kind === k[0]; }).length);
+    });
+    const list = rows.filter(function (p) { return p.gear_kind === st.gk; });
+    box.innerHTML = list.length ? list.map(function (p) {
+      return `<button type="button" class="lm-gl" data-a="gear-post" data-v="${esc(p.id)}"><b>${esc(p.title)}</b><small>${esc([p.nickname, ago(p.created_at), (st.gk === 'review' ? '댓글 ' : '답변 ') + (Number(p.comments_count) || 0)].filter(Boolean).join(' · '))}</small></button>`;
+    }).join('') : '<div class="lm-empty">' + (st.gk === 'review' ? '아직 이 장비 후기가 없어요' : '아직 이 장비 질문이 없어요') + '</div>';
+  }
+  function openGear(p) {
+    const st = { kind: 'gear', key: gearOfKey(p), post: p, gk: p.gear_kind === 'review' ? 'review' : 'question' };
+    openSheet(gearSheetHtml(st), st);
+    if (p.gear_id) { // 목록 장비면 무게를 붙인다
+      ensureGears().then(function (all) {
+        const g = (all || []).find(function (x) { return x && String(x.id) === String(p.gear_id); });
+        const m = SH === st && sheet && sheet.querySelector('[data-gear-meta]');
+        if (g && m && Number(g.weight_g)) m.textContent = (GEAR_CAT[p.gear_cat] || '장비') + ' · 공식 무게 ' + (Number(g.weight_g) / 1000).toFixed(2) + 'kg';
+      });
+    }
+    if (postsBy[st.key]) { paintGearList(); return; }
+    loadPosts(st.key).then(function () { if (SH === st) paintGearList(); }).catch(function (err) {
+      console.warn('[lounge.js:openGear]', err); delete postsBy[st.key];
+      st.err = true;
+      if (SH === st) paintGearList();
+    });
   }
 
   // ----- 댓글 -----
@@ -3810,22 +4022,77 @@
           console.warn('[lounge.js:past]', err); toast('지난 행사를 불러오지 못했어요', true); t.disabled = false;
         });
         break;
-      case 'cat': {
-        S.cat = v;
-        t.parentElement.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === t); });
+      case 'cat':
+      case 'gkind':
+      case 'gcat': {
+        if (a === 'cat') S.cat = v; else if (a === 'gkind') S.gkind = v; else S.gcat = v;
+        t.parentElement.querySelectorAll('button').forEach(function (b) {
+          b.classList.toggle('on', b === t);
+          if (b.hasAttribute('aria-checked')) b.setAttribute('aria-checked', String(b === t));
+        });
+        const pane = t.closest('.lmw-pane');
+        if (pane) { // 장비 말머리면 질문|후기·종류 줄을 보이고 글쓰기 단추 이름을 바꾼다
+          const sub = pane.querySelector('[data-gear-sub]');
+          if (sub) sub.hidden = S.cat !== 'gear';
+          const cl = pane.querySelector('[data-cta-lbl]');
+          if (cl) cl.textContent = ctaLabel();
+        }
         tick();
-        if (postsBy[v]) { renderBoardList(); break; }
-        const l = t.closest('.lmw-pane') && t.closest('.lmw-pane').querySelector('.lmh-list');
+        const key = boardKey();
+        if (postsBy[key]) { renderBoardList(); break; }
+        const l = pane && pane.querySelector('.lmh-list');
         if (l) l.innerHTML = '<div class="lm-empty">불러오는 중…</div>';
-        loadPosts(v).then(renderBoardList).catch(function (err) {
-          console.warn('[lounge.js:cat]', err); delete postsBy[v];
+        loadPosts(key).then(renderBoardList).catch(function (err) {
+          console.warn('[lounge.js:cat]', err); delete postsBy[key];
           if (l && l.isConnected) l.innerHTML = '<div class="lm-empty">불러오지 못했어요</div>';
         });
         break;
       }
+      // 장비 모아 보기 (I2): 이름표를 누르면 시세 단추와 같은 장비 글
+      case 'gear-open': { const p = findPost(v); if (p) openGear(p); break; }
+      case 'gsk':
+        if (SH.kind !== 'gear') break;
+        SH.gk = v;
+        t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+        paintGearList();
+        break;
+      case 'gear-post': {
+        const p = findPost(v);
+        if (!p) break;
+        closeSheet(true);
+        const all = postsBy.all || (postsBy.all = { rows: [], done: false, loading: false, cursor: null });
+        if (!all.rows.some(function (x) { return x.id === p.id; })) {
+          all.rows.push(Object.assign({}, p, { __extra: true }));
+          all.rows.sort(function (x, y) { return String(y.created_at).localeCompare(String(x.created_at)); });
+        }
+        focusPostWhenReady(p.id);
+        break;
+      }
+      case 'gear-write': {
+        if (SH.kind !== 'gear') break;
+        const g = SH.post, gk = SH.gk;
+        closeSheet(true);
+        openPostForm(null, 'gear', { kind: gk, gear: { id: g.gear_id || '', name: g.gear_name, cat: g.gear_cat || 'other' } });
+        break;
+      }
+      case 'pgkind':
+        if (SH.kind !== 'post' || SH.id) break;
+        SH.gkind = v;
+        t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+        break;
+      case 'pgcat':
+        if (SH.kind !== 'post' || !SH.gear) break;
+        SH.gear.cat = v;
+        paintGearPick();
+        break;
+      case 'gear-unpick':
+        if (SH.kind !== 'post') break;
+        SH.gear = null;
+        paintGearPick();
+        break;
       case 'more-posts':
         t.disabled = true;
-        loadPosts(S.cat, true).then(renderBoardList).catch(function (err) { console.warn('[lounge.js:more-posts]', err); toast('더 불러오지 못했어요', true); t.disabled = false; });
+        loadPosts(boardKey(), true).then(renderBoardList).catch(function (err) { console.warn('[lounge.js:more-posts]', err); toast('더 불러오지 못했어요', true); t.disabled = false; });
         break;
       case 'more-reviews':
         t.disabled = true;
@@ -3884,6 +4151,7 @@
         SH.cat = v;
         t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
         sheet.querySelector('[data-private-note]').hidden = v !== 'suggestion';
+        sheet.querySelector('[data-gear-fields]').hidden = v !== 'gear';
         { // 투표면 제목→질문, 보기·마감 칸을 보인다
           const poll = v === 'poll';
           sheet.querySelector('[data-poll-fields]').hidden = !poll;
@@ -4049,11 +4317,13 @@
       }
       case 'gear-add': {
         const g = (window.GEARS_MASTER || []).find(function (x) { return x && String(x.id) === String(v); });
+        if (g && SH.kind === 'post') { pickGear({ id: String(g.id), name: String(g.item_name).slice(0, 120), cat: GEAR_CAT[g.category_id] ? String(g.category_id) : 'other', weight_g: Number(g.weight_g) || 0 }); break; }
         if (g) addItem({ gear_id: String(g.id), category_id: String(g.category_id || 'other'), name: String(g.item_name).slice(0, 120), weight_g: Number(g.weight_g) || 0, price_krw: 0, link_url: '' });
         break;
       }
       case 'gear-custom': {
         const qv = String((sheet.querySelector('[data-gear-q]') || {}).value || '').trim();
+        if (qv && SH.kind === 'post') { pickGear({ id: '', name: qv.slice(0, 120), cat: 'other', weight_g: 0 }); break; }
         if (qv) addItem({ gear_id: '', category_id: 'other', name: qv.slice(0, 120), weight_g: 0, price_krw: 0, link_url: '' });
         break;
       }
@@ -4080,6 +4350,7 @@
     else if (t.dataset.link != null && SH.items && SH.items[Number(t.dataset.link)]) SH.items[Number(t.dataset.link)].link_url = t.value.trim();
     else if (t.dataset.price != null && SH.items && SH.items[Number(t.dataset.price)]) SH.items[Number(t.dataset.price)].price_krw = Number(t.value) || 0;
     else if (t.dataset.w != null && SH.items && SH.items[Number(t.dataset.w)]) SH.items[Number(t.dataset.w)].weight_g = Number(t.value) || 0;
+    else if (t.hasAttribute('data-gear-term')) paintMarketLinks(t.value);
     else if (t.hasAttribute('data-gear-q')) { clearTimeout(searchTimer); searchTimer = setTimeout(function () { gearSuggest(t.value); }, 160); }
     else if (t.name === 'place' && SH.kind === 'event') spotSuggest(t.value);
   }
@@ -4127,7 +4398,7 @@
       D.pastEvents = null;
       loadTabs().then(function (r) {
         D.status = r.every(function (x) { return x.status === 'rejected'; }) ? 'error' : 'ready';
-        if (S.cat !== 'all') return loadPosts(S.cat).catch(function () {});
+        if (S.cat !== 'all') return loadPosts(boardKey()).catch(function () {});
       }).then(function () {
         if (!loggedIn() || !D.admin) closeSheet(true); // 권한이 사라지면 관리자 시트를 닫는다
         renderAll();
