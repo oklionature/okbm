@@ -892,6 +892,52 @@
       }
       window.closeMobileBottomSheet = closeMobileBottomSheet;
 
+      // 휴대폰 정보창은 X 단추 대신 아래로 밀어서 닫는다(대표님 11-07). 내용이 맨 위일 때만 끌리고,
+      // 90px 넘게 내리거나 빠르게 내리면 닫히고 아니면 제자리로 돌아간다. 가로로 미는 사진 줄은 건드리지 않는다.
+      (function initMobileSheetSwipeClose() {
+        var sheet = document.getElementById('mobileBottomSheet');
+        var content = document.getElementById('mobileSheetContent');
+        if (!sheet || !content) return;
+        var startY = 0, startX = 0, startT = 0, dy = 0, mode = '';
+        var reset = function() {
+          sheet.style.transition = '';
+          sheet.style.transform = '';
+        };
+        sheet.addEventListener('touchstart', function(e) {
+          if (!sheet.classList.contains('open') || e.touches.length !== 1) { mode = ''; return; }
+          startY = e.touches[0].clientY; startX = e.touches[0].clientX; startT = Date.now(); dy = 0;
+          mode = content.scrollTop <= 0 ? 'wait' : '';
+        }, { passive: true });
+        sheet.addEventListener('touchmove', function(e) {
+          if (!mode) return;
+          var y = e.touches[0].clientY - startY, x = e.touches[0].clientX - startX;
+          if (mode === 'wait') {
+            if (Math.abs(y) < 8 && Math.abs(x) < 8) return;
+            mode = (y > 0 && Math.abs(y) > Math.abs(x) && content.scrollTop <= 0) ? 'drag' : '';
+            if (!mode) return;
+            sheet.style.transition = 'none';
+          }
+          dy = Math.max(0, y);
+          sheet.style.transform = 'translateY(' + dy + 'px)';
+          if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+        var end = function() {
+          if (mode !== 'drag') { mode = ''; return; }
+          mode = '';
+          var fast = dy > 40 && dy / Math.max(1, Date.now() - startT) > 0.6;
+          if (dy > 90 || fast) {
+            reset();
+            closeMobileBottomSheet();
+          } else {
+            sheet.style.transition = '';
+            sheet.style.transform = '';
+          }
+          dy = 0;
+        };
+        sheet.addEventListener('touchend', end);
+        sheet.addEventListener('touchcancel', end);
+      })();
+
       function openPcSlidingDrawer(spot) {
         if (!spot) return;
         currentActiveSpot = spot;
@@ -2064,6 +2110,18 @@ function updateSmartResetButtons() {
         window.okbmOpenPhotoViewer(campBanPhotos(spot), idx, '야영금지 근거' + (credit ? ' · 사진 제보 ' + credit + '님' : ''));
       };
 
+      // 금지를 제보한 사람(camp_status_credit, 앱 아이디). 이름 줄의 '야영금지' 옆에 박지 등록자 '제보' 단추와 같은 모양으로 두고,
+      // 누르면 그 사람의 피드 모음이 열린다(대표님 11-07: 빨간 띠 안에 두면 보기 안 좋다)
+      function campBanCreditChipHtml(spot) {
+        if (!isCampBanned(spot)) return '';
+        var credit = String(spot.camp_status_credit || '').trim();
+        if (!credit) return '';
+        return '<button type="button" data-author="' + escapeHtml(credit) + '" onclick="event.stopPropagation(); window.okbmOpenSpotAuthor(this.dataset.author, \'\');" style="display:inline-flex; align-items:center; gap:4px; background:rgba(251,191,36,0.10); border:1px solid rgba(251,191,36,0.38); padding:2px 8px; border-radius:12px; cursor:pointer; flex-shrink:0; max-width:100%;" title="금지 제보한 사람 보기">' +
+          '<span style="font-size:0.63rem; color:#f59e0b; font-weight:800;">제보</span>' +
+          '<span style="font-size:0.70rem; color:#fde047; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(credit) + '</span>' +
+        '</button>';
+      }
+
       function campBanBannerHtml(spot) {
         if (!isCampBanned(spot)) return '';
         var rules = [
@@ -2078,13 +2136,8 @@ function updateSmartResetButtons() {
         var list = rules.map(function(r) {
           return '<div style="margin-top:6px;"><div style="font-weight:800; color:#fecdd3;">' + r[0] + '</div><div style="color:#fda4af;">' + r[1] + '</div></div>';
         }).join('');
-        // 제보한 사람의 앱 아이디는 제목 줄 오른쪽에 둔다(대표님 11-07). 사진이 없어도 보인다.
-        var credit = String(spot.camp_status_credit || '').trim();
         return '<div style="margin:6px 0 4px; padding:11px 12px; border-radius:10px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.45); color:#fecdd3; font-size:0.74rem; line-height:1.45;">' +
-          '<div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">' +
-            '<div style="font-weight:900; color:#fb7185; font-size:0.9rem; flex-shrink:0;">🚫 야영이 금지되었습니다</div>' +
-            (credit ? '<div style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.7rem; font-weight:700; color:#fda4af;">제보 ' + escapeHtml(credit) + '</div>' : '') +
-          '</div>' +
+          '<div style="font-weight:900; color:#fb7185; font-size:0.9rem;">🚫 야영이 금지되었습니다</div>' +
           campBanReasonHtml(spot, 'margin-top:6px; font-size:0.8rem;') +
           campBanPhotosHtml(spot) +
           '<div style="margin-top:8px; font-size:0.84rem; font-weight:800;">소중한 박지를 보호하기 위해 LNT 원칙을 꼭 지켜주세요.</div>' +
@@ -4038,12 +4091,13 @@ function updateSmartResetButtons() {
         if (isCampBanned(spot)) {
           return `
           <div style="position: relative; width: 100%;">
-            <div class="sheet-title-row js-center-spot" style="padding-right: ${isMobileSheet ? '36px' : '0'};" data-lat="${safeLat}" data-lng="${safeLng}" title="지도를 장소 중심으로 이동">
+            <div class="sheet-title-row js-center-spot" data-lat="${safeLat}" data-lng="${safeLng}" title="지도를 장소 중심으로 이동">
               <div class="compact-title">
                 ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
                 <span class="${diffClass}">${escapeHtml(cleanMainName)}</span>
                 ${spot.elevation ? '<span style="font-size:0.76rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">' + ICONS.MOUNTAIN + escapeHtml(okbmSpotElevLabel(spot.elevation)) + '</span>' : ''}
                 ${getSpotStatusBadges(spot)}
+                ${campBanCreditChipHtml(spot)}
               </div>
               <div class="js-spot-title-actions" style="display:flex; align-items:center; gap:6px; flex-shrink:0;" onclick="event.stopPropagation();">${closeBtn}</div>
             </div>
@@ -4054,12 +4108,13 @@ function updateSmartResetButtons() {
 
         return `
           <div style="position: relative; width: 100%;">
-            <div class="sheet-title-row js-center-spot" style="padding-right: ${isMobileSheet ? '36px' : '0'};" data-lat="${safeLat}" data-lng="${safeLng}" title="지도를 장소 중심으로 이동">
+            <div class="sheet-title-row js-center-spot" data-lat="${safeLat}" data-lng="${safeLng}" title="지도를 장소 중심으로 이동">
               <div class="compact-title">
                 ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
                 <span class="${diffClass}">${escapeHtml(cleanMainName)}</span>
                 ${spot.elevation ? '<span style="font-size:0.76rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">' + ICONS.MOUNTAIN + escapeHtml(okbmSpotElevLabel(spot.elevation)) + '</span>' : ''}
                 ${getSpotStatusBadges(spot)}
+                ${campBanCreditChipHtml(spot)}
                 ${!spot.gpxUrl && spot.__detailTier === 'member' ? `<button type="button" class="gpx-wanted-badge" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_wanted">${ICONS.GPX_TRACK}<span>GPX 구해요</span></button>` : ''}
               </div>
               <div class="js-spot-title-actions" style="display:flex; align-items:center; gap:6px; flex-shrink:0;" onclick="event.stopPropagation();">${closeBtn}</div>
