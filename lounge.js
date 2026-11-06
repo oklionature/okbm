@@ -2801,7 +2801,7 @@
         const top3 = poll && p.poll_kind === 'top3';
         const r = top3 ? D.top3[p.id] : D.poll[p.id];
         // TOP 3는 참여 수 옆에 지금 1위를 붙인다 (I6)
-        const meta = top3 ? (r ? [(Number(r.total) || 0) + '명', r.leader ? '1위 ' + t3Short(r.leader) : ''].filter(Boolean).join(' · ') : '참여하기')
+        const meta = top3 ? (r && Number(r.total) ? [(Number(r.total) || 0) + '명', r.leader ? '1위 ' + t3Short(r.leader) : ''].filter(Boolean).join(' · ') : '참여하기')
           : poll ? (r ? (Number(r.total) || 0) + '명 참여' : '참여하기') : [p.nickname, Number(p.comments_count) ? '댓글 ' + p.comments_count : ''].filter(Boolean).join(' · ');
         return hubRow('data-a="lounge" data-v="2" data-id="' + esc(p.id) + '"', top3 ? 'TOP 3' : poll ? '설문' : p.category === 'gear' ? '장비' : '', p.title, meta);
       }).join('');
