@@ -4827,6 +4827,11 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       }
     }
 
+    // 장수 표시는 맨 끝 플로깅 사진까지 센다(9장+플로깅이면 1/10 … 10/10)
+    var plogPhoto = String(log.ploggingPhoto || log.plogging_photo || '').trim();
+    var hasPlogSlide = plogPhoto.indexOf('https://') === 0 && photosList.length > 0;
+    var shownPhotoTotal = photosList.length + (hasPlogSlide ? 1 : 0);
+    var photoCountPillStyle = 'position:absolute; top:10px; right:10px; background:#0c1017; color:#ffffff; font-size:0.62rem; font-weight:800; font-family:\'Space Grotesk\', sans-serif; padding:2px 7px; border-radius:10px; border:1px solid rgba(255,255,255,0.15);';
     var photoSectionsHtml = photosList.map(function(pUrl, pIdx) {
       var curMemo = (photoMemos[pIdx] !== undefined && photoMemos[pIdx] !== null) ? window.okbmBlankAutoPackingCaption(photoMemos[pIdx], log.spot) : '';
       if (!curMemo && pIdx === 0 && fallbackMemo) {
@@ -4846,19 +4851,19 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       return '<div style="width:100%; display:flex; flex-direction:column; background:#000000;">' +
         '<div style="width:100%; overflow:hidden; background:#000000; position:relative; display:flex; align-items:center; justify-content:center;">' +
           '<img class="reel-photo-target" src="' + escapeHtml(okbmFastImageUrl(pUrl)) + '" loading="lazy" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
-          (photosList.length > 1 ? '<span style="position:absolute; top:10px; right:10px; background:#0c1017; color:#ffffff; font-size:0.62rem; font-weight:800; font-family:\'Space Grotesk\', sans-serif; padding:2px 7px; border-radius:10px; border:1px solid rgba(255,255,255,0.15);">' + (pIdx + 1) + ' / ' + photosList.length + '</span>' : '') +
+          (shownPhotoTotal > 1 ? '<span style="' + photoCountPillStyle + '">' + (pIdx + 1) + ' / ' + shownPhotoTotal + '</span>' : '') +
         '</div>' +
         memoMarkup +
       '</div>';
     }).join('');
 
     // H19 플로깅 인증: 사진들 맨 끝에 주운 쓰레기·봉투 사진 한 장 + '플로깅 인증' 표시
-    var plogPhoto = String(log.ploggingPhoto || log.plogging_photo || '').trim();
     var plogIcon = typeof window.okbmPlogIcon === 'function' ? window.okbmPlogIcon() : '';
     var ploggingSectionHtml = plogPhoto.indexOf('https://') === 0
       ? '<div class="okbm-plog-sec" style="width:100%; display:flex; flex-direction:column; background:#000000;">' +
           '<div style="width:100%; overflow:hidden; background:#000000; position:relative; display:flex; align-items:center; justify-content:center;">' +
             '<img class="reel-photo-target" src="' + escapeHtml(okbmFastImageUrl(plogPhoto)) + '" alt="플로깅 인증 사진" loading="lazy" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
+            (hasPlogSlide && shownPhotoTotal > 1 ? '<span style="' + photoCountPillStyle + '">' + shownPhotoTotal + ' / ' + shownPhotoTotal + '</span>' : '') +
             '<span class="okbm-plog-pill" style="position:absolute; top:10px; left:10px; display:inline-flex; align-items:center; gap:5px; padding:5px 10px 5px 8px; border-radius:999px; background:rgba(4,30,20,0.82); border:1px solid rgba(52,211,153,0.45); color:#a7f3d0; font-size:0.72rem; font-weight:800;">' + plogIcon + '플로깅 인증</span>' +
           '</div>' +
           '<div style="padding:10px 14px 14px 14px; background:#080b11; border-bottom:1px solid rgba(255,255,255,0.06); font-size:0.80rem; color:#cbd5e1; line-height:1.55;"><b style="color:#6ee7b7; font-weight:800;">플로깅했어요</b> · 박지 주변 쓰레기를 주워 왔어요.</div>' +
@@ -8170,6 +8175,23 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     });
   }
 
+  // 플로깅 사진은 현장 사진 맨 끝에 한 장 더 붙인다(대표님 11-06). 10장 제한과 따로라 9장이면 10장, 10장이면 11장이 된다.
+  // 현장 사진이 없는 기록은 빈 화면·READY SHOT 흐름을 그대로 두려고 붙이지 않는다.
+  function okbmFeedPlogPhoto(record) {
+    var u = String((record && (record.ploggingPhoto || record.plogging_photo)) || '').trim();
+    return u.indexOf('https://') === 0 ? u : '';
+  }
+  function okbmAppendPlogPhoto(list, record) {
+    var plog = okbmFeedPlogPhoto(record);
+    if (!plog || !list.length || list.indexOf(plog) !== -1) return list;
+    return list.concat([plog]);
+  }
+  var OKBM_PLOG_SLIDE_MEMO = '플로깅했어요 · 박지 주변 쓰레기를 주워 왔어요.';
+  function okbmPlogSlidePillHtml() {
+    var icon = typeof window.okbmPlogIcon === 'function' ? window.okbmPlogIcon() : '';
+    return '<span class="okbm-plog-pill" style="position:absolute; left:10px; bottom:30px; z-index:4; pointer-events:none; display:inline-flex; align-items:center; gap:5px; padding:5px 10px 5px 8px; border-radius:999px; background:rgba(4,30,20,0.82); border:1px solid rgba(52,211,153,0.45); color:#a7f3d0; font-size:0.72rem; font-weight:800;">' + icon + '플로깅 인증</span>';
+  }
+
   function okbmBuildEmptyFieldPhotoCtaHtml(spotName, recordId) {
     var cardPureId = String(recordId || '').trim();
     return '<div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:24px 18px; box-sizing:border-box; text-align:center; background:#000000; pointer-events:none;">' +
@@ -8192,7 +8214,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     '</div>';
   }
 
-  function okbmBuildReelPhotoFrontHtml(cardId, mediaItems, spotName, recordId) {
+  function okbmBuildReelPhotoFrontHtml(cardId, mediaItems, spotName, recordId, plogSrc) {
     var totalPhotosCount = Array.isArray(mediaItems) ? mediaItems.length : 0;
     var cardPureId = String(recordId || cardId || '').trim();
     var safeCardId = String(cardId || '');
@@ -8201,8 +8223,10 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     }
 
     var horizontalSlidesHtml = mediaItems.map(function(pUrl) {
+      var isPlogSlide = Boolean(plogSrc) && pUrl === plogSrc;
       return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
         '<img class="reel-photo-target" src="' + escapeHtml(okbmFastImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
+        (isPlogSlide ? okbmPlogSlidePillHtml() : '') +
       '</div>';
     }).join('');
 
@@ -8229,7 +8253,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var card = document.getElementById('feedSnapCard_' + cardIdEsc) || document.getElementById('feedSnapCard_' + cleanCardId);
     if (!card) return false;
 
-    var mediaItems = okbmCollectFeedFieldPhotos(rec);
+    var mediaItems = okbmAppendPlogPhoto(okbmCollectFeedFieldPhotos(rec), rec);
     var front = card.querySelector('.postcard-face-front');
     if (!front) return false;
 
@@ -8244,6 +8268,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       return normalizePhotoSrc(img.getAttribute('src') || '');
     }).filter(Boolean);
     var nextSrcs = mediaItems.map(function(u) { return normalizePhotoSrc(u); }).filter(Boolean);
+    var plogSrc = okbmFeedPlogPhoto(rec) && mediaItems[mediaItems.length - 1] === okbmFeedPlogPhoto(rec) ? normalizePhotoSrc(okbmFeedPlogPhoto(rec)) : '';
     if (!nextSrcs.length && existingSrcs.length) return false;
     var photosChanged = existingSrcs.join('\n') !== nextSrcs.join('\n');
 
@@ -8267,7 +8292,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           }
         }
       }
-      front.innerHTML = okbmBuildReelPhotoFrontHtml(cardIdEsc, nextSrcs, rec.spot || '나의 힐링 스팟', cleanCardId);
+      front.innerHTML = okbmBuildReelPhotoFrontHtml(cardIdEsc, nextSrcs, rec.spot || '나의 힐링 스팟', cleanCardId, plogSrc);
       var oldCount = card.querySelector('.okbm-feed-photo-count');
       if (oldCount && oldCount.parentNode) oldCount.parentNode.removeChild(oldCount);
       var countHtml = okbmFeedPhotoCountHtml(cardIdEsc, nextSrcs.length);
@@ -8285,6 +8310,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       ? rec.photoMemos.map(function(m) { return window.okbmBlankAutoPackingCaption(m, rec.spot); })
       : [memo120];
     while (photoMemosArr.length < nextSrcs.length) photoMemosArr.push('');
+    if (plogSrc) photoMemosArr[nextSrcs.length - 1] = OKBM_PLOG_SLIDE_MEMO;
     card.setAttribute('data-photo-memos', JSON.stringify(photoMemosArr));
     var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
     var memoEl = document.getElementById('feedPhotoMemoText_' + cardIdEsc) || document.getElementById('feedPhotoMemoText_' + cleanCardId);
@@ -8471,7 +8497,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var isStarred = Boolean(starsMap[cleanCardId] || starsMap[cardId] || starsMap[String(record.id)]);
     var parsedLikes = (record.likes_count !== undefined && record.likes_count !== null) ? Number(record.likes_count) : (record.likes !== undefined ? Number(record.likes) : Number(starCounts[cleanCardId] || 0));
     var starCount = isNaN(parsedLikes) ? 0 : parsedLikes;
-    var mediaItems = (photos && photos.length > 0) ? photos : [];
+    var mediaItems = okbmAppendPlogPhoto((photos && photos.length > 0) ? photos : [], record);
+    var plogSlideUrl = mediaItems.length > photos.length ? mediaItems[mediaItems.length - 1] : '';
     var totalPhotosCount = mediaItems.length;
 
     var recordUserId = String(record.userId || '').trim();
@@ -8638,8 +8665,10 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       '</div>';
     } else {
       horizontalSlidesHtml = mediaItems.map(function(pUrl) {
+        var isPlogSlide = Boolean(plogSlideUrl) && pUrl === plogSlideUrl;
         return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
           '<img class="reel-photo-target" src="' + escapeHtml(okbmFastImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
+          (isPlogSlide ? okbmPlogSlidePillHtml() : '') +
         '</div>';
       }).join('');
     }
@@ -8716,6 +8745,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       ? record.photoMemos.map(function(m) { return window.okbmBlankAutoPackingCaption(m, record.spot); })
       : [memo120];
     while (photoMemosArr.length < totalPhotosCount) photoMemosArr.push('');
+    if (plogSlideUrl) photoMemosArr[totalPhotosCount - 1] = OKBM_PLOG_SLIDE_MEMO;
     var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
     var shownPhotoMemo = initialPhotoMemo.trim();
     if (showFeedCredit) shownPhotoMemo = splitFeedPhotoCredit(shownPhotoMemo).body;
