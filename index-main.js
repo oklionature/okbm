@@ -2013,10 +2013,8 @@
       }
       if (railSection) railSection.style.display = '';
 
-      // 영상도 날마다 순서를 바꾼다. 누르면 원래 번호(idx)로 연다
-      var dailyVideos = window.okbmDailyOrder(db.map(function(item, idx) { return { item: item, idx: idx }; }), function(v) {
-        return v.item.videoId || v.item.url || v.item.title || v.idx;
-      }, 'video');
+      // 크리에이터 순위대로(sort_order) 보여 주므로 날마다 섞지 않는다 (대표님 11-06)
+      var dailyVideos = db.map(function(item, idx) { return { item: item, idx: idx }; });
       slider.innerHTML = dailyVideos.map(function(v) {
         var item = v.item, idx = v.idx;
         var spotTitle = item.spot || item.title || '백패킹 필드';
@@ -2052,7 +2050,7 @@
             <div style="width:100%; padding:10px 14px 8px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); box-sizing:border-box; z-index:60;" onclick="event.stopPropagation();">
               <div style="display:flex; align-items:center; gap:6px;">
                 <span style="font-size:1.0rem;"><svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></span>
-                <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">영상 속 그 장소</span>
+                <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">크리에이터의 그 장소</span>
               </div>
               <button type="button" onclick="closeVideoDetailModal()" style="background:rgba(255, 255, 255, 0.08); border:1px solid rgba(255, 255, 255, 0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.95rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">✕</button>
             </div>
@@ -2082,8 +2080,9 @@
       var rawSpotName = (item.spot || item.navSpot || '').trim();
       var isGear = !rawSpotName || rawSpotName === '장비' || rawSpotName === '기어' || rawSpotName.toUpperCase() === 'NONE';
 
-      var matched = null;
-      if (!isGear) {
+      // 박지 번호가 있으면 이름 대신 번호로 잇는다 (이름이 겹치는 박지가 있어서)
+      var matched = item.spotId ? (spotPool.find(function(s) { return String(s.id) === String(item.spotId); }) || null) : null;
+      if (!isGear && !matched) {
         var searchKey = rawSpotName.replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
         matched = spotPool.find(function(s) { 
           var n = String(s.name || s.spot_main || s.fullName || '').replace(/[\s\(\[\]\)]/g, '').toLowerCase(); 
@@ -2105,41 +2104,21 @@
 
      if (bodySlot) {
       
-var adBannersHtml = `
-<div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
-<a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
-<div style="display:flex; align-items:center; gap:8px;">
-<span style="display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v6H6zM4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/></svg></span>
-<div>
-<div style="font-size:0.77rem; font-weight:800; color:#f8fafc;">영상 속 백패킹 장비 확인하기</div>
-<div style="font-size:0.58rem; color:#94a3b8;">텐트 · 침낭 · 에어매트 · 경량 기어 스펙</div>
+// 영상 창 아래: 장비·음식·의류 안내 대신 유튜브 채널 사진·이름·소개글 (대표님 11-06)
+var chImg = String(item.channelImg || '').replace(/=s\d+-c-k/, '=s176-c-k');
+var adBannersHtml = item.channelName ? `
+<div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:12px 14px; margin-top:4px; display:flex; flex-direction:column; gap:10px;">
+  <div style="display:flex; align-items:center; gap:10px;">
+    ${chImg ? `<img src="${escapeHtml(chImg)}" alt="${escapeHtml(item.channelName)}" loading="lazy" referrerpolicy="no-referrer" style="width:46px; height:46px; border-radius:50%; object-fit:cover; flex-shrink:0; background:#1e293b;" />` : ''}
+    <div style="flex:1; min-width:0;">
+      <div style="font-size:0.9rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.channelName)}</div>
+      ${item.creator ? `<div style="font-size:0.66rem; color:#94a3b8; margin-top:2px;">낭만루트 크리에이터 · ${escapeHtml(item.creator)}</div>` : ''}
+    </div>
+    ${item.channelUrl ? `<a href="${escapeHtml(item.channelUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:0.72rem; font-weight:900; color:#000000; background:#ffffff; border-radius:8px; padding:6px 11px; text-decoration:none; flex-shrink:0;">채널 보기</a>` : ''}
+  </div>
+  ${item.channelDesc ? `<div class="okbm-ch-desc" onclick="this.style.webkitLineClamp='unset'; this.style.display='block';" style="font-size:0.76rem; line-height:1.55; color:#cbd5e1; white-space:pre-line; word-break:keep-all; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden; cursor:pointer;">${escapeHtml(item.channelDesc)}</div>` : ''}
 </div>
-</div>
-<span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;"> 장비보기</span>
-</a>
-<a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg></span>
-            <div>
-              <div style="font-size:0.77rem; font-weight:800; color:#f8fafc;">영상 속 비화식 음식 확인하기</div>
-              <div style="font-size:0.58rem; color:#94a3b8;">핫앤쿡 발열도시락 · 보온식단 · 전투식량 모음</div>
-            </div>
-          </div>
-          <span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">음식보기</span>
-        </a>
-
-        <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="#a78bfa" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg></span>
-            <div>
-              <div style="font-size:0.77rem; font-weight:800; color:#f8fafc;">영상 속 아웃도어 의류 확인하기</div>
-              <div style="font-size:0.58rem; color:#94a3b8;">우모복 · 방풍자켓 · 등산화 특가전</div>
-            </div>
-          </div>
-          <span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">특가보기 </span>
-        </a>
-      </div>
-    `;
+` : '';
 
         bodySlot.innerHTML = isGear ? `
           <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:4px;">
@@ -2200,7 +2179,7 @@ var adBannersHtml = `
       try {
         var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
         var targetKey = window.SUPABASE_ANON_KEY || '';
-        var featuredUrl = targetUrl + '/rest/v1/featured_videos?select=*&is_active=eq.true&order=id.asc';
+        var featuredUrl = targetUrl + '/rest/v1/featured_videos?select=*&is_active=eq.true&order=sort_order.asc,id.asc';
         var res = await (typeof window.okbmPublicFetch === 'function'
           ? window.okbmPublicFetch(featuredUrl)
           : fetch(featuredUrl, {
@@ -2218,8 +2197,14 @@ var adBannersHtml = `
               var vUrl = row.video_url || '';
               var yId = row.video_id || extractYouTubeVideoId(vUrl);
               return {
-                title: row.title || "영상 속 그 장소",
+                title: row.title || "크리에이터의 그 장소",
                 spot: row.spot_name || "",
+                spotId: row.spot_id || "",
+                creator: row.creator || "",
+                channelName: row.channel_name || "",
+                channelUrl: row.channel_url || "",
+                channelImg: row.channel_img || "",
+                channelDesc: row.channel_desc || "",
                 navSpot: row.spot_name || "",
                 viewDesc: row.view_desc || "",
                 videoUrl: vUrl,
