@@ -2019,6 +2019,13 @@
         var item = v.item, idx = v.idx;
         var spotTitle = item.spot || item.title || '백패킹 필드';
         var thumb = item.thumbUrl || (item.videoId ? ('https://img.youtube.com/vi/' + item.videoId + '/hqdefault.jpg') : '');
+        // 사진 밑에 유튜버 사진·채널 이름 한 줄 (대표님 11-06: 사진만 있어 밋밋하다)
+        var chImg = String(item.channelImg || '').replace(/=s\d+-c-k/, '=s88-c-k');
+        var chRow = item.channelName ? `
+            <div class="n-video-ch">
+              ${chImg ? `<img src="${escapeHtml(chImg)}" alt="" loading="lazy" referrerpolicy="no-referrer" />` : ''}
+              <span>${escapeHtml(item.channelName)}</span>
+            </div>` : '';
 
         return `
           <div class="n-video-single-card" data-okbm-idx="${Number(idx)}" onclick="openVideoDetailModal(Number(this.dataset.okbmIdx))">
@@ -2027,7 +2034,7 @@
               <div class="n-video-play-icon">
                 <div class="n-video-play-btn-circle">▶</div>
               </div>
-            </div>
+            </div>${chRow}
           </div>
         `;
       }).join('');
