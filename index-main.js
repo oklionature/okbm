@@ -7,12 +7,6 @@
     window.okbmSeoulDayKey = function() {
       return new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
     };
-    // 서울 기준 이번 주 월요일 날짜. 홈 인기 스팟은 한 주 동안 같은 5곳을 건다
-    window.okbmSeoulWeekKey = function() {
-      var d = new Date(Date.now() + 9 * 3600 * 1000);
-      d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
-      return 'w' + d.toISOString().slice(0, 10);
-    };
     window.okbmDailyOrder = function(list, keyOf, salt) {
       var day = window.okbmSeoulDayKey() + '|' + String(salt || '');
       var score = function(k) {
@@ -24,23 +18,6 @@
       };
       return (Array.isArray(list) ? list : []).map(function(item, i) {
         return { item: item, s: score(String(keyOf ? keyOf(item, i) : i)) };
-      }).sort(function(a, b) { return a.s - b.s; }).map(function(x) { return x.item; });
-    };
-    // 날마다 바뀌는 무작위 순서인데, 무게(별 수)가 클수록 앞에 올 확률이 높다.
-    // 별이 없는 글도 뽑힐 수 있게 무게는 별 수 + 1. (가중 무작위 정렬: -ln(u)/무게가 작은 순)
-    // period가 'week'면 날마다가 아니라 주마다 바뀐다
-    window.okbmDailyWeightedOrder = function(list, keyOf, weightOf, salt, period) {
-      var day = (period === 'week' ? window.okbmSeoulWeekKey() : window.okbmSeoulDayKey()) + '|' + String(salt || '');
-      var unit = function(k) {
-        var h = 2166136261;
-        var str = day + '|' + k;
-        for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
-        h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15;
-        return ((h >>> 0) + 1) / 4294967297;
-      };
-      return (Array.isArray(list) ? list : []).map(function(item, i) {
-        var w = Math.max(0, Number(weightOf ? weightOf(item) : 0) || 0) + 1;
-        return { item: item, s: -Math.log(unit(String(keyOf ? keyOf(item, i) : i))) / w };
       }).sort(function(a, b) { return a.s - b.s; }).map(function(x) { return x.item; });
     };
     window.smoothNavigate = function(url, e) {
@@ -1466,6 +1443,12 @@
       return !(typeof window.isFeedHiddenByUgc === 'function' && window.isFeedHiddenByUgc(f));
     }
 
+    // 낭만루트 공식 계정 글(romantic-history.js okbmFeedCreditAccount의 공식 쪽과 같은 기준)
+    function okbmIsOfficialFeed(f) {
+      var uid = String((f && (f.userId || f.user_id)) || '').trim();
+      return uid === 'official_romanticroute' || String((f && f.author) || '').trim() === '낭만루트';
+    }
+
     // 홈 첫 화면에는 글이 열 자를 넘는 후기만 건다('1'처럼 성의 없는 글은 빼기, 대표님 11-07).
     // 한 줄 메모와 사진별 메모 중 가장 긴 것으로 잰다(띄어쓰기는 한 칸으로)
     function okbmHeroMemoOk(f) {
@@ -1489,7 +1472,7 @@
 
     function renderCurrentHeroCard() {
       var records = (window.heroTopRecords || []).filter(function(f) {
-        return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f);
+        return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f) && !okbmIsOfficialFeed(f);
       });
       if (records.length !== (window.heroTopRecords || []).length) {
         window.heroTopRecords = records;
@@ -1994,20 +1977,19 @@
         });
 
         var heroKeyOf = function(f) { return f ? String(f.id || ((f.spot || '') + '_' + (f.date || ''))) : ''; };
-        // 인기 글(좋아요 순 30개) 안에서 주마다 다른 5개를 다른 순서로 보여 준다(대표님 11-07: 일주일 동안 걸림, 10개는 많아 5개).
-        // 별이 많은 글일수록 뽑히고 앞에 올 확률이 높다. 같은 박지는 이름이 달라도 별이 가장 많은 글 하나만 남긴 뒤 섞는다.
+        // 이주의 인기 피드: 좋아요 순위 그대로 위에서 5곳(대표님 11-07: 운 대신 순위, 10곳은 많아 5곳).
+        // 회원 프로필을 거는 칸이라 낭만루트 공식 글은 뺀다. 같은 박지는 이름이 달라도 좋아요가 가장 많은 글 하나만 남긴다
+        // (allCleanFeeds가 좋아요·최신 순이라 처음 만난 글이 그 박지의 1등)
         var heroSpotPool = getThemeSpotPool();
         var seenHeroSpots = {};
-        var heroOnePerSpot = photoFeedsOnly.filter(function(f) {
+        var nextHeroRecords = photoFeedsOnly.filter(function(f) {
+          if (okbmIsOfficialFeed(f)) return false;
           var k = okbmFeedSpotKey(f, heroSpotPool);
           if (!k) return true;
           if (seenHeroSpots[k]) return false;
           seenHeroSpots[k] = true;
           return true;
-        });
-        var nextHeroRecords = window.okbmDailyWeightedOrder(heroOnePerSpot, heroKeyOf, function(f) {
-          return (f && f.likes != null) ? f.likes : (f && f.likes_count) || 0;
-        }, 'hero', 'week').slice(0, 5);
+        }).slice(0, 5);
         var prevHeroKeys = (window.heroTopRecords || []).map(heroKeyOf).join('|');
         var nextHeroKeys = nextHeroRecords.map(heroKeyOf).join('|');
         window.__allLoadedFeeds = allCleanFeeds;
