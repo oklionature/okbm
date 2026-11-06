@@ -2504,14 +2504,14 @@
     if (!n) return;
     const imgs = newsImgs(n);
     const link = n.link_url && HTTPS_RE.test(n.link_url) ? n.link_url : '';
-    // 본문 끝 줄이 유튜브 주소면 매거진 카드 한 번 누르는 것만으로 바로 재생 (대표님 11-06: 썸네일 중간 단계 없이 한 번에 열자)
+    // 본문 끝 줄이 유튜브 주소면 표지 바로 아래에 '유튜브에서 보기' 버튼을 두고, 본문은 그 밑으로 (대표님 11-06: 썸네일 밑에 유튜브 링크 바로, 설명은 그 밑으로)
     const tp = tipParts(n.body);
-    const video = tp.yid ? `<div class="lm-tv${tp.short ? ' short' : ''}" data-yt="${esc(tp.yid)}" style="margin:0 0 12px"><iframe title="YouTube 영상" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen src="https://www.youtube-nocookie.com/embed/${esc(tp.yid)}?autoplay=1&playsinline=1&rel=0"></iframe></div>` : '';
+    const ytBtn = tp.yid ? `<a class="lm-btn main" style="display:flex;align-items:center;justify-content:center;gap:8px;margin:14px 0 0;text-decoration:none;background:#ff0033;color:#fff" href="https://youtu.be/${esc(tp.yid)}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" style="display:inline-block;width:0;height:0;border-style:solid;border-width:7px 0 7px 12px;border-color:transparent transparent transparent #fff;margin-right:2px"></span>유튜브에서 보기</a>` : '';
     const bodyText = tp.yid ? tp.text : (n.body || '');
     openSheet(`<p class="lm-ssub" style="margin:0 0 4px">${esc(NEWS_KIND[n.kind] || '소식')} · ${esc(ago(n.created_at))}</p><h3 id="loungeSheetTitle">${esc(n.title)}</h3>
-      ${video}
       ${imgs.length ? `<div class="hm-view">${imgs.map(function (u, i) { return `<img src="${escapeHtml(okbmFastImageUrl(u))}" alt="${esc(n.title)} ${i + 1}/${imgs.length}" loading="lazy" decoding="async">`; }).join('')}</div>${imgs.length > 1 ? `<p class="lm-hint" style="text-align:center">옆으로 넘겨 보세요 · ${imgs.length}장</p>` : ''}` : ''}
-      ${bodyText ? `<p class="lm-desc">${bodyHtml(bodyText)}</p>` : ''}
+      ${ytBtn}
+      ${bodyText ? `<p class="lm-desc" style="margin-top:14px">${bodyHtml(bodyText)}</p>` : ''}
       ${link ? `<a class="lm-btn main" style="display:flex;align-items:center;justify-content:center;margin-top:16px;text-decoration:none" href="${escapeHtml(okbmSafeExternalUrl(link))}" target="_blank" rel="noopener noreferrer">자세히 보기</a>` : ''}
       ${D.admin ? `<div class="lmx-links" style="margin-top:14px"><button type="button" data-a="edit-news" data-v="${esc(n.id)}">수정</button><button type="button" class="red" data-a="del-news" data-v="${esc(n.id)}">삭제</button></div>` : ''}`,
     { kind: 'news-view', id: n.id });
