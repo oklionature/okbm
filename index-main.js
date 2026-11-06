@@ -156,13 +156,9 @@
       }).length;
     }
 
+    // 사진 3장 이상인 글만 홈에 건다(이주의 인기 피드도 같음, 대표님 11-07: 2장짜리는 빼기)
     function feedHasGalleryPhotos(record) {
       return countFeedGalleryPhotos(record) > 2;
-    }
-
-    // 이주의 인기 피드는 사진 2장 이상이면 건다(대표님 11-07: 좋아요 많은 2장짜리 글도 올리기). 다른 홈 칸은 3장 이상 그대로
-    function heroHasPhotos(record) {
-      return countFeedGalleryPhotos(record) >= 2;
     }
 
     var THEME_SPOT_REGION_PREFIX_RE = /^(강원|경기|인천|충북|충남|전북|전남|경북|경남|제주|서울|세종|울산|부산|대구|광주|대전|전라남도|전라북도|경상남도|경상북도|충청남도|충청북도)\s+/;
@@ -1477,7 +1473,7 @@
 
     function renderCurrentHeroCard() {
       var records = (window.heroTopRecords || []).filter(function(f) {
-        return heroHasPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f) && !okbmIsOfficialFeed(f);
+        return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f) && !okbmIsOfficialFeed(f);
       });
       if (records.length !== (window.heroTopRecords || []).length) {
         window.heroTopRecords = records;
@@ -1984,7 +1980,7 @@
 
         var photoFeedsOnly = allCleanFeeds.filter(function(f) {
           try {
-            return heroHasPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f);
+            return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f);
           } catch (e2) {
             return false;
           }
@@ -1994,8 +1990,8 @@
         // 이주의 인기 피드: 좋아요 순위 그대로 위에서 5곳(대표님 11-07: 운 대신 순위, 10곳은 많아 5곳).
         // 회원 프로필을 거는 칸이라 낭만루트 공식 글은 뺀다. 같은 박지는 이름이 달라도 좋아요가 가장 많은 글 하나만 남긴다
         // (allCleanFeeds가 좋아요·최신 순이라 처음 만난 글이 그 박지의 1등)
-        // 다섯 자리 중 하나(셋째)는 플로깅 피드(대표님 11-07). 별이 많아 원래 순위 5곳 안에 든 플로깅 피드가 있으면 그대로 두고,
-        // 없으면 따로 받은 최근 플로깅 피드(fetchHeroPloggingFeeds) 중 별이 가장 많은 글을 셋째 자리에 넣는다
+        // 다섯 자리 중 하나(맨 앞)는 플로깅 피드(대표님 11-07). 별이 많아 원래 순위 5곳 안에 든 플로깅 피드가 있으면 그대로 두고,
+        // 없으면 따로 받은 최근 플로깅 피드(fetchHeroPloggingFeeds) 중 별이 가장 많은 글을 맨 앞에 넣는다
         var heroSpotPool = getThemeSpotPool();
         var seenHeroSpots = {};
         var takeHeroSpot = function(f) {
@@ -2007,7 +2003,7 @@
         };
         var heroOk = function(f) {
           try {
-            return heroHasPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f) && !okbmIsOfficialFeed(f);
+            return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f) && !okbmIsOfficialFeed(f);
           } catch (e3) {
             return false;
           }
@@ -2029,7 +2025,11 @@
           if (heroPlogging && heroKeyOf(f) === heroKeyOf(heroPlogging)) return false;
           return takeHeroSpot(f);
         }).slice(0, heroPlogging ? 4 : 5);
-        if (heroPlogging) nextHeroRecords.splice(Math.min(2, nextHeroRecords.length), 0, heroPlogging);
+        if (heroPlogging) nextHeroRecords.unshift(heroPlogging);
+        // 플로깅 피드는 맨 앞(대표님 11-07). 순위로 들어온 플로깅 피드도 앞으로 옮긴다
+        var heroPlogIdx = -1;
+        nextHeroRecords.forEach(function(f, i) { if (heroPlogIdx === -1 && f.ploggingPhoto) heroPlogIdx = i; });
+        if (heroPlogIdx > 0) nextHeroRecords.unshift(nextHeroRecords.splice(heroPlogIdx, 1)[0]);
         var prevHeroKeys = (window.heroTopRecords || []).map(heroKeyOf).join('|');
         var nextHeroKeys = nextHeroRecords.map(heroKeyOf).join('|');
         window.__allLoadedFeeds = allCleanFeeds;
