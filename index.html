@@ -964,7 +964,7 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.10.26" defer></script>
+    <script src="romantic-sync.js?v=2.10.27" defer></script>
     <script src="romantic-history.js?v=2.8.48" defer></script>
     <script src="my-badges.js?v=14" defer></script>
     <script src="romantic-points.js?v=17" defer></script>
@@ -1682,6 +1682,8 @@
     .n-video-ch { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
     .n-video-ch img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--bg-3); }
     .n-video-ch span { font-size: var(--fs-body); font-weight: 700; color: var(--tx-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* 영상 창: 옆으로 이어진 페이지 줄의 가로 스크롤바 숨김 */
+    .okbm-vtrack::-webkit-scrollbar { display: none; }
     .n-video-thumb-box {
       width: 100%;
       aspect-ratio: 16 / 9;
@@ -2594,7 +2596,7 @@ window.okbmIsHomePublicFeed = function(f) {
   <script src="home-layout.js?v=50"></script>
   <script src="readyshot-quick.js?v=1.0.1" defer></script>
   <script src="spot-tips.js?v=12" defer></script>
-  <script src="index-main.js?v=1.0.40"></script>
+  <script src="index-main.js?v=1.0.41"></script>
   <script src="home-metrics.js?v=5" defer></script>
   <script src="home-screen-guide.js?v=4" defer></script>
 

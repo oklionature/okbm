@@ -11333,6 +11333,57 @@ window.saveNicknameFromSettingsModal = async function() {
     return;
   }
 
+  // 서버 저장이 된 것을 확인한 뒤에만 화면·기기에 바꾼다(11-06: 서버가 거절해도 '변경되었습니다'가 떠서
+  // 앱을 다시 켜면 예전 닉네임으로 돌아갔다). 실패하면 14일 대기도 걸지 않는다.
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!targetUrl || !targetKey || !profile || !profile.id) {
+    triggerHaptic(20);
+    showToast('닉네임 변경에 실패했습니다. 다시 시도해주세요.', 'warn');
+    return;
+  }
+  var nickHeaders = okbmWriteRestHeaders({ Prefer: 'return=representation' });
+  if (!nickHeaders) return; // 로그인 안내는 okbmWriteRestHeaders가 띄운다
+
+  var saveBtn = document.querySelector('button[onclick="saveNicknameFromSettingsModal()"]');
+  if (saveBtn) saveBtn.disabled = true;
+  var savedNick = '';
+  var failMsg = '닉네임 변경에 실패했습니다. 다시 시도해주세요.';
+  try {
+    var nickRes = await fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(String(profile.id).trim()), {
+      method: 'PATCH',
+      headers: nickHeaders,
+      body: JSON.stringify({
+        nickname: clean,
+        last_nickname_changed_at: now,
+        updated_at: new Date().toISOString()
+      })
+    });
+    var nickText = await nickRes.text();
+    if (nickRes.ok) {
+      var rows = [];
+      try { rows = JSON.parse(nickText || '[]'); } catch (e) {}
+      // 바뀐 줄이 없으면(권한 없음) 실패, 서버가 이름을 되돌렸으면(검사 불통과) 실패로 본다
+      if (Array.isArray(rows) && rows[0] && okbmNormalizeNickname(rows[0].nickname) === clean) savedNick = clean;
+    } else if (nickRes.status === 401) {
+      failMsg = '';
+      okbmPromptLogin();
+    } else if (/nickname_reserved/.test(nickText)) {
+      failMsg = '사용할 수 없는 닉네임입니다.';
+    } else if (/nickname_taken/.test(nickText)) {
+      failMsg = '이미 사용 중인 닉네임입니다.';
+    }
+    if (!savedNick) console.warn('[saveNicknameFromSettingsModal patch]', nickRes.status, nickText);
+  } catch (patchErr) {
+    console.warn('[saveNicknameFromSettingsModal patch]', patchErr);
+  }
+  if (saveBtn) saveBtn.disabled = false;
+  if (!savedNick) {
+    triggerHaptic(20);
+    if (failMsg) showToast(failMsg, 'warn');
+    return;
+  }
+
   profile.nickname = clean;
   profile.lastNicknameChangedAt = now;
   if (!profile.createdAt) {
@@ -11353,23 +11404,6 @@ window.saveNicknameFromSettingsModal = async function() {
 
   var headerNick = document.getElementById('reportHeaderCurrentNick');
   if (headerNick) headerNick.innerText = clean;
-
-  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
-  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
-  if (targetUrl && targetKey && profile.id) {
-    var nickHeaders = okbmWriteRestHeaders({ Prefer: 'return=minimal' });
-    if (nickHeaders) {
-      fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(String(profile.id).trim()), {
-        method: 'PATCH',
-        headers: nickHeaders,
-        body: JSON.stringify({
-          nickname: clean,
-          last_nickname_changed_at: now,
-          updated_at: new Date().toISOString()
-        })
-      }).catch(function() {});
-    }
-  }
 
   updateHeaderAuthUI();
   triggerHaptic(15);
