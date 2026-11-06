@@ -160,6 +160,11 @@
       return countFeedGalleryPhotos(record) > 2;
     }
 
+    // 이주의 인기 피드는 사진 2장 이상이면 건다(대표님 11-07: 좋아요 많은 2장짜리 글도 올리기). 다른 홈 칸은 3장 이상 그대로
+    function heroHasPhotos(record) {
+      return countFeedGalleryPhotos(record) >= 2;
+    }
+
     var THEME_SPOT_REGION_PREFIX_RE = /^(강원|경기|인천|충북|충남|전북|전남|경북|경남|제주|서울|세종|울산|부산|대구|광주|대전|전라남도|전라북도|경상남도|경상북도|충청남도|충청북도)\s+/;
     var THEME_SPOT_PROVINCE_DO_RE = /^(경기|강원|충청|충남|충북|전라|전남|전북|경상|경남|경북)도$/;
 
@@ -1449,7 +1454,7 @@
       return uid === 'official_romanticroute' || String((f && f.author) || '').trim() === '낭만루트';
     }
 
-    // 홈 첫 화면에는 글이 열 자를 넘는 후기만 건다('1'처럼 성의 없는 글은 빼기, 대표님 11-07).
+    // 홈 첫 화면에는 글이 일곱 자 이상인 후기만 건다('1'·'굿!'처럼 성의 없는 글은 빼기, 대표님 11-07).
     // 한 줄 메모와 사진별 메모 중 가장 긴 것으로 잰다(띄어쓰기는 한 칸으로)
     function okbmHeroMemoOk(f) {
       var texts = [f && f.memo, f && f.oneLineMemo].concat(getRecordPhotoMemos(f));
@@ -1458,7 +1463,7 @@
         var n = String(t || '').replace(/\s+/g, ' ').trim().length;
         if (n > longest) longest = n;
       });
-      return longest > 10;
+      return longest >= 7;
     }
 
     // 박지 목록이 늦게 오면 박지를 못 찾아 찜 수가 빠지므로, 목록이 온 뒤 home-layout.js가 한 번 더 부른다
@@ -1472,7 +1477,7 @@
 
     function renderCurrentHeroCard() {
       var records = (window.heroTopRecords || []).filter(function(f) {
-        return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f) && !okbmIsOfficialFeed(f);
+        return heroHasPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f) && !okbmIsOfficialFeed(f);
       });
       if (records.length !== (window.heroTopRecords || []).length) {
         window.heroTopRecords = records;
@@ -1497,6 +1502,10 @@
           var emptyChip = document.getElementById('heroProfileChip');
           if (emptyBars) emptyBars.innerHTML = '';
           if (emptyChip) emptyChip.hidden = true;
+          var emptyTag = document.getElementById('heroPloggingTag');
+          if (emptyTag) emptyTag.hidden = true;
+          var emptyCard = document.getElementById('instaMainCard');
+          if (emptyCard) emptyCard.classList.remove('hero-plogging');
           var emptyStage = document.querySelector('.insta-stage-wrap');
           if (emptyStage) emptyStage.classList.add('okbm-hero-loading');
           window.currentHeroRecord = null;
@@ -1542,6 +1551,10 @@
       var defaultMemoText = (record.memo || record.oneLineMemo || '').trim();
 
       if (cardRoot) {
+        // 플로깅 피드는 사진 테두리를 녹색으로(대표님 11-07, 피드 목록의 플로깅 표시와 같은 색)
+        cardRoot.classList.toggle('hero-plogging', !!record.ploggingPhoto);
+        var ploggingTag = document.getElementById('heroPloggingTag');
+        if (ploggingTag) ploggingTag.hidden = !record.ploggingPhoto;
         cardRoot.dataset.photoMemos = JSON.stringify(photoMemosArr);
         cardRoot.dataset.defaultMemo = defaultMemoText || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
       }
@@ -1897,6 +1910,7 @@
         templateId: r.template_id || 1,
         likes: r.likes_count != null ? Number(r.likes_count) : 0,
         createdAt: r.created_at || '',
+        ploggingPhoto: r.plogging_photo || '',
         isPublished: r.is_published !== false,
         // RLS와 동일 기준(null = 비공개). 홈 공개 노출 판정에 사용.
         is_published: r.is_published === true,
@@ -1970,7 +1984,7 @@
 
         var photoFeedsOnly = allCleanFeeds.filter(function(f) {
           try {
-            return feedHasGalleryPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f);
+            return heroHasPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f);
           } catch (e2) {
             return false;
           }
@@ -1980,16 +1994,42 @@
         // 이주의 인기 피드: 좋아요 순위 그대로 위에서 5곳(대표님 11-07: 운 대신 순위, 10곳은 많아 5곳).
         // 회원 프로필을 거는 칸이라 낭만루트 공식 글은 뺀다. 같은 박지는 이름이 달라도 좋아요가 가장 많은 글 하나만 남긴다
         // (allCleanFeeds가 좋아요·최신 순이라 처음 만난 글이 그 박지의 1등)
+        // 다섯 자리 중 하나(셋째)는 플로깅 피드(대표님 11-07). 별이 많아 원래 순위 5곳 안에 든 플로깅 피드가 있으면 그대로 두고,
+        // 없으면 따로 받은 최근 플로깅 피드(fetchHeroPloggingFeeds) 중 별이 가장 많은 글을 셋째 자리에 넣는다
         var heroSpotPool = getThemeSpotPool();
         var seenHeroSpots = {};
-        var nextHeroRecords = photoFeedsOnly.filter(function(f) {
-          if (okbmIsOfficialFeed(f)) return false;
+        var takeHeroSpot = function(f) {
           var k = okbmFeedSpotKey(f, heroSpotPool);
           if (!k) return true;
           if (seenHeroSpots[k]) return false;
           seenHeroSpots[k] = true;
           return true;
+        };
+        var heroOk = function(f) {
+          try {
+            return heroHasPhotos(f) && window.okbmIsHomePublicFeed(f) && okbmHeroUgcVisible(f) && okbmHeroMemoOk(f) && !okbmIsOfficialFeed(f);
+          } catch (e3) {
+            return false;
+          }
+        };
+        var heroRankTop = photoFeedsOnly.filter(function(f) { return !okbmIsOfficialFeed(f); });
+        var heroRankSeen = {};
+        heroRankTop = heroRankTop.filter(function(f) {
+          var k = okbmFeedSpotKey(f, heroSpotPool);
+          if (!k) return true;
+          if (heroRankSeen[k]) return false;
+          heroRankSeen[k] = true;
+          return true;
         }).slice(0, 5);
+        var heroRankHasPlogging = heroRankTop.some(function(f) { return !!f.ploggingPhoto; });
+        var heroPlogging = heroRankHasPlogging ? null : ((window.__okbmHeroPloggingFeeds || []).filter(heroOk)[0] || null);
+        if (heroPlogging) takeHeroSpot(heroPlogging);
+        var nextHeroRecords = photoFeedsOnly.filter(function(f) {
+          if (okbmIsOfficialFeed(f)) return false;
+          if (heroPlogging && heroKeyOf(f) === heroKeyOf(heroPlogging)) return false;
+          return takeHeroSpot(f);
+        }).slice(0, heroPlogging ? 4 : 5);
+        if (heroPlogging) nextHeroRecords.splice(Math.min(2, nextHeroRecords.length), 0, heroPlogging);
         var prevHeroKeys = (window.heroTopRecords || []).map(heroKeyOf).join('|');
         var nextHeroKeys = nextHeroRecords.map(heroKeyOf).join('|');
         window.__allLoadedFeeds = allCleanFeeds;
@@ -2009,6 +2049,7 @@
       };
 
       try {
+      window.__okbmHeroPloggingFeeds = safeGetJSON('okbm_cached_hero_plogging', []) || [];
       var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []);
       if (Array.isArray(cachedFeeds) && cachedFeeds.length > 0) {
         applyFeedData(cachedFeeds);
@@ -2024,11 +2065,36 @@
         console.warn('[index.html:initDynamicHeroAndFeeds cache]', bootErr);
       }
 
+      // 이주의 인기 피드 플로깅 자리 후보: 최근에 올라온 플로깅 피드 10개(첫 그림은 위에서 읽은 저장본).
+      // 그중 별(좋아요)이 가장 많은 글이 자리를 받는다(같으면 최근 글). 별이 적어도 최근 글이면 걸린다(대표님 11-07)
+      var fetchHeroPloggingFeeds = async function(homeSelect) {
+        try {
+          if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return;
+          var url = window.SUPABASE_URL + '/rest/v1/feeds?select=' + encodeURIComponent(homeSelect) +
+            '&is_published=eq.true&plogging_photo=not.is.null&order=created_at.desc&limit=10';
+          var r = await (typeof window.okbmPublicFetch === 'function'
+            ? window.okbmPublicFetch(url)
+            : fetch(url, { headers: { 'apikey': window.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY } }));
+          if (!r.ok) return;
+          var rows = await r.json();
+          if (!Array.isArray(rows)) return;
+          window.__okbmHeroPloggingFeeds = rows.map(normalizeHomeFeedRow).sort(function(a, b) {
+            return (b.likes || 0) - (a.likes || 0) || String(b.createdAt).localeCompare(String(a.createdAt));
+          });
+          try { localStorage.setItem('okbm_cached_hero_plogging', JSON.stringify(window.__okbmHeroPloggingFeeds)); } catch (e) {}
+        } catch (e) {
+          console.warn('[fetchHeroPloggingFeeds]', e);
+        }
+      };
+
       setTimeout(async function() {
         try {
           var rawRows = null;
           var homeSelect = window.FEEDS_HOME_SELECT || 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,instagram,likes_count,is_published,feed_type,created_at,items,template_id';
+          // 플로깅 피드를 알아보려고(녹색 테두리·플로깅 자리) 플로깅 사진 칸도 받는다
+          if (homeSelect.indexOf('plogging_photo') === -1) homeSelect += ',plogging_photo';
           var guestMode = !(typeof isUserLoggedIn === 'function' && isUserLoggedIn());
+          var ploggingJob = fetchHeroPloggingFeeds(homeSelect);
 
           if (!guestMode && window.supabaseClient) {
             var sbRes = await window.supabaseClient
@@ -2060,6 +2126,7 @@
             }
           }
 
+          await ploggingJob;
           if (Array.isArray(rawRows) && rawRows.length > 0) {
             var normalizedFeeds = rawRows.map(normalizeHomeFeedRow);
 
