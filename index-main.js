@@ -2026,7 +2026,7 @@
         var chImg = String(item.channelImg || '').replace(/=s\d+-c-k/, '=s88-c-k');
         var chRow = item.channelName ? `
             <div class="n-video-ch">
-              ${chImg ? `<img src="${escapeHtml(chImg)}" alt="" loading="lazy" referrerpolicy="no-referrer" />` : ''}
+              ${chImg ? `<img src="${escapeHtml(okbmSafeImageUrl(chImg))}" alt="" loading="lazy" referrerpolicy="no-referrer" />` : ''}
               <span>${escapeHtml(item.channelName)}</span>
             </div>` : '';
 
@@ -2150,9 +2150,9 @@ var chImg = String(item.channelImg || '').replace(/=s\d+-c-k/, '=s176-c-k');
 var adBannersHtml = item.channelName ? `
 <div style="${cardCss} display:flex; flex-direction:column; gap:10px;">
   <div style="display:flex; align-items:center; gap:10px;">
-    ${chImg ? `<img src="${escapeHtml(chImg)}" alt="${escapeHtml(item.channelName)}" loading="lazy" referrerpolicy="no-referrer" style="width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0; background:var(--bg-3);" />` : ''}
+    ${chImg ? `<img src="${escapeHtml(okbmSafeImageUrl(chImg))}" alt="${escapeHtml(item.channelName)}" loading="lazy" referrerpolicy="no-referrer" style="width:44px; height:44px; border-radius:50%; object-fit:cover; flex-shrink:0; background:var(--bg-3);" />` : ''}
     <div style="flex:1; min-width:0; font-size:var(--fs-title); font-weight:800; color:var(--tx-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(item.channelName)}</div>
-    ${item.channelUrl ? `<a href="${escapeHtml(item.channelUrl)}" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:6px; height:34px; padding:0 12px; border-radius:9px; background:#ff0000; color:#ffffff; font-size:var(--fs-meta); font-weight:800; text-decoration:none; flex-shrink:0;"><svg viewBox="0 0 28 20" style="width:20px; height:14px; flex-shrink:0;" aria-label="YouTube"><rect width="28" height="20" rx="5" fill="#ffffff"/><path d="M11.2 5.6v8.8l7.6-4.4z" fill="#ff0000"/></svg><span>채널 구경 가기</span></a>` : ''}
+    ${item.channelUrl ? `<a href="${escapeHtml(okbmSafeExternalUrl(item.channelUrl))}" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; gap:6px; height:34px; padding:0 12px; border-radius:9px; background:#ff0000; color:#ffffff; font-size:var(--fs-meta); font-weight:800; text-decoration:none; flex-shrink:0;"><svg viewBox="0 0 28 20" style="width:20px; height:14px; flex-shrink:0;" aria-label="YouTube"><rect width="28" height="20" rx="5" fill="#ffffff"/><path d="M11.2 5.6v8.8l7.6-4.4z" fill="#ff0000"/></svg><span>채널 구경 가기</span></a>` : ''}
   </div>
   ${item.channelDesc ? `<div onclick="this.style.webkitLineClamp='unset'; this.style.display='block';" style="font-size:var(--fs-body); line-height:1.6; color:var(--tx-2); white-space:pre-line; word-break:keep-all; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden; cursor:pointer;">${escapeHtml(item.channelDesc)}</div>` : ''}
 </div>
@@ -4191,7 +4191,7 @@ var adBannersHtml = item.channelName ? `
             var photos = getTripPhotosList(t);
             if (!photos.length && typeof getRegisteredSpotPhotos === 'function') photos = getRegisteredSpotPhotos(t.spotName) || [];
             var thumb = photos[0]
-              ? `<img src="${escapeHtml(photos[0])}" alt="" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;">`
+              ? `<img src="${escapeHtml(okbmSafeImageUrl(photos[0]))}" alt="" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;">`
               : `<svg viewBox="0 0 24 24" style="width:26px; height:26px; fill:none; stroke:#475569; stroke-width:1.8;"><path d="M3 20L12 4l9 16z"/><path d="M12 20v-5"/></svg>`;
             return `
               <div data-trip-id="${escapeHtml(t.tripId)}" onclick="document.getElementById('tripJoinListModal').remove(); openTripDetailModal(this.dataset.tripId);" style="background:#0c0d10; border:1px solid ${isClosed ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)'}; border-radius:14px; padding:12px; display:flex; align-items:center; gap:12px; cursor:pointer; opacity:${isClosed ? '0.65' : '1'};">
