@@ -102,7 +102,7 @@ BEGIN
         WHEN (g.items->0->>'lvl')::int = 1 THEN '제보해 주신 ' || (g.items->0->>'name') || ', 가 보고 싶다는 첫 사람이 생겼어요.'
         ELSE '제보해 주신 ' || (g.items->0->>'name') || ', ' || (g.items->0->>'lvl') || '명이 가 보고 싶대요.'
       END;
-      v_body := NULL;
+      v_body := '';  -- user_notifications.body는 NOT NULL
     ELSE
       v_title := CASE WHEN g.metric = 'gpx'
         THEN '올려 주신 GPX ' || jsonb_array_length(g.items) || '곳으로 길을 찾은 사람이 또 늘었어요.'

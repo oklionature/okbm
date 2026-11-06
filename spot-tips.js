@@ -263,6 +263,8 @@
     sheet.setAttribute('aria-label', name + ' 후기 남기기');
     sheet.innerHTML = '<h6>' + esc(fromVisit ? name + ' 다녀오셨군요!' : name + ' 후기') + '</h6>' +
       '<p>해당하는 것만 눌러 주세요. 다음 사람에게 큰 도움이 돼요.</p>' +
+      // 고마워요(I5): 이 박지를 알려 준 사람에게 한 줄. 관리자 등록 박지면 빈 칸(spot-thanks.js)
+      (typeof window.okbmThanksSlotHtml === 'function' ? window.okbmThanksSlotHtml(id, 'review') : '') +
       '<div class="stp-body">' +
         '<div class="stp-g"><small>별점 <i>선택</i></small><div class="stp-stars">' +
           [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-stp-star="' + n + '" aria-label="' + n + '점"' + (n <= sheetStar ? ' class="on"' : '') + '>★</button>'; }).join('') +
@@ -281,6 +283,7 @@
     setTimeout(function () { if (sheet) sheet.classList.add('on'); }, 20);
     dim.addEventListener('click', closeSheet);
     sheet.addEventListener('click', onSheetClick);
+    if (typeof window.okbmThanksFill === 'function') window.okbmThanksFill(id);
     var gpxIn = sheet.querySelector('[data-stp-gpx-file]');
     if (gpxIn) gpxIn.addEventListener('change', function () {
       var f = gpxIn.files && gpxIn.files[0];

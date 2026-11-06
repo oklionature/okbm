@@ -4045,6 +4045,10 @@ function updateSmartResetButtons() {
 
       // 정보창 '제보 ○○' 단추. 회원 계정 없는 '관리자' 박지는 프로필 대신 대표 인스타로 보낸다(대표님 11-04).
       window.okbmOpenSpotAuthor = function(authorName, userId) {
+        // 고마워요(I5): 정보창 '제보' 단추로 연 프로필이면 어느 박지에서 왔는지 남겨 프로필에 '알려 준 분이에요' 줄을 띄운다
+        var thxUid = String(userId || '').trim();
+        window.__okbmThanksCtx = (thxUid && currentActiveSpot) ? { spotId: String(currentActiveSpot.id).trim(), uid: thxUid } : null;
+        if (window.__okbmThanksCtx && typeof window.okbmThanksFill === 'function') window.okbmThanksFill(window.__okbmThanksCtx.spotId);
         if (String(authorName || '').trim() === '관리자' && !String(userId || '').trim()) {
           try { window.open('https://instagram.com/oklionnature', '_blank', 'noopener,noreferrer'); } catch (e) { console.warn('[map.html:okbmOpenSpotAuthor]', e); }
           return;
@@ -4224,6 +4228,11 @@ function updateSmartResetButtons() {
                     ${ICONS.GPX_TRACK} ${isGpxActive ? '지도에서 등산로 선 지우기' : (spot.gpxCredit ? escapeHtml(spot.gpxCredit) + '님이 등록하신 GPX 확인하기' : '등산로 GPX 코스 지도에 표시')}
                   </button>
                   ${isGpxActive ? `<button type="button" class="btn-gpx-send" data-gpx-export="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" data-metric-click="feat_spot_gpx_export_open">${ICONS.GPX_TRACK} 내 등산 앱으로 보내기 (가민·트랭글)</button>` : ''}
+                  ${isGpxActive && typeof window.okbmThanksSlotHtml === 'function' ? (function() {
+                    // 고마워요(I5): 선을 켰을 때만 GPX 올린 사람에게 한 줄. 관리자·공식 GPX면 빈 칸으로 남는다
+                    setTimeout(function() { window.okbmThanksFill(sId); }, 0);
+                    return window.okbmThanksSlotHtml(sId, 'gpx');
+                  })() : ''}
                 ` : ''}
               </div>
 

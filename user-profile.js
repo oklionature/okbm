@@ -171,6 +171,37 @@
     return f.n;
   }
 
+  // 받은 고마워요 합계(I5): 사람마다 한 번 받아 두고 오면 머리를 다시 그린다
+  var THANKS = {};
+  function thanksOf(m) {
+    var uid = String(m.dataset.userId || '').trim();
+    if (!uid || typeof window.okbmUserThanksCount !== 'function') return null;
+    if (!(uid in THANKS)) {
+      THANKS[uid] = null;
+      window.okbmUserThanksCount(uid).then(function (n) {
+        if (n === null) { delete THANKS[uid]; return; }
+        THANKS[uid] = n;
+        var mm = modal();
+        if (mm && String(mm.dataset.userId || '').trim() === uid) paintHeader(mm);
+      });
+    }
+    return THANKS[uid];
+  }
+  // 정보창 '제보' 단추로 열었으면 그 박지(map-main.js okbmOpenSpotAuthor가 남긴 것)를 창에 붙여 둔다. 한 번 쓰고 비운다
+  function thanksSpotOf(m) {
+    var ctx = window.__okbmThanksCtx;
+    if (ctx && ctx.uid === String(m.dataset.userId || '').trim()) {
+      m.dataset.thxSpot = ctx.spotId;
+      window.__okbmThanksCtx = null;
+    }
+    return String(m.dataset.thxSpot || '');
+  }
+  window.okbmThanksAfterSend = function (to) {
+    if (to in THANKS) delete THANKS[to];
+    var mm = modal();
+    if (mm && String(mm.dataset.userId || '').trim() === String(to)) paintHeader(mm);
+  };
+
   function headerHtml(m) {
     var d = m.dataset, uid = String(d.userId || '').trim(), self = flag(d.isSelf);
     var hideYear = !self && flag(d.hideYear), hideTotal = !self && flag(d.hideTotal);
@@ -181,6 +212,15 @@
     var cells = (hideTotal ? '' : cell('userModalRouteCountBadge', st && st.total, '기록')) +
       (hideYear ? '' : cell('userModalYearCount', st && st.year, '올해')) +
       (hideTotal ? '' : cell('', st && st.plog, '플로깅'));
+    // 고마워요: 박지·GPX를 알려 줘서 받은 수. 누구에게나 보이고 누가 보냈는지는 숨긴다
+    var thx = thanksOf(m);
+    cells += '<div class="mr-st"><b>' + (thx === null ? '–' : num(thx)) + '</b><small>고마워요</small></div>';
+    var thxSpot = thanksSpotOf(m);
+    var thxLine = '';
+    if (thxSpot && !self && uid && typeof window.okbmThanksSlotHtml === 'function') {
+      thxLine = window.okbmThanksSlotHtml(thxSpot, 'profile', uid);
+      if (typeof window.okbmThanksFill === 'function') setTimeout(function () { window.okbmThanksFill(thxSpot); }, 0);
+    }
     var sns = typeof window.renderUserSnsBadgesHtml === 'function' ? window.renderUserSnsBadgesHtml(d.insta || '', d.yt || '', d.blog || '', false, '') : '';
     var photo = String(d.photo || '');
     var btns = '';
@@ -203,6 +243,7 @@
       (d.bio ? '<div class="up-bio">' + esc(d.bio) + '</div>' : '') +
       '<div class="up-sns">' + sns + '</div>' +
       btns +
+      thxLine +
     '</div>';
   }
 
@@ -433,6 +474,9 @@
         break;
       case 'more':
         if (typeof window.openRouterProfileMoreMenu === 'function') window.openRouterProfileMoreMenu(uid, author, String(m.dataset.feedId || ''), e);
+        break;
+      case 'thanks':
+        if (typeof window.okbmThanksSend === 'function') window.okbmThanksSend(el);
         break;
       case 'photo':
         if (m.dataset.photo && typeof window.previewUserPhotoLarge === 'function') window.previewUserPhotoLarge(m.dataset.photo);

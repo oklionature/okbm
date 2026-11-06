@@ -14607,7 +14607,8 @@ var OKBM_NOTIF_ICON = {
   user: '<circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M19 8v6"/><path d="M22 11h-6"/>',
   bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16"/>',
-  bookmark: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>'
+  bookmark: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
+  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'
 };
 function okbmNotifKindStyle(kind) {
   if (kind === 'feed_like') return { icon: 'star', fill: '#e11d48', soft: 'rgba(225,29,72,0.16)', ink: '#ff4d6d' };
@@ -14618,6 +14619,8 @@ function okbmNotifKindStyle(kind) {
   // '내 덕분에' 알림(I4): 내 GPX를 연 사람·내가 제보한 박지를 담은 사람이 고비를 넘었을 때
   if (kind === 'thanks_gpx') return { icon: 'route', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
   if (kind === 'thanks_bookmark') return { icon: 'bookmark', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
+  // 고마워요 받음(I5): 보낸 사람 얼굴 + 하트
+  if (kind === 'thanks_received') return { icon: 'heart', fill: '#e11d48', soft: 'rgba(225,29,72,0.16)', ink: '#ff4d6d' };
   return { icon: 'bell', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
 }
 function okbmNotifSvg(name, px, color) {
