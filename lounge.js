@@ -2504,9 +2504,9 @@
     if (!n) return;
     const imgs = newsImgs(n);
     const link = n.link_url && HTTPS_RE.test(n.link_url) ? n.link_url : '';
-    // 본문 끝 줄이 유튜브 주소면 위쪽에 큰 썸네일을 두고 누르면 그 자리에서 재생 (대표님 11-06: 낭만매거진 '낭만루트 사용·만든 이유' 영상을 한 번 눌러 바로 보게)
+    // 본문 끝 줄이 유튜브 주소면 매거진 카드 한 번 누르는 것만으로 바로 재생 (대표님 11-06: 썸네일 중간 단계 없이 한 번에 열자)
     const tp = tipParts(n.body);
-    const video = tp.yid ? `<div class="lm-tv${tp.short ? ' short' : ''}" data-yt="${esc(tp.yid)}" style="margin:0 0 12px">${tipPoster(tp.yid)}</div>` : '';
+    const video = tp.yid ? `<div class="lm-tv${tp.short ? ' short' : ''}" data-yt="${esc(tp.yid)}" style="margin:0 0 12px"><iframe title="YouTube 영상" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen src="https://www.youtube-nocookie.com/embed/${esc(tp.yid)}?autoplay=1&playsinline=1&rel=0"></iframe></div>` : '';
     const bodyText = tp.yid ? tp.text : (n.body || '');
     openSheet(`<p class="lm-ssub" style="margin:0 0 4px">${esc(NEWS_KIND[n.kind] || '소식')} · ${esc(ago(n.created_at))}</p><h3 id="loungeSheetTitle">${esc(n.title)}</h3>
       ${video}

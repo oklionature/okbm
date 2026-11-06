@@ -12,7 +12,7 @@ VALUES (
   'magazine',
   '낭만루트 만든 이유와 사용방법',
   E'낭만루트를 만든 이유와\n사용방법을\n자세히 확인해 보세요.\n\nhttps://youtu.be/B2ZgFTrZOyo',
-  '["https://i.ytimg.com/vi/B2ZgFTrZOyo/hqdefault.jpg"]'::jsonb,
+  '["https://img.romanticroute.kr/magazine/cover_intro_v1.png"]'::jsonb,
   -100,
   true
 );
