@@ -2050,7 +2050,7 @@
             <div style="width:100%; padding:10px 14px 8px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:var(--bg-0); border-bottom:1px solid var(--line); box-sizing:border-box; z-index:60;" onclick="event.stopPropagation();">
               <div style="display:flex; align-items:center; gap:6px;">
                 <span style="font-size:1.0rem;"><svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></span>
-                <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">낭만 크리에이터의 그 장소</span>
+                <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">낭만! 크리에이터의 그 장소</span>
               </div>
               <button type="button" onclick="closeVideoDetailModal()" style="background:rgba(255, 255, 255, 0.08); border:1px solid rgba(255, 255, 255, 0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.95rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">✕</button>
             </div>
