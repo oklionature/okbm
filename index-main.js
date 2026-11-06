@@ -2061,7 +2061,7 @@
             <div style="width:100%; padding:10px 14px 8px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:var(--bg-0); border-bottom:1px solid var(--line); box-sizing:border-box; z-index:60;" onclick="event.stopPropagation();">
               <div style="display:flex; align-items:center; gap:6px;">
                 <span style="font-size:1.0rem;"><svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></span>
-                <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">낭만! 크리에이터의 그 장소</span>
+                <span id="videoModalTitle" style="font-size:0.92rem; font-weight:900; color:#ffffff;">낭만! 크리에이터의 그 장소</span>
               </div>
               <button type="button" onclick="closeVideoDetailModal()" style="background:rgba(255, 255, 255, 0.08); border:1px solid rgba(255, 255, 255, 0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.95rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">✕</button>
             </div>
@@ -2076,11 +2076,8 @@
         document.body.appendChild(modal);
       }
 
-      var iframe = document.getElementById('videoModalIframe');
-      var bodySlot = document.getElementById('videoModalBodyContentSlot');
-
       var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
-        ? registeredSpots 
+        ? registeredSpots
         : (safeGetJSON('okbm_spots_cache', []) || []);
 
       if (spotPool.length === 0 && typeof loadPortalSpotData === 'function') {
@@ -2088,6 +2085,38 @@
         spotPool = registeredSpots || safeGetJSON('okbm_spots_cache', []) || [];
       }
 
+      // 영상들을 옆으로 이어 붙인 페이지로 깐다 (대표님 11-06: 넘길 때 번쩍이지 않고 같이 미끄러지게).
+      // 옆 페이지는 표지 그림만 두고, 머무는 페이지에만 유튜브 플레이어를 표지 위에 겹쳐 띄운다.
+      var track = document.getElementById('videoModalScrollBody');
+      track.className = 'okbm-vtrack';
+      track.style.cssText = 'flex:1 1 0%; min-height:0; display:flex; flex-direction:row; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; scrollbar-width:none; box-sizing:border-box;';
+      track.innerHTML = db.map(function(v, i) { return okbmVideoPageHtml(v, i, spotPool); }).join('');
+      if (typeof window.okbmHydrateSpotBriefs === 'function') window.okbmHydrateSpotBriefs(track);
+
+      if (modal) modal.style.display = 'flex';
+      var startIdx = window.__okbmVideoIdx;
+      track.scrollLeft = startIdx * track.clientWidth;
+      window.__okbmVideoIdx = -1;
+      okbmActivateVideoPage(startIdx);
+      okbmBindVideoTrack(track);
+    }
+
+    // 페이지 하나: 표지(플레이어 자리) + 박지·뷰·채널 칸
+    function okbmVideoPageHtml(item, idx, spotPool) {
+      var rawId = item.videoId || extractYouTubeVideoId(item.videoUrl);
+      var thumb = item.thumbUrl || (rawId ? ('https://img.youtube.com/vi/' + rawId + '/hqdefault.jpg') : '');
+      return `
+        <div class="okbm-vpage" data-vidx="${idx}" data-vid="${escapeHtml(rawId || '')}" style="flex:0 0 100%; width:100%; scroll-snap-align:start; scroll-snap-stop:always; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; display:flex; flex-direction:column; box-sizing:border-box;" onclick="event.stopPropagation();">
+          <div class="okbm-vplayer" style="width:100%; aspect-ratio:16/9; background:#000000; overflow:hidden; flex-shrink:0; position:relative; border-bottom:1px solid var(--line);">
+            ${thumb ? `<img src="${escapeHtml(okbmViewImageUrl(thumb))}" alt="" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover;" />` : ''}
+          </div>
+          <div style="padding:14px 14px calc(76px + env(safe-area-inset-bottom, 8px)) 14px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">
+            ${okbmVideoBodyHtml(item, spotPool)}
+          </div>
+        </div>`;
+    }
+
+    function okbmVideoBodyHtml(item, spotPool) {
       var rawSpotName = (item.spot || item.navSpot || '').trim();
       var isGear = !rawSpotName || rawSpotName === '장비' || rawSpotName === '기어' || rawSpotName.toUpperCase() === 'NONE';
 
@@ -2113,7 +2142,6 @@
       var viewMatch = cleanSummary.match(/\[(?:뷰\/특징|뷰|특징)\]\s*([\s\S]*?)(?=\[(?:접근\/코스|접근|코스|박지\/피칭|박지|장소\/피칭|장소|피칭|주의\/팁|주의|팁)\]|$)/i);
       var onlyViewText = viewMatch ? viewMatch[1].trim() : cleanSummary.split(/\n\s*\n|\n(?=\[)/)[0].replace(/^\[.*?\]\s*/, '').trim();
 
-     if (bodySlot) {
       
 // 영상 창 아래: 장비·음식·의류 안내 대신 유튜브 채널 사진·이름·소개글 (대표님 11-06)
 // 색은 tokens.css만 쓴다: 바탕 bg-2 카드, 글자 tx-1~3, 채운 단추는 accent-fill 하나
@@ -2131,7 +2159,7 @@ var adBannersHtml = item.channelName ? `
 ` : '';
 
         var spotMeta = [cityName, elevStr ? ('해발 ' + elevStr) : '', subPoint].filter(Boolean).join(' · ');
-        bodySlot.innerHTML = isGear ? `
+        return isGear ? `
           <div style="${cardCss} display:flex; flex-direction:column; gap:4px;">
             <div style="font-size:var(--fs-section); font-weight:800; color:var(--tx-1);">${escapeHtml(item.title || '추천 기어 세팅')}</div>
             <div style="font-size:var(--fs-body); color:var(--tx-2); line-height:1.5;">${escapeHtml(item.viewDesc || '영상 속 추천 장비 조합과 실전 패킹 팁을 확인하세요.')}</div>
@@ -2154,77 +2182,58 @@ var adBannersHtml = item.channelName ? `
 
           ${adBannersHtml}
         `;
-      }
-
-      if (bodySlot && typeof window.okbmHydrateSpotBriefs === 'function') window.okbmHydrateSpotBriefs(bodySlot);
-
-      var rawId = item.videoId || extractYouTubeVideoId(item.videoUrl);
-      var embedUrl = rawId ? ('https://www.youtube-nocookie.com/embed/' + rawId + '?playsinline=1&rel=0&autoplay=0') : '';
-      if (iframe) iframe.src = embedUrl;
-      if (modal) modal.style.display = 'flex';
-      okbmBindVideoSwipe(modal, db.length);
     }
 
-    // 영상 창에서 좌우로 밀면 앞뒤 영상으로 넘어간다 (대표님 11-06: 닫고 다음 카드를 누르지 않게).
-    // 플레이어(유튜브 iframe) 위는 터치를 받을 수 없어 그 아래 박지·채널 칸에서 민다.
-    function okbmBindVideoSwipe(modal, total) {
-      var titleSpan = modal && modal.querySelector('#videoDetailSheet span[style*="font-weight:900"]');
-      if (titleSpan && !document.getElementById('videoModalCounter')) {
-        titleSpan.insertAdjacentHTML('afterend', '<span id="videoModalCounter" style="font-size:var(--fs-meta); font-weight:700; color:var(--tx-3); margin-left:4px; font-variant-numeric:tabular-nums;"></span>');
-      }
+    // 머무는 페이지에만 플레이어를 둔다. 표지 위에 투명하게 겹쳐 띄우고 다 뜨면 보이게 해서 번쩍이지 않는다.
+    function okbmActivateVideoPage(idx) {
+      var track = document.getElementById('videoModalScrollBody');
+      var db = window.VIDEO_DATABASE || [];
+      if (!track || idx === window.__okbmVideoIdx) return;
+      window.__okbmVideoIdx = idx;
       var counter = document.getElementById('videoModalCounter');
-      if (counter) counter.textContent = total > 1 ? ((window.__okbmVideoIdx + 1) + ' / ' + total) : '';
-
-      var body = document.getElementById('videoModalScrollBody');
-      if (!body || body.__okbmSwipeBound) return;
-      body.__okbmSwipeBound = true;
-      // 손가락을 따라 옆으로 움직이고, 70px 넘게 끌었다 놓으면 넘긴다. 장소확인·채널 구경 가기 단추에서 시작하면 끌지 않는다.
-      var sx = 0, sy = 0, dx = 0, mode = '';
-      function slideTo(x, ms) {
-        body.style.transition = ms ? ('transform ' + ms + 'ms cubic-bezier(0.16, 1, 0.3, 1), opacity ' + ms + 'ms ease') : 'none';
-        body.style.transform = x ? ('translateX(' + x + 'px)') : '';
-        body.style.opacity = x ? String(Math.max(0.35, 1 - Math.abs(x) / 500)) : '';
+      if (!counter) {
+        var titleSpan = document.getElementById('videoModalTitle');
+        if (titleSpan) titleSpan.insertAdjacentHTML('afterend', '<span id="videoModalCounter" style="font-size:var(--fs-meta); font-weight:700; color:var(--tx-3); margin-left:4px; font-variant-numeric:tabular-nums;"></span>');
+        counter = document.getElementById('videoModalCounter');
       }
-      body.addEventListener('touchstart', function(e) {
-        mode = '';
-        if (e.touches.length !== 1 || (e.target.closest && e.target.closest('a, button'))) { mode = 'off'; return; }
-        sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0;
-      }, { passive: true });
-      body.addEventListener('touchmove', function(e) {
-        if (mode === 'off' || mode === 'y') return;
-        var mx = e.touches[0].clientX - sx, my = e.touches[0].clientY - sy;
-        if (!mode) {
-          if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
-          mode = Math.abs(mx) > Math.abs(my) ? 'x' : 'y';
-          if (mode === 'y') return;
-        }
-        var n = (window.VIDEO_DATABASE || []).length;
-        var atEdge = (mx > 0 && window.__okbmVideoIdx <= 0) || (mx < 0 && window.__okbmVideoIdx >= n - 1);
-        dx = atEdge ? mx * 0.25 : mx; // 처음·끝에서는 조금만 끌리게
-        slideTo(dx, 0);
-      }, { passive: true });
-      body.addEventListener('touchend', function() {
-        if (mode !== 'x') { mode = ''; return; }
-        mode = '';
-        var n = (window.VIDEO_DATABASE || []).length;
-        var next = window.__okbmVideoIdx + (dx < 0 ? 1 : -1);
-        if (Math.abs(dx) < 70 || next < 0 || next >= n) { slideTo(0, 220); return; }
-        var w = body.clientWidth || 360;
-        slideTo(dx < 0 ? -w : w, 160);
-        setTimeout(function() {
-          body.scrollTop = 0;
-          openVideoDetailModal(next).then(function() {
-            slideTo(dx < 0 ? w * 0.3 : -w * 0.3, 0);
-            requestAnimationFrame(function() { requestAnimationFrame(function() { slideTo(0, 240); }); });
-          });
-        }, 150);
+      if (counter) counter.textContent = db.length > 1 ? ((idx + 1) + ' / ' + db.length) : '';
+
+      var old = document.getElementById('videoModalIframe');
+      if (old) old.remove();
+      var page = track.querySelector('.okbm-vpage[data-vidx="' + idx + '"]');
+      var box = page && page.querySelector('.okbm-vplayer');
+      var vid = page && page.dataset.vid;
+      if (!box || !vid) return;
+      var f = document.createElement('iframe');
+      f.id = 'videoModalIframe';
+      f.src = 'https://www.youtube-nocookie.com/embed/' + vid + '?playsinline=1&rel=0&autoplay=0';
+      f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      f.referrerPolicy = 'strict-origin-when-cross-origin';
+      f.allowFullscreen = true;
+      f.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; border:none; display:block; opacity:0; transition:opacity 0.25s ease;';
+      f.onload = function() { setTimeout(function() { f.style.opacity = '1'; }, 150); };
+      box.appendChild(f);
+    }
+
+    // 옆으로 넘긴 뒤 멈추면 그 페이지를 머무는 페이지로 삼는다
+    function okbmBindVideoTrack(track) {
+      if (track.__okbmTrackBound) return;
+      track.__okbmTrackBound = true;
+      var timer = null;
+      track.addEventListener('scroll', function() {
+        clearTimeout(timer);
+        timer = setTimeout(function() {
+          var w = track.clientWidth || 1;
+          okbmActivateVideoPage(Math.round(track.scrollLeft / w));
+        }, 120);
       }, { passive: true });
     }
 
     function closeVideoDetailModal() {
       var modal = document.getElementById('videoDetailModal');
       var iframe = document.getElementById('videoModalIframe');
-      if (iframe) iframe.src = '';
+      if (iframe) iframe.remove();
+      window.__okbmVideoIdx = -1;
       if (modal) modal.style.display = 'none';
     }
 
