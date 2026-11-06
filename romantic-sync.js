@@ -929,6 +929,8 @@ function showToast(msg, typeOrDuration, maybeDuration, maybePosition) {
 
   var toastEl = document.getElementById('appToast');
   if (toastEl) {
+    // 계정 관리 창(z-index 2147483642) 같은 맨 위 창 뒤에 깔리지 않게 가장 위 층에 띄운다(11-06 닉네임 변경 안내가 안 보이던 일)
+    toastEl.style.zIndex = '2147483647';
     fillToastBody(toastEl, msg, html);
     toastEl.classList.add('show');
     clearTimeout(toastEl._timer);
@@ -942,7 +944,7 @@ function showToast(msg, typeOrDuration, maybeDuration, maybePosition) {
   if (!container) {
     container = document.createElement('div');
     container.id = 'romanticToastContainer';
-    container.style.cssText = 'position:fixed; bottom:calc(64px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%); z-index:9999999; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; width:90%; max-width:380px;';
+    container.style.cssText = 'position:fixed; bottom:calc(64px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%); z-index:2147483647; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; width:90%; max-width:380px;';
     document.body.appendChild(container);
   }
 
@@ -11274,7 +11276,9 @@ window.saveNicknameFromSettingsModal = async function() {
     showToast('새 닉네임을 입력해주세요.', 'warn');
     return;
   }
-  var rawNick = String(input.value || '');
+  // 휴대폰 키보드가 끝에 붙이는 띄어쓰기는 지우고, 가운데 띄어쓰기만 막는다(11-06)
+  var rawNick = String(input.value || '').trim();
+  input.value = rawNick;
   var clean = okbmNormalizeNickname(rawNick);
   if (/\s/.test(rawNick)) {
     triggerHaptic(20);
