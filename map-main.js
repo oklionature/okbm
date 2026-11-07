@@ -5561,6 +5561,19 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         var tokenRe = new RegExp('(^|[^가-힣A-Za-z0-9])' + escaped + '(?=$|[^가-힣A-Za-z0-9])');
         if (!tokenRe.test(feed)) return false;
 
+        // 피드 이름 괄호 안 세부 장소가 박지 보조 이름과 하나도 안 겹치면 같은 산의 다른 자리다(기백산 누룩덤 바위 피드가 정상 전망데크에 붙던 것, 11-07)
+        var feedParen = feed.match(/\(([^)]+)\)/);
+        var spotSubRaw = String((spot && spot.spot_sub) || '').trim();
+        if (feedParen && spotSubRaw) {
+          var parenNorm = feedParen[1].replace(/\s+/g, '');
+          var subWords = spotSubRaw.match(/[가-힣A-Za-z0-9]{2,}/g) || [];
+          var parenHit = false;
+          for (var pw = 0; pw < subWords.length; pw++) {
+            if (parenNorm.indexOf(subWords[pw]) !== -1 || subWords[pw].indexOf(parenNorm) !== -1) { parenHit = true; break; }
+          }
+          if (!parenHit) return false;
+        }
+
         var city = String((spot && (spot.cityName || spot.city_name)) || '').trim();
         var region = String((spot && spot.region) || '').trim();
         var feedNorm = feed.replace(/\s+/g, '');
