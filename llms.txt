@@ -4,12 +4,12 @@
 
 낭만루트는 자연에서 하룻밤을 보내는 백패커를 위한 국내 아웃도어 서비스입니다. 전국 백패킹 박지를 지역별로 정리하고 고도, 난이도, 거리, 지형을 함께 보여 줍니다. 박지 목록은 운영진과 회원 제보로 만들고 국립·도립·군립공원 안의 장소는 야영이 금지라 싣지 않습니다. 정확한 좌표와 들머리, 코스는 장소 보존을 위해 로그인한 회원에게만 공개합니다.
 
-- 기준일: 2026-11-06
-- 공개 박지: 441곳
+- 기준일: 2026-11-07
+- 공개 박지: 442곳
 
 ## 주요 페이지
 
-- [전국 백패킹 박지 목록](https://romanticroute.kr/spot/): 지역별 박지 441곳
+- [전국 백패킹 박지 목록](https://romanticroute.kr/spot/): 지역별 박지 442곳
 - [전국 백패킹 박지 통계](https://romanticroute.kr/stats/): 지역별·높이별·거리별·난이도별 박지 수 (매일 갱신)
 - [낭만루트 지도](https://romanticroute.kr/map.html): 박지 위치·들머리·코스 (로그인 회원 공개)
 - [개인정보처리방침](https://romanticroute.kr/privacy.html)
@@ -21,7 +21,7 @@
 - [경기 백패킹 90곳](https://romanticroute.kr/region/gyeonggi/)
 - [강원 백패킹 67곳](https://romanticroute.kr/region/gangwon/)
 - [충북 백패킹 25곳](https://romanticroute.kr/region/chungbuk/)
-- [충남 백패킹 26곳](https://romanticroute.kr/region/chungnam/)
+- [충남 백패킹 27곳](https://romanticroute.kr/region/chungnam/)
 - [전북 백패킹 30곳](https://romanticroute.kr/region/jeonbuk/)
 - [전남 백패킹 51곳](https://romanticroute.kr/region/jeonnam/)
 - [경북 백패킹 55곳](https://romanticroute.kr/region/gyeongbuk/)
@@ -35,7 +35,7 @@
 - [섬 백패킹 91곳](https://romanticroute.kr/theme/island/): 섬에 있는 백패킹 박지 91곳을 모았어요.
 - [해변 백패킹 63곳](https://romanticroute.kr/theme/beach/): 바다를 앞에 둔 해변·해수욕장·해안 박지 63곳을 모았어요.
 - [데크 백패킹 242곳](https://romanticroute.kr/theme/deck/): 나무 데크가 있는 박지 242곳을 모았어요.
-- [돌박지 백패킹 100곳](https://romanticroute.kr/theme/rock/): 암릉이나 너럭바위처럼 바위 위에 텐트를 설치하는 박지 100곳이에요.
+- [돌박지 백패킹 101곳](https://romanticroute.kr/theme/rock/): 암릉이나 너럭바위처럼 바위 위에 텐트를 설치하는 박지 101곳이에요.
 - [계곡 백패킹 18곳](https://romanticroute.kr/theme/valley/): 계곡을 끼고 있는 박지 18곳을 모았어요.
 - [오지 백패킹 21곳](https://romanticroute.kr/theme/remote/): 난이도 어려움(4~5/5)에 들머리에서 2km 넘게 걸어야 닿는 박지 21곳이에요. 백패킹 경험을 쌓은 뒤에 도전하길 권해요.
 
@@ -140,6 +140,7 @@
 - [아산 백패킹 2곳](https://romanticroute.kr/city/asan/)
 - [안양 백패킹 2곳](https://romanticroute.kr/city/anyang/)
 - [양산 백패킹 2곳](https://romanticroute.kr/city/yangsan/)
+- [예산 백패킹 2곳](https://romanticroute.kr/city/yesan/)
 - [예천 백패킹 2곳](https://romanticroute.kr/city/yecheon/)
 - [옥천 백패킹 2곳](https://romanticroute.kr/city/okcheon/)
 - [완주 백패킹 2곳](https://romanticroute.kr/city/wanju/)
