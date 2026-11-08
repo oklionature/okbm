@@ -5,6 +5,7 @@
 --    누가 가졌는지는 돌려주지 않는다(수만). 이름은 장비 목록 이름(item_name) 그대로 맞춘다.
 -- 2) 장비 '질문' 글이 올라오면 그 장비를 내 장비에 둔 회원에게 알림(kind 'lounge_gear_q', 글쓴이 빼고 300명까지).
 -- 3) 장비 '후기'를 쓴 지 90일·365일이 지나면 쓴 사람에게 '아직 잘 쓰고 있나요?' 알림(kind 'lounge_gear_again'). 매일 10:00 KST.
+--    처음 산 사람만(대표님 11-08): 사용 기간 '한 달'이거나 사용 횟수 '5회'로 고른 후기. 이미 오래 쓴 사람은 처음 후기에 담겨 있다.
 --    알림을 누르면 그 후기 글이 열리고, 댓글로 덧붙인다.
 -- 적용: Supabase SQL 편집기에서 전체 실행. 여러 번 실행해도 안전.
 -- 되돌리기: DROP FUNCTION okbm_gear_stats, okbm_gear_q_notify, okbm_gear_review_again; DROP TRIGGER trg_lounge_posts_gear_q; SELECT cron.unschedule('okbm_gear_again_daily');
@@ -112,6 +113,7 @@ BEGIN
       FROM public.lounge_posts p
       CROSS JOIN (VALUES (90, '3개월'), (365, '1년')) AS d(days, label)
      WHERE p.gear_review IS NOT NULL
+       AND (p.gear_review ->> 'period' = '1m' OR p.gear_review ->> 'uses' = '5')
        AND p.created_at <= now() - make_interval(days => d.days)
        AND p.created_at > now() - make_interval(days => d.days + 30)
   ), ins AS (
