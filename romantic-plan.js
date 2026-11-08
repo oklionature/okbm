@@ -82,6 +82,52 @@
       .gdm-btns { display:flex; gap:8px; margin-top:2px; }
       .gdm-btn { flex:1; min-width:0; height:46px; border-radius:14px; border:none; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); font-size:14px; font-weight:800; cursor:pointer; font-family:inherit; white-space:nowrap; }
       .gdm-btn.is-main { background:#5bb8f0; color:#00131f; font-weight:900; }
+      /* 11-09 장비 목록 정리: 영문 이름·옵션·패킹/최소 무게·사양 표·공식/판매 링크 */
+      .gdm-en { font-size:13px; font-weight:600; color:var(--tx-3, #8b8b93); margin-top:3px; }
+      .gdm-tag.gdm-ok { display:inline-flex; align-items:center; gap:4px; color:var(--ok, #34d399); }
+      .gdm-tag.gdm-ok svg { width:12px; height:12px; }
+      .gdm-optl { font-size:12.5px; font-weight:800; color:var(--tx-3, #8b8b93); margin-bottom:7px; }
+      .gdm-opts { display:flex; flex-wrap:wrap; gap:8px; }
+      .gdm-opt { min-height:38px; padding:0 14px 0 11px; border-radius:12px; border:1px solid rgba(255,255,255,0.10); background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:800; font-family:inherit; cursor:pointer; }
+      .gdm-opt em { width:16px; height:16px; border-radius:50%; border:1px solid rgba(255,255,255,0.25); flex:none; }
+      .gdm-opt span { display:flex; flex-direction:column; align-items:flex-start; gap:1px; }
+      .gdm-opt small { font-size:12px; font-weight:700; color:var(--tx-3, #8b8b93); font-variant-numeric:tabular-nums; }
+      .gdm-opt.w { flex:1; min-height:50px; padding:0 14px; }
+      .gdm-opt.on { border-color:#ffffff; background:var(--bg-3, #2a2a30); }
+      .gdm-opt.on small { color:var(--tx-2, #d1d1d6); }
+      .gdm-wgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+      .gdm-wgrid > div { background:var(--bg-2, #17171b); border-radius:14px; padding:12px 14px; }
+      .gdm-wgrid > div.main { outline:1.5px solid rgba(255,255,255,0.55); outline-offset:-1.5px; }
+      .gdm-wgrid label { display:block; font-size:12px; font-weight:700; color:var(--tx-3, #8b8b93); }
+      .gdm-wgrid strong { display:block; font-size:21px; font-weight:900; margin-top:2px; font-variant-numeric:tabular-nums; }
+      .gdm-wgrid strong small { font-size:13px; font-weight:700; color:var(--tx-2, #d1d1d6); margin-left:1px; }
+      .gdm-wgrid p { margin:3px 0 0; font-size:12px; font-weight:600; color:var(--tx-3, #8b8b93); }
+      .gdm-wone { display:flex; align-items:center; }
+      .gdm-tbl { margin:0; background:var(--bg-2, #17171b); border-radius:14px; padding:4px 14px; }
+      .gdm-tbl > div { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--line, rgba(255,255,255,0.08)); font-size:13.5px; }
+      .gdm-tbl > div:last-child { border-bottom:none; }
+      .gdm-tbl dt { color:var(--tx-3, #8b8b93); font-weight:700; flex:none; }
+      .gdm-tbl dd { margin:0; font-weight:800; text-align:right; word-break:keep-all; font-variant-numeric:tabular-nums; }
+      .gdm-links { display:flex; flex-direction:column; gap:6px; }
+      .gdm-lk { display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:12px; background:var(--bg-2, #17171b); color:var(--tx-1, #f2f2f3); text-decoration:none; }
+      .gdm-lk .tx { flex:1; min-width:0; }
+      .gdm-lk b { display:block; font-size:13.5px; font-weight:800; }
+      .gdm-lk small { display:block; font-size:12px; font-weight:600; color:var(--tx-3, #8b8b93); margin-top:1px; }
+      .gdm-lk svg { width:15px; height:15px; color:var(--tx-3, #8b8b93); flex:none; }
+      .gdm-lk .pill { font-size:11px; font-weight:900; padding:3px 8px; border-radius:6px; background:var(--bg-3, #2a2a30); color:var(--tx-2, #d1d1d6); flex:none; }
+      .gdm-lk.main .pill { background:rgba(52,211,153,0.16); color:var(--ok, #34d399); }
+      .gdm-btn.is-on { color:var(--tx-3, #8b8b93); }
+      .okg-en { display:block; font-size:12px; font-weight:600; color:var(--tx-3, #8b8b93); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .okg-w { color:var(--tx-2, #d1d1d6); font-weight:800; }
+      .qgr-row small b.okg-w { display:inline; font-size:12px; white-space:nowrap; }
+      .okg-dots { display:inline-flex; gap:3px; margin-left:2px; vertical-align:-1px; }
+      .okg-dots em { width:10px; height:10px; border-radius:50%; border:1px solid rgba(255,255,255,0.25); }
+      .okg-ochip { display:inline-block; font-size:11px; font-weight:800; padding:2px 8px; border-radius:5px; background:var(--bg-3, #2a2a30); color:var(--tx-2, #d1d1d6); vertical-align:1px; }
+      .okg-sheet { position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); z-index:1000040; } /* 아래 메뉴줄 위에 뜬다(장비 추가 창과 같은 높이) */
+      .okg-sheet-bg { position:absolute; inset:0; background:rgba(0,0,0,0.5); }
+      .okg-sheet-panel { position:absolute; left:0; right:0; bottom:0; background:var(--bg-1, #0f0f11); border-radius:20px 20px 0 0; padding:10px 18px 18px; color:var(--tx-1, #f2f2f3); }
+      .okg-sheet-t { font-size:16px; font-weight:900; margin-top:4px; }
+      .okg-sheet-s { font-size:12.5px; font-weight:600; color:var(--tx-3, #8b8b93); margin:2px 0 12px; }
       /* 장비 정보 고치기 창: 테두리 없는 회색 입력칸, 저장만 하늘색 */
       .gme-panel { width:100%; max-width:480px; max-height:100%; overflow-y:auto; background:#1a1c22; border-radius:22px 22px 0 0; padding:10px 18px 16px; display:flex; flex-direction:column; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.5); animation:slideUpSheet 0.22s ease-out; color:var(--tx-1, #f2f2f3); }
       .gme-panel > * { flex-shrink:0; } /* 키보드로 창이 줄어도 칸은 찌그러지지 않고 창이 스크롤된다 */
@@ -493,7 +539,109 @@
     return null;
   }
 
+  // 11-09 장비 목록 정리: 제품 하나에 한 줄, 색·크기는 옵션. 담을 때 이름은 '제품 이름 · 옵션'.
+  // 옛 이름(합쳐지기 전 이름)으로 담아 둔 장비도 찾을 수 있게 이름 색인을 둔다.
+  var GEAR_OPT_SEP = ' · ';
+  window.__okbmGearIdxDirty = true;
+  var okbmGearIdx = { byName: {}, byId: {} };
+  function okbmGearIndex() {
+    if (!window.__okbmGearIdxDirty) return okbmGearIdx;
+    var byName = {}, byId = {};
+    var put = function(key, val) { key = normalizeGearNameKey(key); if (key && !byName[key]) byName[key] = val; };
+    (window.CATEGORIES || []).forEach(function(cat) {
+      ((cat && cat.db) || []).forEach(function(g) {
+        if (!g || !g.name || String(g.id || '').indexOf('custom_') === 0) return;
+        var catId = g.category_id || cat.id;
+        put(g.name, { gear: g, opt: -1, catId: catId });
+        (g.options || []).forEach(function(o, n) { put(g.name + GEAR_OPT_SEP + o.name, { gear: g, opt: n, catId: catId }); });
+        (g.alias_names || []).forEach(function(a) {
+          if (Array.isArray(a)) put(a[0], { gear: g, opt: (a[1] === null || a[1] === undefined) ? -1 : Number(a[1]), catId: catId, old: true });
+        });
+        byId[String(g.id)] = g;
+        (g.aliases || []).forEach(function(id) { if (!byId[String(id)]) byId[String(id)] = g; });
+      });
+    });
+    okbmGearIdx = { byName: byName, byId: byId };
+    window.__okbmGearIdxDirty = false;
+    return okbmGearIdx;
+  }
+  // 이름 → { gear, opt(옵션 순번, 없으면 -1), name(지금 보여 줄 이름), weight, catId, old(옛 이름이었나) }
+  function okbmResolveGearName(name) {
+    var hit = okbmGearIndex().byName[normalizeGearNameKey(name)];
+    if (!hit) return null;
+    var g = hit.gear;
+    var o = (hit.opt >= 0 && g.options && g.options[hit.opt]) || null;
+    return {
+      gear: g,
+      opt: o ? hit.opt : -1,
+      option: o,
+      name: o ? g.name + GEAR_OPT_SEP + o.name : g.name,
+      weight: Number((o && o.weight_g) || g.weight || 0),
+      weightMin: Number((o && o.weight_min_g) || g.weight_min || 0),
+      catId: hit.catId,
+      old: !!hit.old
+    };
+  }
+  window.okbmResolveGearName = okbmResolveGearName;
+  window.okbmGearById = function(id) { return okbmGearIndex().byId[String(id)] || null; };
+  // 제품과 그 옵션들의 담는 이름 전부(즐겨찾기·담긴 개수 셀 때)
+  function okbmGearVariantNames(g) {
+    var out = [g.name];
+    (g.options || []).forEach(function(o) { out.push(g.name + GEAR_OPT_SEP + o.name); });
+    return out;
+  }
+  function okbmGearIsFav(g) {
+    var fav = window.favoriteGearSet;
+    if (!fav || !g) return false;
+    return okbmGearVariantNames(g).some(function(n) { return fav.has(n); });
+  }
+  // 옵션마다 무게가 다른가(배낭에 담을 때 골라야 하나)
+  function okbmGearOptionWeightsDiffer(g) {
+    var ws = (g && g.options || []).map(function(o) { return Number(o.weight_g || 0); }).filter(Boolean);
+    if (ws.length < 2) return false;
+    return ws.some(function(w) { return w !== ws[0]; });
+  }
+  // 목록 한 줄 아래 작은 글: '595g~ · 2P · 싱글월 · 3시즌'
+  function okbmGearWeightText(g) {
+    var w = Number(g.weight || 0);
+    if (okbmGearOptionWeightsDiffer(g)) {
+      var ws = g.options.map(function(o) { return Number(o.weight_g || 0); }).filter(Boolean);
+      w = Math.min.apply(null, ws);
+      return w.toLocaleString() + 'g~';
+    }
+    return w.toLocaleString() + 'g';
+  }
+  var GEAR_LIST_SPEC_KEYS = ['인원', '구조', '시즌', '컴포트 온도', '종류', 'R-Value', '용량', '내하중', '연료', '출력', '밝기', '배터리'];
+  function okbmGearListSpecs(g, max) {
+    var list = Array.isArray(g.spec_list) ? g.spec_list : [];
+    var out = [];
+    GEAR_LIST_SPEC_KEYS.forEach(function(k) {
+      list.forEach(function(s) {
+        if (s && s[0] === k && out.length < (max || 3)) {
+          var v = String(s[1] || '');
+          if (k === '구조') v = v.split(' · ')[0];
+          if (k === 'R-Value') v = 'R ' + v;
+          out.push(v);
+        }
+      });
+    });
+    return out;
+  }
+  function okbmGearOptionChip(g) {
+    var opts = g.options || [];
+    if (!opts.length) return '';
+    if (opts.some(function(o) { return o.hex; }) && g.option_label === '컬러') {
+      return '<span class="okg-dots">' + opts.slice(0, 5).map(function(o) {
+        return '<em style="background:' + escapeHtml(o.hex || '#888') + '"></em>';
+      }).join('') + '</span>';
+    }
+    return '<span class="okg-ochip">' + escapeHtml((g.option_label || '옵션') + ' ' + opts.length + '종') + '</span>';
+  }
+  window.__okbmGearHelpers = { variants: okbmGearVariantNames, isFav: okbmGearIsFav, weightText: okbmGearWeightText, listSpecs: okbmGearListSpecs, optionChip: okbmGearOptionChip, weightsDiffer: okbmGearOptionWeightsDiffer, SEP: GEAR_OPT_SEP };
+
   function readCatalogGearByName(name) {
+    var resolved = okbmResolveGearName(name);
+    if (resolved) return { gear: resolved.gear, categoryId: normalizePlanGearCategoryId(resolved.catId), resolved: resolved };
     var target = normalizeGearNameKey(name);
     if (!target) return null;
     var cats = window.CATEGORIES || [];
@@ -571,10 +719,12 @@
     var custom = readCustomGearByName(name);
     var catalog = readCatalogGearByName(name);
     var catGear = catalog && catalog.gear;
+    var resolved = catalog && catalog.resolved;
     var weight = Number((custom && (custom.weight || custom.weight_g)) || 0);
+    if (!weight && resolved) weight = resolved.weight;
     if (!weight && catGear) weight = Number(catGear.weight || catGear.weight_g || 0);
     var brand = (custom && custom.brand) || (catGear && catGear.brand) || '내 장비';
-    var displayName = (custom && (custom.name || custom.item_name)) || (catGear && (catGear.name || catGear.item_name)) || name;
+    var displayName = (custom && (custom.name || custom.item_name)) || (resolved && resolved.name) || (catGear && (catGear.name || catGear.item_name)) || name;
     return {
       id: (custom && custom.id) || (catGear && (catGear.id || catGear.gear_id)) || ('fav_' + name),
       name: displayName,
@@ -1053,7 +1203,7 @@
     var safeCat = escapeHtml(catId || 'other');
     var safeGear = escapeHtml(gearName || '');
     var w = Number(weight || 0);
-    var addAttrs = 'data-cat="' + safeCat + '" data-gear="' + safeGear + '" data-weight="' + w + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.addGearToCategory(this.dataset.gear, Number(this.dataset.weight), event);"';
+    var addAttrs = 'data-cat="' + safeCat + '" data-gear="' + safeGear + '" data-weight="' + w + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.okbmShelfPlus(this.dataset.gear, Number(this.dataset.weight), event);"';
     if (count > 0) {
       return '<div class="pk-step">' +
         '<button type="button" aria-label="하나 빼기" data-cat="' + safeCat + '" data-gear="' + safeGear + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.decrementGearCount(this.dataset.gear);">−</button>' +
@@ -1179,14 +1329,18 @@
   window.patchGearInteractionRows = function(gearName) {
     if (!gearName) return false;
     var gearMap = window.selectedGearMap || {};
-    var isFav = !!(window.favoriteGearSet && window.favoriteGearSet.has(gearName));
+    // 옵션 이름('제품 · 레드')으로 불려도 목록 줄은 제품 하나라 제품 이름으로 찾고, 옵션까지 합쳐 센다
+    var rzGear = okbmResolveGearName(gearName);
+    var variantNames = [gearName];
+    if (rzGear && !rzGear.old) { gearName = rzGear.gear.name; variantNames = okbmGearVariantNames(rzGear.gear); }
+    var isFav = rzGear && !rzGear.old ? okbmGearIsFav(rzGear.gear) : !!(window.favoriteGearSet && window.favoriteGearSet.has(gearName));
     var found = false;
 
     document.querySelectorAll('.gear-shelf-item-row').forEach(function(row) {
       if (!okbmGearRowMatches(row, gearName)) return;
       found = true;
       var catId = row.dataset.gearCat || row.getAttribute('data-gear-cat') || resolvePlanGearCategoryId(gearName);
-      var count = (gearMap[catId] || []).filter(function(it) { return it && it.name === gearName; }).length;
+      var count = (gearMap[catId] || []).filter(function(it) { return it && variantNames.indexOf(it.name) !== -1; }).length;
       var isAdded = count > 0;
 
       var starBtn = row.querySelector('.gear-shelf-star-btn');
@@ -1356,7 +1510,7 @@
       });
 
       if (curTab === 'fav') {
-        pool = allSource.filter(function(g) { return g && window.favoriteGearSet && window.favoriteGearSet.has(g.name); });
+        pool = allSource.filter(function(g) { return g && (g.isCustom ? (window.favoriteGearSet && window.favoriteGearSet.has(g.name)) : okbmGearIsFav(g)); });
       } else if (curTab === 'all') {
         pool = allSource;
       } else {
@@ -1366,8 +1520,8 @@
       var filtered = pool.filter(function(g) {
         if (!g || !g.name) return false;
         if (!cleanQ) return true;
-        var s = (String(g.name) + ' ' + String(g.brand || '') + ' ' + String(g.specs || '')).toLowerCase();
-        return s.includes(cleanQ);
+        if (!g.__hay) g.__hay = (String(g.name) + ' ' + String(g.brand || '') + ' ' + String(g.name_en || '') + ' ' + String(g.brand_en || '') + ' ' + String(g.specs || '') + ' ' + (g.alias_names || []).map(function(a) { return Array.isArray(a) ? a[0] : ''; }).join(' ')).toLowerCase();
+        return g.__hay.includes(cleanQ);
       });
 
       // 담긴 개수는 카테고리별로 한 번만 센다(정렬 비교마다 배열을 다시 훑지 않도록).
@@ -1382,19 +1536,22 @@
           });
           packedCountByCat[catId] = byName;
         }
+        if (typeof name === 'object' && name) {
+          return okbmGearVariantNames(name).reduce(function(sum, n) { return sum + (byName.get(n) || 0); }, 0);
+        }
         return byName.get(name) || 0;
       }
       var koCollator = okbmPlanKoCollator();
 
       filtered.sort(function(a, b) {
-        var aFav = (window.favoriteGearSet && window.favoriteGearSet.has(a.name)) ? 1 : 0;
-        var bFav = (window.favoriteGearSet && window.favoriteGearSet.has(b.name)) ? 1 : 0;
+        var aFav = okbmGearIsFav(a) ? 1 : 0;
+        var bFav = okbmGearIsFav(b) ? 1 : 0;
         if (aFav !== bFav) return bFav - aFav;
 
         var aCat = a.category_id || 'other';
         var bCat = b.category_id || 'other';
-        var aCount = packedCount(aCat, a.name);
-        var bCount = packedCount(bCat, b.name);
+        var aCount = packedCount(aCat, a);
+        var bCount = packedCount(bCat, b);
         if (aCount !== bCount) return bCount - aCount;
 
         var aCustom = a.isCustom ? 1 : 0;
@@ -1428,15 +1585,21 @@
 
         function renderRowHtml(g) {
           var targetCatId = g.category_id || 'other';
-          var count = packedCount(targetCatId, g.name);
+          var count = g.isCustom ? packedCount(targetCatId, g.name) : packedCount(targetCatId, g);
           var isAdded = count > 0;
-          var isFav = window.favoriteGearSet && window.favoriteGearSet.has(g.name);
+          var isFav = g.isCustom ? (window.favoriteGearSet && window.favoriteGearSet.has(g.name)) : okbmGearIsFav(g);
           var pal = CATEGORY_PALETTE[targetCatId] || { color: '#94a3b8', border: 'rgba(255,255,255,0.12)' };
           var safeGearName = escapeHtml(g.name);
 
           var deleteBtnHtml = g.isCustom ? ` · <button type="button" data-gear="${safeGearName}" onclick="event.stopPropagation(); window.deleteCustomGearCompletely(this.dataset.gear);" style="background:none; border:none; color:var(--tx-3, #8b8b93); font-size:12px; font-weight:700; cursor:pointer; padding:0; text-decoration:underline; font-family:inherit;">삭제</button>` : '';
           // 무게가 잘리지 않게 맨 앞에 둔다
           var metaParts = [Number(g.weight || 0).toLocaleString() + 'g'].concat([pal.label || '', g.brand || ''].filter(Boolean).map(escapeHtml));
+          // 정리된 장비(사양 표가 있음): '595g~ · 2P · 싱글월 · 3시즌 [플로어 2종]'
+          var listSpecs = g.isCustom ? [] : okbmGearListSpecs(g, 3);
+          var metaHtml = listSpecs.length
+            ? '<strong class="okg-w">' + okbmGearWeightText(g) + '</strong> · ' + listSpecs.map(escapeHtml).join(' · ') + ' ' + okbmGearOptionChip(g)
+            : metaParts.join(' · ') + (g.isCustom ? '' : ' ' + okbmGearOptionChip(g));
+          var enHtml = g.name_en ? '<div class="okg-en">' + escapeHtml(g.name_en) + '</div>' : '';
 
           return `
             <div class="gear-shelf-item-row" data-gear-name="${safeGearName}" data-gear-cat="${escapeHtml(targetCatId)}" data-weight="${g.weight || 0}">
@@ -1446,7 +1609,7 @@
                 </button>
                 <div style="min-width:0; flex:1; cursor:pointer;" onclick="if (!window.__longPressTriggered) window.openGearDetailFromEl(this);">
                   <div class="gear-shelf-name" style="font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeGearName}</div>
-                  <div class="pk-meta">${metaParts.join(' · ')}${deleteBtnHtml}</div>
+                  ${enHtml}<div class="pk-meta">${metaHtml}${deleteBtnHtml}</div>
                 </div>
               </div>
 
@@ -1555,31 +1718,27 @@
     modal = document.createElement('div');
     modal.id = 'gearDetailModal';
     modal.className = 'custom-modal-overlay';
-    modal.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); z-index:1000030 !important; justify-content:center; align-items:center; padding:16px; box-sizing:border-box;';
+    modal.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); z-index:1000036 !important; justify-content:center; align-items:center; padding:16px; box-sizing:border-box;';
     modal.onclick = function(e) { if (e.target === modal) window.closeGearDetailModal(); };
 
     modal.innerHTML = `
       <div class="gdm-card">
         <div class="gdm-top">
           <span id="gdmCategoryBadge" class="gdm-tag">카테고리</span>
-          <span id="gdmVerifiedBadge" class="gdm-tag">공식 제원</span>
+          <span id="gdmVerifiedBadge" class="gdm-tag gdm-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>공식 제원 확인</span>
           <button type="button" class="gdm-x" onclick="window.closeGearDetailModal()" aria-label="닫기">✕</button>
         </div>
         <div>
           <div id="gdmBrand" class="gdm-brand">브랜드</div>
           <div id="gdmTitle" class="gdm-title">장비명</div>
+          <div id="gdmEn" class="gdm-en"></div>
         </div>
-        <div class="gdm-box" style="display:flex; align-items:center;">
-          <div><div class="gdm-box-h">제원 무게</div><div id="gdmWeightType" class="gdm-sub">공식제원무게</div></div>
-          <div style="margin-left:auto; text-align:right;"><div id="gdmWeightGrams" class="gdm-g">0g</div><div id="gdmWeightKg" class="gdm-sub">0.00kg</div></div>
-        </div>
-        <div class="gdm-box">
-          <div class="gdm-box-h">상세 제원 & 특성</div>
-          <div id="gdmSpecs" class="gdm-specs">상세 제원 정보</div>
-          <div class="gdm-src"><span>정보 검증 출처</span><span id="gdmEvidence">공식 카탈로그 제원</span></div>
-        </div>
+        <div id="gdmOpts"></div>
+        <div id="gdmWeights"></div>
+        <div id="gdmSpecBox"></div>
+        <div id="gdmLinks" class="gdm-links"></div>
         <div class="gdm-btns">
-          <button type="button" id="gdmFavBtn" class="gdm-btn" onclick="window.toggleDetailModalFav()">☆ 내 장비 추가</button>
+          <button type="button" id="gdmFavBtn" class="gdm-btn" onclick="window.toggleDetailModalFav()">내 장비 추가</button>
           <button type="button" id="gdmPackBtn" class="gdm-btn is-main" onclick="window.toggleDetailModalPack()">배낭에 담기</button>
         </div>
       </div>
@@ -1599,6 +1758,10 @@
       return g && (g.name || g.item_name || '').trim().toLowerCase() === targetName;
     });
     if (found) return Object.assign({}, found, { isCustom: true });
+
+    // 1-1. 정리된 목록: 제품 이름·'제품 · 옵션'·옛 이름 모두 제품 하나로 (옵션은 openGearDetailModal이 다시 고른다)
+    var rzFind = okbmResolveGearName(gearName);
+    if (rzFind) return rzFind.gear;
 
     // 2. window.CATEGORIES 확인
     var categories = window.CATEGORIES || [];
@@ -1687,7 +1850,7 @@
 
     var verBadge = document.getElementById('gdmVerifiedBadge');
     if (verBadge) {
-      verBadge.style.display = gear.verified ? 'inline-block' : 'none';
+      verBadge.style.display = (gear.verified && gear.checked_at) ? 'inline-flex' : 'none';
     }
 
     var brandEl = document.getElementById('gdmBrand');
@@ -1695,44 +1858,147 @@
 
     var titleEl = document.getElementById('gdmTitle');
     if (titleEl) titleEl.innerText = gear.name || gear.item_name || gearName;
+    var enEl = document.getElementById('gdmEn');
+    if (enEl) { enEl.innerText = gear.name_en || ''; enEl.style.display = gear.name_en ? '' : 'none'; }
 
-    var w = Number(gear.weight || gear.weight_g || 0);
-    var gEl = document.getElementById('gdmWeightGrams');
-    if (gEl) gEl.innerText = w.toLocaleString() + 'g';
-
-    var kgEl = document.getElementById('gdmWeightKg');
-    if (kgEl) kgEl.innerText = (w / 1000).toFixed(2) + 'kg';
-
-    var wtEl = document.getElementById('gdmWeightType');
-    if (wtEl) wtEl.innerText = gear.weight_type || '공식제원무게';
-
-    var specsEl = document.getElementById('gdmSpecs');
-    if (specsEl) {
-      var rawSpecs = String(gear.specs || gear.specs_detail || '공식 카탈로그 제원').trim();
-      specsEl.innerText = rawSpecs;
-    }
-
-    var evEl = document.getElementById('gdmEvidence');
-    if (evEl) {
-      var evVal = String(gear.evidence || '').trim();
-      var mUrl = evVal.match(/https?:\/\/[^\s\)\'\"]+/);
-      if (mUrl) {
-        var cleanUrl = mUrl[0];
-        var domainLabel = '공식 페이지 확인';
-        if (cleanUrl.indexOf('rexmonde') !== -1 || cleanUrl.indexOf('okmall') !== -1) {
-          domainLabel = '공식 제원보기';
-        } else if (cleanUrl.indexOf('rei.com') !== -1) {
-          domainLabel = 'REI 공식 제원';
-        }
-        evEl.innerHTML = '<a href="' + escapeHtml(okbmSafeExternalUrl(cleanUrl)) + '" target="_blank" rel="noopener noreferrer">' + domainLabel + ' ↗</a>';
-      } else {
-        evEl.innerText = evVal || '공식 카탈로그 제원';
-      }
-    }
-
+    // 옵션: '제품 · 레드'로 열었으면 레드, 아니면 첫 옵션
+    var rzOpen = okbmResolveGearName(gearName);
+    window.__currentDetailOpt = (gear.options && gear.options.length) ? ((rzOpen && rzOpen.gear === gear && rzOpen.opt >= 0) ? rzOpen.opt : 0) : -1;
+    okbmPaintGearDetailBody();
     window.updateDetailModalActionButtons();
 
     modal.style.setProperty('display', 'flex', 'important');
+  };
+
+  // 자세히 창에서 지금 고른 이름('제품' 또는 '제품 · 옵션')과 무게
+  function okbmDetailPick() {
+    var gear = window.__currentDetailGear;
+    if (!gear) return null;
+    var n = window.__currentDetailOpt;
+    var o = (n >= 0 && gear.options && gear.options[n]) || null;
+    return {
+      gear: gear,
+      option: o,
+      name: o ? gear.name + GEAR_OPT_SEP + o.name : gear.name,
+      weight: Number((o && o.weight_g) || gear.weight || gear.weight_g || 0),
+      weightMin: Number((o && o.weight_min_g) || gear.weight_min || 0)
+    };
+  }
+  // '레드로', '그린으로', '실나일론으로': 받침(ㄹ 빼고)이 있으면 '으로'
+  function okbmJosaRo(word) {
+    var c = String(word || '').trim().slice(-1).charCodeAt(0);
+    if (!(c >= 0xAC00 && c <= 0xD7A3)) return '로';
+    var jong = (c - 0xAC00) % 28;
+    return (jong === 0 || jong === 8) ? '로' : '으로';
+  }
+  function okbmLinkHost(url) {
+    try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return ''; }
+  }
+  var GDM_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>';
+  function okbmPaintGearDetailBody() {
+    var pick = okbmDetailPick();
+    if (!pick) return;
+    var gear = pick.gear;
+    var isNew = Array.isArray(gear.spec_list);
+
+    var optsEl = document.getElementById('gdmOpts');
+    if (optsEl) {
+      var opts = gear.options || [];
+      var differ = okbmGearOptionWeightsDiffer(gear);
+      optsEl.innerHTML = opts.length ? '<div class="gdm-optl">' + escapeHtml(gear.option_label || '옵션') + '</div><div class="gdm-opts">' + opts.map(function(o, i) {
+        var on = i === window.__currentDetailOpt;
+        var dot = o.hex ? '<em style="background:' + escapeHtml(o.hex) + '"></em>' : '';
+        var wTxt = differ && o.weight_g ? '<small>' + Number(o.weight_g).toLocaleString() + 'g</small>' : '';
+        return '<button type="button" class="gdm-opt' + (on ? ' on' : '') + (wTxt ? ' w' : '') + '" aria-pressed="' + on + '" data-i="' + i + '" onclick="window.okbmPickDetailOption(Number(this.dataset.i))">' + dot + '<span>' + escapeHtml(o.name) + wTxt + '</span></button>';
+      }).join('') + '</div>' : '';
+      optsEl.style.display = opts.length ? '' : 'none';
+    }
+
+    var wEl = document.getElementById('gdmWeights');
+    if (wEl) {
+      var w = pick.weight;
+      var fmt = function(g) { return g >= 1000 ? (g / 1000).toFixed(2) + '<small>kg</small>' : Number(g).toLocaleString() + '<small>g</small>'; };
+      if (isNew && pick.weightMin) {
+        wEl.className = 'gdm-wgrid';
+        wEl.innerHTML = '<div class="main"><label>패킹 무게</label><strong>' + fmt(w) + '</strong><p>수납 가방·팩 포함</p></div>'
+          + '<div><label>' + escapeHtml(gear.weight_min_label || '최소 무게') + '</label><strong>' + fmt(pick.weightMin) + '</strong><p>' + (gear.weight_min_label === '본체 무게' ? '수납 가방 뺌' : '플라이·이너·폴만') + '</p></div>';
+      } else {
+        wEl.className = 'gdm-box gdm-wone';
+        wEl.innerHTML = '<div><div class="gdm-box-h">' + (isNew ? '패킹 무게' : '제원 무게') + '</div><div class="gdm-sub">' + escapeHtml(isNew ? '수납 가방·팩 포함' : (gear.weight_type || '공식제원무게')) + '</div></div>'
+          + '<div style="margin-left:auto; text-align:right;"><div class="gdm-g">' + w.toLocaleString() + 'g</div><div class="gdm-sub">' + (w / 1000).toFixed(2) + 'kg</div></div>';
+      }
+    }
+
+    var specEl = document.getElementById('gdmSpecBox');
+    if (specEl) {
+      if (isNew && gear.spec_list.length) {
+        specEl.className = 'gdm-tbl';
+        specEl.innerHTML = gear.spec_list.map(function(sp) {
+          return '<div><dt>' + escapeHtml(sp[0]) + '</dt><dd>' + escapeHtml(sp[1]) + '</dd></div>';
+        }).join('');
+        specEl.style.display = '';
+      } else if (isNew) {
+        specEl.style.display = 'none';
+      } else {
+        specEl.className = 'gdm-box';
+        specEl.style.display = '';
+        specEl.innerHTML = '<div class="gdm-box-h">상세 제원 &amp; 특성</div><div class="gdm-specs">' + escapeHtml(String(gear.specs || gear.specs_detail || '공식 카탈로그 제원').trim()) + '</div>';
+      }
+    }
+
+    var linkEl = document.getElementById('gdmLinks');
+    if (linkEl) {
+      var links = (gear.links && gear.links.length) ? gear.links.slice() : [];
+      if (!links.length) {
+        var mUrl = String(gear.evidence || '').match(/https?:\/\/[^\s\)\'\"]+/);
+        if (mUrl) {
+          var host0 = okbmLinkHost(mUrl[0]);
+          var isShop = /rei\.com|rexmonde|okmall|danawa|coupang|naver/.test(host0);
+          links = [{ kind: isShop ? 'shop' : 'source', url: mUrl[0], label: isShop ? host0.split('.')[0].toUpperCase() : '출처' }];
+        }
+      }
+      var day = gear.checked_at ? gear.checked_at.slice(5).replace('-', '-') : '';
+      linkEl.innerHTML = links.map(function(l) {
+        var host = okbmLinkHost(l.url);
+        var pill = l.kind === 'official' ? '공식' : (l.kind === 'shop' ? '판매' : '출처');
+        var sub = host + (l.kind === 'official' && day ? ' · ' + day + ' 확인' : (l.kind === 'shop' ? ' · 판매처' : ''));
+        return '<a class="gdm-lk' + (l.kind === 'official' ? ' main' : '') + '" href="' + escapeHtml(okbmSafeExternalUrl(l.url)) + '" target="_blank" rel="noopener noreferrer"><span class="pill">' + pill + '</span><span class="tx"><b>' + escapeHtml(l.label || host) + '</b><small>' + escapeHtml(sub) + '</small></span>' + GDM_ARROW + '</a>';
+      }).join('');
+      linkEl.style.display = links.length ? '' : 'none';
+    }
+  }
+  window.okbmPickDetailOption = function(i) {
+    window.__currentDetailOpt = i;
+    okbmPaintGearDetailBody();
+    window.updateDetailModalActionButtons();
+  };
+
+  // 배낭 꾸리기 + 버튼: 옵션마다 무게가 다르면 아래에서 옵션을 고르게, 아니면 바로 담는다
+  window.okbmShelfPlus = function(name, weight, e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var rz = okbmResolveGearName(name);
+    var g = rz && !rz.old && rz.opt === -1 ? rz.gear : null;
+    if (!g || !okbmGearOptionWeightsDiffer(g)) { window.addGearToCategory(name, weight); return; }
+    var old = document.getElementById('okgOptSheet');
+    if (old) old.remove();
+    var sheet = document.createElement('div');
+    sheet.id = 'okgOptSheet';
+    sheet.className = 'okg-sheet';
+    sheet.innerHTML = '<div class="okg-sheet-bg" data-x></div><div class="okg-sheet-panel" role="dialog" aria-label="' + escapeHtml(g.option_label || '옵션') + ' 선택"><div class="gme-grab"></div>'
+      + '<div class="okg-sheet-t">' + escapeHtml(g.name) + ' · ' + escapeHtml(g.option_label || '옵션') + ' 선택</div>'
+      + '<div class="okg-sheet-s">무게가 달라서 하나 골라 주세요</div><div class="gdm-opts">'
+      + g.options.map(function(o, i) {
+        return '<button type="button" class="gdm-opt w" data-i="' + i + '"><span>' + escapeHtml(o.name) + '<small>' + Number(o.weight_g || g.weight || 0).toLocaleString() + 'g</small></span></button>';
+      }).join('') + '</div></div>';
+    sheet.addEventListener('click', function(ev) {
+      if (ev.target.closest('[data-x]')) { sheet.remove(); return; }
+      var b = ev.target.closest('[data-i]');
+      if (!b) return;
+      var o = g.options[Number(b.getAttribute('data-i'))];
+      sheet.remove();
+      window.addGearToCategory(g.name + GEAR_OPT_SEP + o.name, Number(o.weight_g || g.weight || 0));
+    });
+    document.body.appendChild(sheet);
   };
 
   window.closeGearDetailModal = function() {
@@ -1747,15 +2013,18 @@
 
     var favBtn = document.getElementById('gdmFavBtn');
     var packBtn = document.getElementById('gdmPackBtn');
+    var pick = okbmDetailPick();
+    var pickName = pick ? pick.name : gear.name;
 
-    var isFav = window.favoriteGearSet && window.favoriteGearSet.has(gear.name);
+    var isFav = window.favoriteGearSet && window.favoriteGearSet.has(pickName);
     if (favBtn) {
-      favBtn.innerHTML = isFav ? '<span style="color:#fbbf24;">★</span> 내 장비 (등록됨)' : '☆ 내 장비 추가';
+      favBtn.textContent = isFav ? '내 장비에 있음' : (pick && pick.option ? pick.option.name + okbmJosaRo(pick.option.name) + ' 내 장비 추가' : '내 장비 추가');
+      favBtn.classList.toggle('is-on', !!isFav);
     }
 
     var targetCatId = resolvePlanGearCategoryId(gear.name, gear) || window.currentOpeningCategoryId || 'other';
     var currentCatItems = (window.selectedGearMap && window.selectedGearMap[targetCatId]) || [];
-    var count = currentCatItems.filter(function(it) { return it.name === gear.name; }).length;
+    var count = currentCatItems.filter(function(it) { return it.name === pickName; }).length;
 
     if (packBtn) {
       // 담기만 하늘색, 이미 담겼으면 회색 '배낭에서 빼기'
@@ -1767,7 +2036,9 @@
   window.toggleDetailModalFav = function() {
     var gear = window.__currentDetailGear;
     if (!gear) return;
-    window.toggleFavoriteGear(gear.name);
+    var pick = okbmDetailPick();
+    window.toggleFavoriteGear(pick ? pick.name : gear.name);
+    if (typeof window.__okbmQgrRefresh === 'function' && document.getElementById('quickGearDetailModal')) window.__okbmQgrRefresh();
     window.updateDetailModalActionButtons();
   };
 
@@ -1777,11 +2048,13 @@
     var targetCatId = resolvePlanGearCategoryId(gear.name, gear) || window.currentOpeningCategoryId || 'other';
     window.currentOpeningCategoryId = targetCatId;
     var currentCatItems = (window.selectedGearMap && window.selectedGearMap[targetCatId]) || [];
-    var packed = currentCatItems.some(function(it) { return it.name === gear.name; });
+    var pick = okbmDetailPick();
+    var pickName = pick ? pick.name : gear.name;
+    var packed = currentCatItems.some(function(it) { return it.name === pickName; });
 
     if (packed) {
       window.selectedGearMap[targetCatId] = currentCatItems.filter(function(it) {
-        return it.name !== gear.name;
+        return it.name !== pickName;
       });
       if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
         window.RomanticVault.write('okbm_selected_gears_multi', window.selectedGearMap, true);
@@ -1789,9 +2062,9 @@
         localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
       }
       window.refreshPlanPackedChrome();
-      window.patchGearInteractionRows(gear.name);
+      window.patchGearInteractionRows(pickName);
     } else {
-      window.addGearToCategory(gear.name, Number(gear.weight || gear.weight_g || 0));
+      window.addGearToCategory(pickName, pick ? pick.weight : Number(gear.weight || gear.weight_g || 0));
     }
 
     window.updateDetailModalActionButtons();
@@ -2230,6 +2503,14 @@
     if (!window.currentOpeningCategoryId || !window.selectedGearMap[window.currentOpeningCategoryId]) return;
     var list = window.selectedGearMap[window.currentOpeningCategoryId];
     var targetIdx = list.findIndex(function(it) { return it.name === gearName; });
+    if (targetIdx === -1) {
+      // 목록 줄은 제품 이름, 담긴 것은 '제품 · 옵션'일 수 있다: 그 옵션 중 마지막에 담은 것을 뺀다
+      var rzDec = okbmResolveGearName(gearName);
+      if (rzDec && !rzDec.old) {
+        var vn = okbmGearVariantNames(rzDec.gear);
+        for (var di = list.length - 1; di >= 0; di--) { if (list[di] && vn.indexOf(list[di].name) !== -1) { targetIdx = di; break; } }
+      }
+    }
     if (targetIdx !== -1) {
       list.splice(targetIdx, 1);
 
@@ -2304,18 +2585,28 @@
     if (!words.length && QGR.cat === 'all') return '<div class="qgr-empty">장비 이름이나 브랜드를 적어 주세요.<br>예: 호넷, 니모, 헬리녹스</div>';
     var hits = all.filter(function(g) {
       if (QGR.cat !== 'all' && g.category_id !== QGR.cat) return false;
-      var hay = (g.name + ' ' + (g.brand || '')).toLowerCase();
+      if (!g.__hay) g.__hay = (String(g.name) + ' ' + String(g.brand || '') + ' ' + String(g.name_en || '') + ' ' + String(g.brand_en || '') + ' ' + String(g.specs || '') + ' ' + (g.alias_names || []).map(function(a) { return Array.isArray(a) ? a[0] : ''; }).join(' ')).toLowerCase();
+      var hay = g.__hay;
       return words.every(function(w) { return hay.indexOf(w) !== -1; });
     });
     var fav = window.favoriteGearSet || new Set();
     var head = '<div class="qgr-cnt">' + (words.length ? '\'' + escapeHtml(QGR.q.trim()) + '\' ' : '') + '찾은 장비 ' + hits.length + '개' + (hits.length > 60 ? ' · 위 60개' : '') + '</div>';
     if (!hits.length) return head + '<div class="qgr-empty">목록에 없어요. 위 \'직접 등록\'으로 넣어 주세요.</div>';
     return head + hits.slice(0, 60).map(function(g) {
-      var has = fav.has(g.name);
+      var has = okbmGearIsFav(g);
       var w = Number(g.weight) || 0;
-      var sub = [String(g.brand || ''), w ? (w / 1000).toFixed(2) + 'kg' : ''].filter(Boolean).join(' · ');
-      return '<div class="qgr-row"><div><b>' + escapeHtml(g.name) + '</b><small>' + escapeHtml(sub) + '</small></div>'
-        + (has ? '<span class="qgr-add done">담김</span>' : '<button type="button" class="qgr-add" data-qgr-add="' + escapeHtml(g.name) + '">+ 내 장비</button>') + '</div>';
+      var specs = okbmGearListSpecs(g, 2);
+      // 정리된 장비: '3.10kg · 2P · 4시즌 ●●●', 아직 안 된 장비: '브랜드 · 3.10kg'
+      var sub = specs.length
+        ? '<b class="okg-w">' + okbmGearWeightText(g) + '</b> · ' + specs.map(escapeHtml).join(' · ') + ' ' + okbmGearOptionChip(g)
+        : escapeHtml([String(g.brand || ''), w ? (w / 1000).toFixed(2) + 'kg' : ''].filter(Boolean).join(' · ')) + ' ' + okbmGearOptionChip(g);
+      var en = g.name_en ? '<span class="okg-en">' + escapeHtml(g.name_en) + '</span>' : '';
+      // 옵션(컬러 등)이 있으면 자세히 창에서 골라 담는다
+      var btn = has ? '<span class="qgr-add done">담김</span>'
+        : (g.options && g.options.length
+          ? '<button type="button" class="qgr-add" data-qgr-open="' + escapeHtml(g.name) + '" data-qgr-cat-id="' + escapeHtml(g.category_id || '') + '">+ 내 장비</button>'
+          : '<button type="button" class="qgr-add" data-qgr-add="' + escapeHtml(g.name) + '">+ 내 장비</button>');
+      return '<div class="qgr-row" data-qgr-open="' + escapeHtml(g.name) + '" data-qgr-cat-id="' + escapeHtml(g.category_id || '') + '"><div><b>' + escapeHtml(g.name) + '</b>' + en + '<small>' + sub + '</small></div>' + btn + '</div>';
     }).join('');
   }
   function qgrFindHtml() {
@@ -2435,6 +2726,14 @@
         return;
       }
       var add = t.closest('[data-qgr-add]');
+      var openRow = !add && t.closest('[data-qgr-open]');
+      if (openRow) {
+        // 줄이나 옵션 있는 장비의 '+ 내 장비': 자세히 창(옵션 고르기)을 연다
+        QGR.changed = true;
+        window.__okbmQgrRefresh = function() { var lst = modal.querySelector('[data-qgr-list]'); if (lst) lst.innerHTML = qgrListHtml(); };
+        window.openGearDetailModal(openRow.getAttribute('data-qgr-open'), openRow.getAttribute('data-qgr-cat-id'));
+        return;
+      }
       if (add) {
         var name = add.getAttribute('data-qgr-add');
         if (!(window.favoriteGearSet && window.favoriteGearSet.has(name))) window.toggleFavoriteGear(name);
@@ -2642,8 +2941,12 @@
 
     if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
 
+    var rzFav = okbmResolveGearName(gearName);
     if (window.favoriteGearSet.has(gearName)) {
       window.favoriteGearSet.delete(gearName);
+    } else if (rzFav && !rzFav.old && rzFav.opt === -1 && okbmGearIsFav(rzFav.gear)) {
+      // 목록의 별은 제품 하나: 옵션('제품 · 레드')으로 담긴 것도 같이 뺀다
+      okbmGearVariantNames(rzFav.gear).forEach(function(n) { window.favoriteGearSet.delete(n); });
     } else {
       window.favoriteGearSet.add(gearName);
     }
@@ -2861,7 +3164,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   // 20260928: gears/*.json에서 앱이 쓰지 않는 필드(gear_id 중복, created_at, updated_at, category)와 공백을 뺐다. 데이터 값은 동일.
-  var CURRENT_GEAR_VERSION = '20260928_GEAR_SLIM';
+  var CURRENT_GEAR_VERSION = '20261109_GEAR_TIDY2';
   var GEAR_SPLIT_CATS = ['shelter', 'sleep', 'pack', 'food', 'kitchen', 'wear', 'electronics', 'camp', 'other'];
   window.__okbmGearCatLoaded = window.__okbmGearCatLoaded || {};
   window.__okbmGearCatPromises = window.__okbmGearCatPromises || {};
@@ -3073,7 +3376,7 @@ window.saveCurrentPackingRecord = function() {
       var weight = parseInt(row.weight_g || row.weight, 10);
       var brand = String(row.brand || '').trim();
       var specs = String(row.specs_detail || row.specs || '').trim();
-      var verified = (row.verified === 'TRUE' || row.verified === true);
+      var verified = (row.verified === 'TRUE' || row.verified === true || row.verified === 'true');
       var weight_type = String(row.weight_type || '공식제원무게').trim();
       var evidence = String(row.evidence || '공식 카탈로그 제원').trim();
       var rowId = row.gear_id || row.id || ('gear_' + Date.now() + '_' + Math.random());
@@ -3089,6 +3392,18 @@ window.saveCurrentPackingRecord = function() {
           weight_type: weight_type,
           evidence: evidence,
           category_id: catId,
+          // 11-09 정리 형식: 영문 이름·최소 무게·사양 표·옵션(컬러 등)·링크·옛 id/이름
+          name_en: String(row.name_en || '').trim(),
+          brand_en: String(row.brand_en || '').trim(),
+          weight_min: parseInt(row.weight_min_g, 10) || 0,
+          weight_min_label: String(row.weight_min_label || '').trim(),
+          spec_list: Array.isArray(row.specs) ? row.specs : null,
+          option_label: String(row.option_label || '').trim(),
+          options: Array.isArray(row.options) ? row.options : [],
+          links: Array.isArray(row.links) ? row.links : [],
+          checked_at: String(row.checked_at || '').trim(),
+          aliases: Array.isArray(row.aliases) ? row.aliases : [],
+          alias_names: Array.isArray(row.alias_names) ? row.alias_names : [],
           raw: {
             id: rowId,
             category_id: catId,
@@ -3114,7 +3429,9 @@ window.saveCurrentPackingRecord = function() {
           specs_detail: specs,
           verified: verified,
           weight_type: weight_type,
-          evidence: evidence
+          evidence: evidence,
+          name_en: gearItem.name_en,
+          aliases: gearItem.aliases
         });
       }
     });
@@ -3163,12 +3480,66 @@ window.saveCurrentPackingRecord = function() {
       });
     }
 
+    window.__okbmGearIdxDirty = true;
     if (opts.deferFinalize) return compactMasterRows;
     okbmFinalizeFetchedGears(compactMasterRows);
     return compactMasterRows;
   }
 
+  // 11-09: 장비 목록을 제품 단위로 합치면서 이름이 바뀌었다. 옛 이름으로 담아 둔 내 장비·배낭·장비 메모를 새 이름으로 옮긴다.
+  // 같은 이름으로 몇 번을 돌려도 결과가 같다(옛 이름이 없으면 아무것도 안 한다).
+  function okbmMigrateOldGearNames() {
+    var vault = window.RomanticVault && typeof window.RomanticVault.write === 'function' ? window.RomanticVault : null;
+    var save = function(key, val, sync) {
+      if (vault) vault.write(key, val, sync);
+      else { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+    };
+    var mapName = function(n) {
+      var r = okbmResolveGearName(n);
+      return (r && r.old && r.name !== n) ? r : null;
+    };
+    var fav = window.favoriteGearSet;
+    if (fav && fav.size) {
+      var favChanged = false;
+      Array.from(fav).forEach(function(n) {
+        var r = mapName(n);
+        if (!r) return;
+        fav.delete(n);
+        fav.add(r.name);
+        favChanged = true;
+      });
+      if (favChanged) save('okbm_favorite_gears', Array.from(fav), true);
+    }
+    var meta = vault ? vault.read('okbm_gear_meta', {}) : safeGetJSON('okbm_gear_meta', {});
+    if (meta && typeof meta === 'object') {
+      var metaChanged = false;
+      Object.keys(meta).forEach(function(n) {
+        var r = mapName(n);
+        if (!r) return;
+        if (!meta[r.name]) meta[r.name] = meta[n];
+        delete meta[n];
+        metaChanged = true;
+      });
+      if (metaChanged) save('okbm_gear_meta', meta, true);
+    }
+    var map = window.selectedGearMap;
+    if (map && typeof map === 'object') {
+      var packChanged = false;
+      Object.keys(map).forEach(function(catId) {
+        (Array.isArray(map[catId]) ? map[catId] : []).forEach(function(it) {
+          var r = it && it.name && mapName(it.name);
+          if (!r) return;
+          it.name = r.name;
+          if (r.weight) it.weight = r.weight;
+          packChanged = true;
+        });
+      });
+      if (packChanged) save('okbm_selected_gears_multi', map, true);
+    }
+  }
+
   function okbmFinalizeFetchedGears(rows) {
+    try { okbmMigrateOldGearNames(); } catch (e) { console.warn('[romantic-plan.js:okbmMigrateOldGearNames]', e); }
     autoHealSelectedGears(rows);
     if (typeof window.renderPlanCategorySlots === 'function') {
       window.renderPlanCategorySlots();

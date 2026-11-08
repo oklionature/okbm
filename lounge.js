@@ -4009,7 +4009,8 @@
   }
   // 장비 목록 설명에 적힌 자립 정보. 반자립은 둘 중 하나로 못 정해 모름으로 둔다
   function standFromList(id) {
-    const g = id && (window.GEARS_MASTER || []).find(function (x) { return x && String(x.id) === String(id); });
+    // 11-09 장비 목록 정리로 합쳐진 옛 번호(aliases)로도 찾는다
+    const g = id && (window.GEARS_MASTER || []).find(function (x) { return x && (String(x.id) === String(id) || (Array.isArray(x.aliases) && x.aliases.indexOf(String(id)) !== -1)); });
     if (!g) return '';
     const t = String(g.item_name || '') + ' ' + String(g.specs_detail || '');
     if (/비자립|non-?free-?standing|트레킹 ?폴|trekking ?pole/i.test(t)) return 'non';
