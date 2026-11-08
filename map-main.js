@@ -7610,12 +7610,24 @@ var overlay = document.getElementById('customModalOverlay');
         }));
       }
 
+      // 근거 링크 칸의 낱말이 주소처럼 생겼는지: http(s)://로 시작하거나 'blog.naver.com/...'처럼 점 찍힌 영문 도메인.
+      // 한글 낱말에 https://를 붙이면 xn--sh1bj86a 같은 깨진 링크가 된다(대표님 11-08: 받은 함에 '아는 사람 다 알아요'가 링크 넷으로 뜸).
+      function looksLikeEvidenceUrl(part) {
+        return /^https?:\/\/\S+$/i.test(part) || /^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}([\/?#:]\S*)?$/i.test(part);
+      }
+
+      // 링크 칸에 적은 주소 아닌 글은 버리지 않고 사유 뒤에 붙인다
+      function readCorrectionEvidenceNote() {
+        var raw = document.getElementById('modalInputEvidenceUrls')?.value || '';
+        return raw.split(/[\s,]+/).filter(function(part) { return part && !looksLikeEvidenceUrl(part); }).join(' ').trim();
+      }
+
       function readCorrectionEvidenceUrls() {
         var raw = document.getElementById('modalInputEvidenceUrls')?.value || '';
         var out = [];
         raw.split(/[\s,]+/).forEach(function(part) {
           var u = part.trim();
-          if (!u) return;
+          if (!u || !looksLikeEvidenceUrl(u)) return;
           if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
           var safe = window.okbmSafeExternalUrl(u);
           if (safe !== '#' && out.indexOf(safe) === -1) out.push(safe);
@@ -8530,6 +8542,8 @@ var overlay = document.getElementById('customModalOverlay');
               // 🔍 수정 사유 및 변경 대조(Diff) 자동 추출
               var diffNotes = [];
               var correctionReason = (document.getElementById('modalInputCorrectionReason')?.value || '').trim();
+              var evidenceNote = isCorrection ? readCorrectionEvidenceNote() : '';
+              if (evidenceNote) correctionReason = correctionReason ? correctionReason + ' / ' + evidenceNote : evidenceNote;
 
               if (isCorrection && orig.id) {
                 if (orig.spot_main !== name) diffNotes.push(`• 장소명: "${orig.spot_main}" ➔ "${name}"`);
@@ -9151,7 +9165,9 @@ var overlay = document.getElementById('customModalOverlay');
       // 받은 함 카드의 수정 건의 근거: 링크는 새 창으로, 사진은 눌러서 원본 보기
       function renderInboxEvidence(item) {
         var urls = (Array.isArray(item && item.evidence_urls) ? item.evidence_urls : [])
-          .map(function(u) { return window.okbmSafeExternalUrl(u); }).filter(function(u) { return u !== '#'; });
+          .map(function(u) { return window.okbmSafeExternalUrl(u); })
+          // 점 없는 주소(https://xn--sh1bj86a/ 같은, 한글 낱말이 링크로 바뀐 옛 접수분)는 링크로 띄우지 않는다
+          .filter(function(u) { if (u === '#') return false; try { return new URL(u).hostname.indexOf('.') > 0; } catch (e) { return false; } });
         var photos = (Array.isArray(item && item.evidence_photos) ? item.evidence_photos : [])
           .map(function(u) { return window.okbmSafeImageUrl(u); }).filter(Boolean);
         if (!urls.length && !photos.length) return '';
