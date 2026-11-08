@@ -10,7 +10,7 @@
       "file": "gears/sleep.json"
     },
     "pack": {
-      "count": 199,
+      "count": 198,
       "file": "gears/pack.json"
     },
     "food": {
@@ -34,7 +34,7 @@
       "file": "gears/camp.json"
     },
     "other": {
-      "count": 64,
+      "count": 65,
       "file": "gears/other.json"
     }
   }
