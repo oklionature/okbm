@@ -696,8 +696,8 @@
     return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
   };
   // 화면에 보여 줄 사진은 img.romanticroute.kr로(romantic-sync.js okbmFastImageUrl)
-  var okbmFastImageUrl = function(url) {
-    return (typeof window.okbmFastImageUrl === 'function') ? window.okbmFastImageUrl(url) : okbmSafeImageUrl(url);
+  var okbmFastImageUrl = function(url, width) {
+    return (typeof window.okbmFastImageUrl === 'function') ? window.okbmFastImageUrl(url, width) : okbmSafeImageUrl(url);
   };
   var okbmSafeExternalUrl = function(url) {
     return (typeof window.okbmSafeExternalUrl === 'function') ? window.okbmSafeExternalUrl(url) : '#';
@@ -8225,7 +8225,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var horizontalSlidesHtml = mediaItems.map(function(pUrl) {
       var isPlogSlide = Boolean(plogSrc) && pUrl === plogSrc;
       return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-        '<img class="reel-photo-target" src="' + escapeHtml(okbmFastImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
+        '<img class="reel-photo-target" src="' + escapeHtml(okbmFastImageUrl(pUrl, 1080)) + '" loading="lazy" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
         (isPlogSlide ? okbmPlogSlidePillHtml() : '') +
       '</div>';
     }).join('');
@@ -8260,8 +8260,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var normalizePhotoSrc = function(u) {
       var raw = String(u || '').trim();
       if (!raw) return '';
-      // 화면 주소(img.romanticroute.kr)·원래 주소(r2.dev)를 같은 것으로 보게 화면 주소로 맞춘다
-      if (typeof okbmFastImageUrl === 'function') return String(okbmFastImageUrl(raw) || '').trim();
+      // 화면 주소(줄인 img.romanticroute.kr)·원래 주소(r2.dev)를 같은 것으로 보게, 카드가 그리는 주소(okbmBuildReelPhotoFrontHtml)와 같은 폭으로 맞춘다
+      if (typeof okbmFastImageUrl === 'function') return String(okbmFastImageUrl(raw, 1080) || '').trim();
       return raw;
     };
     var existingSrcs = Array.prototype.map.call(front.querySelectorAll('.reel-horizontal-track .reel-photo-target'), function(img) {
@@ -8667,7 +8667,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       horizontalSlidesHtml = mediaItems.map(function(pUrl) {
         var isPlogSlide = Boolean(plogSlideUrl) && pUrl === plogSlideUrl;
         return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-          '<img class="reel-photo-target" src="' + escapeHtml(okbmFastImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
+          '<img class="reel-photo-target" src="' + escapeHtml(okbmFastImageUrl(pUrl, 1080)) + '" loading="lazy" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
           (isPlogSlide ? okbmPlogSlidePillHtml() : '') +
         '</div>';
       }).join('');

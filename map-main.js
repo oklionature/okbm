@@ -136,8 +136,8 @@
         return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
       };
       // 화면에 보여 줄 사진은 img.romanticroute.kr로(romantic-sync.js okbmFastImageUrl)
-      var okbmFastImageUrl = function(url) {
-        return (typeof window.okbmFastImageUrl === 'function') ? window.okbmFastImageUrl(url) : okbmSafeImageUrl(url);
+      var okbmFastImageUrl = function(url, width) {
+        return (typeof window.okbmFastImageUrl === 'function') ? window.okbmFastImageUrl(url, width) : okbmSafeImageUrl(url);
       };
       var okbmSafeExternalUrl = function(url) {
         return (typeof window.okbmSafeExternalUrl === 'function') ? window.okbmSafeExternalUrl(url) : '#';
@@ -4623,6 +4623,8 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         });
       };
 
+      var MEDIA_SALE_TITLE = /부동산|매물(?!도)|매매|분양|급매|경매|임대|새\s*주인|전원주택|평당|매각/;
+
       // 제목에 산 이름이나 세부 장소 이름이 있는 영상만 남긴다. 하나도 없으면 빈 목록을 준다(상관없는 영상으로 채우지 않는다).
       window.rankMediaBySpot = function(list, spotName, areaName, limit, subKey) {
         var max = limit || 5;
@@ -4634,6 +4636,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         var scored = (list || []).map(function(item) {
           var t = String((item && item.title) || '');
           var tTight = t.replace(/\s/g, '');
+          if (MEDIA_SALE_TITLE.test(t)) return { item: item, score: 0 };
           var score = 0;
           if (mountainTight && tTight.indexOf(mountainTight) !== -1) score += 10;
           if (subTight && tTight.indexOf(subTight) !== -1) score += 10;
@@ -4672,7 +4675,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         }
 
         try {
-          var sessionCached = sessionStorage.getItem('okbm_yt_cache_v7_' + cacheKey);
+          var sessionCached = sessionStorage.getItem('okbm_yt_cache_v8_' + cacheKey);
           if (sessionCached) {
             var parsed = JSON.parse(sessionCached);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -4726,7 +4729,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
 
         if (extracted.length > 0) {
           limitedMapSet(window.__spotAutoVideosCache, cacheKey, extracted, 80);
-          try { sessionStorage.setItem('okbm_yt_cache_v7_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
+          try { sessionStorage.setItem('okbm_yt_cache_v8_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
         }
         return extracted;
       };
@@ -5704,7 +5707,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           return `
             <div data-feed-id="${fId}" data-spot-id="${escapeHtml(String(spot.id).trim())}" onclick="openMapSpotFeedDetailModal(this.dataset.feedId, this.dataset.spotId)"${isPlog ? ' class="okbm-plog-rail"' : ''} style="flex:0 0 145px; width:145px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
               <div style="width:100%; aspect-ratio:3/4; position:relative; background:#000; overflow:hidden;">
-                <img src="${escapeHtml(okbmSafeImageUrl(thumbUrl))}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy" />
+                <img src="${escapeHtml(okbmFastImageUrl(thumbUrl, 640))}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy" />
                 <div style="position:absolute; top:5px; left:5px; background:#0c1017; padding:2px 6px; border-radius:4px; font-size:0.56rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85px;">
                   ${isPlog && typeof window.okbmPlogIcon === 'function' ? '<span style="display:inline-flex;vertical-align:-2px;margin-right:3px;color:#34d399;">' + window.okbmPlogIcon() + '</span>' : ''}${escapeHtml(authorNick)}
                 </div>
@@ -6533,7 +6536,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         var slidesHtml = photos.map(function(pUrl) {
           return `
             <div style="flex:0 0 100%; width:100%; height:100%; scroll-snap-align:start; scroll-snap-stop:always; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center; box-sizing:border-box;">
-              <img class="reel-photo-target map-feed-photo" src="${escapeHtml(okbmFastImageUrl(pUrl))}" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="if (window.okbmImageRetryOriginal && window.okbmImageRetryOriginal(this)) return; this.onerror=null; this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" style="max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; object-position:center center; display:block; background:#000;" />
+              <img class="reel-photo-target map-feed-photo" src="${escapeHtml(okbmFastImageUrl(pUrl, 1080))}" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="if (window.okbmImageRetryOriginal && window.okbmImageRetryOriginal(this)) return; this.onerror=null; this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" style="max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; object-position:center center; display:block; background:#000;" />
             </div>
           `;
         }).join('');
@@ -7415,6 +7418,7 @@ var liveSearchTimer = null;
         var isLogged = isUserLoggedIn();
 
         if (!isLogged) {
+          clearSpotCorrectionState();
           if (typeof window.openLoginModal === 'function') {
             window.openLoginModal();
           } else if (typeof window.handleAuthBtnClick === 'function') {
@@ -7495,23 +7499,7 @@ var liveSearchTimer = null;
           var profileInsta = window.okbmProfileInstagramForForm();
           if (profileInsta) authorSnsInput.value = profileInsta;
         }
-        resetModalGpxField();
-var overlay = document.getElementById('customModalOverlay');
-        if (overlay) {
-          overlay.style.setProperty('display', 'flex', 'important');
-          overlay.style.setProperty('z-index', '999999', 'important');
-          overlay.style.setProperty('opacity', '1', 'important');
-          overlay.style.setProperty('visibility', 'visible', 'important');
-          overlay.style.setProperty('pointer-events', 'auto', 'important');
-
-          // 🚀 모달 오픈 즉시 카메라 스크롤을 맨 위(0px)로 강제 텔레포트
-          var modalBox = overlay.querySelector('.custom-modal');
-          if (modalBox) {
-            modalBox.scrollTop = 0;
-            requestAnimationFrame(() => { modalBox.scrollTop = 0; });
-            setTimeout(() => { if (modalBox) modalBox.scrollTop = 0; }, 30);
-          }
-        }
+        showCustomModalOverlay();
       };
 
       // 📎 수정 건의 근거(링크·사진). 둘 다 넣으면 좋고 없어도 접수된다(대표님 11-01).
@@ -8386,9 +8374,16 @@ var overlay = document.getElementById('customModalOverlay');
       }
       window.openAddModal = openAddModal;
 
+      function clearSpotCorrectionState() {
+        window.__isSpotCorrectionMode = false;
+        window.__correctionTargetSpotId = null;
+        window.__origSpotBeforeCorrection = null;
+      }
+
       function closeCustomModal() {
         const overlay = document.getElementById('customModalOverlay');
         if (overlay) overlay.style.display = 'none';
+        clearSpotCorrectionState();
         resetModalPendingMemory();
         if (tempPickedMarker) { 
           tempPickedMarker.setMap(null); 

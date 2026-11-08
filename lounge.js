@@ -23,7 +23,7 @@
   };
   const okbmSafeImageUrl = typeof window.okbmSafeImageUrl === 'function' ? window.okbmSafeImageUrl : function () { return ''; };
   // 화면에 보여 줄 사진은 img.romanticroute.kr로(romantic-sync.js okbmFastImageUrl)
-  const okbmFastImageUrl = function (u) { return typeof window.okbmFastImageUrl === 'function' ? window.okbmFastImageUrl(u) : okbmSafeImageUrl(u); };
+  const okbmFastImageUrl = function (u, width) { return typeof window.okbmFastImageUrl === 'function' ? window.okbmFastImageUrl(u, width) : okbmSafeImageUrl(u); };
   const okbmSafeExternalUrl = typeof window.okbmSafeExternalUrl === 'function' ? window.okbmSafeExternalUrl : function () { return '#'; };
   const esc = escapeHtml;
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -2844,7 +2844,7 @@
     el.hidden = false;
     el.innerHTML = '<div class="hm-head">낭만 매거진</div><div class="hm-rail">' + list.map(function (n) {
       const cover = newsImgs(n)[0];
-      return `<button type="button" class="hm-card" data-a="news" data-v="${esc(n.id)}" aria-label="${esc(n.title)}">${cover ? `<img src="${escapeHtml(okbmFastImageUrl(cover))}" alt="" loading="lazy" decoding="async">` : ''}<span>${n.is_active === false ? '<em>숨김</em>' : ''}${esc(n.title)}</span></button>`;
+      return `<button type="button" class="hm-card" data-a="news" data-v="${esc(n.id)}" aria-label="${esc(n.title)}">${cover ? `<img src="${escapeHtml(okbmFastImageUrl(cover, 320))}" alt="" loading="lazy" decoding="async">` : ''}<span>${n.is_active === false ? '<em>숨김</em>' : ''}${esc(n.title)}</span></button>`;
     }).join('') + (D.admin ? '<button type="button" class="hm-card add" data-a="new-news" data-v="magazine">' + ico(P.plus, 20) + '<span>매거진 올리기</span></button>' : '') + '</div>';
   }
   // 소식·매거진 보기 (아래에서 올라오는 창). 사진이 여러 장이면 옆으로 넘긴다

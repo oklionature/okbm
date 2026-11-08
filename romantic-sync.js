@@ -523,23 +523,35 @@ function okbmSafeExternalUrl(url) {
 // 저장·비교에 쓰는 주소는 그대로 r2.dev로 둔다. 못 받으면 okbmImageRetryOriginal로 원래 주소를 한 번 더 받는다.
 var OKBM_R2_PUBLIC_BASE = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
 var OKBM_IMG_FAST_BASE = 'https://img.romanticroute.kr/';
-function okbmFastImageUrl(url) {
+// 크기를 단계로 묶는다. Cloudflare는 원본·설정 조합마다 한 달에 한 번 세고 월 5,000건까지 무료다. https://developers.cloudflare.com/images/pricing/
+var OKBM_IMG_WIDTHS = [120, 320, 640, 1080, 1600];
+var OKBM_IMG_RESIZED = /^cdn-cgi\/image\/[^/]+\//;
+function okbmFastImageUrl(url, width) {
   var safe = okbmSafeImageUrl(url);
-  if (safe.indexOf(OKBM_R2_PUBLIC_BASE) === 0) return OKBM_IMG_FAST_BASE + safe.slice(OKBM_R2_PUBLIC_BASE.length);
-  return safe;
+  var key = safe.indexOf(OKBM_R2_PUBLIC_BASE) === 0 ? safe.slice(OKBM_R2_PUBLIC_BASE.length)
+    : safe.indexOf(OKBM_IMG_FAST_BASE) === 0 ? safe.slice(OKBM_IMG_FAST_BASE.length)
+    : null;
+  if (key === null) return safe;
+  if (!width || OKBM_IMG_RESIZED.test(key) || /\.(mp4|mov|webm|m4v)(\?|$)/i.test(key)) return OKBM_IMG_FAST_BASE + key;
+  var w = OKBM_IMG_WIDTHS.find(function(s) { return s >= width; }) || OKBM_IMG_WIDTHS[OKBM_IMG_WIDTHS.length - 1];
+  return OKBM_IMG_FAST_BASE + 'cdn-cgi/image/width=' + w + ',quality=70,fit=scale-down,format=auto/' + key.split('?')[0];
+}
+function okbmHeroPhotoUrl(url) {
+  return okbmFastImageUrl(url, 1080);
 }
 function okbmImageRetryOriginal(img) {
   if (!img || img.__okbmTriedOriginal) return false;
   var src = String(img.getAttribute('src') || '');
-  if (src.indexOf(OKBM_IMG_FAST_BASE) !== 0 || src.indexOf(OKBM_IMG_FAST_BASE + 'cdn-cgi/') === 0) return false;
+  if (src.indexOf(OKBM_IMG_FAST_BASE) !== 0) return false;
   img.__okbmTriedOriginal = true;
-  img.src = OKBM_R2_PUBLIC_BASE + src.slice(OKBM_IMG_FAST_BASE.length);
+  img.src = OKBM_R2_PUBLIC_BASE + src.slice(OKBM_IMG_FAST_BASE.length).replace(OKBM_IMG_RESIZED, '');
   return true;
 }
 
 window.okbmNormalizeUserBio = okbmNormalizeUserBio;
 window.okbmSafeImageUrl = okbmSafeImageUrl;
 window.okbmFastImageUrl = okbmFastImageUrl;
+window.okbmHeroPhotoUrl = okbmHeroPhotoUrl;
 window.okbmImageRetryOriginal = okbmImageRetryOriginal;
 // 어느 화면이든 img.romanticroute.kr 사진을 못 받으면 원래 주소로 한 번 더 받는다.
 // 다시 받는 동안에는 그 사진의 onerror(슬라이드 지우기 등)가 돌지 않게 여기서 멈춘다.

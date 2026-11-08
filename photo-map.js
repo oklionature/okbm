@@ -330,12 +330,11 @@
   // 같은 사진·같은 크기는 한 번만 줄이고(월 5,000건 무료) 그다음부터는 캐시에서 나간다. 지도엔 피드 대표 사진만 나온다.
   // R2가 아닌 사진이나 실패하면 원본을 받아 기기에서 줄인다(thumb).
   var R2_BASE = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/';
-  var IMG_BASE = 'https://img.romanticroute.kr/';
   // 새 주소가 한 번 실패하면(도메인 미연결·이미지 줄이기 꺼짐 등) 이번에 열린 동안은 바로 원본 쪽으로 간다.
   var cdnDown = false;
   function cdnUrl(url, w) {
-    if (cdnDown || !url || url.indexOf(R2_BASE) !== 0) return null;
-    return IMG_BASE + 'cdn-cgi/image/width=' + w + ',quality=70,fit=scale-down,format=auto/' + url.slice(R2_BASE.length).split('?')[0];
+    if (cdnDown || !url || url.indexOf(R2_BASE) !== 0 || typeof window.okbmFastImageUrl !== 'function') return null;
+    return window.okbmFastImageUrl(url, w);
   }
   // ------------------------------------------------------------------ 사진 받기(캔버스에 그릴 그림으로)
   // 같은 사진·크기는 한 번만 받는다. 다 풀린(decode) 그림을 넘겨야 그릴 때 비지 않는다.

@@ -78,8 +78,8 @@
       return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
     };
     // 화면에 보여 줄 사진은 img.romanticroute.kr로(romantic-sync.js okbmFastImageUrl). 전역이라 이름을 달리 둔다
-    var okbmViewImageUrl = function(url) {
-      return (typeof window.okbmFastImageUrl === 'function') ? window.okbmFastImageUrl(url) : okbmSafeImageUrl(url);
+    var okbmViewImageUrl = function(url, width) {
+      return (typeof window.okbmFastImageUrl === 'function') ? window.okbmFastImageUrl(url, width) : okbmSafeImageUrl(url);
     };
     var okbmSafeExternalUrl = function(url) {
       return (typeof window.okbmSafeExternalUrl === 'function') ? window.okbmSafeExternalUrl(url) : '#';
@@ -790,7 +790,7 @@
         return `
           <div class="n-trailer-card" data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId)" style="width:118px !important; flex-shrink:0; cursor:pointer;">
             <div class="n-trailer-thumb">
-              <img src="${escapeHtml(okbmViewImageUrl(item.photoUrl))}" alt="${escapeHtml(sName)}" loading="lazy" decoding="async" />
+              <img src="${escapeHtml(okbmViewImageUrl(item.photoUrl, 320))}" alt="${escapeHtml(sName)}" loading="lazy" decoding="async" />
               <div class="n-trailer-weight-chip">${escapeHtml(badgeText)}</div>
             </div>
             <div class="n-trailer-info">
@@ -1531,7 +1531,7 @@
         var isFirst = (pIdx === 0);
         var loadingAttr = isFirst ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
         return '<div class="hero-slide-item" style="flex:0 0 100%; width:100%; height:100%; min-width:100%; position:relative; overflow:hidden; background:#000000;">' +
-          '<img src="' + escapeHtml(okbmViewImageUrl(pUrl)) + '" referrerpolicy="no-referrer" ' + loadingAttr + ' decoding="async" onerror="window.handleHeroSlideImgError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.95) contrast(1.04); display:block;" />' +
+          '<img src="' + escapeHtml(typeof window.okbmHeroPhotoUrl === 'function' ? window.okbmHeroPhotoUrl(pUrl) : okbmViewImageUrl(pUrl)) + '" referrerpolicy="no-referrer" ' + loadingAttr + ' decoding="async" onerror="window.handleHeroSlideImgError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.95) contrast(1.04); display:block;" />' +
           '<div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 20%, transparent 32%, transparent 80%, rgba(0,0,0,0.35) 100%); pointer-events:none; z-index:2;"></div>' +
         '</div>';
       }).join('');
