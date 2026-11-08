@@ -4282,7 +4282,7 @@
       return `<button type="button" class="lm-gl" data-a="gear-post" data-v="${esc(p.id)}"><b>${esc(p.title)}</b>${p.gear_review ? rvSumHtml(p.gear_review) : ''}<small>${esc([p.nickname, ago(p.created_at), (st.gk === 'review' ? '댓글 ' : '답변 ') + (Number(p.comments_count) || 0)].filter(Boolean).join(' · '))}</small></button>`;
     }).join('') : '<div class="lm-empty">' + (st.gk === 'review' ? '아직 이 장비 후기가 없어요' : '아직 이 장비 질문이 없어요') + '</div>';
   }
-  // 가진 사람 수(누군지는 숨김)와 이 장비를 기록한 공개 피드의 박지 (I8)
+  // 같이 사용하는 낭만루터 수: 이 장비를 내 장비에 둔 회원 수(누군지는 숨김) (I8)
   function paintGearStats(st) {
     const c = sb(), name = st.post.gear_name;
     if (!c || !name) return;
@@ -4290,7 +4290,7 @@
       const x = res && res[name];
       const box = SH === st && sheet && sheet.querySelector('[data-gear-stats]');
       if (!box || !x || !x.owners) return;
-      box.innerHTML = '<div style="margin-top:12px;display:inline-flex;align-items:baseline;gap:6px;background:#26262c;border-radius:12px;padding:10px 12px"><b style="font-size:17px;font-weight:800">' + Number(x.owners) + '명</b><small style="font-size:12px;color:var(--sub)">이 장비를 내 장비에 둔 사람</small></div>';
+      box.innerHTML = '<div style="margin-top:12px;display:inline-flex;align-items:baseline;gap:6px;background:#26262c;border-radius:12px;padding:10px 12px"><b style="font-size:17px;font-weight:800">' + Number(x.owners) + '명</b><small style="font-size:12px;color:var(--sub)">같이 사용하는 낭만루터</small></div>';
     }).catch(function (err) { console.warn('[lounge.js:paintGearStats]', err); });
   }
   // 장비 정보: 브랜드 · 종류(자립) · 무게 · 특징 · 제조사·판매처 링크
