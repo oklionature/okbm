@@ -14634,7 +14634,7 @@ function okbmNotifKindStyle(kind) {
   if (kind === 'feed_comment' || kind === 'feed_reply') return { icon: 'chat', fill: '#2b6fd6', soft: 'rgba(76,148,248,0.16)', ink: '#4c94f8' };
   if (kind === 'follow_feed') return { icon: 'tent', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
   if (kind === 'follow') return { icon: 'user', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
-  if (kind === 'lounge_comment' || kind === 'lounge_reply') return { icon: 'chat', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
+  if (kind === 'lounge_comment' || kind === 'lounge_reply' || kind === 'lounge_gear_q' || kind === 'lounge_gear_again') return { icon: 'chat', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
   // '내 덕분에' 알림(I4): 내 GPX를 연 사람·내가 제보한 박지를 담은 사람이 고비를 넘었을 때
   if (kind === 'thanks_gpx') return { icon: 'route', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
   if (kind === 'thanks_bookmark') return { icon: 'bookmark', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
@@ -14719,7 +14719,7 @@ function okbmNotifRowHtml(r, unread) {
   var kind = String(r.kind || '').toLowerCase();
   var ks = okbmNotifKindStyle(kind);
   // 백패커 라운지 댓글·건의 답변 알림은 누르면 그 글을 연다 (related_id = 글 id)
-  var loungePostId = (kind === 'lounge_comment' || kind === 'lounge_reply') ? String(r.related_id || '').trim() : '';
+  var loungePostId = (kind === 'lounge_comment' || kind === 'lounge_reply' || kind === 'lounge_gear_q' || kind === 'lounge_gear_again') ? String(r.related_id || '').trim() : '';
   // 내 피드에 달린 별·댓글, 내가 댓글 단 피드의 새 댓글 알림(H17)은 누르면 그 피드를 연다 (related_id = 피드 id).
   // 댓글 알림이면 댓글 창도 펼친다.
   var isFeedCommentKind = kind === 'feed_comment' || kind === 'feed_reply';

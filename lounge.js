@@ -4124,6 +4124,7 @@
     const p = st.post, term = gearTerm(p.gear_name);
     return `<h3 id="loungeSheetTitle">${esc(gearShort(p.gear_name))}</h3>
       <p class="lm-gmeta" data-gear-meta>${esc(GEAR_CAT[p.gear_cat] || '장비')}</p>
+      <div data-gear-stats></div>
       <div data-gear-sum></div>
       <label class="lm-lbl" for="lmGearTerm" style="margin-top:20px">중고 시세 보러 가기 · 검색어</label>
       ${inp('lmGearTerm', 'term', term, 'data-gear-term maxlength="60" enterkeyhint="done"')}
@@ -4182,9 +4183,24 @@
       return `<button type="button" class="lm-gl" data-a="gear-post" data-v="${esc(p.id)}"><b>${esc(p.title)}</b>${p.gear_review ? rvSumHtml(p.gear_review) : ''}<small>${esc([p.nickname, ago(p.created_at), (st.gk === 'review' ? '댓글 ' : '답변 ') + (Number(p.comments_count) || 0)].filter(Boolean).join(' · '))}</small></button>`;
     }).join('') : '<div class="lm-empty">' + (st.gk === 'review' ? '아직 이 장비 후기가 없어요' : '아직 이 장비 질문이 없어요') + '</div>';
   }
+  // 가진 사람 수(누군지는 숨김)와 이 장비를 기록한 공개 피드의 박지 (I8)
+  function paintGearStats(st) {
+    const c = sb(), name = st.post.gear_name;
+    if (!c || !name) return;
+    q(c.rpc('okbm_gear_stats', { p_names: [name], p_mine: false })).then(function (res) {
+      const x = res && res[name];
+      const box = SH === st && sheet && sheet.querySelector('[data-gear-stats]');
+      if (!box || !x || (!x.owners && !x.spots)) return;
+      const tile = function (b, t) { return '<div style="background:#26262c;border-radius:12px;padding:11px 12px"><b style="display:block;font-size:17px;font-weight:800">' + b + '</b><small style="display:block;font-size:12px;color:var(--sub);margin-top:2px">' + t + '</small></div>'; };
+      const spots = (Array.isArray(x.spot_names) ? x.spot_names : []).map(function (n) { return '<span style="height:30px;padding:0 11px;border-radius:15px;background:#26262c;font-size:13px;font-weight:700;display:inline-flex;align-items:center">' + esc(n) + '</span>'; }).join('');
+      box.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px">' + tile(Number(x.owners || 0) + '명', '내 장비에 둔 사람') + tile(Number(x.spots || 0) + '곳', '이 장비로 간 박지') + '</div>'
+        + (spots ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">' + spots + '</div>' : '');
+    }).catch(function (err) { console.warn('[lounge.js:paintGearStats]', err); });
+  }
   function openGear(p) {
     const st = { kind: 'gear', key: gearOfKey(p), post: p, gk: p.gear_kind === 'review' ? 'review' : 'question' };
     openSheet(gearSheetHtml(st), st);
+    paintGearStats(st);
     if (p.gear_id) { // 목록 장비면 무게를 붙인다
       ensureGears().then(function (all) {
         const g = (all || []).find(function (x) { return x && String(x.id) === String(p.gear_id); });
@@ -5044,6 +5060,19 @@
   }
 
   window.openLoungeWindow = function (tab, itemId) { openLoungeWindow(tab, itemId, null); };
+  // 낭만플랜 장비관리에서 부른다: 그 장비 후기 쓰기, 그 장비 모아 보기 (I8). g = { id, name, cat }
+  window.okbmLoungeGearReview = function (g) {
+    if (!g || !g.name) return;
+    ensureLayer();
+    if (D.status === 'idle') loadAll();
+    openPostForm(null, 'gear', { kind: 'review', gear: { id: g.id || '', name: String(g.name).slice(0, 120), cat: GEAR_CAT[g.cat] ? g.cat : 'other', weight_g: Number(g.weight_g) || 0 } });
+  };
+  window.okbmLoungeGearOpen = function (g) {
+    if (!g || !g.name) return;
+    ensureLayer();
+    if (D.status === 'idle') loadAll();
+    openGear({ gear_id: g.id || '', gear_name: String(g.name).slice(0, 120), gear_cat: GEAR_CAT[g.cat] ? g.cat : 'other', gear_kind: 'review' });
+  };
   window.closeLoungeWindow = closeLoungeWindow;
   window.closeLoungeSheet = function () { closeSheet(); };
   // 지도 정보창 후기 블록(romantic-sync.js)에서 부른다. 두 페이지 부트로더에 bindLazy로 걸려 있다

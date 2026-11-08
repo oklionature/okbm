@@ -4921,6 +4921,7 @@ window.saveCurrentPackingRecord = function() {
                     <div style="font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeGearNameAttr}</div>
                     <div class="pk-meta" style="margin-top:2px;">${escapeHtml(pal.label)} · ${escapeHtml(g.brand || '내 장비')} · ${(g.weight / 1000).toFixed(2)}kg</div>
                     ${extra ? `<div class="pk-meta" style="margin-top:1px;">${extra}</div>` : ''}
+                    <div class="pk-meta" data-grv-line style="display:none; margin-top:4px; align-items:center; gap:6px; flex-wrap:wrap;"></div>
                   </div>
                   <span style="font-size:12px; font-weight:700; flex-shrink:0; ${statusStyle}">${curStatus === 'repair' ? '정비요망' : (curStatus === 'sell' ? '방출예정' : '정상')}</span>
                   <span style="color:var(--tx-4, #55555d); font-size:18px; flex-shrink:0; pointer-events:none;">›</span>
@@ -4950,6 +4951,7 @@ window.saveCurrentPackingRecord = function() {
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('plan');
     }
+    if (window.activePlanSubMode === 'gears') grvPaintRows();
 
     if (window.activePlanSubMode === 'calculator') {
       if (typeof window.ensureGearCategoryLoaded === 'function') {
@@ -4997,6 +4999,124 @@ window.saveCurrentPackingRecord = function() {
       window.bindPlanMemoKeyboardLift();
     }
   };
+  // ----- 장비 후기 (I7·I8): 장비관리 줄에 '박지 N곳 기록 · ★ 내 후기', 장비 창 위에 내 후기·간 박지·모두의 후기 -----
+  // 내 후기는 라운지 장비 후기 글(lounge_posts.gear_review), 박지는 내 피드에 기록한 장비(okbm_gear_stats mine)에서 센다.
+  var GRV = { uid: '', at: 0, job: null, reviews: {}, spots: {} };
+  var GRV_PERIOD = { '1m': '한 달', '6m': '반년', '1y': '1년', '1y+': '1년 이상' };
+  var GRV_USES = { '5': '5회', '10': '10회', '10+': '10회 이상' };
+  function grvUid() {
+    try { return String((window.okbmGetCurrentUserId && window.okbmGetCurrentUserId()) || '').trim(); } catch (e) { return ''; }
+  }
+  function grvLoad(names) {
+    var uid = grvUid(), c = window.supabaseClient;
+    if (!uid || !c) return Promise.resolve(null);
+    if (GRV.uid === uid && GRV.job && Date.now() - GRV.at < 60000) return GRV.job;
+    GRV.uid = uid;
+    GRV.at = Date.now();
+    GRV.job = Promise.all([
+      c.from('lounge_posts').select('id,gear_name,gear_review,created_at').eq('user_id', uid).not('gear_review', 'is', null).order('created_at', { ascending: false }).limit(200),
+      c.rpc('okbm_gear_stats', { p_names: names.slice(0, 200), p_mine: true })
+    ]).then(function (res) {
+      var reviews = {};
+      ((res[0] && res[0].data) || []).forEach(function (p) { if (p.gear_name && !reviews[p.gear_name]) reviews[p.gear_name] = p; });
+      GRV.reviews = reviews;
+      GRV.spots = (res[1] && res[1].data) || {};
+      return GRV;
+    }).catch(function (e) {
+      console.warn('[romantic-plan.js:grvLoad]', e);
+      GRV.job = null;
+      return null;
+    });
+    return GRV.job;
+  }
+  function grvStars(n, size) {
+    var h = '';
+    for (var i = 1; i <= 5; i++) h += '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" aria-hidden="true" style="display:block;"><path fill="' + (i <= n ? '#ffc342' : '#34343b') + '" d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>';
+    return '<span role="img" aria-label="별점 ' + n + '점" style="display:inline-flex; gap:2px;">' + h + '</span>';
+  }
+  function grvMasterGear(name) {
+    var g = (window.GEARS_MASTER || []).find(function (x) { return x && String(x.item_name) === String(name); });
+    return g ? { id: String(g.id), name: String(g.item_name), cat: String(g.category_id || 'other'), weight_g: Number(g.weight_g) || 0 } : null;
+  }
+  function grvLounge(fn) {
+    var ready = typeof window.okbmEnsureLounge === 'function' ? window.okbmEnsureLounge() : Promise.resolve();
+    return ready.then(fn).catch(function (e) { console.warn('[romantic-plan.js:grvLounge]', e); });
+  }
+  window.okbmGearRvWrite = function (name) {
+    var old = document.getElementById('gearMetaEditSheet');
+    if (old) old.remove();
+    var g = grvMasterGear(name) || { id: '', name: name, cat: resolvePlanGearCategoryId(name) || 'other' };
+    grvLounge(function () { if (typeof window.okbmLoungeGearReview === 'function') window.okbmLoungeGearReview(g); });
+  };
+  window.okbmGearRvOpenAll = function (name) {
+    var old = document.getElementById('gearMetaEditSheet');
+    if (old) old.remove();
+    var g = grvMasterGear(name) || { id: '', name: name, cat: resolvePlanGearCategoryId(name) || 'other' };
+    grvLounge(function () { if (typeof window.okbmLoungeGearOpen === 'function') window.okbmLoungeGearOpen(g); });
+  };
+  window.okbmGearRvOpenPost = function (id) {
+    var old = document.getElementById('gearMetaEditSheet');
+    if (old) old.remove();
+    grvLounge(function () { if (typeof window.openLoungeWindow === 'function') window.openLoungeWindow(2, id); });
+  };
+  // 장비관리 줄마다: 박지 기록 수, 내 후기 별점, 목록 장비인데 후기가 없으면 '후기 쓰기'
+  function grvPaintRows() {
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.my-gear-manage-card[data-gear-name]'));
+    if (!cards.length) return;
+    var names = cards.map(function (c) { return c.getAttribute('data-gear-name'); });
+    grvLoad(names).then(function (d) {
+      if (!d) return;
+      cards.forEach(function (card) {
+        var name = card.getAttribute('data-gear-name');
+        var line = card.querySelector('[data-grv-line]');
+        if (!line || !card.isConnected) return;
+        var st = d.spots[name] || {}, rv = d.reviews[name], parts = [];
+        if (Number(st.spots) > 0) parts.push('<span style="color:#4c94f8; font-weight:700;">박지 ' + Number(st.spots) + '곳 기록</span>');
+        if (rv && rv.gear_review) parts.push('<span style="display:inline-flex; align-items:center; gap:4px; color:var(--tx-2, #d1d1d6); font-weight:700;">' + grvStars(Number(rv.gear_review.rating) || 0, 12) + '내 후기</span>');
+        else if (grvMasterGear(name)) parts.push('<button type="button" data-gear="' + escapeHtml(name) + '" onclick="event.stopPropagation(); window.okbmGearRvWrite(this.dataset.gear);" style="height:26px; padding:0 10px; border:none; border-radius:13px; background:rgba(76,148,248,0.16); color:#4c94f8; font-size:12px; font-weight:800; font-family:inherit; cursor:pointer;">후기 쓰기</button>');
+        line.innerHTML = parts.join('<span style="color:var(--tx-4, #55555d);">·</span>');
+        line.style.display = parts.length ? 'flex' : 'none';
+      });
+    });
+  }
+  window.okbmGearRvPaintRows = grvPaintRows;
+  // 장비 창 위: 내 후기(없으면 후기 쓰기), 이 장비로 간 박지, 모두의 후기 보기
+  function grvPaintSheet(name) {
+    var box = document.querySelector('#gearMetaEditSheet [data-grv-sheet]');
+    if (!box) return;
+    grvLoad([name]).then(function (d) {
+      if (!d || !box.isConnected) return;
+      var st = d.spots[name], rv = d.reviews[name], h = '';
+      if (!st && !rv) {
+        // 이 장비가 처음 불러온 이름 묶음에 없으면 한 번 더 묻는다
+        GRV.job = null;
+        return grvLoad([name]).then(function () { if (box.isConnected && GRV.spots[name]) grvPaintSheet(name); });
+      }
+      var r = rv && rv.gear_review;
+      if (r) {
+        var meta = [GRV_PERIOD[r.period] || '', GRV_USES[r.uses] || ''].filter(Boolean).join(' · ');
+        var tags = (Array.isArray(r.pros) ? r.pros : []).slice(0, 4).map(function (t) { return '<span style="color:#34d399;">' + escapeHtml(t) + '</span>'; })
+          .concat((Array.isArray(r.cons) ? r.cons : []).slice(0, 3).map(function (t) { return '<span style="color:#f87171;">' + escapeHtml(t) + '</span>'; })).join(' · ');
+        h += '<span class="gme-lbl">내 후기</span>'
+          + '<div data-id="' + escapeHtml(rv.id) + '" onclick="window.okbmGearRvOpenPost(this.dataset.id);" role="button" tabindex="0" style="background:var(--bg-2, #17171b); border-radius:14px; padding:12px 14px; cursor:pointer;">'
+          + '<div style="display:flex; align-items:center; gap:8px;">' + grvStars(Number(r.rating) || 0, 14) + '<span style="font-size:12px; font-weight:700; color:var(--tx-3, #8b8b93);">' + escapeHtml(meta) + '</span><span style="margin-left:auto; font-size:13px; font-weight:800; color:#4c94f8;">보기</span></div>'
+          + (tags ? '<div style="margin-top:8px; font-size:13px; font-weight:600; line-height:1.55;">' + tags + '</div>' : '') + '</div>';
+      } else if (grvMasterGear(name)) {
+        h += '<button type="button" data-gear="' + escapeHtml(name) + '" onclick="window.okbmGearRvWrite(this.dataset.gear);" style="width:100%; height:44px; margin-top:12px; border:none; border-radius:12px; background:rgba(76,148,248,0.16); color:#4c94f8; font-size:14px; font-weight:800; font-family:inherit; cursor:pointer;">이 장비 후기 쓰기 · 10포인트</button>';
+      }
+      var spots = st && Array.isArray(st.spot_names) ? st.spot_names : [];
+      if (st && Number(st.spots) > 0) {
+        h += '<span class="gme-lbl">이 장비로 간 박지 <span style="color:#4c94f8;">' + Number(st.spots) + '곳</span></span><div style="display:flex; gap:6px; flex-wrap:wrap;">'
+          + spots.map(function (n) { return '<span style="height:28px; padding:0 10px; border-radius:14px; background:var(--bg-3, #2a2a30); font-size:12px; font-weight:700; color:var(--tx-2, #d1d1d6); display:inline-flex; align-items:center;">' + escapeHtml(n) + '</span>'; }).join('') + '</div>';
+      }
+      if (grvMasterGear(name)) {
+        h += '<div data-gear="' + escapeHtml(name) + '" onclick="window.okbmGearRvOpenAll(this.dataset.gear);" role="button" tabindex="0" style="margin-top:12px; display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:14px; background:rgba(76,148,248,0.12); cursor:pointer;">'
+          + '<div style="flex:1; min-width:0;"><div style="font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3);">모두의 후기 보기</div><div class="pk-g" style="margin-top:2px; font-weight:600;">다른 분들 별점·후기와 중고 시세</div></div><span style="color:#4c94f8; font-size:18px; font-weight:800;">›</span></div>';
+      }
+      box.innerHTML = h;
+    });
+  }
+
  window.openGearMetaEditSheet = function(gearName) {
     if (!gearName) return;
     var old = document.getElementById('gearMetaEditSheet');
@@ -5026,6 +5146,7 @@ window.saveCurrentPackingRecord = function() {
           </div>
           <button type="button" class="gdm-x" onclick="document.getElementById('gearMetaEditSheet').remove();" aria-label="닫기">✕</button>
         </div>
+        <div data-grv-sheet></div>
         <div class="gme-grid">
           <div>
             <span class="gme-lbl">구매일</span>
@@ -5067,6 +5188,7 @@ window.saveCurrentPackingRecord = function() {
       </div>
     `;
     document.body.appendChild(sheet);
+    grvPaintSheet(gearName);
   };
 
   window.saveGearMetaFromSheet = function(gearName) {
