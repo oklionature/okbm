@@ -821,6 +821,12 @@
       '.lm-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}',
       '.lm-thumb{position:relative;width:76px;height:76px;border-radius:12px;overflow:hidden;background:#26262c;display:grid;place-items:center;font-size:11px;color:var(--sub)}',
       '.lm-thumb img{width:100%;height:100%;object-fit:cover}',
+      '.lm-thumb .rvp{top:auto;right:auto;left:0;bottom:0;width:100%;height:24px;border-radius:0;background:rgba(0,0,0,.55);font-size:11px;font-weight:800;color:#fff}',
+      '.lm-thumb .rvp.on{background:var(--blue-fill,#2b6fd6)}.lm-thumb.rvon{box-shadow:inset 0 0 0 2px var(--blue)}',
+      '.lm-gcard>i.ph{width:64px;height:64px;border-radius:12px;overflow:hidden}.lm-gcard>i.ph img{width:100%;height:100%;object-fit:cover}',
+      '.lm-gphoto{margin-top:14px;width:100%;height:210px;border-radius:16px;overflow:hidden;background:#26262c;position:relative}.lm-gphoto img{width:100%;height:100%;object-fit:cover}',
+      '.lm-gphoto span{position:absolute;left:10px;bottom:10px;height:24px;padding:0 9px;border-radius:12px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:700;display:inline-flex;align-items:center}',
+      '.lm-gphotos{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}.lm-gphotos img{width:104px;height:104px;border-radius:12px;object-fit:cover;flex:none;background:#26262c}',
       '.lm-thumb button{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;display:grid;place-items:center}',
       '.lm-chipline button:disabled{opacity:.45;cursor:default}',
       '.lm-revhead{display:flex;align-items:baseline;gap:10px;margin:18px 0 2px}',
@@ -1905,16 +1911,22 @@
     if (/반자립|세미 ?자립|semi/i.test(t)) return '';
     return /자립|free-?standing/i.test(t) ? 'free' : '';
   }
+  function gearKindLabel(p) {
+    if (p.gear_cat !== 'sleep') return GEAR_CAT[p.gear_cat] || '';
+    const k = p.gear_review && p.gear_review.kind;
+    return k === 'mat' || (!k && isMatName(p.gear_name)) ? '매트' : '침낭';
+  }
   function gearMetaText(p) {
     const g = GI.info[p.gear_id] || {};
     const stand = p.gear_cat === 'shelter' ? ({ free: '자립', non: '비자립' })[gearStandOf(p.gear_id, p.gear_review)] : '';
-    return [GEAR_CAT[p.gear_cat] || '', Number(g.weight_g) ? (Number(g.weight_g) / 1000).toFixed(2) + 'kg' : '', stand || '',
+    return [gearKindLabel(p), Number(g.weight_g) ? (Number(g.weight_g) / 1000).toFixed(2) + 'kg' : '', stand || '',
       String(g.specs_detail || '').trim() || gearParen(p.gear_name)].filter(Boolean).join(' · ');
   }
   // 글 위쪽(닉네임 밑) 장비 카드. 누르면 장비 정보 창
   function gearCardHtml(p) {
     if (p.gear_id) gearInfoWant(p.gear_id);
-    return `<button type="button" class="lm-gcard" data-a="gear-open" data-v="${esc(p.id)}"${p.gear_id ? ` data-gid="${esc(p.gear_id)}"` : ''} aria-label="${esc(gearShort(p.gear_name) + ', 장비 정보와 후기 보기')}"><i>${ico(P.tent, 22)}</i><span><b>${esc(gearShort(p.gear_name))}</b><small>${esc(gearMetaText(p))}</small></span>${ico(P.chevR, 18)}</button>`;
+    const photo = p.gear_review && okbmSafeImageUrl(p.gear_review.photo);
+    return `<button type="button" class="lm-gcard" data-a="gear-open" data-v="${esc(p.id)}"${p.gear_id ? ` data-gid="${esc(p.gear_id)}"` : ''} aria-label="${esc(gearShort(p.gear_name) + ', 장비 정보와 후기 보기')}">${photo ? `<i class="ph"><img src="${escapeHtml(okbmFastImageUrl(photo))}" alt="" loading="lazy" decoding="async"></i>` : `<i>${ico(P.tent, 22)}</i>`}<span><b>${esc(gearShort(p.gear_name))}</b><small>${esc(gearMetaText(p))}</small></span>${ico(P.chevR, 18)}</button>`;
   }
   // 장비 후기 본문: 안내 칸 제목을 크게. 접힌 글은 첫 칸 세 줄만
   function rvBodyHtml(body) {
@@ -2287,9 +2299,21 @@
       <div class="lmx-links">${links.join('')}</div></div>`;
     return fold(p.id, head, body);
   }
+  // 장비 후기가 많아 '전체'가 장비로 도배되지 않게: 고정 글 → 설문·투표 → 백패킹이야기 → 그 밖 → 장비는 최신 하나만
+  function allOrder(list) {
+    const pin = [], poll = [], story = [], gear = [], etc = [];
+    list.forEach(function (p) {
+      if (p.is_pinned) pin.push(p);
+      else if (p.category === 'poll') poll.push(p);
+      else if (p.category === 'backpacking' || p.category === 'life') story.push(p);
+      else if (p.category === 'gear') gear.push(p);
+      else etc.push(p);
+    });
+    return pin.concat(poll, story, etc, gear.slice(0, 1));
+  }
   function boardListHtml() {
     const key = boardKey();
-    const list = visiblePosts(key);
+    const list = key === 'all' ? allOrder(visiblePosts(key)) : visiblePosts(key);
     const st = postsBy[key];
     if (!st) return '<div class="lm-empty">불러오는 중…</div>';
     const empty = S.cat === 'suggestion' ? '내가 쓴 건의가 없어요'
@@ -2318,7 +2342,7 @@
   };
   function paneBoard(full) {
     if (!full) {
-      const list = visiblePosts('all').slice(0, HOME_N);
+      const list = allOrder(visiblePosts('all')).slice(0, HOME_N);
       if (!list.length) return homeEmpty('첫 글을 기다리고 있어요', 2, '라운지 열기');
       return list.map(postRow).join('') + moreBtn(2, '자유게시판 전체 보기');
     }
@@ -2883,7 +2907,8 @@
       if (key === 'board') {
         const poll = list.find(function (p) { return p.category === 'poll'; })
           || visiblePosts('poll').find(function (p) { return !p.is_private; });
-        const rest = list.filter(function (p) { return p.category !== 'poll'; });
+        // 장비 후기가 몰려도 장비는 한 줄만, 백패킹이야기를 앞에(대표님 11-09)
+        const rest = allOrder(list.filter(function (p) { return p.category !== 'poll'; }));
         list = poll ? [poll].concat(rest) : rest;
       }
       list = list.slice(0, HUB_N);
@@ -3772,7 +3797,9 @@
     const list = SH.photos || [];
     return list.map(function (ph, i) {
       if (ph.uploading) return '<div class="lm-thumb" aria-label="사진 올리는 중">올리는 중…</div>';
-      return `<div class="lm-thumb"><img src="${escapeHtml(okbmFastImageUrl(ph.url))}" alt="" decoding="async"><button type="button" data-a="photo-del" data-v="${i}" aria-label="사진 ${i + 1} 빼기">${ico(P.x, 14)}</button></div>`;
+      const rvOn = SH.cat === 'gear' && SH.gkind === 'review' && SH.rv;
+      const pick = rvOn && SH.rv.photo === ph.url;
+      return `<div class="lm-thumb${pick ? ' rvon' : ''}"><img src="${escapeHtml(okbmFastImageUrl(ph.url))}" alt="" decoding="async"><button type="button" data-a="photo-del" data-v="${i}" aria-label="사진 ${i + 1} 빼기">${ico(P.x, 14)}</button>${rvOn ? `<button type="button" class="rvp${pick ? ' on' : ''}" data-a="rv-photo" data-v="${i}" aria-pressed="${pick}">${pick ? '장비 사진' : '장비 사진으로'}</button>` : ''}</div>`;
     }).join('');
   }
   // 투표 보기 칸 (2~5개). 3번째부터 뺄 수 있다
@@ -3874,7 +3901,7 @@
   function rvSyncGear(st) {
     const rv = st.rv, g = st.gear;
     rv.known = '';
-    if (st.gcat === 'sleep' && g) rv.sleep = isMatName(g.name) ? 'mat' : 'bag';
+    if (st.gcat === 'sleep' && g && !rv.sleep) rv.sleep = isMatName(g.name) ? 'mat' : 'bag';
     if (!g || !g.id || st.gcat !== 'shelter') return;
     rv.known = standFromList(g.id);
     if (rv.known) return;
@@ -3924,19 +3951,18 @@
     if (!sheet) return;
     sheet.querySelectorAll('[data-rv-etc]').forEach(function (el) { st.rv.etc[el.dataset.rvEtc] = String(el.value || '').trim(); });
   }
-  // 제목이 비었거나 저절로 채운 그대로면 '기간 사용 후기'로 채운다. 장비 이름은 글 위 장비 카드에 크게 나온다
+  // 제목이 비었거나 저절로 채운 그대로면 '장비 이름 사용 후기'로 채운다(대표님 11-09)
   function rvAutoTitle(st) {
     if (!sheet || st.id) return;
     const ti = sheet.querySelector('#lmPostTitle');
     if (!ti || (ti.value.trim() && ti.value.trim() !== st.autoTitle)) return;
-    const per = rvLabel(RV_PERIODS, st.rv.period);
-    if (!per) return;
-    st.autoTitle = per + ' 사용 후기';
+    if (!st.gear) return;
+    st.autoTitle = gearShort(st.gear.name) + ' 사용 후기';
     ti.value = st.autoTitle;
   }
   // 후기일 때만 위 칸(별점·기간·꼬리표)을 다시 그리고, 내용 칸을 안내 칸 셋으로 바꾼다
   function paintReview() {
-    if (!sheet || SH.kind !== 'post' || SH.id) return;
+    if (!sheet || SH.kind !== 'post' || (SH.id && !SH.editRv)) return;
     const st = SH, on = st.cat === 'gear' && st.gkind === 'review';
     const top = sheet.querySelector('[data-rv-top]'), texts = sheet.querySelector('[data-rv-texts]'), body = sheet.querySelector('[data-body-field]');
     if (!top) return;
@@ -3950,15 +3976,19 @@
     const tip = sheet.querySelector('[data-gear-tip]');
     if (tip && !st.gear) tip.textContent = on ? '후기는 장비를 골라야 올라가요. 목록에 없으면 이름을 적고 \'직접 추가\'를 눌러요.' : '특정 장비 이야기면 골라 주세요. 중고 시세 단추가 같이 붙어요.';
     const mine = sheet.querySelector('[data-rv-mine]');
+    const ph = sheet.querySelector('[data-rv-photo-hint]');
+    if (ph) ph.hidden = !on;
+    if (sheet.querySelector('[data-thumbs]')) refreshThumbs();
     if (mine) {
       mine.hidden = !(on && st.gear);
       mine.textContent = st.gear && st.gear.id ? '올리면 이 장비가 내 장비에 들어가요.' : '목록에 없는 장비라 내 장비에는 안 들어가요. 낭만플랜 장비관리에서 직접 등록할 수 있어요.';
     }
     if (on) rvAutoTitle(st);
   }
-  function rvTextsHtml() {
+  function rvTextsHtml(p) {
+    const val = p ? rvSplitBody(p.body) : {};
     return '<div data-rv-texts hidden>' + RV_TEXTS.map(function (d) {
-      return '<label class="lm-lbl" for="' + d[0] + '">' + esc(d[1]) + ' <span style="font-weight:600;color:var(--sub)">선택</span></label><textarea class="lm-ta" id="' + d[0] + '" name="' + d[0] + '" maxlength="900" placeholder="' + esc(d[2]) + '" style="min-height:64px"></textarea>';
+      return '<label class="lm-lbl" for="' + d[0] + '">' + esc(d[1]) + ' <span style="font-weight:600;color:var(--sub)">선택</span></label><textarea class="lm-ta" id="' + d[0] + '" name="' + d[0] + '" maxlength="900" placeholder="' + esc(d[2]) + '" style="min-height:64px">' + esc(val[d[0]] || '') + '</textarea>';
     }).join('') + '</div>';
   }
   // 저장할 정리 칸과 글 내용. 모자라면 { err }
@@ -3977,6 +4007,7 @@
       return list.filter(function (t, i) { return t && list.indexOf(t) === i; }).slice(0, RV_MAX_TAGS);
     };
     const review = { kind: kind, rating: rv.rating, period: rv.period, uses: rv.uses, pros: side('pros'), cons: side('cons') };
+    if (rv.photo && st.photos.some(function (ph) { return ph.url === rv.photo; }) && /^https:\/\//.test(rv.photo)) review.photo = rv.photo;
     const stand = kind === 'tent' ? (rv.known || rv.stand) : '';
     if (stand) review.stand = stand;
     const body = RV_TEXTS.map(function (d) {
@@ -4009,10 +4040,43 @@
       else localStorage.setItem('okbm_favorite_gears', JSON.stringify(Array.from(set)));
     } catch (e) { console.warn('[lounge.js:addToMyGear]', e); }
   }
+  const isRvPost = function (p) { return !!(p && p.category === 'gear' && p.gear_kind === 'review'); };
+  // 고치기: 저장된 정리 칸을 글쓰기 상태로 되돌린다. 목록에 없는 꼬리표는 '기타 직접 적기'로
+  function rvFromPost(r) {
+    const rv = newRv();
+    if (!r || typeof r !== 'object') return rv;
+    rv.rating = Number(r.rating) || 0;
+    rv.period = r.period || '';
+    rv.uses = r.uses || '';
+    rv.stand = r.stand || '';
+    rv.sleep = r.kind === 'mat' || r.kind === 'bag' ? r.kind : '';
+    rv.photo = r.photo || '';
+    ['pros', 'cons'].forEach(function (side) {
+      const known = rvTags(r.kind, side);
+      (Array.isArray(r[side]) ? r[side] : []).forEach(function (t) {
+        if (known.indexOf(t) >= 0) rv[side].push(t);
+        else if (!rv.etc[side]) { rv.etc[side] = t; rv.etcOpen[side] = true; }
+      });
+    });
+    return rv;
+  }
+  // 글 내용을 안내 칸 셋으로 나눈다(제목 줄로 가른다). 제목 없는 글은 마지막 칸(하고 싶은 말)으로
+  function rvSplitBody(body) {
+    const out = {};
+    const titles = RV_TEXTS.map(function (d) { return d[1]; });
+    String(body || '').split(/\n{2,}/).forEach(function (blk) {
+      const nl = blk.indexOf('\n'), head = nl > 0 ? blk.slice(0, nl).trim() : '';
+      const i = titles.indexOf(head);
+      const key = i >= 0 ? RV_TEXTS[i][0] : 'rv_etc';
+      const txt = (i >= 0 ? blk.slice(nl + 1) : blk).trim();
+      if (txt) out[key] = out[key] ? out[key] + '\n\n' + txt : txt;
+    });
+    return out;
+  }
   function gearFieldsHtml(p, cat, st) {
-    if (p) return p.category === 'gear' ? '<p class="lm-hint">' + esc(catLabel(p) + (p.gear_name ? ' · ' + gearShort(p.gear_name) : '')) + '. 종류·장비와 질문·후기는 올린 뒤에 바꿀 수 없어요.</p>' : '';
+    if (p && !isRvPost(p)) return p.category === 'gear' ? '<p class="lm-hint">' + esc(catLabel(p) + (p.gear_name ? ' · ' + gearShort(p.gear_name) : '')) + '. 종류·장비와 질문·후기는 올린 뒤에 바꿀 수 없어요.</p>' : '';
     return `<div data-gear-fields ${cat === 'gear' ? '' : 'hidden'}>
-        ${segHtml('pgkind', st.gkind, '질문·후기')}
+        ${p ? '' : segHtml('pgkind', st.gkind, '질문·후기')}
         <span class="lm-lbl">종류 <b aria-hidden="true">*</b></span>
         <div class="lm-chipline" role="radiogroup" aria-label="장비 종류" data-gcat-chips>${gearCatChips(st)}</div>
         <label class="lm-lbl" for="lmGearQ" data-gear-q-lbl>${st.gkind === 'review' ? '어떤 장비인가요 <b aria-hidden="true">*</b>' : '특정 장비 (선택)'}</label>
@@ -4042,6 +4106,7 @@
   }
   function pickGear(g) {
     SH.gear = g;
+    if (SH.rv) SH.rv.sleep = '';
     if (g.id) SH.gcat = g.cat; // 목록 장비면 종류를 따라 채운다
     const sg = sheet && sheet.querySelector('[data-gear-sugg]');
     if (sg) { sg.hidden = true; sg.innerHTML = ''; }
@@ -4059,10 +4124,11 @@
         ${p ? '<p class="lm-hint">분류는 올린 뒤에 바꿀 수 없어요.</p>' : ''}
         ${gearFieldsHtml(p, cat, SH)}
         <label class="lm-lbl" for="lmPostTitle"><span data-title-lbl>${poll ? '질문' : '제목'}</span> <b aria-hidden="true">*</b></label>${inp('lmPostTitle', 'title', p && p.title, 'maxlength="80" required data-autofocus placeholder="' + (poll ? '무엇을 물어볼까요?' : '제목') + '"')}
-        ${p ? '' : rvTextsHtml()}
+        ${!p || isRvPost(p) ? rvTextsHtml(p) : ''}
         ${pollFieldsHtml(p, cat)}
         <div data-body-field>${field('lmPostBody', poll ? '설명 (선택)' : '내용', '<textarea class="lm-ta" id="lmPostBody" name="body" maxlength="3000" placeholder="' + (poll ? '덧붙일 말이 있으면 적어요' : '어떤 이야기를 나눌까요?') + '" style="min-height:' + (poll ? 72 : 140) + 'px">' + esc(p && p.body) + '</textarea>')}</div>
         <span class="lm-lbl">사진 <span data-pcount>${(SH.photos || []).length}</span>/5</span>
+        <p class="lm-hint" data-rv-photo-hint hidden>사진 아래 '장비 사진'을 누르면 그 사진이 글 위 장비 카드와 장비 정보에 쓰여요.</p>
         <div class="lm-thumbs" data-thumbs>${thumbsHtml()}</div>
         <label class="lm-file">${ico(P.img, 18)}<span>사진 추가</span><input type="file" accept="image/*,.heic,.heif" multiple data-post-files hidden></label>
         ${p ? '' : '<p class="lm-hint" data-rv-mine hidden style="margin-top:16px">올리면 이 장비가 내 장비에 들어가요.</p>'}
@@ -4076,12 +4142,19 @@
     const st = { kind: 'post', id: p ? p.id : null, cat: cat, pollDays: 7, pollKind: 'choice', pollSource: 'spot', photos: postPhotos(p || {}).map(function (u) { return { url: u }; }),
       gkind: (pre && pre.kind) || S.gkind, gear: (pre && pre.gear) || null,
       gcat: (pre && pre.gear && pre.gear.cat) || (S.gcat !== 'all' ? S.gcat : null), rv: newRv(), autoTitle: '' };
+    if (isRvPost(p)) {
+      st.editRv = true;
+      st.gkind = 'review';
+      st.gcat = p.gear_cat;
+      st.gear = p.gear_name ? { id: p.gear_id || '', name: p.gear_name, cat: p.gear_cat } : null;
+      st.rv = rvFromPost(p.gear_review);
+    }
     const prev = SH;
     SH = st; // thumbsHtml이 SH를 읽는다
     const html = postFormHtml(p, cat);
     SH = prev;
     openSheet(html, st);
-    if (!p) { rvSyncGear(st); paintReview(); }
+    if (!p || st.editRv) { rvSyncGear(st); paintReview(); }
   }
   const PHOTO_MAX = { post: 5, news: 10 };
   function refreshThumbs() {
@@ -4119,7 +4192,7 @@
     let body = val('body');
     let review = null;
     // 검색 칸에 적기만 하고 목록에서 안 누른 이름도 장비로 받는다(대표님 11-08: 적었는데 장비가 빠졌다)
-    if (!st.id && st.cat === 'gear' && !st.gear) {
+    if ((!st.id || st.editRv) && st.cat === 'gear' && !st.gear) {
       const typed = String((f.querySelector('[data-gear-q]') || {}).value || '').trim();
       if (typed) {
         const key = typed.toLowerCase();
@@ -4134,7 +4207,7 @@
         title = val('title');
       }
     }
-    if (!st.id && st.cat === 'gear' && st.gkind === 'review') {
+    if ((!st.id || st.editRv) && st.cat === 'gear' && st.gkind === 'review') {
       if (!GEAR_CAT[st.gcat]) { toast('장비 종류를 골라 주세요', true); return; }
       const got = rvCollect(st, f);
       if (got.err) { toast(got.err, true); return; }
@@ -4170,7 +4243,8 @@
     btn.disabled = true;
     try {
       const rows = await q(st.id
-        ? c.from('lounge_posts').update({ title: title, body: body, photos: photos }).eq('id', st.id).select(POST_COLS)
+        ? c.from('lounge_posts').update(Object.assign({ title: title, body: body, photos: photos }, st.editRv && review ? {
+          gear_cat: st.gcat, gear_id: st.gear.id || null, gear_name: String(st.gear.name).slice(0, 120), gear_review: review } : {})).eq('id', st.id).select(POST_COLS)
         : c.from('lounge_posts').insert([row0]).select(POST_COLS));
       const row = Array.isArray(rows) && rows[0];
       if (!row) throw new Error('no_rows');
@@ -4187,8 +4261,8 @@
         if (row.category === 'poll' && row.poll_kind === 'top3') D.top3[row.id] = { post_id: row.id, total: 0, mine: null, leader: null, top: [], closed: false };
         else if (row.category === 'poll') D.poll[row.id] = { post_id: row.id, total: 0, counts: null, mine: null, closed: false };
         if (window.okbmPoints) window.okbmPoints.check(row.gear_review ? 'gear_review' : 'post'); // 낭만 포인트 알림 (H32, I7)
-        if (row.gear_review && row.gear_id && row.gear_name) addToMyGear(row.gear_name);
       }
+      if (row.gear_review && row.gear_id && row.gear_name) addToMyGear(row.gear_name);
       closeSheet();
       toast(st.id ? '글을 고쳤어요' : (row.category === 'suggestion' ? '건의를 보냈어요. 답변이 달리면 알려 드릴게요' : row.category === 'poll' ? '설문을 올렸어요' : '글을 올렸어요'));
       if (!st.id && S.cat !== 'all' && S.cat !== row.category) S.cat = 'all';
@@ -4222,7 +4296,9 @@
     const p = st.post, term = gearTerm(p.gear_name);
     return `<h3 id="loungeSheetTitle">${esc(gearShort(p.gear_name))}</h3>
       <p class="lm-gmeta" data-gear-meta>${esc([gearParen(p.gear_name), GEAR_CAT[p.gear_cat] || '장비'].filter(Boolean).join(' · '))}</p>
+      <div data-gear-photo></div>
       <div class="lm-ginfo" data-gear-info></div>
+      <div data-gear-photos></div>
       <div data-gear-stats></div>
       <div data-gear-sum></div>
       <label class="lm-lbl" for="lmGearTerm" style="margin-top:20px">중고 시세 보러 가기 · 검색어</label>
@@ -4262,6 +4338,14 @@
     return '<div class="lm-gsum"><div class="score"><b>' + avg.toFixed(1) + '</b><div><span class="lm-rvsum" style="margin:0">' + starsMini(Math.round(avg)) + '</span><small>종합 별점 · 후기 ' + rs.length + '개</small></div></div>'
       + (bars ? '<span class="lm-lbl" style="margin-top:18px">후기 ' + rs.length + '개에서 많이 고른 말</span>' + bars : '') + '</div>';
   }
+  // 그 장비 후기들의 '장비 사진': 최신 한 장을 크게, 모두를 '낭만루터 실물 사진'으로
+  function paintGearPhotos(rows) {
+    const shots = rows.filter(function (p) { return p.gear_review && okbmSafeImageUrl(p.gear_review.photo); });
+    const top = sheet.querySelector('[data-gear-photo]'), all = sheet.querySelector('[data-gear-photos]');
+    if (top) top.innerHTML = shots.length ? '<div class="lm-gphoto"><img src="' + escapeHtml(okbmFastImageUrl(okbmSafeImageUrl(shots[0].gear_review.photo))) + '" alt="" decoding="async"><span>' + esc((shots[0].nickname || '낭만루터') + '님 장비 사진') + '</span></div>' : '';
+    if (all) all.innerHTML = shots.length > 1 ? '<span class="lm-lbl" style="margin-top:18px">낭만루터 실물 사진 <span style="font-weight:600;color:var(--sub)">' + shots.length + '장</span></span><div class="lm-gphotos">'
+      + shots.slice(0, 12).map(function (p) { return '<img src="' + escapeHtml(okbmFastImageUrl(okbmSafeImageUrl(p.gear_review.photo))) + '" alt="' + esc((p.nickname || '낭만루터') + '님 장비 사진') + '" loading="lazy" decoding="async">'; }).join('') + '</div>' : '';
+  }
   function paintGearList() {
     if (!sheet || SH.kind !== 'gear') return;
     const st = SH, box = sheet.querySelector('[data-gear-list]');
@@ -4277,6 +4361,7 @@
     });
     const sum = sheet.querySelector('[data-gear-sum]');
     if (sum) sum.innerHTML = gearSumHtml(rows);
+    paintGearPhotos(rows);
     const list = rows.filter(function (p) { return p.gear_kind === st.gk; });
     box.innerHTML = list.length ? list.map(function (p) {
       return `<button type="button" class="lm-gl" data-a="gear-post" data-v="${esc(p.id)}"><b>${esc(p.title)}</b>${p.gear_review ? rvSumHtml(p.gear_review) : ''}<small>${esc([p.nickname, ago(p.created_at), (st.gk === 'review' ? '댓글 ' : '답변 ') + (Number(p.comments_count) || 0)].filter(Boolean).join(' · '))}</small></button>`;
@@ -4304,7 +4389,7 @@
     const link = okbmSafeExternalUrl(g.evidence);
     box.innerHTML = '<span class="lm-lbl" style="margin-top:18px">장비 정보</span>'
       + row('브랜드', esc(String(g.brand || '').replace(/\s*\(.*\)$/, '')))
-      + row('종류', esc([GEAR_CAT[p.gear_cat] || '', stand].filter(Boolean).join(' · ')))
+      + row('종류', esc([gearKindLabel(p), stand].filter(Boolean).join(' · ')))
       + row('무게', kg)
       + row('특징', esc(String(g.specs_detail || '').trim()))
       + (link && link !== '#' ? '<a class="lm-out" href="' + escapeHtml(link) + '" target="_blank" rel="noopener noreferrer">제조사·판매처 정보 보기' + ico(P.ext, 16) + '</a>' : '');
@@ -4737,13 +4822,19 @@
         paintReview();
         break;
       case 'pgcat':
-        if (SH.kind !== 'post' || SH.id) break;
+        if (SH.kind !== 'post' || (SH.id && !SH.editRv)) break;
         if (SH.gcat !== v) { SH.rv.pros = []; SH.rv.cons = []; SH.rv.stand = ''; }
         SH.gcat = v;
         t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
         rvSyncGear(SH);
         paintReview();
         break;
+      case 'rv-photo': {
+        if (SH.kind !== 'post' || !SH.rv) break;
+        const ph = SH.photos[Number(v)];
+        if (ph && ph.url) { SH.rv.photo = SH.rv.photo === ph.url ? '' : ph.url; refreshThumbs(); }
+        break;
+      }
       case 'rv-rate': if (SH.kind === 'post') { SH.rv.rating = Number(v) || 0; paintReview(); tick(); } break;
       case 'rv-period': if (SH.kind === 'post') { SH.rv.period = v; paintReview(); } break;
       case 'rv-uses': if (SH.kind === 'post') { SH.rv.uses = v; paintReview(); } break;
