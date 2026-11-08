@@ -9138,6 +9138,7 @@ window._pastTripShowSpotDetail = function(show) {
 window._pastTripSetSpotBadge = function(kind) {
   var badge = document.getElementById('pastTripSpotStatusBadge');
   if (!badge) return;
+  if (typeof window._pastTripSyncReview === 'function') setTimeout(window._pastTripSyncReview, 0);
   if (kind === 'registered') {
     badge.textContent = '등록 장소 · 마이데이터 합산 가능';
     badge.style.color = '#e5e7eb';
@@ -9154,6 +9155,65 @@ window._pastTripSetSpotBadge = function(kind) {
     badge.style.fontSize = '0.62rem';
     badge.style.lineHeight = '1.35';
   }
+};
+
+// ④ 박지 후기(대표님 11-09, A안): 등록 박지를 고르면 별점·팁 칸이 나오고, 한 줄 소감이 박지 후기 한 줄로 같이 올라간다.
+// 고르기·저장은 spot-tips.js(okbmSpotReviewPick)가 정보창 후기 창과 같은 방식으로 한다. 스위치를 끄면 피드만 올라간다
+window._pastTripSyncReview = function() {
+  var box = document.getElementById('pastTripReviewStep');
+  if (!box) return;
+  var st = window.__pastTripRegisterState || {};
+  var id = String(st.spotId || '').trim();
+  var pick = window.okbmSpotReviewPick;
+  var ok = !!(id && pick && pick.known(id) && (typeof window.isUserLoggedIn !== 'function' || window.isUserLoggedIn()));
+  if (!ok) { box.style.display = 'none'; box.innerHTML = ''; box.dataset.spot = ''; return; }
+  box.style.display = '';
+  if (box.dataset.spot === id) return;
+  box.dataset.spot = id;
+  var esc = window._pastTripEsc || function(v) { return String(v || ''); };
+  var paint = function() {
+    box.innerHTML =
+      '<div class="ptw-h"><h5><span class="ptw-n">4</span>박지 후기</h5></div>' +
+      '<div class="ptw-rv">' +
+        '<div class="ptw-pub"><div><b>' + esc(pick.name(id)) + ' 후기에도 남기기</b><small class="ptw-rvs">박지 정보창 \'박지 후기\'에 같이 올라가요</small></div>' +
+          '<button type="button" class="ptw-sw" data-ptw-rv-sw role="switch" aria-checked="true" aria-label="박지 후기에도 남기기"></button></div>' +
+        '<div data-ptw-rv-body style="display:flex;flex-direction:column;gap:2px;">' + pick.html(id) + '</div>' +
+        '<p class="ptw-rvh" data-ptw-rv-hint>위 한 줄 소감이 박지 후기 한 줄로 같이 올라가요.</p>' +
+      '</div>';
+  };
+  paint();
+  // 내가 전에 남긴 별점·팁을 받아 켜 둔다(아직 아무것도 안 눌렀을 때만)
+  pick.load(id).then(function() {
+    if (box.dataset.spot === id && box.dataset.touched !== '1') paint();
+  }).catch(function(err) { console.warn('[pastTrip:review]', err); });
+  if (!box.dataset.bound) {
+    box.dataset.bound = '1';
+    box.addEventListener('click', function(e) {
+      var p = window.okbmSpotReviewPick;
+      var sw = e.target.closest('[data-ptw-rv-sw]');
+      if (sw) {
+        var on = sw.getAttribute('aria-checked') !== 'true';
+        sw.setAttribute('aria-checked', String(on));
+        box.querySelector('.ptw-rv').classList.toggle('off', !on);
+        box.querySelector('[data-ptw-rv-body]').style.display = on ? 'flex' : 'none';
+        box.querySelector('[data-ptw-rv-hint]').style.display = on ? '' : 'none';
+        box.dataset.touched = '1';
+        return;
+      }
+      var body = box.querySelector('[data-ptw-rv-body]');
+      if (p && body && p.click(e, body)) box.dataset.touched = '1';
+    });
+  }
+};
+// 올릴 때 넘길 값. 칸이 없거나 스위치를 껐으면 null
+window._pastTripReadReview = function() {
+  var box = document.getElementById('pastTripReviewStep');
+  var pick = window.okbmSpotReviewPick;
+  if (!box || box.style.display === 'none' || !box.dataset.spot || !pick) return null;
+  var sw = box.querySelector('[data-ptw-rv-sw]');
+  if (!sw || sw.getAttribute('aria-checked') !== 'true') return null;
+  var r = pick.read(box.querySelector('[data-ptw-rv-body]'));
+  return { spotId: box.dataset.spot, star: r.star, tips: r.tips };
 };
 
 window._pastTripScoreSpotMatches = function(q) {
@@ -9560,6 +9620,8 @@ window.openPastTripRegisterModal = function(ev) {
       '.ptw-fold{border:1px solid rgba(255,255,255,0.1);border-radius:12px;background:rgba(255,255,255,0.02)}.ptw-fold>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:0.80rem;font-weight:900;color:#e2e8f0}.ptw-fold>summary::-webkit-details-marker{display:none}' +
       '.ptw-fold>summary span{font-size:0.66rem;color:#64748b;font-weight:700}.ptw-fb{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px}' +
       '.ptw-pubcard{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}.ptw-pub{display:flex;justify-content:space-between;align-items:center;gap:10px}.ptw-pub b{font-size:0.80rem;color:#fff;font-weight:900}' +
+      '.ptw-rv{border:1px solid rgba(255,195,66,0.35);border-radius:14px;background:rgba(255,195,66,0.05);padding:14px;display:flex;flex-direction:column;gap:12px}.ptw-rv.off{border-color:rgba(255,255,255,0.1);background:transparent}' +
+      '.ptw-rv small.ptw-rvs{display:block;font-size:0.68rem;color:#94a3b8;font-weight:700;margin-top:3px}.ptw-rv .ptw-sw[aria-checked="true"]{background:#ffc342}.ptw-rv .ptw-sw[aria-checked="true"]:after{background:#111214}.ptw-rvh{font-size:0.68rem;color:#94a3b8;line-height:1.5;margin:0}' +
       '.ptw-sw{flex:none;width:44px;height:26px;border-radius:13px;border:0;background:#334155;position:relative;cursor:pointer;padding:0;transition:background .2s}.ptw-sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}' +
       '.ptw-sw[aria-checked="true"]{background:#ffffff}.ptw-sw[aria-checked="true"]:after{background:#111214}.ptw-sw[aria-checked="true"]:after{transform:translateX(18px)}.ptw-sw:disabled{opacity:.45;cursor:default}' +
       '.ptw-plog{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,background .2s}.ptw-plog.on{border-color:rgba(52,211,153,0.4);background:rgba(52,211,153,0.05)}' +
@@ -9628,6 +9690,7 @@ window.openPastTripRegisterModal = function(ev) {
           '<div id="pastTripMemoModeHelper" style="font-size:0.68rem; color:#64748b;">한 줄이면 충분해요. 최대 120자</div>' +
           '<textarea id="pastTripMemoInput" maxlength="120" placeholder="어땠는지 한 줄이면 충분해요." oninput="window.updatePastTripMemoCount();" style="min-height:96px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:10px 12px; font-size:0.88rem; line-height:1.45; outline:none; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>' +
         '</div>' +
+        '<div class="ptw-step" id="pastTripReviewStep" style="display:none;"></div>' +
         '<details class="ptw-fold"><summary>장비도 기록하기 <span>선택 ▾</span></summary><div class="ptw-fb">' +
           '<div style="font-size:0.68rem; color:#64748b; line-height:1.5;">내 장비나 장비 세트에서 고르면 무게가 함께 기록돼요. 안 넣어도 피드에 올라가요.</div>' +
           '<div style="display:flex; flex-direction:column; gap:6px;">' +
@@ -9766,6 +9829,7 @@ window.submitPastTripRegister = async function() {
 
   var spot = spotInput ? String(spotInput.value || '').trim() : (st.spotName || '');
   if (!spot) spot = '자유 일정';
+  var review = typeof window._pastTripReadReview === 'function' ? window._pastTripReadReview() : null;
   if (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(spot)) {
     if (typeof showToast === 'function') showToast('올바른 장소명을 입력해 주세요.', 'warn');
     return;
@@ -9894,6 +9958,16 @@ window.submitPastTripRegister = async function() {
       }
     } else if (isUnregistered && (ytUrl || blogUrl)) {
       window._pastTripSavePendingMedia(spot, ytUrl, blogUrl);
+    }
+
+    // ④ 박지 후기: 피드는 이미 올라갔으니 후기가 안 돼도 피드는 그대로 둔다
+    if (review && !isUnregistered && review.spotId === spotId && window.okbmSpotReviewPick) {
+      try {
+        await window.okbmSpotReviewPick.save(spotId, review.star, review.tips, memo);
+      } catch (rvErr) {
+        console.warn('[submitPastTripRegister:review]', rvErr);
+        if (typeof showToast === 'function') showToast('피드는 올라갔지만 박지 후기는 남기지 못했어요. 정보창에서 다시 남겨 주세요.', 'warn', 3000);
+      }
     }
 
     triggerHaptic(15);

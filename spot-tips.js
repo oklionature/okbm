@@ -225,7 +225,7 @@
   }
 
   // ---------- 남기는 창 ----------
-  var sheet = null, dim = null, sheetSpot = '', sheetStar = 0;
+  var sheet = null, dim = null, sheetSpot = '';
   function closeSheet() {
     if (!sheet) return;
     sheet.classList.remove('on');
@@ -243,6 +243,63 @@
       '<label class="stp-gpx-consent" hidden><input type="checkbox" data-stp-gpx-consent> 내가 직접 다녀온 기록이고, 낭만루트 지도에 써도 괜찮아요</label>' +
       '<div class="stp-gpx-note">다른 낭만루터 분들에게 큰 도움이 됩니다. 소정의 포인트도 드려요.</div></div>';
   }
+  // 별점·팁 고르기 칸(후기 창과 피드 올리기 창이 같이 쓴다). 내가 남긴 별점·팁이 있으면 켜 둔다
+  function pickHtml(id) {
+    var hit = store[id] || {};
+    var mineTip = hit.tips && hit.tips.mine;
+    var mineRev = hit.rev && hit.rev.mine;
+    var picked = mineTip && Array.isArray(mineTip.tips) ? mineTip.tips : [];
+    var star = mineRev && mineRev.rating ? Number(mineRev.rating) : 0;
+    return '<div class="stp-g"><small>별점 <i>선택</i></small><div class="stp-stars">' +
+        [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-stp-star="' + n + '" aria-label="' + n + '점"' + (n <= star ? ' class="on"' : '') + '>★</button>'; }).join('') +
+      '</div></div>' +
+      GROUPS.map(function (g) {
+        return '<div class="stp-g"><small>' + esc(g.label) + (g.one ? '' : ' <i>여러 개</i>') + '</small><div class="stp-chips" data-stp-group="' + g.key + '"' + (g.one ? ' data-one="1"' : '') + '>' +
+          g.tips.map(function (k) { return '<button type="button" class="stp-chip' + (picked.indexOf(k) !== -1 ? ' on' : '') + '" data-stp-chip="' + esc(k) + '">' + esc(k) + '</button>'; }).join('') + '</div></div>';
+      }).join('');
+  }
+  // 별·팁 누르기. 같은 별을 다시 누르면 별점 없음, 하나만 고르는 묶음은 나머지를 끈다. 처리했으면 true
+  function pickClick(e, root) {
+    var st = e.target.closest('[data-stp-star]');
+    if (st && root.contains(st)) {
+      var n = Number(st.getAttribute('data-stp-star'));
+      var next = pickRead(root).star === n ? 0 : n;
+      root.querySelectorAll('[data-stp-star]').forEach(function (b) { b.classList.toggle('on', Number(b.getAttribute('data-stp-star')) <= next); });
+      return true;
+    }
+    var chip = e.target.closest('[data-stp-chip]');
+    if (chip && root.contains(chip)) {
+      var grp = chip.closest('[data-stp-group]');
+      var turnOn = !chip.classList.contains('on');
+      if (grp && grp.getAttribute('data-one') === '1') grp.querySelectorAll('.stp-chip').forEach(function (c) { c.classList.remove('on'); });
+      chip.classList.toggle('on', turnOn);
+      return true;
+    }
+    return false;
+  }
+  function pickRead(root) {
+    return {
+      star: root.querySelectorAll('[data-stp-star].on').length,
+      tips: Array.prototype.map.call(root.querySelectorAll('.stp-chip.on'), function (c) { return c.getAttribute('data-stp-chip'); })
+    };
+  }
+  // 별점이 있으면 별점 후기(comments)에 한 줄과 같이, 팁은 팁으로. 별점이 없으면 팁과 한 줄(60자)을 팁으로
+  function saveAll(id, star, tips, text) {
+    var jobs = [];
+    if (star) {
+      jobs.push(saveReview(id, star, text.slice(0, 1000)));
+      if (tips.length) jobs.push(rpc('okbm_save_spot_tips', { p_spot_id: id, p_tips: tips, p_note: '' }));
+    } else if (tips.length || text) {
+      jobs.push(rpc('okbm_save_spot_tips', { p_spot_id: id, p_tips: tips, p_note: text.slice(0, 60) }));
+    }
+    return jobs;
+  }
+  function afterSaved(id, star) {
+    if (window.okbmPoints) setTimeout(function () { window.okbmPoints.check(star ? 'review' : 'tip'); }, 1600);
+    load(id, true);
+    try { window.dispatchEvent(new CustomEvent('okbm_spot_review_saved', { detail: { spotId: id } })); } catch (e2) {}
+  }
+
   function openSheet(id, fromVisit) {
     if (!loggedIn()) { if (typeof window.openLoginModal === 'function') window.openLoginModal(); return; }
     injectCss();
@@ -251,8 +308,6 @@
     var hit = store[id] || {};
     var mineTip = hit.tips && hit.tips.mine;
     var mineRev = hit.rev && hit.rev.mine;
-    var picked = mineTip && Array.isArray(mineTip.tips) ? mineTip.tips : [];
-    sheetStar = mineRev && mineRev.rating ? Number(mineRev.rating) : 0;
     var text = mineRev ? (mineRev.text || '') : (mineTip ? (mineTip.note || '') : '');
     var name = shortName(spotOf(id));
     dim = document.createElement('div');
@@ -266,13 +321,7 @@
       // 고마워요(I5): 이 박지를 알려 준 사람에게 한 줄. 관리자 등록 박지면 빈 칸(spot-thanks.js)
       (typeof window.okbmThanksSlotHtml === 'function' ? window.okbmThanksSlotHtml(id, 'review') : '') +
       '<div class="stp-body">' +
-        '<div class="stp-g"><small>별점 <i>선택</i></small><div class="stp-stars">' +
-          [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-stp-star="' + n + '" aria-label="' + n + '점"' + (n <= sheetStar ? ' class="on"' : '') + '>★</button>'; }).join('') +
-        '</div></div>' +
-        GROUPS.map(function (g) {
-          return '<div class="stp-g"><small>' + esc(g.label) + (g.one ? '' : ' <i>여러 개</i>') + '</small><div class="stp-chips" data-stp-group="' + g.key + '"' + (g.one ? ' data-one="1"' : '') + '>' +
-            g.tips.map(function (k) { return '<button type="button" class="stp-chip' + (picked.indexOf(k) !== -1 ? ' on' : '') + '" data-stp-chip="' + esc(k) + '">' + esc(k) + '</button>'; }).join('') + '</div></div>';
-        }).join('') +
+        pickHtml(id) +
         '<textarea class="stp-inp" maxlength="300" rows="2" placeholder="한 줄 남기기 (안 써도 돼요)">' + esc(text) + '</textarea>' +
         gpxHtml(id) +
       '</div>' +
@@ -329,26 +378,8 @@
       else window.location.assign('index.html?feed=' + encodeURIComponent(fid));
     });
   }
-  function paintStars() {
-    if (!sheet) return;
-    sheet.querySelectorAll('[data-stp-star]').forEach(function (b) { b.classList.toggle('on', Number(b.getAttribute('data-stp-star')) <= sheetStar); });
-  }
   function onSheetClick(e) {
-    var st = e.target.closest('[data-stp-star]');
-    if (st) {
-      var n = Number(st.getAttribute('data-stp-star'));
-      sheetStar = (sheetStar === n) ? 0 : n; // 같은 별을 다시 누르면 별점 없음
-      paintStars();
-      return;
-    }
-    var chip = e.target.closest('[data-stp-chip]');
-    if (chip) {
-      var grp = chip.closest('[data-stp-group]');
-      var turnOn = !chip.classList.contains('on');
-      if (grp && grp.getAttribute('data-one') === '1') grp.querySelectorAll('.stp-chip').forEach(function (c) { c.classList.remove('on'); });
-      chip.classList.toggle('on', turnOn);
-      return;
-    }
+    if (pickClick(e, sheet)) return;
     var b = e.target.closest('[data-stp]');
     if (!b) return;
     if (b.getAttribute('data-stp') === 'skip') { closeSheet(); return; }
@@ -378,21 +409,14 @@
   }
   function save(btn) {
     var id = sheetSpot;
-    var tips = Array.prototype.map.call(sheet.querySelectorAll('.stp-chip.on'), function (c) { return c.getAttribute('data-stp-chip'); });
+    var pick = pickRead(sheet), tips = pick.tips, star = pick.star;
     var text = String((sheet.querySelector('.stp-inp') || {}).value || '').trim();
-    var star = sheetStar;
     var gpxIn = sheet.querySelector('[data-stp-gpx-file]');
     var gpxFile = gpxIn && gpxIn.files && gpxIn.files[0];
     if (!tips.length && !text && !star && !gpxFile) { toast('별점이나 팁을 하나 고르거나 한 줄을 적어 주세요.', 'warn'); return; }
     if (gpxFile && !sheet.querySelector('[data-stp-gpx-consent]').checked) { toast('내 기록이라는 확인에 체크해 주세요', 'warn'); return; }
     btn.disabled = true;
-    var jobs = [];
-    if (star) {
-      jobs.push(saveReview(id, star, text.slice(0, 1000)));
-      if (tips.length) jobs.push(rpc('okbm_save_spot_tips', { p_spot_id: id, p_tips: tips, p_note: '' }));
-    } else if (tips.length || text) {
-      jobs.push(rpc('okbm_save_spot_tips', { p_spot_id: id, p_tips: tips, p_note: text.slice(0, 60) }));
-    }
+    var jobs = saveAll(id, star, tips, text);
     // GPX는 후기와 따로 보낸다. GPX가 안 돼도 후기는 남긴다
     var gpxMsg = '';
     if (gpxFile) {
@@ -411,11 +435,8 @@
       if (typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(12); } catch (err) {} }
       if (!hasReview) { toast(gpxMsg, gpxMsg.indexOf('못') !== -1 ? 'warn' : 'success'); load(id, true); return; }
       toast('고마워요! ' + shortName(spotOf(id)) + ' 후기에 쌓였어요.' + (gpxMsg ? ' ' + gpxMsg : ''));
-      // 낭만 포인트 알림(H32): 후기 토스트와 겹치지 않게 조금 뒤에
-      if (window.okbmPoints) setTimeout(function () { window.okbmPoints.check(star ? 'review' : 'tip'); }, 1600);
-      load(id, true);
-      // 라운지 "박지 후기" 탭 등 다른 화면도 새로 받게 알린다
-      try { window.dispatchEvent(new CustomEvent('okbm_spot_review_saved', { detail: { spotId: id } })); } catch (e2) {}
+      // 낭만 포인트 알림(H32)은 토스트와 겹치지 않게 조금 뒤에. 라운지 '박지 후기' 탭 등도 새로 받게 알린다
+      afterSaved(id, star);
     }).catch(function (err) {
       console.warn('[spot-tips:save]', err);
       var m = String((err && err.message) || '');
@@ -499,6 +520,23 @@
     var id = String(spotId || '').trim();
     if (!id) return;
     load(id, true).then(function () { openSheet(id, false); });
+  };
+
+  // 피드 올리기 창(romantic-sync.js)의 '④ 박지 후기' 칸이 쓴다(대표님 11-09: 피드와 후기를 한 번에)
+  window.okbmSpotReviewPick = {
+    known: function (id) { return !!spotOf(id); },
+    name: function (id) { return shortName(spotOf(id)); },
+    load: function (id) { injectCss(); return load(String(id), true); },
+    html: function (id) { injectCss(); return pickHtml(String(id)); },
+    click: pickClick,
+    read: pickRead,
+    // text는 한 줄 소감. 고른 것도 한 줄도 없으면 아무것도 안 남긴다
+    save: function (id, star, tips, text) {
+      id = String(id);
+      text = String(text || '').trim();
+      if (!loggedIn() || (!star && !tips.length && !text)) return Promise.resolve(false);
+      return Promise.all(saveAll(id, star, tips, text)).then(function () { afterSaved(id, star); return true; });
+    }
   };
 
   function start() {
