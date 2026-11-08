@@ -84,6 +84,35 @@
       .gdm-btn.is-main { background:#5bb8f0; color:#00131f; font-weight:900; }
       /* 장비 정보 고치기 창: 테두리 없는 회색 입력칸, 저장만 하늘색 */
       .gme-panel { width:100%; max-width:480px; max-height:100%; overflow-y:auto; background:#1a1c22; border-radius:22px 22px 0 0; padding:10px 18px 16px; display:flex; flex-direction:column; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.5); animation:slideUpSheet 0.22s ease-out; color:var(--tx-1, #f2f2f3); }
+      .gme-panel > * { flex-shrink:0; } /* 키보드로 창이 줄어도 칸은 찌그러지지 않고 창이 스크롤된다 */
+      #quickGearDetailModal.is-kb { bottom:0 !important; }
+      body.okbm-qgr-kb #romanticMasterBottomDock { display:none !important; } /* 키보드가 올라온 동안 아래 메뉴줄이 창을 가리지 않게 */
+      #quickGearDetailModal.is-kb .gme-panel { max-height:none; height:100%; border-radius:0; }
+      .qgr-panel.is-find { height:88%; overflow:hidden; }
+      #quickGearDetailModal.is-kb .qgr-panel.is-find { height:100%; }
+      .qgr-panel.is-find .qgr-body { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+      .qgr-panel.is-find .qgr-body > * { flex-shrink:0; }
+      .qgr-seg { display:flex; background:var(--bg-2, #17171b); border-radius:12px; padding:3px; margin-top:12px; }
+      .qgr-seg button { flex:1; height:38px; border:none; border-radius:10px; background:transparent; color:var(--tx-3, #8b8b93); font-size:14px; font-weight:800; font-family:inherit; cursor:pointer; }
+      .qgr-seg button.on { background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); }
+      .qgr-search { display:flex; align-items:center; gap:8px; height:48px; margin-top:12px; border-radius:12px; background:var(--bg-2, #17171b); padding:0 14px; }
+      .qgr-search svg { width:18px; height:18px; color:var(--tx-3, #8b8b93); flex:none; }
+      .qgr-search input { flex:1; min-width:0; height:100%; border:none; outline:none; background:transparent; color:var(--tx-1, #f2f2f3); font-size:15px; font-weight:600; font-family:inherit; -webkit-appearance:none; appearance:none; }
+      .qgr-search input::placeholder { color:var(--tx-3, #8b8b93); }
+      .qgr-cats { display:flex; gap:6px; overflow-x:auto; margin:12px -18px 0; padding:0 18px; scrollbar-width:none; }
+      .qgr-cats::-webkit-scrollbar { display:none; }
+      .qgr-chips { display:flex; flex-wrap:wrap; gap:6px; }
+      .qgr-chip { flex:none; height:34px; padding:0 13px; border-radius:999px; border:1px solid rgba(255,255,255,0.10); background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); font-size:13px; font-weight:800; font-family:inherit; cursor:pointer; white-space:nowrap; }
+      .qgr-chip.on { background:#ffffff; color:#000000; border-color:#ffffff; }
+      .qgr-panel.is-find .qgr-list { flex:1 1 auto !important; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; margin-top:4px; }
+      .qgr-cnt { font-size:12px; color:var(--tx-3, #8b8b93); font-weight:700; margin:8px 0 2px; }
+      .qgr-empty { padding:28px 0; text-align:center; font-size:13px; line-height:1.6; color:var(--tx-3, #8b8b93); }
+      .qgr-row { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--line, rgba(255,255,255,0.08)); }
+      .qgr-row > div { flex:1; min-width:0; }
+      .qgr-row b { display:block; font-size:14.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .qgr-row small { display:block; font-size:12px; color:var(--tx-3, #8b8b93); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .qgr-add { flex:none; height:32px; padding:0 12px; border-radius:9px; border:none; background:var(--bg-3, #2a2a30); color:var(--tx-1, #f2f2f3); font-size:12.5px; font-weight:800; font-family:inherit; cursor:pointer; display:inline-flex; align-items:center; }
+      .qgr-add.done { background:transparent; color:var(--tx-3, #8b8b93); cursor:default; }
       .gme-grab { width:40px; height:5px; border-radius:9px; background:var(--bg-3, #2a2a30); margin:0 auto 12px; }
       .gme-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
       .gme-lbl { display:block; font-size:12px; color:var(--tx-3, #8b8b93); font-weight:700; margin:12px 0 6px; }
@@ -2252,36 +2281,61 @@
 
     window.renderPlanCategorySlots();
   };
-window.openQuickGearRegisterModal = function(opts) {
-    var isFromCalc = (window.activePlanSubMode === 'calculator');
-    var defaultAddToPack = (opts && typeof opts.addToPack === 'boolean') ? opts.addToPack : isFromCalc;
-    var searchInput = document.getElementById('calcShelfSearchInput');
-    var initName = (searchInput && isFromCalc) ? searchInput.value.trim() : '';
-
-    var old = document.getElementById('quickGearDetailModal');
-    if (old) old.remove();
-
-    var modal = document.createElement('div');
-    modal.id = 'quickGearDetailModal';
-    modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:rgba(0,0,0,0.45); z-index:1000030; display:flex; align-items:flex-end; justify-content:center; box-sizing:border-box;';
-    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
-
-    modal.innerHTML = `
-      <div class="gme-panel">
-        <div class="gme-grab"></div>
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div style="flex:1; font-size:18px; font-weight:900;">새 장비 등록</div>
-          <button type="button" class="gdm-x" onclick="document.getElementById('quickGearDetailModal').remove();" aria-label="닫기">✕</button>
-        </div>
+  // 내 장비 '장비 추가'(대표님 11-09): 목록에서 찾기 | 직접 등록 두 칸.
+  // · 찾기: 앱 장비 목록(식량 빼고)에서 이름·브랜드로 찾아 '+ 내 장비'(별표 즐겨찾기와 같은 저장).
+  // · 직접 등록: '장비 정보 고치기'와 같은 칸(구매일·구매가·상태·메모)까지 한 번에. 분류는 알약으로 고른다.
+  // · 키보드가 올라와 화면이 줄면 창을 화면 위까지 키운다(.is-kb). 칸은 찌그러지지 않고 창(찾기는 목록)이 스크롤된다.
+  var MY_GEAR_CAT_IDS = PLAN_GEAR_CAT_IDS.filter(function(id) { return id !== 'food'; });
+  var QGR = { tab: 'find', q: '', cat: 'all', changed: false, baseH: 0, onResize: null };
+  function qgrCatalog() {
+    var out = [];
+    (window.CATEGORIES || []).forEach(function(cat) {
+      if (!cat || cat.id === 'food') return;
+      (cat.db || []).forEach(function(g) {
+        if (g && g.name && String(g.id || '').indexOf('custom_') !== 0) out.push(g);
+      });
+    });
+    return out;
+  }
+  function qgrListHtml() {
+    var all = qgrCatalog();
+    if (!all.length) return '<div class="qgr-empty">장비 목록을 불러오는 중…</div>';
+    var words = QGR.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length && QGR.cat === 'all') return '<div class="qgr-empty">장비 이름이나 브랜드를 적어 주세요.<br>예: 호넷, 니모, 헬리녹스</div>';
+    var hits = all.filter(function(g) {
+      if (QGR.cat !== 'all' && g.category_id !== QGR.cat) return false;
+      var hay = (g.name + ' ' + (g.brand || '')).toLowerCase();
+      return words.every(function(w) { return hay.indexOf(w) !== -1; });
+    });
+    var fav = window.favoriteGearSet || new Set();
+    var head = '<div class="qgr-cnt">' + (words.length ? '\'' + escapeHtml(QGR.q.trim()) + '\' ' : '') + '찾은 장비 ' + hits.length + '개' + (hits.length > 60 ? ' · 위 60개' : '') + '</div>';
+    if (!hits.length) return head + '<div class="qgr-empty">목록에 없어요. 위 \'직접 등록\'으로 넣어 주세요.</div>';
+    return head + hits.slice(0, 60).map(function(g) {
+      var has = fav.has(g.name);
+      var w = Number(g.weight) || 0;
+      var sub = [String(g.brand || ''), w ? (w / 1000).toFixed(2) + 'kg' : ''].filter(Boolean).join(' · ');
+      return '<div class="qgr-row"><div><b>' + escapeHtml(g.name) + '</b><small>' + escapeHtml(sub) + '</small></div>'
+        + (has ? '<span class="qgr-add done">담김</span>' : '<button type="button" class="qgr-add" data-qgr-add="' + escapeHtml(g.name) + '">+ 내 장비</button>') + '</div>';
+    }).join('');
+  }
+  function qgrFindHtml() {
+    return '<div class="qgr-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>'
+      + '<input type="search" id="qgrSearch" value="' + escapeHtml(QGR.q) + '" placeholder="장비 이름·브랜드로 찾기" autocomplete="off" enterkeyhint="search" aria-label="장비 이름이나 브랜드로 찾기"></div>'
+      + '<div class="qgr-cats">' + ['all'].concat(MY_GEAR_CAT_IDS).map(function(id) {
+        return '<button type="button" class="qgr-chip' + (id === QGR.cat ? ' on' : '') + '" data-qgr-fcat="' + id + '">' + escapeHtml(id === 'all' ? '전체' : planGearCategoryLabel(id)) + '</button>';
+      }).join('') + '</div>'
+      + '<div class="qgr-list" data-qgr-list>' + qgrListHtml() + '</div>';
+  }
+  function qgrDirectHtml(initName, addToPack) {
+    return `
         <span class="gme-lbl">장비 이름</span>
-        <input type="text" id="regGearName" class="gme-in" placeholder="예: MSR 엘릭서 2" value="${escapeHtml(initName)}" oninput="window.previewQuickGearCategory(this.value)" />
+        <input type="text" id="regGearName" class="gme-in" placeholder="예: MSR 엘릭서 2" value="${escapeHtml(initName)}" />
         <span class="gme-lbl">분류</span>
-        <select id="regGearCat" class="gme-in gme-sel" onchange="window.previewQuickGearCategory(document.getElementById('regGearName') ? document.getElementById('regGearName').value : '')">
-          ${planGearCategoryOptionsHtml('', true)}
-        </select>
+        <input type="hidden" id="regGearCat" value="" />
+        <div class="qgr-chips" data-qgr-cats>${MY_GEAR_CAT_IDS.map(function(id) { return '<button type="button" class="qgr-chip" data-qgr-cat="' + id + '">' + escapeHtml(planGearCategoryLabel(id)) + '</button>'; }).join('')}</div>
         <div id="regGearCatHint" class="pk-g" style="min-height:16px; margin-top:6px; font-weight:600;"></div>
         <div class="gme-grid">
-          <div><span class="gme-lbl">무게 (g)</span><input type="number" id="regGearWeight" class="gme-in" placeholder="0" /></div>
+          <div><span class="gme-lbl">무게 (g)</span><input type="number" id="regGearWeight" class="gme-in" inputmode="numeric" placeholder="0" /></div>
           <div><span class="gme-lbl">브랜드</span><input type="text" id="regGearBrand" class="gme-in" placeholder="선택" /></div>
         </div>
         <div class="gme-grid">
@@ -2293,18 +2347,142 @@ window.openQuickGearRegisterModal = function(opts) {
           </div>
           <div><span class="gme-lbl">구매가</span><input type="text" id="regGearPrice" class="gme-in" inputmode="numeric" placeholder="₩ 금액" oninput="window.formatDirectInputPrice(this)" /></div>
         </div>
+        <span class="gme-lbl">상태</span>
+        <select id="regGearStatus" class="gme-in gme-sel">
+          <option value="ok" selected>정상</option>
+          <option value="repair">정비요망</option>
+          <option value="sell">방출예정</option>
+        </select>
+        <span class="gme-lbl">메모 (선택)</span>
+        <textarea id="regGearMemo" class="gme-in" rows="3" placeholder="보관 위치, 수리한 일 등" style="height:80px; padding:12px; line-height:1.45; resize:none;"></textarea>
         <label style="display:flex; align-items:center; gap:10px; margin-top:14px; cursor:pointer; user-select:none; -webkit-user-select:none;">
-          <input type="checkbox" id="chkRegAddToPack" ${defaultAddToPack ? 'checked' : ''} style="width:20px; height:20px; accent-color:#5bb8f0; cursor:pointer; margin:0;" />
+          <input type="checkbox" id="chkRegAddToPack" ${addToPack ? 'checked' : ''} style="width:20px; height:20px; accent-color:#5bb8f0; cursor:pointer; margin:0;" />
           <span style="font-size:14px; font-weight:700; color:var(--tx-2, #d1d1d6);">등록하면서 지금 배낭에도 담기</span>
         </label>
         <div style="display:flex; gap:8px; margin-top:16px;">
-          <button type="button" class="pk-dock-sub" onclick="document.getElementById('quickGearDetailModal').remove();">취소</button>
-          <button type="button" class="pk-dock-save" onclick="window.submitQuickGearRegister();">등록 완료</button>
+          <button type="button" class="pk-dock-sub" data-qgr-close>취소</button>
+          <button type="button" class="pk-dock-save" data-qgr-submit>등록 완료</button>
+        </div>`;
+  }
+  function qgrClose() {
+    var modal = document.getElementById('quickGearDetailModal');
+    if (modal) modal.remove();
+    document.body.classList.remove('okbm-qgr-kb');
+    if (QGR.onResize) {
+      window.removeEventListener('resize', QGR.onResize);
+      if (window.visualViewport) window.visualViewport.removeEventListener('resize', QGR.onResize);
+      QGR.onResize = null;
+    }
+    if (QGR.changed) {
+      QGR.changed = false;
+      if (window.activePlanSubMode === 'calculator') { if (typeof window.renderPlanCategorySlots === 'function') window.renderPlanCategorySlots(); }
+      else if (typeof window.renderPlanStage === 'function') window.renderPlanStage();
+    }
+  }
+  window.closeQuickGearRegisterModal = qgrClose;
+
+  window.openQuickGearRegisterModal = function(opts) {
+    var isFromCalc = (window.activePlanSubMode === 'calculator');
+    var defaultAddToPack = (opts && typeof opts.addToPack === 'boolean') ? opts.addToPack : isFromCalc;
+    var searchInput = document.getElementById('calcShelfSearchInput');
+    var initName = (searchInput && isFromCalc) ? searchInput.value.trim() : '';
+
+    qgrClose();
+    // 배낭 꾸리기에서 부르면 그 화면에 찾기가 따로 있어 직접 등록부터 연다
+    QGR.tab = (opts && opts.tab) || (isFromCalc ? 'direct' : 'find');
+    QGR.q = ''; QGR.cat = 'all'; QGR.changed = false;
+
+    var modal = document.createElement('div');
+    modal.id = 'quickGearDetailModal';
+    modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:rgba(0,0,0,0.45); z-index:1000030; display:flex; align-items:flex-end; justify-content:center; box-sizing:border-box;';
+    modal.innerHTML = `
+      <div class="gme-panel qgr-panel">
+        <div class="gme-grab"></div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="flex:1; font-size:18px; font-weight:900;">장비 추가</div>
+          <button type="button" class="gdm-x" data-qgr-close aria-label="닫기">✕</button>
         </div>
+        <div class="qgr-seg" role="tablist">
+          <button type="button" role="tab" data-qgr-tab="find">목록에서 찾기</button>
+          <button type="button" role="tab" data-qgr-tab="direct">직접 등록</button>
+        </div>
+        <div class="qgr-body" data-qgr-body="find">${qgrFindHtml()}</div>
+        <div class="qgr-body" data-qgr-body="direct">${qgrDirectHtml(initName, defaultAddToPack)}</div>
       </div>
     `;
     document.body.appendChild(modal);
-    if (typeof window.previewQuickGearCategory === 'function') window.previewQuickGearCategory(initName);
+    var panel = modal.querySelector('.qgr-panel');
+
+    var setTab = function(tab) {
+      QGR.tab = tab;
+      panel.classList.toggle('is-find', tab === 'find');
+      modal.querySelectorAll('[data-qgr-tab]').forEach(function(b) { var on = b.getAttribute('data-qgr-tab') === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+      modal.querySelectorAll('[data-qgr-body]').forEach(function(b) { b.style.display = b.getAttribute('data-qgr-body') === tab ? '' : 'none'; });
+    };
+    var paintList = function() { var box = modal.querySelector('[data-qgr-list]'); if (box) box.innerHTML = qgrListHtml(); };
+    setTab(QGR.tab);
+
+    modal.addEventListener('click', function(e) {
+      var t = e.target;
+      if (t === modal || t.closest('[data-qgr-close]')) { qgrClose(); return; }
+      var tb = t.closest('[data-qgr-tab]');
+      if (tb) { setTab(tb.getAttribute('data-qgr-tab')); return; }
+      var fc = t.closest('[data-qgr-fcat]');
+      if (fc) {
+        QGR.cat = fc.getAttribute('data-qgr-fcat');
+        modal.querySelectorAll('[data-qgr-fcat]').forEach(function(b) { b.classList.toggle('on', b === fc); });
+        paintList();
+        return;
+      }
+      var add = t.closest('[data-qgr-add]');
+      if (add) {
+        var name = add.getAttribute('data-qgr-add');
+        if (!(window.favoriteGearSet && window.favoriteGearSet.has(name))) window.toggleFavoriteGear(name);
+        QGR.changed = true;
+        add.outerHTML = '<span class="qgr-add done">담김</span>';
+        if (typeof showToast === 'function') showToast('[' + name + '] 내 장비에 담았어요', 'success');
+        return;
+      }
+      var cc = t.closest('[data-qgr-cat]');
+      if (cc) {
+        var hid = document.getElementById('regGearCat');
+        var v = cc.getAttribute('data-qgr-cat');
+        hid.value = hid.value === v ? '' : v; // 같은 걸 다시 누르면 이름 보고 자동
+        modal.querySelectorAll('[data-qgr-cat]').forEach(function(b) { b.classList.toggle('on', b.getAttribute('data-qgr-cat') === hid.value); });
+        window.previewQuickGearCategory(document.getElementById('regGearName').value);
+        return;
+      }
+      if (t.closest('[data-qgr-submit]')) window.submitQuickGearRegister();
+    });
+    var sTimer = 0;
+    modal.addEventListener('input', function(e) {
+      if (e.target.id === 'qgrSearch') {
+        QGR.q = e.target.value;
+        clearTimeout(sTimer);
+        sTimer = setTimeout(paintList, 120);
+      } else if (e.target.id === 'regGearName') {
+        window.previewQuickGearCategory(e.target.value);
+      }
+    });
+    // 키보드: 처음 높이보다 120px 넘게 줄면 키보드가 올라온 것으로 본다
+    var vh = function() { return window.visualViewport ? window.visualViewport.height : window.innerHeight; };
+    QGR.baseH = vh();
+    QGR.onResize = function() {
+      var kb = vh() < QGR.baseH - 120;
+      modal.classList.toggle('is-kb', kb);
+      document.body.classList.toggle('okbm-qgr-kb', kb);
+      if (kb) {
+        var f = document.activeElement;
+        if (f && modal.contains(f) && QGR.tab === 'direct') setTimeout(function() { f.scrollIntoView({ block: 'center' }); }, 60);
+      }
+    };
+    window.addEventListener('resize', QGR.onResize);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', QGR.onResize);
+
+    window.previewQuickGearCategory(initName);
+    if (!qgrCatalog().length && typeof window.ensureAllGearCategoriesLoaded === 'function') {
+      window.ensureAllGearCategoriesLoaded(false).then(paintList).catch(function(err) { console.warn('[romantic-plan.js:qgr catalog]', err); });
+    }
   };
 
   window.previewQuickGearCategory = function(name) {
@@ -2312,16 +2490,20 @@ window.openQuickGearRegisterModal = function(opts) {
     var hint = document.getElementById('regGearCatHint');
     if (!hint) return;
     if (catEl && catEl.value) {
-      hint.textContent = '직접 선택한 분류로 저장됩니다.';
+      hint.textContent = '고른 분류로 저장해요. 한 번 더 누르면 이름을 보고 정해요.';
       return;
     }
     var trimmed = String(name || '').trim();
     if (!trimmed) {
-      hint.textContent = '이름을 입력하면 분류가 정해집니다. 직접 고를 수도 있습니다.';
+      hint.textContent = '이름을 적으면 분류를 정해 드려요. 직접 골라도 돼요.';
       return;
     }
     var inferred = inferPlanGearCategoryFromText(trimmed);
-    hint.textContent = '자동 분류: ' + planGearCategoryLabel(inferred || 'other');
+    if (!inferred || inferred === 'food') inferred = 'other';
+    var lbl = planGearCategoryLabel(inferred);
+    var code = lbl.charCodeAt(lbl.length - 1) - 0xAC00;
+    var jong = code >= 0 && code <= 11171 ? code % 28 : 0;
+    hint.textContent = '이름을 보고 \'' + lbl + '\'' + (jong && jong !== 8 ? '으로' : '로') + ' 저장해요. 바꾸려면 눌러 주세요.';
   };
 
   window.submitQuickGearRegister = function() {
@@ -2339,7 +2521,12 @@ window.openQuickGearRegisterModal = function(opts) {
     var name = nameEl.value.trim();
     var pickedCat = catEl.value ? normalizePlanGearCategoryId(catEl.value) : '';
     var catId = pickedCat || inferPlanGearCategoryFromText(name) || 'other';
+    if (catId === 'food') catId = 'other'; // 내 장비에는 식량을 두지 않는다(대표님 11-09)
     var weight = parseInt(weightEl.value, 10);
+    var statusEl = document.getElementById('regGearStatus');
+    var memoEl = document.getElementById('regGearMemo');
+    var status = statusEl && statusEl.value ? statusEl.value : 'ok';
+    var memo = memoEl ? memoEl.value.trim() : '';
     var brand = brandEl ? brandEl.value.trim() : '';
     var rawDate = pDateEl && pDateEl.value ? pDateEl.value.trim() : '';
     var pDate = '';
@@ -2405,6 +2592,8 @@ window.openQuickGearRegisterModal = function(opts) {
     if (!gearMetaObj[name]) gearMetaObj[name] = { purchaseDate: '', price: 0, status: 'ok', memo: '' };
     if (pDate) gearMetaObj[name].purchaseDate = pDate;
     if (price > 0) gearMetaObj[name].price = price;
+    gearMetaObj[name].status = status;
+    if (memo) gearMetaObj[name].memo = memo;
     gearMetaObj[name].categoryId = catId;
     gearMetaObj[name].categoryLocked = !!pickedCat;
 
@@ -2430,8 +2619,8 @@ window.openQuickGearRegisterModal = function(opts) {
       }
     }
 
-    var modal = document.getElementById('quickGearDetailModal');
-    if (modal) modal.remove();
+    QGR.changed = false; // 아래에서 다시 그린다
+    qgrClose();
 
     if (typeof syncUserDataToCloud === 'function') {
       syncUserDataToCloud();
@@ -4827,9 +5016,10 @@ window.saveCurrentPackingRecord = function() {
     // 5. 내 장비관리 뷰 연산 및 렌더링 엔진
     var gearMetaObj = safeGetJSON('okbm_gear_meta', {});
     var favList = Array.from(window.favoriteGearSet || []);
+    // 식량은 장비가 아니라 내 장비에서 뺀다(대표님 11-09). 저장된 즐겨찾기는 그대로 둔다
     var myFavGears = favList.map(function(name) {
       return materializeMyGear(name);
-    });
+    }).filter(function(g) { return g && g.categoryId !== 'food'; });
 
     myFavGears.sort(function(a, b) {
       var aTime = (a.id && String(a.id).startsWith('custom_')) ? parseInt(String(a.id).split('_')[1], 10) : 0;
@@ -4850,7 +5040,6 @@ window.saveCurrentPackingRecord = function() {
       { id: 'shelter', label: '텐트·타프' },
       { id: 'sleep', label: '침낭·매트' },
       { id: 'pack', label: '배낭' },
-      { id: 'food', label: '음식' },
       { id: 'kitchen', label: '취사' },
       { id: 'wear', label: '의류' },
       { id: 'electronics', label: '전자·조명' },
