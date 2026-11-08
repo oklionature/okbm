@@ -56,9 +56,11 @@
     ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'
   };
 
-  const TABS = ['이번 달 행사', '초보 가이드', '자유게시판', '박지 후기', '장비 세일 소식'];
+  const TABS = ['이번 달 행사', '초보 가이드', '자유게시판', '박지 후기', '장비 세일 소식', '장비'];
   // 창에 보이는 순서. 번호는 그대로라 ?lounge=2(자유게시판) 같은 기존 링크가 안 밀린다.
-  const TAB_ORDER = [0, 4, 1, 2, 3];
+  // 대표님 11-09: 자유게시판 · 장비 · 박지 후기 · 이번 달 행사 · 장비 세일 소식 · 초보 가이드
+  const TAB_ORDER = [2, 5, 3, 0, 4, 1];
+  const TAB_GEAR = 5;
   const TAB_DEAL = 4;
   function trackOf(tab) {
     const i = TAB_ORDER.indexOf(Number(tab));
@@ -69,7 +71,8 @@
     return TAB_ORDER[i];
   }
   // 사는이야기(life)는 글이 없어 투표(poll) 칸으로 바꿨다. 옛 life 글이 남아 있어도 이름은 보인다 (SUPABASE_H25)
-  const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['gear', '장비'], ['poll', '설문·투표'], ['suggestion', '건의']];
+  // 장비 글은 라운지 '장비' 탭으로 옮겼다(대표님 11-09). 자유게시판에는 장비 말머리가 없다
+  const CATS = [['all', '전체'], ['backpacking', '백패킹이야기'], ['poll', '설문·투표'], ['suggestion', '건의']];
   const CAT_LABEL = { backpacking: '백패킹이야기', life: '사는이야기', gear: '장비', poll: '설문·투표', suggestion: '건의' };
   const GEAR_CAT = { shelter: '텐트', sleep: '침낭', pack: '배낭', food: '식량', kitchen: '조리', wear: '의류', electronics: '전자', camp: '캠프', other: '기타' };
   // 장비 말머리 (SUPABASE_I2): 질문·후기를 나눠 보고, 종류 줄로 거른다
@@ -97,7 +100,8 @@
   // revView: 박지 후기 창의 작은 탭 'recent'(최근 후기, 처음) | 'top'(평점순) | 'many'(후기 많은 순)
   // revBand: 평점순에서 고른 점수대 'all' | '45'(4.5 이상) | '4'(4점대) | '3'(3점대) | 'low'(3점 미만)
   // hub: 홈 라운지 알약 'board' | 'poll' | 'review' | 'guide'
-  const S = { tab: 0, wtab: 0, cat: 'all', gkind: 'question', gcat: 'all', revSpot: null, revView: 'recent', revBand: 'all', hub: 'board' };
+  const S = { tab: 2, wtab: 2, cat: 'all', gkind: 'question', gcat: 'all', revSpot: null, revView: 'recent', revBand: 'all', hub: 'board',
+    gt: { kind: 'review', cat: 'all', q: '', sort: 'count' }, keep: '' };
   let timeSig = ''; // 신청·오픈 상태 요약 (renderAll·timeTick)
 
   // ---------- 날짜 ----------
@@ -591,6 +595,17 @@
       '.lm-gtabs::-webkit-scrollbar{display:none}',
       '.lm-gtabs button{flex:none;height:36px;font-size:13px;font-weight:700;color:var(--sub);border-bottom:2px solid transparent}',
       '.lm-gtabs button.on{color:var(--tx);border-bottom-color:var(--tx)}',
+      '.lm-gbsearch{display:flex;align-items:center;gap:8px;height:46px;padding:0 14px;border-radius:14px;background:#1c1c20;border:1px solid rgba(255,255,255,.08);color:var(--sub)}',
+      '.lm-gbsearch input{flex:1;min-width:0;height:44px;border:0;background:none;color:var(--tx);font-size:16px;font-weight:600;outline:none;-webkit-appearance:none}',
+      '.lm-gbsearch input::placeholder{color:var(--sub);font-weight:500}',
+      '.lm-gbcount{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:13px;color:var(--sub);font-weight:600}.lm-gbcount button{color:#d1d1d6;font-weight:700;min-height:32px}',
+      '.lm-gbrow{width:100%;display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--div);text-align:left}',
+      '.lm-gbrow>i{width:56px;height:56px;border-radius:12px;background:#2a2a30;display:grid;place-items:center;flex:none;color:#d1d1d6;overflow:hidden}.lm-gbrow>i.ph img{width:100%;height:100%;object-fit:cover}',
+      '.lm-gbrow>span{flex:1;min-width:0}.lm-gbrow b{display:block;font-size:15px;font-weight:800;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.lm-gbrow small{display:block;font-size:12px;color:var(--sub);margin-top:2px}',
+      '.lm-gbrow em{display:flex;align-items:center;gap:6px;margin-top:5px;font-style:normal;font-size:12px;font-weight:700;color:var(--star)}.lm-gbrow em strong{color:var(--tx);font-weight:800}.lm-gbrow em span{color:var(--sub)}',
+      '.lm-gbrow em u{text-decoration:none;height:20px;padding:0 7px;border-radius:10px;background:rgba(52,211,153,.14);color:#34d399;font-size:11px;display:inline-flex;align-items:center;max-width:150px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}',
+      '.lm-gbrow>svg{flex:none;color:#55555d}',
       '.lm-gcard{width:100%;margin:8px 0 10px;display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:#1c1c20;border:1px solid rgba(255,255,255,.08);text-align:left}',
       '.lm-gcard>i{width:44px;height:44px;border-radius:10px;background:#2a2a30;display:grid;place-items:center;flex:none;color:#d1d1d6}',
       '.lm-gcard>span{flex:1;min-width:0}.lm-gcard b{display:block;font-size:16px;font-weight:800;line-height:1.35}',
@@ -2299,7 +2314,8 @@
       <div class="lmx-links">${links.join('')}</div></div>`;
     return fold(p.id, head, body);
   }
-  // 장비 후기가 많아 '전체'가 장비로 도배되지 않게: 고정 글 → 설문·투표 → 백패킹이야기 → 그 밖 → 장비는 최신 하나만
+  // 게시판 '전체': 고정 글 → 설문·투표 → 백패킹이야기 → 그 밖. 장비 글은 '장비' 탭에서 본다(대표님 11-09).
+  // 알림·장비 창에서 장비 글 하나를 열 때만(S.keep) 그 글을 남긴다
   function allOrder(list) {
     const pin = [], poll = [], story = [], gear = [], etc = [];
     list.forEach(function (p) {
@@ -2309,7 +2325,7 @@
       else if (p.category === 'gear') gear.push(p);
       else etc.push(p);
     });
-    return pin.concat(poll, story, etc, gear.slice(0, 1));
+    return pin.concat(poll, story, etc, gear.filter(function (p) { return p.id === S.keep; }));
   }
   function boardListHtml() {
     const key = boardKey();
@@ -2541,7 +2557,83 @@
     h += '<p class="lm-hint" style="margin-top:20px">후기는 박지마다 한 사람에 하나예요. 별점 없이 팁만 남겨도 돼요. 지도에서 박지를 열거나 「평점순」에서 박지를 눌러 남길 수 있어요.</p>';
     return h;
   }
-  const PANES = [paneEvents, paneGuide, paneBoard, paneReviews, paneDeals];
+  const PANES = [paneEvents, paneGuide, paneBoard, paneReviews, paneDeals, paneGear];
+
+  // ----- 라운지 '장비' 탭 (I10): 검색 · 후기|질문(후기 먼저) · 종류 · 장비 하나에 한 줄 -----
+  const GB_CATS = [['all', '전체'], ['shelter', '텐트'], ['bag', '침낭'], ['mat', '매트'], ['pack', '배낭'], ['kitchen', '조리'], ['wear', '의류'], ['electronics', '전자'], ['camp', '캠프'], ['food', '식량'], ['other', '기타']];
+  const GB_SORTS = [['count', '후기 많은 순'], ['rating', '별점 높은 순'], ['recent', '최근 후기 순']];
+  const GB = { key: '', rows: null, err: false, timer: 0 };
+  const gbKey = function () { return [S.gt.q.trim().toLowerCase(), S.gt.cat, S.gt.sort].join('|'); };
+  // 질문은 게시판 글 목록을 그대로 쓴다. 침낭·매트 칸은 같은 'sleep' 묶음
+  const gbQuestionKey = function () { const c = S.gt.cat === 'bag' || S.gt.cat === 'mat' ? 'sleep' : S.gt.cat; return 'gear|question|' + c; };
+  function gbLoad() {
+    const key = gbKey(), c = sb();
+    if (!c) return;
+    GB.key = key; GB.rows = null; GB.err = false;
+    q(c.rpc('okbm_gear_board', { p_q: S.gt.q.trim(), p_cat: S.gt.cat, p_sort: S.gt.sort, p_limit: 100 })).then(function (rows) {
+      if (GB.key !== key) return;
+      GB.rows = Array.isArray(rows) ? rows : [];
+      gbPaintList();
+    }).catch(function (err) {
+      console.warn('[lounge.js:gbLoad]', err);
+      if (GB.key === key) { GB.err = true; gbPaintList(); }
+    });
+  }
+  function gbReset() { GB.key = ''; GB.rows = null; }
+  function gbRowHtml(g, i) {
+    const photo = okbmSafeImageUrl(g.photo);
+    const kind = g.gear_cat === 'sleep' ? (g.kind === 'mat' ? '매트' : '침낭') : (GEAR_CAT[g.gear_cat] || '');
+    const meta = [kind, Number(g.weight_g) ? (Number(g.weight_g) / 1000).toFixed(2) + 'kg' : ''].filter(Boolean).join(' · ');
+    return `<button type="button" class="lm-gbrow" data-a="gb-open" data-v="${i}">
+      ${photo ? `<i class="ph"><img src="${escapeHtml(okbmFastImageUrl(photo))}" alt="" loading="lazy" decoding="async"></i>` : `<i>${ico(P.tent, 22)}</i>`}
+      <span><b>${esc(gearShort(g.gear_name))}</b><small>${esc(meta)}</small>
+      <em><svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${STAR_PATH}"/></svg><strong>${Number(g.avg || 0).toFixed(1)}</strong><span>후기 ${Number(g.n) || 0}</span>${g.top_pro ? `<u>${esc(g.top_pro)}</u>` : ''}</em></span>
+      ${ico(P.chevR, 18)}</button>`;
+  }
+  function gbListHtml() {
+    if (S.gt.kind === 'question') {
+      const key = gbQuestionKey(), st = postsBy[key];
+      if (!st) { loadPosts(key).then(gbPaintList).catch(function (err) { console.warn('[lounge.js:gb-question]', err); delete postsBy[key]; }); return '<div class="lm-empty">불러오는 중…</div>'; }
+      const words = S.gt.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      const list = visiblePosts(key).filter(function (p) {
+        if (S.gt.cat === 'bag' && isMatName(p.gear_name)) return false;
+        if (S.gt.cat === 'mat' && !isMatName(p.gear_name)) return false;
+        const hay = [p.title, p.gear_name, p.body].join(' ').toLowerCase();
+        return words.every(function (w) { return hay.indexOf(w) >= 0; });
+      });
+      return '<div class="lm-gbcount"><span>장비 질문 ' + list.length + '개</span></div>' + (list.length ? list.map(postItem).join('') : '<div class="lm-empty">' + (words.length ? '찾는 질문이 없어요' : '아직 장비 질문이 없어요') + '</div>');
+    }
+    if (GB.key !== gbKey()) { gbLoad(); return '<div class="lm-empty">불러오는 중…</div>'; }
+    if (GB.err) return '<div class="lm-empty">불러오지 못했어요</div>';
+    if (!GB.rows) return '<div class="lm-empty">불러오는 중…</div>';
+    const qv = S.gt.q.trim();
+    const sortLbl = (GB_SORTS.find(function (x) { return x[0] === S.gt.sort; }) || GB_SORTS[0])[1];
+    return '<div class="lm-gbcount"><span>' + (qv ? '\'' + esc(qv) + '\' 찾은 장비 ' : '후기 있는 장비 ') + GB.rows.length + '개</span><button type="button" data-a="gb-sort">' + esc(sortLbl) + ' ▾</button></div>'
+      + (GB.rows.length ? GB.rows.map(gbRowHtml).join('') : '<div class="lm-empty">' + (qv ? '찾는 장비 후기가 없어요.<br>첫 후기를 남겨 주세요' : '아직 장비 후기가 없어요') + '</div>');
+  }
+  function gbPaintList() {
+    const pane = paneByTab(TAB_GEAR);
+    const box = pane && pane.querySelector('[data-gb-list]');
+    if (box) keepOpen(box, function () { box.innerHTML = gbListHtml(); });
+  }
+  function paneGear(full) {
+    if (!full) { // 홈(창 아닌 곳): 후기 많은 장비 세 줄
+      if (GB.key !== gbKey()) gbLoad();
+      const rows = (GB.rows || []).slice(0, 3);
+      return (rows.length ? '<div class="lm-gbmini">' + rows.map(gbRowHtml).join('') + '</div>' : '<div class="lm-empty">아직 장비 후기가 없어요</div>') + moreBtn(TAB_GEAR, '장비 전체 보기');
+    }
+    return '<div class="lm-gbsearch">' + ico(P.search, 18) + '<input type="search" data-gb-q value="' + esc(S.gt.q) + '" placeholder="장비 이름·브랜드로 찾기" enterkeyhint="search" autocomplete="off" aria-label="장비 이름이나 브랜드로 찾기"></div>'
+      + '<div class="lm-seg" role="radiogroup" aria-label="후기·질문" style="margin-top:12px">' + [['review', '후기'], ['question', '질문']].map(function (k) {
+        const on = k[0] === S.gt.kind;
+        return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="gb-kind" data-v="' + k[0] + '">' + k[1] + '</button>';
+      }).join('') + '</div>'
+      + '<div class="lm-gtabs" role="radiogroup" aria-label="장비 종류">' + GB_CATS.map(function (c) {
+        const on = c[0] === S.gt.cat;
+        return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="gb-cat" data-v="' + c[0] + '">' + esc(c[1]) + '</button>';
+      }).join('') + '</div>'
+      + '<div data-gb-list>' + gbListHtml() + '</div>'
+      + '<button type="button" class="lmh-cta" data-a="gb-write">' + ico(P.plus, 18) + '<span>' + (S.gt.kind === 'question' ? '장비 질문하기' : '장비 후기 쓰기') + '</span></button>';
+  }
 
   // 로딩·실패 상태를 거쳐 탭 내용을 고른다 (i = 탭 번호, full = 라운지 창)
   function paneHtml(i, full) {
@@ -2897,7 +2989,7 @@
       const rows = visiblePosts('gear').slice(0, HUB_N).map(function (p) {
         return hubRow('data-a="lounge" data-v="2" data-id="' + esc(p.id) + '"', p.gear_kind === 'review' ? '후기' : '질문', p.title, GEAR_CAT[p.gear_cat] || '');
       }).join('');
-      return (rows || '<div class="hh-empty">첫 장비 질문을 올려 보세요</div>') + hubFoot('data-a="hub-all" data-v="gear"', '장비 전체 보기', 'gear', '질문하기');
+      return (rows || '<div class="hh-empty">첫 장비 후기를 올려 보세요</div>') + hubFoot('data-a="hub-all" data-v="gear"', '장비 전체 보기', 'gear', '후기 쓰기');
     }
     if (key === 'board' || key === 'poll') {
       const st = postsBy[key === 'poll' ? 'poll' : 'all'];
@@ -3160,6 +3252,7 @@
   }
   // 목록에 아직 없는 글(첫 로딩 중, 오래된 글, 알림·신고 검수에서 열 때): 불러온 뒤 펼친다
   async function focusPostWhenReady(id) {
+    S.keep = String(id || '');
     try {
       if (loadAllPromise) await loadAllPromise;
       if (!win) return;
@@ -3193,6 +3286,7 @@
     clearTimeout(winTimer);
     layer.querySelectorAll('.lm-win').forEach(function (n) { n.remove(); }); // 닫히는 중이던 창
     const post = itemId && findPost(itemId);
+    if (itemId && tab === 2) S.keep = String(itemId);
     if (post && S.cat !== 'all' && post.category !== S.cat) S.cat = 'all';
     S.wtab = tab;
     layer.insertAdjacentHTML('afterbegin', winHtml(tab));
@@ -4141,7 +4235,7 @@
     const cat = p ? p.category : (cat0 || (S.cat !== 'all' ? S.cat : 'backpacking'));
     const st = { kind: 'post', id: p ? p.id : null, cat: cat, pollDays: 7, pollKind: 'choice', pollSource: 'spot', photos: postPhotos(p || {}).map(function (u) { return { url: u }; }),
       gkind: (pre && pre.kind) || S.gkind, gear: (pre && pre.gear) || null,
-      gcat: (pre && pre.gear && pre.gear.cat) || (S.gcat !== 'all' ? S.gcat : null), rv: newRv(), autoTitle: '' };
+      gcat: (pre && pre.gear && pre.gear.cat) || (pre && pre.cat) || (S.gcat !== 'all' ? S.gcat : null), rv: newRv(), autoTitle: '' };
     if (isRvPost(p)) {
       st.editRv = true;
       st.gkind = 'review';
@@ -4263,6 +4357,7 @@
         if (window.okbmPoints) window.okbmPoints.check(row.gear_review ? 'gear_review' : 'post'); // 낭만 포인트 알림 (H32, I7)
       }
       if (row.gear_review && row.gear_id && row.gear_name) addToMyGear(row.gear_name);
+      if (row.category === 'gear') { gbReset(); Object.keys(postsBy).forEach(function (k) { if (k.indexOf('gear|') === 0 || k.indexOf('gearof|') === 0) delete postsBy[k]; }); }
       closeSheet();
       toast(st.id ? '글을 고쳤어요' : (row.category === 'suggestion' ? '건의를 보냈어요. 답변이 달리면 알려 드릴게요' : row.category === 'poll' ? '설문을 올렸어요' : '글을 올렸어요'));
       if (!st.id && S.cat !== 'all' && S.cat !== row.category) S.cat = 'all';
@@ -4272,7 +4367,11 @@
       }
       renderBoard();
       if (!postsBy[boardKey()]) loadPosts(boardKey()).then(renderBoardList).catch(function (err) { console.warn('[lounge.js:savePost]', err); });
-      if (win && !st.id) {
+      if (row.category === 'gear') {
+        S.gt.kind = row.gear_kind === 'question' ? 'question' : 'review';
+        rerenderPane(TAB_GEAR);
+        if (win) winTo(TAB_GEAR);
+      } else if (win && !st.id) {
         winTo(2);
         const posted = paneByTab(2);
         if (posted) posted.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
@@ -4835,6 +4934,31 @@
         if (ph && ph.url) { SH.rv.photo = SH.rv.photo === ph.url ? '' : ph.url; refreshThumbs(); }
         break;
       }
+      case 'gb-kind':
+        S.gt.kind = v === 'question' ? 'question' : 'review';
+        rerenderPane(TAB_GEAR);
+        break;
+      case 'gb-cat':
+        S.gt.cat = GB_CATS.some(function (c) { return c[0] === v; }) ? v : 'all';
+        t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+        gbPaintList();
+        break;
+      case 'gb-sort': {
+        const i = GB_SORTS.findIndex(function (x) { return x[0] === S.gt.sort; });
+        S.gt.sort = GB_SORTS[(i + 1) % GB_SORTS.length][0];
+        gbPaintList();
+        break;
+      }
+      case 'gb-open': {
+        const g = GB.rows && GB.rows[Number(v)];
+        if (g) openGear({ gear_id: g.gear_id || '', gear_name: g.gear_name, gear_cat: g.gear_cat || 'other', gear_kind: 'review' });
+        break;
+      }
+      case 'gb-write': {
+        const cat = S.gt.cat === 'bag' || S.gt.cat === 'mat' ? 'sleep' : (S.gt.cat !== 'all' ? S.gt.cat : null);
+        openPostForm(null, 'gear', { kind: S.gt.kind, gear: null, cat: cat });
+        break;
+      }
       case 'rv-rate': if (SH.kind === 'post') { SH.rv.rating = Number(v) || 0; paintReview(); tick(); } break;
       case 'rv-period': if (SH.kind === 'post') { SH.rv.period = v; paintReview(); } break;
       case 'rv-uses': if (SH.kind === 'post') { SH.rv.uses = v; paintReview(); } break;
@@ -4897,6 +5021,7 @@
           if (!ok) return;
           dropPost(p.id);
           renderBoard();
+          if (p.category === 'gear') { gbReset(); rerenderPane(TAB_GEAR); }
         });
         break;
       }
@@ -4905,8 +5030,8 @@
       case 'new-post': openPostForm(null, v === 'poll' || v === 'gear' ? v : null); break;
       // 홈 알약 '전체 보기': 그 말머리를 고른 채로 자유게시판을 연다
       case 'hub-all': {
-        S.cat = v === 'gear' || v === 'poll' ? v : 'all';
-        if (v === 'gear') { S.gkind = 'question'; S.gcat = 'all'; }
+        if (v === 'gear') { S.gt.kind = 'review'; openLoungeWindow(TAB_GEAR, null, t); break; }
+        S.cat = v === 'poll' ? v : 'all';
         const key = boardKey();
         if (!postsBy[key]) loadPosts(key).then(renderBoardList).catch(function (err) { console.warn('[lounge.js:hub-all]', err); delete postsBy[key]; });
         rerenderPane(2);
@@ -5155,6 +5280,12 @@
   }
   function onInput(e) {
     const t = e.target;
+    if (t.hasAttribute && t.hasAttribute('data-gb-q')) { // 장비 탭 검색: 잠깐 멈추면 찾는다
+      S.gt.q = String(t.value || '').slice(0, 40);
+      clearTimeout(GB.timer);
+      GB.timer = setTimeout(gbPaintList, 250);
+      return;
+    }
     if (t.hasAttribute && t.hasAttribute('data-t3-q')) { t3State(t.dataset.post).q[Number(t.dataset.i)] = t.value; clearTimeout(searchTimer); searchTimer = setTimeout(function () { t3Suggest(t); }, 120); return; }
     if (!sheet || !sheet.contains(t)) return;
     if (t.dataset.about != null && SH.items && SH.items[Number(t.dataset.about)]) SH.items[Number(t.dataset.about)].about = t.value;
