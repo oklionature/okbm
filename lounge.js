@@ -2653,8 +2653,9 @@
         const on = c[0] === S.gt.cat;
         return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="gb-cat" data-v="' + c[0] + '">' + esc(c[1]) + '</button>';
       }).join('') + '</div>'
-      + '<div data-gb-list>' + gbListHtml() + '</div>'
-      + '<button type="button" class="lmh-cta" data-a="gb-write">' + ico(P.plus, 18) + '<span>' + (S.gt.kind === 'question' ? '장비 질문하기' : '장비 후기 쓰기') + '</span></button>';
+      // 쓰기 단추는 자유게시판처럼 목록 위에 둔다(목록 끝이면 장비가 늘수록 밀려 내려간다, 대표님 11-09)
+      + '<button type="button" class="lmh-cta" data-a="gb-write">' + ico(P.plus, 18) + '<span>' + (S.gt.kind === 'question' ? '장비 질문하기' : '장비 후기 쓰기') + '</span></button>'
+      + '<div data-gb-list>' + gbListHtml() + '</div>';
   }
 
   // 로딩·실패 상태를 거쳐 탭 내용을 고른다 (i = 탭 번호, full = 라운지 창)
@@ -5053,7 +5054,8 @@
       }
       // 회원 쓰기
       case 'need-login': needLogin(); break;
-      case 'new-post': openPostForm(null, v === 'poll' || v === 'gear' ? v : null); break;
+      // 홈 장비 칸 '후기 쓰기'는 후기로 연다(기본값 S.gkind는 '질문'이라 질문 창이 열렸다, 대표님 11-09)
+      case 'new-post': openPostForm(null, v === 'poll' || v === 'gear' ? v : null, v === 'gear' ? { kind: 'review' } : null); break;
       // 홈 알약 '전체 보기': 그 말머리를 고른 채로 자유게시판을 연다
       case 'hub-all': {
         if (v === 'gear') { S.gt.kind = 'review'; openLoungeWindow(TAB_GEAR, null, t); break; }
