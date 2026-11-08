@@ -7802,10 +7802,10 @@ window.openPastTripDatePicker = function() {
   overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:2147483646; display:flex; justify-content:center; align-items:center; padding:16px; box-sizing:border-box;';
   overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
   overlay.innerHTML =
-    '<div style="width:100%; max-width:336px; background:#0c1017; border-radius:14px; border:1px solid rgba(255,255,255,0.12); padding:12px 12px 14px 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box; max-height:min(78dvh, 520px); overflow:auto; box-shadow:0 16px 40px rgba(0,0,0,0.55);" onclick="event.stopPropagation();">' +
+    '<div style="width:100%; max-width:336px; background:#17171b; border-radius:14px; border:1px solid rgba(255,255,255,0.12); padding:12px 12px 14px 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box; max-height:min(78dvh, 520px); overflow:auto; box-shadow:0 16px 40px rgba(0,0,0,0.55);" onclick="event.stopPropagation();">' +
       '<div style="display:flex; justify-content:space-between; align-items:center;">' +
         '<span style="font-size:0.82rem; font-weight:900; color:#fff;">날짜 선택</span>' +
-        '<button type="button" onclick="document.getElementById(\'pastTripDatePickerModal\').remove();" style="background:none; border:none; color:#94a3b8; font-size:1rem; cursor:pointer;">✕</button>' +
+        '<button type="button" onclick="document.getElementById(\'pastTripDatePickerModal\').remove();" style="background:none; border:none; color:#8b8b93; font-size:1rem; cursor:pointer;">✕</button>' +
       '</div>' +
       '<div style="display:flex; gap:6px;">' +
         '<button type="button" id="pastTripPickerYearBtn" onclick="window.setPastTripPickerView(\'years\');" style="flex:1; height:34px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04); color:#fff; font-size:0.80rem; font-weight:900; cursor:pointer;"></button>' +
@@ -7883,8 +7883,8 @@ window.renderPastTripDatePicker = function() {
   var curMonth = now.getMonth() + 1;
   var selectedIso = (document.getElementById('pastTripDateInput') || {}).value || '';
   var onCss = 'border:1px solid rgba(226,232,240,0.55); background:rgba(226,232,240,0.16); color:#fff;';
-  var offCss = 'border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:#cbd5e1;';
-  var disCss = 'border:1px solid transparent; background:transparent; color:#475569;';
+  var offCss = 'border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:#d1d1d6;';
+  var disCss = 'border:1px solid transparent; background:transparent; color:#55555d;';
 
   if (view === 'years') {
     var years = [];
@@ -7911,7 +7911,7 @@ window.renderPastTripDatePicker = function() {
 
   var firstDay = new Date(y, m - 1, 1).getDay();
   var lastDay = new Date(y, m, 0).getDate();
-  var html = '<div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.56rem; font-weight:800; color:#64748b; margin-bottom:4px;">' +
+  var html = '<div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.56rem; font-weight:800; color:#6b6b73; margin-bottom:4px;">' +
     '<span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>' +
     '<div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:3px;">';
   for (var b = 0; b < firstDay; b++) html += '<div style="height:32px;"></div>';
@@ -7923,7 +7923,7 @@ window.renderPastTripDatePicker = function() {
     var on = iso === selectedIso;
     html += '<button type="button" ' + (disabled ? 'disabled' : 'data-okbm-arg="' + Number(day) + '" onclick="window.selectPastTripPickerDay(Number(this.dataset.okbmArg));"') +
       ' style="height:32px; border-radius:8px; font-size:0.74rem; font-weight:800; cursor:' + (disabled ? 'default' : 'pointer') + '; ' +
-      (disabled ? disCss : (on ? onCss : 'border:1px solid transparent; background:transparent; color:#e2e8f0;')) + '">' + day + '</button>';
+      (disabled ? disCss : (on ? onCss : 'border:1px solid transparent; background:transparent; color:#f2f2f3;')) + '">' + day + '</button>';
   }
   html += '</div>';
   body.innerHTML = html;
@@ -8487,12 +8487,12 @@ window._pastTripRenderPhotoStage = function() {
   if (stage) {
     if (!photos.length) {
       stage.innerHTML =
-        '<div onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="width:100%; aspect-ratio:3/4; max-height:420px; border:1.5px dashed rgba(255,255,255,0.16); border-radius:14px; background:#141517; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-sizing:border-box;">' +
-          '<div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; color:#cbd5e1;">' +
+        '<div onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="width:100%; aspect-ratio:3/4; max-height:420px; border:1.5px dashed rgba(255,255,255,0.16); border-radius:14px; background:#17171b; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-sizing:border-box;">' +
+          '<div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; color:#d1d1d6;">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>' +
           '</div>' +
-          '<span style="font-size:0.88rem; font-weight:800; color:#e2e8f0;">사진 추가</span>' +
-          '<span style="font-size:0.68rem; color:#64748b; text-align:center; line-height:1.45;">최대 10장</span>' +
+          '<span style="font-size:0.88rem; font-weight:800; color:#f2f2f3;">사진 추가</span>' +
+          '<span style="font-size:0.68rem; color:#6b6b73; text-align:center; line-height:1.45;">최대 10장</span>' +
         '</div>';
     } else {
       var esc = window._pastTripEsc;
@@ -8500,13 +8500,13 @@ window._pastTripRenderPhotoStage = function() {
         return '<div style="flex:0 0 100%; width:100%; height:100%; scroll-snap-align:start; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">' +
           '<img src="' + escapeHtml(okbmSafeImageUrl(url)) + '" alt="" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.32); transform:scale(1.15); pointer-events:none;" />' +
           '<img src="' + escapeHtml(okbmSafeImageUrl(url)) + '" alt="" style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" />' +
-          '<button type="button" data-okbm-idx="' + Number(pIdx) + '" onclick="event.stopPropagation(); window.removePastTripPhoto(Number(this.dataset.okbmIdx));" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:#141517; color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer;">✕</button>' +
+          '<button type="button" data-okbm-idx="' + Number(pIdx) + '" onclick="event.stopPropagation(); window.removePastTripPhoto(Number(this.dataset.okbmIdx));" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:#17171b; color:#d1d1d6; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer;">✕</button>' +
         '</div>';
       }).join('');
       var thumbsHtml = photos.map(function(tUrl, tIdx) {
         var on = tIdx === idx;
         var border = on
-          ? 'border:2.5px solid #94a3b8; box-shadow:0 0 10px rgba(148,163,184,0.45); transform:scale(1.06); z-index:3; opacity:1;'
+          ? 'border:2.5px solid #8b8b93; box-shadow:0 0 10px rgba(148,163,184,0.45); transform:scale(1.06); z-index:3; opacity:1;'
           : 'border:1px solid rgba(255,255,255,0.16); opacity:0.65;';
         return '<div data-past-thumb-idx="' + tIdx + '" draggable="true"' +
           ' ondragstart="window._pastTripThumbDragStart(event, Number(this.dataset.pastThumbIdx));"' +
@@ -8527,7 +8527,7 @@ window._pastTripRenderPhotoStage = function() {
             slidesHtml +
           '</div>' +
           (photos.length < 10
-            ? '<button type="button" onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="position:absolute; bottom:12px; right:12px; z-index:10; background:#141517; border:1px solid rgba(255,255,255,0.22); color:#e2e8f0; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer;">사진 추가</button>'
+            ? '<button type="button" onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="position:absolute; bottom:12px; right:12px; z-index:10; background:#17171b; border:1px solid rgba(255,255,255,0.22); color:#f2f2f3; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer;">사진 추가</button>'
             : '') +
         '</div>' +
         '<div id="pastTripPhotoThumbs" style="width:100%; display:flex; flex-wrap:wrap; gap:8px; padding:10px 0 6px 0; box-sizing:border-box;">' +
@@ -8566,7 +8566,7 @@ window._pastTripSyncPhotoThumbs = function() {
   nodes.forEach(function(node) {
     var nIdx = parseInt(node.getAttribute('data-past-thumb-idx'), 10);
     var on = nIdx === idx;
-    node.style.border = on ? '2.5px solid #94a3b8' : '1px solid rgba(255,255,255,0.16)';
+    node.style.border = on ? '2.5px solid #8b8b93' : '1px solid rgba(255,255,255,0.16)';
     node.style.boxShadow = on ? '0 0 10px rgba(148,163,184,0.45)' : 'none';
     node.style.transform = on ? 'scale(1.06)' : 'scale(1)';
     node.style.opacity = on ? '1' : '0.65';
@@ -8654,7 +8654,7 @@ window._pastTripThumbTouchStart = function(e, idx) {
     triggerHaptic(25);
     if (window.__pastTripTouchThumbEl) {
       window.__pastTripTouchThumbEl.style.transform = 'scale(1.15)';
-      window.__pastTripTouchThumbEl.style.borderColor = '#94a3b8';
+      window.__pastTripTouchThumbEl.style.borderColor = '#8b8b93';
       window.__pastTripTouchThumbEl.style.zIndex = '99';
     }
   }, 300);
@@ -8743,10 +8743,10 @@ window.switchPastTripMemoMode = function(mode) {
   if (btnSingle && btnPer) {
     var isSingle = st.memoMode === 'single';
     btnSingle.style.background = isSingle ? '#ffffff' : 'transparent';
-    btnSingle.style.color = isSingle ? '#000000' : '#94a3b8';
+    btnSingle.style.color = isSingle ? '#000000' : '#8b8b93';
     btnSingle.style.fontWeight = isSingle ? '900' : '700';
     btnPer.style.background = !isSingle ? '#ffffff' : 'transparent';
-    btnPer.style.color = !isSingle ? '#000000' : '#94a3b8';
+    btnPer.style.color = !isSingle ? '#000000' : '#8b8b93';
     btnPer.style.fontWeight = !isSingle ? '900' : '700';
   }
   if (helper) {
@@ -8774,8 +8774,8 @@ window._pastTripRenderGearList = function() {
     grams += Number(it.weight || 0);
     return '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:7px 10px;">' +
       '<div style="min-width:0; flex:1;">' +
-        '<div style="font-size:0.78rem; font-weight:800; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(it.name) + '</div>' +
-        '<div style="font-size:0.62rem; color:#64748b; margin-top:1px;">' + Number(it.weight || 0) + 'g</div>' +
+        '<div style="font-size:0.78rem; font-weight:800; color:#f2f2f3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(it.name) + '</div>' +
+        '<div style="font-size:0.62rem; color:#6b6b73; margin-top:1px;">' + Number(it.weight || 0) + 'g</div>' +
       '</div>' +
       '<button type="button" data-okbm-idx="' + Number(i) + '" onclick="window.removePastTripGearItem(Number(this.dataset.okbmIdx));" style="width:26px; height:26px; border-radius:6px; border:1px solid rgba(244,63,94,0.3); background:rgba(244,63,94,0.12); color:#fda4af; font-size:0.78rem; font-weight:900; cursor:pointer;">−</button>' +
     '</div>';
@@ -8831,14 +8831,14 @@ window._pastTripRenderGearSuggest = function(rawQ) {
   var esc = window._pastTripEsc;
   if (!matched.length) {
     listEl.style.display = 'block';
-    listEl.innerHTML = '<div style="padding:12px; color:#64748b; font-size:0.74rem; text-align:center;">일치하는 장비가 없습니다.</div>';
+    listEl.innerHTML = '<div style="padding:12px; color:#6b6b73; font-size:0.74rem; text-align:center;">일치하는 장비가 없습니다.</div>';
     return;
   }
   listEl.style.display = 'block';
   listEl.innerHTML = matched.map(function(g, i) {
     return '<button type="button" class="js-past-add-gear" data-idx="' + i + '" style="width:100%; text-align:left; background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,0.06); padding:9px 12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:8px;">' +
-      '<span style="font-size:0.80rem; font-weight:800; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(g.name) + '</span>' +
-      '<span style="font-size:0.68rem; color:#94a3b8; flex-shrink:0;">' + (g.weight / 1000).toFixed(2) + 'kg</span>' +
+      '<span style="font-size:0.80rem; font-weight:800; color:#f2f2f3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(g.name) + '</span>' +
+      '<span style="font-size:0.68rem; color:#8b8b93; flex-shrink:0;">' + (g.weight / 1000).toFixed(2) + 'kg</span>' +
     '</button>';
   }).join('');
   listEl.querySelectorAll('.js-past-add-gear').forEach(function(btn) {
@@ -8899,17 +8899,17 @@ window.togglePastTripPresetSheet = function() {
   var presets = window._pastTripReadPresets();
   var esc = window._pastTripEsc;
   if (!presets.length) {
-    sheet.innerHTML = '<div style="padding:14px; color:#64748b; font-size:0.74rem; text-align:center;">저장된 장비세트가 없습니다.</div>';
+    sheet.innerHTML = '<div style="padding:14px; color:#6b6b73; font-size:0.74rem; text-align:center;">저장된 장비세트가 없습니다.</div>';
   } else {
     sheet.innerHTML = presets.map(function(p) {
       if (!p || !p.id) return '';
       var flat = window._pastTripFlattenPresetItems(p);
       return '<button type="button" class="js-past-add-preset" data-preset-id="' + esc(String(p.id)) + '" style="width:100%; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:9px 12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:8px;">' +
         '<span style="min-width:0;">' +
-          '<span style="display:block; font-size:0.80rem; font-weight:800; color:#e2e8f0;">' + esc(p.name || '세트') + '</span>' +
-          '<span style="display:block; font-size:0.62rem; color:#64748b; margin-top:2px;">' + flat.items.length + '개 · ' + (flat.totalGrams / 1000).toFixed(2) + 'kg</span>' +
+          '<span style="display:block; font-size:0.80rem; font-weight:800; color:#f2f2f3;">' + esc(p.name || '세트') + '</span>' +
+          '<span style="display:block; font-size:0.62rem; color:#6b6b73; margin-top:2px;">' + flat.items.length + '개 · ' + (flat.totalGrams / 1000).toFixed(2) + 'kg</span>' +
         '</span>' +
-        '<span style="font-size:0.70rem; color:#cbd5e1; font-weight:800; flex-shrink:0;">추가</span>' +
+        '<span style="font-size:0.70rem; color:#d1d1d6; font-weight:800; flex-shrink:0;">추가</span>' +
       '</button>';
     }).join('');
     sheet.querySelectorAll('.js-past-add-preset').forEach(function(btn) {
@@ -9118,13 +9118,13 @@ window._pastTripShowSpotChoice = function(show) {
   ov.style.cssText = 'position:fixed; inset:0; z-index:2147483647; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
   ov.onclick = function(e) { if (e.target === ov) window._pastTripShowSpotChoice(false); };
   ov.innerHTML =
-    '<div style="width:100%; max-width:320px; background:#141517; border-radius:14px; border:1px solid rgba(255,255,255,0.12); padding:16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.55);" onclick="event.stopPropagation();">' +
+    '<div style="width:100%; max-width:320px; background:#17171b; border-radius:14px; border:1px solid rgba(255,255,255,0.12); padding:16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.55);" onclick="event.stopPropagation();">' +
       '<div style="font-size:0.92rem; font-weight:900; color:#fff; text-align:center;">장소를 등록하시겠습니까?</div>' +
-      (name ? ('<div style="font-size:0.78rem; font-weight:800; color:#e2e8f0; text-align:center; word-break:break-all;">' + esc(name) + '</div>') : '') +
-      '<div style="font-size:0.68rem; color:#94a3b8; line-height:1.5; text-align:center;">등록하기를 선택하시면 제보창으로 연결됩니다.<br>등록하지 않기를 선택하시면 나만보기와 이 기록에 저장됩니다.</div>' +
+      (name ? ('<div style="font-size:0.78rem; font-weight:800; color:#f2f2f3; text-align:center; word-break:break-all;">' + esc(name) + '</div>') : '') +
+      '<div style="font-size:0.68rem; color:#8b8b93; line-height:1.5; text-align:center;">등록하기를 선택하시면 제보창으로 연결됩니다.<br>등록하지 않기를 선택하시면 나만보기와 이 기록에 저장됩니다.</div>' +
       '<div style="display:flex; gap:8px;">' +
-        '<button type="button" onclick="window.choosePastTripSpotRegister();" style="flex:1; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:#e2e8f0; color:#000; font-size:0.78rem; font-weight:900; cursor:pointer;">등록하기</button>' +
-        '<button type="button" onclick="window.choosePastTripSpotSkip();" style="flex:1; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04); color:#cbd5e1; font-size:0.78rem; font-weight:800; cursor:pointer;">등록하지 않기</button>' +
+        '<button type="button" onclick="window.choosePastTripSpotRegister();" style="flex:1; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:#f2f2f3; color:#000; font-size:0.78rem; font-weight:900; cursor:pointer;">등록하기</button>' +
+        '<button type="button" onclick="window.choosePastTripSpotSkip();" style="flex:1; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04); color:#d1d1d6; font-size:0.78rem; font-weight:800; cursor:pointer;">등록하지 않기</button>' +
       '</div>' +
     '</div>';
   document.body.appendChild(ov);
@@ -9141,17 +9141,17 @@ window._pastTripSetSpotBadge = function(kind) {
   if (typeof window._pastTripSyncReview === 'function') setTimeout(window._pastTripSyncReview, 0);
   if (kind === 'registered') {
     badge.textContent = '등록 장소 · 마이데이터 합산 가능';
-    badge.style.color = '#e5e7eb';
+    badge.style.color = '#f2f2f3';
     badge.style.fontSize = '0.62rem';
     badge.style.lineHeight = '1.35';
   } else if (kind === 'unregistered') {
     badge.textContent = '비등록 장소는 나만보기에 저장됩니다. 추후 등록될경우 노출됩니다.';
-    badge.style.color = '#e5e7eb';
+    badge.style.color = '#f2f2f3';
     badge.style.fontSize = 'calc(0.62rem + 3pt)';
     badge.style.lineHeight = '1.35';
   } else {
     badge.textContent = '등록 장소를 선택하면 마이데이터에 합산됩니다.';
-    badge.style.color = '#64748b';
+    badge.style.color = '#6b6b73';
     badge.style.fontSize = '0.62rem';
     badge.style.lineHeight = '1.35';
   }
@@ -9268,7 +9268,7 @@ window._pastTripRenderSpotSuggest = function(rawQ) {
   if (confirmBtn) confirmBtn.style.display = matchedList.length ? 'none' : 'inline-flex';
   if (!matchedList.length) {
     listEl.style.display = 'block';
-    listEl.innerHTML = '<div style="padding:12px; color:#64748b; font-size:0.74rem; text-align:center; line-height:1.5;">일치하는 등록 장소가 없습니다.<br>확인을 누르면 이 이름으로 진행합니다.</div>';
+    listEl.innerHTML = '<div style="padding:12px; color:#6b6b73; font-size:0.74rem; text-align:center; line-height:1.5;">일치하는 등록 장소가 없습니다.<br>확인을 누르면 이 이름으로 진행합니다.</div>';
     return;
   }
   listEl.style.display = 'block';
@@ -9280,8 +9280,8 @@ window._pastTripRenderSpotSuggest = function(rawQ) {
     if (sub && title.indexOf(sub) !== -1) sub = '';
     if (!sub && s.address) sub = s.address;
     return '<button type="button" class="js-past-select-spot" data-idx="' + i + '" style="width:100%; text-align:left; background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,0.06); padding:9px 12px; cursor:pointer;">' +
-      '<div style="font-size:0.82rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(title) + (elev ? (' <span style="color:#cbd5e1; font-size:0.68rem;">(' + esc(elev) + ')</span>') : '') + '</div>' +
-      (sub ? ('<div style="font-size:0.64rem; color:#94a3b8; margin-top:2px;">' + esc(sub) + '</div>') : '') +
+      '<div style="font-size:0.82rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(title) + (elev ? (' <span style="color:#d1d1d6; font-size:0.68rem;">(' + esc(elev) + ')</span>') : '') + '</div>' +
+      (sub ? ('<div style="font-size:0.64rem; color:#8b8b93; margin-top:2px;">' + esc(sub) + '</div>') : '') +
     '</button>';
   }).join('');
   listEl.querySelectorAll('.js-past-select-spot').forEach(function(row) {
@@ -9613,38 +9613,38 @@ window.openPastTripRegisterModal = function(ev) {
   modal.innerHTML =
     '<style>#pastTripPhotoSwipeTrack::-webkit-scrollbar{display:none}#pastTripSpotSuggest::-webkit-scrollbar,#pastTripGearSuggest::-webkit-scrollbar{display:none}' +
       '#pastTripPhotoStage>div[onclick]{aspect-ratio:auto !important;height:150px !important}.ptw-step{display:flex;flex-direction:column;gap:8px}.ptw-h{display:flex;align-items:center;gap:8px;justify-content:space-between}' +
-      '.ptw-h h5{margin:0;font-size:0.86rem;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px}.ptw-n{width:20px;height:20px;border-radius:50%;background:#2a2d33;color:#ffffff;font-size:0.68rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center}' +
-      '.ptw-sub{font-size:0.64rem;color:#64748b;font-weight:700}.ptw-date{display:flex;align-items:center;gap:8px}.ptw-date label{font-size:0.74rem;font-weight:800;color:#94a3b8;flex:none}.ptw-date button{height:38px !important;font-size:0.84rem !important;flex:1}' +
-      '.ptw-geo{background:#141517;border:1px solid #2a2b2f;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}.ptw-geo[hidden]{display:none}.ptw-geo small{font-size:0.66rem;color:#8b93a5;font-weight:700}.ptw-geo b{font-size:0.88rem;color:#fff}' +
-      '.ptw-chips{display:flex;flex-wrap:wrap;gap:6px}.ptw-chip{height:32px;padding:0 12px;border-radius:999px;border:1px solid #2e3034;background:#1b1c1f;color:#cfd4df;font-size:0.72rem;font-weight:800;cursor:pointer;font-family:inherit}.ptw-chip.on{background:#fff;color:#000;border-color:#fff}' +
-      '.ptw-fold{border:1px solid rgba(255,255,255,0.1);border-radius:12px;background:rgba(255,255,255,0.02)}.ptw-fold>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:0.80rem;font-weight:900;color:#e2e8f0}.ptw-fold>summary::-webkit-details-marker{display:none}' +
-      '.ptw-fold>summary span{font-size:0.66rem;color:#64748b;font-weight:700}.ptw-fb{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px}' +
+      '.ptw-h h5{margin:0;font-size:0.86rem;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px}.ptw-n{width:20px;height:20px;border-radius:50%;background:#2a2a30;color:#ffffff;font-size:0.68rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center}' +
+      '.ptw-sub{font-size:0.64rem;color:#6b6b73;font-weight:700}.ptw-date{display:flex;align-items:center;gap:8px}.ptw-date label{font-size:0.74rem;font-weight:800;color:#8b8b93;flex:none}.ptw-date button{height:38px !important;font-size:0.84rem !important;flex:1}' +
+      '.ptw-geo{background:#17171b;border:1px solid #2a2a30;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}.ptw-geo[hidden]{display:none}.ptw-geo small{font-size:0.66rem;color:#8b8b93;font-weight:700}.ptw-geo b{font-size:0.88rem;color:#fff}' +
+      '.ptw-chips{display:flex;flex-wrap:wrap;gap:6px}.ptw-chip{height:32px;padding:0 12px;border-radius:999px;border:1px solid #2a2a30;background:#17171b;color:#d1d1d6;font-size:0.72rem;font-weight:800;cursor:pointer;font-family:inherit}.ptw-chip.on{background:#fff;color:#000;border-color:#fff}' +
+      '.ptw-fold{border:1px solid rgba(255,255,255,0.1);border-radius:12px;background:rgba(255,255,255,0.02)}.ptw-fold>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:0.80rem;font-weight:900;color:#f2f2f3}.ptw-fold>summary::-webkit-details-marker{display:none}' +
+      '.ptw-fold>summary span{font-size:0.66rem;color:#6b6b73;font-weight:700}.ptw-fb{padding:0 14px 14px;display:flex;flex-direction:column;gap:8px}' +
       '.ptw-pubcard{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}.ptw-pub{display:flex;justify-content:space-between;align-items:center;gap:10px}.ptw-pub b{font-size:0.80rem;color:#fff;font-weight:900}' +
       // 색은 피드 창 하나의 톤: 흰색(켜짐·고름) + 회색 칸. 별만 별색(대표님 11-09)
       '.ptw-rv{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:12px}' +
-      '.ptw-rv small.ptw-rvs{display:block;font-size:0.68rem;color:#94a3b8;font-weight:700;margin-top:3px}.ptw-rvh{font-size:0.68rem;color:#94a3b8;line-height:1.5;margin:0}' +
-      '.ptw-rv .stp-g small{color:#94a3b8}.ptw-rv .stp-g small i{color:#64748b}.ptw-rv .stp-stars button{color:#2e3034}.ptw-rv .stp-stars button.on{color:#ffc342}' +
-      '.ptw-rv .stp-chip{border-color:#2e3034;background:#1b1c1f;color:#cfd4df;font-size:0.72rem}.ptw-rv .stp-chip.on{background:#fff;color:#000;border-color:#fff}' +
-      '.ptw-sw{flex:none;width:44px;height:26px;border-radius:13px;border:0;background:#334155;position:relative;cursor:pointer;padding:0;transition:background .2s}.ptw-sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}' +
-      '.ptw-sw[aria-checked="true"]{background:#ffffff}.ptw-sw[aria-checked="true"]:after{background:#111214}.ptw-sw[aria-checked="true"]:after{transform:translateX(18px)}.ptw-sw:disabled{opacity:.45;cursor:default}' +
+      '.ptw-rv small.ptw-rvs{display:block;font-size:0.68rem;color:#8b8b93;font-weight:700;margin-top:3px}.ptw-rvh{font-size:0.68rem;color:#8b8b93;line-height:1.5;margin:0}' +
+      '.ptw-rv .stp-g small{color:#8b8b93}.ptw-rv .stp-g small i{color:#6b6b73}.ptw-rv .stp-stars button{color:#2a2a30}.ptw-rv .stp-stars button.on{color:#ffc342}' +
+      '.ptw-rv .stp-chip{border-color:#2a2a30;background:#17171b;color:#d1d1d6;font-size:0.72rem}.ptw-rv .stp-chip.on{background:#fff;color:#000;border-color:#fff}' +
+      '.ptw-sw{flex:none;width:44px;height:26px;border-radius:13px;border:0;background:#3a3a40;position:relative;cursor:pointer;padding:0;transition:background .2s}.ptw-sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}' +
+      '.ptw-sw[aria-checked="true"]{background:#ffffff}.ptw-sw[aria-checked="true"]:after{background:#0f0f11}.ptw-sw[aria-checked="true"]:after{transform:translateX(18px)}.ptw-sw:disabled{opacity:.45;cursor:default}' +
       '.ptw-plog{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,background .2s}.ptw-plog.on{border-color:rgba(255,255,255,0.22)}' +
-      '.ptw-plog .ptw-pub b{display:inline-flex;align-items:center;gap:6px}.ptw-plog .ptw-pub b svg{width:17px;height:17px;color:#34d399}' +
-      '.ptw-plog p{margin:0;font-size:0.72rem;color:#94a3b8;line-height:1.5;font-weight:600}.ptw-plog-row{display:flex;align-items:center;gap:12px}' +
-      '.ptw-plog-slot{flex:none;position:relative;width:84px;height:84px;border-radius:12px;border:1.5px dashed rgba(255,255,255,0.22);background:rgba(255,255,255,0.04);color:#cbd5e1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:0.66rem;font-weight:800;cursor:pointer;padding:0;font-family:inherit;background-size:cover;background-position:center}' +
+      '.ptw-plog .ptw-pub b{display:inline-flex;align-items:center;gap:6px}.ptw-plog .ptw-pub b svg{width:17px;height:17px;color:#f2f2f3}' +
+      '.ptw-plog p{margin:0;font-size:0.72rem;color:#8b8b93;line-height:1.5;font-weight:600}.ptw-plog-row{display:flex;align-items:center;gap:12px}' +
+      '.ptw-plog-slot{flex:none;position:relative;width:84px;height:84px;border-radius:12px;border:1.5px dashed rgba(255,255,255,0.22);background:rgba(255,255,255,0.04);color:#d1d1d6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:0.66rem;font-weight:800;cursor:pointer;padding:0;font-family:inherit;background-size:cover;background-position:center}' +
       '.ptw-plog-slot svg{width:24px;height:24px}.ptw-plog-slot.has{border-style:solid;border-color:#ffffff}.ptw-plog-slot.has>span{display:none}' +
       '.ptw-plog-ck{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:#ffffff;color:#000000;display:flex;align-items:center;justify-content:center}.ptw-plog-ck svg{width:13px;height:13px;stroke-width:3}' +
-      '.ptw-plog-msg{min-width:0;font-size:0.72rem;line-height:1.5;color:#94a3b8;font-weight:700}.ptw-plog-msg b{display:block;font-size:0.80rem;color:#ffffff;font-weight:900}.ptw-plog-msg.warn b{color:#fbbf24}' +
-      '.ptw-plog-slot.bad{border-color:#fbbf24;border-style:solid}' +
-      '.ptw-plog-msg button{margin-top:4px;background:none;border:0;padding:0;color:#94a3b8;font-size:0.68rem;font-weight:800;text-decoration:underline;cursor:pointer;font-family:inherit}' +
-      '.ptw-done{position:absolute;inset:0;z-index:30;background:#07090e;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;gap:12px;padding:24px;text-align:center}.ptw-done[hidden]{display:none}.ptw-done .ck{width:56px;height:56px;border-radius:50%;background:#ffffff;color:#000000;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center}' +
+      '.ptw-plog-msg{min-width:0;font-size:0.72rem;line-height:1.5;color:#8b8b93;font-weight:700}.ptw-plog-msg b{display:block;font-size:0.80rem;color:#ffffff;font-weight:900}.ptw-plog-msg.warn b{color:#f2f2f3}' +
+      '.ptw-plog-slot.bad{border-color:#f2f2f3;border-style:solid}' +
+      '.ptw-plog-msg button{margin-top:4px;background:none;border:0;padding:0;color:#8b8b93;font-size:0.68rem;font-weight:800;text-decoration:underline;cursor:pointer;font-family:inherit}' +
+      '.ptw-done{position:absolute;inset:0;z-index:30;background:#0f0f11;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;gap:12px;padding:24px;text-align:center}.ptw-done[hidden]{display:none}.ptw-done .ck{width:56px;height:56px;border-radius:50%;background:#ffffff;color:#000000;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center}' +
       '.ptw-done>:first-child{margin-top:auto}.ptw-done>:last-child{margin-bottom:auto}.ptw-done>*{flex-shrink:0}' +
-      '.ptw-done h6{margin:0;font-size:1.05rem;font-weight:900;color:#fff}.ptw-done p{margin:0;font-size:0.78rem;color:#94a3b8;line-height:1.55}.ptw-card{width:220px;height:150px;border-radius:14px;background:#1b1c1f;position:relative;overflow:hidden}.ptw-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}' +
-      '.ptw-card div{position:absolute;left:0;right:0;bottom:0;padding:24px 10px 8px;background:linear-gradient(transparent,rgba(0,0,0,.85));text-align:left;font-size:0.66rem;color:#cbd5e1}.ptw-card b{display:block;font-size:0.82rem;color:#fff}' +
-      '.ptw-row2{display:flex;gap:8px;width:100%;max-width:300px}.ptw-row2 button{flex:1;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#e2e8f0;font-size:0.84rem;font-weight:900;cursor:pointer;font-family:inherit}.ptw-row2 button.p{background:#ffffff;border-color:#ffffff;color:#000000}' +
+      '.ptw-done h6{margin:0;font-size:1.05rem;font-weight:900;color:#fff}.ptw-done p{margin:0;font-size:0.78rem;color:#8b8b93;line-height:1.55}.ptw-card{width:220px;height:150px;border-radius:14px;background:#17171b;position:relative;overflow:hidden}.ptw-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}' +
+      '.ptw-card div{position:absolute;left:0;right:0;bottom:0;padding:24px 10px 8px;background:linear-gradient(transparent,rgba(0,0,0,.85));text-align:left;font-size:0.66rem;color:#d1d1d6}.ptw-card b{display:block;font-size:0.82rem;color:#fff}' +
+      '.ptw-row2{display:flex;gap:8px;width:100%;max-width:300px}.ptw-row2 button{flex:1;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.06);color:#f2f2f3;font-size:0.84rem;font-weight:900;cursor:pointer;font-family:inherit}.ptw-row2 button.p{background:#ffffff;border-color:#ffffff;color:#000000}' +
     '</style>' +
-    '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; background:#07090e; box-sizing:border-box; position:relative;">' +
-      '<div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">' +
-        '<button type="button" onclick="window.closePastTripRegisterModal();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer;">◀</button>' +
+    '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; background:#0f0f11; box-sizing:border-box; position:relative;">' +
+      '<div style="flex-shrink:0; background:rgba(15,15,17,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">' +
+        '<button type="button" onclick="window.closePastTripRegisterModal();" style="background:rgba(255,255,255,0.08); border:none; color:#d1d1d6; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer;">◀</button>' +
         '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">후기 올리기</span>' +
         '<div style="width:30px;"></div>' +
       '</div>' +
@@ -9652,29 +9652,29 @@ window.openPastTripRegisterModal = function(ev) {
         '<div class="ptw-step">' +
           '<div class="ptw-h"><h5><span class="ptw-n">1</span>사진 <span id="pastTripPhotoCountLabel" class="ptw-sub">0장 / 최대 10장</span></h5>' +
             '<div style="display:flex; align-items:center; gap:6px;">' +
-              '<span id="pastTripPhotoIndexBadge" style="font-size:0.62rem; color:#cbd5e1; background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:10px; font-weight:900;">0 / 0</span>' +
-              '<button type="button" onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="height:30px; padding:0 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:#e2e8f0; font-size:0.72rem; font-weight:800; cursor:pointer;">사진 추가</button>' +
+              '<span id="pastTripPhotoIndexBadge" style="font-size:0.62rem; color:#d1d1d6; background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:10px; font-weight:900;">0 / 0</span>' +
+              '<button type="button" onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="height:30px; padding:0 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:#f2f2f3; font-size:0.72rem; font-weight:800; cursor:pointer;">사진 추가</button>' +
             '</div>' +
           '</div>' +
           '<input type="file" id="pastTripPhotoInput" accept="image/*" multiple style="display:none;" onchange="window.handlePastTripPhotoUpload(event);" />' +
           '<div id="pastTripPhotoStage"></div>' +
-          '<div id="pastTripPhotoStatus" style="font-size:0.68rem; color:#64748b;"></div>' +
+          '<div id="pastTripPhotoStatus" style="font-size:0.68rem; color:#6b6b73;"></div>' +
         '</div>' +
         '<div class="ptw-step">' +
           '<div class="ptw-h"><h5><span class="ptw-n">2</span>장소</h5>' +
-            '<span id="pastTripSpotStatusBadge" style="font-size:0.62rem; color:#64748b; font-weight:700; text-align:right; line-height:1.35; min-width:0;">등록 장소를 선택하면 마이데이터에 합산됩니다.</span>' +
+            '<span id="pastTripSpotStatusBadge" style="font-size:0.62rem; color:#6b6b73; font-weight:700; text-align:right; line-height:1.35; min-width:0;">등록 장소를 선택하면 마이데이터에 합산됩니다.</span>' +
           '</div>' +
           '<div id="pastTripGeoBox" class="ptw-geo" hidden></div>' +
           '<div style="display:flex; flex-direction:column; gap:6px; position:relative;">' +
             '<div style="display:flex; gap:6px;">' +
               '<input type="text" id="pastTripSpotInput" maxlength="60" placeholder="장소명 검색" autocomplete="off" onfocus="window.onPastTripSpotTyped();" oninput="window.onPastTripSpotTyped();" style="' + fieldCss + '" />' +
-              '<button type="button" id="pastTripSpotConfirmBtn" onclick="window.confirmPastTripCustomSpot();" style="display:none; flex-shrink:0; height:42px; padding:0 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.08); color:#e2e8f0; font-size:0.74rem; font-weight:800; cursor:pointer; white-space:nowrap; align-items:center; justify-content:center; line-height:1; box-sizing:border-box;">확인</button>' +
+              '<button type="button" id="pastTripSpotConfirmBtn" onclick="window.confirmPastTripCustomSpot();" style="display:none; flex-shrink:0; height:42px; padding:0 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.08); color:#f2f2f3; font-size:0.74rem; font-weight:800; cursor:pointer; white-space:nowrap; align-items:center; justify-content:center; line-height:1; box-sizing:border-box;">확인</button>' +
             '</div>' +
-            '<div id="pastTripSpotSuggest" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:20; margin-top:4px; max-height:220px; overflow-y:auto; background:#141517; border:1px solid rgba(255,255,255,0.12); border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,0.55);"></div>' +
+            '<div id="pastTripSpotSuggest" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:20; margin-top:4px; max-height:220px; overflow-y:auto; background:#17171b; border:1px solid rgba(255,255,255,0.12); border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,0.55);"></div>' +
           '</div>' +
           '<div id="pastTripSpotDetailPanel" style="display:none; flex-direction:column; gap:8px;">' +
-            '<input type="text" id="pastTripRegionInput" maxlength="30" placeholder="지역 (시군구, 예: 평창)" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#cbd5e1; padding:0 12px; font-size:0.80rem; font-weight:700; outline:none; box-sizing:border-box;" />' +
-            '<input type="text" id="pastTripElevInput" maxlength="12" placeholder="고도 (있으면 숫자, 예: 580)" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#cbd5e1; padding:0 12px; font-size:0.80rem; font-weight:700; outline:none; box-sizing:border-box;" />' +
+            '<input type="text" id="pastTripRegionInput" maxlength="30" placeholder="지역 (시군구, 예: 평창)" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#d1d1d6; padding:0 12px; font-size:0.80rem; font-weight:700; outline:none; box-sizing:border-box;" />' +
+            '<input type="text" id="pastTripElevInput" maxlength="12" placeholder="고도 (있으면 숫자, 예: 580)" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#d1d1d6; padding:0 12px; font-size:0.80rem; font-weight:700; outline:none; box-sizing:border-box;" />' +
           '</div>' +
           '<div class="ptw-date"><label>날짜</label>' +
             '<input type="hidden" id="pastTripDateInput" value="' + maxDate + '" />' +
@@ -9684,31 +9684,31 @@ window.openPastTripRegisterModal = function(ev) {
         '</div>' +
         '<div class="ptw-step">' +
           '<div class="ptw-h"><h5><span class="ptw-n">3</span>한 줄 소감</h5>' +
-            '<span id="pastTripMemoCount" style="font-size:0.68rem; color:#64748b;">0/120</span>' +
+            '<span id="pastTripMemoCount" style="font-size:0.68rem; color:#6b6b73;">0/120</span>' +
           '</div>' +
           '<div style="display:inline-flex; gap:4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:3px; align-self:flex-start;">' +
             '<button type="button" id="pastTripMemoModeSingle" onclick="window.switchPastTripMemoMode(\'single\');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:#ffffff; color:#000; font-weight:900;">한 번에 쓰기</button>' +
-            '<button type="button" id="pastTripMemoModePerPhoto" onclick="window.switchPastTripMemoMode(\'per_photo\');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:transparent; color:#94a3b8; font-weight:700;">사진별 쓰기</button>' +
+            '<button type="button" id="pastTripMemoModePerPhoto" onclick="window.switchPastTripMemoMode(\'per_photo\');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:transparent; color:#8b8b93; font-weight:700;">사진별 쓰기</button>' +
           '</div>' +
-          '<div id="pastTripMemoModeHelper" style="font-size:0.68rem; color:#64748b;">한 줄이면 충분해요. 최대 120자</div>' +
+          '<div id="pastTripMemoModeHelper" style="font-size:0.68rem; color:#6b6b73;">한 줄이면 충분해요. 최대 120자</div>' +
           '<textarea id="pastTripMemoInput" maxlength="120" placeholder="어땠는지 한 줄이면 충분해요." oninput="window.updatePastTripMemoCount();" style="min-height:96px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:10px 12px; font-size:0.88rem; line-height:1.45; outline:none; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>' +
         '</div>' +
         '<div class="ptw-step" id="pastTripReviewStep" style="display:none;"></div>' +
         '<details class="ptw-fold"><summary>장비도 기록하기 <span>선택 ▾</span></summary><div class="ptw-fb">' +
-          '<div style="font-size:0.68rem; color:#64748b; line-height:1.5;">내 장비나 장비 세트에서 고르면 무게가 함께 기록돼요. 안 넣어도 피드에 올라가요.</div>' +
+          '<div style="font-size:0.68rem; color:#6b6b73; line-height:1.5;">내 장비나 장비 세트에서 고르면 무게가 함께 기록돼요. 안 넣어도 피드에 올라가요.</div>' +
           '<div style="display:flex; flex-direction:column; gap:6px;">' +
             '<input type="text" id="pastTripGearSearchInput" maxlength="40" placeholder="장비 검색" autocomplete="off" onfocus="window.onPastTripGearTyped();" oninput="window.onPastTripGearTyped();" style="width:100%; height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.82rem; outline:none; box-sizing:border-box;" />' +
-            '<div id="pastTripGearSuggest" style="display:none; max-height:220px; overflow-y:auto; background:#141517; border:1px solid rgba(255,255,255,0.12); border-radius:10px;"></div>' +
-            '<button type="button" onclick="window.togglePastTripPresetSheet();" style="width:100%; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:#e2e8f0; font-size:0.76rem; font-weight:800; cursor:pointer;">장비세트로 추가하기</button>' +
+            '<div id="pastTripGearSuggest" style="display:none; max-height:220px; overflow-y:auto; background:#17171b; border:1px solid rgba(255,255,255,0.12); border-radius:10px;"></div>' +
+            '<button type="button" onclick="window.togglePastTripPresetSheet();" style="width:100%; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:#f2f2f3; font-size:0.76rem; font-weight:800; cursor:pointer;">장비세트로 추가하기</button>' +
           '</div>' +
           '<div id="pastTripPresetSheet" style="display:none; flex-direction:column; gap:6px;"></div>' +
           '<div id="pastTripGearList" style="display:flex; flex-direction:column; gap:6px;"></div>' +
-          '<div id="pastTripPresetHint" style="font-size:0.68rem; color:#64748b;">장비 없이 일정·사진·일지만 등록합니다.</div>' +
+          '<div id="pastTripPresetHint" style="font-size:0.68rem; color:#6b6b73;">장비 없이 일정·사진·일지만 등록합니다.</div>' +
         '</div></details>' +
         '<details class="ptw-fold"><summary>영상·블로그 링크 남기기 <span>선택 ▾</span></summary><div class="ptw-fb">' +
           '<input type="text" id="pastTripYoutubeInput" inputmode="url" placeholder="YouTube 링크" onblur="window.onPastTripLinkBlur(\'yt\');" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />' +
           '<input type="text" id="pastTripNaverInput" inputmode="url" placeholder="네이버 블로그 링크" onblur="window.onPastTripLinkBlur(\'blog\');" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />' +
-          '<div style="font-size:calc(0.66rem + 1pt); color:#64748b; line-height:1.45;">다른 낭만 루터분들에게 도움이 됩니다</div>' +
+          '<div style="font-size:calc(0.66rem + 1pt); color:#6b6b73; line-height:1.45;">다른 낭만 루터분들에게 도움이 됩니다</div>' +
         '</div></details>' +
         '<div class="ptw-plog" id="pastTripPlogCard">' +
           '<div class="ptw-pub"><b>' + window.okbmPlogIcon() + '플로깅 했어요</b><button type="button" id="pastTripPlogSwitch" class="ptw-sw" role="switch" aria-checked="false" aria-label="플로깅 했어요"></button></div>' +
@@ -9720,7 +9720,7 @@ window.openPastTripRegisterModal = function(ev) {
         '</div>' +
         '<div class="ptw-pubcard">' +
           '<div class="ptw-pub"><b>피드에 공개</b><button type="button" id="pastTripPublishSwitch" class="ptw-sw" role="switch" aria-checked="true" aria-label="피드에 공개"></button></div>' +
-          '<div id="pastTripPublishHint" role="status" style="font-size:0.72rem; font-weight:700; line-height:1.45; margin:0; color:#94a3b8;"></div>' +
+          '<div id="pastTripPublishHint" role="status" style="font-size:0.72rem; font-weight:700; line-height:1.45; margin:0; color:#8b8b93;"></div>' +
         '</div>' +
       '</div>' +
       '<div style="flex-shrink:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) 16px; border-top:1px solid rgba(255,255,255,0.08); box-sizing:border-box;">' +
@@ -9781,7 +9781,7 @@ window.updatePastTripMemoCount = function() {
   } else {
     st.singleMemo = raw;
     countEl.textContent = cur + '/120';
-    countEl.style.color = (cur >= 1 && cur <= 120) ? '#e5e7eb' : '#64748b';
+    countEl.style.color = (cur >= 1 && cur <= 120) ? '#f2f2f3' : '#6b6b73';
   }
   window.__pastTripRegisterState = st;
 };
@@ -10030,7 +10030,7 @@ window._pastTripRenderPublishHint = function() {
     ok: '피드와 지도 후기에 함께 올라가요.'
   }[state];
   el.textContent = text;
-  el.style.color = state === 'ok' ? '#e5e7eb' : '#fbbf24';
+  el.style.color = state === 'ok' ? '#f2f2f3' : '#f2f2f3';
 };
 
 // 장소 선택·사진 변경 뒤에 안내를 다시 그린다.
@@ -10198,7 +10198,7 @@ window._ptwSyncSwitch = function() {
         : '등록된 박지가 아니라서 지금은 나만 보기로 저장돼요. 이 장소가 박지로 등록되면 피드에 올라가요.';
     } else if (el && window._pastTripPublishState() === 'ok' && st.publishOff === true) {
       el.textContent = '나만 보기로 저장돼요. 나중에 피드에 공개할 수 있어요.';
-      el.style.color = '#94a3b8';
+      el.style.color = '#8b8b93';
     } else if (el && window._pastTripPublishState() === 'ok') {
       el.textContent = '다른 낭만루터들의 피드와 이 박지 후기에 올라가요.';
     }
@@ -10215,7 +10215,7 @@ window._ptwEnsureGears = function() {
   var input = document.getElementById('pastTripGearSearchInput');
   if (listEl && input && String(input.value || '').trim()) {
     listEl.style.display = 'block';
-    listEl.innerHTML = '<div style="padding:12px; color:#64748b; font-size:0.74rem; text-align:center;">장비 목록을 불러오는 중이에요</div>';
+    listEl.innerHTML = '<div style="padding:12px; color:#6b6b73; font-size:0.74rem; text-align:center;">장비 목록을 불러오는 중이에요</div>';
   }
   var load = function() {
     return typeof window.ensureAllGearCategoriesLoaded === 'function' ? window.ensureAllGearCategoriesLoaded(false) : null;
@@ -10546,7 +10546,7 @@ window._ptwShowDone = function(record, next) {
     '<h6>' + (pub ? '피드에 올라갔어요' : '나만 보기로 저장했어요') + '</h6>' +
     '<p>' + (pub ? '다른 낭만루터들이 피드와 박지 후기에서 볼 수 있어요.' : esc(why)) + '</p>' +
     (photo ? '<div class="ptw-card"><img src="' + escapeHtml(okbmSafeImageUrl(photo)) + '" alt="" referrerpolicy="no-referrer"><div><b>' + esc(spotShort) + '</b>' + esc(record.date || '') + '</div></div>' : '') +
-    (record.ploggingPhoto ? '<p class="ptw-plog-done" style="display:inline-flex;align-items:center;gap:6px;color:#6ee7b7;font-weight:800;">' + window.okbmPlogIcon() + '플로깅 1번이 더해졌어요</p>' : '') +
+    (record.ploggingPhoto ? '<p class="ptw-plog-done" style="display:inline-flex;align-items:center;gap:6px;color:#f2f2f3;font-weight:800;">' + window.okbmPlogIcon() + '플로깅 1번이 더해졌어요</p>' : '') +
     (pub ? '<p id="ptwFollowNews" hidden></p>' : '') +
     '<div id="ptwBadge" class="ptw-badge"></div>' +
     '<div class="ptw-row2"><button type="button" data-ptw-done="close">닫기</button>' +
@@ -10715,9 +10715,9 @@ window._ptwRestoreDraft = function(modal) {
   if (scroller) {
     var bar = document.createElement('div');
     bar.id = 'pastTripDraftBar';
-    bar.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:10px; background:rgba(56,189,248,0.10); border:1px solid rgba(56,189,248,0.35); font-size:0.76rem; font-weight:800; color:#bae6fd;';
+    bar.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:10px; background:#17171b; border:1px solid rgba(255,255,255,0.16); font-size:0.76rem; font-weight:800; color:#f2f2f3;';
     bar.innerHTML = '<span>쓰던 후기를 불러왔어요</span>' +
-      '<button type="button" data-ptw-draft="new" style="flex:none; height:30px; padding:0 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:#e2e8f0; font-size:0.72rem; font-weight:800; cursor:pointer; font-family:inherit;">새로 쓰기</button>';
+      '<button type="button" data-ptw-draft="new" style="flex:none; height:30px; padding:0 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.06); color:#f2f2f3; font-size:0.72rem; font-weight:800; cursor:pointer; font-family:inherit;">새로 쓰기</button>';
     bar.querySelector('[data-ptw-draft="new"]').addEventListener('click', function() {
       window._ptwClearDraft();
       var cur = document.getElementById('pastTripRegisterModal');
