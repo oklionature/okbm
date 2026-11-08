@@ -591,6 +591,20 @@
       '.lm-gtabs::-webkit-scrollbar{display:none}',
       '.lm-gtabs button{flex:none;height:36px;font-size:13px;font-weight:700;color:var(--sub);border-bottom:2px solid transparent}',
       '.lm-gtabs button.on{color:var(--tx);border-bottom-color:var(--tx)}',
+      '.lm-gcard{width:100%;margin:8px 0 10px;display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:#1c1c20;border:1px solid rgba(255,255,255,.08);text-align:left}',
+      '.lm-gcard>i{width:44px;height:44px;border-radius:10px;background:#2a2a30;display:grid;place-items:center;flex:none;color:#d1d1d6}',
+      '.lm-gcard>span{flex:1;min-width:0}.lm-gcard b{display:block;font-size:16px;font-weight:800;line-height:1.35}',
+      '.lm-gcard small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px;font-size:12.5px;color:var(--sub);line-height:1.45}',
+      '.lm-gcard>svg{flex:none;color:var(--sub)}',
+      '.lm-rvbody{margin-top:4px}.lm-rvbody .sec{margin-top:10px}',
+      '.lm-rvbody .sec b{display:block;font-size:15px;font-weight:800;color:var(--tx);letter-spacing:-.02em}',
+      '.lm-rvbody .sec p{margin:3px 0 0;font-size:14px;line-height:1.6;color:#d1d1d6;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}',
+      '.lm-rvbody .sec+.sec{display:none}',
+      '.lmx.open .lm-post .lm-rvbody .sec+.sec{display:block}.lmx.open .lm-post .lm-rvbody .sec p{display:block;-webkit-line-clamp:unset}',
+      '.lm-ginfo .row{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px}',
+      '.lm-ginfo .row span{width:64px;flex:none;color:var(--sub);font-weight:600}.lm-ginfo .row em{flex:1;font-style:normal;font-weight:600;line-height:1.5}',
+      '.lm-ginfo .row small{color:var(--sub);font-weight:500;margin-left:4px}',
+      '.lm-ginfo a.lm-out{display:flex;align-items:center;justify-content:space-between;margin-top:10px;height:44px;padding:0 14px;border-radius:12px;background:#26262c;color:var(--tx);text-decoration:none;font-size:14px;font-weight:700}',
       '.lm-gchip{max-width:100%;margin-top:8px;height:32px;padding:0 10px 0 8px;border-radius:8px;background:#17171b;border:1px solid rgba(255,255,255,.12);display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--tx)}',
       '.lm-gchip span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.lm-gchip svg{flex:none;color:var(--sub)}.lm-gchip svg:first-child{color:var(--star)}',
@@ -1852,6 +1866,67 @@
     const s = gearShort(name);
     return s.split(' ').filter(function (w) { return !GEAR_STOP.has(w); }).join(' ') || s;
   };
+  // 장비 정보: 보이는 글의 장비만 gears 표에서 받는다(전체 목록 2,540개는 무거워 안 받음). 자립은 gear_facts까지 본다
+  const GI = { info: {}, facts: {}, want: new Set(), timer: 0 };
+  const gearParen = function (name) { return (String(name || '').match(/\(([^)]*)\)/g) || []).map(function (x) { return x.slice(1, -1).trim(); }).filter(Boolean).join(' · '); };
+  function gearInfoWant(id) {
+    if (!id || GI.info[id] || GI.want.has(id)) return;
+    GI.want.add(id);
+    if (!GI.timer) GI.timer = setTimeout(gearInfoFetch, 0);
+  }
+  function gearInfoFetch() {
+    GI.timer = 0;
+    const ids = Array.from(GI.want).filter(function (id) { return !GI.info[id]; }).slice(0, 100);
+    GI.want.clear();
+    const c = sb();
+    if (!c || !ids.length) return;
+    Promise.all([
+      q(c.from('gears').select('id,item_name,brand,weight_g,weight_type,specs_detail,evidence,category_id').in('id', ids)),
+      q(c.from('gear_facts').select('gear_id,stand').in('gear_id', ids)).catch(function () { return []; })
+    ]).then(function (res) {
+      (res[0] || []).forEach(function (g) { GI.info[g.id] = g; });
+      (res[1] || []).forEach(function (f) { GI.facts[f.gear_id] = f.stand; });
+      ids.forEach(function (id) { if (!GI.info[id]) GI.info[id] = { id: id, missing: true }; });
+      document.querySelectorAll('[data-gid]').forEach(function (el) {
+        const p = findPost(el.dataset.v);
+        const m = el.querySelector('small');
+        if (p && m && ids.indexOf(el.dataset.gid) >= 0) m.textContent = gearMetaText(p);
+      });
+      if (SH && SH.kind === 'gear' && SH.post && ids.indexOf(SH.post.gear_id) >= 0) paintGearInfo(SH);
+    }).catch(function (err) { console.warn('[lounge.js:gearInfoFetch]', err); });
+  }
+  function gearStandOf(id, review) {
+    if (review && review.stand) return review.stand;
+    if (GI.facts[id]) return GI.facts[id];
+    const g = GI.info[id];
+    if (!g || g.missing) return '';
+    const t = String(g.item_name || '') + ' ' + String(g.specs_detail || '');
+    if (/비자립|non-?free-?standing|트레킹 ?폴|trekking ?pole/i.test(t)) return 'non';
+    if (/반자립|세미 ?자립|semi/i.test(t)) return '';
+    return /자립|free-?standing/i.test(t) ? 'free' : '';
+  }
+  function gearMetaText(p) {
+    const g = GI.info[p.gear_id] || {};
+    const stand = p.gear_cat === 'shelter' ? ({ free: '자립', non: '비자립' })[gearStandOf(p.gear_id, p.gear_review)] : '';
+    return [GEAR_CAT[p.gear_cat] || '', Number(g.weight_g) ? (Number(g.weight_g) / 1000).toFixed(2) + 'kg' : '', stand || '',
+      String(g.specs_detail || '').trim() || gearParen(p.gear_name)].filter(Boolean).join(' · ');
+  }
+  // 글 위쪽(닉네임 밑) 장비 카드. 누르면 장비 정보 창
+  function gearCardHtml(p) {
+    if (p.gear_id) gearInfoWant(p.gear_id);
+    return `<button type="button" class="lm-gcard" data-a="gear-open" data-v="${esc(p.id)}"${p.gear_id ? ` data-gid="${esc(p.gear_id)}"` : ''} aria-label="${esc(gearShort(p.gear_name) + ', 장비 정보와 후기 보기')}"><i>${ico(P.tent, 22)}</i><span><b>${esc(gearShort(p.gear_name))}</b><small>${esc(gearMetaText(p))}</small></span>${ico(P.chevR, 18)}</button>`;
+  }
+  // 장비 후기 본문: 안내 칸 제목을 크게. 접힌 글은 첫 칸 세 줄만
+  function rvBodyHtml(body) {
+    const titles = RV_TEXTS.map(function (d) { return d[1]; });
+    const secs = String(body || '').split(/\n{2,}/).map(function (blk) {
+      const nl = blk.indexOf('\n');
+      const head = nl > 0 ? blk.slice(0, nl).trim() : '';
+      return titles.indexOf(head) >= 0 ? { h: head, t: blk.slice(nl + 1).trim() } : { h: '', t: blk.trim() };
+    }).filter(function (x) { return x.t; });
+    if (!secs.length) return '';
+    return '<div class="lm-rvbody">' + secs.map(function (x) { return '<div class="sec">' + (x.h ? '<b>' + esc(x.h) + '</b>' : '') + '<p>' + bodyHtml(x.t) + '</p></div>'; }).join('') + '</div>';
+  }
   const gearChip = function (p) {
     return `<button type="button" class="lm-gchip" data-a="gear-open" data-v="${esc(p.id)}" aria-label="${esc(gearShort(p.gear_name) + ', 이 장비 글과 중고 시세 보기')}">${ico(P.tent, 15)}<span>${esc(gearShort(p.gear_name))}</span>${ico(P.chevR, 14)}</button>`;
   };
@@ -2196,9 +2271,9 @@
       <div class="lm-lcol">${avUser(p.nickname, p.user_id)}${cc ? '<div class="lm-thread"></div>' : ''}</div>
       <div class="lm-rb">
         <div class="lm-who">${whoName(p.nickname, p.user_id)}<span>${esc(ago(p.created_at))}</span><span>· ${esc(catLabel(p))}</span></div>
-        <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}${p.is_pinned ? '<span class="lm-tag">고정</span>' : ''}</div>${p.gear_review ? rvSumHtml(p.gear_review) : ''}${p.body ? `<div class="lm-bd">${bodyHtml(p.body)}</div>` : ''}
+        ${p.category === 'gear' && p.gear_name ? gearCardHtml(p) : ''}
+        <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}${p.is_pinned ? '<span class="lm-tag">고정</span>' : ''}</div>${p.gear_review ? rvSumHtml(p.gear_review) : ''}${p.body ? (p.gear_review ? rvBodyHtml(p.body) : `<div class="lm-bd">${bodyHtml(p.body)}</div>`) : ''}
         ${p.category === 'poll' ? (p.poll_kind === 'top3' ? top3Html(p) : pollHtml(p)) : ''}
-        ${p.category === 'gear' && p.gear_name ? gearChip(p) : ''}
         ${photos.length ? `<div class="lm-photos ${photos.length > 1 ? 'multi' : ''}">${photos.map(function (u) { return `<img src="${escapeHtml(okbmFastImageUrl(u))}" alt="" loading="lazy" decoding="async">`; }).join('')}</div>` : ''}
         ${p.is_private ? `<div class="lm-private">${ico(P.lock, 13)}나와 운영팀만 볼 수 있어요 · 댓글 ${cc}</div>`
           : `<div class="lm-acts">${likeBtn(p)}<span class="lm-act">${ico(P.chat, 17)}<span>${cc}</span></span></div>`}
@@ -3849,15 +3924,14 @@
     if (!sheet) return;
     sheet.querySelectorAll('[data-rv-etc]').forEach(function (el) { st.rv.etc[el.dataset.rvEtc] = String(el.value || '').trim(); });
   }
-  // 제목이 비었거나 저절로 채운 그대로면 '장비 · 기간 사용 후기'로 채운다
+  // 제목이 비었거나 저절로 채운 그대로면 '기간 사용 후기'로 채운다. 장비 이름은 글 위 장비 카드에 크게 나온다
   function rvAutoTitle(st) {
     if (!sheet || st.id) return;
     const ti = sheet.querySelector('#lmPostTitle');
     if (!ti || (ti.value.trim() && ti.value.trim() !== st.autoTitle)) return;
-    const name = st.gear ? gearShort(st.gear.name) : (RV_KINDS[rvKind(st)] || {}).label;
     const per = rvLabel(RV_PERIODS, st.rv.period);
-    if (!name || name === '기타') return;
-    st.autoTitle = name + (per ? ' · ' + per + ' 사용 후기' : ' 후기');
+    if (!per) return;
+    st.autoTitle = per + ' 사용 후기';
     ti.value = st.autoTitle;
   }
   // 후기일 때만 위 칸(별점·기간·꼬리표)을 다시 그리고, 내용 칸을 안내 칸 셋으로 바꾼다
@@ -4147,7 +4221,8 @@
   function gearSheetHtml(st) {
     const p = st.post, term = gearTerm(p.gear_name);
     return `<h3 id="loungeSheetTitle">${esc(gearShort(p.gear_name))}</h3>
-      <p class="lm-gmeta" data-gear-meta>${esc(GEAR_CAT[p.gear_cat] || '장비')}</p>
+      <p class="lm-gmeta" data-gear-meta>${esc([gearParen(p.gear_name), GEAR_CAT[p.gear_cat] || '장비'].filter(Boolean).join(' · '))}</p>
+      <div class="lm-ginfo" data-gear-info></div>
       <div data-gear-stats></div>
       <div data-gear-sum></div>
       <label class="lm-lbl" for="lmGearTerm" style="margin-top:20px">중고 시세 보러 가기 · 검색어</label>
@@ -4214,23 +4289,33 @@
     q(c.rpc('okbm_gear_stats', { p_names: [name], p_mine: false })).then(function (res) {
       const x = res && res[name];
       const box = SH === st && sheet && sheet.querySelector('[data-gear-stats]');
-      if (!box || !x || (!x.owners && !x.spots)) return;
-      const tile = function (b, t) { return '<div style="background:#26262c;border-radius:12px;padding:11px 12px"><b style="display:block;font-size:17px;font-weight:800">' + b + '</b><small style="display:block;font-size:12px;color:var(--sub);margin-top:2px">' + t + '</small></div>'; };
-      const spots = (Array.isArray(x.spot_names) ? x.spot_names : []).map(function (n) { return '<span style="height:30px;padding:0 11px;border-radius:15px;background:#26262c;font-size:13px;font-weight:700;display:inline-flex;align-items:center">' + esc(n) + '</span>'; }).join('');
-      box.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px">' + tile(Number(x.owners || 0) + '명', '내 장비에 둔 사람') + tile(Number(x.spots || 0) + '곳', '이 장비로 간 박지') + '</div>'
-        + (spots ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">' + spots + '</div>' : '');
+      if (!box || !x || !x.owners) return;
+      box.innerHTML = '<div style="margin-top:12px;display:inline-flex;align-items:baseline;gap:6px;background:#26262c;border-radius:12px;padding:10px 12px"><b style="font-size:17px;font-weight:800">' + Number(x.owners) + '명</b><small style="font-size:12px;color:var(--sub)">이 장비를 내 장비에 둔 사람</small></div>';
     }).catch(function (err) { console.warn('[lounge.js:paintGearStats]', err); });
+  }
+  // 장비 정보: 브랜드 · 종류(자립) · 무게 · 특징 · 제조사·판매처 링크
+  function paintGearInfo(st) {
+    const box = SH === st && sheet && sheet.querySelector('[data-gear-info]');
+    const g = box && GI.info[st.post.gear_id];
+    if (!g || g.missing) return;
+    const p = st.post, row = function (k, v) { return v ? '<div class="row"><span>' + k + '</span><em>' + v + '</em></div>' : ''; };
+    const stand = p.gear_cat === 'shelter' ? ({ free: '자립', non: '비자립' })[gearStandOf(p.gear_id, null)] : '';
+    const kg = Number(g.weight_g) ? (Number(g.weight_g) / 1000).toFixed(2) + 'kg<small>' + esc(g.weight_type === '실측포함무게' ? '실측' : '공식 제원') + '</small>' : '';
+    const link = okbmSafeExternalUrl(g.evidence);
+    box.innerHTML = '<span class="lm-lbl" style="margin-top:18px">장비 정보</span>'
+      + row('브랜드', esc(String(g.brand || '').replace(/\s*\(.*\)$/, '')))
+      + row('종류', esc([GEAR_CAT[p.gear_cat] || '', stand].filter(Boolean).join(' · ')))
+      + row('무게', kg)
+      + row('특징', esc(String(g.specs_detail || '').trim()))
+      + (link && link !== '#' ? '<a class="lm-out" href="' + escapeHtml(link) + '" target="_blank" rel="noopener noreferrer">제조사·판매처 정보 보기' + ico(P.ext, 16) + '</a>' : '');
   }
   function openGear(p) {
     const st = { kind: 'gear', key: gearOfKey(p), post: p, gk: p.gear_kind === 'review' ? 'review' : 'question' };
     openSheet(gearSheetHtml(st), st);
     paintGearStats(st);
-    if (p.gear_id) { // 목록 장비면 무게를 붙인다
-      ensureGears().then(function (all) {
-        const g = (all || []).find(function (x) { return x && String(x.id) === String(p.gear_id); });
-        const m = SH === st && sheet && sheet.querySelector('[data-gear-meta]');
-        if (g && m && Number(g.weight_g)) m.textContent = (GEAR_CAT[p.gear_cat] || '장비') + ' · 공식 무게 ' + (Number(g.weight_g) / 1000).toFixed(2) + 'kg';
-      });
+    if (p.gear_id) {
+      if (GI.info[p.gear_id]) paintGearInfo(st);
+      else gearInfoWant(p.gear_id);
     }
     if (postsBy[st.key]) { paintGearList(); return; }
     loadPosts(st.key).then(function () { if (SH === st) paintGearList(); }).catch(function (err) {

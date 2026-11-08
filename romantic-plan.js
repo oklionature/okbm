@@ -4999,9 +4999,9 @@ window.saveCurrentPackingRecord = function() {
       window.bindPlanMemoKeyboardLift();
     }
   };
-  // ----- 장비 후기 (I7·I8): 장비관리 줄에 '박지 N곳 기록 · ★ 내 후기', 장비 창 위에 내 후기·간 박지·모두의 후기 -----
-  // 내 후기는 라운지 장비 후기 글(lounge_posts.gear_review), 박지는 내 피드에 기록한 장비(okbm_gear_stats mine)에서 센다.
-  var GRV = { uid: '', at: 0, job: null, reviews: {}, spots: {} };
+  // ----- 장비 후기 (I7·I8): 장비관리 줄에 '★ 내 후기'·'후기 쓰기', 장비 창 위에 내 후기·모두의 후기 -----
+  // 내 후기는 라운지 장비 후기 글(lounge_posts.gear_review). '이 장비로 간 박지'는 대표님이 빼라고 해서(11-09) 안 보인다.
+  var GRV = { uid: '', at: 0, job: null, reviews: {} };
   var GRV_PERIOD = { '1m': '한 달', '6m': '반년', '1y': '1년', '1y+': '1년 이상' };
   var GRV_USES = { '5': '5회', '10': '10회', '10+': '10회 이상' };
   function grvUid() {
@@ -5013,14 +5013,10 @@ window.saveCurrentPackingRecord = function() {
     if (GRV.uid === uid && GRV.job && Date.now() - GRV.at < 60000) return GRV.job;
     GRV.uid = uid;
     GRV.at = Date.now();
-    GRV.job = Promise.all([
-      c.from('lounge_posts').select('id,gear_name,gear_review,created_at').eq('user_id', uid).not('gear_review', 'is', null).order('created_at', { ascending: false }).limit(200),
-      c.rpc('okbm_gear_stats', { p_names: names.slice(0, 200), p_mine: true })
-    ]).then(function (res) {
+    GRV.job = Promise.resolve(c.from('lounge_posts').select('id,gear_name,gear_review,created_at').eq('user_id', uid).not('gear_review', 'is', null).order('created_at', { ascending: false }).limit(200)).then(function (res) {
       var reviews = {};
-      ((res[0] && res[0].data) || []).forEach(function (p) { if (p.gear_name && !reviews[p.gear_name]) reviews[p.gear_name] = p; });
+      ((res && res.data) || []).forEach(function (p) { if (p.gear_name && !reviews[p.gear_name]) reviews[p.gear_name] = p; });
       GRV.reviews = reviews;
-      GRV.spots = (res[1] && res[1].data) || {};
       return GRV;
     }).catch(function (e) {
       console.warn('[romantic-plan.js:grvLoad]', e);
@@ -5070,8 +5066,7 @@ window.saveCurrentPackingRecord = function() {
         var name = card.getAttribute('data-gear-name');
         var line = card.querySelector('[data-grv-line]');
         if (!line || !card.isConnected) return;
-        var st = d.spots[name] || {}, rv = d.reviews[name], parts = [];
-        if (Number(st.spots) > 0) parts.push('<span style="color:#4c94f8; font-weight:700;">박지 ' + Number(st.spots) + '곳 기록</span>');
+        var rv = d.reviews[name], parts = [];
         if (rv && rv.gear_review) parts.push('<span style="display:inline-flex; align-items:center; gap:4px; color:var(--tx-2, #d1d1d6); font-weight:700;">' + grvStars(Number(rv.gear_review.rating) || 0, 12) + '내 후기</span>');
         else if (grvMasterGear(name)) parts.push('<button type="button" data-gear="' + escapeHtml(name) + '" onclick="event.stopPropagation(); window.okbmGearRvWrite(this.dataset.gear);" style="height:26px; padding:0 10px; border:none; border-radius:13px; background:rgba(76,148,248,0.16); color:#4c94f8; font-size:12px; font-weight:800; font-family:inherit; cursor:pointer;">후기 쓰기</button>');
         line.innerHTML = parts.join('<span style="color:var(--tx-4, #55555d);">·</span>');
@@ -5086,12 +5081,7 @@ window.saveCurrentPackingRecord = function() {
     if (!box) return;
     grvLoad([name]).then(function (d) {
       if (!d || !box.isConnected) return;
-      var st = d.spots[name], rv = d.reviews[name], h = '';
-      if (!st && !rv) {
-        // 이 장비가 처음 불러온 이름 묶음에 없으면 한 번 더 묻는다
-        GRV.job = null;
-        return grvLoad([name]).then(function () { if (box.isConnected && GRV.spots[name]) grvPaintSheet(name); });
-      }
+      var rv = d.reviews[name], h = '';
       var r = rv && rv.gear_review;
       if (r) {
         var meta = [GRV_PERIOD[r.period] || '', GRV_USES[r.uses] || ''].filter(Boolean).join(' · ');
@@ -5103,11 +5093,6 @@ window.saveCurrentPackingRecord = function() {
           + (tags ? '<div style="margin-top:8px; font-size:13px; font-weight:600; line-height:1.55;">' + tags + '</div>' : '') + '</div>';
       } else if (grvMasterGear(name)) {
         h += '<button type="button" data-gear="' + escapeHtml(name) + '" onclick="window.okbmGearRvWrite(this.dataset.gear);" style="width:100%; height:44px; margin-top:12px; border:none; border-radius:12px; background:rgba(76,148,248,0.16); color:#4c94f8; font-size:14px; font-weight:800; font-family:inherit; cursor:pointer;">이 장비 후기 쓰기 · 10포인트</button>';
-      }
-      var spots = st && Array.isArray(st.spot_names) ? st.spot_names : [];
-      if (st && Number(st.spots) > 0) {
-        h += '<span class="gme-lbl">이 장비로 간 박지 <span style="color:#4c94f8;">' + Number(st.spots) + '곳</span></span><div style="display:flex; gap:6px; flex-wrap:wrap;">'
-          + spots.map(function (n) { return '<span style="height:28px; padding:0 10px; border-radius:14px; background:var(--bg-3, #2a2a30); font-size:12px; font-weight:700; color:var(--tx-2, #d1d1d6); display:inline-flex; align-items:center;">' + escapeHtml(n) + '</span>'; }).join('') + '</div>';
       }
       if (grvMasterGear(name)) {
         h += '<div data-gear="' + escapeHtml(name) + '" onclick="window.okbmGearRvOpenAll(this.dataset.gear);" role="button" tabindex="0" style="margin-top:12px; display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:14px; background:rgba(76,148,248,0.12); cursor:pointer;">'
