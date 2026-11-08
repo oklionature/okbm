@@ -3871,8 +3871,15 @@
     top.innerHTML = on ? reviewTopHtml(st) : '';
     if (texts) texts.hidden = !on;
     if (body) body.hidden = on;
+    const ql = sheet.querySelector('[data-gear-q-lbl]');
+    if (ql) ql.innerHTML = on ? '어떤 장비인가요 <b aria-hidden="true">*</b>' : '특정 장비 (선택)';
+    const tip = sheet.querySelector('[data-gear-tip]');
+    if (tip && !st.gear) tip.textContent = on ? '후기는 장비를 골라야 올라가요. 목록에 없으면 이름을 적고 \'직접 추가\'를 눌러요.' : '특정 장비 이야기면 골라 주세요. 중고 시세 단추가 같이 붙어요.';
     const mine = sheet.querySelector('[data-rv-mine]');
-    if (mine) mine.hidden = !(on && st.gear && st.gear.id);
+    if (mine) {
+      mine.hidden = !(on && st.gear);
+      mine.textContent = st.gear && st.gear.id ? '올리면 이 장비가 내 장비에 들어가요.' : '목록에 없는 장비라 내 장비에는 안 들어가요. 낭만플랜 장비관리에서 직접 등록할 수 있어요.';
+    }
     if (on) rvAutoTitle(st);
   }
   function rvTextsHtml() {
@@ -3884,6 +3891,7 @@
   function rvCollect(st, f) {
     const rv = st.rv, kind = rvKind(st);
     rvKeepEtc(st);
+    if (!st.gear) return { err: '어떤 장비 후기인지 골라 주세요' };
     if (st.gcat === 'sleep' && !kind) return { err: '침낭인지 매트인지 골라 주세요' };
     if (!rv.rating) return { err: '종합 별점을 골라 주세요' };
     if (kind === 'tent' && st.gear && !rv.known && !rv.stand) return { err: '자립인지 비자립인지 골라 주세요' };
@@ -3933,7 +3941,7 @@
         ${segHtml('pgkind', st.gkind, '질문·후기')}
         <span class="lm-lbl">종류 <b aria-hidden="true">*</b></span>
         <div class="lm-chipline" role="radiogroup" aria-label="장비 종류" data-gcat-chips>${gearCatChips(st)}</div>
-        <label class="lm-lbl" for="lmGearQ">특정 장비 (선택)</label>
+        <label class="lm-lbl" for="lmGearQ" data-gear-q-lbl>${st.gkind === 'review' ? '어떤 장비인가요 <b aria-hidden="true">*</b>' : '특정 장비 (선택)'}</label>
         <div data-gear-pick>${gearPickHtml(st)}</div>
         <input class="lm-in" id="lmGearQ" data-gear-q placeholder="장비 이름으로 찾기 (예: 호넷)"${st.gear ? ' hidden' : ''}>
         <p class="lm-hint" data-gear-tip${st.gear ? ' hidden' : ''}>특정 장비 이야기면 골라 주세요. 중고 시세 단추가 같이 붙어요.</p>
@@ -4033,9 +4041,25 @@
     const c = sb(), me = myId();
     const val = function (n) { return String((f.elements[n] && f.elements[n].value) || '').trim(); };
     if (!c || !me) { needLogin(); return; }
-    const title = val('title');
+    let title = val('title');
     let body = val('body');
     let review = null;
+    // 검색 칸에 적기만 하고 목록에서 안 누른 이름도 장비로 받는다(대표님 11-08: 적었는데 장비가 빠졌다)
+    if (!st.id && st.cat === 'gear' && !st.gear) {
+      const typed = String((f.querySelector('[data-gear-q]') || {}).value || '').trim();
+      if (typed) {
+        const key = typed.toLowerCase();
+        const hit = (window.GEARS_MASTER || []).filter(function (x) {
+          return x && x.item_name && (String(x.item_name).toLowerCase() === key || gearShort(x.item_name).toLowerCase() === key);
+        });
+        const g = hit.length === 1 ? hit[0] : null;
+        st.gear = g ? { id: String(g.id), name: String(g.item_name).slice(0, 120), cat: GEAR_CAT[g.category_id] ? String(g.category_id) : 'other', weight_g: Number(g.weight_g) || 0 }
+          : { id: '', name: typed.slice(0, 120), cat: st.gcat || 'other', weight_g: 0 };
+        if (g) st.gcat = st.gear.cat;
+        paintGearPick(); // 자립 칸·저절로 채운 제목이 장비에 맞게 다시 그려진다
+        title = val('title');
+      }
+    }
     if (!st.id && st.cat === 'gear' && st.gkind === 'review') {
       if (!GEAR_CAT[st.gcat]) { toast('장비 종류를 골라 주세요', true); return; }
       const got = rvCollect(st, f);
