@@ -608,6 +608,22 @@
       '.lm-gpick{display:flex;align-items:center;gap:10px;margin-top:6px;padding:10px 4px 10px 12px;border-radius:12px;background:#26262c}',
       '.lm-gpick span{flex:1;min-width:0}.lm-gpick b{display:block;font-size:14px;font-weight:700;line-height:1.4}.lm-gpick small{display:block;font-size:11.5px;color:var(--sub)}',
       '.lm-gpick button{flex:none;width:44px;height:44px;display:grid;place-items:center;color:var(--sub)}',
+      // 장비 후기 (I7)
+      '.lm-rvstars{display:flex;align-items:center;gap:6px;margin-top:2px}.lm-rvstars button{width:40px;height:40px;display:grid;place-items:center;color:#34343b}.lm-rvstars button.on{color:var(--star)}.lm-rvstars em{font-style:normal;margin-left:6px;font-size:15px;font-weight:700;color:var(--sub)}',
+      '.lm-rvtags{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}',
+      '.lm-rvtags button{min-height:34px;padding:0 12px;border-radius:17px;background:#26262c;font-size:13px;font-weight:700;color:var(--sub)}',
+      '.lm-rvtags button.on.pro{background:rgba(52,211,153,.14);color:#34d399;box-shadow:inset 0 0 0 1.5px rgba(52,211,153,.4)}',
+      '.lm-rvtags button.on.con{background:rgba(248,113,113,.14);color:#f87171;box-shadow:inset 0 0 0 1.5px rgba(248,113,113,.4)}',
+      '.lm-rvtags button.etc{background:none;color:var(--tx);box-shadow:inset 0 0 0 1.5px #3a3a42}',
+      '.lm-rvsum{margin-top:8px;display:flex;flex-direction:column;gap:6px}',
+      '.lm-rvsum .top{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--sub)}',
+      '.lm-rvsum .stars{display:flex;gap:2px;color:var(--star)}',
+      '.lm-rvsum .tags{display:flex;flex-wrap:wrap;gap:4px}.lm-rvsum .tags span{height:24px;padding:0 9px;border-radius:12px;font-size:12px;font-weight:700;display:inline-flex;align-items:center}',
+      '.lm-rvsum .tags .pro{background:rgba(52,211,153,.14);color:#34d399}.lm-rvsum .tags .con{background:rgba(248,113,113,.14);color:#f87171}',
+      '.lm-gsum{margin-top:16px}.lm-gsum .score{display:flex;align-items:center;gap:14px}.lm-gsum .score b{font-size:38px;font-weight:800;letter-spacing:-.04em;line-height:1}',
+      '.lm-gsum .score small{display:block;margin-top:5px;font-size:12px;color:var(--sub)}',
+      '.lm-gcnt{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:14px;font-weight:700}.lm-gcnt span{width:132px;flex:none}.lm-gcnt i{flex:1;height:6px;border-radius:3px;background:#2e2e35;position:relative;overflow:hidden}',
+      '.lm-gcnt i i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;opacity:.85}.lm-gcnt b{width:40px;text-align:right;font-weight:800}',
       // 투표: 보기 버튼 → 고른 뒤 막대
       '.lm-poll{margin-top:10px;display:flex;flex-direction:column;gap:6px}',
       '.lm-popt{width:100%;min-height:42px;padding:9px 14px;border-radius:12px;border:1.5px solid #34343a;font-size:14px;font-weight:700;text-align:left;line-height:1.4;transition:border-color .15s,background .15s}',
@@ -825,7 +841,7 @@
   }
 
   // ---------- 데이터 (window.supabaseClient, RLS가 권한을 가른다) ----------
-  const POST_COLS = 'id,user_id,nickname,category,title,body,photos,is_private,likes_count,comments_count,created_at,poll_options,poll_ends_at,poll_kind,poll_source,is_pinned,gear_kind,gear_id,gear_name,gear_cat';
+  const POST_COLS = 'id,user_id,nickname,category,title,body,photos,is_private,likes_count,comments_count,created_at,poll_options,poll_ends_at,poll_kind,poll_source,is_pinned,gear_kind,gear_id,gear_name,gear_cat,gear_review';
   const postsBy = {}; // cat → { rows, done, loading }
 
   async function q(builder) {
@@ -2180,7 +2196,7 @@
       <div class="lm-lcol">${avUser(p.nickname, p.user_id)}${cc ? '<div class="lm-thread"></div>' : ''}</div>
       <div class="lm-rb">
         <div class="lm-who">${whoName(p.nickname, p.user_id)}<span>${esc(ago(p.created_at))}</span><span>· ${esc(catLabel(p))}</span></div>
-        <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}${p.is_pinned ? '<span class="lm-tag">고정</span>' : ''}</div>${p.body ? `<div class="lm-bd">${bodyHtml(p.body)}</div>` : ''}
+        <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}${p.is_pinned ? '<span class="lm-tag">고정</span>' : ''}</div>${p.gear_review ? rvSumHtml(p.gear_review) : ''}${p.body ? `<div class="lm-bd">${bodyHtml(p.body)}</div>` : ''}
         ${p.category === 'poll' ? (p.poll_kind === 'top3' ? top3Html(p) : pollHtml(p)) : ''}
         ${p.category === 'gear' && p.gear_name ? gearChip(p) : ''}
         ${photos.length ? `<div class="lm-photos ${photos.length > 1 ? 'multi' : ''}">${photos.map(function (u) { return `<img src="${escapeHtml(okbmFastImageUrl(u))}" alt="" loading="lazy" decoding="async">`; }).join('')}</div>` : ''}
@@ -3731,6 +3747,186 @@
       return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="pgcat" data-v="' + c[0] + '">' + esc(c[1]) + '</button>';
     }).join('');
   }
+  // ----- 장비 후기 (I7) -----
+  // 꼬리표는 OutdoorGearLab 평가 항목(텐트: 실내 생활·비바람·무게·패킹 부피·내구성 / 침낭: 보온·무게·편안함·부피·기능 /
+  // 매트: 편안함·무게·보온·부피·만듦새 / 배낭: 착용감·쓰기 편함·무게 대비 용량·조절)에 맞춰 대표님과 11-08에 정했다.
+  // 저장은 꼬리표 글자 그대로라서, 글자를 바꾸면 이전 후기와 따로 세진다.
+  const RV_VALUE = ['가성비가 좋아요', '가격 대비 아쉬워요'];
+  const RV_KINDS = {
+    tent: { label: '텐트',
+      pros: ['실내 공간이 넓어요', '전실이 넉넉해요', '피칭이 빨라요', '방수가 확실해요', '바람에 강해요', '결로가 적어요', '통풍이 잘돼요', '경량이에요', '패킹 부피가 작아요', '내구성이 좋아요'],
+      cons: ['실내가 좁아요', '전실이 좁아요', '피칭이 번거로워요', '누수가 있어요', '바람에 약해요', '결로가 심해요', '무게가 나가요', '패킹 부피가 커요', '원단·폴이 약해요', '지퍼가 잘 걸려요'] },
+    bag: { label: '침낭',
+      pros: ['표기 온도만큼 따뜻해요', '경량이에요', '패킹 부피가 작아요', '안이 넉넉해요', '후드가 머리를 잘 감싸요', '목 둘레로 바람이 안 새요', '지퍼가 부드러워요', '습기에 강해요'],
+      cons: ['표기 온도보다 추워요', '무게가 나가요', '패킹 부피가 커요', '안이 답답해요', '지퍼가 잘 걸려요', '털이 잘 빠져요', '다운이 쏠려 한쪽이 차가워요'] },
+    mat: { label: '매트',
+      pros: ['옆으로 누워도 편해요', '바닥 냉기를 잘 막아요', '경량이에요', '패킹 부피가 작아요', '바람 넣기가 쉬워요', '소음이 적어요', '펑크 걱정이 없어요'],
+      cons: ['바닥이 배겨요', '바닥 냉기가 올라와요', '바스락 소음이 커요', '몸이 미끄러져요', '바람 넣기가 힘들어요', '밤새 바람이 빠져요', '밸브가 불편해요'] },
+    pack: { label: '배낭',
+      pros: ['가벼워요', '허리벨트가 하중을 잘 받쳐요', '어깨가 편해요', '등판 통기가 좋아요', '허리벨트에 포켓이 있어요', '어깨끈에 포켓이 있어요', '사이드 포켓에 물병이 잘 들어가요', '앞 메시 포켓이 넉넉해요', '헤드(뚜껑) 수납이 좋아요', '짐 꺼내기 편해요', '무게 대비 용량이 좋아요', '등 길이 조절이 돼요'],
+      cons: ['무게가 나가요', '어깨가 아파요', '허리벨트가 약해요', '등이 많이 젖어요', '허리벨트 포켓이 없어요', '메고서 사이드 포켓에 손이 안 닿아요', '포켓이 부족해요', '짐 꺼내기 불편해요', '표기보다 용량이 작아요', '몸에 안 맞아요'] },
+    other: { label: '기타', pros: [], cons: [] }
+  };
+  const RV_PERIODS = [['1m', '한 달'], ['6m', '반년'], ['1y', '1년'], ['1y+', '1년 이상']];
+  const RV_USES = [['5', '5회'], ['10', '10회'], ['10+', '10회 이상']];
+  const RV_STANDS = [['free', '자립'], ['non', '비자립']];
+  const RV_SLEEPS = [['bag', '침낭'], ['mat', '매트']];
+  const RV_TEXTS = [['rv_before', '사기 전에 알았으면 좋았을 점', '예) 높이가 낮아서 키 큰 사람한테는 비추천이에요'],
+    ['rv_fit', '이런 분께 맞아요', '예) 2인 경량 텐트를 찾는 분, 설치가 빠른 걸 원하는 분'],
+    ['rv_etc', '기타 · 하고 싶은 말', '위에 없는 이야기를 자유롭게 적어 주세요']];
+  const RV_MAX_TAGS = 12;
+  const rvLabel = function (list, v) { const x = list.find(function (d) { return d[0] === v; }); return x ? x[1] : ''; };
+  const rvTags = function (kind, side) { return (RV_KINDS[kind] || RV_KINDS.other)[side].concat(side === 'pros' ? RV_VALUE[0] : RV_VALUE[1]); };
+  const isMatName = function (name) { return /매트|패드|\bpad\b|\bmat\b/i.test(String(name || '')); };
+  function rvKind(st) {
+    if (st.gcat === 'shelter') return 'tent';
+    if (st.gcat === 'pack') return 'pack';
+    if (st.gcat === 'sleep') return st.rv.sleep || '';
+    return 'other';
+  }
+  // 장비 목록 설명에 적힌 자립 정보. 반자립은 둘 중 하나로 못 정해 모름으로 둔다
+  function standFromList(id) {
+    const g = id && (window.GEARS_MASTER || []).find(function (x) { return x && String(x.id) === String(id); });
+    if (!g) return '';
+    const t = String(g.item_name || '') + ' ' + String(g.specs_detail || '');
+    if (/비자립|non-?free-?standing|트레킹 ?폴|trekking ?pole/i.test(t)) return 'non';
+    if (/반자립|세미 ?자립|semi/i.test(t)) return '';
+    if (/자립|free-?standing/i.test(t)) return 'free';
+    return '';
+  }
+  function newRv() { return { rating: 0, period: '', uses: '', pros: [], cons: [], etcOpen: {}, etc: { pros: '', cons: '' }, stand: '', known: '', sleep: '' }; }
+  // 장비가 바뀌면 자립을 목록 → gear_facts 순서로 찾고, 침낭·매트는 이름으로 가른다
+  function rvSyncGear(st) {
+    const rv = st.rv, g = st.gear;
+    rv.known = '';
+    if (st.gcat === 'sleep' && g) rv.sleep = isMatName(g.name) ? 'mat' : 'bag';
+    if (!g || !g.id || st.gcat !== 'shelter') return;
+    rv.known = standFromList(g.id);
+    if (rv.known) return;
+    const c = sb();
+    if (!c) return;
+    const id = g.id;
+    q(c.from('gear_facts').select('gear_id,stand').eq('gear_id', id)).then(function (rows) {
+      const r = Array.isArray(rows) && rows[0];
+      if (r && SH === st && st.gear && st.gear.id === id) { rv.known = r.stand; paintReview(); }
+    }).catch(function (err) { console.warn('[lounge.js:rvSyncGear]', err); });
+  }
+  const STAR_PATH = 'M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z';
+  const starsMini = function (n) {
+    let h = '';
+    for (let i = 1; i <= 5; i++) h += '<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path fill="' + (i <= n ? 'currentColor' : '#34343b') + '" d="' + STAR_PATH + '"/></svg>';
+    return '<span class="stars" role="img" aria-label="별점 ' + n + '점">' + h + '</span>';
+  };
+  function rvTagLine(st, kind, side) {
+    const rv = st.rv, cls = side === 'pros' ? 'pro' : 'con';
+    const btns = rvTags(kind, side).map(function (t) {
+      const on = rv[side].indexOf(t) >= 0;
+      return '<button type="button" aria-pressed="' + on + '" class="' + cls + (on ? ' on' : '') + '" data-a="rv-tag" data-g="' + side + '" data-v="' + esc(t) + '">' + esc(t) + '</button>';
+    }).join('');
+    const open = !!rv.etcOpen[side];
+    return '<div class="lm-rvtags">' + btns + '<button type="button" class="etc" data-a="rv-etc" data-g="' + side + '" aria-expanded="' + open + '">+ 기타 직접 적기</button></div>'
+      + (open ? '<input class="lm-in" data-rv-etc="' + side + '" maxlength="30" value="' + esc(rv.etc[side]) + '" placeholder="짧게 적어 주세요 (30자)">' : '');
+  }
+  function reviewTopHtml(st) {
+    const rv = st.rv, kind = rvKind(st);
+    let h = '';
+    if (st.gcat === 'sleep') h += '<span class="lm-lbl">침낭 · 매트 <b aria-hidden="true">*</b></span>' + chipRadio(RV_SLEEPS, rv.sleep, 'rv-sleep', '침낭 매트');
+    h += '<span class="lm-lbl">종합 별점 <b aria-hidden="true">*</b></span><div class="lm-rvstars" role="radiogroup" aria-label="종합 별점">';
+    for (let i = 1; i <= 5; i++) h += '<button type="button" role="radio" aria-checked="' + (rv.rating === i) + '" aria-label="' + i + '점" class="' + (i <= rv.rating ? 'on' : '') + '" data-a="rv-rate" data-v="' + i + '"><svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + STAR_PATH + '"/></svg></button>';
+    h += (rv.rating ? '<em>' + rv.rating + '점</em>' : '') + '</div>';
+    if (kind === 'tent' && st.gear && !rv.known) {
+      h += '<span class="lm-lbl">자립 · 비자립 <b aria-hidden="true">*</b></span>' + chipRadio(RV_STANDS, rv.stand, 'rv-stand', '자립 비자립')
+        + (st.gear.id ? '<p class="lm-hint">이 텐트는 아직 정보가 없어요. 한 번 골라 주시면 다음 분부터 자동으로 붙어요.</p>' : '');
+    }
+    h += '<span class="lm-lbl">사용 기간 <b aria-hidden="true">*</b></span>' + chipRadio(RV_PERIODS, rv.period, 'rv-period', '사용 기간');
+    h += '<span class="lm-lbl">사용 횟수 <b aria-hidden="true">*</b></span>' + chipRadio(RV_USES, rv.uses, 'rv-uses', '사용 횟수');
+    if (!kind) return h + '<p class="lm-hint">침낭인지 매트인지 고르면 꼬리표가 나와요.</p>';
+    h += '<span class="lm-lbl">좋았던 점 <span style="font-weight:600;color:var(--sub)">눌러서 고르기</span></span>' + rvTagLine(st, kind, 'pros');
+    h += '<span class="lm-lbl">아쉬웠던 점</span>' + rvTagLine(st, kind, 'cons');
+    return h;
+  }
+  function rvKeepEtc(st) {
+    if (!sheet) return;
+    sheet.querySelectorAll('[data-rv-etc]').forEach(function (el) { st.rv.etc[el.dataset.rvEtc] = String(el.value || '').trim(); });
+  }
+  // 제목이 비었거나 저절로 채운 그대로면 '장비 · 기간 사용 후기'로 채운다
+  function rvAutoTitle(st) {
+    if (!sheet || st.id) return;
+    const ti = sheet.querySelector('#lmPostTitle');
+    if (!ti || (ti.value.trim() && ti.value.trim() !== st.autoTitle)) return;
+    const name = st.gear ? gearShort(st.gear.name) : (RV_KINDS[rvKind(st)] || {}).label;
+    const per = rvLabel(RV_PERIODS, st.rv.period);
+    if (!name || name === '기타') return;
+    st.autoTitle = name + (per ? ' · ' + per + ' 사용 후기' : ' 후기');
+    ti.value = st.autoTitle;
+  }
+  // 후기일 때만 위 칸(별점·기간·꼬리표)을 다시 그리고, 내용 칸을 안내 칸 셋으로 바꾼다
+  function paintReview() {
+    if (!sheet || SH.kind !== 'post' || SH.id) return;
+    const st = SH, on = st.cat === 'gear' && st.gkind === 'review';
+    const top = sheet.querySelector('[data-rv-top]'), texts = sheet.querySelector('[data-rv-texts]'), body = sheet.querySelector('[data-body-field]');
+    if (!top) return;
+    rvKeepEtc(st);
+    top.hidden = !on;
+    top.innerHTML = on ? reviewTopHtml(st) : '';
+    if (texts) texts.hidden = !on;
+    if (body) body.hidden = on;
+    const mine = sheet.querySelector('[data-rv-mine]');
+    if (mine) mine.hidden = !(on && st.gear && st.gear.id);
+    if (on) rvAutoTitle(st);
+  }
+  function rvTextsHtml() {
+    return '<div data-rv-texts hidden>' + RV_TEXTS.map(function (d) {
+      return '<label class="lm-lbl" for="' + d[0] + '">' + esc(d[1]) + ' <span style="font-weight:600;color:var(--sub)">선택</span></label><textarea class="lm-ta" id="' + d[0] + '" name="' + d[0] + '" maxlength="900" placeholder="' + esc(d[2]) + '" style="min-height:64px"></textarea>';
+    }).join('') + '</div>';
+  }
+  // 저장할 정리 칸과 글 내용. 모자라면 { err }
+  function rvCollect(st, f) {
+    const rv = st.rv, kind = rvKind(st);
+    rvKeepEtc(st);
+    if (st.gcat === 'sleep' && !kind) return { err: '침낭인지 매트인지 골라 주세요' };
+    if (!rv.rating) return { err: '종합 별점을 골라 주세요' };
+    if (kind === 'tent' && st.gear && !rv.known && !rv.stand) return { err: '자립인지 비자립인지 골라 주세요' };
+    if (!rv.period) return { err: '사용 기간을 골라 주세요' };
+    if (!rv.uses) return { err: '사용 횟수를 골라 주세요' };
+    const side = function (k) {
+      const list = rv[k].slice();
+      if (rv.etcOpen[k] && rv.etc[k]) list.push(rv.etc[k].slice(0, 30));
+      return list.filter(function (t, i) { return t && list.indexOf(t) === i; }).slice(0, RV_MAX_TAGS);
+    };
+    const review = { kind: kind, rating: rv.rating, period: rv.period, uses: rv.uses, pros: side('pros'), cons: side('cons') };
+    const stand = kind === 'tent' ? (rv.known || rv.stand) : '';
+    if (stand) review.stand = stand;
+    const body = RV_TEXTS.map(function (d) {
+      const v = String((f.elements[d[0]] && f.elements[d[0]].value) || '').trim();
+      return v ? d[1] + '\n' + v : '';
+    }).filter(Boolean).join('\n\n');
+    return { review: review, body: body.slice(0, 3000) };
+  }
+  // 글 목록의 후기 한 줄: 별점 · 기간 · 횟수 · 자립, 그 아래 꼬리표
+  function rvSumHtml(r) {
+    if (!r || typeof r !== 'object') return '';
+    const n = Math.max(0, Math.min(5, Number(r.rating) || 0));
+    const meta = [rvLabel(RV_PERIODS, r.period), rvLabel(RV_USES, r.uses), rvLabel(RV_STANDS, r.stand)].filter(Boolean).join(' · ');
+    const tag = function (list, cls) { return (Array.isArray(list) ? list : []).map(function (t) { return '<span class="' + cls + '">' + esc(t) + '</span>'; }).join(''); };
+    const tags = tag(r.pros, 'pro') + tag(r.cons, 'con');
+    return '<div class="lm-rvsum"><div class="top">' + starsMini(n) + '<span>' + esc(meta) + '</span></div>' + (tags ? '<div class="tags">' + tags + '</div>' : '') + '</div>';
+  }
+  // 후기를 올리면 목록 장비를 낭만플랜 '내 장비'에 넣는다(장비 이름이 열쇠)
+  function addToMyGear(name) {
+    try {
+      let set = window.favoriteGearSet;
+      if (!set) {
+        let saved = [];
+        try { saved = JSON.parse(localStorage.getItem('okbm_favorite_gears') || '[]') || []; } catch (e) { saved = []; }
+        set = window.favoriteGearSet = new Set(Array.isArray(saved) ? saved : []);
+      }
+      if (set.has(name)) return;
+      set.add(name);
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') window.RomanticVault.write('okbm_favorite_gears', Array.from(set), true);
+      else localStorage.setItem('okbm_favorite_gears', JSON.stringify(Array.from(set)));
+    } catch (e) { console.warn('[lounge.js:addToMyGear]', e); }
+  }
   function gearFieldsHtml(p, cat, st) {
     if (p) return p.category === 'gear' ? '<p class="lm-hint">' + esc(catLabel(p) + (p.gear_name ? ' · ' + gearShort(p.gear_name) : '')) + '. 종류·장비와 질문·후기는 올린 뒤에 바꿀 수 없어요.</p>' : '';
     return `<div data-gear-fields ${cat === 'gear' ? '' : 'hidden'}>
@@ -3742,6 +3938,7 @@
         <input class="lm-in" id="lmGearQ" data-gear-q placeholder="장비 이름으로 찾기 (예: 호넷)"${st.gear ? ' hidden' : ''}>
         <p class="lm-hint" data-gear-tip${st.gear ? ' hidden' : ''}>특정 장비 이야기면 골라 주세요. 중고 시세 단추가 같이 붙어요.</p>
         <div class="lm-sugg" data-gear-sugg hidden></div>
+        <div data-rv-top hidden></div>
       </div>`;
   }
   function paintGearPick() {
@@ -3757,6 +3954,8 @@
       qi.hidden = !!SH.gear;
       if (!SH.gear) { qi.value = ''; qi.focus({ preventScroll: true }); }
     }
+    rvSyncGear(SH);
+    paintReview();
     tick();
   }
   function pickGear(g) {
@@ -3778,11 +3977,13 @@
         ${p ? '<p class="lm-hint">분류는 올린 뒤에 바꿀 수 없어요.</p>' : ''}
         ${gearFieldsHtml(p, cat, SH)}
         <label class="lm-lbl" for="lmPostTitle"><span data-title-lbl>${poll ? '질문' : '제목'}</span> <b aria-hidden="true">*</b></label>${inp('lmPostTitle', 'title', p && p.title, 'maxlength="80" required data-autofocus placeholder="' + (poll ? '무엇을 물어볼까요?' : '제목') + '"')}
+        ${p ? '' : rvTextsHtml()}
         ${pollFieldsHtml(p, cat)}
-        ${field('lmPostBody', poll ? '설명 (선택)' : '내용', '<textarea class="lm-ta" id="lmPostBody" name="body" maxlength="3000" placeholder="' + (poll ? '덧붙일 말이 있으면 적어요' : '어떤 이야기를 나눌까요?') + '" style="min-height:' + (poll ? 72 : 140) + 'px">' + esc(p && p.body) + '</textarea>')}
+        <div data-body-field>${field('lmPostBody', poll ? '설명 (선택)' : '내용', '<textarea class="lm-ta" id="lmPostBody" name="body" maxlength="3000" placeholder="' + (poll ? '덧붙일 말이 있으면 적어요' : '어떤 이야기를 나눌까요?') + '" style="min-height:' + (poll ? 72 : 140) + 'px">' + esc(p && p.body) + '</textarea>')}</div>
         <span class="lm-lbl">사진 <span data-pcount>${(SH.photos || []).length}</span>/5</span>
         <div class="lm-thumbs" data-thumbs>${thumbsHtml()}</div>
         <label class="lm-file">${ico(P.img, 18)}<span>사진 추가</span><input type="file" accept="image/*,.heic,.heif" multiple data-post-files hidden></label>
+        ${p ? '' : '<p class="lm-hint" data-rv-mine hidden style="margin-top:16px">올리면 이 장비가 내 장비에 들어가요.</p>'}
         <button type="submit" class="lm-btn main">${p ? '저장' : '올리기'}</button>
       </form>`;
   }
@@ -3792,12 +3993,13 @@
     const cat = p ? p.category : (cat0 || (S.cat !== 'all' ? S.cat : 'backpacking'));
     const st = { kind: 'post', id: p ? p.id : null, cat: cat, pollDays: 7, pollKind: 'choice', pollSource: 'spot', photos: postPhotos(p || {}).map(function (u) { return { url: u }; }),
       gkind: (pre && pre.kind) || S.gkind, gear: (pre && pre.gear) || null,
-      gcat: (pre && pre.gear && pre.gear.cat) || (S.gcat !== 'all' ? S.gcat : null) };
+      gcat: (pre && pre.gear && pre.gear.cat) || (S.gcat !== 'all' ? S.gcat : null), rv: newRv(), autoTitle: '' };
     const prev = SH;
     SH = st; // thumbsHtml이 SH를 읽는다
     const html = postFormHtml(p, cat);
     SH = prev;
     openSheet(html, st);
+    if (!p) { rvSyncGear(st); paintReview(); }
   }
   const PHOTO_MAX = { post: 5, news: 10 };
   function refreshThumbs() {
@@ -3831,7 +4033,16 @@
     const c = sb(), me = myId();
     const val = function (n) { return String((f.elements[n] && f.elements[n].value) || '').trim(); };
     if (!c || !me) { needLogin(); return; }
-    const title = val('title'), body = val('body');
+    const title = val('title');
+    let body = val('body');
+    let review = null;
+    if (!st.id && st.cat === 'gear' && st.gkind === 'review') {
+      if (!GEAR_CAT[st.gcat]) { toast('장비 종류를 골라 주세요', true); return; }
+      const got = rvCollect(st, f);
+      if (got.err) { toast(got.err, true); return; }
+      review = got.review;
+      body = got.body;
+    }
     if (!title) { toast('제목을 적어 주세요', true); f.elements.title.focus(); return; }
     if (st.photos.some(function (ph) { return ph.uploading; })) { toast('사진을 올리는 중이에요. 잠시 뒤 다시 눌러 주세요', true); return; }
     const photos = st.photos.map(function (ph) { return ph.url; }).filter(function (u) { return okbmSafeImageUrl(u); }).slice(0, 5);
@@ -3844,6 +4055,7 @@
         row0.gear_id = st.gear.id || null;
         row0.gear_name = String(st.gear.name).slice(0, 120);
       }
+      if (review) row0.gear_review = review;
     }
     if (!st.id && st.cat === 'poll' && st.pollKind === 'top3') {
       row0.poll_kind = 'top3';
@@ -3876,7 +4088,8 @@
         D.likeChecked.add(row.id);
         if (row.category === 'poll' && row.poll_kind === 'top3') D.top3[row.id] = { post_id: row.id, total: 0, mine: null, leader: null, top: [], closed: false };
         else if (row.category === 'poll') D.poll[row.id] = { post_id: row.id, total: 0, counts: null, mine: null, closed: false };
-        if (window.okbmPoints) window.okbmPoints.check('post'); // 낭만 포인트 알림 (H32)
+        if (window.okbmPoints) window.okbmPoints.check(row.gear_review ? 'gear_review' : 'post'); // 낭만 포인트 알림 (H32, I7)
+        if (row.gear_review && row.gear_id && row.gear_name) addToMyGear(row.gear_name);
       }
       closeSheet();
       toast(st.id ? '글을 고쳤어요' : (row.category === 'suggestion' ? '건의를 보냈어요. 답변이 달리면 알려 드릴게요' : row.category === 'poll' ? '설문을 올렸어요' : '글을 올렸어요'));
@@ -3911,6 +4124,7 @@
     const p = st.post, term = gearTerm(p.gear_name);
     return `<h3 id="loungeSheetTitle">${esc(gearShort(p.gear_name))}</h3>
       <p class="lm-gmeta" data-gear-meta>${esc(GEAR_CAT[p.gear_cat] || '장비')}</p>
+      <div data-gear-sum></div>
       <label class="lm-lbl" for="lmGearTerm" style="margin-top:20px">중고 시세 보러 가기 · 검색어</label>
       ${inp('lmGearTerm', 'term', term, 'data-gear-term maxlength="60" enterkeyhint="done"')}
       <div class="lm-mkt">${MARKETS.map(function (m) {
@@ -3930,6 +4144,24 @@
       if (m) a.href = marketUrl(m, term);
     });
   }
+  // 이 장비 후기 모아 보기: 종합 별점 평균과 많이 고른 꼬리표 (I7)
+  function gearSumHtml(rows) {
+    const rs = rows.map(function (p) { return p.gear_review; }).filter(function (r) { return r && Number(r.rating) >= 1; });
+    if (!rs.length) return '';
+    const avg = rs.reduce(function (a, r) { return a + Number(r.rating); }, 0) / rs.length;
+    const count = function (side) {
+      const m = new Map();
+      rs.forEach(function (r) { (Array.isArray(r[side]) ? r[side] : []).forEach(function (t) { m.set(t, (m.get(t) || 0) + 1); }); });
+      return Array.from(m.entries()).sort(function (a, b) { return b[1] - a[1]; });
+    };
+    const top = count('pros').slice(0, 5).map(function (x) { return x.concat('#34d399'); })
+      .concat(count('cons').slice(0, 3).map(function (x) { return x.concat('#f87171'); }));
+    const bars = top.map(function (x) {
+      return '<div class="lm-gcnt"><span style="color:' + x[2] + '">' + esc(x[0]) + '</span><i><i style="width:' + Math.round(x[1] / rs.length * 100) + '%;background:' + x[2] + '"></i></i><b>' + x[1] + '명</b></div>';
+    }).join('');
+    return '<div class="lm-gsum"><div class="score"><b>' + avg.toFixed(1) + '</b><div><span class="lm-rvsum" style="margin:0">' + starsMini(Math.round(avg)) + '</span><small>종합 별점 · 후기 ' + rs.length + '개</small></div></div>'
+      + (bars ? '<span class="lm-lbl" style="margin-top:18px">후기 ' + rs.length + '개에서 많이 고른 말</span>' + bars : '') + '</div>';
+  }
   function paintGearList() {
     if (!sheet || SH.kind !== 'gear') return;
     const st = SH, box = sheet.querySelector('[data-gear-list]');
@@ -3943,9 +4175,11 @@
       const n = sheet.querySelector('[data-gn="' + k[0] + '"]');
       if (n) n.textContent = String(rows.filter(function (p) { return p.gear_kind === k[0]; }).length);
     });
+    const sum = sheet.querySelector('[data-gear-sum]');
+    if (sum) sum.innerHTML = gearSumHtml(rows);
     const list = rows.filter(function (p) { return p.gear_kind === st.gk; });
     box.innerHTML = list.length ? list.map(function (p) {
-      return `<button type="button" class="lm-gl" data-a="gear-post" data-v="${esc(p.id)}"><b>${esc(p.title)}</b><small>${esc([p.nickname, ago(p.created_at), (st.gk === 'review' ? '댓글 ' : '답변 ') + (Number(p.comments_count) || 0)].filter(Boolean).join(' · '))}</small></button>`;
+      return `<button type="button" class="lm-gl" data-a="gear-post" data-v="${esc(p.id)}"><b>${esc(p.title)}</b>${p.gear_review ? rvSumHtml(p.gear_review) : ''}<small>${esc([p.nickname, ago(p.created_at), (st.gk === 'review' ? '댓글 ' : '답변 ') + (Number(p.comments_count) || 0)].filter(Boolean).join(' · '))}</small></button>`;
     }).join('') : '<div class="lm-empty">' + (st.gk === 'review' ? '아직 이 장비 후기가 없어요' : '아직 이 장비 질문이 없어요') + '</div>';
   }
   function openGear(p) {
@@ -4375,12 +4609,44 @@
         if (SH.kind !== 'post' || SH.id) break;
         SH.gkind = v;
         t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+        paintReview();
         break;
       case 'pgcat':
         if (SH.kind !== 'post' || SH.id) break;
+        if (SH.gcat !== v) { SH.rv.pros = []; SH.rv.cons = []; SH.rv.stand = ''; }
         SH.gcat = v;
         t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
+        rvSyncGear(SH);
+        paintReview();
         break;
+      case 'rv-rate': if (SH.kind === 'post') { SH.rv.rating = Number(v) || 0; paintReview(); tick(); } break;
+      case 'rv-period': if (SH.kind === 'post') { SH.rv.period = v; paintReview(); } break;
+      case 'rv-uses': if (SH.kind === 'post') { SH.rv.uses = v; paintReview(); } break;
+      case 'rv-stand': if (SH.kind === 'post') { SH.rv.stand = v; paintReview(); } break;
+      case 'rv-sleep':
+        if (SH.kind !== 'post') break;
+        if (SH.rv.sleep !== v) { SH.rv.pros = []; SH.rv.cons = []; }
+        SH.rv.sleep = v;
+        paintReview();
+        break;
+      case 'rv-tag': {
+        if (SH.kind !== 'post') break;
+        const side = t.dataset.g === 'cons' ? 'cons' : 'pros', list = SH.rv[side], i = list.indexOf(v);
+        if (i >= 0) list.splice(i, 1);
+        else if (list.length < RV_MAX_TAGS) list.push(v);
+        paintReview();
+        break;
+      }
+      case 'rv-etc': {
+        if (SH.kind !== 'post') break;
+        const side = t.dataset.g === 'cons' ? 'cons' : 'pros';
+        rvKeepEtc(SH);
+        SH.rv.etcOpen[side] = !SH.rv.etcOpen[side];
+        paintReview();
+        const el = SH.rv.etcOpen[side] && sheet.querySelector('[data-rv-etc="' + side + '"]');
+        if (el) el.focus({ preventScroll: true });
+        break;
+      }
       case 'gear-unpick':
         if (SH.kind !== 'post') break;
         SH.gear = null;
@@ -4469,6 +4735,7 @@
           const bl = sheet.querySelector('label[for="lmPostBody"]');
           if (bl) bl.textContent = poll ? '설명 (선택)' : '내용';
         }
+        paintReview();
         tick();
         break;
       }
