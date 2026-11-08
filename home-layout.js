@@ -569,7 +569,7 @@
     Promise.all([reviewCount(record, master).catch(function () { return 0; }), bm.catch(function () { return 0; })]).then(function (r) {
       if (my !== statToken) return; // 그새 다른 카드로 넘겼다
       var parts = [];
-      if (r[0] > 0) parts.push('후기 ' + r[0]);
+      if (r[0] > 0) parts.push('피드 ' + r[0]); // 지도 정보창의 '후기'(별점 후기 수)와 헷갈리지 않게(대표님 11-08)
       if (r[1] > 0) parts.push('찜 ' + r[1]);
       el.textContent = parts.join(' · ');
       el.hidden = !parts.length;

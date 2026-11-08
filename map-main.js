@@ -58,13 +58,13 @@
         if (msgEl) {
           msgEl.textContent = (opts && typeof opts === 'object' && opts.message)
             ? String(opts.message)
-            : '로그인후 낭만루트의 모든 기능을 이용하실수 있습니다.';
+            : '로그인 후 낭만루트의 모든 기능을 이용하실 수 있습니다.';
         }
         var overlay = document.getElementById('loginModalOverlay');
         if (overlay) {
           overlay.style.setProperty('display', 'flex', 'important');
         } else {
-          showToast('🔒 로그인이 필요한 기능입니다.');
+          showToast('로그인이 필요한 기능입니다.', { html: ICONS.LOCK });
         }
       };
 
@@ -233,6 +233,8 @@
           if (typeof window.fetchMasterSpotsFromSupabase === 'function') {
             // 기기에 저장해 둔 목록을 쓰고, 서버 판 번호(H14)가 바뀌었을 때만 새로 받는다.
             rows = await window.fetchMasterSpotsFromSupabase();
+            // 손님 하루 한도에 걸려 첫 지도가 비면, 지도를 움직일 때와 같은 안내를 띄운다(아무 말 없이 텅 비어 있었다)
+            if ((!Array.isArray(rows) || !rows.length) && window.__okbmSpotsFailCode === 'rate') handleGuestPinError({ code: 'rate' });
             // 받기에 실패해 비회원 때 대략 좌표 목록만 남았으면 회원 지도에는 쓰지 않는다.
             if (typeof window.okbmSpotListFitsViewer === 'function' && !window.okbmSpotListFitsViewer(rows)) return;
           } else if (typeof window.okbmFetchSpotRows === 'function') {
@@ -409,6 +411,9 @@
 
       // ✨ 28종 확정 100% SVG 벡터 라이브러리
       const ICONS = {
+        // 이모티콘 대신 쓰는 글자 크기 그림(야영 금지 표시, 추천)
+        BAN: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" style="width:1em; height:1em; vertical-align:-0.15em; margin-right:3px; flex-shrink:0;"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>`,
+        THUMB: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1em; height:1em; vertical-align:-0.15em; margin-right:3px; flex-shrink:0;"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>`,
         AUTH: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; margin-right:3px; display:inline-block; vertical-align:-1px;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>`,
         MEMBER: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#6ee7b7;"><circle cx="10" cy="8" r="4"/><path d="M3 20c0-3.5 3-6 7-6"/><circle cx="17" cy="16" r="3.5" fill="#10b981"/><path d="M15 16l1.5 1.5 3-3" stroke="#fff"/></svg>`,
         BACKPACK: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><rect x="4" y="2" width="16" height="5" rx="2.5"/><path d="M8 2v5M16 2v5M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M12 7l-4 4M12 7l4 4M8 15h8v4H8z"/></svg>`,
@@ -1483,11 +1488,12 @@
       ];
       var mapFilterDraft = null;
 
-      function mapFilterCount(d) {
+      function mapFilterSpots(d) {
         return (spots || []).filter(function(sp) {
           return sp && sp.lat && sp.lng && !BLOCKED_SPOT_IDS.has(String(sp.id).trim()) && hudFilterMatches(sp, d.diff, d.status, d.terrain) && listFilterMatches(sp);
-        }).length;
+        });
       }
+      function mapFilterCount(d) { return mapFilterSpots(d).length; }
 
       function mapFilterEls() {
         let dim = document.getElementById('mfDim'), sheet = document.getElementById('mfSheet');
@@ -1526,7 +1532,7 @@
           return '<div class="mf-g"><div class="mf-gt">' + g.title + '</div><div class="mf-opts">' + g.opts.map(function(o) {
             return '<button type="button" class="mf-o' + (d[g.key] === o[0] ? ' on' : '') + '" data-mf-g="' + g.key + '" data-mf-v="' + escapeHtml(o[0]) + '">' + o[1] + '</button>';
           }).join('') + '</div></div>';
-        }).join('') + '<div class="mf-btns"><button type="button" data-mf-act="reset">초기화</button><button type="button" class="mf-apply" data-mf-act="apply">' + mapFilterCount(d) + '곳 보기</button></div>';
+        }).join('') + '<div class="mf-btns"><button type="button" data-mf-act="reset">초기화</button><button type="button" class="mf-apply" data-mf-act="apply"' + (mapFilterCount(d) ? '' : ' disabled') + '>' + mapFilterCount(d) + '곳 보기</button></div>';
       }
 
       function openMapFilterSheet() {
@@ -1549,6 +1555,19 @@
         currentHudFilterDiff = d.diff; currentHudFilterTerrain = d.terrain; currentHudFilterStatus = d.status;
         renderSpots();
         updateMapFilterBtn();
+        // 확대해 둔 자리에 맞는 박지가 하나도 없으면, 맞는 박지가 다 보이게 지도를 옮긴다(그대로 두면 아무 일도 안 일어난 것처럼 보였다)
+        const hits = mapFilterSpots(d);
+        if (!hits.length || !isKakaoMapReady()) return;
+        const view = map.getBounds();
+        if (hits.some(function(sp) { return view.contain(new kakao.maps.LatLng(sp.lat, sp.lng)); })) return;
+        if (hits.length === 1) {
+          map.setLevel(8, { animate: false });
+          map.setCenter(new kakao.maps.LatLng(hits[0].lat, hits[0].lng));
+          return;
+        }
+        const bounds = new kakao.maps.LatLngBounds();
+        hits.forEach(function(sp) { bounds.extend(new kakao.maps.LatLng(sp.lat, sp.lng)); });
+        map.setBounds(bounds);
       }
 
       function updateMapFilterBtn() {
@@ -2072,7 +2091,7 @@ function updateSmartResetButtons() {
 
       function campBanBadgeHtml(spot) {
         return isCampBanned(spot)
-          ? '<span class="badge-status" style="background:rgba(244,63,94,0.18); color:#fda4af; border:1px solid rgba(244,63,94,0.45);">🚫 야영금지</span>'
+          ? '<span class="badge-status" style="background:rgba(244,63,94,0.18); color:#fda4af; border:1px solid rgba(244,63,94,0.45);">' + ICONS.BAN + '야영금지</span>'
           : '';
       }
 
@@ -2137,7 +2156,7 @@ function updateSmartResetButtons() {
           return '<div style="margin-top:6px;"><div style="font-weight:800; color:#fecdd3;">' + r[0] + '</div><div style="color:#fda4af;">' + r[1] + '</div></div>';
         }).join('');
         return '<div style="margin:6px 0 4px; padding:11px 12px; border-radius:10px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.45); color:#fecdd3; font-size:0.74rem; line-height:1.45;">' +
-          '<div style="font-weight:900; color:#fb7185; font-size:0.9rem;">🚫 야영이 금지되었습니다</div>' +
+          '<div style="font-weight:900; color:#fb7185; font-size:0.9rem;">' + ICONS.BAN + '야영이 금지되었습니다</div>' +
           campBanReasonHtml(spot, 'margin-top:6px; font-size:0.8rem;') +
           campBanPhotosHtml(spot) +
           '<div style="margin-top:8px; font-size:0.84rem; font-weight:800;">소중한 박지를 보호하기 위해 LNT 원칙을 꼭 지켜주세요.</div>' +
@@ -2772,7 +2791,7 @@ function updateSmartResetButtons() {
                 ${userBookmarks.has(id) ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 장소">${ICONS.HEART}</div>` : ''}
                 ${userVisited.has(id) ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 장소">${ICONS.FLAG}</div>` : ''}
                 <div class="lod-marker-label" style="position: absolute; bottom: 44px; left: 50%; pointer-events: auto; ${labelTransform}">
-                  <div class="lod-label-row-1 ${isBan ? '' : diffClass}"${isBan ? ' style="color:#fda4af;"' : ''}>${isBan ? '🚫 ' : ''}${escapeHtml(row1Name)}</div>
+                  <div class="lod-label-row-1 ${isBan ? '' : diffClass}"${isBan ? ' style="color:#fda4af;"' : ''}>${isBan ? '' + ICONS.BAN + '' : ''}${escapeHtml(row1Name)}</div>
                   ${isBan ? '<div class="lod-label-row-2" style="color:#fb7185; font-weight:900;">야영금지</div>' : ''}
                   ${(isFullMode && row2Sub) ? `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>` : ''}
                   ${(isFullMode && row3Elev) ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${escapeHtml(row3Elev)}</div>` : ''}
@@ -4088,7 +4107,7 @@ function updateSmartResetButtons() {
             <button type="button" class="btn-edit" style="display:inline-block;" data-id="${spot.id}" onclick="editSpotById(event, this.dataset.id)">${ICONS.EDIT}수정</button>
             <button type="button" class="btn-edit" style="display:inline-block; background:#0f766e;" data-id="${spot.id}" onclick="startAdminPinMove(this.dataset.id, event)">${ICONS.PIN}핀</button>
             <button type="button" class="btn-del" style="display:inline-block;" data-id="${spot.id}" onclick="deleteSpotById(event, this.dataset.id)">${ICONS.DEL}삭제</button>
-            <button type="button" class="btn-edit" style="display:inline-block; background:${isCampBanned(spot) ? '#475569' : '#9f1239'};" data-id="${spot.id}" onclick="window.toggleSpotCampBanById(this.dataset.id, event)">${isCampBanned(spot) ? '금지해제' : '🚫금지'}</button>
+            <button type="button" class="btn-edit" style="display:inline-block; background:${isCampBanned(spot) ? '#475569' : '#9f1239'};" data-id="${spot.id}" onclick="window.toggleSpotCampBanById(this.dataset.id, event)">${isCampBanned(spot) ? '금지해제' : '' + ICONS.BAN + '금지'}</button>
           </div>
         ` : '';
 
@@ -4131,7 +4150,7 @@ function updateSmartResetButtons() {
           <!-- 2행: 좌측 세부 포인트 ── 우측 등록자(구형: 오라네) + SNS 미니 아이콘 -->
             <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin:4px 0 3px 0; width:100%; min-height:24px;">
               <div style="display:flex; align-items:center; min-width:0; flex:1;">
-                ${cleanSubName ? `<span class="badge-sub-point" style="margin:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${ICONS.PIN} ${escapeHtml(cleanSubName)}</span>` : ''}
+                ${cleanSubName ? `<span class="badge-sub-point" style="margin:0; max-width:100%; overflow:hidden; white-space:nowrap;">${ICONS.PIN}<span style="min-width:0; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(cleanSubName)}</span></span>` : ''}
               </div>
 
               ${(function() {
@@ -4154,7 +4173,7 @@ function updateSmartResetButtons() {
                 <span data-okbm-review-chip="${escapeHtml(sId)}" style="display:contents;">${typeof window.okbmSpotReviewChipHtml === 'function' ? window.okbmSpotReviewChipHtml(sId) : ''}</span>
                 ${getMetaBadgesHtml(spot)}
               </div>
-              <button data-metric-click="feat_spot_correction" type="button" data-id="${sId}" onclick="window.openSpotCorrectionModal(this.dataset.id, event);" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:2px 6px; border-radius:10px; font-size:0.62rem; font-weight:700; color:#94a3b8; cursor:pointer; flex-shrink:0; outline:none;" title="틀린 정보 수정 건의">
+              <button data-metric-click="feat_spot_correction" type="button" data-id="${sId}" onclick="window.openSpotCorrectionModal(this.dataset.id, event);" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:7px 6px; border-radius:10px; font-size:0.62rem; font-weight:700; color:#94a3b8; cursor:pointer; flex-shrink:0; outline:none;" title="틀린 정보 수정 건의">
                 <svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 <span>수정건의</span>
               </button>
@@ -4367,76 +4386,6 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         });
       };
 
-      window.fetchTextFast = function(url, timeoutMs) {
-        return new Promise(function(resolve, reject) {
-          var settled = false;
-          var timer = setTimeout(function() {
-            if (settled) return;
-            settled = true;
-            reject(new Error('timeout'));
-          }, timeoutMs || 2500);
-          fetch(url)
-            .then(function(res) {
-              if (!res.ok) throw new Error('bad-status');
-              return res.text();
-            })
-            .then(function(text) {
-              if (settled) return;
-              settled = true;
-              clearTimeout(timer);
-              resolve(text);
-            })
-            .catch(function(err) {
-              if (settled) return;
-              settled = true;
-              clearTimeout(timer);
-              reject(err);
-            });
-        });
-      };
-
-
-      window.decodeSearchPayload = function(html) {
-        var t = String(html || '').replace(/\\\//g, '/');
-        t = t.replace(/uddg=([^&\s)"']+)/g, function(_, enc) {
-          try { return 'uddg=' + decodeURIComponent(enc); } catch (e) { return 'uddg=' + enc; }
-        });
-        t = t.replace(/%3A/gi, ':').replace(/%2F/gi, '/').replace(/%3F/gi, '?').replace(/%3D/gi, '=').replace(/%26/gi, '&').replace(/%2D/gi, '-');
-        return t;
-      };
-
-      window.extractYouTubeVideosFromText = function(html, limit) {
-        var max = limit || 5;
-        html = window.decodeSearchPayload(html);
-        var extracted = [];
-        var seenIds = new Set();
-        // 검색 결과에 shorts/ 주소로 한 번이라도 나온 영상은 숏츠다. watch?v= 로 바꾸기 전에 골라 둔다.
-        var shortsIds = new Set();
-        var shortsRe = /shorts\/([a-zA-Z0-9_-]{11})/g;
-        var sm;
-        while ((sm = shortsRe.exec(html)) !== null) shortsIds.add(sm[1]);
-        function add(id, title) {
-          id = String(id || '').replace(/[^a-zA-Z0-9_-]/g, '');
-          if (!id || id.length !== 11 || seenIds.has(id) || extracted.length >= max) return;
-          if (shortsIds.has(id) || /#shorts?\b/i.test(String(title || ''))) return;
-          if (/^[a-zA-Z0-9_-]{11}$/.test(id) === false) return;
-          seenIds.add(id);
-          extracted.push({
-            id: id,
-            title: window.decodeMediaText(title),
-            url: 'https://www.youtube.com/watch?v=' + id,
-            thumb: 'https://img.youtube.com/vi/' + id + '/mqdefault.jpg'
-          });
-        }
-        var mdRe = /\[([^\]]{2,180})\]\((?:https?:\/\/(?:www\.)?youtube\.com\/watch\?v=|https?:\/\/youtu\.be\/)([a-zA-Z0-9_-]{11})\)/g;
-        var match;
-        while ((match = mdRe.exec(html)) !== null && extracted.length < max) add(match[2], match[1]);
-        var ddgRe = /\[([^\]]{2,180})\]\([^)\]]*(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/g;
-        while ((match = ddgRe.exec(html)) !== null && extracted.length < max) add(match[2], match[1]);
-        var watchRe = /(?:watch\?v=|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/g;
-        while ((match = watchRe.exec(html)) !== null && extracted.length < max) add(match[1], '');
-        return extracted;
-      };
 
       window.parsePipedOrInvidiousVideos = function(data, limit) {
         var max = limit || 5;
@@ -4603,6 +4552,11 @@ window.__ytMetaCache = window.__ytMetaCache || {};
             return q.indexOf(area) !== -1 && q.indexOf(mountain) !== -1;
           });
           if (!variants.length) variants = [area + ' ' + mountain + ' 백패킹'];
+        } else if (mountain) {
+          // 블로그 찾기는 첫 검색어 하나만 쓰고 그 낱말이 제목에 다 있어야 남긴다. 이름이 하나뿐인 곳은 지역 이름을 빼야
+          // '굴업도 백패킹' 같은 글이 걸린다('인천 굴업도'로는 0개였다)
+          var bare = variants.filter(function(q) { return area && q.indexOf(area) === -1; });
+          variants = bare.concat(variants.filter(function(q) { return bare.indexOf(q) === -1; }));
         }
         return variants;
       };
@@ -4695,16 +4649,8 @@ window.__ytMetaCache = window.__ytMetaCache || {};
           });
         }
 
+        // r.jina.ai(덕덕고 거쳐 찾기)는 401로 막혀 매번 헛걸음이라 뺐다(11-08 확인). piped만 쓴다
         async function searchOne(query) {
-          var encoded = encodeURIComponent(query + ' site:youtube.com');
-          var htmls = await Promise.all([
-            window.fetchTextFast('https://r.jina.ai/https://html.duckduckgo.com/html/?q=' + encoded, 10000).catch(function() { return ''; }),
-            window.fetchTextFast('https://r.jina.ai/https://lite.duckduckgo.com/lite/?q=' + encoded, 10000).catch(function() { return ''; })
-          ]);
-          htmls.forEach(function(html) {
-            if (html) absorb(window.extractYouTubeVideosFromText(html, 8));
-          });
-          if (relevantCount() >= 10) return;
           try {
             var piped = await window.fetchJsonFast('https://api.piped.private.coffee/search?q=' + encodeURIComponent(query) + '&filter=videos', 8000);
             absorb(window.parsePipedOrInvidiousVideos(piped, 8));
@@ -5087,7 +5033,8 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
       };
 
       window.prefetchSpotMediaForSpot = function(spot) {
-        if (!spot) return;
+        // 야영 금지 박지는 정보창에 영상·블로그 칸이 없으니 찾지 않는다
+        if (!spot || isCampBanned(spot)) return;
         var spotId = String(spot.id).trim();
         var spotName = spot.spot_main || spot.name || '장소';
         window.prefetchSpotYouTubeList(spotId, spotName, window.getSpotRegisteredMediaUrls(spot, 'yt'));
@@ -6139,7 +6086,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         }
         function loggedIn() { return typeof isUserLoggedIn === 'function' && isUserLoggedIn(); }
 
-        // 목록 카드 아래 한 줄: 크리에이터 · 닉네임 · 👍 · 신고 (내 것: 삭제, 관리자: 숨김·삭제)
+        // 목록 카드 아래 한 줄: 크리에이터 · 닉네임 · 추천 · 신고 (내 것: 삭제, 관리자: 숨김·삭제)
         function actionsHtml(sId, r) {
           var up = r.my_vote === 'up';
           var rep = r.my_vote === 'report';
@@ -6147,10 +6094,10 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           var btn = 'display:inline-flex; align-items:center; gap:3px; height:30px; padding:0 11px; border-radius:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); cursor:pointer; font-family:inherit; font-size:0.76rem; font-weight:800; flex-shrink:0;';
           var tools = '';
           if (r.mine) {
-            tools = '<span style="font-size:0.74rem; color:#60a5fa; font-weight:800; padding:0 4px; flex-shrink:0;">내 콘텐츠 · 👍 ' + (Number(r.ups) || 0) + '</span>' +
+            tools = '<span style="font-size:0.74rem; color:#60a5fa; font-weight:800; padding:0 4px; flex-shrink:0;">내 콘텐츠 · ' + ICONS.THUMB + '' + (Number(r.ups) || 0) + '</span>' +
               '<button type="button" data-act="del" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' style="' + btn + ' color:#64748b;">삭제</button>';
           } else {
-            tools = '<button type="button" data-act="up" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + up + '" style="' + btn + ' color:' + (up ? '#fbbf24' : '#e2e8f0') + ';' + (up ? ' border-color:rgba(251,191,36,0.6); background:rgba(251,191,36,0.12);' : '') + '">👍 추천 ' + (Number(r.ups) || 0) + '</button>' +
+            tools = '<button type="button" data-act="up" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + up + '" style="' + btn + ' color:' + (up ? '#fbbf24' : '#e2e8f0') + ';' + (up ? ' border-color:rgba(251,191,36,0.6); background:rgba(251,191,36,0.12);' : '') + '">' + ICONS.THUMB + '추천 ' + (Number(r.ups) || 0) + '</button>' +
               '<button type="button" data-act="report" data-spot="' + esc(sId) + '" data-id="' + esc(r.id) + '"' + ACT + ' aria-pressed="' + rep + '" style="' + btn + ' color:' + (rep ? '#f87171' : '#94a3b8') + ';' + (rep ? ' border-color:rgba(248,113,113,0.6); background:rgba(248,113,113,0.12);' : '') + '">' + (rep ? '신고함' : '신고') + '</button>';
           }
           if (isAdminMode) {
@@ -6884,7 +6831,7 @@ var liveSearchTimer = null;
               <span style="color:#f59e0b; font-size:0.70rem;">★</span>
               <span style="font-size:0.72rem; font-weight:800; color:var(--text-primary);">최근 7일 인기 박지 TOP 5</span>
             </div>
-            <button type="button" onclick="document.getElementById('pcSearchDropdown').style.display='none';" style="background:none; border:none; color:var(--text-muted); font-size:0.68rem; font-weight:700; cursor:pointer; padding:2px 4px;">✕ 닫기</button>
+            <button type="button" onclick="document.getElementById('pcSearchDropdown').style.display='none';" style="background:none; border:none; color:var(--text-muted); font-size:0.68rem; font-weight:700; cursor:pointer; padding:8px 10px; margin:-6px -6px -6px 0;">✕ 닫기</button>
           </div>`;
         dropdown.style.display = 'block';
 
@@ -6938,7 +6885,7 @@ var liveSearchTimer = null;
                     ${escapeHtml(item.spot_main || item.name)}
                   </span>
                   ${item.spot_sub ? `<span style="font-size:0.64rem; color:var(--accent-blue); font-weight:700;">(${escapeHtml(item.spot_sub)})</span>` : ''}
-                  ${isCampBanned(item) ? '<span style="font-size:0.58rem; color:#fda4af; font-weight:900; flex-shrink:0;">🚫 야영금지</span>' : ''}
+                  ${isCampBanned(item) ? '<span style="font-size:0.58rem; color:#fda4af; font-weight:900; flex-shrink:0;">' + ICONS.BAN + '야영금지</span>' : ''}
                 </div>
                 <span style="font-size:0.60rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                   ${escapeHtml(item.region || '')} ${escapeHtml(item.cityName || '')}${(() => {
@@ -7323,7 +7270,7 @@ var liveSearchTimer = null;
               <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'};" data-id="${sId}" onclick="editSpotById(event, this.dataset.id)">수정</button>
               <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'}; background:#0f766e;" data-id="${sId}" onclick="startAdminPinMove(this.dataset.id, event)">핀</button>
               <button class="btn-del" style="display:${isAdminMode ? 'inline-block' : 'none'};" data-id="${sId}" onclick="deleteSpotById(event, this.dataset.id)">삭제</button>
-              <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'}; background:${isCampBanned(spot) ? '#475569' : '#9f1239'};" data-id="${sId}" onclick="window.toggleSpotCampBanById(this.dataset.id, event)">${isCampBanned(spot) ? '금지해제' : '🚫금지'}</button>
+              <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'}; background:${isCampBanned(spot) ? '#475569' : '#9f1239'};" data-id="${sId}" onclick="window.toggleSpotCampBanById(this.dataset.id, event)">${isCampBanned(spot) ? '금지해제' : '' + ICONS.BAN + '금지'}</button>
             </div>
           </div>
 
@@ -7337,7 +7284,7 @@ var liveSearchTimer = null;
           </div>
 
           ${isCampBanned(spot)
-            ? '<div class="spot-desc-multi" style="color:#fda4af; font-weight:800;">🚫 야영이 금지되었습니다' + campBanReasonHtml(spot, 'margin-top:3px; font-size:0.92em;') + '</div>'
+            ? '<div class="spot-desc-multi" style="color:#fda4af; font-weight:800;">' + ICONS.BAN + '야영이 금지되었습니다' + campBanReasonHtml(spot, 'margin-top:3px; font-size:0.92em;') + '</div>'
             : `<div class="spot-desc-multi">${ICONS.VIEW_CARD} <span class="spot-desc-text">${escapeHtml(descText)}</span>${descIsShort ? ' <button type="button" class="spot-desc-more">더보기</button>' : ''}</div>`}`;
 
         // 목록은 소개 앞 80자만 받는다(H15). '더보기'를 누르면 이 박지 하나의 전체 소개를 받아 카드 안에서 펼친다.
@@ -7424,7 +7371,7 @@ var liveSearchTimer = null;
           } else if (typeof window.handleAuthBtnClick === 'function') {
             window.handleAuthBtnClick();
           }
-          showToast('🔒 장소 제보는 로그인 후 이용하실 수 있습니다.');
+          showToast('장소 제보는 로그인 후 이용하실 수 있습니다.', { html: ICONS.LOCK });
           return;
         }
 
@@ -8330,7 +8277,7 @@ var liveSearchTimer = null;
         var banned = isCampBanned(target);
         noticeEl.style.display = 'flex';
         noticeEl.innerHTML = ICONS.PIN + ' <span style="flex:1;">핀 위치는 [콕 찍기]로 바꾸거나, 지도에서 마커를 드래그해 바로 저장할 수 있습니다.</span>' +
-          '<button type="button" class="btn-edit" style="display:inline-block; flex-shrink:0; background:' + (banned ? '#475569' : '#9f1239') + ';" data-id="' + escapeHtml(String(target.id)) + '" onclick="window.toggleEditModalCampBan(this.dataset.id, event)">' + (banned ? '금지해제' : '🚫야영금지') + '</button>';
+          '<button type="button" class="btn-edit" style="display:inline-block; flex-shrink:0; background:' + (banned ? '#475569' : '#9f1239') + ';" data-id="' + escapeHtml(String(target.id)) + '" onclick="window.toggleEditModalCampBan(this.dataset.id, event)">' + (banned ? '금지해제' : '' + ICONS.BAN + '야영금지') + '</button>';
       }
 
       window.toggleEditModalCampBan = async function(spotId, e) {
@@ -9323,7 +9270,7 @@ var liveSearchTimer = null;
               '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.reviewAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#0284c7; color:#fff;">검토/수정</button>' +
               '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.approveAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#059669; color:#fff;">즉시반영</button>' +
               (item.type === 'correction'
-                ? '<button type="button" data-id="' + escapeHtml(safeId) + '" onclick="window.banSpotFromCorrection(this.dataset.id)" style="background:#9f1239; color:#fff;">🚫야영금지</button>'
+                ? '<button type="button" data-id="' + escapeHtml(safeId) + '" onclick="window.banSpotFromCorrection(this.dataset.id)" style="background:#9f1239; color:#fff;">' + ICONS.BAN + '야영금지</button>'
                 : '') +
               '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.rejectAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#be123c; color:#fff;">반려</button>';
           return '<div class="admin-inbox-card">' +
@@ -9735,7 +9682,7 @@ var liveSearchTimer = null;
             li.onmouseout = () => { li.style.background = 'transparent'; };
 
             const badgeHtml = res.isInternal && isCampBanned(res.spotObj)
-              ? '<span style="font-size:0.56rem; font-weight:900; background:rgba(244,63,94,0.18); color:#fda4af; border:1px solid rgba(244,63,94,0.45); padding:1px 5px; border-radius:4px; flex-shrink:0;">🚫 야영금지</span>'
+              ? '<span style="font-size:0.56rem; font-weight:900; background:rgba(244,63,94,0.18); color:#fda4af; border:1px solid rgba(244,63,94,0.45); padding:1px 5px; border-radius:4px; flex-shrink:0;">' + ICONS.BAN + '야영금지</span>'
               : res.isInternal
               ? '<span style="font-size:0.56rem; font-weight:900; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">장소</span>'
               : '<span style="font-size:0.56rem; font-weight:700; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">자연</span>';
@@ -9905,6 +9852,10 @@ var liveSearchTimer = null;
         var noticeId = String(root.getAttribute('data-notice-id') || '').trim();
         if (!noticeId) return;
         var storageKey = 'okbm_map_notice_id';
+        // 공유 링크·홈 '자세히'로 박지 하나를 보러 왔으면 그 정보창을 덮지 않게 이번엔 띄우지 않는다(닫음으로 적지는 않는다).
+        // 박지를 연 뒤 주소에서 id를 지우므로 들어온 순간의 주소로 정해 둔다
+        var entryQuery = new URLSearchParams(window.location.search);
+        var cameForOneSpot = !!(entryQuery.get('id') || entryQuery.get('spot') || entryQuery.get('q'));
 
         function storedId() {
           try { return String(localStorage.getItem(storageKey) || ''); } catch (e) { return noticeId; }
@@ -9914,6 +9865,10 @@ var liveSearchTimer = null;
         //   (11-02 굴업도 알림을 지도에서 잠깐 띄웠다 되돌려, 그걸 닫은 사람에게 10-31 알림이 다시 뜨지 않게)
         function showNotice() {
           if (storedId() >= noticeId) {
+            root.hidden = true;
+            return;
+          }
+          if (cameForOneSpot) {
             root.hidden = true;
             return;
           }

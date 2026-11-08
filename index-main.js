@@ -530,8 +530,9 @@
       modal.style.height = 'calc(var(--vh, 1vh) * 100)';
       modal.style.maxHeight = 'calc(var(--vh, 1vh) * 100)';
       modal.innerHTML = `
-        <div class="modal-app-header" style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); height:auto !important; min-height:48px; padding:12px 14px !important; padding-top:calc(12px + env(safe-area-inset-top, 0px)) !important; display:flex; justify-content:flex-start; align-items:center; box-sizing:border-box;">
+        <div class="modal-app-header" style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); height:auto !important; min-height:48px; padding:12px 14px !important; padding-top:calc(12px + env(safe-area-inset-top, 0px)) !important; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box;">
           <span style="font-size:0.95rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">테마 스팟 아카이브</span>
+          <button type="button" onclick="window.closeThemeSpotAllModal()" aria-label="닫기" style="background:var(--bg-2); border:1px solid var(--line-strong); color:var(--tx-1); width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </div>
 
         <div style="flex-shrink:0; background:#07090e; padding:6px 14px 8px 14px; border-bottom:1px solid rgba(255,255,255,0.06); box-sizing:border-box;">
@@ -549,7 +550,7 @@
           </nav>
         </div>
 
-        <div id="themeSpotAllScrollBody" class="modal-scroll-body" style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; contain:content; padding:12px 14px calc(30px + env(safe-area-inset-bottom, 0px)) 14px; box-sizing:border-box;">
+        <div id="themeSpotAllScrollBody" class="modal-scroll-body" style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; contain:content; padding:12px 14px calc(76px + env(safe-area-inset-bottom, 8px)) 14px; box-sizing:border-box;">
           <div id="themeSpotAllGridContainer" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; width:100%; box-sizing:border-box;"></div>
         </div>
       `;
@@ -2058,6 +2059,8 @@
         if (heroPlogIdx > 0) nextHeroRecords.unshift(nextHeroRecords.splice(heroPlogIdx, 1)[0]);
         var prevHeroKeys = (window.heroTopRecords || []).map(heroKeyOf).join('|');
         var nextHeroKeys = nextHeroRecords.map(heroKeyOf).join('|');
+        // 피드 목록을 갈아 끼우면 남겨 둔 피드 화면과 어긋나니, 다음에 피드를 열 때 새로 그린다
+        if (window.__allLoadedFeeds !== allCleanFeeds) window.__okbmFeedPaintedAt = 0;
         window.__allLoadedFeeds = allCleanFeeds;
         window.__okbmHomeFeedPool = allCleanFeeds;
         window.heroTopRecords = nextHeroRecords;

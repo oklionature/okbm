@@ -4430,6 +4430,7 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
     return useCached();
   }
 
+  window.__okbmSpotsFailCode = '';
   try {
     var controller = new AbortController();
     // 저장해 둔 목록이 있으면 오래 기다리지 않고 그걸 쓴다. 없으면 느린 연결에서도 끝까지 받는다.
@@ -4447,6 +4448,7 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
         window.__okbmSpotsMemoryCache = spots;
         window.__okbmSpotsFetchedAt = Date.now();
         window.__okbmSpotsFailedAt = 0;
+        window.__okbmSpotsFailCode = '';
         if (typeof window.renderSpots === 'function') {
           window.renderSpots();
         }
@@ -4454,7 +4456,10 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
         return spots;
       }
     }
-  } catch (e) { console.warn('[romantic-sync.js:fetchMasterSpotsFromSupabase]', e); }
+  } catch (e) {
+    console.warn('[romantic-sync.js:fetchMasterSpotsFromSupabase]', e);
+    window.__okbmSpotsFailCode = (e && e.code) || '';
+  }
 
   window.__okbmSpotsFailedAt = Date.now();
   return cacheUsable ? useCached() : cached;
@@ -5712,7 +5717,7 @@ function ensureMyReportAndAuthModalsInDOM() {
           <img src="logo.png" alt="낭만루트 로고" style="width:64px; height:64px; object-fit:contain; display:block;" />
           <div>
             <h3 style="color:#ffffff; font-size:1.02rem; font-weight:900; letter-spacing:-0.02em; margin:0;">낭만루트 로그인</h3>
-            <p id="loginModalMessage" style="font-size:0.72rem; color:#94a3b8; line-height:1.4; margin-top:5px; margin-bottom:0; word-break:keep-all; white-space:pre-line;">로그인후 낭만루트의 모든 기능을 이용하실수 있습니다.</p>
+            <p id="loginModalMessage" style="font-size:0.72rem; color:#94a3b8; line-height:1.4; margin-top:5px; margin-bottom:0; word-break:keep-all; white-space:pre-line;">로그인 후 낭만루트의 모든 기능을 이용하실 수 있습니다.</p>
           </div>
           <div style="width:100%; display:flex; flex-direction:column; gap:7px; margin-top:6px;">
             <button type="button" class="modal-btn btn-social-apple" onclick="loginWithApple()" style="width:100%; height:34px !important; min-height:34px !important; border-radius:8px !important; font-size:0.76rem !important; font-weight:800 !important; padding:0 10px !important; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; background:#ffffff; color:#000000; border:none;">
@@ -7301,7 +7306,7 @@ function openLoginModal(opts) {
     if (msgEl) {
       msgEl.textContent = (opts && typeof opts === 'object' && opts.message)
         ? String(opts.message)
-        : '로그인후 낭만루트의 모든 기능을 이용하실수 있습니다.';
+        : '로그인 후 낭만루트의 모든 기능을 이용하실 수 있습니다.';
     }
     var modal = document.getElementById('loginModalOverlay');
     if (modal) {
@@ -7594,6 +7599,8 @@ window.navigateToDockTab = function(tabId) {
     }
   } else if (tabId === 'report') {
     if (!isUserLoggedIn()) {
+      // 손님은 리포트로 넘어가지 않으니, 누르자마자 켠 불을 지금 보이는 화면 탭으로 되돌린다(로그인 창을 닫아도 남지 않게)
+      window.ensureMasterBottomDock();
       openLoginModal();
       return;
     }
@@ -15454,6 +15461,7 @@ if (typeof window !== 'undefined') {
       { id: 'okbmNewSpotNotice', close: clickOwnClose('#okbmNewSpotNoticeClose') },
       { id: 'okbmHomeGuide', close: clickOwnClose('.hg-x') },
       { id: 'romanticConfirmModal', close: removeEl },
+      { id: 'okbmPlanDaySheet', close: removeEl },
       { id: 'romanticDatePickerModal', close: removeEl },
       { id: 'pastTripDatePickerModal', close: removeEl },
       { id: 'tripDatePickerModal', close: removeEl },

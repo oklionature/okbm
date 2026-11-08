@@ -9660,6 +9660,7 @@ window.renderHistoryStage = function(isLoading, opts) {
         window.renderHistoryStage(false, { serverOnly: true });
       }
       window.__okbmVaultJustSaved = null;
+      window.__okbmFeedPaintedAt = fromServer ? Date.now() : 0;
       var reel = document.getElementById('reelsVerticalContainer');
       if (reel) reel.scrollTop = 0;
       if (liveContent) liveContent.style.visibility = '';
@@ -9679,6 +9680,17 @@ window.renderHistoryStage = function(isLoading, opts) {
         paintVaultFromList(serverOk ? feeds : null, serverOk);
       });
     };
+
+    // 다른 탭에 다녀온 거면(10분 안) 다시 받아 처음부터 그리지 않고 보던 자리 그대로 보여 준다.
+    // 다시 받으면 목록 순서가 바뀌고 맨 위로 돌아가 보던 글을 잃었다. 방금 글을 올렸으면 새로 그린다
+    var keptReel = document.getElementById('reelsVerticalContainer');
+    if (keptReel && keptReel.querySelector('.reel-page-snap[data-feed-id]') && !window.__okbmVaultJustSaved &&
+        window.__okbmFeedPaintedAt && (Date.now() - window.__okbmFeedPaintedAt) < 10 * 60 * 1000) {
+      if (historyContent) historyContent.style.visibility = '';
+      keptReel.scrollTop = window.__okbmFeedScrollTop || 0;
+      if (typeof window.okbmBindReelFeedObserver === 'function') window.okbmBindReelFeedObserver();
+      return;
+    }
 
     var bootFresh = window.__okbmVaultBootState === 'server'
       && window.__okbmVaultBootAt
@@ -9705,6 +9717,8 @@ window.renderHistoryStage = function(isLoading, opts) {
   };
 
   window.closeHistoryModal = function() {
+    var reel = document.getElementById('reelsVerticalContainer');
+    if (window.__okbmHistoryModalOpen && reel) window.__okbmFeedScrollTop = reel.scrollTop;
     window.__okbmHistoryModalOpen = false;
     if (typeof window.okbmUnbindOverlayViewportFit === 'function') {
       window.okbmUnbindOverlayViewportFit();

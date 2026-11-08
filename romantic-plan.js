@@ -3464,9 +3464,12 @@ window.saveCurrentPackingRecord = function() {
     okbmPlanCloseSheet();
     var wrap = document.createElement('div');
     wrap.id = 'okbmPlanDaySheet';
+    // 막까지 한 창으로 잡혀야 휴대폰 뒤로 가기가 안쪽 상자만 지우고 어두운 막을 남기지 않는다
+    wrap.setAttribute('role', 'dialog');
+    wrap.setAttribute('aria-modal', 'true');
     wrap.style.cssText = 'position:fixed; inset:0; z-index:2147483647; display:flex; flex-direction:column; justify-content:flex-end;';
     wrap.innerHTML = '<div class="js-pds-close" style="position:absolute; inset:0; background:rgba(0,0,0,0.6);"></div>' +
-      '<div role="dialog" aria-modal="true" style="position:relative; width:100%; max-width:520px; margin:0 auto; max-height:86vh; max-height:86dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; background:#111318; border-top-left-radius:22px; border-top-right-radius:22px; border-top:1px solid rgba(255,255,255,0.08); padding:10px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display:flex; flex-direction:column; gap:12px; box-sizing:border-box;">' +
+      '<div class="okbm-pds-box" style="position:relative; width:100%; max-width:520px; margin:0 auto; max-height:86vh; max-height:86dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; background:#111318; border-top-left-radius:22px; border-top-right-radius:22px; border-top:1px solid rgba(255,255,255,0.08); padding:10px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display:flex; flex-direction:column; gap:12px; box-sizing:border-box;">' +
       '<div style="width:38px; height:4px; border-radius:2px; background:#3a3d44; margin:0 auto 2px; flex-shrink:0;"></div>' + inner + '</div>';
     document.body.appendChild(wrap);
     // 달력이 가려지지 않게 '다가오는 일정' 칸 윗선까지만 올라온다
@@ -3474,7 +3477,7 @@ window.saveCurrentPackingRecord = function() {
     var anchor = document.getElementById('planUpcomingWrap');
     var top = anchor ? anchor.getBoundingClientRect().top : 0;
     if (top > 0 && top < window.innerHeight) {
-      var dlg = wrap.querySelector('[role="dialog"]');
+      var dlg = wrap.querySelector('.okbm-pds-box');
       if (dlg) dlg.style.maxHeight = Math.round(Math.max(window.innerHeight - top, Math.min(460, window.innerHeight * 0.86))) + 'px';
     }
     return wrap;

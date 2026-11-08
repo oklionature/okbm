@@ -450,7 +450,7 @@
       '#okbmHomeHub .hh-row small{flex:none;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}',
       '#okbmHomeHub .hh-empty{padding:28px 0 22px;text-align:center;font-size:13px;color:var(--sub)}',
       '#okbmHomeMag .hm-head{padding:0 14px;margin-bottom:10px;font-size:var(--fs-title,16px);font-weight:900;color:var(--tx)}',
-      '#okbmHomeMag .hm-rail{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 14px;scroll-snap-type:x proximity}',
+      '#okbmHomeMag .hm-rail{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 14px;scroll-padding:0 14px;scroll-snap-type:x proximity}',
       '#okbmHomeMag .hm-rail::-webkit-scrollbar{display:none}',
       '#okbmHomeMag .hm-card{position:relative;flex:none;width:124px;aspect-ratio:4/5;border-radius:12px;overflow:hidden;background:#1c1c20;scroll-snap-align:start;text-align:left}',
       '#okbmHomeMag .hm-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}',
@@ -2844,7 +2844,7 @@
     el.hidden = false;
     el.innerHTML = '<div class="hm-head">낭만 매거진</div><div class="hm-rail">' + list.map(function (n) {
       const cover = newsImgs(n)[0];
-      return `<button type="button" class="hm-card" data-a="news" data-v="${esc(n.id)}" aria-label="${esc(n.title)}">${cover ? `<img src="${escapeHtml(okbmFastImageUrl(cover, 320))}" alt="" loading="lazy" decoding="async">` : ''}<span>${n.is_active === false ? '<em>숨김</em>' : ''}${esc(n.title)}</span></button>`;
+      return `<button type="button" class="hm-card" data-a="news" data-v="${esc(n.id)}" aria-label="${esc(n.title)}">${cover ? `<img src="${escapeHtml(okbmFastImageUrl(cover, 320))}" alt="" loading="lazy" decoding="async">` : ''}${cover ? (n.is_active === false ? '<span><em>숨김</em></span>' : '') : `<span>${n.is_active === false ? '<em>숨김</em>' : ''}${esc(n.title)}</span>`}</button>`;
     }).join('') + (D.admin ? '<button type="button" class="hm-card add" data-a="new-news" data-v="magazine">' + ico(P.plus, 20) + '<span>매거진 올리기</span></button>' : '') + '</div>';
   }
   // 소식·매거진 보기 (아래에서 올라오는 창). 사진이 여러 장이면 옆으로 넘긴다
