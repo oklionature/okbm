@@ -101,7 +101,7 @@
   // revBand: 평점순에서 고른 점수대 'all' | '45'(4.5 이상) | '4'(4점대) | '3'(3점대) | 'low'(3점 미만)
   // hub: 홈 라운지 알약 'board' | 'poll' | 'review' | 'guide'
   const S = { tab: 2, wtab: 2, cat: 'all', gkind: 'question', gcat: 'all', revSpot: null, revView: 'recent', revBand: 'all', hub: 'board',
-    gt: { kind: 'review', cat: 'all', q: '', sort: 'count' }, keep: '' };
+    gt: { kind: 'review', cat: 'all', q: '', sort: 'count', open: '' } };
   let timeSig = ''; // 신청·오픈 상태 요약 (renderAll·timeTick)
 
   // ---------- 날짜 ----------
@@ -595,6 +595,7 @@
       '.lm-gtabs::-webkit-scrollbar{display:none}',
       '.lm-gtabs button{flex:none;height:36px;font-size:13px;font-weight:700;color:var(--sub);border-bottom:2px solid transparent}',
       '.lm-gtabs button.on{color:var(--tx);border-bottom-color:var(--tx)}',
+      '.lm-gbback{display:inline-flex;align-items:center;gap:4px;min-height:40px;margin:2px 0 6px -4px;font-size:14px;font-weight:700;color:var(--sub)}',
       '.lm-gbsearch{display:flex;align-items:center;gap:8px;height:46px;padding:0 14px;border-radius:14px;background:#1c1c20;border:1px solid rgba(255,255,255,.08);color:var(--sub)}',
       '.lm-gbsearch input{flex:1;min-width:0;height:44px;border:0;background:none;color:var(--tx);font-size:16px;font-weight:600;outline:none;-webkit-appearance:none}',
       '.lm-gbsearch input::placeholder{color:var(--sub);font-weight:500}',
@@ -2314,8 +2315,7 @@
       <div class="lmx-links">${links.join('')}</div></div>`;
     return fold(p.id, head, body);
   }
-  // 게시판 '전체': 고정 글 → 설문·투표 → 백패킹이야기 → 그 밖. 장비 글은 '장비' 탭에서 본다(대표님 11-09).
-  // 알림·장비 창에서 장비 글 하나를 열 때만(S.keep) 그 글을 남긴다
+  // 게시판 '전체': 고정 글 → 설문·투표 → 백패킹이야기 → 그 밖. 장비 글은 '장비' 탭에서 연다(대표님 11-09, openGearPost)
   function allOrder(list) {
     const pin = [], poll = [], story = [], gear = [], etc = [];
     list.forEach(function (p) {
@@ -2325,7 +2325,7 @@
       else if (p.category === 'gear') gear.push(p);
       else etc.push(p);
     });
-    return pin.concat(poll, story, etc, gear.filter(function (p) { return p.id === S.keep; }));
+    return pin.concat(poll, story, etc);
   }
   function boardListHtml() {
     const key = boardKey();
@@ -2559,6 +2559,23 @@
   }
   const PANES = [paneEvents, paneGuide, paneBoard, paneReviews, paneDeals, paneGear];
 
+  async function openGearPost(id) {
+    try {
+      if (loadAllPromise) await loadAllPromise;
+      let p = findPost(id);
+      if (!p) p = await loadPostById(id);
+      if (!p) { toast('글을 찾을 수 없어요. 지워졌거나 볼 수 없는 글이에요', true); return; }
+      S.gt.open = String(p.id);
+      S.gt.kind = p.gear_kind === 'question' ? 'question' : 'review';
+      if (win) { winTo(TAB_GEAR); rerenderPane(TAB_GEAR); } else openLoungeWindow(TAB_GEAR, null, null);
+      const pane = paneByTab(TAB_GEAR);
+      if (pane) pane.scrollTop = 0;
+      focusItem(TAB_GEAR, p.id, false);
+    } catch (e) {
+      console.warn('[lounge.js:openGearPost]', e);
+      toast('글을 불러오지 못했어요', true);
+    }
+  }
   // ----- 라운지 '장비' 탭 (I10): 검색 · 후기|질문(후기 먼저) · 종류 · 장비 하나에 한 줄 -----
   const GB_CATS = [['all', '전체'], ['shelter', '텐트'], ['bag', '침낭'], ['mat', '매트'], ['pack', '배낭'], ['kitchen', '조리'], ['wear', '의류'], ['electronics', '전자'], ['camp', '캠프'], ['food', '식량'], ['other', '기타']];
   const GB_SORTS = [['count', '후기 많은 순'], ['rating', '별점 높은 순'], ['recent', '최근 후기 순']];
@@ -2617,6 +2634,11 @@
     if (box) keepOpen(box, function () { box.innerHTML = gbListHtml(); });
   }
   function paneGear(full) {
+    const open = full && S.gt.open ? findPost(S.gt.open) : null;
+    if (open) {
+      return '<button type="button" class="lm-gbback" data-a="gb-back">' + ico(P.back, 20) + '<span>' + (open.gear_kind === 'question' ? '장비 질문' : '장비 후기') + ' 목록</span></button>'
+        + '<div class="lmh-list">' + postItem(open) + '</div>';
+    }
     if (!full) { // 홈(창 아닌 곳): 후기 많은 장비 세 줄
       if (GB.key !== gbKey()) gbLoad();
       const rows = (GB.rows || []).slice(0, 3);
@@ -2987,7 +3009,7 @@
     if (key === 'gear') { // 장비 말머리 글: 질문·후기 꼬리표, 오른쪽에 종류 (I2)
       if (!postsBy.gear) return '<div class="hh-empty">불러오는 중…</div>';
       const rows = visiblePosts('gear').slice(0, HUB_N).map(function (p) {
-        return hubRow('data-a="lounge" data-v="2" data-id="' + esc(p.id) + '"', p.gear_kind === 'review' ? '후기' : '질문', p.title, GEAR_CAT[p.gear_cat] || '');
+        return hubRow('data-a="lounge" data-v="' + TAB_GEAR + '" data-id="' + esc(p.id) + '"', p.gear_kind === 'review' ? '후기' : '질문', p.title, GEAR_CAT[p.gear_cat] || '');
       }).join('');
       return (rows || '<div class="hh-empty">첫 장비 후기를 올려 보세요</div>') + hubFoot('data-a="hub-all" data-v="gear"', '장비 전체 보기', 'gear', '후기 쓰기');
     }
@@ -3210,6 +3232,7 @@
   // 자유게시판만 바뀐 경우(댓글·글 쓰기/삭제): 홈은 게시판 탭일 때만, 창은 게시판 칸만 다시 그린다
   const BOARD_TAB = 2;
   function renderBoard() {
+    if (S.gt.open) rerenderPane(TAB_GEAR);
     if (isSplit()) renderSplit(BOARD_TAB);
     else if (S.tab === BOARD_TAB) renderHome();
     rerenderPane(BOARD_TAB);
@@ -3252,7 +3275,6 @@
   }
   // 목록에 아직 없는 글(첫 로딩 중, 오래된 글, 알림·신고 검수에서 열 때): 불러온 뒤 펼친다
   async function focusPostWhenReady(id) {
-    S.keep = String(id || '');
     try {
       if (loadAllPromise) await loadAllPromise;
       if (!win) return;
@@ -3261,6 +3283,8 @@
         if (!p) { toast('글을 찾을 수 없어요. 지워졌거나 볼 수 없는 글이에요', true); return; }
       }
       if (!win) return;
+      const fp = findPost(id);
+      if (fp && fp.category === 'gear') { openGearPost(id); return; }
       if (S.cat !== 'all') S.cat = 'all';
       rerenderPane(2);
       // 신고했거나 차단한 사람의 글이면 목록에서 빠져 있다
@@ -3279,6 +3303,7 @@
     if (D.status === 'idle') loadAll();
     if (win) {
       winTo(tab);
+      if (itemId && tab === TAB_GEAR) { setTimeout(function () { openGearPost(itemId); }, reduce ? 0 : 360); return; }
       if (itemId) setTimeout(function () { if (win && !focusItem(tab, itemId, true) && tab === 2) focusPostWhenReady(itemId); }, reduce ? 0 : 360);
       return;
     }
@@ -3286,7 +3311,7 @@
     clearTimeout(winTimer);
     layer.querySelectorAll('.lm-win').forEach(function (n) { n.remove(); }); // 닫히는 중이던 창
     const post = itemId && findPost(itemId);
-    if (itemId && tab === 2) S.keep = String(itemId);
+    if (post && post.category === 'gear' && (tab === 2 || tab === TAB_GEAR)) { S.gt.open = String(post.id); S.gt.kind = post.gear_kind === 'question' ? 'question' : 'review'; tab = TAB_GEAR; }
     if (post && S.cat !== 'all' && post.category !== S.cat) S.cat = 'all';
     S.wtab = tab;
     layer.insertAdjacentHTML('afterbegin', winHtml(tab));
@@ -3300,6 +3325,7 @@
     revealBtn(wmenu, tab);
     const target = itemId ? focusItem(tab, itemId, false) : null;
     if (itemId && !target && tab === 2) focusPostWhenReady(itemId);
+    if (itemId && !target && tab === TAB_GEAR) openGearPost(itemId);
     opener = from || document.activeElement;
     lockScroll();
     register('loungeWindow', closeLoungeWindow);
@@ -4899,14 +4925,13 @@
         const p = findPost(v);
         if (!p) break;
         closeSheet(true);
-        const all = postsBy.all || (postsBy.all = { rows: [], done: false, loading: false, cursor: null });
-        if (!all.rows.some(function (x) { return x.id === p.id; })) {
-          all.rows.push(Object.assign({}, p, { __extra: true }));
-          all.rows.sort(function (x, y) { return String(y.created_at).localeCompare(String(x.created_at)); });
-        }
-        focusPostWhenReady(p.id);
+        openGearPost(p.id);
         break;
       }
+      case 'gb-back':
+        S.gt.open = '';
+        rerenderPane(TAB_GEAR);
+        break;
       case 'gear-write': {
         if (SH.kind !== 'gear') break;
         const g = SH.post, gk = SH.gk;
@@ -4936,6 +4961,7 @@
       }
       case 'gb-kind':
         S.gt.kind = v === 'question' ? 'question' : 'review';
+        S.gt.open = '';
         rerenderPane(TAB_GEAR);
         break;
       case 'gb-cat':
@@ -5021,7 +5047,7 @@
           if (!ok) return;
           dropPost(p.id);
           renderBoard();
-          if (p.category === 'gear') { gbReset(); rerenderPane(TAB_GEAR); }
+          if (p.category === 'gear') { if (S.gt.open === String(p.id)) S.gt.open = ''; gbReset(); rerenderPane(TAB_GEAR); }
         });
         break;
       }
