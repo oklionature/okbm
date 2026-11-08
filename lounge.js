@@ -3910,7 +3910,7 @@
   // =====================================================================
   // 회원 쓰기 (P4): 글·사진·댓글·좋아요·박지 후기. 권한은 RLS, 닉네임·개수는 서버 트리거가 채운다
   // =====================================================================
-  const POST_CATS = [['backpacking', '백패킹이야기'], ['gear', '장비'], ['poll', '설문·투표'], ['suggestion', '건의']];
+  const POST_CATS = [['backpacking', '백패킹이야기'], ['poll', '설문·투표'], ['suggestion', '건의']]; // 장비는 장비 탭에서 따로 쓴다
   const POLL_ENDS = [['1', '1일'], ['3', '3일'], ['7', '7일'], ['0', '마감 없음']];
 
   // ----- 글 쓰기·고치기 -----
@@ -4197,7 +4197,6 @@
   function gearFieldsHtml(p, cat, st) {
     if (p && !isRvPost(p)) return p.category === 'gear' ? '<p class="lm-hint">' + esc(catLabel(p) + (p.gear_name ? ' · ' + gearShort(p.gear_name) : '')) + '. 종류·장비와 질문·후기는 올린 뒤에 바꿀 수 없어요.</p>' : '';
     return `<div data-gear-fields ${cat === 'gear' ? '' : 'hidden'}>
-        ${p ? '' : segHtml('pgkind', st.gkind, '질문·후기')}
         <span class="lm-lbl">종류 <b aria-hidden="true">*</b></span>
         <div class="lm-chipline" role="radiogroup" aria-label="장비 종류" data-gcat-chips>${gearCatChips(st)}</div>
         <label class="lm-lbl" for="lmGearQ" data-gear-q-lbl>${st.gkind === 'review' ? '어떤 장비인가요 <b aria-hidden="true">*</b>' : '특정 장비 (선택)'}</label>
@@ -4233,16 +4232,19 @@
     if (sg) { sg.hidden = true; sg.innerHTML = ''; }
     paintGearPick();
   }
+  // 게시판 글쓰기는 게시판 말머리만, 장비 글쓰기는 장비만(대표님 11-09). 장비 창은 들어온 곳에서 질문/후기가 정해진다
   function postFormHtml(p, cat) {
-    const poll = cat === 'poll';
-    return `<h3 id="loungeSheetTitle">${p ? '글 고치기' : '새 글'}</h3>
+    const poll = cat === 'poll', gear = cat === 'gear';
+    const rv = gear && (p ? isRvPost(p) : SH.gkind === 'review');
+    const ttl = gear ? '장비 ' + (rv ? '후기' : '질문') + (p ? ' 고치기' : (rv ? ' 쓰기' : '하기')) : (p ? '글 고치기' : '새 글');
+    return `<h3 id="loungeSheetTitle">${ttl}</h3>
       <form data-form="post" novalidate autocomplete="off">
-        <div class="lm-chipline" role="radiogroup" aria-label="분류">${POST_CATS.map(function (c) {
+        ${gear ? '' : `<div class="lm-chipline" role="radiogroup" aria-label="분류">${POST_CATS.map(function (c) {
           const on = c[0] === cat;
           return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="pcat" data-v="' + c[0] + '"' + (p ? ' disabled' : '') + '>' + (c[0] === 'suggestion' ? ico(P.lock, 13) + ' ' : '') + esc(c[1]) + '</button>';
-        }).join('')}</div>
+        }).join('')}</div>`}
         <p class="lm-hint" data-private-note ${cat === 'suggestion' ? '' : 'hidden'}>건의는 나와 운영팀만 볼 수 있어요. 답변이 달리면 알림으로 알려 드려요.</p>
-        ${p ? '<p class="lm-hint">분류는 올린 뒤에 바꿀 수 없어요.</p>' : ''}
+        ${p && !gear ? '<p class="lm-hint">분류는 올린 뒤에 바꿀 수 없어요.</p>' : ''}
         ${gearFieldsHtml(p, cat, SH)}
         <label class="lm-lbl" for="lmPostTitle"><span data-title-lbl>${poll ? '질문' : '제목'}</span> <b aria-hidden="true">*</b></label>${inp('lmPostTitle', 'title', p && p.title, 'maxlength="80" required data-autofocus placeholder="' + (poll ? '무엇을 물어볼까요?' : '제목') + '"')}
         ${!p || isRvPost(p) ? rvTextsHtml(p) : ''}
@@ -4940,12 +4942,6 @@
         openPostForm(null, 'gear', { kind: gk, gear: { id: g.gear_id || '', name: g.gear_name, cat: g.gear_cat || 'other' } });
         break;
       }
-      case 'pgkind':
-        if (SH.kind !== 'post' || SH.id) break;
-        SH.gkind = v;
-        t.parentElement.querySelectorAll('button').forEach(function (b) { const on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); });
-        paintReview();
-        break;
       case 'pgcat':
         if (SH.kind !== 'post' || (SH.id && !SH.editRv)) break;
         if (SH.gcat !== v) { SH.rv.pros = []; SH.rv.cons = []; SH.rv.stand = ''; }
