@@ -9627,14 +9627,14 @@ window.openPastTripRegisterModal = function(ev) {
       '.ptw-rv .stp-chip{border-color:#2a2a30;background:#17171b;color:#d1d1d6;font-size:0.72rem}.ptw-rv .stp-chip.on{background:#fff;color:#000;border-color:#fff}' +
       '.ptw-sw{flex:none;width:44px;height:26px;border-radius:13px;border:0;background:#3a3a40;position:relative;cursor:pointer;padding:0;transition:background .2s}.ptw-sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}' +
       '.ptw-sw[aria-checked="true"]{background:#ffffff}.ptw-sw[aria-checked="true"]:after{background:#0f0f11}.ptw-sw[aria-checked="true"]:after{transform:translateX(18px)}.ptw-sw:disabled{opacity:.45;cursor:default}' +
-      '.ptw-plog{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,background .2s}.ptw-plog.on{border-color:rgba(255,255,255,0.22)}' +
-      '.ptw-plog .ptw-pub b{display:inline-flex;align-items:center;gap:6px}.ptw-plog .ptw-pub b svg{width:17px;height:17px;color:#f2f2f3}' +
+      '.ptw-plog{border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,background .2s}.ptw-plog.on{border-color:rgba(52,211,153,0.4);background:rgba(52,211,153,0.05)}' +
+      '.ptw-plog .ptw-pub b{display:inline-flex;align-items:center;gap:6px}.ptw-plog .ptw-pub b svg{width:17px;height:17px;color:#34d399}.ptw-plog .ptw-sw[aria-checked="true"]{background:#34d399}.ptw-plog .ptw-sw[aria-checked="true"]:after{background:#fff}' +
       '.ptw-plog p{margin:0;font-size:0.72rem;color:#8b8b93;line-height:1.5;font-weight:600}.ptw-plog-row{display:flex;align-items:center;gap:12px}' +
-      '.ptw-plog-slot{flex:none;position:relative;width:84px;height:84px;border-radius:12px;border:1.5px dashed rgba(255,255,255,0.22);background:rgba(255,255,255,0.04);color:#d1d1d6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:0.66rem;font-weight:800;cursor:pointer;padding:0;font-family:inherit;background-size:cover;background-position:center}' +
-      '.ptw-plog-slot svg{width:24px;height:24px}.ptw-plog-slot.has{border-style:solid;border-color:#ffffff}.ptw-plog-slot.has>span{display:none}' +
-      '.ptw-plog-ck{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:#ffffff;color:#000000;display:flex;align-items:center;justify-content:center}.ptw-plog-ck svg{width:13px;height:13px;stroke-width:3}' +
-      '.ptw-plog-msg{min-width:0;font-size:0.72rem;line-height:1.5;color:#8b8b93;font-weight:700}.ptw-plog-msg b{display:block;font-size:0.80rem;color:#ffffff;font-weight:900}.ptw-plog-msg.warn b{color:#f2f2f3}' +
-      '.ptw-plog-slot.bad{border-color:#f2f2f3;border-style:solid}' +
+      '.ptw-plog-slot{flex:none;position:relative;width:84px;height:84px;border-radius:12px;border:1.5px dashed rgba(52,211,153,0.5);background:rgba(52,211,153,0.06);color:#6ee7b7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:0.66rem;font-weight:800;cursor:pointer;padding:0;font-family:inherit;background-size:cover;background-position:center}' +
+      '.ptw-plog-slot svg{width:24px;height:24px}.ptw-plog-slot.has{border-style:solid;border-color:#34d399}.ptw-plog-slot.has>span{display:none}' +
+      '.ptw-plog-ck{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:#34d399;color:#04201c;display:flex;align-items:center;justify-content:center}.ptw-plog-ck svg{width:13px;height:13px;stroke-width:3}' +
+      '.ptw-plog-msg{min-width:0;font-size:0.72rem;line-height:1.5;color:#8b8b93;font-weight:700}.ptw-plog-msg b{display:block;font-size:0.80rem;color:#6ee7b7;font-weight:900}.ptw-plog-msg.warn b{color:#fbbf24}' +
+      '.ptw-plog-slot.bad{border-color:#fbbf24;border-style:solid}' +
       '.ptw-plog-msg button{margin-top:4px;background:none;border:0;padding:0;color:#8b8b93;font-size:0.68rem;font-weight:800;text-decoration:underline;cursor:pointer;font-family:inherit}' +
       '.ptw-done{position:absolute;inset:0;z-index:30;background:#0f0f11;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;gap:12px;padding:24px;text-align:center}.ptw-done[hidden]{display:none}.ptw-done .ck{width:56px;height:56px;border-radius:50%;background:#ffffff;color:#000000;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center}' +
       '.ptw-done>:first-child{margin-top:auto}.ptw-done>:last-child{margin-bottom:auto}.ptw-done>*{flex-shrink:0}' +
@@ -9706,8 +9706,8 @@ window.openPastTripRegisterModal = function(ev) {
           '<div id="pastTripPresetHint" style="font-size:0.68rem; color:#6b6b73;">장비 없이 일정·사진·일지만 등록합니다.</div>' +
         '</div></details>' +
         '<details class="ptw-fold"><summary>영상·블로그 링크 남기기 <span>선택 ▾</span></summary><div class="ptw-fb">' +
-          '<input type="text" id="pastTripYoutubeInput" inputmode="url" placeholder="YouTube 링크" onblur="window.onPastTripLinkBlur(\'yt\');" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />' +
-          '<input type="text" id="pastTripNaverInput" inputmode="url" placeholder="네이버 블로그 링크" onblur="window.onPastTripLinkBlur(\'blog\');" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />' +
+          '<input type="text" id="pastTripYoutubeInput" inputmode="url" placeholder="YouTube 링크" onblur="window.onPastTripLinkBlur(\'yt\');" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(244,63,94,0.28); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />' +
+          '<input type="text" id="pastTripNaverInput" inputmode="url" placeholder="네이버 블로그 링크" onblur="window.onPastTripLinkBlur(\'blog\');" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(3,199,90,0.28); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />' +
           '<div style="font-size:calc(0.66rem + 1pt); color:#6b6b73; line-height:1.45;">다른 낭만 루터분들에게 도움이 됩니다</div>' +
         '</div></details>' +
         '<div class="ptw-plog" id="pastTripPlogCard">' +
@@ -10546,7 +10546,7 @@ window._ptwShowDone = function(record, next) {
     '<h6>' + (pub ? '피드에 올라갔어요' : '나만 보기로 저장했어요') + '</h6>' +
     '<p>' + (pub ? '다른 낭만루터들이 피드와 박지 후기에서 볼 수 있어요.' : esc(why)) + '</p>' +
     (photo ? '<div class="ptw-card"><img src="' + escapeHtml(okbmSafeImageUrl(photo)) + '" alt="" referrerpolicy="no-referrer"><div><b>' + esc(spotShort) + '</b>' + esc(record.date || '') + '</div></div>' : '') +
-    (record.ploggingPhoto ? '<p class="ptw-plog-done" style="display:inline-flex;align-items:center;gap:6px;color:#f2f2f3;font-weight:800;">' + window.okbmPlogIcon() + '플로깅 1번이 더해졌어요</p>' : '') +
+    (record.ploggingPhoto ? '<p class="ptw-plog-done" style="display:inline-flex;align-items:center;gap:6px;color:#6ee7b7;font-weight:800;">' + window.okbmPlogIcon() + '플로깅 1번이 더해졌어요</p>' : '') +
     (pub ? '<p id="ptwFollowNews" hidden></p>' : '') +
     '<div id="ptwBadge" class="ptw-badge"></div>' +
     '<div class="ptw-row2"><button type="button" data-ptw-done="close">닫기</button>' +
