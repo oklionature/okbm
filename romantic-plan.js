@@ -3164,7 +3164,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   // 20260928: gears/*.json에서 앱이 쓰지 않는 필드(gear_id 중복, created_at, updated_at, category)와 공백을 뺐다. 데이터 값은 동일.
-  var CURRENT_GEAR_VERSION = '20261109_GEAR_TIDY4';
+  var CURRENT_GEAR_VERSION = '20261109_GEAR_TIDY5';
   var GEAR_SPLIT_CATS = ['shelter', 'sleep', 'pack', 'food', 'kitchen', 'wear', 'electronics', 'camp', 'other'];
   window.__okbmGearCatLoaded = window.__okbmGearCatLoaded || {};
   window.__okbmGearCatPromises = window.__okbmGearCatPromises || {};
