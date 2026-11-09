@@ -81,9 +81,9 @@
       '<div class="okbm-gcs-top">' + HEART + '<h2>지금까지 쓰면서<br>제일 좋았던 장비 하나</h2></div>' +
       '<p class="okbm-gcs-lead">그 장비 후기를 남겨 주세요. 별점과 꼬리표만 눌러도 돼요.</p>' +
       '<ul>' +
-        '<li><i>1</i><span><b>사기 전에 고민하는 낭만루터</b>가 실제 쓴 사람 말을 보고 고를 수 있어요</span></li>' +
-        '<li><i>2</i><span>같은 장비를 쓰는 낭만루터가 <b>질문</b>하면 알림이 와요</span></li>' +
-        '<li><i>3</i><span>후기 하나에 <b>10포인트</b>, 내 장비에도 저절로 들어가요</span></li>' +
+        '<li><i>1</i><span>다른 낭만루터의 <b>장비 선택</b>에 큰 도움이 돼요</span></li>' +
+        '<li><i>2</i><span>후기를 남긴 장비는 <b>내 장비 목록</b>에 들어가 장비 관리가 쉬워져요</span></li>' +
+        '<li><i>3</i><span>고마운 마음을 담아 <b>소정의 포인트</b>도 드려요</span></li>' +
       '</ul>' +
       '<button type="button" class="okbm-gcs-go" data-gc="go" data-metric-click="feat_map_gc_go">최애 장비 고르기</button>' +
       '<button type="button" class="okbm-gcs-later" data-gc="later">나중에</button>' +
