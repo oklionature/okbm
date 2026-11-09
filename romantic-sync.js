@@ -9964,7 +9964,8 @@ window.submitPastTripRegister = async function() {
     }
 
     // ④ 박지 후기: 피드는 이미 올라갔으니 후기가 안 돼도 피드는 그대로 둔다
-    if (review && !isUnregistered && review.spotId === spotId && window.okbmSpotReviewPick) {
+    // 별점을 안 눌렀으면 박지 후기에는 아무것도 남기지 않는다(칩·한 줄도 X, 대표님 11-09: 별점 없는 후기는 받지 않음)
+    if (review && review.star > 0 && !isUnregistered && review.spotId === spotId && window.okbmSpotReviewPick) {
       try {
         await window.okbmSpotReviewPick.save(spotId, review.star, review.tips, memo);
       } catch (rvErr) {
