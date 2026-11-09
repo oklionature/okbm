@@ -7578,7 +7578,85 @@ window.commitPlanDestination = async function(dateKey) {
     } catch (err) {
       console.error('[RomanticPlan] renderPlanStage error:', err);
     }
+    if (!subMode || subMode === 'calendar') setTimeout(okbmPlanGearIntro, 650);
   };
+
+  // ----- 낭만플랜 '내 장비' 알림 (대표님 11-09): 낭만플랜을 처음 열 때 한 번, 아래에서 올라오는 시트 -----
+  // 시안: .claude/mockups/notice-1109-gear/plan/plan.html. 다시 띄우려면 OKBM_PLAN_GEAR_INTRO 값을 바꾼다.
+  var OKBM_PLAN_GEAR_INTRO = '20261109';
+  function okbmPlanGearIntro() {
+    var key = 'okbm_plan_gear_intro';
+    try { if (localStorage.getItem(key) === OKBM_PLAN_GEAR_INTRO) return; } catch (e) { return; }
+    var modal = document.getElementById('romanticPlanModal');
+    if (!modal || modal.style.display === 'none' || document.getElementById('okbmPlanGearIntro')) return;
+    if (!document.getElementById('okbmPlanGearIntroCss')) {
+      var st = document.createElement('style');
+      st.id = 'okbmPlanGearIntroCss';
+      st.textContent = [
+        '#okbmPlanGearIntro{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}',
+        '#okbmPlanGearIntro .pgi{width:100%;max-width:480px;max-height:92%;overflow:auto;border-radius:24px 24px 0 0;background:#fff;color:#1d2b24;padding:10px 20px calc(18px + env(safe-area-inset-bottom, 0px));word-break:keep-all;letter-spacing:-.01em;font-family:inherit}',
+        '#okbmPlanGearIntro .pgi-grab{width:40px;height:5px;border-radius:3px;background:#d8dcd9;margin:0 auto 14px}',
+        '#okbmPlanGearIntro .pgi-ey{display:inline-flex;font-size:13px;font-weight:800;color:#1f7a50;background:#e8f5ee;padding:6px 10px;border-radius:999px}',
+        '#okbmPlanGearIntro h2{margin:12px 0 0;font-size:24px;line-height:1.32;font-weight:800;letter-spacing:-.03em;color:#1d2b24}',
+        '#okbmPlanGearIntro h2 em{font-style:normal;color:#2f9e6a}',
+        '#okbmPlanGearIntro .pgi-mine{margin-top:16px;border-radius:18px;background:linear-gradient(160deg,#eef7f2,#f6f9ff);padding:12px;display:grid;gap:8px}',
+        '#okbmPlanGearIntro .pgi-it{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:#fff;box-shadow:0 2px 10px rgba(31,71,52,.07)}',
+        '#okbmPlanGearIntro .pgi-it i{flex:none;width:36px;height:36px;border-radius:10px;background:#e8f5ee;display:grid;place-items:center}',
+        '#okbmPlanGearIntro .pgi-it svg{width:20px;height:20px;stroke:#2f9e6a;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}',
+        '#okbmPlanGearIntro .pgi-it div{flex:1;min-width:0}',
+        '#okbmPlanGearIntro .pgi-it b{display:block;font-size:14.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+        '#okbmPlanGearIntro .pgi-it small{display:block;margin-top:2px;font-size:12px;color:#5b655f}',
+        '#okbmPlanGearIntro .pgi-tag{flex:none;font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px}',
+        '#okbmPlanGearIntro .pgi-tag.my{background:#fff4d6;color:#8a5a00}',
+        '#okbmPlanGearIntro .pgi-tag.wr{background:#1f7a50;color:#fff}',
+        '#okbmPlanGearIntro .pgi-ben{margin-top:16px;display:grid;gap:12px}',
+        '#okbmPlanGearIntro .pgi-b{display:flex;gap:12px}',
+        '#okbmPlanGearIntro .pgi-b span{flex:none;width:24px;height:24px;border-radius:50%;background:#1f7a50;color:#fff;font-size:13px;font-weight:800;display:grid;place-items:center;margin-top:1px}',
+        '#okbmPlanGearIntro .pgi-b strong{display:block;font-size:15.5px;font-weight:800}',
+        '#okbmPlanGearIntro .pgi-b p{margin:3px 0 0;font-size:13.5px;line-height:1.5;color:#55625b}',
+        '#okbmPlanGearIntro .pgi-btns{margin-top:18px;display:grid;gap:4px}',
+        '#okbmPlanGearIntro .pgi-btns button{font-family:inherit;border:0;border-radius:14px;height:50px;font-size:16.5px;font-weight:800;background:#1f7a50;color:#fff;cursor:pointer}',
+        '#okbmPlanGearIntro .pgi-btns button.sec{height:40px;background:transparent;color:#5b655f;font-size:14.5px;font-weight:600}'
+      ].join('');
+      document.head.appendChild(st);
+    }
+    var root = document.createElement('div');
+    root.id = 'okbmPlanGearIntro';
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-label', '내 장비 등록 안내');
+    var tent = '<svg viewBox="0 0 24 24"><path d="M2.5 19c0-5.5 4.3-10 9.5-10s9.5 4.5 9.5 10Z"/><path d="M12 9v10"/><path d="M8.5 19 12 13l3.5 6"/></svg>';
+    var pack = '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="4"/><path d="M9 4V2.5h6V4"/><path d="M8 12h8"/></svg>';
+    root.innerHTML = '<div class="pgi"><div class="pgi-grab"></div><span class="pgi-ey">낭만플랜 · 내 장비</span>' +
+      '<h2>내 장비를 등록해 두면<br><em>더 편해져요</em></h2>' +
+      '<div class="pgi-mine" aria-hidden="true">' +
+        '<div class="pgi-it"><i>' + tent + '</i><div><b>빅아그네스 코퍼스퍼 HV UL2</b><small>텐트 · 1.42kg · 2024년 5월 구매</small></div><span class="pgi-tag my">★ 내 후기</span></div>' +
+        '<div class="pgi-it"><i>' + pack + '</i><div><b>오스프리 엑소스 48</b><small>배낭 · 1.13kg · 상태 좋음</small></div><span class="pgi-tag wr">후기 쓰기</span></div>' +
+      '</div>' +
+      '<div class="pgi-ben">' +
+        '<div class="pgi-b"><span>1</span><div><strong>가진 장비를 한곳에서 관리해요</strong><p>구매일·구매가·상태·메모까지<br>장비관리 \'내 장비\'에 모아 둘 수 있어요.</p></div></div>' +
+        '<div class="pgi-b"><span>2</span><div><strong>배낭 꾸리기가 빨라져요</strong><p>내 장비에서 바로 골라 담고,<br>배낭 무게도 바로 보여요.</p></div></div>' +
+        '<div class="pgi-b"><span>3</span><div><strong>후기도 바로 쓸 수 있어요</strong><p>내 장비 줄의 \'후기 쓰기\'를 누르면 끝.<br>후기를 쓰면 내 장비에 저절로 등록돼요.</p></div></div>' +
+      '</div>' +
+      '<div class="pgi-btns"><button type="button" data-pgi="go" data-metric-click="feat_plan_gear_intro_go">내 장비 등록하기</button><button type="button" class="sec" data-pgi="later" data-metric-click="feat_plan_gear_intro_later">나중에</button></div></div>';
+    function close() {
+      try { localStorage.setItem(key, OKBM_PLAN_GEAR_INTRO); } catch (e) {}
+      root.remove();
+    }
+    root.addEventListener('click', function(ev) {
+      var b = ev.target.closest('[data-pgi]');
+      if (b) {
+        close();
+        if (b.getAttribute('data-pgi') === 'go') {
+          window.activePlanSubMode = 'gears';
+          try { window.renderPlanStage(); } catch (err) { console.error('[RomanticPlan] gear intro', err); }
+        }
+        return;
+      }
+      if (ev.target === root) close();
+    });
+    document.body.appendChild(root);
+  }
 
   window.closePlanModal = function(opts) {
     opts = opts || {};
