@@ -9178,7 +9178,7 @@ window._pastTripSyncReview = function() {
         '<div class="ptw-pub"><div><b>' + esc(pick.name(id)) + ' 후기에도 남기기</b><small class="ptw-rvs">박지 정보창 \'박지 후기\'에 같이 올라가요</small></div>' +
           '<button type="button" class="ptw-sw" data-ptw-rv-sw role="switch" aria-checked="true" aria-label="박지 후기에도 남기기"></button></div>' +
         '<div data-ptw-rv-body style="display:flex;flex-direction:column;gap:2px;">' + pick.html(id) + '</div>' +
-        '<p class="ptw-rvh" data-ptw-rv-hint>위 한 줄 소감이 박지 후기 한 줄로 같이 올라가요.</p>' +
+        '<p class="ptw-rvh" data-ptw-rv-hint>별점을 안 누르면 박지 후기엔 올라가지 않아요.</p>' +
       '</div>';
   };
   paint();
