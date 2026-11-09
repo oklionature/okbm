@@ -42,7 +42,10 @@
     css.id = 'okbmHomeLayoutCss';
     css.textContent = [
       // 세 칸을 설명 칸에 바로 붙인다(홈 칸 사이 기본 간격 28px을 당김). 첫 화면에 히어로와 같이 보이게
-      '.hq{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:0 14px;margin-top:-20px}',
+      '.hq{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:0 14px;margin-top:-20px}',
+      // 11-09 '장비 후기' 칸: 노란 테두리·NEW(굴업도 줄 NEW는 11-09에 뺌), NEW는 일주일만(.hq-new를 start()에서 붙인다)
+      '.hq-btn.hq-gear{position:relative;border-color:rgba(255,214,120,.35)}',
+      '.hq-new{position:absolute;top:-7px;right:6px;font-style:normal;font-size:10px;font-weight:900;color:#1a1206;background:#f5b94a;border-radius:5px;padding:2px 5px;line-height:1.2}',
       '.hq-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:62px;padding:0 4px;border-radius:14px;background:#0c0d10;border:1px solid rgba(255,255,255,.08);color:#F2F3F5;font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}',
       '.hq-btn:active{background:#16161a}',
       '.hq-btn b{font-size:14px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}',
@@ -53,9 +56,26 @@
       '.hn{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.62);display:flex;justify-content:center;align-items:flex-start;padding:calc(var(--okbm-status-top, 12px) + 8px) 12px calc(8px + env(safe-area-inset-bottom, 0px));box-sizing:border-box}',
       '.hn-frame{position:relative;width:min(100%, 480px);max-height:100%;display:flex}',
       '.hn-scroll{width:100%;max-height:100%;overflow:auto;-webkit-overflow-scrolling:touch;border-radius:14px;background:#000}',
-      '.hn-scroll img{display:block;width:100%;height:auto}',
-      '.hn-act{position:sticky;bottom:0;display:block;width:calc(100% - 32px);margin:0 16px;padding:15px 10px;box-shadow:0 -14px 18px 6px #000;border:0;border-radius:12px;background:#2f9e6a;color:#fff;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer}',
-      '.hn-pad{height:14px}',
+      // 11-09 장비 알림: 그림 대신 글자로 그린 새벽 산 능선 판(.hg). 폰 한 화면(390×844)에 내리지 않고 다 보이게
+      '.hn-scroll.hg{background:#f4f8f6;border-radius:18px;color:#1d2b24;word-break:keep-all;letter-spacing:-.01em;display:flex;flex-direction:column}',
+      '.hg-hero{position:relative;padding:34px 20px 112px;background:linear-gradient(180deg,#ffe7cf 0%,#ffd9c2 30%,#d9ecf2 75%,#cfe7de 100%);overflow:hidden}',
+      '.hg-hero svg{position:absolute;left:0;bottom:0;width:100%;height:112px}',
+      '.hg-hin{position:relative}',
+      '.hg-ey{margin:0;font-size:13px;font-weight:700;letter-spacing:.04em;color:#c4622d}',
+      '.hg-hero h2{margin:6px 0 0;font-size:25px;line-height:1.3;font-weight:800;letter-spacing:-.03em;color:#1d2b24}',
+      '.hg-thx{margin:6px 0 0;font-size:15.5px;font-weight:600;color:#3d4d45}',
+      '.hg-vis{margin:14px 0 0;font-size:16px;line-height:1.5;font-weight:700;color:#1d2b24}',
+      '.hg-vis b{color:#1f7a50;font-weight:800}',
+      '.hg-w{position:relative;margin-top:-46px;padding:0 12px}',
+      '.hg-blk{margin-top:8px;padding:13px 15px 12px;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(31,71,52,.08)}',
+      '.hg-q{margin:0;font-size:17px;line-height:1.38;font-weight:800;letter-spacing:-.025em;color:#1d2b24}',
+      '.hg-q em{font-style:normal;color:#2f9e6a}',
+      '.hg-d{margin:6px 0 0;font-size:13px;line-height:1.55;color:#55625b}',
+      '.hg-end{margin:12px 4px 0;text-align:center;font-size:14.5px;font-weight:700;line-height:1.5;color:#1d2b24}',
+      '.hg-btns{display:grid;gap:2px;padding:10px 16px 14px}',
+      '.hg-btns button{height:48px;border:0;border-radius:14px;background:#2f9e6a;color:#fff;font-family:inherit;font-size:16.5px;font-weight:700;cursor:pointer}',
+      '.hg-btns button.sec{height:34px;background:transparent;color:#1f7a50;font-size:14px;font-weight:600}',
+      '.hn-x.hg-x{background:rgba(29,43,36,.12);border:0;color:#1d2b24}',
       '.hn-x{position:absolute;top:10px;right:10px;z-index:2;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:15px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
       '.hq-isle b{display:flex;align-items:center;gap:7px;font-size:18.5px;font-weight:800;letter-spacing:-.03em}',
       '.hq-isle i{font-style:normal;font-size:10.5px;font-weight:900;letter-spacing:.02em;color:#1a1206;background:#f5b94a;border-radius:5px;padding:3px 6px 2px;line-height:1}',
@@ -144,6 +164,7 @@
     else if (kind === 'guide' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(1);
     else if (kind === 'rank' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(3);
     else if (kind === 'board' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(2);
+    else if (kind === 'gear' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(5);   // 라운지 장비 탭
     else if (kind === 'join' && typeof window.openTripJoinListModal === 'function') window.openTripJoinListModal();
     else if (kind === 'write' && typeof window.openPastTripRegisterModal === 'function') {
       // 홈에서 열면 올린 뒤·닫은 뒤 홈으로 돌아온다 (낭만플랜에서 연 것과 같은 처리: 마이리포트로 넘어가지 않음)
@@ -166,7 +187,7 @@
     btn.type = 'button';
     btn.id = 'homeGulupdo';
     btn.className = 'hq-isle okbm-press';
-    btn.innerHTML = '<b><i>NEW</i>온라인 굴업도로 떠나기</b><em id="homeGulupdoN">접속 인원 확인 중</em>';
+    btn.innerHTML = '<b>온라인 굴업도로 떠나기</b><em id="homeGulupdoN">접속 인원 확인 중</em>';
     btn.addEventListener('click', openGulupdo);
     quick.insertAdjacentElement('afterend', btn);
     gulupdoCount();
@@ -198,49 +219,51 @@
     gulupdoCountT = setTimeout(gulupdoCount, 30000);
   }
   // ---------- 홈 첫 알림창(11-02 대표님: 지도 말고 낭만루터에서 뜨게) ----------
-  // 바꿀 때: notice/에 새 그림(820폭)을 넣고 HOME_NOTICE의 id·img·label을 바꾼다. 한 번 닫으면 같은 id는 다시 안 뜬다.
-  // 그림 원본: .claude/mockups/app-launch/ad.html?v=notice (11-03 앱 정식 출시, 이전: notice-gulupdo/notice.html)
+  // 11-09: 앱 출시 그림 알림을 내리고, 라운지 장비 탭 개편 알림을 글자판으로 띄운다(앱·웹 모두).
+  // 바꿀 때: HOME_NOTICE.id를 새 값으로 바꾸면 전에 닫은 사람에게도 한 번 뜬다. 시안: .claude/mockups/notice-1109-gear/v10/v07a1.html
   var HOME_NOTICE = {
-    id: '20261103-app',
-    img: '/notice/app-launch-1103.jpg',
-    alt: '낭만루트 드디어 정식 출시! 이제 편하게 앱으로 떠나요. 안드로이드는 Google Play, 아이폰은 App Store에서 낭만루트를 검색하세요. 앱 안에서 굴업도 미리 체험도 할 수 있어요.',
-    label: '앱 받으러 가기'
+    id: '20261109-gear',
+    mag: '158728fc-eda4-4ac9-9638-52d5e89ae6d4'   // '매거진에서 이용 방법 보기'로 열 라운지 매거진 id(lounge_news). 비어 있으면 장비 탭을 연다
   };
-  var STORE_PLAY = 'https://play.google.com/store/apps/details?id=com.romanticroute.app';
-  var STORE_APPLE = 'https://apps.apple.com/kr/app/id6824809664';
-  // 아이폰·아이패드는 앱스토어, 그 밖(안드로이드·PC)은 구글 플레이
-  function storeUrl() {
-    var ua = navigator.userAgent || '';
-    var ios = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-    return ios ? STORE_APPLE : STORE_PLAY;
-  }
+  var HG_RIDGE = '<svg viewBox="0 0 390 170" preserveAspectRatio="none" aria-hidden="true"><path d="M0 120 L60 70 L105 98 L170 40 L230 92 L285 58 L340 96 L390 72 V170 H0Z" fill="#c9e3d6"/><path d="M0 140 L70 104 L130 128 L200 86 L265 124 L330 100 L390 122 V170 H0Z" fill="#9fcfb6"/><path d="M0 170 V150 L90 132 L170 150 L250 128 L320 146 L390 136 V170Z" fill="#f4f8f6"/></svg>';
   function homeNotice() {
     var key = 'okbm_home_notice_id';
-    // 앱 안에서는 이미 앱이라 출시 알림을 안 띄운다
-    if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) return;
     try { if (localStorage.getItem(key) === HOME_NOTICE.id) return; } catch (e) { return; }
     if (document.getElementById('okbmHomeNotice')) return;
     var root = document.createElement('div');
     root.id = 'okbmHomeNotice';
     root.className = 'hn';
-    root.innerHTML = '<div class="hn-frame"><button type="button" class="hn-x" data-metric-click="feat_home_notice_close" aria-label="닫기">✕</button>' +
-      '<div class="hn-scroll"><img alt=""><button type="button" class="hn-act" data-metric-click="feat_home_notice_go"></button><div class="hn-pad"></div></div></div>';
-    var img = root.querySelector('img');
-    img.alt = HOME_NOTICE.alt;
-    img.addEventListener('error', function () { root.remove(); });
-    img.src = HOME_NOTICE.img + '?v=' + encodeURIComponent(HOME_NOTICE.id);
-    root.querySelector('.hn-act').textContent = HOME_NOTICE.label;
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-label', '라운지 장비 탭 개편 알림');
+    root.innerHTML = '<div class="hn-frame"><button type="button" class="hn-x hg-x" data-metric-click="feat_home_notice_close" aria-label="닫기">✕</button>' +
+      '<div class="hn-scroll hg">' +
+        '<div class="hg-hero">' + HG_RIDGE + '<div class="hg-hin"><p class="hg-ey">앱 출시 일주일</p><h2>어느새 약 2,500분이<br>낭만루터가 되어 주셨어요</h2><p class="hg-thx">진심으로 고맙습니다.</p>' +
+          '<p class="hg-vis">낭만루트는 백패커 여러분의 경험을 모아<br><b>모두에게 도움이 되는 앱</b>이 되고 싶어요.</p></div></div>' +
+        '<div class="hg-w">' +
+          '<div class="hg-blk"><p class="hg-q">박지처럼, 이제 <em>장비 이야기</em>도<br>함께 나누고 싶어요</p><p class="hg-d">그래서 라운지 장비 탭을 개편했어요.<br>장비마다 별점과 후기를 모아 보고,<br>궁금한 장비는 질문할 수 있어요.</p></div>' +
+          '<div class="hg-blk"><p class="hg-q">광고가 아닌 <em>진짜 이야기</em>가<br>다음 사람의 기준이 돼요</p><p class="hg-d">직접 써 본 사람의 한 줄 경험이<br>누군가의 첫 장비, 다음 장비를 고르는 기준이 돼요.<br>후기가 쌓이면 가장 많이 쓰는 텐트·침낭·배낭도 보여요.</p></div>' +
+          '<div class="hg-blk"><p class="hg-q">써 본 장비가 있다면<br><em>한 줄</em>만 남겨 주세요</p><p class="hg-d">잘 아는 장비라면 질문에 답도 달아 주세요.<br>후기·질문·답변에는 낭만 포인트도 드려요.</p></div>' +
+          '<p class="hg-end">같이 만들어 가는 낭만루트가 될게요.</p>' +
+        '</div>' +
+        '<div class="hg-btns"><button type="button" data-hg="gear" data-metric-click="feat_home_notice_go">장비 탭 가기</button><button type="button" class="sec" data-hg="mag" data-metric-click="feat_home_notice_mag">매거진에서 이용 방법 보기</button></div>' +
+      '</div></div>';
     function close() {
       try { localStorage.setItem(key, HOME_NOTICE.id); } catch (e) {}
       root.remove();
     }
     root.querySelector('.hn-x').addEventListener('click', close);
-    root.querySelector('.hn-act').addEventListener('click', function () {
+    root.querySelector('.hg-btns').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-hg]');
+      if (!b) return;
       close();
-      window.location.href = storeUrl();
+      var go = b.getAttribute('data-hg');
+      if (go === 'mag' && HOME_NOTICE.mag && typeof window.openLoungeNews === 'function') window.openLoungeNews(HOME_NOTICE.mag);
+      else if (typeof window.openLoungeWindow === 'function') window.openLoungeWindow(5);   // 5 = 라운지 장비 탭
     });
     document.body.appendChild(root);
   }
+
   function gulupdoToast(msg) { if (typeof showToast === 'function') showToast(msg, 'warn'); }
   function gulupdoGo(tok) {
     // 11-03 대표님: 앱에서 바깥 브라우저로 열면 주소창이 뜸 → 앱 화면 위에 꽉 차게 띄운다. 웹은 openGulupdo에서 앱 안내로 막힘
@@ -608,6 +631,8 @@
     injectCss();
     var quick = document.getElementById('homeQuickNav');
     if (quick) quick.addEventListener('click', onQuickClick);
+    var gq = document.querySelector('#homeQuickNav [data-quick="gear"]');
+    if (gq && Date.now() < Date.parse('2026-11-16T00:00:00+09:00')) gq.insertAdjacentHTML('afterbegin', '<i class="hq-new">NEW</i>');   // 일주일만
     paintGulupdo();
     window.addEventListener('okbm_admin_flag', paintGulupdo);
     [2000, 6000, 15000].forEach(function (ms) { setTimeout(paintGulupdo, ms); });   // 로그인·프로필이 늦게 와도 다시 본다

@@ -116,6 +116,7 @@
       .gdm-lk svg { width:15px; height:15px; color:var(--tx-3, #8b8b93); flex:none; }
       .gdm-lk .pill { font-size:11px; font-weight:900; padding:3px 8px; border-radius:6px; background:var(--bg-3, #2a2a30); color:var(--tx-2, #d1d1d6); flex:none; }
       .gdm-lk.main .pill { background:rgba(52,211,153,0.16); color:var(--ok, #34d399); }
+      .gdm-disc { margin:0; padding:10px 14px; border-radius:12px; background:rgba(251,191,36,0.10); color:var(--warn, #fbbf24); font-size:12.5px; font-weight:700; }
       .gdm-btn.is-on { color:var(--tx-3, #8b8b93); }
       .okg-en { display:block; font-size:12px; font-weight:600; color:var(--tx-3, #8b8b93); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
       .okg-w { color:var(--tx-2, #d1d1d6); font-weight:800; }
@@ -1960,11 +1961,13 @@
       var day = gear.checked_at ? gear.checked_at.slice(5).replace('-', '-') : '';
       linkEl.innerHTML = links.map(function(l) {
         var host = okbmLinkHost(l.url);
-        var pill = l.kind === 'official' ? '공식' : (l.kind === 'shop' ? '판매' : '출처');
-        var sub = host + (l.kind === 'official' && day ? ' · ' + day + ' 확인' : (l.kind === 'shop' ? ' · 판매처' : ''));
+        // archive: 단종돼 공식 페이지가 없어진 제품의 예전 공식 페이지(웨이백머신 보관본)
+        var pill = l.kind === 'official' ? '공식' : (l.kind === 'shop' ? '판매' : (l.kind === 'archive' ? '보관본' : '출처'));
+        var sub = host + (l.kind === 'official' && day ? ' · ' + day + ' 확인' : (l.kind === 'shop' ? ' · 판매처' : (l.kind === 'archive' ? ' · 단종 전 공식 페이지' : '')));
         return '<a class="gdm-lk' + (l.kind === 'official' ? ' main' : '') + '" href="' + escapeHtml(okbmSafeExternalUrl(l.url)) + '" target="_blank" rel="noopener noreferrer"><span class="pill">' + pill + '</span><span class="tx"><b>' + escapeHtml(l.label || host) + '</b><small>' + escapeHtml(sub) + '</small></span>' + GDM_ARROW + '</a>';
       }).join('');
-      linkEl.style.display = links.length ? '' : 'none';
+      if (gear.discontinued) linkEl.innerHTML = '<p class="gdm-disc">단종된 제품이에요. 중고나 남은 재고로만 구할 수 있어요.</p>' + linkEl.innerHTML;
+      linkEl.style.display = (links.length || gear.discontinued) ? '' : 'none';
     }
   }
   window.okbmPickDetailOption = function(i) {
@@ -3164,7 +3167,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   // 20260928: gears/*.json에서 앱이 쓰지 않는 필드(gear_id 중복, created_at, updated_at, category)와 공백을 뺐다. 데이터 값은 동일.
-  var CURRENT_GEAR_VERSION = '20261109_GEAR_TIDY7';
+  var CURRENT_GEAR_VERSION = '20261109_GEAR_TIDY8';
   var GEAR_SPLIT_CATS = ['shelter', 'sleep', 'pack', 'food', 'kitchen', 'wear', 'electronics', 'camp', 'other'];
   window.__okbmGearCatLoaded = window.__okbmGearCatLoaded || {};
   window.__okbmGearCatPromises = window.__okbmGearCatPromises || {};
@@ -3402,6 +3405,7 @@ window.saveCurrentPackingRecord = function() {
           options: Array.isArray(row.options) ? row.options : [],
           links: Array.isArray(row.links) ? row.links : [],
           checked_at: String(row.checked_at || '').trim(),
+          discontinued: row.discontinued === true,
           aliases: Array.isArray(row.aliases) ? row.aliases : [],
           alias_names: Array.isArray(row.alias_names) ? row.alias_names : [],
           raw: {
