@@ -2505,8 +2505,8 @@
         + '<div class="lm-gr-who">' + whoName(nick, r.uid) + (n === 1 ? '<div class="lm-gr-sub">' + GPX_CROWN + '가장 많이 올렸어요</div>' : '') + '</div>'
         + '<div class="lm-gr-m"><b>' + r.n + '개</b>' + (r.km > 0 ? '길 ' + r.km.toFixed(1) + 'km' : '') + '</div></div>';
     }).join('');
-    return '<div class="lm-gr-head"><b>GPX 올려 주신 분들</b><small>승인된 GPX 기준</small></div>'
-      + '<p class="lm-gr-thanks">GPX를 올려 주신 덕분에 많은 낭만루터분들이<br>길을 헤매지 않고 박지까지 안전하게 가게 되었어요.<br>정말 고맙습니다.</p>'
+    return '<div class="lm-gr-head"><b>GPX를 올려 주신 분들 감사합니다</b><small>승인된 GPX 기준</small></div>'
+      + '<p class="lm-gr-thanks">GPX를 올려 주신 덕분에 많은 낭만루터분들이<br>길을 헤매지 않고 박지까지 안전하게 가게 되었어요.</p>'
       + '<div class="lm-gr-list">' + cards + '</div>'
       + (rows.length > 4 ? '<p class="lm-gr-more">' + (rows.length - 4) + '명 더 있어요 · 밀어서 보기</p>' : '');
   }
