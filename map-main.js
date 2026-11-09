@@ -347,6 +347,7 @@
             renderSubChips();
             if (typeof renderSpots === 'function') renderSpots(true);
             if (map && typeof checkUrlParamSpotFocus === 'function') checkUrlParamSpotFocus();
+            if (typeof window.okbmCheckUrlGpxSend === 'function') window.okbmCheckUrlGpxSend();
             // 확대해 둔 상태에서 새 목록(대략 좌표)을 받았으면 지금 범위를 다시 정확히
             if (typeof scheduleGuestPinRefine === 'function') scheduleGuestPinRefine();
           }
@@ -1239,6 +1240,7 @@
             renderSubChips();
             renderSpots(); 
             checkUrlParamSpotFocus(); 
+            if (typeof window.okbmCheckUrlGpxSend === 'function') window.okbmCheckUrlGpxSend();
           } else {
             loadSpotsMasterEngine();
           }
@@ -3702,10 +3704,24 @@ function updateSmartResetButtons() {
       };
       window.OKBM_GPX_SEND_ERRORS = GPX_SEND_ERRORS;  // 후기 창(spot-tips.js)도 같은 문구를 쓴다
 
+      // spotId 없이 열면(라운지 'GPX 등록 랭킹'의 '+ GPX 등록하기', 대표님 11-09) 박지 이름 자리에 '박지 찾기' 칸을 둔다
+      function gpxSpotLabel(s) { return String((s && (s.fullName || s.name)) || '').trim(); }
+      function gpxSpotSearch(q) {
+        var key = String(q || '').replace(/\s+/g, '').toLowerCase();
+        if (!key) return [];
+        var out = [];
+        (spots || []).forEach(function(s) {
+          if (out.length >= 8 || !s) return;
+          var hay = (String(s.fullName || '') + ' ' + String(s.name || '') + ' ' + String(s.cityName || '')).replace(/\s+/g, '').toLowerCase();
+          if (hay.indexOf(key) >= 0) out.push(s);
+        });
+        return out;
+      }
       function openGpxSendModal(spotId) {
         var sId = String(spotId || '').trim();
-        var spot = (spots || []).find(function(s) { return String(s.id).trim() === sId; });
-        if (!spot) return;
+        var picking = !sId;
+        var spot = picking ? null : (spots || []).find(function(s) { return String(s.id).trim() === sId; });
+        if (!picking && !spot) return;
         var old = document.getElementById('okbmGpxSend');
         if (old) old.remove();
         var wrap = document.createElement('div');
@@ -3714,6 +3730,7 @@ function updateSmartResetButtons() {
         wrap.innerHTML = '<div class="okbm-gpx-send-box" role="dialog" aria-modal="true" aria-labelledby="okbmGpxSendTitle">' +
           '<div class="okbm-gpx-send-head"><strong id="okbmGpxSendTitle">등산 기록(GPX) 보내기</strong><button type="button" data-gpx-send-act="close" aria-label="닫기">✕</button></div>' +
           '<div class="okbm-gpx-send-spot"></div>' +
+          '<div class="okbm-gpx-send-pick" hidden><input type="search" data-gpx-send-q maxlength="40" autocomplete="off" placeholder="어느 박지 GPX인가요? 박지 이름 찾기" aria-label="박지 이름 찾기"><div class="okbm-gpx-send-results"></div></div>' +
           '<p class="okbm-gpx-send-help">트랭글·램블러·가민 같은 등산 앱에서 이 박지에 다녀온 기록을 GPX 파일로 내보내 골라 주세요. 기록 시각과 기기 정보는 지우고 길(좌표)만 받아요.</p>' +
           '<label class="okbm-gpx-send-file"><input type="file" data-gpx-send-file><span>GPX 파일 고르기</span></label>' +
           '<div class="okbm-gpx-send-picked"></div>' +
@@ -3723,10 +3740,48 @@ function updateSmartResetButtons() {
           '<button type="button" class="okbm-gpx-send-go" data-gpx-send-act="go" data-metric-click="feat_spot_gpx_send">보내기</button>' +
           '<p class="okbm-gpx-send-note">검수 뒤 박지에 등록되면 감사한 마음을 담아 낭만 포인트 50점을 드려요.<br>다른 분이 내 GPX를 사용하면 추가로 포인트를 드려요.</p>' +
         '</div>';
-        wrap.querySelector('.okbm-gpx-send-spot').textContent = spot.fullName || spot.name || '';
+        var spotLine = wrap.querySelector('.okbm-gpx-send-spot');
+        var pickBox = wrap.querySelector('.okbm-gpx-send-pick');
+        var qInput = wrap.querySelector('[data-gpx-send-q]');
+        var results = wrap.querySelector('.okbm-gpx-send-results');
         var fileInput = wrap.querySelector('[data-gpx-send-file]');
         var msg = wrap.querySelector('.okbm-gpx-send-msg');
         var goBtn = wrap.querySelector('.okbm-gpx-send-go');
+        // 고른 박지 이름을 보여 준다. 찾기로 연 창이면 옆에 '바꾸기'
+        var showSpot = function() {
+          spotLine.textContent = gpxSpotLabel(spot);
+          if (picking) {
+            var re = document.createElement('button');
+            re.type = 'button';
+            re.className = 'okbm-gpx-send-repick';
+            re.setAttribute('data-gpx-send-act', 'repick');
+            re.textContent = '바꾸기';
+            spotLine.appendChild(re);
+          }
+          spotLine.hidden = false;
+          pickBox.hidden = true;
+        };
+        var showPicker = function() {
+          spotLine.hidden = true;
+          pickBox.hidden = false;
+          results.innerHTML = '';
+          qInput.value = '';
+        };
+        if (spot) showSpot(); else showPicker();
+        qInput.addEventListener('input', function() {
+          var list = gpxSpotSearch(qInput.value);
+          results.innerHTML = '';
+          list.forEach(function(s) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.setAttribute('data-gpx-send-act', 'pick');
+            b.setAttribute('data-gpx-send-id', String(s.id).trim());
+            b.textContent = gpxSpotLabel(s);
+            results.appendChild(b);
+          });
+          if (!list.length && qInput.value.trim()) results.innerHTML = '<p class="okbm-gpx-send-none">찾는 박지가 없어요. 다른 이름으로 찾아 주세요</p>';
+          msg.textContent = '';
+        });
         fileInput.addEventListener('change', function() {
           var f = fileInput.files && fileInput.files[0];
           wrap.querySelector('.okbm-gpx-send-picked').textContent = f ? f.name : '';
@@ -3737,7 +3792,18 @@ function updateSmartResetButtons() {
           if (e.target === wrap) return close();
           var btn = e.target && e.target.closest ? e.target.closest('[data-gpx-send-act]') : null;
           if (!btn) return;
-          if (btn.getAttribute('data-gpx-send-act') === 'close') return close();
+          var act = btn.getAttribute('data-gpx-send-act');
+          if (act === 'close') return close();
+          if (act === 'pick') {
+            var pid = btn.getAttribute('data-gpx-send-id');
+            spot = (spots || []).find(function(s) { return String(s.id).trim() === pid; }) || null;
+            sId = spot ? pid : '';
+            if (spot) showSpot();
+            msg.textContent = '';
+            return;
+          }
+          if (act === 'repick') { spot = null; sId = ''; showPicker(); qInput.focus(); return; }
+          if (!sId) { msg.textContent = '어느 박지 GPX인지 먼저 골라 주세요'; return; }
           var f = fileInput.files && fileInput.files[0];
           if (!f) { msg.textContent = 'GPX 파일을 골라 주세요'; return; }
           if (!wrap.querySelector('[data-gpx-send-consent]').checked) { msg.textContent = GPX_SEND_ERRORS['consent required']; return; }
@@ -3794,6 +3860,23 @@ function updateSmartResetButtons() {
         if (btn.classList.contains('gpx-wanted-badge')) { e.stopPropagation(); e.preventDefault(); }
         openGpxSendModal(btn.getAttribute('data-gpx-send'));
       }, true);
+
+      // 라운지 '+ GPX 등록하기'(lounge.js): 지도에서는 바로 열고, 홈에서는 map.html?gpxsend=1로 와서 박지를 다 받은 뒤 연다
+      window.okbmOpenGpxSend = function() { openGpxSendModal(''); };
+      window.okbmCheckUrlGpxSend = function() {
+        if (window.__okbmGpxSendUrlRan || !spots || !spots.length) return;
+        var params;
+        try { params = new URLSearchParams(window.location.search); } catch (e) { return; }
+        if (params.get('gpxsend') !== '1') return;
+        window.__okbmGpxSendUrlRan = true;
+        try {
+          params.delete('gpxsend');
+          var qs = params.toString();
+          window.history.replaceState({}, '', window.location.pathname + (qs ? '?' + qs : '') + (window.location.hash || ''));
+        } catch (e2) {}
+        openGpxSendModal('');
+      };
+      window.okbmCheckUrlGpxSend();
 
       // 남이 보낸 GPX는 처음 켤 때 5점을 내고 연다(등록자는 2점, 화면엔 '소정의 포인트'로만 알린다). SUPABASE_H46
       // 포인트가 모자라면 그냥 연다: 단추가 들머리 관문(등록자 인스타·링크를 한 번 거침) 뒤에만 있어서다(대표님 11-05, 나중에 광고 자리)

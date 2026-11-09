@@ -471,6 +471,12 @@
       '.lm-gr-head{margin-top:18px;display:flex;align-items:baseline;justify-content:space-between;gap:8px}',
       '.lm-gr-head b{font-size:16px;font-weight:800;color:var(--tx)}.lm-gr-head small{font-size:12px;color:var(--sub)}',
       '.lm-gr-thanks{margin:6px 0 0;font-size:13px;line-height:1.55;color:var(--tx-2,#d1d1d6);word-break:keep-all}',
+      // '+ GPX 등록하기'(대표님 11-09 A안): 감사 문구 오른쪽 두 줄 칸, 글자는 칸 정가운데. 문구는 두 줄을 넘지 않게
+      '.lm-gr-top{display:flex;align-items:center;gap:10px;margin-top:6px}.lm-gr-top .lm-gr-thanks{flex:1;min-width:0;margin:0}',
+      '.lm-gr-add{flex:none;width:76px;height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-radius:12px;border:1px solid var(--line-strong,rgba(255,255,255,.16));background:#1a1a1e;color:var(--tx);font-size:12px;font-weight:700;line-height:1.2;text-align:center}',
+      '.lm-gr-add span{display:flex;align-items:center;justify-content:center}.lm-gr-add svg{margin-left:-3px}',
+      '.lm-gr-add:active{background:#26262c}',
+      '@media (max-width:379px){.lm-gr-top .lm-gr-thanks{font-size:12px}.lm-gr-top{gap:8px}.lm-gr-add{width:70px}}',
       '.lm-gr-list{margin-top:6px;max-height:330px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}',
       '.lm-gr-list::-webkit-scrollbar{display:none}',
       '.lm-gr{display:flex;align-items:center;gap:12px;height:66px;margin-top:8px;padding:0 14px;border-radius:14px;background:#1a1a1e;border:1px solid var(--div)}',
@@ -2506,7 +2512,8 @@
         + '<div class="lm-gr-m"><b>' + r.n + '개</b>' + (r.km > 0 ? '길 ' + r.km.toFixed(1) + 'km' : '') + '</div></div>';
     }).join('');
     return '<div class="lm-gr-head"><b>GPX를 올려 주신 분들 감사합니다</b><small>승인된 GPX 기준</small></div>'
-      + '<p class="lm-gr-thanks">GPX를 올려 주신 덕분에 많은 낭만루터분들이<br>길을 헤매지 않고 박지까지 안전하게 가게 되었어요.</p>'
+      + '<div class="lm-gr-top"><p class="lm-gr-thanks">GPX를 올려 주신 덕분에 많은 낭만루터분들이<br>길을 헤매지 않고 박지까지 안전하게 가게 되었어요.</p>'
+      + '<button type="button" class="lm-gr-add" data-a="gpx-add" aria-label="GPX 등록하기"><span>' + ico(P.plus, 12) + 'GPX</span><span>등록하기</span></button></div>'
       + '<div class="lm-gr-list">' + cards + '</div>'
       + (rows.length > 4 ? '<p class="lm-gr-more">' + (rows.length - 4) + '명 더 있어요 · 밀어서 보기</p>' : '');
   }
@@ -2591,7 +2598,6 @@
         const news = (D.gpxNews || []).map(gpxNewsItem).join('');
         h += news ? gpxRankHtml(D.gpxNews) + '<div class="lm-gr-sec">최근 등록</div>' + news : '<div class="lm-empty">아직 등록된 GPX가 없어요</div>';
       }
-      h += '<p class="lm-hint" style="margin-top:20px">다녀온 박지 GPX가 있으세요? 지도에서 박지 정보창을 열어 올리면 승인 뒤 랭킹에 올라가요.</p>';
       return h;
     } else if (view !== 'recent') {
       const rank = (D.rank || []).filter(function (r) { return spotById(r.spot_id); });
@@ -4932,6 +4938,14 @@
       case 'wclose': closeLoungeWindow(); break;
       case 'tab': if (inWin) winTo(Number(v)); else switchTab(Number(v)); break;
       case 'spot': closeSheet(true); closeLoungeWindow(true); openSpotOnMap(v); break;
+      // GPX 등록 랭킹의 '+ GPX 등록하기': 지도의 GPX 등록 창을 '박지 찾기' 칸과 함께 연다(map-main.js okbmOpenGpxSend)
+      case 'gpx-add':
+        if (needLogin('로그인하면 GPX를 올릴 수 있어요')) break;
+        closeSheet(true); closeLoungeWindow(true);
+        if (IS_MAP && typeof window.okbmOpenGpxSend === 'function') { window.okbmOpenGpxSend(); break; }
+        try { sessionStorage.setItem('okbm_entered_via_index', '1'); } catch (e) {}
+        if (typeof window.smoothNavigate === 'function') window.smoothNavigate('map.html?gpxsend=1'); else window.location.assign('map.html?gpxsend=1');
+        break;
       case 'retry': loadAll(); break;
       case 'login':
         // openLoginModal은 라운지 층 위(z 2147483646)에 뜬다. 로그인하면 페이지가 새로 열린다
