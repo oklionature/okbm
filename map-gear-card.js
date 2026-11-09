@@ -4,16 +4,16 @@
 // 지도 아래 띠(포토맵·목록 보기·일반·내 위치) 바로 위 오른쪽에 작은 칸을 띄운다.
 //   '최애 장비 후기' 줄 → 안내 시트 → '최애 장비 고르기'는 라운지 장비 탭 위에 장비 후기 쓰기 창(lounge.js okbmLoungeGearReviewNew)
 //   '박지 이상형 월드컵' 줄 → map-worldcup.js를 받아 월드컵을 연다. 끝나면 1·2·3위가 라운지 '내 최애 박지 TOP 3' 설문에 들어간다.
-//   로그인 안 하고 끝낸 답은 로그인 뒤 지도가 다시 열리면 이어서 넣는다(칸을 닫았어도).
-// 휴대폰 화면에서만, 목록·정보창·포토맵·깨끗한 지도일 때는 숨긴다. X로 닫으면 다시 뜨지 않는다.
+//   로그인 안 하고 끝낸 답은 로그인 뒤 지도가 다시 열리면 이어서 넣는다.
+// 휴대폰 화면에서만, 목록·정보창·포토맵·깨끗한 지도일 때는 숨긴다.
+// X로 닫으면 이번 접속에서만 숨기고, 지도에 다시 들어오면 늘 뜬다(대표님 11-09).
 // 인라인 onclick을 쓰지 않는다(CSP 해시가 필요 없게).
 // =========================================================================
 (function () {
   'use strict';
 
-  var KEY = 'okbm_map_gear_card_1109';
-  var closed = false;
-  try { closed = localStorage.getItem(KEY) === '1'; } catch (e) {}
+  // 예전에 X로 영영 닫아 둔 기록은 지운다
+  try { localStorage.removeItem('okbm_map_gear_card_1109'); } catch (e) {}
 
   var HEART = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.6 3.9 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.8 1.2-1.7 2.8-2.8 4.8-2.8 3.3 0 5.6 3.1 4.4 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"/></svg>';
 
@@ -157,7 +157,6 @@
 
   function initGc() {
     resumeWorldcup();
-    if (closed) return;
     var st = document.createElement('style');
     st.id = 'okbmGearCardCss';
     st.textContent = CSS;
@@ -172,7 +171,6 @@
       if (!a) return;
       if (a.getAttribute('data-gc') === 'close') {
         card.remove();
-        try { localStorage.setItem(KEY, '1'); } catch (err) {}
       } else if (a.getAttribute('data-gc') === 'wc') openWorldcup();
       else openSheet();
     });
