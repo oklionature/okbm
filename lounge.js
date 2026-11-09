@@ -467,6 +467,24 @@
       '.hm-view img{flex:none;width:100%;height:auto;border-radius:12px;scroll-snap-align:center;background:#17171b}',
       '.lm-tchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.lm-tchips span{font-size:11px;font-weight:700;color:var(--tx);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:2px 8px}',
       '.lm-gpxtag{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.06);color:#e5e7eb;font-size:10.5px;font-weight:800;vertical-align:middle}',
+      // GPX 등록 랭킹 (대표님 11-09, 시안 .claude/mockups/gpx-ranking): 같은 카드 모양, 1위만 살짝 크게. 4위까지 보이고 5위부터는 칸 안에서 민다
+      '.lm-gr-head{margin-top:18px;display:flex;align-items:baseline;justify-content:space-between;gap:8px}',
+      '.lm-gr-head b{font-size:16px;font-weight:800;color:var(--tx)}.lm-gr-head small{font-size:12px;color:var(--sub)}',
+      '.lm-gr-thanks{margin:6px 0 0;font-size:13px;line-height:1.55;color:var(--tx-2,#d1d1d6);word-break:keep-all}',
+      '.lm-gr-list{margin-top:6px;max-height:330px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}',
+      '.lm-gr-list::-webkit-scrollbar{display:none}',
+      '.lm-gr{display:flex;align-items:center;gap:12px;height:66px;margin-top:8px;padding:0 14px;border-radius:14px;background:#1a1a1e;border:1px solid var(--div)}',
+      '.lm-gr-n{flex:none;width:30px;text-align:center;font-size:14px;font-weight:800;color:var(--sub);font-variant-numeric:tabular-nums}',
+      '.lm-gr .lm-av{width:40px;height:40px;font-size:16px}',
+      '.lm-gr-who{min-width:0;flex:1}.lm-gr-who>button,.lm-gr-who>b{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:800;color:var(--tx)}',
+      '.lm-gr-sub{display:flex;align-items:center;gap:3px;margin-top:2px;font-size:11px;font-weight:700;color:var(--warn,#fbbf24)}',
+      '.lm-gr-m{flex:none;text-align:right;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}.lm-gr-m b{display:block;font-size:15px;color:var(--tx)}',
+      '.lm-gr.r1{height:76px;border-color:rgba(251,191,36,.4)}.lm-gr.r1 .lm-gr-n{font-size:15.5px;color:var(--warn,#fbbf24)}',
+      '.lm-gr.r1 .lm-av{width:46px;height:46px;font-size:18px;box-shadow:0 0 0 2px #1a1a1e,0 0 0 3.5px var(--warn,#fbbf24)}.lm-gr.r1 .lm-gr-who>button,.lm-gr.r1 .lm-gr-who>b{font-size:16.5px}.lm-gr.r1 .lm-gr-m b{font-size:17px}',
+      '.lm-gr.r2 .lm-gr-n{font-size:15px;color:#cbd5e1}.lm-gr.r2 .lm-av{width:43px;height:43px;font-size:17px;box-shadow:0 0 0 2px #1a1a1e,0 0 0 3px #cbd5e1}.lm-gr.r2 .lm-gr-m b{font-size:16px}',
+      '.lm-gr.r3 .lm-gr-n{color:#d6a77a}.lm-gr.r3 .lm-av{box-shadow:0 0 0 2px #1a1a1e,0 0 0 3px #d6a77a}',
+      '.lm-gr-more{margin:6px 0 0;text-align:center;font-size:11.5px;color:var(--sub)}',
+      '.lm-gr-sec{margin:22px 0 0;font-size:13px;font-weight:700;color:var(--sub)}',
       '.lm-tchips.lg{margin:4px 0 6px}.lm-tchips.lg span{font-size:12px;padding:3px 9px}',
       '#okbmLoungeHome .lmh-empty{height:192px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:12.5px;color:var(--sub);text-align:center}',
       '.lm-sk{height:64px;border-bottom:1px solid var(--div);display:flex;align-items:center;gap:16px}',
@@ -2463,6 +2481,35 @@
       <div class="lm-bd">${esc(nick)}님이 ${esc(spotName(s))} GPX를 등록해 주셨어요. 이제 정보창에서 자세한 GPX 경로를 확인할 수 있어요.</div>
       </div></div>`;
   }
+  // GPX 등록 랭킹 (대표님 11-09): 승인돼 지금 박지에 붙은 GPX를 사람마다 센다. 많이 올린 순, 같으면 길이 긴 순, 그래도 같으면 먼저 올린 사람.
+  // okbm_recent_gpx_news가 최근 50개까지만 주므로 승인 GPX가 50개를 넘으면 랭킹 전용 RPC로 바꿔야 한다(TASK_GPX.md).
+  const GPX_CROWN = '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5L3 7z"/></svg>';
+  function gpxRankHtml(news) {
+    const by = {};
+    (news || []).forEach(function (g) {
+      if (!g || !g.user_id || !spotById(g.spot_id) || hidden({ id: 'gpx_' + g.id, user_id: g.user_id })) return;
+      const r = by[g.user_id] || (by[g.user_id] = { uid: g.user_id, nick: '', n: 0, km: 0, first: g.reviewed_at, last: '' });
+      r.n += 1;
+      r.km += Number(g.km) || 0;
+      if (String(g.reviewed_at) > r.last) { r.last = String(g.reviewed_at); r.nick = String(g.nickname || '').trim(); }
+      if (String(g.reviewed_at) < String(r.first)) r.first = g.reviewed_at;
+    });
+    const rows = Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) {
+      return b.n - a.n || b.km - a.km || String(a.first).localeCompare(String(b.first));
+    });
+    if (!rows.length) return '';
+    const cards = rows.map(function (r, i) {
+      const n = i + 1;
+      const nick = r.nick || '낭만루터';
+      return '<div class="lm-gr' + (n <= 3 ? ' r' + n : '') + '"><span class="lm-gr-n">' + n + '위</span>' + avUser(nick, r.uid)
+        + '<div class="lm-gr-who">' + whoName(nick, r.uid) + (n === 1 ? '<div class="lm-gr-sub">' + GPX_CROWN + '가장 많이 올렸어요</div>' : '') + '</div>'
+        + '<div class="lm-gr-m"><b>' + r.n + '개</b>' + (r.km > 0 ? '길 ' + r.km.toFixed(1) + 'km' : '') + '</div></div>';
+    }).join('');
+    return '<div class="lm-gr-head"><b>GPX 올려 주신 분들</b><small>승인된 GPX 기준</small></div>'
+      + '<p class="lm-gr-thanks">GPX를 올려 주신 덕분에 많은 낭만루터분들이<br>길을 헤매지 않고 박지까지 안전하게 가게 되었어요.<br>정말 고맙습니다.</p>'
+      + '<div class="lm-gr-list">' + cards + '</div>'
+      + (rows.length > 4 ? '<p class="lm-gr-more">' + (rows.length - 4) + '명 더 있어요 · 밀어서 보기</p>' : '');
+  }
   // 별점 후기 + 팁을 날짜순으로 섞는다. 같은 사람·같은 박지면 별점 후기 밑에 그 사람 칩을 붙인다
   function mixedReviewList(reviews, tipRows, inSpot, gpxNews) {
     const byKey = {};
@@ -2531,15 +2578,21 @@
       if (!top.length) return homeEmpty('아직 박지 후기가 없어요', 3, '라운지 열기');
       return top.slice(0, HOME_N).map(function (r) { return bestRow(r, false); }).join('') + moreBtn(3, '최근 후기까지 전체 보기');
     }
-    // 작은 탭 네 개: 처음엔 최근 후기. 랭킹이 화면을 다 채워 최근 후기가 묻혔다. GPX 등록은 대표님 11-05에 더함
+    // 작은 탭 네 개: 처음엔 최근 후기. 랭킹이 화면을 다 채워 최근 후기가 묻혔다. GPX 등록은 대표님 11-05에 더함, 11-09 'GPX 등록 랭킹'으로
     const view = S.revView === 'top' || S.revView === 'many' || S.revView === 'gpx' ? S.revView : 'recent';
-    let h = '<div class="lm-seg" role="tablist">' + [['recent', '최근 후기'], ['top', '평점순'], ['many', '후기 많은 순'], ['gpx', 'GPX 등록']].map(function (t) {
+    let h = '<div class="lm-seg" role="tablist">' + [['recent', '최근 후기'], ['top', '평점순'], ['many', '후기 많은 순'], ['gpx', 'GPX 등록 랭킹']].map(function (t) {
       return '<button type="button" role="tab" data-a="rev-view" data-v="' + t[0] + '" class="' + (view === t[0] ? 'on' : '') + '" aria-selected="' + (view === t[0]) + '">' + t[1] + '</button>';
     }).join('') + '</div>';
     if (view === 'gpx') {
       // GPX 등록 소식은 최근 후기와 같이 받는다(loadRecentReviews, SUPABASE_H50 okbm_recent_gpx_news)
+      // 위에 랭킹(4위까지, 5위부터 칸 안에서 밀기), 그 밑에 최근 등록 소식
       if (D.recent === null) h += '<div class="lm-empty" data-recent>불러오는 중…</div>';
-      else h += (D.gpxNews || []).map(gpxNewsItem).join('') || '<div class="lm-empty">아직 등록된 GPX가 없어요</div>';
+      else {
+        const news = (D.gpxNews || []).map(gpxNewsItem).join('');
+        h += news ? gpxRankHtml(D.gpxNews) + '<div class="lm-gr-sec">최근 등록</div>' + news : '<div class="lm-empty">아직 등록된 GPX가 없어요</div>';
+      }
+      h += '<p class="lm-hint" style="margin-top:20px">다녀온 박지 GPX가 있으세요? 지도에서 박지 정보창을 열어 올리면 승인 뒤 랭킹에 올라가요.</p>';
+      return h;
     } else if (view !== 'recent') {
       const rank = (D.rank || []).filter(function (r) { return spotById(r.spot_id); });
       if (D.rank === null) h += '<div class="lm-empty">불러오는 중…</div>';
