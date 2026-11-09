@@ -2253,7 +2253,8 @@ function updateSmartResetButtons() {
         if (!cfg.url || !headers) return false;
         var evPhotos = (evidence && Array.isArray(evidence.photos) ? evidence.photos : [])
           .map(function(u) { return okbmSafeImageUrl(u); }).filter(Boolean).slice(0, 3);
-        var evCredit = evPhotos.length ? String((evidence && evidence.credit) || '').trim().slice(0, 40) : '';
+        // 제보자는 사진이 없어도 이름 줄 '제보 ○○'로 보이므로 늘 남긴다
+        var evCredit = String((evidence && evidence.credit) || '').trim().slice(0, 40);
         var payload = banned
           ? {
               camp_status: 'banned',
@@ -2291,11 +2292,12 @@ function updateSmartResetButtons() {
         if (isCampBanned(spot)) {
           if (!confirm('야영금지 표시를 해제할까요?')) return;
           ok = await window.setSpotCampBan(sId, false);
-        } else {
-          if (!confirm('이 장소를 야영금지로 표시할까요?\n뷰·유튜브 등 상세 내용이 가려지고 금지 안내와 LNT 원칙만 보입니다.')) return;
-          ok = await window.setSpotCampBan(sId, true);
+          showToast(ok ? '야영금지 상태를 바꿨습니다.' : '변경에 실패했습니다.');
+          return;
         }
-        showToast(ok ? '야영금지 상태를 바꿨습니다.' : '변경에 실패했습니다.');
+        // 정보창·목록·수정 창의 금지 단추도 검수함과 같은 채택 창을 띄워, 이 박지에 들어온 수정 건의의 사진·사유를 같이 건다(대표님 11-10)
+        var item = await findCampBanCorrection(sId);
+        await applyCampBanWithEvidence(spot, item);
       };
 
       function getSpotStatusBadges(spot) {
@@ -9576,8 +9578,9 @@ var liveSearchTimer = null;
       };
 
       // 야영금지 채택 창: 정보창에 붙일 근거 사진을 고르고(기본 전부), 제보 사유를 다듬어 금지 사유로 넣는다.
-      // 고르면 { note, photos, credit }, 취소하면 null
+      // 고르면 { note, photos, credit }, 취소하면 null. item이 없으면(이 박지에 건의가 없음) 사유만 적는다
       function askCampBanEvidence(item, spot) {
+        item = item || {};
         return new Promise(function(resolve) {
           var photos = (Array.isArray(item.evidence_photos) ? item.evidence_photos : [])
             .map(function(u) { return okbmSafeImageUrl(u); }).filter(Boolean).slice(0, 3);
@@ -9597,7 +9600,7 @@ var liveSearchTimer = null;
                 '</div>';
               }).join('') + '</div>' +
               (credit ? '<div style="margin-top:6px; font-size:0.66rem; color:#fda4af;">정보창에 \'사진 제보 ' + escapeHtml(credit) + '님\'으로 표시됩니다.</div>' : '')
-            : '<div style="margin-top:12px; font-size:0.72rem; color:#94a3b8;">이 건의에는 근거 사진이 없습니다.</div>';
+            : '<div style="margin-top:12px; font-size:0.72rem; color:#94a3b8;">' + (item.id ? '이 건의에는 근거 사진이 없습니다.' : '이 장소에 들어온 수정 건의가 없어 붙일 사진이 없습니다.') + '</div>';
           overlay.innerHTML =
             '<div style="width:100%; max-width:400px; max-height:100%; overflow-y:auto; background:#0c1017; border:1px solid rgba(244,63,94,0.45); border-radius:14px; padding:16px; box-sizing:border-box; box-shadow:0 12px 40px rgba(0,0,0,0.5);">' +
               '<div style="font-size:0.92rem; font-weight:900; color:#fb7185;">야영금지로 채택</div>' +
@@ -9634,6 +9637,49 @@ var liveSearchTimer = null;
         });
       }
 
+      // 금지 단추를 누른 박지에 걸 수정 건의: 대기 중인 건의가 먼저, 없으면 최근 30일 안에 채택된 건의(즉시반영 뒤 금지를 누른 경우)
+      async function findCampBanCorrection(spotId) {
+        var sId = String(spotId || '').trim();
+        var list = window.__adminSpotInboxCache;
+        if (!Array.isArray(list) || !list.length) {
+          try {
+            list = await fetchAdminSpotInboxItems();
+            window.__adminSpotInboxCache = list;
+          } catch (e) {
+            console.warn('[map.html:findCampBanCorrection]', e);
+            return null;
+          }
+        }
+        var mine = (list || []).filter(function(it) {
+          return it && it.type === 'correction' && String(resolveCorrectionOrigSpotId(it) || '').trim() === sId;
+        });
+        var pending = mine.find(function(it) { return isPendingInboxStatus(it.status); });
+        if (pending) return pending;
+        var since = Date.now() - 30 * 86400000;
+        return mine.find(function(it) {
+          return String(it.status || '').indexOf('반영') !== -1 && (Date.parse(it.created_at) || 0) >= since;
+        }) || null;
+      }
+
+      // 채택 창을 띄워 금지를 걸고, 대기 중인 건의였으면 반영완료로 바꾸고 건의자에게 알린다
+      async function applyCampBanWithEvidence(spot, item) {
+        var sId = String(spot.id).trim();
+        var choice = await askCampBanEvidence(item, spot);
+        if (!choice) return false;
+        var ok = await window.setSpotCampBan(sId, true, choice.note, { photos: choice.photos, credit: choice.credit });
+        var adopted = false;
+        if (ok && item && isPendingInboxStatus(item.status) && typeof window.updateAdminSpotInboxStatus === 'function') {
+          adopted = await window.updateAdminSpotInboxStatus(item.id, true, '반영완료', { approved_spot_id: sId });
+          if (adopted) item.status = '반영완료';
+          if (adopted && typeof window.notifyProposalDecision === 'function') {
+            await window.notifyProposalDecision(item, '반영완료', sId);
+          }
+        }
+        showToast(!ok ? '야영금지 표시에 실패했습니다.' : adopted ? '야영금지로 표시하고 건의를 채택했습니다.' : '야영금지로 표시했습니다.');
+        if (document.getElementById('adminSpotInboxModal')) await window.renderAdminSpotInboxList();
+        return ok;
+      }
+
       window.banSpotFromCorrection = async function(id) {
         var item = findAdminInboxItem(id, 'correction');
         if (!item) return;
@@ -9643,17 +9689,7 @@ var liveSearchTimer = null;
           showToast('원래 장소를 찾을 수 없습니다.');
           return;
         }
-        var choice = await askCampBanEvidence(item, spot);
-        if (!choice) return;
-        var ok = await window.setSpotCampBan(origId, true, choice.note, { photos: choice.photos, credit: choice.credit });
-        if (ok && typeof window.updateAdminSpotInboxStatus === 'function') {
-          await window.updateAdminSpotInboxStatus(item.id, true, '반영완료', { approved_spot_id: origId });
-          if (typeof window.notifyProposalDecision === 'function') {
-            await window.notifyProposalDecision(item, '반영완료', origId);
-          }
-        }
-        showToast(ok ? '야영금지로 표시하고 건의를 채택했습니다.' : '야영금지 표시에 실패했습니다.');
-        await window.renderAdminSpotInboxList();
+        await applyCampBanWithEvidence(spot, item);
       };
 
       window.rejectAdminInboxItem = async function(id, type) {
