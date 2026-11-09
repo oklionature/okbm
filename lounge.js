@@ -5435,6 +5435,28 @@
     if (D.status === 'idle') loadAll();
     openGear({ gear_id: g.id || '', gear_name: String(g.name).slice(0, 120), gear_cat: GEAR_CAT[g.cat] ? g.cat : 'other', gear_kind: 'review' });
   };
+  // 지도 박지 월드컵(map-worldcup.js)에서 부른다: TOP 3 설문 글에 1·2·3위 박지를 넣고 {before: 예전 내 답, after: 결과}를 돌려준다
+  window.okbmLoungeTop3Put = async function (postId, spotIds) {
+    const c = sb();
+    if (!c) throw new Error('no_client');
+    const answers = (spotIds || []).filter(Boolean).slice(0, 3).map(function (sid) {
+      const s = spotById(sid);
+      return { key: 's:' + sid, label: spotName(s) || String(sid) };
+    });
+    const old = await q(c.rpc('okbm_top3_results', { p_ids: [postId] })).catch(function () { return null; });
+    const before = Array.isArray(old) && old[0] && Array.isArray(old[0].mine) && old[0].mine.length ? old[0].mine : null;
+    const r = await q(c.rpc('okbm_top3_submit', { p_post_id: postId, p_answers: answers }));
+    if (r && r.post_id) {
+      D.top3[postId] = r;
+      T3[postId] = { edit: false, slots: [null, null, null], q: ['', '', ''], all: false };
+      paintTop3(postId);
+      if (D.status === 'ready') paintHub();
+    }
+    if (window.okbmPoints) window.okbmPoints.check('vote'); // 처음 답하면 투표 참여 포인트 (H32·I6)
+    return { before: before, after: r };
+  };
+  // 그 글을 라운지 게시판에서 펼쳐 연다
+  window.okbmLoungeOpenPost = function (postId) { openLoungeWindow(2, postId, null); };
   window.closeLoungeWindow = closeLoungeWindow;
   window.closeLoungeSheet = function () { closeSheet(); };
   // 지도 정보창 후기 블록(romantic-sync.js)에서 부른다. 두 페이지 부트로더에 bindLazy로 걸려 있다
