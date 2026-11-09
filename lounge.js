@@ -5423,6 +5423,12 @@
     if (D.status === 'idle') loadAll();
     openPostForm(null, 'gear', { kind: 'review', gear: { id: g.id || '', name: String(g.name).slice(0, 120), cat: GEAR_CAT[g.cat] ? g.cat : 'other', weight_g: Number(g.weight_g) || 0 } });
   };
+  // 지도 '최애 장비 후기' 칸(map-gear-card.js)에서 부른다: 장비 탭(후기)을 열고 그 위에 장비를 고르는 후기 쓰기 창
+  window.okbmLoungeGearReviewNew = function () {
+    S.gt.kind = 'review';
+    openLoungeWindow(TAB_GEAR, null, null);
+    openPostForm(null, 'gear', { kind: 'review', gear: null, cat: null });
+  };
   window.okbmLoungeGearOpen = function (g) {
     if (!g || !g.name) return;
     ensureLayer();
