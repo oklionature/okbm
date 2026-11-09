@@ -2,7 +2,7 @@
   "version_file": "gears_master.json",
   "categories": {
     "shelter": {
-      "count": 928,
+      "count": 930,
       "file": "gears/shelter.json"
     },
     "sleep": {
