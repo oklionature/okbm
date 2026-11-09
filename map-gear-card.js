@@ -61,7 +61,7 @@
   function small(key) { var u = R2 + key; return typeof window.okbmFastImageUrl === 'function' ? window.okbmFastImageUrl(u, 120) : u; }
   var VS_A = small('okbm/6e6e6ff3-9261-4fd5-9259-36e1b2ccb0d7/6ae1f89a-f8e7-49f9-9c9a-47c819b21b5d.jpg');
   var VS_B = small('okbm/e0817167-1b1c-4042-85b4-87d63c13cc8e/15baeeae-898c-4589-94aa-1195e14f64f3.jpg');
-  var WC_SRC = 'map-worldcup.js?v=1';
+  var WC_SRC = 'map-worldcup.js?v=2';
 
   var CARD ='<div class="okbm-gc-head"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20l6-10 4 6 3-4 5 8z"/><circle cx="17" cy="6" r="2"/></svg>낭만루터 참여</div>' +
     '<button type="button" class="okbm-gc-x" data-gc="close" data-metric-click="feat_map_gc_close" aria-label="닫기"><svg viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg></button>' +

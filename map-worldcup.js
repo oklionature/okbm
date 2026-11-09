@@ -1,7 +1,8 @@
 // =========================================================================
 // 박지 이상형 월드컵 32강 (2026-11-09, 대표님. 시안 audit/worldcup32/index.html)
 //
-// 지도 '낭만루터 참여' 칸(map-gear-card.js)에서 받아 연다. 화면 전체를 덮는 층 하나에
+// 지도 '낭만루터 참여' 칸(map-gear-card.js)에서 받아 연다. 아래 메뉴(56px) 위까지 덮는 층 하나에
+//   (휴대폰에선 아래 메뉴가 맨 위 층이라, 바닥까지 덮으면 아래쪽 단추·글이 메뉴에 가려진다)
 //   시작 → 대결(32강~결승, 31번) → 2·3위 고르기(1위도 바꿀 수 있음) → 결과
 // 결과의 1·2·3위는 라운지 '내 최애 박지 TOP 3' 설문 답으로 들어간다(lounge.js okbmLoungeTop3Put → okbm_top3_submit).
 // 예전에 답했다면 이번 결과로 바뀐다.
@@ -79,7 +80,7 @@
   }
 
   var CSS = [
-    '.okbm-wc{--bg-0:#000;--bg-1:#0f0f11;--bg-2:#17171b;--bg-3:#2a2a30;--line:rgba(255,255,255,.08);--line-strong:rgba(255,255,255,.16);--tx-1:#f2f2f3;--tx-2:#d1d1d6;--tx-3:#8b8b93;--accent:#4c94f8;--accent-fill:#2b6fd6;--gold:#e9c46a;--silver:#c9ced6;--bronze:#d29a6a;position:fixed;inset:0;z-index:calc(var(--z-modal,1000) + 40);background:var(--bg-0);color:var(--tx-1);font-size:13px;-webkit-tap-highlight-color:transparent;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;word-break:keep-all}',
+    '.okbm-wc{--bg-0:#000;--bg-1:#0f0f11;--bg-2:#17171b;--bg-3:#2a2a30;--line:rgba(255,255,255,.08);--line-strong:rgba(255,255,255,.16);--tx-1:#f2f2f3;--tx-2:#d1d1d6;--tx-3:#8b8b93;--accent:#4c94f8;--accent-fill:#2b6fd6;--gold:#e9c46a;--silver:#c9ced6;--bronze:#d29a6a;position:fixed;left:0;right:0;top:0;bottom:calc(56px + env(safe-area-inset-bottom,0px));z-index:calc(var(--z-modal,1000) + 40);background:var(--bg-0);color:var(--tx-1);font-size:13px;-webkit-tap-highlight-color:transparent;padding-top:env(safe-area-inset-top,0px);box-sizing:border-box;word-break:keep-all}',
     '.okbm-wc[hidden],.okbm-wc [hidden]{display:none!important}',
     '.okbm-wc *{box-sizing:border-box}',
     '.okbm-wc button{font:inherit;color:inherit}',
@@ -197,7 +198,7 @@
     '.okbm-wc .found span{font-size:12px;color:var(--tx-3);flex:none}',
     '.okbm-wc .found .in{color:var(--accent)}',
     '.okbm-wc .pickfoot{flex:none;padding-block:10px 12px;border-top:1px solid var(--line);background:var(--bg-0)}',
-    '.okbm-wc .toast{position:absolute;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);background:var(--bg-3);color:var(--tx-1);padding:10px 14px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;width:max-content;max-width:calc(100% - 32px);z-index:9}',
+    '.okbm-wc .toast{position:absolute;left:50%;bottom:36px;transform:translate(-50%,12px);background:var(--bg-3);color:var(--tx-1);padding:10px 14px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;width:max-content;max-width:calc(100% - 32px);z-index:9}',
     '.okbm-wc .toast.on{opacity:1;transform:translate(-50%,0)}',
     '@media (min-height:760px){.okbm-wc .card .nm{font-size:24px}}',
     '@media (prefers-reduced-motion:reduce){.okbm-wc .card,.okbm-wc .stage,.okbm-wc .progress i,.okbm-wc .toast{transition:none}}'
