@@ -133,7 +133,6 @@ const SCRIPT_HOSTS = [
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/",
   "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/",
   "https://dapi.kakao.com",
-  "https://t1.daumcdn.net",
   "https://t1.kakaocdn.net",
   "https://developers.kakao.com",
   "https://openapi.naver.com",
@@ -154,7 +153,7 @@ const CONNECT_COMMON = [
   `https://${SUPABASE_HOST}`, `wss://${SUPABASE_HOST}`, // REST·RPC·Edge Functions·Realtime
   "https://romantic-upload-worker.ggumfree.workers.dev", // 사진 업로드·CSP 신고
   "https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev", // 우리 사진(R2)
-  "https://*.kakao.com", "https://*.daumcdn.net",        // Kakao SDK(API·로그인·공유), 지도 SDK
+  "https://*.kakao.com", "https://*.kakaocdn.net",       // Kakao SDK(API·로그인·공유), 지도 SDK(daumcdn은 2026-12 종료)
   "https://openapi.naver.com",                           // 네이버 프로필(fetch 폴백)
   "data:", "blob:",                                      // 사진 압축·캡처 중간 결과
 ];
