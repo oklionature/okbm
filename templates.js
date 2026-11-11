@@ -1087,6 +1087,42 @@ function downloadReadyShotBlob(blob, fileName) {
   setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
 }
 
+// 안드로이드 앱(0.9.2부터) PhotoSave: 웹뷰엔 내려받기 처리기가 없어 <a download>가 조용히 실패한다(11-11 진단)
+function getOkbmPhotoSavePlugin() {
+  if (!isOkbmNativeApp()) return null;
+  var C = window.Capacitor;
+  var PS = C && C.Plugins && C.Plugins.PhotoSave;
+  if (!PS || !(C.isPluginAvailable && C.isPluginAvailable('PhotoSave'))) return null;
+  return PS;
+}
+
+function readyShotBlobToBase64(blob) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function() { resolve(String(reader.result || '').split(',')[1] || ''); };
+    reader.onerror = function() { reject(reader.error || new Error('read failed')); };
+    reader.readAsDataURL(blob);
+  });
+}
+
+// 앱은 PhotoSave로 사진첩 '사진/낭만루트'에, 웹은 내려받기로. 앱에서 못 넣으면 던진다(저장됐다고 알리지 않게)
+async function saveReadyShotBlob(blob, fileName) {
+  if (!isOkbmNativeApp()) {
+    downloadReadyShotBlob(blob, fileName);
+    return;
+  }
+  var PS = getOkbmPhotoSavePlugin();
+  if (!PS || typeof PS.save !== 'function') throw new Error('PhotoSave unavailable');
+  await PS.save({ data: await readyShotBlobToBase64(blob), name: fileName });
+}
+
+// 앱에서 인스타: 휴대폰 공유 창을 열어 인스타를 고르게 한다(instagram://app은 안드로이드 인스타가 받지 않는다)
+async function shareReadyShotBlobNative(blob, fileName) {
+  var PS = getOkbmPhotoSavePlugin();
+  if (!PS || typeof PS.share !== 'function') throw new Error('PhotoSave unavailable');
+  await PS.share({ data: await readyShotBlobToBase64(blob), name: fileName });
+}
+
 // [헌법 2] 업로드는 공통 통로(okbmUploadImageBlob)로만 한다. 로그인 토큰이 붙고 https URL만 돌려받는다.
 // Worker가 실제 바이트로 형식을 판별하므로 PNG도 그대로 올라간다.
 async function uploadReadyShotBlob(blob) {
@@ -1154,13 +1190,9 @@ function openExternalAppUrl(url) {
 
 function openInstagramApp() {
   var ua = navigator.userAgent || '';
-  var isMobile = /Android|iPhone|iPad|iPod/i.test(ua) || isOkbmNativeApp();
+  var isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
   if (!isMobile) {
     try { window.open('https://www.instagram.com/', '_blank', 'noopener'); } catch (e) {}
-    return;
-  }
-  if (isOkbmNativeApp()) {
-    openExternalAppUrl('instagram://app');
     return;
   }
   var opened = false;
@@ -1307,19 +1339,24 @@ window.handleReadyShotShareAction = async function(act) {
 
   try {
     if (act === 'save') {
-      downloadReadyShotBlob(blob, fileName);
+      try {
+        await saveReadyShotBlob(blob, fileName);
+      } catch (eSave) {
+        console.warn('[templates.js:handleReadyShotShareAction:save]', eSave);
+        if (typeof showToast === 'function') showToast('저장 중 오류가 발생했습니다.', 'warn');
+        return;
+      }
       if (typeof showToast === 'function') showToast('사진이 입혀진 레디샷이 저장되었습니다.', 'success', 2200);
       return;
     }
 
     if (act === 'instagram') {
       if (isOkbmNativeApp()) {
-        downloadReadyShotBlob(blob, fileName);
-        setTimeout(openInstagramApp, 700);
-      } else {
-        openInstagramApp();
-        downloadReadyShotBlob(blob, fileName);
+        await shareReadyShotBlobNative(blob, fileName);
+        return;
       }
+      openInstagramApp();
+      downloadReadyShotBlob(blob, fileName);
       if (typeof showToast === 'function') showToast('이미지를 저장했습니다. 인스타를 엽니다.', 'success', 2200);
       return;
     }
@@ -1336,7 +1373,7 @@ window.handleReadyShotShareAction = async function(act) {
           return;
         } catch (eNativeKakao) {
           console.warn('[templates.js:handleReadyShotShareAction:kakaolink]', eNativeKakao);
-          downloadReadyShotBlob(blob, fileName);
+          await saveReadyShotBlob(blob, fileName);
           if (typeof showToast === 'function') showToast('카카오 공유를 열 수 없어 이미지를 저장했습니다.', 'warn', 2200);
           return;
         }
