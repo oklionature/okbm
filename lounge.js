@@ -594,11 +594,13 @@
       '.lm-ytap iframe{display:block;width:100%;margin-top:8px;border:0;border-radius:12px;background:#17171b;aspect-ratio:16/9}',
       '.lm-ytap.short iframe{width:min(70%,236px);aspect-ratio:9/16}',
       '.lmx-cm .lm-bd{display:block}',
-      // 사진은 원래 비율대로(대표님 11-11: 가로 사진이 세로 칸에 잘려 보임). 한 장은 폭·340px 안에 다 보이게,
-      // 여러 장은 옆으로 넘기게 한 장 폭을 85%까지로(높이는 사진마다 달라도 자르지 않는다)
-      '.lm-photos{display:flex;align-items:flex-start;gap:6px;margin-top:10px;overflow-x:auto;scrollbar-width:none}',
-      '.lm-photos img{flex:none;display:block;width:auto;height:auto;max-width:100%;max-height:340px;border-radius:12px;background:#17171b}',
-      '.lm-photos.multi img{max-width:85%}',
+      // 사진은 자르지 않는다(대표님 11-11: 가로 사진이 세로 칸에 잘려 보임). 한 장은 원래 비율로 폭·340px 안에 다 보이게,
+      // 여러 장은 칸을 모두 4:5(한 장 폭 85%)로 맞추고 사진은 가운데, 남는 곳은 단색(대표님 11-11 B안). 누르면 크게 본다
+      '.lm-photos{display:flex;gap:6px;margin-top:10px;overflow-x:auto;scrollbar-width:none}',
+      '.lm-ph{flex:none;display:block;max-width:100%;padding:0;border:0;border-radius:12px;overflow:hidden;background:#17171b;cursor:zoom-in}',
+      '.lm-ph img{display:block;width:auto;height:auto;max-width:100%;max-height:340px}',
+      '.lm-photos.multi .lm-ph{width:85%;aspect-ratio:4/5;background:#202027}',
+      '.lm-photos.multi .lm-ph img{width:100%;height:100%;max-height:none;object-fit:contain}',
       '.lm-acts{display:flex;align-items:center;gap:4px;margin:8px 0 0 -8px}',
       '.lm-act{height:32px;padding:0 8px;border-radius:16px;display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}',
       '.lm-act.on{color:var(--pink)}',
@@ -2329,7 +2331,7 @@
         ${p.category === 'gear' && p.gear_name ? gearCardHtml(p) : ''}
         <div class="lm-tt">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}${p.is_pinned ? '<span class="lm-tag">고정</span>' : ''}</div>${p.gear_review ? rvSumHtml(p.gear_review) : ''}${p.body ? (p.gear_review ? rvBodyHtml(p.body) : `<div class="lm-bd">${bodyHtml(p.body)}</div>`) : ''}
         ${p.category === 'poll' ? (p.poll_kind === 'top3' ? top3Html(p) : pollHtml(p)) : ''}
-        ${photos.length ? `<div class="lm-photos ${photos.length > 1 ? 'multi' : ''}">${photos.map(function (u) { return `<img src="${escapeHtml(okbmFastImageUrl(u))}" alt="" loading="lazy" decoding="async">`; }).join('')}</div>` : ''}
+        ${photos.length ? `<div class="lm-photos ${photos.length > 1 ? 'multi' : ''}">${photos.map(function (u, i) { return `<button type="button" class="lm-ph" data-a="photo-view" data-v="${i}" aria-label="사진 ${i + 1} 크게 보기"><img src="${escapeHtml(okbmFastImageUrl(u))}" alt="" loading="lazy" decoding="async"></button>`; }).join('')}</div>` : ''}
         ${p.is_private ? `<div class="lm-private">${ico(P.lock, 13)}나와 운영팀만 볼 수 있어요 · 댓글 ${cc}</div>`
           : `<div class="lm-acts">${likeBtn(p)}<span class="lm-act">${ico(P.chat, 17)}<span>${cc}</span></span></div>`}
       </div></div>`;
@@ -4899,6 +4901,11 @@
     loungeMetric(a, v, item);
     switch (a) {
       case 'x': toggleItem(item); break;
+      case 'photo-view': { // 글 사진을 누르면 그 사진부터 크게 본다(photo-viewer.js). 글은 접히거나 펼쳐지지 않는다
+        const urls = Array.prototype.map.call(t.parentElement.querySelectorAll('img'), function (img) { return img.getAttribute('src'); });
+        if (typeof window.okbmOpenPhotoViewer === 'function') window.okbmOpenPhotoViewer(urls, Number(v));
+        break;
+      }
       case 'deal-ig': e.preventDefault(); openDealInsta(t.dataset.kind, t.dataset.code); break;
       case 'body-yt': {
         e.preventDefault();
