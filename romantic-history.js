@@ -4705,12 +4705,126 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }, 120);
   };
 
+  // 낭만피드 박지 이름을 누르면, 아직 별을 안 누른 남의 피드에서 한 번만 좋아요를 권한다(대표님 11-14: B안).
+  // 막지는 않는다. '다음에 할게요'는 별 없이 바로 지도로 간다.
+  var OKBM_LIKE_NUDGE_KEY = 'okbm_feed_like_nudged';
+
+  function okbmFeedLikeNudgeTarget(pill) {
+    if (typeof window.okbmCheckUserLoginStatus !== 'function' || !window.okbmCheckUserLoginStatus()) return null;
+    var myId = typeof window.okbmGetNormalizedUserId === 'function' ? String(window.okbmGetNormalizedUserId() || '') : '';
+    if (!myId) return null;
+    var card = pill.parentElement;
+    var starBtn = null;
+    while (card && card !== document.body) {
+      starBtn = card.querySelector('[data-star-card-id]');
+      if (starBtn) break;
+      card = card.parentElement;
+    }
+    if (!starBtn) return null;
+    var icon = starBtn.querySelector('svg');
+    var fill = icon ? icon.getAttribute('fill') : '';
+    if (fill && fill !== 'none' && fill !== 'transparent') return null;
+    var feedId = String(starBtn.getAttribute('data-star-card-id') || '').replace(/[`'"]/g, '').trim();
+    if (!feedId || safeGetJSON(OKBM_LIKE_NUDGE_KEY, {})[feedId]) return null;
+    var sameId = function(r) { return r && String(r.id).replace(/[`'"]/g, '').trim() === feedId; };
+    var rec = (window.interactiveHistory || []).find(sameId) || (Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds.find(sameId) : null);
+    var authorBtn = card.querySelector('[data-author][data-user-id]');
+    if (rec && typeof window.isRecordOwner === 'function' && window.isRecordOwner(rec)) return null;
+    if (authorBtn && String(authorBtn.getAttribute('data-user-id') || '').trim() === myId) return null;
+    var author = rec ? String(rec.author || rec.nick || rec.nickname || '').trim() : '';
+    if (!author && authorBtn) author = String(authorBtn.getAttribute('data-author') || '').trim();
+    var labelEl = pill.querySelector('span');
+    return { feedId: feedId, author: author, label: labelEl ? labelEl.textContent.trim() : '' };
+  }
+
+  function okbmRememberFeedLikeNudge(feedId) {
+    var seen = safeGetJSON(OKBM_LIKE_NUDGE_KEY, {});
+    seen[feedId] = Date.now();
+    var keys = Object.keys(seen);
+    if (keys.length > 300) {
+      keys.sort(function(a, b) { return seen[a] - seen[b]; }).slice(0, keys.length - 300).forEach(function(k) { delete seen[k]; });
+    }
+    try { localStorage.setItem(OKBM_LIKE_NUDGE_KEY, JSON.stringify(seen)); } catch (e) {}
+  }
+
+  // 받침 있는 말 뒤에는 '으로'(ㄹ 받침은 '로')
+  function okbmRoParticle(word) {
+    var code = String(word || '').charCodeAt(String(word || '').length - 1) - 0xAC00;
+    if (code < 0 || code > 11171) return '로';
+    var jong = code % 28;
+    return (jong === 0 || jong === 8) ? '로' : '으로';
+  }
+
+  function okbmOpenFeedLikeNudge(target, go) {
+    okbmRememberFeedLikeNudge(target.feedId);
+    var old = document.getElementById('okbmFeedLikeNudge');
+    if (old) old.remove();
+    var star = function(size, fill) {
+      return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="' + fill + '" stroke="#fde047" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+    };
+    var body = target.author
+      ? ('좋아요로 ' + escapeHtml(target.author) + '님께 고마움을 전해 주세요.')
+      : '좋아요로 고마움을 전해 주세요.';
+    var wrap = document.createElement('div');
+    wrap.id = 'okbmFeedLikeNudge';
+    wrap.innerHTML =
+      '<div data-nudge-close="1" style="position:fixed; inset:0; z-index:99998; background:rgba(0,0,0,0.55);"></div>' +
+      '<div role="dialog" aria-modal="true" aria-labelledby="okbmFeedLikeNudgeTitle" style="position:fixed; left:0; right:0; bottom:0; z-index:99999; background:#17171b; border-radius:20px 20px 0 0; padding:10px 20px calc(24px + env(safe-area-inset-bottom, 0px)); font-family:\'Pretendard Variable\', Pretendard, -apple-system, sans-serif;">' +
+        '<div style="width:36px; height:4px; border-radius:2px; background:#2a2a30; margin:0 auto 18px;"></div>' +
+        '<div style="display:flex; gap:12px; align-items:flex-start;">' +
+          '<div style="flex:0 0 44px; height:44px; border-radius:12px; background:rgba(253,224,71,0.12); display:flex; align-items:center; justify-content:center;">' + star(22, 'none') + '</div>' +
+          '<div style="min-width:0;">' +
+            '<div id="okbmFeedLikeNudgeTitle" style="font-size:16px; font-weight:700; color:#f2f2f3; line-height:1.35;">피드 보고 궁금증이 생기셨다면</div>' +
+            '<div style="font-size:13px; color:#d1d1d6; margin-top:4px; line-height:1.5;">' + body + '</div>' +
+          '</div>' +
+        '</div>' +
+        (target.label
+          ? '<div style="margin:14px 0 0; padding:10px 12px; background:#0f0f11; border-radius:10px; font-size:12px; color:#8b8b93; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><span style="color:#d1d1d6; font-weight:600;">' + escapeHtml(target.label) + '</span>' + okbmRoParticle(target.label) + ' 가요</div>'
+          : '') +
+        '<button type="button" data-nudge-like="1" style="display:flex; align-items:center; justify-content:center; gap:6px; width:100%; margin-top:16px; height:48px; border:0; border-radius:12px; background:#2b6fd6; color:#fff; font:inherit; font-size:14px; font-weight:700; cursor:pointer;">' + star(16, '#fde047') + '좋아요 남기고 보기</button>' +
+        '<button type="button" data-nudge-skip="1" style="display:block; width:100%; margin-top:6px; height:40px; border:0; background:none; color:#8b8b93; font:inherit; font-size:13px; cursor:pointer;">다음에 할게요</button>' +
+      '</div>';
+    (document.getElementById('romanticHistoryModal') || document.body).appendChild(wrap);
+    var busy = false;
+    wrap.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      if (busy) return;
+      if (e.target.closest('[data-nudge-close]')) { wrap.remove(); return; }
+      if (e.target.closest('[data-nudge-skip]')) { wrap.remove(); go(); return; }
+      var likeBtn = e.target.closest('[data-nudge-like]');
+      if (!likeBtn) return;
+      busy = true;
+      likeBtn.style.opacity = '0.7';
+      // 서버에 별이 들어간 뒤 넘어간다(바로 넘어가면 요청이 끊길 수 있다). 4초가 넘으면 그냥 간다.
+      try {
+        await Promise.race([
+          window.toggleFeedStar(target.feedId, null),
+          new Promise(function(resolve) { setTimeout(resolve, 4000); })
+        ]);
+      } catch (likeErr) {
+        console.warn('[romantic-history.js:okbmOpenFeedLikeNudge]', likeErr);
+      }
+      wrap.remove();
+      go();
+    });
+  }
+
   if (!window.__okbmFeedSpotMapClickBound) {
     window.__okbmFeedSpotMapClickBound = true;
     document.addEventListener('click', function(e) {
       var btn = e.target && e.target.closest ? e.target.closest('.js-feed-spot-map') : null;
       if (!btn) return;
-      window.navigateToSpotMap(btn.getAttribute('data-spot') || '', e, btn.getAttribute('data-spot-id') || '');
+      var spot = btn.getAttribute('data-spot') || '';
+      var spotId = btn.getAttribute('data-spot-id') || '';
+      var nudge = okbmFeedLikeNudgeTarget(btn);
+      if (nudge) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        okbmOpenFeedLikeNudge(nudge, function() { window.navigateToSpotMap(spot, null, spotId); });
+        return;
+      }
+      window.navigateToSpotMap(spot, e, spotId);
     }, true);
   }
 
