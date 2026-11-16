@@ -3739,7 +3739,7 @@ function updateSmartResetButtons() {
           var btn = e.target && e.target.closest ? e.target.closest('[data-gpx-act]') : null;
           if (!btn) return;
           if (btn.getAttribute('data-gpx-act') === 'off') hideGpxGuide();
-          else checkGpxPosition(true);
+          else checkGpxPosition(true, true);
         });
         document.body.appendChild(bar);
         return bar;
@@ -3753,7 +3753,9 @@ function updateSmartResetButtons() {
       }
 
       // 앱 안에서는 기기 위치 기능을 쓴다. 웹 위치 기능을 쓰면 아이폰이 앱 허락 창 뒤에 사이트 허락 창을 한 번 더 띄운다.
-      function getDevicePosition(onOk, onFail) {
+      // silent: 지도를 열거나 화면을 다시 켤 때처럼 낭만루터가 누르지 않은 확인. 이미 허락받았을 때만 위치를 읽고,
+      // 아니면 설명 창·기기 허락 창을 띄우지 않고 그냥 넘어간다(11-16 대표님: 위치 단추·GPX를 누를 때만 묻는다).
+      function getDevicePosition(onOk, onFail, silent) {
         const nativeGeo = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation;
         const useNativeGeo = !!(nativeGeo && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
         if (!useNativeGeo && !navigator.geolocation) return onFail('unsupported');
@@ -3764,22 +3766,33 @@ function updateSmartResetButtons() {
           if (useNativeGeo) nativeGeo.getCurrentPosition({ enableHighAccuracy: highAccuracy, timeout: 15000 }).then(onOk, onFail);
           else navigator.geolocation.getCurrentPosition(onOk, onFail, { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 });
         };
+        if (silent) {
+          okbmLocationPermState(useNativeGeo ? nativeGeo : null).then(function(state) {
+            if (state === 'granted') ask(); else onFail({ code: 'silent', message: 'not granted' });
+          });
+          return;
+        }
         okbmLocationRationale(useNativeGeo ? nativeGeo : null).then(function(go) {
           if (go) ask(); else onFail({ code: 'later', message: 'later' });
         });
+      }
+
+      // 정확한 위치 허락 상태: 'granted' | 'prompt' | 'denied'. 안드로이드에서 '대략적인 위치'만 허락했으면 'prompt'다.
+      function okbmLocationPermState(nativeGeo) {
+        var stateP = nativeGeo && typeof nativeGeo.checkPermissions === 'function'
+          ? Promise.resolve(nativeGeo.checkPermissions()).then(function(p) { return (p && p.location) || 'prompt'; })
+          : (navigator.permissions && typeof navigator.permissions.query === 'function'
+            ? navigator.permissions.query({ name: 'geolocation' }).then(function(r) { return r.state; })
+            : Promise.resolve('prompt'));
+        return stateP.catch(function() { return 'unknown'; });
       }
 
       // 11-16 대표님 A안: 위치를 아직 허락하지 않았으면 기기 허락 창 앞에 왜 필요한지 한 번 알려 준다.
       // 안드로이드 허락 창에는 앱이 이유를 적을 칸이 없고, '정확한 위치'를 골라야 GPX 길 안내가 되기 때문.
       // 이미 허락했거나(granted) 거절해 둔 경우(denied, 기기 창이 안 뜸)는 묻지 않고 바로 간다. '나중에'면 false.
       function okbmLocationRationale(nativeGeo) {
-        var stateP = nativeGeo && typeof nativeGeo.checkPermissions === 'function'
-          ? Promise.resolve(nativeGeo.checkPermissions()).then(function(p) { return (p && p.location) || 'prompt'; })
-          : (navigator.permissions && typeof navigator.permissions.query === 'function'
-            ? navigator.permissions.query({ name: 'geolocation' }).then(function(r) { return r.state; })
-            : Promise.resolve('prompt'));
-        return stateP.catch(function() { return 'granted'; }).then(function(state) {
-          if (state === 'granted' || state === 'denied') return true;
+        return okbmLocationPermState(nativeGeo).then(function(state) {
+          if (state === 'granted' || state === 'denied' || state === 'unknown') return true;
           return new Promise(function(resolve) {
             var old = document.getElementById('okbmLocWhy');
             if (old) old.remove();
@@ -3811,8 +3824,9 @@ function updateSmartResetButtons() {
         } else { userLocationOverlay.setPosition(loc); userLocationOverlay.setMap(map); }
       }
 
-      // force: '다시 확인' 단추. 화면을 켤 때는 15초 안에 다시 묻지 않는다.
-      function checkGpxPosition(force) {
+      // force: 15초 안에 다시 확인하지 않는 제한을 건너뛴다. userTap: 낭만루터가 GPX·'다시 확인'을 눌렀을 때만 true.
+      // 누르지 않은 확인(지도 열 때·화면 다시 켤 때)은 위치를 이미 허락받았을 때만 조용히 읽는다.
+      function checkGpxPosition(force, userTap) {
         if (!gpxTrack || !isKakaoMapReady() || gpxCheckBusy || isGpxGuideHidden()) return;
         if (!force && Date.now() - gpxLastCheckAt < 15000) return;
         gpxCheckBusy = true;
@@ -3852,10 +3866,14 @@ function updateSmartResetButtons() {
           } else {
             setGpxGuide('길 위에 있어요' + leftText, 'ok');
           }
-        }, function() {
+        }, function(err) {
           gpxCheckBusy = false;
+          if (err && err.code === 'silent') {
+            if (barShown) { var bar = document.getElementById('okbmGpxGuide'); if (bar) bar.remove(); }
+            return;
+          }
           if (barShown) setGpxGuide('위치를 받지 못했어요. 위치 권한을 확인해 주세요', 'warn');
-        });
+        }, !userTap);
       }
 
       function saveGpxActive(sId, url, pts) {
@@ -4241,7 +4259,7 @@ function updateSmartResetButtons() {
           try { localStorage.removeItem(GPX_GUIDE_HIDDEN_KEY); } catch (e) {}
           showToast('등산로 선을 켰어요. 화면을 다시 켤 때마다 길 위 내 위치를 알려 드려요', { html: ICONS.HIKING });
           refreshCurrentSpotPopup();
-          checkGpxPosition(true);
+          checkGpxPosition(true, true);
         } catch (err) {
           showToast('등산로 파일을 불러올 수 없습니다.', { html: ICONS.ALERT_CARD });
         }
