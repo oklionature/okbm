@@ -315,7 +315,7 @@
         bindLazy('openSpotReviewSheet', window.okbmEnsureLounge);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.10.43" defer></script>
+    <script src="romantic-sync.js?v=2.10.44" defer></script>
     <script src="romantic-history.js?v=2.8.53" defer></script>
     <script src="my-badges.js?v=14" defer></script>
     <script src="romantic-points.js?v=20" defer></script>
@@ -1405,6 +1405,21 @@
           pointer-events: auto !important;
         }
       }
+      /* 펼친 폴드·태블릿처럼 손가락으로 쓰는 넓은 화면: 왼쪽 칸(목록·박지 정보) + 오른쪽 지도 + 아래 탭.
+         마우스로 쓰는 PC는 이 묶음에 걸리지 않는다. */
+      .sheet-close-btn .scb-back { display: none; }
+      @media (min-width: 769px) and (hover: none) and (pointer: coarse) {
+        :root { --okbm-dock-max: none; --okbm-pane-w: 360px; --okbm-pane-bottom: calc(56px + 43px + env(safe-area-inset-bottom, 0px)); }
+        .sidebar { width: var(--okbm-pane-w) !important; height: calc(100% - var(--okbm-pane-bottom)) !important; padding-top: var(--okbm-status-top) !important; box-sizing: border-box !important; }
+        .pc-sliding-drawer { left: 0; width: var(--okbm-pane-w); height: calc(100% - var(--okbm-pane-bottom)); padding-top: calc(14px + var(--okbm-status-top)); z-index: calc(var(--z-sidebar) + 10); box-shadow: none; border-right: 1px solid var(--border-titanium); transform: translateX(-24px); }
+        .pc-sliding-drawer.open { transform: translateX(0); }
+        html .pc-sliding-drawer.open ~ .floating-drawer-close-tab { display: none !important; }
+        .floating-top-search-wrap { left: calc(var(--okbm-pane-w) + 12px) !important; right: 12px !important; max-width: none !important; margin: 0 !important; }
+        .pc-sliding-drawer .sheet-close-btn { width: auto; height: 32px; padding: 0 12px 0 10px; border-radius: 999px; gap: 2px; color: var(--accent-blue); border-color: var(--border-titanium); font-size: 0.8rem; }
+        .pc-sliding-drawer .sheet-close-btn .scb-x { display: none; }
+        .pc-sliding-drawer .sheet-close-btn .scb-back { display: inline-flex; align-items: center; }
+        .pc-sliding-drawer .sheet-close-btn .scb-back::before { content: ''; width: 7px; height: 7px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); margin-right: 5px; }
+      }
     </style>
   </head>
   <body>
@@ -1754,7 +1769,7 @@
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.130"></script>
+       <script src="map-main.js?v=1.0.131"></script>
     <script src="photo-map.js?v=26" defer></script>
     <script src="spot-tips.js?v=14" defer></script>
     <script src="map-gear-card.js?v=6" defer></script>

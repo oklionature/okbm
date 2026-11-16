@@ -1469,7 +1469,7 @@
       function initMapBottomStrip() {
         const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
         on('mbsPhotoBtn', function() { triggerHaptic(15); togglePhotoMap(); });
-        on('mbsListBtn', function() { if (currentMapLayerState === 3) setMapLayerState(mapBaseLayer); toggleMobileSidebar(); });
+        on('mbsListBtn', function() { if (currentMapLayerState === 3) setMapLayerState(mapBaseLayer); if (window.innerWidth > 768) { closePcSlidingDrawer(); return; } toggleMobileSidebar(); });
         on('mbsLayerBtn', function() { triggerHaptic(10); toggleMapTypeMode(); });
         on('mbsLocateBtn', function(e) { if (currentMapLayerState === 3) setMapLayerState(mapBaseLayer); locateUserPosition(e); });
         on('mbsFoldBtn', function() { handleSmartResetClick(); });
@@ -2560,8 +2560,8 @@ function updateSmartResetButtons() {
           var sheetTop = (window.innerHeight - dockH - sheetH) - mapRect.top;
           if (sheetTop > visibleTop + 48 && sheetTop < mh) visibleBottom = sheetTop;
         } else if (drawerOpen) {
-          var drawerW = drawer.offsetWidth || 380;
-          if (drawerW > 0 && drawerW < mw - 80) visibleLeft = drawerW;
+          var drawerCover = drawer.getBoundingClientRect().right - mapRect.left;
+          if (drawerCover > 0 && drawerCover < mw - 80) visibleLeft = drawerCover;
         }
 
         var desiredX = (visibleLeft + visibleRight) / 2;
@@ -3034,7 +3034,7 @@ function updateSmartResetButtons() {
           activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
-        const isMobileView = window.innerWidth <= 768 || ('ontouchstart' in window && window.innerWidth <= 1024);
+        const isMobileView = window.innerWidth <= 768;
         if (isMobileView) {
           setMobileSidebarCollapsed(true);
           closePcSlidingDrawer();
@@ -4487,7 +4487,7 @@ function updateSmartResetButtons() {
         }).join('')}</div>` : '';
         
         const targetUnlockLink = okbmSpotUnlockTarget(spot);
-        const closeBtn = isMobileSheet ? '' : `<button type="button" class="sheet-close-btn" onclick="closePcSlidingDrawer()" title="닫기">✕</button>`;
+        const closeBtn = isMobileSheet ? '' : `<button type="button" class="sheet-close-btn" onclick="closePcSlidingDrawer()" title="닫기"><span class="scb-x">✕</span><span class="scb-back">목록</span></button>`;
         const adminTopActions = isAdminMode ? `
           <div class="sheet-admin-actions" onclick="event.stopPropagation();">
             <button type="button" class="btn-edit" style="display:inline-block;" data-id="${spot.id}" onclick="editSpotById(event, this.dataset.id)">${ICONS.EDIT}수정</button>
