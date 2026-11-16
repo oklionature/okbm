@@ -3746,15 +3746,9 @@ window.toggleFeedStar = async function(cardId, e) {
     }
   };
 
-  if (directBtn) {
-    var directIcon = directBtn.querySelector('svg');
-    if (directIcon) {
-      directIcon.style.transform = 'scale(1.25)';
-      setTimeout(function() { if (directIcon) directIcon.style.transform = 'scale(1)'; }, 180);
-    }
-  }
-
   updateStarDOMElements(sId, nextStarred, nextCount);
+  if (directBtn && window.okbmMotion) window.okbmMotion.starPop(directBtn, nextStarred);
+  if (nextStarred && typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(10); } catch (hapErr) {} }
 
   if (targetCard) {
     targetCard.likes = nextCount;

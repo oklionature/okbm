@@ -134,17 +134,25 @@
       return;
     }
     el.disabled = true;
+    var motion = window.okbmMotion;
+    if (motion) motion.thanksPress(el);
     rpc('okbm_send_thanks', { p_spot_id: sId, p_to_user: to }).then(function (res) {
       var hit = store[sId];
       var p = hit && hit.list.filter(function (x) { return x.user_id === to; })[0];
       if (p) { p.sent = true; p.n = Number(res && res.n) || (p.n + 1); }
       if (res && res.new && counts[to]) delete counts[to];
       paint(sId);
+      if (motion) {
+        document.querySelectorAll('[data-okbm-thanks-slot] .okbm-thx-b.on').forEach(function (b) {
+          if (b.closest('[data-okbm-thanks-slot]').getAttribute('data-okbm-thanks-slot') === sId) motion.thanksDone(b);
+        });
+      }
       if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_spot_thanks'); // 기능 사용 세기 (H8)
       if (typeof window.showToast === 'function') window.showToast((p ? p.nick + '님께 ' : '') + '고마움을 전했어요', 'success', 2000);
       if (typeof window.okbmThanksAfterSend === 'function') window.okbmThanksAfterSend(to);
     }).catch(function () {
       el.disabled = false;
+      if (motion) motion.thanksCancel(el);
       if (typeof window.showToast === 'function') window.showToast('보내지 못했어요. 잠시 뒤 다시 눌러 주세요.', 'error', 2200);
     });
   }

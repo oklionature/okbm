@@ -126,7 +126,11 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function num(n) { return Number(n || 0).toLocaleString('ko-KR'); }
   function metric(n) { if (typeof window.okbmMetric === 'function') window.okbmMetric(n); }
-  function toast(msg) { if (typeof window.showToast === 'function') window.showToast(msg, 'success', 1800); }
+  function toast(msg, coin) {
+    if (typeof window.showToast !== 'function') return;
+    if (coin && window.okbmMotion) window.showToast(msg, 'success', 1800, { html: window.okbmMotion.COIN });
+    else window.showToast(msg, 'success', 1800);
+  }
   function myId() {
     try { return typeof window.okbmGetCurrentUserId === 'function' ? String(window.okbmGetCurrentUserId() || '').trim() : ''; } catch (e) { return ''; }
   }
@@ -182,7 +186,7 @@
     return new Promise(function (ok) { setTimeout(ok, 400); }).then(function () { return load(true); }).then(function (d) {
       if (!d) return;
       var bal = Number(d.balance) || 0;
-      if (before != null && bal > before) toast('+' + num(bal - before) + ' 낭만 포인트');
+      if (before != null && bal > before) toast('+' + num(bal - before) + ' 낭만 포인트', true);
       else if (before != null && hint && CAP[hint] && (Number((d.today || {})[hint]) || 0) >= CAP[hint] && S.capShown[hint] !== kstDay()) {
         // 상한 안내는 그 활동마다 하루 한 번만
         S.capShown[hint] = kstDay();
@@ -208,8 +212,8 @@
       if (res && res.error) throw res.error;
       try { localStorage.setItem(key, day); } catch (e) {}
       var g = res && res.data ? res.data : {};
-      if (Number(g.streak_bonus) > 0) toast('7일 연속 출석! +' + num(g.gained) + ' 낭만 포인트');
-      else if (Number(g.attend) > 0) toast('출석 +' + num(g.attend) + ' 낭만 포인트');
+      if (Number(g.streak_bonus) > 0) toast('7일 연속 출석! +' + num(g.gained) + ' 낭만 포인트', true);
+      else if (Number(g.attend) > 0) toast('출석 +' + num(g.attend) + ' 낭만 포인트', true);
       return load(true).then(syncBalance);
     }).catch(function (e) { console.warn('[romantic-points:attend]', e); });
   }
@@ -236,8 +240,19 @@
     box.setAttribute('data-pt-open', '1');
     box.setAttribute('aria-label', '낭만 포인트 자세히 보기');
     cardBox = box;
-    box.innerHTML = cardHtml(S.data);
+    paintCard();
     load(false).then(function (d) { syncBalance(d); });
+  }
+  // 카드가 화면에 보일 때 마지막으로 보여 준 숫자(seen)에서 굴려 올린다. 안 보일 때 오른 만큼은 다음에 보일 때 굴러간다
+  var seen = null;
+  function paintCard() {
+    if (!cardBox || !document.body.contains(cardBox)) return;
+    var d = S.data;
+    cardBox.innerHTML = cardHtml(d);
+    if (!d || !cardBox.offsetParent) return;
+    var now = { uid: S.uid, bal: Math.max(0, Number(d.balance) || 0), today: todaySum(d.today) };
+    if (seen && seen.uid === now.uid && now.bal > seen.bal && window.okbmMotion) window.okbmMotion.points(cardBox, seen, now, DAY_MAX);
+    seen = now;
   }
 
   // ---------------------------------------------------------------- 전체 창
@@ -289,7 +304,7 @@
 
   function repaint() {
     var d = S.data;
-    if (cardBox && document.body.contains(cardBox)) cardBox.innerHTML = cardHtml(d);
+    paintCard();
     var b = document.getElementById('okbmPointsBody');
     if (b) b.innerHTML = sheetHtml(d);
     var bal = document.getElementById('okbmPointsBal');

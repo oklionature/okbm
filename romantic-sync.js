@@ -9918,8 +9918,8 @@ window.submitPastTripRegister = async function() {
 
   if (submitBtn) {
     submitBtn.disabled = true;
-    submitBtn.textContent = '올리는 중...';
-    submitBtn.style.opacity = '0.6';
+    if (window.okbmMotion) window.okbmMotion.upBusy(submitBtn);
+    else submitBtn.textContent = '올리는 중...';
   }
 
   var y = parseInt(parts[0], 10);
@@ -9964,8 +9964,8 @@ window.submitPastTripRegister = async function() {
     if (saved && saved.__serverSaveFailed) {
       if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.textContent = '올리기';
-        submitBtn.style.opacity = '1';
+        if (window.okbmMotion) window.okbmMotion.upFail(submitBtn, '다시 올리기');
+        else submitBtn.textContent = '올리기';
       }
       return;
     }
@@ -9996,6 +9996,7 @@ window.submitPastTripRegister = async function() {
     triggerHaptic(15);
     if (typeof window._ptwClearDraft === 'function') window._ptwClearDraft();
     if (typeof window.refreshMyReportFullStats === 'function') window.refreshMyReportFullStats();
+    await new Promise(function(ok) { if (window.okbmMotion) window.okbmMotion.upDone(submitBtn, ok); else ok(); });
     window._ptwShowDone(newRecord, function() {
     var el = document.getElementById('pastTripRegisterModal');
     var fromPlan = !!(el && (el.dataset.fromPlan === '1' || el.dataset.stay === '1'));
@@ -10021,8 +10022,8 @@ window.submitPastTripRegister = async function() {
     if (typeof showToast === 'function') showToast('등록 중 오류가 발생했습니다.', 'error');
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = '올리기';
-      submitBtn.style.opacity = '1';
+      if (window.okbmMotion) window.okbmMotion.upFail(submitBtn, '다시 올리기');
+      else submitBtn.textContent = '올리기';
     }
   }
 };
