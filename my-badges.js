@@ -134,6 +134,15 @@
     '.bdg-box .btns button{height:46px;border-radius:12px;border:0;font:inherit;font-size:15px;font-weight:800;cursor:pointer}',
     '.bdg-box .btns .c{background:var(--bg-2,#17171b);color:var(--tx-2,#d1d1d6)}.bdg-box .btns .s{background:var(--accent-fill,#2b6fd6);color:#fff}',
     '.bdg-box .btns.one{grid-template-columns:1fr}',
+    // 한꺼번에 받은 새 배지 부채꼴(11-17 시안 16번)
+    '.bdg-fanbox{display:flex;flex-direction:column;align-items:center;gap:18px;width:100%;max-width:340px;color:#f2f2f3;text-align:center}',
+    '.bdg-fanbox .eb{font-size:12px;font-weight:700;color:#fbbf24;letter-spacing:.04em}',
+    '.bdg-fanbox h2{margin:4px 0 2px;font-size:19px;font-weight:800}.bdg-fanbox p{margin:0;font-size:12px;color:var(--tx-3,#8b8b93)}',
+    '.bdg-fan{position:relative;width:100%;height:220px}',
+    '.bdg-fc{position:absolute;left:50%;top:50%;width:118px;height:160px;margin:-80px 0 0 -59px;border-radius:16px;background:linear-gradient(180deg,#1d1d22,#121215);border:1px solid rgba(255,224,150,.28);box-shadow:0 10px 28px rgba(0,0,0,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 6px;box-sizing:border-box;transform-origin:50% 120%;cursor:pointer;font:inherit;color:#f2f2f3;transition:transform .3s cubic-bezier(.32,.72,0,1),filter .3s}',
+    '.bdg-fc svg{width:78px;height:89px;flex:none}.bdg-fc b{font-size:13px;font-weight:800;line-height:1.3;word-break:keep-all}',
+    '.bdg-fanbox .s{height:46px;width:100%;border-radius:12px;border:0;font:inherit;font-size:15px;font-weight:800;background:var(--accent-fill,#2b6fd6);color:#fff;cursor:pointer}',
+    '@media (prefers-reduced-motion: reduce){.bdg-fc{transition:none}}',
     // 장착 (badge-ring.js 사진 링)
     '.bdg-it{position:relative}.bdg-on{position:absolute;top:-4px;left:50%;transform:translateX(-50%);padding:2px 8px;border-radius:999px;background:#f1cf6a;color:#1c1405;font-size:11px;font-weight:800;white-space:nowrap;z-index:1}',
     '.bdg-eq{display:flex;align-items:center;gap:12px;width:100%;margin-top:14px;padding:12px;border-radius:14px;background:var(--bg-2,#17171b);box-sizing:border-box;text-align:left}',
@@ -297,10 +306,67 @@
         (b.got ? '<button type="button" class="c" data-bdg-save="' + esc(b.id) + '">이미지 저장</button>' : '') + '<button type="button" class="s" data-bdg-ok="1">확인</button></div>' +
       '</div>';
     document.body.appendChild(el);
+    if (isNew) riseIn(el);
   }
   function nextInQueue() {
     var b = queue.shift();
     if (b) showPop(b, true);
+  }
+  function still() { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+  // 새 배지 하나: 창이 아래에서 올라오고 배지 둘레로 금빛이 한 번 번진다
+  function riseIn(el) {
+    var box = el && el.querySelector('.bdg-box');
+    if (!box || !box.animate || still()) return;
+    box.animate([{ transform: 'translateY(40px) scale(.94)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    var art = box.querySelector('svg');
+    if (art) art.animate([{ filter: 'drop-shadow(0 0 0 rgba(240,196,92,0))' }, { filter: 'drop-shadow(0 0 22px rgba(240,196,92,.75))', offset: 0.35 }, { filter: 'drop-shadow(0 0 0 rgba(240,196,92,0))' }], { duration: 1200, delay: 200, easing: 'ease-out' });
+  }
+  // 새 배지 여럿: 겹쳐 올라왔다가 부채꼴로 펼쳐진다. 뒤 카드를 누르면 앞으로 오고, 앞 카드를 누르면 그 배지 창(장착·이미지 저장)이 열린다
+  var fan = [], fanFront = 0;
+  function fanPos(i, n, front) {
+    var mid = (n - 1) / 2, step = n > 3 ? 11 : 15, d = i - mid;
+    var isF = i === front;
+    return 'translate(' + (d * (n > 3 ? 40 : 58)).toFixed(0) + 'px,' + (Math.abs(d) * 9 - (isF ? 10 : 0)).toFixed(0) + 'px) rotate(' + (d * step).toFixed(1) + 'deg) scale(' + (isF ? 1.08 : 0.92) + ')';
+  }
+  function paintFan() {
+    var cards = document.querySelectorAll('#okbmBadgePop .bdg-fc');
+    cards.forEach(function (c, i) {
+      var isF = i === fanFront;
+      c.style.transform = fanPos(i, cards.length, fanFront);
+      c.style.zIndex = isF ? 20 : 10 - Math.abs(i - fanFront);
+      c.style.filter = isF ? 'none' : 'brightness(.65)';
+      c.setAttribute('aria-label', fan[i].ko + (isF ? ' 배지 자세히 보기' : ' 배지 앞으로'));
+    });
+  }
+  function showFan(list) {
+    ensureCss();
+    var old = document.getElementById('okbmBadgePop');
+    if (old) old.remove();
+    fan = list.slice(0, 5);
+    fanFront = Math.floor((fan.length - 1) / 2);
+    queue = [];
+    var el = document.createElement('div');
+    el.id = 'okbmBadgePop';
+    el.className = 'bdg-pop';
+    el.innerHTML = '<div class="bdg-fanbox" role="dialog" aria-modal="true" aria-label="새 배지 ' + list.length + '개">' +
+      '<div><span class="eb">NEW BADGE</span><h2>새 배지 ' + list.length + '개를 받았어요</h2><p>카드를 눌러 보세요</p></div>' +
+      '<div class="bdg-fan">' + fan.map(function (b, i) { return '<button type="button" class="bdg-fc" data-bdg-fan="' + i + '">' + svg(b) + '<b>' + esc(b.ko) + '</b></button>'; }).join('') + '</div>' +
+      '<button type="button" class="s" data-bdg-ok="1">확인</button>' +
+    '</div>';
+    document.body.appendChild(el);
+    paintFan();
+    if (still()) return;
+    el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220 });
+    el.querySelectorAll('.bdg-fc').forEach(function (c, i) {
+      var end = c.style.transform;
+      c.style.transition = 'none';
+      c.animate([
+        { transform: 'translate(0,170px) rotate(0) scale(.8)', opacity: 0 },
+        { transform: 'translate(0,0) rotate(0) scale(1)', opacity: 1, offset: 0.45 },
+        { transform: end, opacity: 1 }
+      ], { duration: 820, delay: i * 50, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }).onfinish = function () { c.style.transition = ''; };
+    });
+    if (typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(12); } catch (e) {} }
   }
 
   // 이미지 저장: 1080×1080, 배지 + 이름 + 받은 날 + 닉네임
@@ -391,6 +457,7 @@
     var fresh = LIST.filter(function (b) { return b.got && seen.indexOf(b.id) < 0; });
     if (!fresh.length) return;
     metric('feat_badge_new');
+    if (fresh.length > 1) { showFan(fresh); return; }
     queue = fresh;
     nextInQueue();
   }
@@ -523,6 +590,12 @@
       return;
     }
     if ((x = t.closest('[data-bdg-save]'))) { var bs = find(x.getAttribute('data-bdg-save')); if (bs) saveImage(bs); return; }
+    if ((x = t.closest('[data-bdg-fan]'))) {
+      var fi = Number(x.getAttribute('data-bdg-fan'));
+      if (fi !== fanFront) { fanFront = fi; paintFan(); return; }
+      if (fan[fi]) { metric('feat_badge_open'); showPop(fan[fi], false); }
+      return;
+    }
     if ((x = t.closest('[data-bdg-ok]')) || t.id === 'okbmBadgePop') { var p = document.getElementById('okbmBadgePop'); if (p) p.remove(); nextInQueue(); return; }
     if ((x = t.closest('[data-bdg]'))) { var b = find(x.getAttribute('data-bdg')); if (b) { metric('feat_badge_open'); showPop(b, false); } }
   });

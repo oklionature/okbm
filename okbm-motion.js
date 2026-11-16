@@ -12,6 +12,14 @@
 // 8. flyIn / flyBack: 누른 카드 사진이 그대로 커져 창 사진이 되고, 닫으면 그 카드 자리로 돌아간다(홈 테마 스팟·매거진, 11-17 시안 6·10번)
 // 9. profileIn: 피드에서 누른 동그란 사진이 프로필 머리 자리로 날아가고 숫자가 굴러 들어온다. 창이 닫히면 사진이 돌아간다(user-profile.js, 11-17 시안 9번)
 // 10. bookify: 매거진 카드뉴스(4:5)를 옆 스크롤 대신 책장처럼 한 장씩 넘긴다. 누르거나 옆으로 밀면 넘어간다(lounge.js, 11-17 시안 10번)
+// 11. badgeBump: 내 리포트 알림 숫자가 톡 튀고, 보고 있는 동안 새 알림이 늘면 종이 딸랑 흔들린다(romantic-sync.js, 11-17 시안 13번)
+//     staggerIn: 알림함 줄이 위에서부터 차례로 내려온다
+// 12. countRing: 글자 수 '12/120' 대신 차오르는 동그라미. 남은 글자가 1/6이면 노랗게 남은 수를 보이고, 다 차면 빨개지고 더 쓰면 칸이 흔들린다(14번)
+// 13. pop / sheen: 체크가 톡 튀기, 단추 위로 빛이 한 번 지나가기(패킹 완료·후기 올리기 단추, 15·22번)
+// 14. rate: 박지 별점이 첫 별부터 차례로 튀며 채워진다. 별 위를 옆으로 밀어서도 고른다(spot-tips.js, 18번)
+// 15. 칩 차오름: 팁 칩·장비 칩(.stp-chip·.qgr-chip)을 켜면 누른 자리에서 하얀색이 번진다. 팁 칩은 앞에 체크가 붙는다(19번)
+// 16. thumbSnap / thumbPlay: 후기 올리기 사진 칸에서 새 사진은 아래에서 차례로 올라오고, 지우면 옆 사진이 미끄러져 채운다(17번)
+// 17. flip: 공개 스위치 앞 지구·자물쇠 그림이 돌아 바뀐다(21번)
 // 6. pullRefresh  낭만피드 맨 위에서 당기면 로고 산이 드러나고 해가 떠오른다. 놓으면 새로 받는다(romantic-history.js, 11-17)
 //    로고 산 모양은 인스타에니/로고/등장_해돋이/조각/산.geojson을 옮긴 것(영상 끝 카드 해돋이와 같은 움직임)
 //
@@ -59,6 +67,21 @@
     '.okm-book-dots{display:flex;gap:5px;justify-content:center;margin-top:10px}',
     '.okm-book-dots i{width:5px;height:5px;border-radius:3px;background:rgba(255,255,255,.3);transition:width .3s,background-color .3s}',
     '.okm-book-dots i.on{width:14px;background:#fff}',
+    '.okm-cring{display:inline-flex!important;align-items:center;gap:5px;vertical-align:middle;line-height:1}',
+    '.okm-cring svg{width:20px;height:20px;transform:rotate(-90deg);transition:transform .2s;flex:none}',
+    '.okm-cring circle{fill:none;stroke-width:2.4}',
+    '.okm-cring .bg{stroke:#2a2a30}',
+    '.okm-cring .fg{stroke:#4c94f8;stroke-linecap:round;transition:stroke-dashoffset .18s ease-out,stroke .2s}',
+    '.okm-cring.warn .fg{stroke:#fbbf24}.okm-cring.full .fg{stroke:#f43f5e}',
+    '.okm-cring.warn svg,.okm-cring.full svg{transform:rotate(-90deg) scale(1.18)}',
+    '.okm-cring .okm-cl{font-size:11px;font-weight:700;color:#fbbf24;font-variant-numeric:tabular-nums;min-width:2ch;text-align:right}',
+    '.okm-cring.full .okm-cl{color:#f43f5e}',
+    '.okm-sheen{position:absolute;top:0;bottom:0;width:45%;left:-55%;pointer-events:none;z-index:2}',
+    '.stp-stars{touch-action:pan-y}',
+    '.stp-stars button svg{width:28px;height:28px;display:block;margin:auto}',
+    '.stp-stars button svg polygon{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}',
+    '.stp-stars button.on svg polygon{fill:currentColor}',
+    '.stp-chip.on::before{content:"";display:inline-block;width:12px;height:12px;margin:0 4px 0 -2px;vertical-align:-1px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23000%27 stroke-width=%273.4%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M20 6 9 17l-5-5%27/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23000%27 stroke-width=%273.4%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M20 6 9 17l-5-5%27/%3E%3C/svg%3E") center/contain no-repeat}',
     '@keyframes okmFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}',
     '@keyframes okmBeat{0%{transform:scale(1)}35%{transform:scale(1.35)}60%{transform:scale(.9)}100%{transform:scale(1)}}',
     '@keyframes okmDraw{to{stroke-dashoffset:0}}',
@@ -505,10 +528,17 @@
     var b = e.target && e.target.closest && e.target.closest('[data-metric-click="feat_user_feed_open"]');
     if (!b) return;
     var img = b.querySelector('img');
-    lastAvatarTap = img && img.getBoundingClientRect().width ? { img: img, at: Date.now() } : null;
+    lastAvatarTap = img && img.getBoundingClientRect().width ? { img: img, btn: b, at: Date.now() } : null;
   }, true);
 
-  // 프로필 창 머리(paintHeader)를 그릴 때마다 부른다. 누른 사진이 있으면 한 번만 날리고, 숫자가 생긴 첫 그림에서 한 번 굴린다
+  // 프로필 창은 피드 위 z 2147483642라 사진 유령은 그보다 위에 띄운다
+  var PROFILE_Z = '2147483646';
+  // el 안 (x, y)를 가운데로 한 원. 반지름 r
+  function circleAt(r, x, y) { return 'circle(' + r.toFixed(1) + 'px at ' + x.toFixed(1) + 'px ' + y.toFixed(1) + 'px)'; }
+  function farCorner(w, h, x, y) { return Math.sqrt(Math.pow(Math.max(x, w - x), 2) + Math.pow(Math.max(y, h - y), 2)) + 2; }
+
+  // 프로필 창 머리(paintHeader)를 그릴 때마다 부른다. 누른 사진이 있으면 한 번만, 그 사진 자리에서 창이 동그랗게 퍼지고(12번 B안)
+  // 사진은 머리 자리로 날아간다. 숫자가 생긴 첫 그림에서 한 번 굴린다
   function profileIn(modal) {
     if (!modal || reduce()) return;
     var av = modal.querySelector('.mr-av');
@@ -516,12 +546,19 @@
       var tap = lastAvatarTap;
       lastAvatarTap = null;
       modal.__okmRoll = true;
-      var r0 = visibleRect(tap.img), r1 = av.getBoundingClientRect();
-      if (r0 && r1.width) {
+      var r0 = visibleRect(tap.img), r1 = av.getBoundingClientRect(), mr = modal.getBoundingClientRect();
+      if (r0 && r1.width && mr.width) {
+        var cx = r0.left + r0.width / 2 - mr.left, cy = r0.top + r0.height / 2 - mr.top;
+        modal.animate([
+          { clipPath: circleAt(r0.width / 2, cx, cy) },
+          { clipPath: circleAt(farCorner(mr.width, mr.height, cx, cy), cx, cy) }
+        ], { duration: 520, easing: 'cubic-bezier(.5,0,.2,1)' });
         var g = ghostAt(r0, tap.img.currentSrc || tap.img.src, '50%');
+        g.style.zIndex = PROFILE_Z;
         av.style.visibility = 'hidden';
-        flyBox(g, r0, r1, '50%', '50%', 420).onfinish = function () { av.style.visibility = ''; g.remove(); };
-        watchProfileClose(modal, tap.img);
+        tap.img.style.visibility = 'hidden';
+        flyBox(g, r0, r1, '50%', '50%', 460).onfinish = function () { av.style.visibility = ''; tap.img.style.visibility = ''; g.remove(); };
+        watchProfileClose(modal, tap.img, tap.btn);
       }
     }
     if (modal.__okmRoll) {
@@ -533,25 +570,69 @@
       }
     }
   }
-  // 창이 문서에서 빠지는 순간, 마지막으로 잰 머리 사진 자리에서 피드 사진 자리로 돌려보낸다
-  function watchProfileClose(modal, img) {
-    var last = null;
+  // 창이 문서에서 빠지는 순간, 빠진 창을 껍데기로 다시 띄워 피드 사진 자리로 동그랗게 줄이고 사진도 그 자리로 돌려보낸다.
+  // 같은 사람 창을 다시 그렸으면(관심 누르기 등) 새 창을 지켜보고, 피드 사진이 다른 창에 덮였으면(기록 열기) 아무것도 안 한다
+  function watchProfileClose(modal, img, btn) {
+    var last = null, scrolled = [];
     function measure() {
       var av = modal.querySelector('.mr-av');
       last = av ? av.getBoundingClientRect() : null;
     }
-    setTimeout(measure, 450);
-    modal.addEventListener('scroll', measure, true);
+    setTimeout(measure, 480);
+    modal.addEventListener('scroll', function (e) {
+      measure();
+      if (scrolled.indexOf(e.target) < 0) scrolled.push(e.target);
+      e.target.__okmTop = e.target.scrollTop;
+    }, true);
     var mo = new MutationObserver(function () {
       if (modal.isConnected) return;
       mo.disconnect();
+      var nu = document.getElementById('userFeedCollectionModal');
+      if (nu && nu !== modal && String(nu.dataset.userId || nu.dataset.author || '') === String(modal.dataset.userId || modal.dataset.author || '')) {
+        watchProfileClose(nu, img, btn);
+        return;
+      }
       var r1 = visibleRect(img);
-      if (!last || !last.width || last.bottom < 0 || !r1 || reduce()) return;
+      if (!r1 || reduce()) return;
+      var hit = document.elementFromPoint(r1.left + r1.width / 2, r1.top + r1.height / 2);
+      var home = btn || img;
+      if (!hit || !(home === hit || home.contains(hit) || hit.contains(home))) return;
+      shrinkShell(modal, r1, scrolled);
+      if (!last || !last.width || last.bottom < 0) return;
       var g = ghostAt(last, img.currentSrc || img.src, '50%');
+      g.style.zIndex = PROFILE_Z;
       img.style.visibility = 'hidden';
-      flyBox(g, last, r1, '50%', '50%', 340).onfinish = function () { img.style.visibility = ''; g.remove(); };
+      flyBox(g, last, r1, '50%', '50%', 380).onfinish = function () { img.style.visibility = ''; g.remove(); };
     });
     mo.observe(document.body, { childList: true, subtree: true });
+  }
+  // 닫힌 창을 똑같이 복사해(id는 지워 다른 코드가 못 찾게) 보던 스크롤 그대로 띄우고, 사진 자리로 원을 줄인 뒤 지운다
+  function shrinkShell(modal, to, scrolled) {
+    var all = modal.querySelectorAll('*');
+    var shell = modal.cloneNode(true);
+    shell.removeAttribute('id');
+    shell.querySelectorAll('[id]').forEach(function (el) { el.removeAttribute('id'); });
+    shell.setAttribute('aria-hidden', 'true');
+    shell.inert = true;
+    shell.style.pointerEvents = 'none';
+    var av = shell.querySelector('.mr-av');
+    if (av) av.style.visibility = 'hidden';
+    document.body.appendChild(shell);
+    var copies = shell.querySelectorAll('*');
+    scrolled.forEach(function (el) {
+      if (!el.__okmTop) return;
+      if (el === modal) { shell.scrollTop = el.__okmTop; return; }
+      var i = Array.prototype.indexOf.call(all, el);
+      if (i >= 0 && copies[i]) copies[i].scrollTop = el.__okmTop;
+    });
+    var sr = shell.getBoundingClientRect();
+    var cx = to.left + to.width / 2 - sr.left, cy = to.top + to.height / 2 - sr.top;
+    var a = shell.animate([
+      { clipPath: circleAt(farCorner(sr.width, sr.height, cx, cy), cx, cy) },
+      { clipPath: circleAt(to.width / 2, cx, cy) }
+    ], { duration: 420, easing: 'cubic-bezier(.5,0,.2,1)', fill: 'forwards' });
+    a.onfinish = function () { shell.remove(); };
+    setTimeout(function () { if (shell.isConnected) shell.remove(); }, 900);
   }
 
   function bookify(view) {
@@ -605,6 +686,200 @@
     return { current: function () { return pages[cur]; } };
   }
 
+  // ---------------------------------------------------------------- 11. 알림 종
+  // el: 숫자 칸. prev가 없으면(머리를 막 그림) 숫자만 톡, 보고 있는 동안 늘었으면 ring일 때 종도 흔든다
+  function badgeBump(el, prev, next, ring) {
+    if (!canAnimate(el) || !(next > 0) || next === prev || !el.offsetParent) return;
+    el.animate([{ transform: 'scale(0)' }, { transform: 'scale(1.25)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: 420, easing: 'cubic-bezier(.2,.9,.3,1.3)' });
+    if (!ring || prev == null || !(next > prev)) return;
+    var btn = el.closest('button'), icon = btn && btn.querySelector('svg');
+    if (!icon) return;
+    icon.style.transformOrigin = '50% 8%';
+    icon.animate([
+      { transform: 'rotate(0)' }, { transform: 'rotate(16deg)', offset: 0.12 }, { transform: 'rotate(-14deg)', offset: 0.26 },
+      { transform: 'rotate(10deg)', offset: 0.4 }, { transform: 'rotate(-7deg)', offset: 0.54 }, { transform: 'rotate(4deg)', offset: 0.68 },
+      { transform: 'rotate(-2deg)', offset: 0.82 }, { transform: 'rotate(0)' }
+    ], { duration: 900, easing: 'cubic-bezier(.36,.07,.19,.97)' });
+    haptic(8);
+  }
+  function staggerIn(nodes, gap) {
+    if (reduce()) return;
+    Array.prototype.forEach.call(nodes, function (n, i) {
+      if (!n.animate || i > 12) return;
+      n.animate([{ opacity: 0, transform: 'translateY(-14px)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: 40 + i * (gap || 40), easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' });
+    });
+  }
+  function haptic(ms) {
+    if (typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(ms); } catch (e) {} }
+  }
+
+  // ---------------------------------------------------------------- 12. 글자 수 동그라미
+  var RING_C = 2 * Math.PI * 8;
+  function countRing(el, cur, max, input) {
+    if (!el) return;
+    if (!el.__okmRing) {
+      el.__okmRing = true;
+      el.classList.add('okm-cring');
+      el.innerHTML = '<span class="okm-cl"></span><svg viewBox="0 0 20 20" aria-hidden="true"><circle class="bg" cx="10" cy="10" r="8"/><circle class="fg" cx="10" cy="10" r="8" stroke-dasharray="' + RING_C.toFixed(2) + '" stroke-dashoffset="' + RING_C.toFixed(2) + '"/></svg><span class="okm-sr"></span>';
+      if (input && !input.__okmRingIn) {
+        input.__okmRingIn = true;
+        input.addEventListener('beforeinput', function (e) {
+          if (!e.inputType || e.inputType.indexOf('insert') !== 0) return;
+          if (String(input.value || '').length < max || input.selectionStart !== input.selectionEnd) return;
+          if (canAnimate(input)) input.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(4px)' }, { transform: 'translateX(-2px)' }, { transform: 'translateX(0)' }], { duration: 320 });
+          haptic(10);
+        });
+      }
+    }
+    var n = Math.max(0, Number(cur) || 0), rest = max - n;
+    el.querySelector('.fg').setAttribute('stroke-dashoffset', (RING_C * (1 - Math.min(n, max) / max)).toFixed(2));
+    el.classList.toggle('warn', rest > 0 && rest <= Math.ceil(max / 6));
+    el.classList.toggle('full', rest <= 0);
+    el.querySelector('.okm-cl').textContent = rest <= Math.ceil(max / 6) ? String(Math.max(0, rest)) : '';
+    el.querySelector('.okm-sr').textContent = n + '/' + max;
+  }
+
+  // ---------------------------------------------------------------- 13. 톡 튀기 · 빛 지나가기
+  function pop(el) {
+    if (!canAnimate(el)) return;
+    el.animate([{ transform: 'scale(.7)' }, { transform: 'scale(1.15)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: 360, easing: 'cubic-bezier(.2,.9,.3,1.3)' });
+  }
+  function sheen(btn, color) {
+    if (!canAnimate(btn)) return;
+    ensurePositioned(btn);
+    var keepOverflow = btn.style.overflow;
+    btn.style.overflow = 'hidden';
+    var s = document.createElement('span');
+    s.className = 'okm-sheen';
+    s.style.background = 'linear-gradient(100deg,transparent,' + (color || 'rgba(255,255,255,.45)') + ' 50%,transparent)';
+    btn.appendChild(s);
+    btn.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.03)', offset: 0.4 }, { transform: 'scale(1)' }], { duration: 600, easing: 'ease-out' });
+    s.animate([{ left: '-55%' }, { left: '120%' }], { duration: 950, delay: 60, easing: 'ease-out', fill: 'forwards' }).onfinish = function () {
+      s.remove();
+      btn.style.overflow = keepOverflow;
+    };
+    haptic(12);
+  }
+
+  // ---------------------------------------------------------------- 14. 별점
+  var STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+  // 별 칸(class on)은 부르는 쪽이 바로 바꾸고, 여기서는 그림만 차례로 튀게 한다(저장 값은 바로 맞다)
+  function rate(btns, prev, next) {
+    if (reduce()) return;
+    Array.prototype.forEach.call(btns, function (b, i) {
+      var svg = b.querySelector('svg') || b;
+      if (!svg.animate) return;
+      if (i < next && i >= prev) {
+        svg.animate([
+          { transform: 'scale(.6) rotate(-14deg)', opacity: 0.4 },
+          { transform: 'scale(1.25) rotate(6deg)', opacity: 1, offset: 0.55 },
+          { transform: 'scale(1)', opacity: 1 }
+        ], { duration: 380, delay: (i - prev) * 55, easing: 'cubic-bezier(.2,.9,.3,1.35)', fill: 'backwards' });
+      } else if (i >= next && i < prev) {
+        svg.animate([{ transform: 'scale(1)' }, { transform: 'scale(.8)' }, { transform: 'scale(1)' }], { duration: 220, delay: (prev - 1 - i) * 40, easing: 'ease-out' });
+      }
+    });
+    if (next > prev) haptic(6);
+  }
+  // 별 위를 옆으로 밀면 손가락 아래 별을 누른 것처럼 한다. 민 뒤에 따라오는 click 한 번은 삼킨다
+  var starDrag = null, swallowClick = 0;
+  document.addEventListener('pointerdown', function (e) {
+    var box = e.target && e.target.closest && e.target.closest('.stp-stars');
+    starDrag = box ? { box: box, moved: false } : null;
+  }, true);
+  document.addEventListener('pointermove', function (e) {
+    if (!starDrag) return;
+    var btns = starDrag.box.querySelectorAll('[data-stp-star]');
+    if (!btns.length) return;
+    var a = btns[0].getBoundingClientRect(), z = btns[btns.length - 1].getBoundingClientRect();
+    if (e.clientY < a.top - 30 || e.clientY > a.bottom + 30) return;
+    var n = Math.max(1, Math.min(btns.length, Math.ceil((e.clientX - a.left) / ((z.right - a.left) / btns.length))));
+    var cur = starDrag.box.querySelectorAll('[data-stp-star].on').length;
+    if (n === cur) return;
+    starDrag.moved = true;
+    btns[n - 1].click();
+  }, true);
+  document.addEventListener('pointerup', function () {
+    if (starDrag && starDrag.moved) swallowClick = Date.now();
+    starDrag = null;
+  }, true);
+  document.addEventListener('pointercancel', function () { starDrag = null; }, true);
+  document.addEventListener('click', function (e) {
+    if (!swallowClick || Date.now() - swallowClick > 400 || !e.isTrusted) return;
+    swallowClick = 0;
+    if (e.target && e.target.closest && e.target.closest('.stp-stars')) { e.stopPropagation(); e.preventDefault(); }
+  }, true);
+
+  // ---------------------------------------------------------------- 15. 칩 차오름
+  var CHIP = '.stp-chip,.qgr-chip';
+  document.addEventListener('click', function (e) {
+    var c = e.target && e.target.closest && e.target.closest(CHIP);
+    if (!c || reduce() || c.classList.contains('on')) return;
+    var cs = getComputedStyle(c), bg = cs.backgroundColor, col = cs.color, r = c.getBoundingClientRect();
+    var x = (e.clientX || r.left + r.width / 2) - r.left, y = (e.clientY || r.top + r.height / 2) - r.top;
+    setTimeout(function () { if (c.isConnected && c.classList.contains('on')) chipFill(c, x, y, bg, col); }, 0);
+  }, true);
+  function chipFill(c, x, y, offBg, offCol) {
+    var onBg = getComputedStyle(c).backgroundColor;
+    if (onBg === offBg) return;
+    var keep = { p: c.style.position, o: c.style.overflow, i: c.style.isolation };
+    ensurePositioned(c);
+    c.style.overflow = 'hidden';
+    c.style.isolation = 'isolate';
+    c.style.backgroundColor = offBg;
+    c.style.color = offCol;
+    var w = c.offsetWidth, h = c.offsetHeight;
+    var f = document.createElement('span');
+    f.style.cssText = 'position:absolute;left:' + x + 'px;top:' + y + 'px;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;pointer-events:none;z-index:-1;background:' + onBg;
+    c.appendChild(f);
+    var scale = (Math.sqrt(Math.pow(Math.max(x, w - x), 2) + Math.pow(Math.max(y, h - y), 2)) * 2 + 4) / 12;
+    setTimeout(function () { c.style.color = ''; }, 130);
+    f.animate([{ transform: 'scale(0)' }, { transform: 'scale(' + scale.toFixed(2) + ')' }], { duration: 380, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' }).onfinish = function () {
+      f.remove();
+      c.style.backgroundColor = '';
+      c.style.position = keep.p; c.style.overflow = keep.o; c.style.isolation = keep.i;
+    };
+    c.animate([{ transform: 'scale(.95)' }, { transform: 'scale(1)' }], { duration: 220, easing: 'ease-out' });
+    haptic(5);
+  }
+
+  // ---------------------------------------------------------------- 16. 사진 칸
+  // 다시 그리기 전에 사진 칸 자리(사진 주소 → 자리)를 재 두고, 다시 그린 뒤 넘기면 새 사진은 올라오고 남은 사진은 미끄러진다
+  function thumbSnap(box, sel) {
+    var m = {};
+    if (!box) return m;
+    box.querySelectorAll(sel).forEach(function (n) {
+      var img = n.querySelector('img');
+      if (img) m[img.getAttribute('src')] = n.getBoundingClientRect();
+    });
+    return m;
+  }
+  function thumbPlay(box, sel, before) {
+    if (!box || reduce() || !before) return;
+    var had = Object.keys(before).length, k = 0;
+    box.querySelectorAll(sel).forEach(function (n) {
+      var img = n.querySelector('img');
+      if (!img || !n.animate) return;
+      var old = before[img.getAttribute('src')];
+      if (old) {
+        var r = n.getBoundingClientRect(), dx = old.left - r.left, dy = old.top - r.top;
+        if (dx || dy) n.animate([{ translate: dx + 'px ' + dy + 'px' }, { translate: '0 0' }], { duration: 300, easing: 'cubic-bezier(.32,.72,0,1)' });
+      } else if (had || k < 10) {
+        n.animate([{ opacity: 0, translate: '0 40px', scale: '.7' }, { opacity: 1, translate: '0 0', scale: '1' }], { duration: 420, delay: k++ * 70, easing: 'cubic-bezier(.2,.9,.3,1.15)', fill: 'backwards' });
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------- 17. 돌아 바뀌기
+  function flip(el) {
+    if (!canAnimate(el)) return;
+    el.animate([{ transform: 'rotateY(90deg) scale(.7)', opacity: 0.4 }, { transform: 'none', opacity: 1 }], { duration: 360, easing: 'ease-out' });
+  }
+  function riseText(el) {
+    if (!canAnimate(el)) return;
+    el.animate([{ transform: 'translateY(8px)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  }
+
   window.okbmMotion = {
     starPop: starPop,
     rollIn: rollIn,
@@ -620,6 +895,17 @@
     flyIn: flyIn,
     flyBack: flyBack,
     profileIn: profileIn,
-    bookify: bookify
+    bookify: bookify,
+    badgeBump: badgeBump,
+    staggerIn: staggerIn,
+    countRing: countRing,
+    pop: pop,
+    sheen: sheen,
+    rate: rate,
+    STAR_SVG: STAR_SVG,
+    thumbSnap: thumbSnap,
+    thumbPlay: thumbPlay,
+    flip: flip,
+    riseText: riseText
   };
 })();

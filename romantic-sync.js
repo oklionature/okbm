@@ -8504,6 +8504,10 @@ window._pastTripRenderPhotoStage = function() {
   if (countEl) countEl.textContent = photos.length + '장 / 최대 10장';
   if (badgeEl) badgeEl.textContent = photos.length ? ((idx + 1) + ' / ' + photos.length) : '0 / 0';
   if (typeof window._ptwSyncSteps === 'function') window._ptwSyncSteps();
+  // 다시 그리기 전 작은 사진 자리를 재 둔다: 새 사진은 아래에서 차례로 올라오고, 지운 뒤엔 남은 사진이 미끄러진다(11-17 시안 17번)
+  var motion = window.okbmMotion && window.okbmMotion.thumbSnap ? window.okbmMotion : null;
+  var thumbsBefore = motion && stage ? motion.thumbSnap(stage, '[data-past-thumb-idx]') : null;
+  var hadPhotos = !!(stage && stage.querySelector('#pastTripPhotoSwipeTrack'));
   if (stage) {
     if (!photos.length) {
       stage.innerHTML =
@@ -8557,6 +8561,10 @@ window._pastTripRenderPhotoStage = function() {
         var track = document.getElementById('pastTripPhotoSwipeTrack');
         if (track) track.scrollLeft = idx * track.offsetWidth;
       }, 30);
+      if (motion) {
+        motion.thumbPlay(stage, '[data-past-thumb-idx]', thumbsBefore);
+        if (!hadPhotos && stage.firstElementChild) motion.riseText(stage.firstElementChild);
+      }
     }
   }
   window._pastTripSyncMemoInput();
@@ -9657,6 +9665,11 @@ window.openPastTripRegisterModal = function(ev) {
       '.ptw-rv .stp-chip{border-color:rgba(255,255,255,0.10);background:#2a2a30;color:#f2f2f3;font-size:0.72rem}.ptw-rv .stp-chip.on{background:#fff;color:#000;border-color:#fff}' +
       '.ptw-sw{flex:none;width:44px;height:26px;border-radius:13px;border:0;background:#3a3a40;position:relative;cursor:pointer;padding:0;transition:background .2s}.ptw-sw:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}' +
       '.ptw-sw[aria-checked="true"]{background:#ffffff}.ptw-sw[aria-checked="true"]:after{background:#0f0f11}.ptw-sw[aria-checked="true"]:after{transform:translateX(18px)}.ptw-sw:disabled{opacity:.45;cursor:default}' +
+      // 스위치: 누르는 동안 손잡이가 길쭉해지고, 넘어갈 때 살짝 튀며 미끄러진다(11-17 시안 21번)
+      '.ptw-sw:after{transition:transform .3s cubic-bezier(.3,.7,.2,1.25),width .15s ease,background .2s}.ptw-sw:not(:disabled):active:after{width:26px}.ptw-sw[aria-checked="true"]:not(:disabled):active:after{transform:translateX(12px)}' +
+      '.ptw-pub b .ptw-pubi{display:inline-grid;width:17px;height:17px;margin-right:6px;vertical-align:-3px}.ptw-pub b .ptw-pubi svg{width:17px;height:17px}' +
+      '#pastTripSubmitBtn{transition:background-color .3s,color .3s,border-color .3s}#pastTripSubmitBtn.ptw-go-dim{background:#2a2a30 !important;border-color:#2a2a30 !important;color:#8b8b93 !important}' +
+      '@media (prefers-reduced-motion: reduce){.ptw-sw:after,#pastTripSubmitBtn{transition:none}}' +
       '.ptw-plog{border:1px solid rgba(255,255,255,0.1);border-radius:12px;background:#17171b;padding:12px 14px;display:flex;flex-direction:column;gap:8px;transition:border-color .2s,background .2s}.ptw-plog.on{border-color:rgba(52,211,153,0.55)}' +
       '.ptw-plog .ptw-pub b{display:inline-flex;align-items:center;gap:6px}.ptw-plog .ptw-pub b svg{width:17px;height:17px;color:#34d399}.ptw-plog .ptw-sw[aria-checked="true"]{background:#34d399}.ptw-plog .ptw-sw[aria-checked="true"]:after{background:#fff}' +
       '.ptw-plog p{margin:0;font-size:0.72rem;color:#8b8b93;line-height:1.5;font-weight:600}.ptw-plog-row{display:flex;align-items:center;gap:12px}' +
@@ -9813,6 +9826,16 @@ window._ptwSyncSteps = function() {
     if (dots[i]) dots[i].classList.toggle('on', ok);
     if (lines[i]) lines[i].classList.toggle('on', ok);
   });
+  // 셋 다 채우기 전엔 '올리기'가 흐리고, 다 채우는 순간 켜지며 빛이 한 번 지나간다(11-17 시안 22번).
+  // 흐려도 누를 수 있고, 누르면 빠진 칸을 알려 준다. 처음 그릴 때(고치기 등 이미 다 찬 경우)는 빛내지 않는다
+  var go = document.getElementById('pastTripSubmitBtn');
+  if (go && !go.disabled) {
+    var all = done.every(Boolean);
+    var was = go.__ptwAll;
+    go.__ptwAll = all;
+    go.classList.toggle('ptw-go-dim', !all);
+    if (all && was === false && window.okbmMotion) window.okbmMotion.sheen(go, 'rgba(76,148,248,.35)');
+  }
 };
 
 window.updatePastTripMemoCount = function() {
@@ -9827,12 +9850,15 @@ window.updatePastTripMemoCount = function() {
     window._pastTripEnsurePhotoMemos();
     var idx = Number(st.photoIndex) || 0;
     st.photoMemos[idx] = raw;
-    countEl.textContent = cur + '/120';
-    countEl.style.color = '#ffffff';
   } else {
     st.singleMemo = raw;
+  }
+  // 글자 수는 차오르는 동그라미로(okbm-motion.js countRing, 11-17 시안 14번)
+  if (window.okbmMotion && window.okbmMotion.countRing) {
+    window.okbmMotion.countRing(countEl, cur, 120, input);
+  } else {
     countEl.textContent = cur + '/120';
-    countEl.style.color = (cur >= 1 && cur <= 120) ? '#f2f2f3' : '#6b6b73';
+    countEl.style.color = (st.memoMode === 'per_photo' || (cur >= 1 && cur <= 120)) ? '#f2f2f3' : '#6b6b73';
   }
   window.__pastTripRegisterState = st;
   window._ptwSyncSteps();
@@ -10236,8 +10262,14 @@ window._ptwSyncSwitch = function() {
   var label = state === 'unregistered' ? '박지 생기면 공개' : '피드에 공개';
   sw.setAttribute('aria-label', label);
   var b = sw.parentElement ? sw.parentElement.querySelector('b') : null;
-  if (b) b.textContent = label;
+  // 앞 그림: 켜면 지구, 끄면 자물쇠. 바뀔 때 돌아 바뀐다(11-17 시안 21번)
+  var on = sw.getAttribute('aria-checked') === 'true';
+  if (b) b.innerHTML = '<span class="ptw-pubi" aria-hidden="true">' + (on ? PTW_GLOBE : PTW_LOCK) + '</span>' + escapeHtml(label);
+  if (sw.__ptwOn !== undefined && sw.__ptwOn !== on && b && window.okbmMotion) window.okbmMotion.flip(b.querySelector('.ptw-pubi'));
+  sw.__ptwOn = on;
 };
+var PTW_GLOBE = '<svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>';
+var PTW_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="#8b8b93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 (function() {
   var origHint = window._pastTripRenderPublishHint;
   window._pastTripRenderPublishHint = function() {
@@ -10246,6 +10278,7 @@ window._ptwSyncSwitch = function() {
     window._ptwSyncSwitch();
     var st = window.__pastTripRegisterState || {};
     var el = document.getElementById('pastTripPublishHint');
+    var hintBefore = el ? el.textContent : '';
     if (el && window._pastTripPublishState() === 'unregistered') {
       el.textContent = st.publishOff === true
         ? '등록된 박지가 아니라서 나만 보기로 저장돼요. 나중에 박지로 등록돼도 공개하지 않아요.'
@@ -10256,6 +10289,8 @@ window._ptwSyncSwitch = function() {
     } else if (el && window._pastTripPublishState() === 'ok') {
       el.textContent = '다른 낭만루터들의 피드와 이 박지 후기에 올라가요.';
     }
+    // 스위치를 눌러 안내 글이 바뀌면 아래에서 올라오며 바뀐다
+    if (el && hintBefore && el.textContent !== hintBefore && window.okbmMotion) window.okbmMotion.riseText(el);
   };
 })();
 
@@ -13647,6 +13682,9 @@ window.refreshProposalInboxForUser = async function() {
 function okbmPaintCountBadgeEl(el, count) {
   if (!el) return;
   var n = Number(count || 0);
+  // 지난번 숫자: 처음 그리면 숫자만 톡, 보고 있는 동안 알림이 늘면 종이 흔들린다(okbm-motion.js badgeBump)
+  var prev = el.__okmN;
+  el.__okmN = n;
   if (n <= 0) {
     el.style.display = 'none';
     el.textContent = '';
@@ -13654,6 +13692,7 @@ function okbmPaintCountBadgeEl(el, count) {
   }
   el.style.display = 'flex';
   el.textContent = n > 9 ? '9+' : String(n);
+  if (window.okbmMotion && window.okbmMotion.badgeBump) window.okbmMotion.badgeBump(el, prev, n, el.id === 'reportNotifCountBadge');
 }
 
 window.okbmPaintNotifBadge = function(count) {
@@ -14954,6 +14993,8 @@ window.okbmPaintNotifInboxList = async function() {
     okbmBindNotifRowOpen(listEl);
   };
   paint();
+  // 알림함을 열 때 한 번만 줄이 위에서부터 차례로 내려온다(사진을 받아 다시 그릴 때는 그대로)
+  if (window.okbmMotion && window.okbmMotion.staggerIn) window.okbmMotion.staggerIn(listEl.children);
   // 얼굴·피드 사진은 뒤에서 받아 다시 그린다(그 사이 알림 탭을 떠났으면 그리지 않는다)
   okbmEnrichNotifRows(rows).then(function(changed) {
     if (!changed || window.__okbmInboxTab !== 'notif' || !document.body.contains(listEl)) return;

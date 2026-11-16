@@ -251,20 +251,26 @@
     var picked = mineTip && Array.isArray(mineTip.tips) ? mineTip.tips : [];
     var star = mineRev && mineRev.rating ? Number(mineRev.rating) : 0;
     return '<div class="stp-g"><small>별점 <i>선택</i></small><div class="stp-stars">' +
-        [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-stp-star="' + n + '" aria-label="' + n + '점"' + (n <= star ? ' class="on"' : '') + '>★</button>'; }).join('') +
+        [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-stp-star="' + n + '" aria-label="' + n + '점"' + (n <= star ? ' class="on"' : '') + '>' + starGlyph() + '</button>'; }).join('') +
       '</div></div>' +
       GROUPS.map(function (g) {
         return '<div class="stp-g"><small>' + esc(g.label) + (g.one ? '' : ' <i>여러 개</i>') + '</small><div class="stp-chips" data-stp-group="' + g.key + '"' + (g.one ? ' data-one="1"' : '') + '>' +
           g.tips.map(function (k) { return '<button type="button" class="stp-chip' + (picked.indexOf(k) !== -1 ? ' on' : '') + '" data-stp-chip="' + esc(k) + '">' + esc(k) + '</button>'; }).join('') + '</div></div>';
       }).join('');
   }
+  // 별 그림: 움직임 파일이 있으면 SVG 별(튀는 움직임이 붙는다), 없으면 글자 별
+  function starGlyph() { return window.okbmMotion && window.okbmMotion.STAR_SVG ? window.okbmMotion.STAR_SVG : '★'; }
   // 별·팁 누르기. 같은 별을 다시 누르면 별점 없음, 하나만 고르는 묶음은 나머지를 끈다. 처리했으면 true
   function pickClick(e, root) {
     var st = e.target.closest('[data-stp-star]');
     if (st && root.contains(st)) {
       var n = Number(st.getAttribute('data-stp-star'));
-      var next = pickRead(root).star === n ? 0 : n;
+      var prev = pickRead(root).star;
+      var next = prev === n ? 0 : n;
+      var btns = st.parentNode.querySelectorAll('[data-stp-star]');
       root.querySelectorAll('[data-stp-star]').forEach(function (b) { b.classList.toggle('on', Number(b.getAttribute('data-stp-star')) <= next); });
+      // 첫 별부터 누른 별까지 차례로 튄다(okbm-motion.js rate, 11-17 시안 18번)
+      if (window.okbmMotion && window.okbmMotion.rate) window.okbmMotion.rate(btns, prev, next);
       return true;
     }
     var chip = e.target.closest('[data-stp-chip]');

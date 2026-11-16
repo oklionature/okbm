@@ -6636,6 +6636,11 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var charCounter = document.getElementById('richMemoCharCounter');
     if (!charCounter) return;
     var n = Number(len) || 0;
+    // 글자 수는 차오르는 동그라미로(okbm-motion.js countRing, 11-17 시안 14번)
+    if (window.okbmMotion && window.okbmMotion.countRing) {
+      window.okbmMotion.countRing(charCounter, n, 120, document.getElementById('richFormMemoInput'));
+      return;
+    }
     charCounter.innerText = n + '/120자';
     if (window.__tempMemoMode === 'single') {
       charCounter.style.color = (n >= 30 && n <= 120) ? '#34d399' : '#ffffff';

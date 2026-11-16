@@ -244,6 +244,13 @@
       .checklist-item-row.checked .checklist-checkbox-box { background:#ffffff !important; border-color:#ffffff !important; }
       .checklist-item-name { font-size:14px; font-weight:800; color:var(--tx-1, #f2f2f3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:5px; min-width:0; }
       .checklist-item-row.checked .checklist-item-name { color:var(--tx-3, #8b8b93); }
+      /* 체크하면 체크가 그려지고 이름에 줄이 그어진다(11-17 시안 15번) */
+      .checklist-checkbox-box svg path { stroke-dasharray:20; stroke-dashoffset:20; transition:stroke-dashoffset .26s .06s ease-out; }
+      .checklist-item-row.checked .checklist-checkbox-box svg path { stroke-dashoffset:0; }
+      .checklist-item-row .checklist-item-name { position:relative; }
+      .checklist-item-row .checklist-item-name::after { content:""; position:absolute; left:0; right:0; top:52%; height:1.5px; background:var(--tx-3, #8b8b93); transform:scaleX(0); transform-origin:left center; transition:transform .3s cubic-bezier(.4,0,.2,1); pointer-events:none; }
+      .checklist-item-row.checked .checklist-item-name::after { transform:scaleX(1); }
+      @media (prefers-reduced-motion: reduce) { .checklist-checkbox-box svg path, .checklist-item-row .checklist-item-name::after { transition:none; } }
       .checklist-item-weight { font-size:13px; font-weight:800; color:var(--tx-2, #d1d1d6); font-variant-numeric:tabular-nums; }
       .checklist-item-row.checked .checklist-item-weight { color:var(--tx-3, #8b8b93); }
       .ck-head { position:relative; display:flex; align-items:center; gap:8px; min-height:36px; z-index:50; flex-shrink:0; }
@@ -3613,11 +3620,17 @@ window.saveCurrentPackingRecord = function() {
   })();
 
   //  [실전 패킹 체크리스트 인덱스 안전 토글 엔진 - 스크롤 위치 완벽 보존]
+  var PACK_CHECK_SVG = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#000" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
   window.paintChecklistRow = function(changedRow, isChecked) {
     if (!changedRow) return;
     changedRow.classList.toggle('checked', !!isChecked);
     var chkIcon = changedRow.querySelector('.check-icon') || changedRow.querySelector('.checklist-checkbox-box');
-    if (chkIcon) chkIcon.innerHTML = isChecked ? '✓' : '';
+    // 체크 그림은 늘 두고 줄 긋기로 보였다 숨긴다(CSS). 켤 때 동그라미가 톡 튄다
+    if (chkIcon && !chkIcon.querySelector('svg')) chkIcon.innerHTML = PACK_CHECK_SVG;
+    if (isChecked && chkIcon && window.okbmMotion) {
+      window.okbmMotion.pop(chkIcon);
+      if (typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(5); } catch (e) {} }
+    }
   };
 
   window.togglePackCheckByIndex = function(itemIdx) {
@@ -3690,9 +3703,17 @@ window.saveCurrentPackingRecord = function() {
     if (fill) fill.style.width = pct + '%';
 
     var label = document.getElementById('checklistProgressLabel');
+    var wasAll = !label || label.textContent.indexOf('100%') >= 0;
     if (label) label.textContent = all ? '패킹 체크 100% 완료' : '패킹 체크 완료';
     var countEl = document.getElementById('checklistProgressCount');
-    if (countEl) countEl.textContent = String(packed);
+    if (countEl) {
+      var before = Number(countEl.textContent) || 0;
+      countEl.textContent = String(packed);
+      if (packed !== before && window.okbmMotion) window.okbmMotion.rollIn(countEl, packed > before);
+    }
+    // 다 챙긴 순간 완료 단추 위로 초록 빛이 한 번 지나간다(11-17 시안 15번)
+    var dock = document.querySelector('#checklistProgressDock .js-complete-checklist');
+    if (dock && all && !wasAll && window.okbmMotion) window.okbmMotion.sheen(dock, 'rgba(52,211,153,.55)');
 
     var toggleBtn = document.getElementById('checklistToggleAllBtn');
     if (toggleBtn) {
@@ -5039,7 +5060,7 @@ window.saveCurrentPackingRecord = function() {
             return `
               <div onclick="window.togglePackCheckByIndex(Number(this.dataset.checkIdx))" class="checklist-item-row${isChecked ? ' checked' : ''}" data-check-idx="${idx}">
                 <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
-                  <div class="checklist-checkbox-box check-icon">${isChecked ? '✓' : ''}</div>
+                  <div class="checklist-checkbox-box check-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#000" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div>
                   <span class="checklist-item-name">
                     ${isFood ? '<span style="display:inline-flex; align-items:center; width:14px; height:14px; color:var(--tx-3, #8b8b93); flex-shrink:0;">' + UI_ICONS.foodUtensils + '</span>' : ''}
                     <span style="overflow:hidden; text-overflow:ellipsis;">${escapeHtml(it.name || '')}</span>
