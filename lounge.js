@@ -52,6 +52,10 @@
     cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
     pack: '<path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/>',
     tent: '<path d="M2 20h20M4 20l8-15 8 15M12 13l-3 7M12 13l3 7"/>',
+    ask: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14"/><path d="M12 17.5h.01"/>',
+    hill: '<path d="M3 20 9 9l4 6 2-3 6 8Z"/><circle cx="17" cy="6" r="2"/>',
+    pack: '<path d="M8 6V5a4 4 0 0 1 8 0v1"/><rect x="5" y="6" width="14" height="15" rx="4"/><path d="M9 14h6M9 6v4h6V6"/>',
+    bars: '<path d="M5 20V10M12 20V4M19 20v-7"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
     ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'
   };
@@ -836,6 +840,18 @@
       '.lm-sseg button.on{background:#3a3a40;color:#fff}',
       '.lm-pinbox{margin:10px 0 4px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#0c0d10;padding:0 14px}',
       '.lm-pinbox>.lmx:last-child{border-bottom:0}',
+      '.lm-wait{margin:16px 0 4px}',
+      '.lm-wh{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}',
+      '.lm-wh b{font-size:15px;font-weight:800;color:var(--tx)}.lm-wh span{font-size:12px;font-weight:800;color:var(--star)}',
+      '.lm-wr{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px;scroll-padding:0 20px;scroll-snap-type:x proximity}',
+      '.lm-wr::-webkit-scrollbar{display:none}',
+      '.lm-wc{flex:0 0 250px;display:flex;align-items:center;gap:10px;padding:10px;border-radius:14px;background:#16161a;text-align:left;color:var(--tx);scroll-snap-align:start}',
+      '.lm-wc:active{opacity:.7}',
+      '.lm-wc img,.lm-wc i{flex:none;width:52px;height:52px;border-radius:10px;object-fit:cover;background:#222228;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:700;color:var(--sub);text-align:center;line-height:1.25}',
+      '.lm-wx{flex:1;min-width:0}',
+      '.lm-wx b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.lm-wx small{display:block;margin-top:2px;font-size:11.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.lm-wx em{display:inline-flex;align-items:center;margin-top:6px;height:26px;padding:0 10px;border-radius:13px;background:rgba(76,148,248,.16);color:#7fb2ff;font-style:normal;font-size:12px;font-weight:700}',
       '.lmx.cmp:not(.open)>.lm-post{display:none}',
       '.lmx.cmp.open>.lm-crow{display:none}',
       '.lm-crow{display:flex;align-items:center;gap:12px;padding:13px 0;cursor:pointer;transition:opacity .15s}',
@@ -897,6 +913,23 @@
       // 단추는 글꼴을 물려받지 않아 얇고 작게 보였다(대표님 11-07). 누르기 쉽게 높이도 준다
       '.lm-chipline button{font:inherit;color:inherit;min-height:36px;letter-spacing:-.01em}',
       '.lm-chipline button.on{color:var(--blue)}',
+      // 글쓰기 고르기·질문하기 (11-17 시안 2·3)
+      '.lm-pkgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}',
+      '.lm-pk{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:13px;border-radius:16px;background:#1f1f24;text-align:left;color:var(--tx)}',
+      '.lm-pk:active{opacity:.75}',
+      '.lm-pk i{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.07)}',
+      '.lm-pk b{display:block;font-size:15.5px;font-weight:700}',
+      '.lm-pk small{display:block;margin-top:4px;font-size:12.5px;color:#a1a1a8;line-height:1.4}',
+      '.lm-pk em{position:absolute;top:12px;right:12px;font-style:normal;font-size:11.5px;font-weight:800;color:#8a5d00;background:#ffe9b0;padding:3px 7px;border-radius:7px}',
+      '.lm-pk.big{grid-column:span 2;flex-direction:row;align-items:center;gap:14px;background:linear-gradient(120deg,rgba(43,111,214,.3),rgba(43,111,214,.08));box-shadow:inset 0 0 0 1px rgba(76,148,248,.35)}',
+      '.lm-pk.big i{width:48px;height:48px;background:var(--accent-fill);color:#fff}',
+      '.lm-pk.big span{flex:1;min-width:0}.lm-pk.big b{font-size:17px}.lm-pk.big em{position:static;flex:none}',
+      '.lm-pk.k-story i{color:#34d399}.lm-pk.k-gear i{color:var(--star)}.lm-pk.k-poll i{color:#7fb2ff}.lm-pk.k-suggestion i{color:#c7c7cc}',
+      '.lm-chipline[data-ask-topics]{gap:6px;margin:6px 0 4px;font-size:13px;font-weight:600}',
+      '.lm-chipline[data-ask-topics] button{min-height:34px;padding:0 13px;border-radius:17px;background:#1f1f24;color:#c7c7cc}',
+      '.lm-chipline[data-ask-topics] button.on{background:var(--tx);color:#000}',
+      '.lm-askgo{display:flex;align-items:center;justify-content:center;gap:8px;width:100%}',
+      '.lm-askgo em{font-style:normal;font-size:12px;font-weight:800;background:rgba(255,255,255,.2);padding:3px 7px;border-radius:7px}',
       '.lm-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;font-size:13.5px;border-bottom:1px solid var(--div)}',
       '.lm-switch i{flex:none;position:relative;width:44px;height:26px;border-radius:13px;background:#3a3a40;transition:background .2s}',
       '.lm-switch i::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s var(--ease)}',
@@ -2531,6 +2564,29 @@
     });
     return pin.concat(poll, story, etc);
   }
+  // 첫 댓글을 기다리는 글 (대표님 11-17 시안 1): 고정 칸 바로 밑 가로 카드. 지난 14일 댓글 단 사람이 16명뿐이라
+  // 댓글 0개인 남의 최근 글(21일 안)을 사진 있는 것부터 보여 주고, 누르면 그 글을 펼친다(장비 글은 장비 탭에서). 댓글 +10점은 TASK_POINTS_1116 표 그대로
+  const WAIT_DAYS = 21, WAIT_N = 6;
+  function waitPosts() {
+    const since = Date.now() - WAIT_DAYS * 864e5, seen = {};
+    const pool = visiblePosts('all').concat(postsBy.gear ? visiblePosts('gear') : []).filter(function (p) {
+      if (seen[p.id]) return false;
+      seen[p.id] = 1;
+      return !p.is_private && p.category !== 'poll' && p.category !== 'suggestion' && !(Number(p.comments_count) > 0)
+        && !isMine(p.user_id) && new Date(p.created_at).getTime() >= since;
+    }).sort(function (a, b) { return String(b.created_at).localeCompare(String(a.created_at)); });
+    const withPh = function (p) { return !!postPhotos(p)[0]; };
+    return pool.filter(withPh).concat(pool.filter(function (p) { return !withPh(p); })).slice(0, WAIT_N);
+  }
+  function waitHtml() {
+    const list = waitPosts();
+    if (!list.length) return '';
+    return '<div class="lm-wait"><div class="lm-wh"><b>첫 댓글을 기다리는 글</b><span>첫 댓글 +10점</span></div><div class="lm-wr">' + list.map(function (p) {
+      const ph = postPhotos(p)[0];
+      const tag = p.category === 'gear' ? (p.gear_kind === 'review' ? '장비 후기' : '장비 질문') : '이야기';
+      return `<button type="button" class="lm-wc" data-a="lounge" data-v="${p.category === 'gear' ? TAB_GEAR : 2}" data-id="${esc(p.id)}">${ph ? `<img src="${escapeHtml(okbmFastImageUrl(ph, 160))}" alt="" loading="lazy" decoding="async">` : `<i>${esc(tag)}</i>`}<span class="lm-wx"><b>${esc(p.title)}</b><small>${esc([p.nickname || '낭만루터', ago(p.created_at)].join(' · '))}</small><em>첫 댓글 달기</em></span></button>`;
+    }).join('') + '</div></div>';
+  }
   // 자유게시판 목록 (I28): 위 고정 칸 → 추천순(순위)이나 최신순(올린 순서대로) 제목 줄. 장비 글은 '장비' 탭에서
   //   (추천순 '전체'에는 장비 후기가 서버 규칙대로 위 10개 안에 3개까지 섞인다)
   function boardListHtml() {
@@ -2545,6 +2601,7 @@
     }
     const empty = S.cat === 'suggestion' ? '내가 쓴 건의가 없어요' : hot ? '최근 30일 동안 올라온 글이 없어요' : '첫 글을 기다리고 있어요';
     let h = pins.length ? '<div class="lm-pinbox">' + pins.map(function (p) { return postItem(p, { pin: true }); }).join('') + '</div>' : '';
+    if (S.cat === 'all') h += waitHtml();
     h += list.length ? list.map(function (p, i) { return postItem(p, { list: true, rank: hot ? i + 1 : 0 }); }).join('') : '<div class="lm-empty">' + empty + '</div>';
     if (hot) h += '<p class="lm-hotend">30일이 지난 글은 <button type="button" data-a="bsort" data-v="new">최신순</button>에서 볼 수 있어요</p>';
     else if (!st.done && st.rows.length) h += '<button type="button" class="lmh-more" data-a="more-posts">더 보기' + ico(P.chevR, 16) + '</button>';
@@ -3353,7 +3410,7 @@
       // 장비 후기가 몰려도 장비는 한 줄만, 백패킹이야기를 앞에(대표님 11-09)
       const rest = allOrder(visiblePosts('all').filter(function (p) { return !p.is_private && p.category !== 'poll'; })).slice(0, HUB_BOARD_N);
       const body = (h ? hubPollRow(h) : '') + rest.map(hubPostRow).join('');
-      return (body || '<div class="hh-empty">첫 글을 기다리고 있어요</div>') + hubFoot('data-a="hub-all" data-v="all"', '게시판 전체 보기', '', '질문하기');
+      return (body || '<div class="hh-empty">첫 글을 기다리고 있어요</div>') + hubFoot('data-a="hub-all" data-v="all"', '게시판 전체 보기', 'ask', '질문하기');
     }
     if (key === 'poll') {
       if (!postsBy.poll) return '<div class="hh-empty">불러오는 중…</div>';
@@ -4582,8 +4639,47 @@
     paintGearPick();
   }
   // 게시판 글쓰기는 게시판 말머리만, 장비 글쓰기는 장비만(대표님 11-09). 장비 창은 들어온 곳에서 질문/후기가 정해진다
+  // 글쓰기 고르기 (대표님 11-17 시안 2): 빈 양식 대신 무엇을 올릴지 먼저. 포인트는 TASK_POINTS_1116 표 그대로(글·투표 +5, 장비 후기 +10)
+  const PICKS = [
+    ['ask', 'ask', '질문하기', '초보 질문도 환영해요. 답이 달리면 알려 드려요', '+5'],
+    ['story', 'hill', '백패킹 이야기', '다녀온 박지, 소소한 일상', '+5'],
+    ['gear', 'pack', '장비 후기', '쓰던 장비, 별점과 한 줄이면 돼요', '+10'],
+    ['poll', 'bars', '투표 만들기', '보기만 적으면 끝', '+5'],
+    ['suggestion', 'lock', '건의', '나와 운영팀만 봐요', '']
+  ];
+  function openPostPick() {
+    if (needLogin('로그인하면 글을 쓸 수 있어요')) return;
+    openSheet('<h3 id="loungeSheetTitle">무엇을 올릴까요?</h3><p class="lm-ssub">고르면 거기에 맞는 칸만 나와요</p><div class="lm-pkgrid">' + PICKS.map(function (x, i) {
+      return '<button type="button" class="lm-pk k-' + x[0] + (i ? '' : ' big') + '" data-a="pick-post" data-v="' + x[0] + '"><i>' + ico(P[x[1]], i ? 21 : 24) + '</i><span><b>' + esc(x[2]) + '</b><small>' + esc(x[3]) + '</small></span>' + (x[4] ? '<em>' + x[4] + '</em>' : '') + '</button>';
+    }).join('') + '</div>', { kind: 'post-pick' });
+  }
+  // 질문하기 (대표님 11-17 시안 3): 주제 칩은 고르면 제목 앞에 [장비]처럼 붙는다(따로 저장할 칸이 없어서)
+  const ASK_TOPICS = ['장비', '박지', '날씨·계절', '초보', '기타'];
+  const askTopicsHtml = function () {
+    return ASK_TOPICS.map(function (x) {
+      const on = SH.topic === x;
+      return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="atopic" data-v="' + esc(x) + '">' + esc(x) + '</button>';
+    }).join('');
+  };
+  function paintAskTopics() {
+    const el = sheet && sheet.querySelector('[data-ask-topics]');
+    if (el) el.innerHTML = askTopicsHtml();
+  }
   function postFormHtml(p, cat) {
     const poll = cat === 'poll', gear = cat === 'gear';
+    if (!p && SH.ask) {
+      return `<h3 id="loungeSheetTitle">질문하기</h3><p class="lm-ssub">선배 낭만루터가 답해 드려요. 답이 달리면 알림으로 알려 드려요</p>
+      <form data-form="post" novalidate autocomplete="off">
+        <div class="lm-chipline" role="radiogroup" aria-label="주제 (고르면 제목 앞에 붙어요)" data-ask-topics>${askTopicsHtml()}</div>
+        <label class="lm-lbl" for="lmPostTitle">궁금한 것 한 줄 <b aria-hidden="true">*</b></label>${inp('lmPostTitle', 'title', '', 'maxlength="72" required data-autofocus placeholder="예) 12월 선자령, 침낭 몇 도짜리면 될까요?"')}
+        <div data-body-field>${field('lmPostBody', '조금 더 알려 주면 답이 빨라져요 (선택)', '<textarea class="lm-ta" id="lmPostBody" name="body" maxlength="3000" placeholder="언제, 어디로, 지금 가진 장비는 뭔지" style="min-height:96px"></textarea>')}</div>
+        <span class="lm-lbl">사진 <span data-pcount>0</span>/5</span>
+        <div class="lm-thumbs" data-thumbs>${thumbsHtml()}</div>
+        <label class="lm-file">${ico(P.img, 18)}<span>사진 추가</span><input type="file" accept="image/*,.heic,.heif" multiple data-post-files hidden></label>
+        <button type="submit" class="lm-btn main lm-askgo">질문 올리기<em>+5점</em></button>
+        <p class="lm-hint" style="text-align:center">사진·내용 없이 한 줄만 올려도 돼요</p>
+      </form>`;
+    }
     const rv = gear && (p ? isRvPost(p) : SH.gkind === 'review');
     const ttl = gear ? '장비 ' + (rv ? '후기' : '질문') + (p ? ' 고치기' : (rv ? ' 쓰기' : '하기')) : (p ? '글 고치기' : '새 글');
     return `<h3 id="loungeSheetTitle">${ttl}</h3>
@@ -4613,7 +4709,8 @@
     const cat = p ? p.category : (cat0 || (S.cat !== 'all' ? S.cat : 'backpacking'));
     const st = { kind: 'post', id: p ? p.id : null, cat: cat, pollDays: 7, pollKind: 'choice', pollSource: 'spot', photos: postPhotos(p || {}).map(function (u) { return { url: u }; }),
       gkind: (pre && pre.kind) || S.gkind, gear: (pre && pre.gear) || null,
-      gcat: (pre && pre.gear && pre.gear.cat) || (pre && pre.cat) || (S.gcat !== 'all' ? S.gcat : null), rv: newRv(), autoTitle: '' };
+      gcat: (pre && pre.gear && pre.gear.cat) || (pre && pre.cat) || (S.gcat !== 'all' ? S.gcat : null), rv: newRv(), autoTitle: '',
+      ask: !p && !!(pre && pre.ask), topic: '' };
     if (isRvPost(p)) {
       st.editRv = true;
       st.gkind = 'review';
@@ -4682,7 +4779,8 @@
       review = got.review;
       body = got.body;
     }
-    if (!title) { toast('제목을 적어 주세요', true); f.elements.title.focus(); return; }
+    if (!title) { toast(st.ask ? '궁금한 것을 한 줄 적어 주세요' : '제목을 적어 주세요', true); f.elements.title.focus(); return; }
+    if (st.ask && st.topic && title.indexOf('[' + st.topic + ']') !== 0) title = ('[' + st.topic + '] ' + title).slice(0, 80);
     if (st.photos.some(function (ph) { return ph.uploading; })) { toast('사진을 올리는 중이에요. 잠시 뒤 다시 눌러 주세요', true); return; }
     const photos = st.photos.map(function (ph) { return ph.url; }).filter(function (u) { return okbmSafeImageUrl(u); }).slice(0, 5);
     const row0 = { user_id: me, category: st.cat, title: title, body: body, photos: photos };
@@ -5457,7 +5555,16 @@
       // 회원 쓰기
       case 'need-login': needLogin(); break;
       // 홈 장비 칸 '후기 쓰기'는 후기로 연다(기본값 S.gkind는 '질문'이라 질문 창이 열렸다, 대표님 11-09)
-      case 'new-post': openPostForm(null, v === 'poll' || v === 'gear' ? v : null, v === 'gear' ? { kind: 'review' } : null); break;
+      case 'new-post':
+        // 라운지 '글쓰기'는 무엇을 올릴지 먼저 고른다(대표님 11-17 시안 2). 장비 탭의 '장비 후기 쓰기·질문하기'는 바로 쓴다
+        if (!v && t.classList.contains('lm-fab') && S.cat !== 'gear') { openPostPick(); break; }
+        if (v === 'ask') { openPostForm(null, 'backpacking', { ask: true }); break; }
+        openPostForm(null, v === 'poll' || v === 'gear' ? v : null, v === 'gear' ? { kind: 'review' } : null); break;
+      case 'pick-post':
+        if (v === 'gear') openPostForm(null, 'gear', { kind: 'review' });
+        else openPostForm(null, v === 'poll' || v === 'suggestion' ? v : 'backpacking', v === 'ask' ? { ask: true } : null);
+        break;
+      case 'atopic': if (SH.kind === 'post' && SH.ask) { SH.topic = SH.topic === v ? '' : v; paintAskTopics(); } break;
       // 홈 알약 '전체 보기': 그 말머리를 고른 채로 자유게시판을 연다
       case 'hub-all': {
         if (v === 'gear') { S.gt.kind = 'review'; openLoungeWindow(TAB_GEAR, null, t); break; }
