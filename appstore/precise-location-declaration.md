@@ -30,3 +30,9 @@ Approximate location (hundreds of meters to kilometers of error) cannot tell whe
 trail by 50 m, so precise location is required. Location is used only while the app is in the foreground, only when the
 user turns on a trail or taps "check again"/"my location", is processed on the device, and is never stored on our
 servers or used for ads or analytics. Background location is not requested.
+
+## 진행 (2026-11-16)
+- 0.9.4(버전 코드 13, 정밀 위치 권한 추가)를 프로덕션 전체 출시(100%)로 올려 검토를 위해 전송했다. 출시 노트:
+  "GPX 등산로 길 안내가 더 정확해졌어요. 등산로를 켜고 산에 가면 정확한 위치로 길 위에 있는지, 길에서 벗어났는지 알려 드려요."
+- 빠른 검사는 통과했고(경고는 늘 나오는 가독화·디버그 기호 안내 2개뿐), 이때는 정밀 위치 신고서를 따로 묻지 않았다(앱 콘텐츠 '주의 필요' 없음).
+  심사 중에 신고서를 요구하면 위 문구를 넣는다. 앱 묶음: Desktop/my-app (AndroidManifest ACCESS_FINE_LOCATION, build.gradle 13/0.9.4).
