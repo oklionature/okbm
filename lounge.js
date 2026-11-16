@@ -3273,6 +3273,15 @@
   function openNews(id) {
     const n = D.news.find(function (x) { return String(x.id) === String(id); });
     if (!n) return;
+    // 기능 사용 세기 (H8, 11-16 대표님): 매거진은 전체(feat_mag_open)와 한 편마다(feat_mag_ + id 앞 8자리), 소식은 feat_news_open.
+    // 홈·지도 첫 알림창·라운지 어디서 열어도 여기를 지난다. 관리자는 home-metrics.js가 세지 않는다.
+    if (typeof window.okbmMetric === 'function') {
+      if (n.kind === 'magazine') {
+        window.okbmMetric('feat_mag_open');
+        const key = String(n.id).replace(/[^0-9a-f]/gi, '').slice(0, 8).toLowerCase();
+        if (key.length === 8) window.okbmMetric('feat_mag_' + key);
+      } else window.okbmMetric('feat_news_open');
+    }
     const imgs = newsImgs(n);
     const link = n.link_url && HTTPS_RE.test(n.link_url) ? n.link_url : '';
     // 본문 끝 줄이 유튜브 주소면 표지 밑에 '영상 속 그 장소' 창처럼 유튜브 플레이어를 바로 띄우고 설명은 그 밑으로 (대표님 11-06)
