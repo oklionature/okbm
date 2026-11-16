@@ -2382,13 +2382,16 @@
   </div>
 </section>
 
-<!-- 바로가기 세 칸 (2026-10-31): 레디샷 · 동행 구하기 · 후기 올리기. 동작은 home-layout.js (인라인 핸들러 없음)
-     초보 가이드·박지 랭킹·자유게시판은 아래 백패커 라운지 알약으로, 함께하기·레디샷 칸은 여기로 모았다 -->
+<!-- 바로가기 (2026-10-31, 11-16 개편): 위 작은 세 칸 레디샷 · 후기 올리기 · 굴업도, 아래 큰 두 칸 동행 구하기 · 장비 후기.
+     동행 구하기가 네 칸 중 하나라 작아 안 보여서 큰 칸으로 올리고, 덜 쓰는 굴업도는 작은 칸으로 내렸다(대표님 11-16). 동작은 home-layout.js (인라인 핸들러 없음) -->
 <nav class="hq" id="homeQuickNav" aria-label="바로가기">
   <button type="button" class="hq-btn okbm-press" data-quick="ready" data-metric-click="ready"><b>레디샷</b><em>배낭 무게</em><span id="mainBannerKgText" hidden>0.00 kg</span></button>
-  <button type="button" class="hq-btn okbm-press" data-quick="join" data-metric-click="quick_join"><b>동행 구하기</b><em id="hqJoinSub">오픈채팅</em></button>
   <button type="button" class="hq-btn okbm-press" data-quick="write" data-metric-click="quick_write"><b>후기 올리기</b><em>다녀왔다면</em></button>
-  <button type="button" class="hq-btn hq-gear okbm-press" data-quick="gear" data-metric-click="quick_gear"><b>장비 후기</b><em>라운지 장비</em></button>
+  <button type="button" class="hq-btn hq-isle okbm-press" id="homeGulupdo"><b>굴업도</b><em id="homeGulupdoN">서버 원활</em></button>
+</nav>
+<nav class="hq hq-big" id="homeQuickBig" aria-label="동행·장비">
+  <button type="button" class="hq-btn hq-join okbm-press" data-quick="join" data-metric-click="quick_join"><b>동행 구하기</b><em id="hqJoinSub">오픈채팅</em><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="7.5" r="3.5"/><path d="M2.5 20v-1.5A5 5 0 0 1 7.5 13.5h3a5 5 0 0 1 5 5V20"/><path d="M16 4.3a3.5 3.5 0 0 1 0 6.4"/><path d="M18.5 13.7a5 5 0 0 1 3 4.8V20"/></svg></button>
+  <button type="button" class="hq-btn hq-gear okbm-press" data-quick="gear" data-metric-click="quick_gear"><b>장비 후기</b><em>라운지 장비</em><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 5V3.8a2.5 2.5 0 0 1 5 0V5"/><path d="M6 10a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v9.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19.5z"/><path d="M6 11.5h12"/><rect x="9" y="14.5" width="6" height="4" rx="1"/></svg></button>
 </nav>
 
 <!-- 백패커 라운지 (2026-10-31, 11-07 개편): 소식 띠 → 제목 줄 → 알약 다섯 개(게시판·장비·설문·투표·후기·랭킹·초보 가이드, 5줄) → 행사|할인 → 매거진.
@@ -2652,7 +2655,7 @@ window.okbmIsHomePublicFeed = function(f) {
 
  <!-- 🎨 [엽서 스튜디오 / 공유 액션시트 / 포토 카드 스튜디오는 templates.js에서 동적 생성 통제] -->
 
-  <script src="home-layout.js?v=53"></script>
+  <script src="home-layout.js?v=54"></script>
   <script src="readyshot-quick.js?v=1.0.1" defer></script>
   <script src="spot-tips.js?v=14" defer></script>
   <script src="index-main.js?v=1.0.53"></script>

@@ -2,7 +2,7 @@
 // 홈 개편 (2026-10-14): 바로가기 네 개 · 최근 다녀온 후기 · 인기 스팟 "후기 N · 찜 N"
 // 시안: 인스타에니/낭만루트_앱점검/미리보기/미리보기.html "1. 첫 화면" 넷째 판
 //
-// · 바로가기 세 칸(#homeQuickNav [data-quick], 2026-10-31): 레디샷 · 동행 구하기 · 후기 올리기. 누르면 그 화면으로 넘어간다.
+// · 바로가기(#homeQuickNav·#homeQuickBig [data-quick], 2026-10-31, 11-16 개편): 위 작은 세 칸 레디샷 · 후기 올리기 · 굴업도, 아래 큰 두 칸 동행 구하기 · 장비 후기. 누르면 그 화면으로 넘어간다.
 //   초보 가이드·박지 랭킹·자유게시판 바로가기는 그 밑 백패커 라운지(#okbmLoungeHome, lounge.js) 알약으로 옮겼다.
 // · 최근 다녀온 후기는 운영자 글을 빼고 회원이 공개한 글만, 다녀온 날짜가 최근인 것부터. 개수와 상관없이 바로가기 바로 밑(대표님 10-14).
 // · 굴업도 들어가기(2026-11-02, 관리자만): 바로가기 밑 띠. 누르면 로그인 토큰을 주소 뒤 #tok=로 붙여 같이 접속 게임(Cloudflare)을 연다.
@@ -42,7 +42,18 @@
     css.id = 'okbmHomeLayoutCss';
     css.textContent = [
       // 세 칸을 설명 칸에 바로 붙인다(홈 칸 사이 기본 간격 28px을 당김). 첫 화면에 히어로와 같이 보이게
-      '.hq{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:0 14px;margin-top:-20px}',
+      '.hq{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:0 14px;margin-top:-20px}',
+      // 11-16 아래 큰 두 칸(동행 구하기·장비 후기): 글은 왼쪽, 그림은 오른쪽. 위 세 칸에 바로 붙인다
+      '.hq-big{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:-21px}',
+      '.hq-big .hq-btn{position:relative;align-items:flex-start;height:74px;padding:0 14px;gap:4px;overflow:hidden}',
+      '.hq-big .hq-btn b{font-size:17px}',
+      '.hq-big .hq-btn em{font-size:12.5px}',
+      '.hq-big .hq-btn svg{position:absolute;right:12px;top:50%;width:26px;height:26px;margin-top:-13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;opacity:.9}',
+      // 동행 구하기는 초록으로 눈에 띄게(대표님 11-16: 작아서 안 보임)
+      '.hq-btn.hq-join{border-color:rgba(52,211,153,.5);background:linear-gradient(135deg,rgba(52,211,153,.16),rgba(52,211,153,.04)) #0c0d10}',
+      '.hq-btn.hq-join em{color:#34d399;font-weight:700}',
+      '.hq-btn.hq-join svg{color:#34d399}',
+      '.hq-btn.hq-gear svg{color:#e0b45a}',
       // 11-09 '장비 후기' 칸: 노란 테두리·NEW(굴업도 줄 NEW는 11-09에 뺌), NEW는 일주일만(.hq-new를 start()에서 붙인다)
       '.hq-btn.hq-gear{position:relative;border-color:rgba(255,214,120,.35)}',
       '.hq-new{position:absolute;top:-7px;right:6px;font-style:normal;font-size:10px;font-weight:900;color:#1a1206;background:#f5b94a;border-radius:5px;padding:2px 5px;line-height:1.2}',
@@ -50,8 +61,6 @@
       '.hq-btn:active{background:#16161a}',
       '.hq-btn b{font-size:14px;font-weight:800;letter-spacing:-.03em;white-space:nowrap}',
       '.hq-btn em{font-style:normal;font-size:11.5px;font-weight:600;color:#8e8e93;white-space:nowrap}',
-      '.hq-isle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:calc(100% - 28px);margin:2px 14px -6px;height:62px;padding:0 14px;border-radius:14px;background:#0c0d10;border:1px solid rgba(255,214,120,.25);color:#F2F3F5;font-family:inherit;cursor:pointer}',
-      '.hq-isle:active{background:#16161a}',
       // 홈 첫 알림창(지도 map.html의 .okbm-spot-notice와 같은 모양)
       '.hn{position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.62);display:flex;justify-content:center;align-items:flex-start;padding:calc(var(--okbm-status-top, 12px) + 8px) 12px calc(8px + env(safe-area-inset-bottom, 0px));box-sizing:border-box}',
       '.hn-frame{position:relative;width:min(100%, 480px);max-height:100%;display:flex}',
@@ -77,9 +86,7 @@
       '.hg-btns button.sec{height:34px;background:transparent;color:#1f7a50;font-size:14px;font-weight:600}',
       '.hn-x.hg-x{background:rgba(29,43,36,.12);border:0;color:#1d2b24}',
       '.hn-x{position:absolute;top:10px;right:10px;z-index:2;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:15px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
-      '.hq-isle b{display:flex;align-items:center;gap:7px;font-size:18.5px;font-weight:800;letter-spacing:-.03em}',
-      '.hq-isle i{font-style:normal;font-size:10.5px;font-weight:900;letter-spacing:.02em;color:#1a1206;background:#f5b94a;border-radius:5px;padding:3px 6px 2px;line-height:1}',
-      '.hq-isle em{font-style:normal;font-size:12.5px;font-weight:700;color:#e0b45a;white-space:nowrap}',
+      '.hq-btn.hq-isle em{color:#e0b45a}',
       '.gq-wrap{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);padding:0 12px calc(env(safe-area-inset-bottom) + 84px)}',
       '.gq{width:100%;max-width:420px;border-radius:18px;background:#16171b;border:1px solid rgba(255,255,255,.08);color:#F2F3F5;padding:20px 18px 16px}',
       '.gq h3{margin:0 0 8px;font-size:17px;font-weight:800;letter-spacing:-.02em}',
@@ -178,18 +185,13 @@
   var GULUPDO_URL = 'https://gulupdo.ggumfree.workers.dev/';
   // 11-02 대표님: 비로그인에게도 보이고, 누르면 로그인 창(openGulupdo)
   function gulupdoVisible() { return true; }
+  // 11-16: 큰 줄에서 바로가기 작은 칸(index.html #homeGulupdo)으로 내렸다. 칸은 처음부터 있고 여기서 누름만 붙인다
   function paintGulupdo() {
-    var quick = document.getElementById('homeQuickNav');
     var btn = document.getElementById('homeGulupdo');
-    if (!quick || !gulupdoVisible()) { if (btn) btn.remove(); return; }
-    if (btn) return;
-    btn = document.createElement('button');
-    btn.type = 'button';
-    btn.id = 'homeGulupdo';
-    btn.className = 'hq-isle okbm-press';
-    btn.innerHTML = '<b>온라인 굴업도로 떠나기</b><em id="homeGulupdoN">접속 인원 확인 중</em>';
+    if (!btn || !gulupdoVisible()) { if (btn) btn.remove(); return; }
+    if (btn.__okbmGulupdo) return;
+    btn.__okbmGulupdo = true;
     btn.addEventListener('click', openGulupdo);
-    quick.insertAdjacentElement('afterend', btn);
     gulupdoCount();
     gulupdoArrive();
   }
@@ -369,7 +371,7 @@
     wrap.className = 'gq-wrap';
     wrap.innerHTML = '<div class="gq" role="dialog" aria-modal="true" aria-labelledby="gqTitle">' +
       '<h3 id="gqTitle">굴업도는 앱에서만 열려요</h3>' +
-      '<p>낭만루트 앱을 받고 홈의 \'온라인 굴업도로 떠나기\'를 눌러 주세요.</p>' +
+      '<p>낭만루트 앱을 받고 홈의 \'굴업도\' 칸을 눌러 주세요.</p>' +
       '<div class="gq-b"><button type="button" data-gq="x">닫기</button><button type="button" data-gq="store" class="on">앱 받으러 가기</button></div></div>';
     document.body.appendChild(wrap);
     wrap.addEventListener('click', function (e) {
@@ -631,7 +633,9 @@
     injectCss();
     var quick = document.getElementById('homeQuickNav');
     if (quick) quick.addEventListener('click', onQuickClick);
-    var gq = document.querySelector('#homeQuickNav [data-quick="gear"]');
+    var quickBig = document.getElementById('homeQuickBig');
+    if (quickBig) quickBig.addEventListener('click', onQuickClick);
+    var gq = document.querySelector('#homeQuickBig [data-quick="gear"]');
     if (gq && Date.now() < Date.parse('2026-11-16T00:00:00+09:00')) gq.insertAdjacentHTML('afterbegin', '<i class="hq-new">NEW</i>');   // 일주일만
     paintGulupdo();
     window.addEventListener('okbm_admin_flag', paintGulupdo);
