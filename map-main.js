@@ -3753,66 +3753,90 @@ function updateSmartResetButtons() {
       }
 
       // 앱 안에서는 기기 위치 기능을 쓴다. 웹 위치 기능을 쓰면 아이폰이 앱 허락 창 뒤에 사이트 허락 창을 한 번 더 띄운다.
-      // silent: 지도를 열거나 화면을 다시 켤 때처럼 낭만루터가 누르지 않은 확인. 이미 허락받았을 때만 위치를 읽고,
-      // 아니면 설명 창·기기 허락 창을 띄우지 않고 그냥 넘어간다(11-16 대표님: 위치 단추·GPX를 누를 때만 묻는다).
+      // silent: 지도를 열거나 화면을 다시 켤 때처럼 낭만루터가 누르지 않은 확인. 이미 허락받은 위치만 조용히 읽고
+      // 아무 창도 띄우지 않는다(11-16 대표님: 위치 단추·GPX를 누를 때만 묻는다).
+      // 누를 때: 설명 창은 폰마다 한 번만 띄운다. 한 번 물은 뒤 '대략적인 위치'만 받았으면 다시 묻지 않고 대략 위치로 간다.
+      var LOC_WHY_SHOWN_KEY = 'okbm_loc_why_shown';
       function getDevicePosition(onOk, onFail, silent) {
         const nativeGeo = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation;
         const useNativeGeo = !!(nativeGeo && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
         if (!useNativeGeo && !navigator.geolocation) return onFail('unsupported');
-        // 11-16 대표님: 안드로이드도 GPX 길 안내가 되게 정확한 위치를 요청한다. 앱에 정밀 위치 권한(ACCESS_FINE_LOCATION)이
-        // 없는 옛 안드로이드 앱(0.9.3까지)은 위치 플러그인이 알아서 대략 위치만 묻는다(@capacitor/geolocation getAlias).
-        const highAccuracy = true;
-        const ask = function() {
-          if (useNativeGeo) nativeGeo.getCurrentPosition({ enableHighAccuracy: highAccuracy, timeout: 15000 }).then(onOk, onFail);
+        // precise=false면 안드로이드 위치 플러그인이 대략 위치 권한만 본다(@capacitor/geolocation getAlias) → 허락 창이 안 뜬다.
+        const ask = function(precise) {
+          if (useNativeGeo) nativeGeo.getCurrentPosition({ enableHighAccuracy: precise, timeout: 15000 }).then(onOk, onFail);
           else navigator.geolocation.getCurrentPosition(onOk, onFail, { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 });
         };
-        if (silent) {
-          okbmLocationPermState(useNativeGeo ? nativeGeo : null).then(function(state) {
-            if (state === 'granted') ask(); else onFail({ code: 'silent', message: 'not granted' });
-          });
-          return;
-        }
-        okbmLocationRationale(useNativeGeo ? nativeGeo : null).then(function(go) {
-          if (go) ask(); else onFail({ code: 'later', message: 'later' });
+        okbmLocationPerm(useNativeGeo ? nativeGeo : null).then(function(perm) {
+          if (perm.fine) return ask(true);
+          if (silent) return perm.coarse ? ask(false) : onFail({ code: 'silent', message: 'not granted' });
+          if (perm.denied) return ask(true);   // 거절해 둔 상태: 기기 창이 안 뜨고 실패 → '권한을 허용해주세요' 안내
+          if (perm.canAskFine && !okbmLocWhyShown()) {
+            return okbmLocationRationale().then(function(go) {
+              if (go) ask(true); else onFail({ code: 'later', message: 'later' });
+            });
+          }
+          // 이미 한 번 물었거나 정확한 위치를 줄 수 없는 옛 앱: 대략 위치가 있으면 그것으로, 아무것도 없으면 기기 창만 띄운다
+          ask(!perm.coarse);
         });
       }
 
-      // 정확한 위치 허락 상태: 'granted' | 'prompt' | 'denied'. 안드로이드에서 '대략적인 위치'만 허락했으면 'prompt'다.
-      function okbmLocationPermState(nativeGeo) {
-        var stateP = nativeGeo && typeof nativeGeo.checkPermissions === 'function'
-          ? Promise.resolve(nativeGeo.checkPermissions()).then(function(p) { return (p && p.location) || 'prompt'; })
-          : (navigator.permissions && typeof navigator.permissions.query === 'function'
-            ? navigator.permissions.query({ name: 'geolocation' }).then(function(r) { return r.state; })
-            : Promise.resolve('prompt'));
-        return stateP.catch(function() { return 'unknown'; });
+      function okbmLocWhyShown() {
+        try { return localStorage.getItem(LOC_WHY_SHOWN_KEY) === '1'; } catch (e) { return false; }
       }
 
-      // 11-16 대표님 A안: 위치를 아직 허락하지 않았으면 기기 허락 창 앞에 왜 필요한지 한 번 알려 준다.
-      // 안드로이드 허락 창에는 앱이 이유를 적을 칸이 없고, '정확한 위치'를 골라야 GPX 길 안내가 되기 때문.
-      // 이미 허락했거나(granted) 거절해 둔 경우(denied, 기기 창이 안 뜸)는 묻지 않고 바로 간다. '나중에'면 false.
-      function okbmLocationRationale(nativeGeo) {
-        return okbmLocationPermState(nativeGeo).then(function(state) {
-          if (state === 'granted' || state === 'denied' || state === 'unknown') return true;
-          return new Promise(function(resolve) {
-            var old = document.getElementById('okbmLocWhy');
-            if (old) old.remove();
-            var wrap = document.createElement('div');
-            wrap.id = 'okbmLocWhy';
-            wrap.className = 'okbm-gpx-send';
-            wrap.innerHTML = '<div class="okbm-gpx-send-box" role="dialog" aria-modal="true" aria-labelledby="okbmLocWhyTitle">' +
-              '<div class="okbm-gpx-send-head"><strong id="okbmLocWhyTitle">GPX 길 안내를 하려면 위치가 필요해요</strong><button type="button" data-loc-act="later" aria-label="닫기">✕</button></div>' +
-              '<p class="okbm-gpx-send-help">등산로를 켜면 내가 길 위에 있는지, 길에서 벗어났는지 알려 드려요. 산길은 폭이 좁아서 다음 창에서 <b>\'정확한 위치\'</b>를 골라 주셔야 제대로 안내돼요. 위치는 폰 안에서만 쓰고 저장하지 않아요.</p>' +
-              '<button type="button" class="okbm-gpx-send-go" data-loc-act="go" data-metric-click="feat_loc_why_go">위치 허락하기</button>' +
-              '<button type="button" class="okbm-loc-later" data-loc-act="later" data-metric-click="feat_loc_why_later">나중에</button>' +
-            '</div>';
-            var done = function(go) { wrap.remove(); resolve(go); };
-            wrap.addEventListener('click', function(e) {
-              if (e.target === wrap) return done(false);
-              var b = e.target && e.target.closest ? e.target.closest('[data-loc-act]') : null;
-              if (b) done(b.getAttribute('data-loc-act') === 'go');
-            });
-            document.body.appendChild(wrap);
+      // fine: 정확한 위치 허락됨(아이폰은 위치 허락 하나뿐이라 granted면 fine). coarse: 대략적인 위치라도 허락됨(안드로이드 앱).
+      // denied: 다시 물어도 기기 창이 안 뜨는 상태. canAskFine: 정확한 위치를 물을 수 있는 앱인가.
+      // 안드로이드 0.9.3(빌드 12)까지는 앱에 정확한 위치 권한(ACCESS_FINE_LOCATION)이 없어 물어도 받을 수 없다.
+      function okbmLocationPerm(nativeGeo) {
+        if (nativeGeo && typeof nativeGeo.checkPermissions === 'function') {
+          var isAndroid = typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() === 'android';
+          var appPlugin = window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+          var buildP = isAndroid && appPlugin && typeof appPlugin.getInfo === 'function'
+            ? Promise.resolve(appPlugin.getInfo()).then(function(i) { return Number(i && i.build) || 0; }).catch(function() { return 0; })
+            : Promise.resolve(0);
+          return Promise.all([Promise.resolve(nativeGeo.checkPermissions()).catch(function() { return null; }), buildP]).then(function(r) {
+            var p = r[0] || {}, build = r[1];
+            var fine = p.location === 'granted';
+            var coarse = fine || p.coarseLocation === 'granted';
+            return {
+              fine: fine,
+              coarse: coarse,
+              denied: !coarse && (p.location === 'denied' || p.coarseLocation === 'denied'),
+              canAskFine: !isAndroid || !build || build >= 13
+            };
           });
+        }
+        var stateP = navigator.permissions && typeof navigator.permissions.query === 'function'
+          ? navigator.permissions.query({ name: 'geolocation' }).then(function(r) { return r.state; }).catch(function() { return 'prompt'; })
+          : Promise.resolve('prompt');
+        return stateP.then(function(state) {
+          return { fine: state === 'granted', coarse: state === 'granted', denied: state === 'denied', canAskFine: true };
+        });
+      }
+
+      // 11-16 대표님 A안: 기기 허락 창 앞에 위치를 어디에 쓰는지 폰마다 한 번 알려 준다(안드로이드 허락 창에는 이유를 적을 칸이 없다).
+      // 띄운 순간 기록해서 '나중에'를 눌러도 다시 띄우지 않는다. '다음'이면 true.
+      function okbmLocationRationale() {
+        try { localStorage.setItem(LOC_WHY_SHOWN_KEY, '1'); } catch (e) {}
+        return new Promise(function(resolve) {
+          var old = document.getElementById('okbmLocWhy');
+          if (old) old.remove();
+          var wrap = document.createElement('div');
+          wrap.id = 'okbmLocWhy';
+          wrap.className = 'okbm-gpx-send';
+          wrap.innerHTML = '<div class="okbm-gpx-send-box" role="dialog" aria-modal="true" aria-labelledby="okbmLocWhyTitle">' +
+            '<div class="okbm-gpx-send-head"><strong id="okbmLocWhyTitle">위치를 쓰면 이런 게 돼요</strong><button type="button" data-loc-act="later" aria-label="닫기">✕</button></div>' +
+            '<p class="okbm-gpx-send-help">내 근처 박지를 바로 찾고, GPX 등산로에서 길을 벗어나면 알려 드려요. 원치 않으면 다음 창에서 \'허용 안 함\'을 누르셔도 다른 기능은 다 쓸 수 있어요. 위치는 폰 안에서만 쓰고 저장하지 않아요.</p>' +
+            '<button type="button" class="okbm-gpx-send-go" data-loc-act="go" data-metric-click="feat_loc_why_go">다음</button>' +
+            '<button type="button" class="okbm-loc-later" data-loc-act="later" data-metric-click="feat_loc_why_later">나중에</button>' +
+          '</div>';
+          var done = function(go) { wrap.remove(); resolve(go); };
+          wrap.addEventListener('click', function(e) {
+            if (e.target === wrap) return done(false);
+            var b = e.target && e.target.closest ? e.target.closest('[data-loc-act]') : null;
+            if (b) done(b.getAttribute('data-loc-act') === 'go');
+          });
+          document.body.appendChild(wrap);
         });
       }
 
