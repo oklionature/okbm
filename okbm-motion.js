@@ -522,13 +522,42 @@
     };
   }
 
-  // 피드에서 프로필을 여는 단추(data-metric-click="feat_user_feed_open")를 누르면 그 안 사진을 기억해 둔다
+  // 피드·히어로 피드에서 프로필을 여는 단추를 누르면 그 안 얼굴 자리를 기억해 둔다.
+  // 사진이 있으면 사진, 없으면 사진 없는 얼굴 그림이 든 동그라미(11-17 대표님: 사진 없는 낭만루터도 같은 움직임)
+  var AUTHOR_BTN = '[data-metric-click="feat_user_feed_open"],#heroProfileChip';
   var lastAvatarTap = null;
-  document.addEventListener('click', function (e) {
-    var b = e.target && e.target.closest && e.target.closest('[data-metric-click="feat_user_feed_open"]');
-    if (!b) return;
+  function avatarOf(b) {
     var img = b.querySelector('img');
-    lastAvatarTap = img && img.getBoundingClientRect().width ? { img: img, btn: b, at: Date.now() } : null;
+    if (img && img.getBoundingClientRect().width && img.getAttribute('src')) return { el: img, img: img };
+    var ph = b.querySelector('.avatar-placeholder-svg');
+    var holder = b.querySelector('.hero-av-ph') || (ph && ph.parentElement !== b ? ph.parentElement : null) || b;
+    var r = holder.getBoundingClientRect();
+    if (!r.width || Math.abs(r.width - r.height) > 4) return null;
+    return { el: holder, img: null, svg: ph };
+  }
+  // 얼굴 유령: 사진이면 사진, 아니면 같은 바탕색 동그라미에 얼굴 그림
+  function avatarGhost(r, av, solid) {
+    if (av.img) {
+      var gi = ghostAt(r, av.img.currentSrc || av.img.src, '50%');
+      if (!solid) gi.style.background = 'transparent';
+      return gi;
+    }
+    var g = ghostAt(r, '', '50%');
+    var bg = getComputedStyle(av.el).backgroundColor;
+    g.style.background = (!bg || bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') ? '#090d14' : bg;
+    if (av.svg) {
+      var sv = av.svg.cloneNode(true);
+      sv.removeAttribute('class');
+      sv.style.cssText = 'position:absolute;left:50%;top:50%;width:46%;height:46%;transform:translate(-50%,-50%)';
+      g.appendChild(sv);
+    }
+    return g;
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest && e.target.closest(AUTHOR_BTN);
+    if (!b) return;
+    var av = avatarOf(b);
+    lastAvatarTap = av ? { av: av, btn: b, at: Date.now() } : null;
   }, true);
 
   // 프로필 창은 피드 위 z 2147483642라 사진 유령은 그보다 위에 띄운다
@@ -546,19 +575,20 @@
       var tap = lastAvatarTap;
       lastAvatarTap = null;
       modal.__okmRoll = true;
-      var r0 = visibleRect(tap.img), r1 = av.getBoundingClientRect(), mr = modal.getBoundingClientRect();
+      var src = tap.av.el;
+      var r0 = visibleRect(src), r1 = av.getBoundingClientRect(), mr = modal.getBoundingClientRect();
       if (r0 && r1.width && mr.width) {
         var cx = r0.left + r0.width / 2 - mr.left, cy = r0.top + r0.height / 2 - mr.top;
         modal.animate([
           { clipPath: circleAt(r0.width / 2, cx, cy) },
           { clipPath: circleAt(farCorner(mr.width, mr.height, cx, cy), cx, cy) }
         ], { duration: 520, easing: 'cubic-bezier(.5,0,.2,1)' });
-        var g = ghostAt(r0, tap.img.currentSrc || tap.img.src, '50%');
+        var g = avatarGhost(r0, tap.av, true);
         g.style.zIndex = PROFILE_Z;
         av.style.visibility = 'hidden';
-        tap.img.style.visibility = 'hidden';
-        flyBox(g, r0, r1, '50%', '50%', 460).onfinish = function () { av.style.visibility = ''; tap.img.style.visibility = ''; g.remove(); };
-        watchProfileClose(modal, tap.img, tap.btn);
+        src.style.visibility = 'hidden';
+        flyBox(g, r0, r1, '50%', '50%', 460).onfinish = function () { av.style.visibility = ''; src.style.visibility = ''; g.remove(); };
+        watchProfileClose(modal, tap.av, tap.btn);
       }
     }
     if (modal.__okmRoll) {
@@ -572,7 +602,8 @@
   }
   // 창이 문서에서 빠지는 순간, 빠진 창을 껍데기로 다시 띄워 피드 사진 자리로 동그랗게 줄이고 사진도 그 자리로 돌려보낸다.
   // 같은 사람 창을 다시 그렸으면(관심 누르기 등) 새 창을 지켜보고, 피드 사진이 다른 창에 덮였으면(기록 열기) 아무것도 안 한다
-  function watchProfileClose(modal, img, btn) {
+  function watchProfileClose(modal, face, btn) {
+    var img = face.el;
     var last = null, scrolled = [];
     function measure() {
       var av = modal.querySelector('.mr-av');
@@ -589,7 +620,7 @@
       mo.disconnect();
       var nu = document.getElementById('userFeedCollectionModal');
       if (nu && nu !== modal && String(nu.dataset.userId || nu.dataset.author || '') === String(modal.dataset.userId || modal.dataset.author || '')) {
-        watchProfileClose(nu, img, btn);
+        watchProfileClose(nu, face, btn);
         return;
       }
       var r1 = visibleRect(img);
@@ -599,9 +630,8 @@
       if (!hit || !(home === hit || home.contains(hit) || hit.contains(home))) return;
       shrinkShell(modal, r1, scrolled);
       if (!last || !last.width || last.bottom < 0) return;
-      var g = ghostAt(last, img.currentSrc || img.src, '50%');
+      var g = avatarGhost(last, face, false); // 사진이면 회색 바탕 없이 돌아간다
       g.style.zIndex = PROFILE_Z;
-      g.style.background = 'transparent'; // 돌아갈 때 회색 바탕이 사진 둘레에 남지 않게
       img.style.visibility = 'hidden';
       flyBox(g, last, r1, '50%', '50%', 260).onfinish = function () { img.style.visibility = ''; g.remove(); };
     });
