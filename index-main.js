@@ -497,6 +497,8 @@
       // 야영장(H51 camp_type)은 박지 자랑 자리인 테마 줄에 넣지 않는다(대표님 11-05: 플랜B로 물러서 보여 주기)
       var campSpot = findThemeSpotMaster(feed, spotPool);
       if (campSpot && String(campSpot.camp_type || '').trim()) return false;
+      // 야영 금지(camp_status=banned) 박지 사진도 테마 줄에 걸지 않는다(대표님 11-16: 홍성 백월산이 백보킹에 떴다)
+      if (campSpot && String(campSpot.camp_status || '').trim() === 'banned') return false;
       if (!themeKey || themeKey === 'all') return true;
       var flags = getSecretSpotThemeFlags(feed, spotPool);
       if (themeKey === 'baekbo') return flags.isBaekbo;
