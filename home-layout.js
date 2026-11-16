@@ -406,13 +406,15 @@
     document.addEventListener('visibilitychange', onVis);
     var App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App, appL = null;
     if (App && typeof App.addListener === 'function') { try { Promise.resolve(App.addListener('appStateChange', function (st) { post(st && st.isActive ? 'resume' : 'pause'); })).then(function (h) { appL = h; }); } catch (e) {} }
-    var close = function () { if (!w.parentNode) return; if (!confirm('굴업도에서 나갈까요?')) return; w.remove(); document.documentElement.style.overflow = ''; if (dock) dock.style.removeProperty('display'); window.removeEventListener('popstate', onBack); window.removeEventListener('message', onMsg); document.removeEventListener('visibilitychange', onVis); if (appL && appL.remove) appL.remove(); gulupdoCount(); };
-    var onBack = function () { if (!w.parentNode) return; history.pushState({ gulupdo: 1 }, ''); if (w.dataset.under) { var L = gulupdoOver(w).filter(function (n) { return !/^gulupdoSheet/.test(n.id); }); if (L.length) L[L.length - 1].remove(); return; } close(); };   // 프로필 창이 위에 있으면 뒤로 가기는 그 창만 닫는다   // 안드로이드 뒤로 가기도 닫기로
-    // 닫기는 게임 오른쪽 위 '나가기'(게임이 알려 줌)·안드로이드 뒤로 가기
+    var close = function () { if (!w.parentNode) return; if (!confirm('굴업도에서 나갈까요?')) return; w.remove(); document.documentElement.style.overflow = ''; if (dock) dock.style.removeProperty('display'); window.removeEventListener('message', onMsg); document.removeEventListener('visibilitychange', onVis); if (appL && appL.remove) appL.remove(); gulupdoCount(); };
+    // 닫기는 게임 오른쪽 위 '나가기'(게임이 알려 줌)·뒤로 가기. 뒤로 가기는 앱 공통 장치(romantic-sync.js 닫기 목록의 gulupdoFrame)가
+    // 맨 위 창부터 닫다가 이 틀 차례가 되면 w._okbmClose를 부른다. 프로필 창이 위에 있으면 그 창이 먼저 닫힌다.
+    // 11-16: 전에는 틀이 따로 기록 칸·뒤로 가기를 처리해서, 프로필 창을 X로 닫을 때 공통 장치가 칸을 지우는 신호까지 받아
+    // '굴업도에서 나갈까요?'가 엉뚱하게 뜨고(브라우저 재현 7번 중 2번) 닫을 때마다 기록 칸이 하나씩 쌓였다
+    w._okbmClose = close;
     var onMsg = function (e) { if (e.source !== f.contentWindow || !e.data) return; if (e.data.gulupdo === 'close') close(); else if (e.data.gulupdo === 'save') gulupdoSave(e.data, f); else if (e.data.gulupdo === 'profile') gulupdoProfile(e.data, w); };
     window.addEventListener('message', onMsg);
     w.appendChild(f); document.body.appendChild(w); document.documentElement.style.overflow = 'hidden';
-    try { history.pushState({ gulupdo: 1 }, ''); window.addEventListener('popstate', onBack); } catch (e) {}
   }
   // 11-04 대표님: 게임에서 상대를 눌러 [프로필 보기] → 앱 프로필 창(피드에서 이름 누르면 뜨는 그 창)을 게임 위에 띄운다.
   // 게임 틀이 맨 위층이라, 그동안 새로 뜬 창들 바로 아래로 틀을 내리고, 그 창들이 다 닫히면 다시 맨 위로

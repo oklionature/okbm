@@ -12546,17 +12546,21 @@ async function okbmConsumeSupabaseOAuthSession(session) {
   var photo = String(um.avatar_url || um.picture || '').trim();
   var email = String(user.email || um.email || '').trim();
   planted = String(meta.okbm_user_id || planted || '').trim();
+  // 성공하면 곧 새로고침하므로 그때까지 잠가 두고(브리지가 같은 로그인을 다시 처리하지 않게), 그 밖에는 언제나 푼다.
+  // 전에는 오류일 때만 풀어서, 로그인 정보가 비어 돌아오면 새로고침 전까지 소셜 로그인 브리지가 멈춰 있었다(11-16).
+  var reloading = false;
   try {
     if (planted && window.okbmHasSocialUserId(planted)) {
       var plantedProvider = planted.split('_')[0];
-      await handleSocialLoginSuccess(plantedProvider, planted, email, nick, photo, session.access_token);
+      reloading = await handleSocialLoginSuccess(plantedProvider, planted, email, nick, photo, session.access_token);
     } else {
-      await handleSocialLoginSuccess(provider, providerId, email, nick, photo, session.access_token);
+      reloading = await handleSocialLoginSuccess(provider, providerId, email, nick, photo, session.access_token);
     }
   } catch (e) {
-    window.__okbmOAuthBootstrapping = false;
     console.warn('[okbmConsumeSupabaseOAuthSession]', e);
     okbmMarkSocialButtonsBusy(false);
+  } finally {
+    if (reloading !== true) window.__okbmOAuthBootstrapping = false;
   }
 }
 
@@ -12593,7 +12597,7 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
   if (!provider || !providerId) {
     okbmMarkSocialButtonsBusy(false);
     if (typeof showToast === 'function') showToast('로그인 정보를 확인하지 못했습니다.', 'warn');
-    return;
+    return false;
   }
 
   var normalizedEmail = window.okbmNormalizeEmail(email);
@@ -12741,6 +12745,7 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
   window.__okbmSplashAlreadyShown = true;
 
   setTimeout(function() { window.location.reload(); }, 200);
+  return true; // 곧 새로고침한다
 }
 window.handleSocialLoginSuccess = handleSocialLoginSuccess;
 
@@ -15473,6 +15478,8 @@ if (typeof window !== 'undefined') {
   // 목록에 없는 창도 이 모양이면 열린 창으로 본다(닫기·뒤로가기 칸 세기 공통)
   var OVERLAY_EXTRA_SELECTOR = '.custom-modal-overlay, .modal-fullscreen-container, .modal-overlay, .modal-backdrop, .calc-slide-sheet.active, .mobile-bottom-sheet.open, .pc-sliding-drawer.open, [role="dialog"]';
 
+  // 리포트 위에 겹쳐 뜨는 창. 뒤로가기 장치와 romantic-history.js goBackModal이 함께 쓰는 단 하나의 목록이다.
+  // goBackModal은 적힌 순서대로 처음 보이는 창을 닫으므로, 새 창은 순서를 생각해 여기에만 넣는다.
   var NESTED_REPORT_IDS = {
     feedCustomShareModal: 1,
     modalRichAfterTrip: 1,
@@ -15646,7 +15653,9 @@ if (typeof window !== 'undefined') {
         if (!callWin('closePlanModal')) hideOrRemove(document.getElementById('romanticPlanModal'));
       } },
       { id: 'romanticHistoryModal', close: function() { if (!callWin('closeHistoryModal')) hideOrRemove(document.getElementById('romanticHistoryModal')); } },
-      { id: 'userProfileModalOverlay', close: function() { if (!callWin('closeUserProfileModal')) hideOrRemove(document.getElementById('userProfileModalOverlay')); } }
+      { id: 'userProfileModalOverlay', close: function() { if (!callWin('closeUserProfileModal')) hideOrRemove(document.getElementById('userProfileModalOverlay')); } },
+      // 굴업도 게임 틀(home-layout.js gulupdoFrame). 맨 아래 층이라 목록 끝에 둔다. '나갈까요?'를 묻고, 아니요면 그대로 둔다
+      { id: 'gulupdoFrame', close: function(el) { if (el && typeof el._okbmClose === 'function') el._okbmClose(); } }
     ];
   }
 

@@ -2686,18 +2686,8 @@ window.normalizeHistoryRecord = function(r, idx) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
 
     var currentTopModal = null;
-    var openModalSelectors = [
-      'feedCustomShareModal',
-      'modalRichAfterTrip',
-      'tripActionActionSheet',
-      'singleTripFeedModal',
-      'userFeedCollectionModal',
-      'pastTripsListModal',
-      'followedRoutersModal',
-      'savedFeedsListModal',
-      'savedFeedsEmptyModal',
-      'userAccountSettingsModal'
-    ];
+    // 리포트 위에 겹쳐 뜨는 창 목록은 romantic-sync.js NESTED_REPORT_IDS 하나만 쓴다(뒤로가기 장치와 같은 목록, 적힌 순서가 먼저 닫을 순서)
+    var openModalSelectors = Object.keys(window.NESTED_REPORT_IDS || {});
 
     for (var i = 0; i < openModalSelectors.length; i++) {
       var el = document.getElementById(openModalSelectors[i]);
@@ -7138,6 +7128,16 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     window.__renderRichPhotoStage();
   };
 
+  function restoreRichSubmitBtn() {
+    var btn = document.getElementById('btnSubmitRichTrip');
+    if (!btn) return;
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.innerText = '저장';
+  }
+
+  // 저장 중 잠금(__isSubmittingRichTrip)은 여기서만 걸고 푼다. 본문이 어디서 끝나든(되돌아가기·예상 못 한 오류) 풀려서
+  // 저장 단추가 새로고침 전까지 안 눌리는 일이 없게 한다(11-16 숨은 상태 정리).
  window.__saveRichAfterTrip = async function(recordId) {
     if (window.__isSubmittingRichTrip) {
       return;
@@ -7147,7 +7147,18 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       return;
     }
     window.__isSubmittingRichTrip = true;
+    try {
+      await saveRichAfterTripWhileLocked(recordId);
+    } catch (err) {
+      console.warn('[RomanticHistory] 기록 저장 예외:', err);
+      restoreRichSubmitBtn();
+      if (typeof showToast === 'function') showToast('저장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'warn', 2400);
+    } finally {
+      window.__isSubmittingRichTrip = false;
+    }
+  };
 
+  async function saveRichAfterTripWhileLocked(recordId) {
     var sId = String(recordId || '').trim();
     var target = (window.interactiveHistory || []).find(function(r) { return r && String(r.id).trim() === sId; });
     if (!target && window.__richCurrentRecord) {
@@ -7156,7 +7167,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     if (!target) {
       if (typeof showToast === 'function') showToast('저장 대상을 찾을 수 없습니다.', 'warn');
-      window.__isSubmittingRichTrip = false;
       return;
     }
 
@@ -7165,7 +7175,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       if (typeof showToast === 'function') {
         showToast('디데이 이후 작성할수있습니다', 'info', 2400, { html: HISTORY_TOAST_VEC.clock });
       }
-      window.__isSubmittingRichTrip = false;
       return;
     }
 
@@ -7177,13 +7186,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (photosToProcess.length === 0) {
       triggerHaptic(20);
       if (typeof showToast === 'function') showToast('현장 사진을 1장 이상 추가해주세요.', 'warn', 2400, { html: HISTORY_TOAST_VEC.camera, position: 'center' });
-      window.__isSubmittingRichTrip = false;
-      var submitBtnEl = document.getElementById('btnSubmitRichTrip');
-      if (submitBtnEl) {
-        submitBtnEl.disabled = false;
-        submitBtnEl.style.opacity = '1';
-        submitBtnEl.innerText = '저장';
-      }
+      restoreRichSubmitBtn();
       return;
     }
 
@@ -7197,7 +7200,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       if (!singleMemoCheck) {
         triggerHaptic(20);
         if (typeof showToast === 'function') showToast('대표 일지를 작성해주세요.', 'warn', 2400, 'center');
-        window.__isSubmittingRichTrip = false;
         if (memoInputEl) memoInputEl.focus();
         return;
       }
@@ -7240,22 +7242,12 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var blogUrl = blogCleanFn ? blogCleanFn(blogRaw) : blogRaw;
     if (ytRaw && !ytUrl) {
       if (typeof showToast === 'function') showToast('유튜브 링크를 확인해주세요.', 'warn');
-      window.__isSubmittingRichTrip = false;
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = '1';
-        submitBtn.innerText = '저장';
-      }
+      restoreRichSubmitBtn();
       return;
     }
     if (blogRaw && !blogUrl) {
       if (typeof showToast === 'function') showToast('네이버 블로그 링크를 확인해주세요.', 'warn');
-      window.__isSubmittingRichTrip = false;
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = '1';
-        submitBtn.innerText = '저장';
-      }
+      restoreRichSubmitBtn();
       return;
     }
     if (ytInput && ytUrl) ytInput.value = ytUrl;
@@ -7345,13 +7337,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       // 서버 저장이 실패했으므로 "저장 성공" 처리를 하지 않고 사용자가 다시
       // 시도할 수 있도록 버튼과 상태를 원복합니다. 에러 토스트는
       // savePackingHistoryRecord 내부에서 이미 표시했습니다.
-      window.__isSubmittingRichTrip = false;
-      var failedSubmitBtn = document.getElementById('btnSubmitRichTrip');
-      if (failedSubmitBtn) {
-        failedSubmitBtn.disabled = false;
-        failedSubmitBtn.style.opacity = '1';
-        failedSubmitBtn.innerText = '저장';
-      }
+      restoreRichSubmitBtn();
       return;
     }
 
@@ -7429,7 +7415,6 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
 
     triggerHaptic(15);
-    window.__isSubmittingRichTrip = false;
     if (typeof showToast === 'function') {
       var savedPrivate = target.unregisteredSpot === true || target.isPublished === false;
       showToast(
@@ -7441,7 +7426,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         { html: HISTORY_TOAST_VEC.check }
       );
     }
-  };
+  }
   // 🔗 [공유 링크 딥링크 다이렉트 자동 오픈 엔진]
   function okbmBootDirectFeedParam() {
     try {
