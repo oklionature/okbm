@@ -14729,7 +14729,8 @@ var OKBM_NOTIF_ICON = {
   bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16"/>',
   bookmark: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>',
-  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'
+  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>'
 };
 function okbmNotifKindStyle(kind) {
   if (kind === 'feed_like') return { icon: 'star', fill: '#e11d48', soft: 'rgba(225,29,72,0.16)', ink: '#ff4d6d' };
@@ -14742,6 +14743,9 @@ function okbmNotifKindStyle(kind) {
   if (kind === 'thanks_bookmark') return { icon: 'bookmark', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
   // 고마워요 받음(I5): 보낸 사람 얼굴 + 하트
   if (kind === 'thanks_received') return { icon: 'heart', fill: '#e11d48', soft: 'rgba(225,29,72,0.16)', ink: '#ff4d6d' };
+  // 라운지 글 좋아요(I28): 마지막으로 누른 분 얼굴 + 빨간 하트, 한 글에 한 줄로 묶임 / 추천순 1~3위에 처음 듦: 금색 트로피
+  if (kind === 'lounge_like') return { icon: 'heart', fill: '#e11d48', soft: 'rgba(225,29,72,0.16)', ink: '#ff4d6d' };
+  if (kind === 'lounge_top') return { icon: 'trophy', fill: '#b8862b', soft: 'rgba(224,180,90,0.16)', ink: '#e0b45a' };
   return { icon: 'bell', fill: '#3a3a42', soft: '#17171b', ink: '#d1d1d6' };
 }
 function okbmNotifSvg(name, px, color) {
@@ -14804,24 +14808,26 @@ function okbmNotifActorId(r) {
 }
 
 // 제목 'OO님이 ~' 에서 이름만 굵게. 보낸 사람(actor)을 알면 이름을 누르면 그 사람 피드 모아보기가 열린다.
+// 라운지 좋아요 묶음(I28) 'OO님 외 N명이 ~'도 이름만 굵게
+var OKBM_NOTIF_NICK_RE = /^(관심 루터 )?(.+?)님( 외 \d+명)?이 (.*)$/;
 function okbmNotifTitleNick(title) {
-  var m = String(title || '').match(/^(관심 루터 )?(.+?)님이 (.*)$/);
+  var m = String(title || '').match(OKBM_NOTIF_NICK_RE);
   return m ? m[2] : '';
 }
 function okbmNotifTitleHtml(title, actor) {
-  var m = String(title || '').match(/^(관심 루터 )?(.+?)님이 (.*)$/);
+  var m = String(title || '').match(OKBM_NOTIF_NICK_RE);
   if (!m) return _escapeReportPropHtml(title || '알림');
   var who = actor
     ? ' data-notif-user="' + _escapeReportPropHtml(actor) + '" data-notif-nick="' + _escapeReportPropHtml(m[2]) + '" style="color:#f2f2f3; font-weight:700; cursor:pointer;"'
     : ' style="color:#f2f2f3; font-weight:700;"';
-  return _escapeReportPropHtml(m[1] || '') + '<b' + who + '>' + _escapeReportPropHtml(m[2]) + '</b>님이 ' + _escapeReportPropHtml(m[3]);
+  return _escapeReportPropHtml(m[1] || '') + '<b' + who + '>' + _escapeReportPropHtml(m[2]) + '</b>님' + _escapeReportPropHtml(m[3] || '') + '이 ' + _escapeReportPropHtml(m[4]);
 }
 
 function okbmNotifRowHtml(r, unread) {
   var kind = String(r.kind || '').toLowerCase();
   var ks = okbmNotifKindStyle(kind);
   // 백패커 라운지 댓글·건의 답변 알림은 누르면 그 글을 연다 (related_id = 글 id)
-  var loungePostId = (kind === 'lounge_comment' || kind === 'lounge_reply' || kind === 'lounge_gear_q' || kind === 'lounge_gear_again') ? String(r.related_id || '').trim() : '';
+  var loungePostId = (kind === 'lounge_comment' || kind === 'lounge_reply' || kind === 'lounge_gear_q' || kind === 'lounge_gear_again' || kind === 'lounge_like' || kind === 'lounge_top') ? String(r.related_id || '').trim() : '';
   // 내 피드에 달린 별·댓글, 내가 댓글 단 피드의 새 댓글 알림(H17)은 누르면 그 피드를 연다 (related_id = 피드 id).
   // 댓글 알림이면 댓글 창도 펼친다.
   var isFeedCommentKind = kind === 'feed_comment' || kind === 'feed_reply';

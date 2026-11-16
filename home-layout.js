@@ -43,6 +43,12 @@
       '.hq-btn.hq-join em{color:#34d399;font-weight:700}',
       '.hq-btn.hq-join svg{color:#34d399}',
       '.hq-btn.hq-gear svg{color:#e0b45a}',
+      // 큰 칸 '백패커 라운지'(11-16): 둘째 줄 추천순 1위 제목, 셋째 줄 '인기 1위 · 하트 N' (lounge.js가 채움)
+      '.hq-btn.hq-lounge{border-color:rgba(255,214,120,.35);gap:2px}',
+      '.hq-big .hq-btn.hq-lounge em{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;color:#e9e9ee;font-weight:600}',
+      '.hq-big .hq-btn .hq-k{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:#e0b45a}',
+      '.hq-big .hq-btn .hq-k[hidden]{display:none}',
+      '.hq-big .hq-btn .hq-k svg{position:static;width:12px;height:12px;margin:0;color:#ff6b8a;opacity:1}',
       // 11-09 '장비 후기' 칸: 노란 테두리·NEW(굴업도 줄 NEW는 11-09에 뺌), NEW는 일주일만(.hq-new를 start()에서 붙인다)
       '.hq-btn.hq-gear{position:relative;border-color:rgba(255,214,120,.35)}',
       '.hq-new{position:absolute;top:-7px;right:6px;font-style:normal;font-size:10px;font-weight:900;color:#1a1206;background:#f5b94a;border-radius:5px;padding:2px 5px;line-height:1.2}',
@@ -219,6 +225,11 @@
     else if (kind === 'rank' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(3);
     else if (kind === 'board' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(2);
     else if (kind === 'gear' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(5);   // 라운지 장비 탭
+    // 큰 칸 '백패커 라운지'(11-16): 자유게시판 추천순. lounge.js가 아직이면 받은 뒤 연다
+    else if (kind === 'lounge') {
+      if (typeof window.okbmOpenLoungeHot === 'function') window.okbmOpenLoungeHot();
+      else if (typeof window.okbmEnsureLounge === 'function') window.okbmEnsureLounge().then(function () { if (typeof window.okbmOpenLoungeHot === 'function') window.okbmOpenLoungeHot(); }).catch(function (err) { console.warn('[home-layout.js:lounge]', err); });
+    }
     else if (kind === 'join' && typeof window.openTripJoinListModal === 'function') window.openTripJoinListModal();
     else if (kind === 'write' && typeof window.openPastTripRegisterModal === 'function') {
       // 홈에서 열면 올린 뒤·닫은 뒤 홈으로 돌아온다 (낭만플랜에서 연 것과 같은 처리: 마이리포트로 넘어가지 않음)

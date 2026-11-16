@@ -100,7 +100,9 @@
   // revView: 박지 후기 창의 작은 탭 'recent'(최근 후기, 처음) | 'top'(평점순) | 'many'(후기 많은 순)
   // revBand: 평점순에서 고른 점수대 'all' | '45'(4.5 이상) | '4'(4점대) | '3'(3점대) | 'low'(3점 미만)
   // hub: 홈 라운지 알약 'board' | 'poll' | 'review' | 'guide'
+  // bsort: 자유게시판 정렬 'hot'(추천순, 처음) | 'new'(최신순). 고른 것은 이 휴대폰에 기억 (I28)
   const S = { tab: 2, wtab: 2, cat: 'all', gkind: 'question', gcat: 'all', revSpot: null, revView: 'recent', revBand: 'all', hub: 'board',
+    bsort: (function () { try { return localStorage.getItem('okbm_lounge_bsort') === 'new' ? 'new' : 'hot'; } catch (e) { return 'hot'; } })(),
     gt: { kind: 'review', cat: 'all', q: '', sort: 'count', open: '' } };
   let timeSig = ''; // 신청·오픈 상태 요약 (renderAll·timeTick)
 
@@ -780,6 +782,39 @@
       '.lm-btn.main{flex:1.6;background:var(--accent-fill);color:var(--on-accent)}',
       '.lm-btn:disabled{opacity:.35;pointer-events:none}',
       '.lm-hint{margin:8px 0 0;font-size:13px;line-height:1.55;color:var(--sub)}',
+      // 자유게시판 추천순·제목 줄 (I28)
+      '.lm-bsort{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 2px}',
+      '.lm-bsort>span{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.lm-sseg{flex:none;display:flex;background:#1c1c20;border-radius:10px;padding:3px}',
+      '.lm-sseg button{font-size:13px;font-weight:700;color:var(--sub);padding:6px 13px;border-radius:8px;transition:background .15s,color .15s}',
+      '.lm-sseg button.on{background:#3a3a40;color:#fff}',
+      '.lm-pinbox{margin:10px 0 4px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#0c0d10;padding:0 14px}',
+      '.lm-pinbox>.lmx:last-child{border-bottom:0}',
+      '.lmx.cmp:not(.open)>.lm-post{display:none}',
+      '.lmx.cmp.open>.lm-crow{display:none}',
+      '.lm-crow{display:flex;align-items:center;gap:12px;padding:13px 0;cursor:pointer;transition:opacity .15s}',
+      '.lm-crow:active{opacity:.6}',
+      '.lm-crow.pin{gap:8px;padding:12px 0}',
+      '.lm-ptag{flex:none;font-style:normal;font-size:11px;font-weight:800;color:var(--star);border:1px solid rgba(255,195,66,.55);border-radius:5px;padding:1px 5px}',
+      '.lm-pt{flex:1;min-width:0;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.lm-crow.pin small{flex:none;font-size:12px;font-weight:700;color:#60a5fa}',
+      '.lm-rk{flex:none;width:20px;text-align:center;font-size:15px;font-weight:800;color:#5c5c63;font-variant-numeric:tabular-nums}',
+      '.lm-rk.top{color:var(--star)}',
+      '.lm-ctx{flex:1;min-width:0}',
+      '.lm-ct{font-size:15px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}',
+      '.lm-cm{display:flex;align-items:center;gap:8px;margin-top:5px;font-size:12px;color:var(--sub);white-space:nowrap;min-width:0}',
+      '.lm-cm>span{display:inline-flex;align-items:center;gap:2px}',
+      '.lm-cm>span:first-of-type{min-width:0;overflow:hidden;text-overflow:ellipsis;display:block}',
+      '.lm-cm em{flex:none;font-style:normal;font-weight:700;color:var(--star)}',
+      '.lm-cm .lk svg{color:var(--pink)}',
+      '.lm-cth{flex:none;width:56px;height:56px;border-radius:10px;object-fit:cover;background:#1c1c20}',
+      '.lm-hotend{margin:18px 0 0;text-align:center;font-size:13px;color:var(--sub)}',
+      '.lm-hotend button{font-weight:700;color:#60a5fa}',
+      '.lm-fabw{position:sticky;bottom:16px;height:0;display:flex;justify-content:flex-end;pointer-events:none;z-index:2}',
+      '.lm-fab{pointer-events:auto;transform:translateY(-100%);display:inline-flex;align-items:center;gap:6px;height:48px;padding:0 20px;border-radius:24px;background:var(--tx);color:#000;font-size:15px;font-weight:800;box-shadow:0 6px 20px rgba(0,0,0,.5)}',
+      '.lm-fab:active{transform:translateY(-100%) scale(.97)}',
+      '.lm-gl .lk{display:inline-flex;align-items:center;gap:2px;vertical-align:-1px}.lm-gl .lk svg{color:var(--pink)}',
+      '.lm-best{display:inline-block;margin-bottom:6px;font-size:11px;font-weight:800;color:var(--star);border:1px solid rgba(255,195,66,.55);border-radius:5px;padding:1px 6px}',
       '.lm-win{position:absolute;top:0;bottom:0;left:0;right:0;z-index:1;max-width:480px;margin:0 auto;display:flex;flex-direction:column;background:var(--bg);box-shadow:-14px 0 34px rgba(0,0,0,.5);pointer-events:auto;transform:translateX(105%);transition:transform .42s var(--ease)}',
       '.lm-win.on{transform:none}',
       '.lmw-top{flex:none;position:relative;z-index:2;padding:calc(4px + env(safe-area-inset-top,0px)) 20px 0;background:var(--bg)}',
@@ -953,6 +988,12 @@
   }
   // 게시판 칸 열쇠: 'all' · 분류 · 'gear|질문후기|종류'(장비 말머리) · 'gearof|id:장비id' 또는 'gearof|n:이름'(장비 모아 보기)
   function boardKey() { return S.cat === 'gear' ? 'gear|' + S.gkind + '|' + S.gcat : S.cat; }
+  // 자유게시판 목록 열쇠: 추천순이면 'hot|분류'(서버 okbm_lounge_hot, I28). 건의는 늘 최신순
+  const hotOn = function () { return S.bsort === 'hot' && S.cat !== 'suggestion' && S.cat !== 'gear'; };
+  function listKey() { return hotOn() ? 'hot|' + S.cat : boardKey(); }
+  // 장비 이름만 다른 같은 장비(띄어쓰기·대소문자, I28 okbm_gear_board names): 맞춘 이름 → 적힌 이름들
+  const GN = {};
+  const gnKey = function (name) { return String(name || '').replace(/\s+/g, '').toLowerCase(); };
   function gearOfKey(p) { return 'gearof|' + (p.gear_id ? 'id:' + p.gear_id : 'n:' + p.gear_name); }
   function scopeQuery(b, key) {
     if (key === 'all') return b;
@@ -963,7 +1004,9 @@
     }
     if (k[0] === 'gearof') {
       const v = key.slice(7);
-      return v.indexOf('id:') === 0 ? b.eq('gear_id', v.slice(3)) : b.eq('category', 'gear').eq('gear_name', v.slice(2));
+      if (v.indexOf('id:') === 0) return b.eq('gear_id', v.slice(3));
+      const names = GN[gnKey(v.slice(2))];
+      return names && names.length > 1 ? b.eq('category', 'gear').in('gear_name', names) : b.eq('category', 'gear').eq('gear_name', v.slice(2));
     }
     return b.eq('category', key);
   }
@@ -971,6 +1014,7 @@
     const c = sb();
     if (!c) throw new Error('no_client');
     const key = cat || 'all';
+    if (key.indexOf('hot|') === 0) return loadHot(key);
     const st = postsBy[key] || (postsBy[key] = { rows: [], done: false, loading: false });
     if (st.loading || (more && st.done)) return st;
     st.loading = true;
@@ -999,6 +1043,28 @@
       if (list.length) st.cursor = list[list.length - 1].created_at;
       st.done = list.length < POST_PAGE;
       await Promise.all([loadMyLikes(list.map(function (p) { return p.id; })), loadPolls(list)]);
+    } finally {
+      st.loading = false;
+    }
+    return st;
+  }
+  // 추천순 (I28): 최근 30일 공개 글을 좋아요 → 댓글 → 최근 순으로 서버가 세운 그대로. 고정 글은 빠지므로
+  // 위 고정 칸은 그 분류의 최신순 목록(고정 글을 따로 받아 둠)에서 꺼낸다. 더 보기 없음(최대 50개)
+  async function loadHot(key) {
+    const c = sb();
+    if (!c) throw new Error('no_client');
+    const cat = key.slice(4) || 'all';
+    const st = postsBy[key] || (postsBy[key] = { rows: [], done: true, loading: false });
+    if (st.loading) return st;
+    st.loading = true;
+    try {
+      const both = await Promise.all([
+        q(c.rpc('okbm_lounge_hot', { p_cat: cat, p_limit: 50 })),
+        postsBy[cat] ? null : loadPosts(cat).catch(function () { return null; })
+      ]);
+      st.rows = (Array.isArray(both[0]) ? both[0] : []).filter(function (p) { return !p.is_pinned; });
+      st.done = true;
+      await Promise.all([loadMyLikes(st.rows.map(function (p) { return p.id; })), loadPolls(st.rows)]);
     } finally {
       st.loading = false;
     }
@@ -1140,7 +1206,10 @@
   }
   // 탭 순서와 같은 순서로 불러온다. D.fail[i] = 그 탭만 실패
   function loadTabs() {
-    return Promise.allSettled([loadEvents(), loadGuides(), loadPosts('all'), loadTop(), loadDeals(), loadNews()]).then(function (r) {
+    // 추천순 '전체'(I28)도 같이 받는다: 라운지 첫 화면과 홈 '백패커 라운지' 칸 1위 글
+    return Promise.allSettled([loadEvents(), loadGuides(), loadPosts('all'), loadTop(), loadDeals(), loadNews(),
+      loadPosts('hot|all').catch(function (e) { console.warn('[lounge.js:loadHot]', e); })]).then(function (r) {
+      r = r.slice(0, 6);
       r.forEach(function (x) { if (x.status === 'rejected') console.warn('[lounge.js:loadTabs]', x.reason); });
       D.fail = r.map(function (x) { return x.status === 'rejected'; });
       return r;
@@ -2066,6 +2135,7 @@
     const p = findPost(id);
     if (!p || !layer) return;
     layer.querySelectorAll('[data-poll]').forEach(function (el) { if (el.dataset.poll === String(id)) el.outerHTML = pollHtml(p); });
+    paintPinMeta(id);
   }
   const pollBusy = new Set();
   async function votePoll(id, i) {
@@ -2167,6 +2237,7 @@
     const p = findPost(id);
     if (!p || !layer) return;
     layer.querySelectorAll('[data-t3]').forEach(function (el) { if (el.dataset.t3 === String(id)) el.outerHTML = top3Html(p); });
+    paintPinMeta(id);
     if (focusI == null) return;
     layer.querySelectorAll('[data-t3]').forEach(function (el) {
       if (el.dataset.t3 !== String(id) || !el.offsetParent) return;
@@ -2320,7 +2391,33 @@
     }
     return '<a class="lm-out" href="' + escapeHtml(okbmSafeExternalUrl(url)) + '" target="_blank" rel="noopener noreferrer">' + esc(url) + '</a>';
   }
-  function postItem(p) {
+  // 자유게시판 줄 (I28): 접혀 있을 땐 제목 줄, 누르면 그 자리에서 지금 큰 카드로 펼친다. 다시 누르면 접힘
+  //   o.rank: 추천순 순위(1~3 금색) · o.pin: 위 고정 칸 한 줄(꼬리표·제목·참여 수)
+  function pinMeta(p) {
+    if (p.category !== 'poll') return '보기 ›';
+    const r = p.poll_kind === 'top3' ? D.top3[p.id] : D.poll[p.id];
+    const n = r ? Number(r.total) || 0 : 0;
+    return (n ? n + '명 참여' : '참여하기') + ' ›';
+  }
+  function paintPinMeta(id) {
+    const p = findPost(id);
+    if (!p || !layer) return;
+    layer.querySelectorAll('[data-pmeta]').forEach(function (el) { if (el.dataset.pmeta === String(id)) el.textContent = pinMeta(p); });
+  }
+  function postRowHead(p, o) {
+    if (o.pin) {
+      const top3 = p.category === 'poll' && p.poll_kind === 'top3';
+      return `<div class="lm-crow pin" data-a="x" role="button" tabindex="0" aria-expanded="false"><i class="lm-ptag">${top3 ? 'TOP 3' : p.category === 'poll' ? '설문' : '고정'}</i><b class="lm-pt">${esc(p.title)}</b><small data-pmeta="${esc(p.id)}">${esc(pinMeta(p))}</small></div>`;
+    }
+    const ph = postPhotos(p)[0];
+    const cc = Number(p.comments_count) || 0;
+    return `<div class="lm-crow" data-a="x" role="button" tabindex="0" aria-expanded="false">${o.rank ? `<span class="lm-rk${o.rank <= 3 ? ' top' : ''}">${o.rank}</span>` : ''}<div class="lm-ctx"><div class="lm-ct">${p.is_private ? ico(P.lock, 13) + ' ' : ''}${esc(p.title)}</div>`
+      + `<div class="lm-cm">${p.category === 'gear' ? '<em>장비 후기</em>' : ''}<span>${esc([p.nickname, ago(p.created_at)].filter(Boolean).join(' · '))}</span>`
+      + (p.is_private ? '' : `<span class="lk" data-lk="${esc(p.id)}">${ico(P.heart, 13)}${Number(p.likes_count) || 0}</span>`)
+      + (cc ? `<span>${ico(P.chat, 13)}${cc}</span>` : '') + `</div></div>`
+      + (ph ? `<img class="lm-cth" src="${escapeHtml(okbmFastImageUrl(ph, 160))}" alt="" loading="lazy" decoding="async">` : '') + `</div>`;
+  }
+  function postItem(p, o) {
     const photos = postPhotos(p);
     const cc = Number(p.comments_count) || 0;
     const own = isMine(p.user_id);
@@ -2342,6 +2439,7 @@
     if (!own) links.push(ugcBtn('lounge_post', p.id, p.user_id, p.nickname));
     const body = `<div class="lmx-in ind">${commentsHtml(p)}${composeHtml(p)}
       <div class="lmx-links">${links.join('')}</div></div>`;
+    if (o && (o.pin || o.list)) return '<div class="lmx cmp' + (o.pin ? ' pin' : '') + '" data-id="' + esc(p.id) + '">' + postRowHead(p, o) + head + '<div class="lmx-body"><div>' + body + '</div></div></div>';
     return fold(p.id, head, body);
   }
   // 게시판 '전체': 고정 글 → 설문·투표 → 백패킹이야기 → 그 밖. 장비 글은 '장비' 탭에서 연다(대표님 11-09, openGearPost)
@@ -2356,17 +2454,32 @@
     });
     return pin.concat(poll, story, etc);
   }
+  // 자유게시판 목록 (I28): 위 고정 칸 → 추천순(순위)이나 최신순(올린 순서대로) 제목 줄. 장비 글은 '장비' 탭에서
+  //   (추천순 '전체'에는 장비 후기가 서버 규칙대로 위 10개 안에 3개까지 섞인다)
   function boardListHtml() {
-    const key = boardKey();
-    const list = key === 'all' ? allOrder(visiblePosts(key)) : visiblePosts(key);
-    const st = postsBy[key];
-    if (!st) return '<div class="lm-empty">불러오는 중…</div>';
-    const empty = S.cat === 'suggestion' ? '내가 쓴 건의가 없어요'
-      : S.cat === 'gear' ? (S.gkind === 'review' ? '아직 장비 후기가 없어요' : '아직 장비 질문이 없어요') : '첫 글을 기다리고 있어요';
-    let h = list.length ? list.map(postItem).join('') : '<div class="lm-empty">' + empty + '</div>';
-    if (!st.done && st.rows.length) h += '<button type="button" class="lmh-more" data-a="more-posts">더 보기' + ico(P.chevR, 16) + '</button>';
+    const hot = hotOn();
+    const key = listKey(), st = postsBy[key];
+    if (!st || (hot && !postsBy[S.cat])) return '<div class="lm-empty">불러오는 중…</div>';
+    const pins = visiblePosts(S.cat).filter(function (p) { return p.is_pinned; });
+    let list = visiblePosts(key).filter(function (p) { return !p.is_pinned; });
+    if (!hot) {
+      if (key === 'all') list = list.filter(function (p) { return p.category !== 'gear'; });
+      list.sort(function (a, b) { return String(b.created_at).localeCompare(String(a.created_at)); });
+    }
+    const empty = S.cat === 'suggestion' ? '내가 쓴 건의가 없어요' : hot ? '최근 30일 동안 올라온 글이 없어요' : '첫 글을 기다리고 있어요';
+    let h = pins.length ? '<div class="lm-pinbox">' + pins.map(function (p) { return postItem(p, { pin: true }); }).join('') + '</div>' : '';
+    h += list.length ? list.map(function (p, i) { return postItem(p, { list: true, rank: hot ? i + 1 : 0 }); }).join('') : '<div class="lm-empty">' + empty + '</div>';
+    if (hot) h += '<p class="lm-hotend">30일이 지난 글은 <button type="button" data-a="bsort" data-v="new">최신순</button>에서 볼 수 있어요</p>';
+    else if (!st.done && st.rows.length) h += '<button type="button" class="lmh-more" data-a="more-posts">더 보기' + ico(P.chevR, 16) + '</button>';
     return h;
   }
+  const bsortHtml = function () {
+    const hot = S.bsort === 'hot';
+    return '<div class="lm-bsort" data-bsort' + (S.cat === 'suggestion' ? ' hidden' : '') + '><span data-bsort-lbl>' + (hot ? '최근 30일 · 좋아요 많은 순' : '올린 순서대로') + '</span>'
+      + '<div class="lm-sseg" role="radiogroup" aria-label="정렬">' + [['hot', '추천순'], ['new', '최신순']].map(function (x) {
+        return '<button type="button" role="radio" aria-checked="' + (S.bsort === x[0]) + '" class="' + (S.bsort === x[0] ? 'on' : '') + '" data-a="bsort" data-v="' + x[0] + '">' + x[1] + '</button>';
+      }).join('') + '</div></div>';
+  };
   // 장비 말머리를 고르면 '질문|후기' 두 칸과 종류 줄이 나온다 (I2)
   const segHtml = function (a, cur, label, counts) {
     return '<div class="lm-seg" role="radiogroup" aria-label="' + label + '">' + GEAR_KIND.map(function (k) {
@@ -2395,9 +2508,10 @@
       return '<button type="button" data-a="cat" data-v="' + c[0] + '" class="' + (S.cat === c[0] ? 'on' : '') + '">' + (c[0] === 'suggestion' ? ico(P.lock, 13) : '') + esc(c[1]) + '</button>';
     }).join('') + '</div>'
       + gearSubHtml()
-      + '<button type="button" class="lmh-cta" data-a="new-post">' + ico(P.plus, 18) + '<span data-cta-lbl>' + esc(ctaLabel()) + '</span></button>'
+      + bsortHtml()
       + '<div class="lmh-list">' + boardListHtml() + '</div>'
-      + '<p class="lm-hint" style="margin-top:20px">건의는 나와 운영팀만 볼 수 있어요. 답변이 달리면 알림으로 알려 드려요.</p>';
+      + '<p class="lm-hint" style="margin-top:20px">건의는 나와 운영팀만 볼 수 있어요. 답변이 달리면 알림으로 알려 드려요.</p>'
+      + '<div class="lm-fabw"><button type="button" class="lm-fab" data-a="new-post">' + ico(P.plus, 18) + '<span data-cta-lbl>' + esc(ctaLabel()) + '</span></button></div>';
   }
 
   // 박지 후기
@@ -3281,7 +3395,23 @@
     if (adm) adm.textContent = D.admin ? '관리자' : '';
     for (let i = 0; i < wpanes.length; i++) rerenderPane(i);
   }
-  function renderAll() { timeSig = timeSigNow(); renderHome(); paintDealSurfaces(); rerenderWindow(); }
+  function renderAll() { timeSig = timeSigNow(); renderHome(); paintDealSurfaces(); rerenderWindow(); paintHomeLoungeTop(); }
+  // 홈 바로가기 큰 칸 '백패커 라운지'(index.html #hqLoungeTop, I28): 추천순 1위 글 제목과 '인기 1위 · 하트 N'.
+  // 좋아요 받은 글이 없으면 가장 최근 글 제목만
+  function paintHomeLoungeTop() {
+    const el = document.getElementById('hqLoungeTop'), k = document.getElementById('hqLoungeK');
+    if (!el || D.status !== 'ready') return;
+    const top = visiblePosts('hot|all')[0];
+    if (top && Number(top.likes_count) > 0) {
+      el.textContent = top.title;
+      if (k) { k.innerHTML = '인기 1위 · ' + ico(P.heart, 12) + (Number(top.likes_count) || 0); k.hidden = false; }
+      return;
+    }
+    const last = visiblePosts('all').filter(function (p) { return !p.is_pinned && !p.is_private && p.category !== 'gear'; })
+      .sort(function (a, b) { return String(b.created_at).localeCompare(String(a.created_at)); })[0];
+    el.textContent = last ? last.title : '\u00a0';
+    if (k) k.hidden = true;
+  }
   // 신청·오픈 시각이 지나면 순서와 글씨가 바뀐다. 1분마다 상태(맨 위로·제자리)가 바뀌었으면 전부 다시 그리고,
   // 아니면 홈 두 칸('37분 뒤' 같은 꼬리표)만 다시 그린다. 펼친 글·인스타 게시물은 상태가 바뀔 때만 다시 그려진다.
   function timeSigNow() {
@@ -3323,6 +3453,8 @@
     if (!pane || !id) return null;
     let t = findLmx(pane, id);
     if (!t && tab === 2 && S.cat !== 'all') { S.cat = 'all'; rerenderPane(2); t = findLmx(pane, id); }
+    // 추천순에 없는 글(30일 지남·좋아요 적음)은 이번만 최신순으로 바꿔 연다(기억한 정렬은 그대로, I28)
+    if (!t && tab === 2 && hotOn()) { S.bsort = 'new'; rerenderPane(2); t = findLmx(pane, id); }
     if (!t) return null;
     if (!animate) t.classList.add('noanim');
     Array.prototype.forEach.call(t.parentElement.children, function (n) {
@@ -4455,12 +4587,15 @@
       closeSheet();
       toast(st.id ? '글을 고쳤어요' : (row.category === 'suggestion' ? '건의를 보냈어요. 답변이 달리면 알려 드릴게요' : row.category === 'poll' ? '설문을 올렸어요' : '글을 올렸어요'));
       if (!st.id && S.cat !== 'all' && S.cat !== row.category) S.cat = 'all';
+      // 새 글은 좋아요가 0이라 추천순에선 아래에 묻힌다. 이번엔 최신순으로 보여 준다(기억한 정렬은 그대로)
+      if (!st.id && row.category !== 'gear') S.bsort = 'new';
       if (!st.id && S.cat === 'gear') { // 올린 글이 보이는 칸으로
         S.gkind = row.gear_kind;
         if (S.gcat !== row.gear_cat) S.gcat = 'all';
       }
       renderBoard();
-      if (!postsBy[boardKey()]) loadPosts(boardKey()).then(renderBoardList).catch(function (err) { console.warn('[lounge.js:savePost]', err); });
+      if (!postsBy[listKey()]) loadPosts(listKey()).then(renderBoardList).catch(function (err) { console.warn('[lounge.js:savePost]', err); });
+      Object.keys(postsBy).forEach(function (k) { if (k.indexOf('hot|') === 0 && k !== listKey()) delete postsBy[k]; });
       if (row.category === 'gear') {
         S.gt.kind = row.gear_kind === 'question' ? 'question' : 'review';
         rerenderPane(TAB_GEAR);
@@ -4556,8 +4691,17 @@
     if (sum) sum.innerHTML = gearSumHtml(rows);
     paintGearPhotos(rows);
     const list = rows.filter(function (p) { return p.gear_kind === st.gk; });
-    box.innerHTML = list.length ? list.map(function (p) {
-      return `<button type="button" class="lm-gl" data-a="gear-post" data-v="${esc(p.id)}"><b>${esc(p.title)}</b>${p.gear_review ? rvSumHtml(p.gear_review) : ''}<small>${esc([p.nickname, ago(p.created_at), (st.gk === 'review' ? '댓글 ' : '답변 ') + (Number(p.comments_count) || 0)].filter(Boolean).join(' · '))}</small></button>`;
+    // 후기가 둘 이상이면 추천순(좋아요 많은 순, 처음) | 최신순. 기간 제한 없이 센다 (I28). 질문은 최신순 그대로
+    const sortable = st.gk === 'review' && list.length >= 2;
+    const hot = sortable && st.gsort !== 'new';
+    if (hot) list.sort(function (a, b) { return (Number(b.likes_count) || 0) - (Number(a.likes_count) || 0) || String(b.created_at).localeCompare(String(a.created_at)); });
+    const bar = sortable ? '<div class="lm-bsort"><span>' + (hot ? '좋아요 많은 순' : '올린 순서대로') + '</span><div class="lm-sseg" role="radiogroup" aria-label="정렬">'
+      + [['hot', '추천순'], ['new', '최신순']].map(function (x) { const on = (x[0] === 'hot') === hot; return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="gsort" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('')
+      + '</div></div>' : '';
+    box.innerHTML = list.length ? bar + list.map(function (p, i) {
+      const lk = Number(p.likes_count) || 0;
+      const best = hot && i === 0 && lk >= 1 ? '<span class="lm-best">좋아요 많은 후기</span>' : '';
+      return `<button type="button" class="lm-gl" data-a="gear-post" data-v="${esc(p.id)}">${best}<b>${esc(p.title)}</b>${p.gear_review ? rvSumHtml(p.gear_review) : ''}<small>${esc([p.nickname, ago(p.created_at)].filter(Boolean).join(' · '))}${st.gk === 'review' ? ` · <span class="lk">${ico(P.heart, 12)}${lk}</span>` : ''} · ${esc((st.gk === 'review' ? '댓글 ' : '답변 ') + (Number(p.comments_count) || 0))}</small></button>`;
     }).join('') : '<div class="lm-empty">' + (st.gk === 'review' ? '아직 이 장비 후기가 없어요' : '아직 이 장비 질문이 없어요') + '</div>';
   }
   // 같이 사용하는 낭만루터 수: 이 장비를 내 장비에 둔 회원 수(누군지는 숨김) (I8)
@@ -4649,6 +4793,7 @@
     const p = findPost(id);
     if (!p || !layer) return;
     layer.querySelectorAll('[data-a="like"]').forEach(function (b) { if (b.dataset.v === String(id)) b.outerHTML = likeBtn(p); });
+    layer.querySelectorAll('[data-lk]').forEach(function (b) { if (b.dataset.lk === String(id)) b.innerHTML = ico(P.heart, 13) + (Number(p.likes_count) || 0); });
   }
   async function toggleLike(id) {
     if (needLogin('로그인하면 좋아요를 누를 수 있어요')) return;
@@ -4982,14 +5127,38 @@
           if (sub) sub.hidden = S.cat !== 'gear';
           const cl = pane.querySelector('[data-cta-lbl]');
           if (cl) cl.textContent = ctaLabel();
+          const bs = pane.querySelector('[data-bsort]');
+          if (bs) bs.hidden = S.cat === 'suggestion';
         }
         tick();
-        const key = boardKey();
-        if (postsBy[key]) { renderBoardList(); break; }
+        const key = listKey();
+        if (postsBy[key] && (!hotOn() || postsBy[S.cat])) { renderBoardList(); break; }
         const l = pane && pane.querySelector('.lmh-list');
         if (l) l.innerHTML = '<div class="lm-empty">불러오는 중…</div>';
         loadPosts(key).then(renderBoardList).catch(function (err) {
           console.warn('[lounge.js:cat]', err); delete postsBy[key];
+          if (l && l.isConnected) l.innerHTML = '<div class="lm-empty">불러오지 못했어요</div>';
+        });
+        break;
+      }
+      // 장비 창 후기 추천순 | 최신순 (I28)
+      case 'gsort': if (SH && SH.kind === 'gear') { SH.gsort = v === 'new' ? 'new' : 'hot'; paintGearList(); tick(); } break;
+      // 자유게시판 추천순 | 최신순 (I28). 고른 것은 이 휴대폰에 기억
+      case 'bsort': {
+        if (v !== 'hot' && v !== 'new') break;
+        S.bsort = v;
+        try { localStorage.setItem('okbm_lounge_bsort', v); } catch (err) {}
+        const pane = paneByTab(2);
+        const bar = pane && pane.querySelector('[data-bsort]');
+        if (bar) bar.outerHTML = bsortHtml();
+        tick();
+        const key = listKey();
+        const l = pane && pane.querySelector('.lmh-list');
+        if (pane && t.closest('.lm-hotend')) pane.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+        if (postsBy[key] && (!hotOn() || postsBy[S.cat])) { renderBoardList(); break; }
+        if (l) l.innerHTML = '<div class="lm-empty">불러오는 중…</div>';
+        loadPosts(key).then(renderBoardList).catch(function (err) {
+          console.warn('[lounge.js:bsort]', err); delete postsBy[key];
           if (l && l.isConnected) l.innerHTML = '<div class="lm-empty">불러오지 못했어요</div>';
         });
         break;
@@ -5052,6 +5221,10 @@
       }
       case 'gb-open': {
         const g = GB.rows && GB.rows[Number(v)];
+        if (g && !g.gear_id && Array.isArray(g.names) && g.names.length > 1 && String(GN[gnKey(g.gear_name)]) !== String(g.names)) {
+          GN[gnKey(g.gear_name)] = g.names.slice();
+          g.names.forEach(function (n) { delete postsBy[gearOfKey({ gear_name: n })]; });
+        }
         if (g) openGear({ gear_id: g.gear_id || '', gear_name: g.gear_name, gear_cat: g.gear_cat || 'other', gear_kind: 'review' });
         break;
       }
@@ -5134,7 +5307,7 @@
       case 'hub-all': {
         if (v === 'gear') { S.gt.kind = 'review'; openLoungeWindow(TAB_GEAR, null, t); break; }
         S.cat = v === 'poll' ? v : 'all';
-        const key = boardKey();
+        const key = listKey();
         if (!postsBy[key]) loadPosts(key).then(renderBoardList).catch(function (err) { console.warn('[lounge.js:hub-all]', err); delete postsBy[key]; });
         rerenderPane(2);
         openLoungeWindow(2, null, t);
@@ -5442,7 +5615,8 @@
       D.pastEvents = null;
       loadTabs().then(function (r) {
         D.status = r.every(function (x) { return x.status === 'rejected'; }) ? 'error' : 'ready';
-        if (S.cat !== 'all') return loadPosts(boardKey()).catch(function () {});
+        return Promise.all([S.cat !== 'all' ? loadPosts(boardKey()).catch(function () {}) : null,
+          hotOn() ? loadPosts(listKey()).catch(function () {}) : null]);
       }).then(function () {
         if (!loggedIn() || !D.admin) closeSheet(true); // 권한이 사라지면 관리자 시트를 닫는다
         renderAll();
@@ -5493,6 +5667,13 @@
   }
 
   window.openLoungeWindow = function (tab, itemId) { openLoungeWindow(tab, itemId, null); };
+  // 홈 '백패커 라운지' 칸: 자유게시판 '전체'를 추천순으로 연다(기억한 정렬은 그대로, I28)
+  window.okbmOpenLoungeHot = function () {
+    S.cat = 'all'; S.bsort = 'hot';
+    if (!postsBy['hot|all']) loadPosts('hot|all').then(renderBoardList).catch(function (err) { console.warn('[lounge.js:openHot]', err); });
+    rerenderPane(2);
+    openLoungeWindow(2, null, null);
+  };
   // 낭만플랜 장비관리에서 부른다: 그 장비 후기 쓰기, 그 장비 모아 보기 (I8). g = { id, name, cat }
   window.okbmLoungeGearReview = function (g) {
     if (!g || !g.name) return;
