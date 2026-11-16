@@ -1740,7 +1740,8 @@
       .okbm-spot-notice-pad { height: 14px; }
       .okbm-spot-notice-x { position: absolute; top: 10px; right: 10px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.55); color: #fff; font-size: 15px; font-weight: 700; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
     </style>
-    <div id="okbmNewSpotNotice" class="okbm-spot-notice" data-notice-id="20261105-fire-v2" data-notice-img="/notice/fire-1105.jpg" data-notice-action="news" data-notice-news="1ca01dd2-6a6c-4c44-bd28-342a77646b5c" data-notice-label="카드뉴스로 자세히 보기" hidden>
+    <!-- 11-16: 지도 알림창을 산불(20261105-fire-v2, /notice/fire-1105.jpg, 라운지 소식 1ca01dd2…)에서 GPX 알림으로 바꿈. 판은 map-main.js okbmGpxNoticeMount -->
+    <div id="okbmNewSpotNotice" class="okbm-spot-notice" data-notice-id="20261116-gpx" data-notice-action="gpx" aria-label="GPX 등록 알림" hidden>
       <div class="okbm-spot-notice-frame">
         <button type="button" id="okbmNewSpotNoticeClose" data-metric-click="feat_notice_close" class="okbm-spot-notice-x" aria-label="닫기">✕</button>
         <div class="okbm-spot-notice-scroll">
@@ -1750,10 +1751,10 @@
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.126"></script>
+       <script src="map-main.js?v=1.0.127"></script>
     <script src="photo-map.js?v=26" defer></script>
     <script src="spot-tips.js?v=14" defer></script>
-    <script src="map-gear-card.js?v=5" defer></script>
+    <script src="map-gear-card.js?v=6" defer></script>
     <script src="home-metrics.js?v=5" defer></script>
     <script src="home-screen-guide.js?v=4" data-device-metric="off" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js" integrity="sha384-WgXwGL6fUsYJWNaKJgVbrJKGRQwc1vieh2oy4kw9nXqpNDz3tdSsqEYUgeHD/NuF" crossorigin="anonymous"></script>

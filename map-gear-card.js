@@ -7,6 +7,8 @@
 //   로그인 안 하고 끝낸 답은 로그인 뒤 지도가 다시 열리면 이어서 넣는다.
 // 휴대폰 화면에서만, 목록·정보창·포토맵·깨끗한 지도일 때는 숨긴다.
 // X로 닫으면 이번 접속에서만 숨기고, 지도에 다시 들어오면 늘 뜬다(대표님 11-09).
+// 11-16 대표님: 한 번이라도 참여한 줄은 더 띄우지 않는다(장비 후기를 한 번이라도 쓴 분은 '최애 장비 후기' 줄,
+//   최애 박지 TOP 3를 낸 분은 월드컵 줄, 둘 다면 칸 전체). X 대신 '일주일 동안 안 보기'(포인트 없이 무료).
 // 인라인 onclick을 쓰지 않는다(CSP 해시가 필요 없게).
 // =========================================================================
 (function () {
@@ -23,7 +25,8 @@
     '@media (max-width:768px){.okbm-gc.on{display:block}}',
     '.okbm-gc{position:fixed;right:10px;bottom:var(--okbm-gc-bottom,calc(109px + env(safe-area-inset-bottom,0px)));z-index:calc(var(--z-sidebar,700) + 20);width:248px;background:rgba(15,15,17,.96);border:1px solid rgba(255,255,255,.16);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.55);padding:10px 6px 6px;box-sizing:border-box;font-family:inherit;color:#f2f2f3}',
     'body.pm-on .okbm-gc,body.clean-map-mode .okbm-gc,body:has(#mobileBottomSheet.open) .okbm-gc,body:has(#sidebar:not(.collapsed)) .okbm-gc,body:has(#mbsListRow:not([hidden])) .okbm-gc{display:none!important}',
-    '.okbm-gc-head{display:flex;align-items:center;gap:6px;padding:0 8px 6px;font-size:11px;font-weight:700;color:#f2c14e}',
+    '.okbm-gc-head{display:flex;align-items:center;gap:6px;padding:0 0 4px 8px;font-size:11px;font-weight:700;color:#f2c14e}',
+    '.okbm-gc-snooze{margin-left:auto;padding:4px 8px;min-height:28px;border:0;background:none;color:#8b8b93;font:inherit;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap}',
     '.okbm-gc-x{position:absolute;top:2px;right:2px;width:32px;height:32px;display:grid;place-items:center;color:#8b8b93;background:none;border:0;padding:0;cursor:pointer}',
     '.okbm-gc-x svg{width:14px;height:14px;display:block}',
     '.okbm-gc-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px;border-radius:10px;background:none;border:0;color:inherit;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}',
@@ -63,8 +66,8 @@
   var VS_B = small('okbm/e0817167-1b1c-4042-85b4-87d63c13cc8e/15baeeae-898c-4589-94aa-1195e14f64f3.jpg');
   var WC_SRC = 'map-worldcup.js?v=2';
 
-  var CARD ='<div class="okbm-gc-head"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20l6-10 4 6 3-4 5 8z"/><circle cx="17" cy="6" r="2"/></svg>낭만루터 참여</div>' +
-    '<button type="button" class="okbm-gc-x" data-gc="close" data-metric-click="feat_map_gc_close" aria-label="닫기"><svg viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg></button>' +
+  var CARD ='<div class="okbm-gc-head"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20l6-10 4 6 3-4 5 8z"/><circle cx="17" cy="6" r="2"/></svg>낭만루터 참여' +
+      '<button type="button" class="okbm-gc-snooze" data-gc="snooze" data-metric-click="feat_map_gc_snooze">일주일 동안 안 보기</button></div>' +
     '<button type="button" class="okbm-gc-row" data-gc="wc" data-metric-click="feat_map_gc_wc">' +
       '<span class="okbm-gc-vs"><img src="' + VS_A + '" alt=""><img src="' + VS_B + '" alt=""><b>VS</b></span>' +
       '<span class="okbm-gc-t"><strong>박지 이상형 월드컵</strong><span>당신의 최애 박지를 골라 주세요</span></span>' +
@@ -90,6 +93,55 @@
     '</div>';
 
   var card = null, sheet = null;
+
+  // ---------- 일주일 안 보기 · 참여한 줄 빼기 (11-16) ----------
+  var SNOOZE_KEY = 'okbm_gc_snooze_until';
+  var DONE_KEY = 'okbm_gc_done';   // { 사용자 id: { gear: 1, wc: 1 } } 한 번 참여하면 다시 묻지 않는다
+  var TOP3_POST = '8945c4dc-86c4-4728-9425-b5ca46895179';   // 라운지 '내 최애 박지 TOP 3' (map-worldcup.js POLL_ID와 같은 글)
+  function snoozed() { try { return Number(localStorage.getItem(SNOOZE_KEY) || 0) > Date.now(); } catch (e) { return false; } }
+  function snooze() { try { localStorage.setItem(SNOOZE_KEY, String(Date.now() + 7 * 24 * 3600 * 1000)); } catch (e) {} }
+  function uid() { try { return String((window.okbmGetCurrentUserId && window.okbmGetCurrentUserId()) || '').trim(); } catch (e) { return ''; } }
+  function doneOf(id) { try { return (JSON.parse(localStorage.getItem(DONE_KEY) || '{}') || {})[id] || {}; } catch (e) { return {}; } }
+  function saveDone(id, d) {
+    try { var all = JSON.parse(localStorage.getItem(DONE_KEY) || '{}') || {}; all[id] = d; localStorage.setItem(DONE_KEY, JSON.stringify(all)); } catch (e) {}
+  }
+  // 참여한 줄을 지우고, 둘 다 지워지면 칸을 없앤다
+  function dropRows(d) {
+    if (!card) return;
+    if (d.wc) { var a = card.querySelector('[data-gc="wc"]'); if (a) a.remove(); }
+    if (d.gear) { var b = card.querySelector('[data-gc="gear"]'); if (b) b.remove(); }
+    if (!card.querySelector('.okbm-gc-row')) { card.remove(); card = null; }
+  }
+  async function checkDone(id) {
+    var c = window.supabaseClient;
+    var d = doneOf(id);
+    if (!c || (d.gear && d.wc)) return d;
+    var jobs = [];
+    if (!d.gear) jobs.push(Promise.resolve(c.from('lounge_posts').select('id').eq('user_id', id).not('gear_review', 'is', null).limit(1))
+      .then(function (r) { if (r && !r.error && Array.isArray(r.data) && r.data.length) d.gear = 1; }).catch(function () {}));
+    if (!d.wc) jobs.push(Promise.resolve(c.rpc('okbm_top3_results', { p_ids: [TOP3_POST] }))
+      .then(function (r) { var row = r && !r.error && Array.isArray(r.data) ? r.data[0] : null; if (row && row.mine) d.wc = 1; }).catch(function () {}));
+    await Promise.all(jobs);
+    if (d.gear || d.wc) saveDone(id, d);
+    return d;
+  }
+  // 로그인 확인이 늦게 끝나기도 해서 몇 번 더 본다
+  function watchDone() {
+    var tries = 0, busy = false;
+    var run = function () {
+      if (!card || busy) return true;
+      var id = uid();
+      if (!id || !(typeof window.isUserLoggedIn === 'function' && window.isUserLoggedIn())) return false;
+      busy = true;
+      dropRows(doneOf(id));
+      checkDone(id).then(dropRows).catch(function (err) { console.warn('[map-gear-card.js:checkDone]', err); }).then(function () { busy = false; });
+      return true;
+    };
+    var onRefresh = function () { run(); };
+    window.addEventListener('okbm_user_data_refreshed', onRefresh);
+    var tick = function () { if (!run() && ++tries < 8) setTimeout(tick, 1500); };
+    tick();
+  }
 
   function openSheet() {
     if (!sheet) {
@@ -157,6 +209,7 @@
 
   function initGc() {
     resumeWorldcup();
+    if (snoozed()) return;
     var st = document.createElement('style');
     st.id = 'okbmGearCardCss';
     st.textContent = CSS;
@@ -169,8 +222,10 @@
     card.addEventListener('click', function (e) {
       var a = e.target.closest('[data-gc]');
       if (!a) return;
-      if (a.getAttribute('data-gc') === 'close') {
+      if (a.getAttribute('data-gc') === 'snooze') {
+        snooze();
         card.remove();
+        card = null;
       } else if (a.getAttribute('data-gc') === 'wc') openWorldcup();
       else openSheet();
     });
@@ -178,7 +233,8 @@
     place();
     window.addEventListener('resize', place);
     // 지도 첫 화면이 자리 잡은 뒤에 띄운다
-    setTimeout(function () { place(); card.classList.add('on'); }, 1200);
+    setTimeout(function () { if (!card) return; place(); card.classList.add('on'); }, 1200);
+    watchDone();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initGc);
