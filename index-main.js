@@ -2035,7 +2035,22 @@
             return false;
           }
         };
-        var heroRankTop = photoFeedsOnly.filter(function(f) { return !okbmIsOfficialFeed(f); });
+        // 후보는 최근 7일 안에 올라온 글이 먼저다(대표님 11-16: 몇 주째 같은 사진). 전체 기간 좋아요 순 30개만 보면
+        // 11월 초 글이 계속 1~5등을 지켜서, 따로 받은 최근 7일 글(fetchHeroWeekFeeds)을 좋아요 순으로 앞에 세우고
+        // 모자라면 전체 순위로 채운다. 저장본이 묵었을 수 있어 올린 시각으로 한 번 더 거른다
+        var heroWeekCut = Date.now() - 7 * 24 * 3600 * 1000;
+        var heroWeekPool = sortFeedsByStarsAndDate(window.__okbmHeroWeekFeeds || []).filter(function(f) {
+          var t = Date.parse(f && f.createdAt || '');
+          return !isNaN(t) && t >= heroWeekCut && heroOk(f);
+        });
+        var heroCandSeen = {};
+        var heroCandidates = heroWeekPool.concat(photoFeedsOnly).filter(function(f) {
+          var k = heroKeyOf(f);
+          if (heroCandSeen[k]) return false;
+          heroCandSeen[k] = true;
+          return true;
+        });
+        var heroRankTop = heroCandidates.filter(function(f) { return !okbmIsOfficialFeed(f); });
         var heroRankSeen = {};
         heroRankTop = heroRankTop.filter(function(f) {
           var k = okbmFeedSpotKey(f, heroSpotPool);
@@ -2047,7 +2062,7 @@
         var heroRankHasPlogging = heroRankTop.some(function(f) { return !!f.ploggingPhoto; });
         var heroPlogging = heroRankHasPlogging ? null : ((window.__okbmHeroPloggingFeeds || []).filter(heroOk)[0] || null);
         if (heroPlogging) takeHeroSpot(heroPlogging);
-        var nextHeroRecords = photoFeedsOnly.filter(function(f) {
+        var nextHeroRecords = heroCandidates.filter(function(f) {
           if (okbmIsOfficialFeed(f)) return false;
           if (heroPlogging && heroKeyOf(f) === heroKeyOf(heroPlogging)) return false;
           return takeHeroSpot(f);
@@ -2079,6 +2094,7 @@
 
       try {
       window.__okbmHeroPloggingFeeds = safeGetJSON('okbm_cached_hero_plogging', []) || [];
+      window.__okbmHeroWeekFeeds = safeGetJSON('okbm_cached_hero_week', []) || [];
       var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []);
       if (Array.isArray(cachedFeeds) && cachedFeeds.length > 0) {
         applyFeedData(cachedFeeds);
@@ -2116,6 +2132,26 @@
         }
       };
 
+      // 이주의 인기 피드 후보: 최근 7일 안에 올라온 공개 글을 좋아요 순으로 40개(대표님 11-16)
+      var fetchHeroWeekFeeds = async function(homeSelect) {
+        try {
+          if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return;
+          var since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+          var url = window.SUPABASE_URL + '/rest/v1/feeds?select=' + encodeURIComponent(homeSelect) +
+            '&is_published=eq.true&created_at=gte.' + encodeURIComponent(since) + '&order=likes_count.desc,created_at.desc&limit=40';
+          var r = await (typeof window.okbmPublicFetch === 'function'
+            ? window.okbmPublicFetch(url)
+            : fetch(url, { headers: { 'apikey': window.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY } }));
+          if (!r.ok) return;
+          var rows = await r.json();
+          if (!Array.isArray(rows)) return;
+          window.__okbmHeroWeekFeeds = rows.map(normalizeHomeFeedRow);
+          try { localStorage.setItem('okbm_cached_hero_week', JSON.stringify(window.__okbmHeroWeekFeeds)); } catch (e) {}
+        } catch (e) {
+          console.warn('[fetchHeroWeekFeeds]', e);
+        }
+      };
+
       setTimeout(async function() {
         try {
           var rawRows = null;
@@ -2124,6 +2160,7 @@
           if (homeSelect.indexOf('plogging_photo') === -1) homeSelect += ',plogging_photo';
           var guestMode = !(typeof isUserLoggedIn === 'function' && isUserLoggedIn());
           var ploggingJob = fetchHeroPloggingFeeds(homeSelect);
+          var weekJob = fetchHeroWeekFeeds(homeSelect);
 
           if (!guestMode && window.supabaseClient) {
             var sbRes = await window.supabaseClient
@@ -2156,6 +2193,7 @@
           }
 
           await ploggingJob;
+          await weekJob;
           if (Array.isArray(rawRows) && rawRows.length > 0) {
             var normalizedFeeds = rawRows.map(normalizeHomeFeedRow);
 
