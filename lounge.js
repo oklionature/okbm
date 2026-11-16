@@ -454,6 +454,19 @@
       '#okbmHomeHub .hh-write{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 12px;border-radius:16px;background:#1c1c20;font-size:12.5px;font-weight:700;color:var(--tx)}',
       '#okbmHomeHub .hh-write:active,#okbmHomeHub .hh-all:active{opacity:.6}',
       '#okbmHomeHub .hh-row small{flex:none;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}',
+      '#okbmHomeHub .hh-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0 4px}',
+      '#okbmHomeHub .hh-col{min-width:0;padding:10px 8px 4px;border-radius:14px;background:#141417}',
+      '#okbmHomeHub .hh-ch{margin-bottom:2px;font-size:11.5px;font-weight:700;color:var(--sub);white-space:nowrap}',
+      '#okbmHomeHub .hh-cr{width:100%;display:flex;gap:5px;align-items:flex-start;padding:7px 0;border-top:1px solid rgba(255,255,255,.07);text-align:left;color:var(--tx)}',
+      '#okbmHomeHub .hh-ch+.hh-cr{border-top:0}',
+      '#okbmHomeHub .hh-cr:active{opacity:.6}',
+      '#okbmHomeHub .hh-rk{flex:none;width:12px;font-size:12px;font-weight:800;line-height:18px;color:var(--sub);font-variant-numeric:tabular-nums}',
+      '#okbmHomeHub .hh-rk.g1{color:var(--star)}#okbmHomeHub .hh-rk.g2{color:#c9ced8}#okbmHomeHub .hh-rk.g3{color:#d99a62}',
+      '#okbmHomeHub .hh-cn{min-width:0;flex:1}',
+      '#okbmHomeHub .hh-cn b{display:block;font-size:13px;font-weight:700;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '#okbmHomeHub .hh-cn small{display:block;margin-top:1px;font-size:11px;color:var(--sub);white-space:nowrap;font-variant-numeric:tabular-nums}',
+      '#okbmHomeHub .hh-st{font-style:normal;color:var(--blue)}',
+      '#okbmHomeHub .hh-cl{padding:18px 0;text-align:center;font-size:11.5px;color:var(--sub)}',
       '#okbmHomeHub .hh-empty{padding:28px 0 22px;text-align:center;font-size:13px;color:var(--sub)}',
       '#okbmHomeMag .hm-head{padding:0 14px;margin-bottom:10px;font-size:var(--fs-title,16px);font-weight:900;color:var(--tx)}',
       '#okbmHomeMag .hm-rail{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 14px;scroll-padding:0 14px;scroll-snap-type:x proximity}',
@@ -1180,10 +1193,28 @@
     if (!more) {
       const t = await q(c.rpc('okbm_recent_spot_tips', { p_spot_id: null, p_limit: 30, p_before: null })).catch(function () { return null; });
       D.tipsRecent = (t && Array.isArray(t.rows)) ? t.rows : [];
-      // GPX 등록 소식도 최근 후기에 섞는다 (SUPABASE_H50)
-      const g = await q(c.rpc('okbm_recent_gpx_news', { p_limit: 50 })).catch(function () { return null; });
-      D.gpxNews = Array.isArray(g) ? g : [];
+      await loadGpxNews(); // GPX 등록 소식도 최근 후기에 섞는다
     }
+  }
+  // GPX 등록 소식 (SUPABASE_H50): 최근 후기·GPX 등록 랭킹 탭, 홈 후기·랭킹 칸이 같이 쓴다
+  async function loadGpxNews() {
+    const c = sb();
+    if (!c) return;
+    const g = await q(c.rpc('okbm_recent_gpx_news', { p_limit: 50 })).catch(function () { return null; });
+    D.gpxNews = Array.isArray(g) ? g : [];
+  }
+  // 홈 후기·랭킹 칸(대표님 11-16 A안: 평점·후기 많은 순·GPX 세 기둥)은 처음 볼 때 박지 랭킹 전체와 GPX 소식을 받는다
+  let hubRankLoading = false;
+  function ensureHubRank() {
+    if (hubRankLoading || D.status !== 'ready' || (D.rank !== null && D.gpxNews)) return;
+    hubRankLoading = true;
+    Promise.allSettled([D.rank === null ? loadTop(true) : null, D.gpxNews ? null : loadGpxNews()]).then(function (r) {
+      r.forEach(function (x) { if (x.status === 'rejected') console.warn('[lounge.js:ensureHubRank]', x.reason); });
+      if (D.rank === null) D.rank = D.top.slice();
+      if (!D.gpxNews) D.gpxNews = [];
+      hubRankLoading = false;
+      paintHub();
+    });
   }
   async function loadComments(postId) {
     const c = sb();
@@ -2622,7 +2653,7 @@
   // GPX 등록 랭킹 (대표님 11-09): 승인돼 지금 박지에 붙은 GPX를 사람마다 센다. 많이 올린 순, 같으면 길이 긴 순, 그래도 같으면 먼저 올린 사람.
   // okbm_recent_gpx_news가 최근 50개까지만 주므로 승인 GPX가 50개를 넘으면 랭킹 전용 RPC로 바꿔야 한다(TASK_GPX.md).
   const GPX_CROWN = '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5L3 7z"/></svg>';
-  function gpxRankHtml(news) {
+  function gpxRankRows(news) {
     const by = {};
     (news || []).forEach(function (g) {
       if (!g || !g.user_id || !spotById(g.spot_id) || hidden({ id: 'gpx_' + g.id, user_id: g.user_id })) return;
@@ -2632,9 +2663,12 @@
       if (String(g.reviewed_at) > r.last) { r.last = String(g.reviewed_at); r.nick = String(g.nickname || '').trim(); }
       if (String(g.reviewed_at) < String(r.first)) r.first = g.reviewed_at;
     });
-    const rows = Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) {
+    return Object.keys(by).map(function (k) { return by[k]; }).sort(function (a, b) {
       return b.n - a.n || b.km - a.km || String(a.first).localeCompare(String(b.first));
     });
+  }
+  function gpxRankHtml(news) {
+    const rows = gpxRankRows(news);
     if (!rows.length) return '';
     const cards = rows.map(function (r, i) {
       const n = i + 1;
@@ -3196,6 +3230,36 @@
     const gold = tag === '후기' || tag === '장비' || tag === 'TOP 3';
     return `<button type="button" class="hh-row" ${attrs}><span class="hh-x">${tag ? `<i${gold ? ' class="gold"' : ''}>${esc(tag)}</i>` : ''}${esc(title)}</span>${meta ? `<small>${esc(meta)}</small>` : ''}</button>`;
   }
+  // 후기·랭킹 칸: 평점 높은 · 후기 많은 · GPX 올린 세 기둥을 나란히, 기둥마다 5위까지 (대표님 11-16 A안)
+  // 박지 이름 바로 밑에 작게 숫자. 지역은 뺐다(이름 옆 오른쪽 끝까지 길게 늘이지 않게)
+  function hubColRow(i, attrs, name, meta) {
+    return '<button type="button" class="hh-cr" ' + attrs + '><span class="hh-rk' + (i < 3 ? ' g' + (i + 1) : '') + '">' + (i + 1) + '</span>'
+      + '<span class="hh-cn"><b>' + esc(name) + '</b><small>' + meta + '</small></span></button>';
+  }
+  function hubCol(title, rows) {
+    return '<div class="hh-col"><div class="hh-ch">' + title + '</div>'
+      + (rows === null ? '<div class="hh-cl">불러오는 중…</div>' : rows.length ? rows.join('') : '<div class="hh-cl">아직 없어요</div>') + '</div>';
+  }
+  function hubRankBody() {
+    ensureHubRank();
+    const star = '<i class="hh-st">★</i>';
+    const spots = (D.rank || D.top).filter(function (r) { return spotById(r.spot_id); });
+    const spotRow = function (r, i, many) {
+      const n = Number(r.review_count) || 0, a = Number(r.avg_rating || 0).toFixed(1);
+      return hubColRow(i, 'data-a="spot" data-v="' + esc(r.spot_id) + '"', spotName(spotById(r.spot_id)), many ? n + '개 · ' + star + a : star + a + ' · ' + n + '개');
+    };
+    const rate = spots.slice(0, HUB_N).map(function (r, i) { return spotRow(r, i, false); });
+    const many = D.rank === null ? null : spots.slice().sort(function (a, b) {
+      return (Number(b.review_count) || 0) - (Number(a.review_count) || 0) || (Number(b.avg_rating) || 0) - (Number(a.avg_rating) || 0);
+    }).slice(0, HUB_N).map(function (r, i) { return spotRow(r, i, true); });
+    const gpx = !D.gpxNews ? null : gpxRankRows(D.gpxNews).slice(0, HUB_N).map(function (r, i) {
+      const nick = r.nick || '낭만루터';
+      return hubColRow(i, 'data-a="user" data-v="' + esc(r.uid) + '" data-n="' + esc(nick) + '"', nick, r.n + '개' + (r.km > 0 ? ' · ' + r.km.toFixed(1) + 'km' : ''));
+    });
+    if (!spots.length && gpx && !gpx.length) return '<div class="hh-empty">아직 박지 후기가 없어요</div>' + hubFoot('data-a="lounge" data-v="3"', '후기·랭킹 전체 보기', '', '');
+    return '<div class="hh-cols">' + hubCol('평점 높은', rate) + hubCol('후기 많은', many) + hubCol('GPX 올린', gpx) + '</div>'
+      + hubFoot('data-a="lounge" data-v="3"', '후기·랭킹 전체 보기', '', '');
+  }
   function hubBody(key) {
     if (D.status !== 'ready') return '<div class="hh-empty">불러오는 중…</div>';
     if (key === 'gear') { // 장비 말머리 글: 질문·후기 꼬리표, 오른쪽에 종류 (I2)
@@ -3230,14 +3294,7 @@
       return (rows || '<div class="hh-empty">' + (key === 'poll' ? '첫 설문을 올려 보세요' : '첫 글을 기다리고 있어요') + '</div>')
         + (key === 'poll' ? hubFoot('data-a="hub-all" data-v="poll"', '설문 전체 보기', 'poll', '설문 만들기') : hubFoot('data-a="hub-all" data-v="all"', '게시판 전체 보기', '', '글쓰기'));
     }
-    if (key === 'review') {
-      const top = D.top.filter(function (r) { return spotById(r.spot_id); }).slice(0, HUB_N);
-      const rows = top.map(function (r) {
-        const s = spotById(r.spot_id);
-        return hubRow('data-a="spot" data-v="' + esc(r.spot_id) + '"', '★ ' + Number(r.avg_rating || 0).toFixed(1), spotName(s), [spotRegion(s), '후기 ' + (Number(r.review_count) || 0)].filter(Boolean).join(' · '));
-      }).join('');
-      return (rows || '<div class="hh-empty">아직 박지 후기가 없어요</div>') + hubFoot('data-a="lounge" data-v="3"', '후기·랭킹 전체 보기', '', '');
-    }
+    if (key === 'review') return hubRankBody();
     const tipList = tips();
     const daily = typeof window.okbmDailyOrder === 'function' ? window.okbmDailyOrder(tipList, function (t) { return t.id; }, 'guides') : tipList;
     const rows = daily.slice(0, HUB_N).concat(kits().slice(0, Math.max(0, HUB_N - daily.length)));
