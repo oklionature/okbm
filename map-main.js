@@ -3774,7 +3774,9 @@ function updateSmartResetButtons() {
         if (!force && Date.now() - gpxLastCheckAt < 15000) return;
         gpxCheckBusy = true;
         gpxLastCheckAt = Date.now();
-        setGpxGuide('내 위치 확인 중…', '');
+        // 11-16 대표님: 길에서 멀리 있을 땐(집에서 미리 볼 때) 안내 줄을 띄우지 않는다. 이미 떠 있을 때만 '확인 중'을 보여 준다
+        var barShown = !!document.getElementById('okbmGpxGuide');
+        if (barShown) setGpxGuide('내 위치 확인 중…', '');
         getDevicePosition(function(pos) {
           gpxCheckBusy = false;
           if (!gpxTrack) return;
@@ -3784,7 +3786,9 @@ function updateSmartResetButtons() {
           var near = nearestOnGpx(gpxTrack, lat, lng);
           if (!near) return;
           if (near.dist > GPX_FAR_M) {
-            setGpxGuide('아직 길에서 멀리 있어요(' + gpxDistanceText(near.dist) + '). 들머리 근처에서 다시 확인해 주세요', '');
+            // 아직 산에 안 간 것: 안내 줄을 치운다. 들머리에서 앱을 다시 열면(visibilitychange) 저절로 다시 본다
+            var far = document.getElementById('okbmGpxGuide');
+            if (far) far.remove();
             return;
           }
           // 산길이 보이게 확대한다(이미 더 가까이 보고 있으면 그대로)
@@ -3807,7 +3811,7 @@ function updateSmartResetButtons() {
           }
         }, function() {
           gpxCheckBusy = false;
-          setGpxGuide('위치를 받지 못했어요. 위치 권한을 확인해 주세요', 'warn');
+          if (barShown) setGpxGuide('위치를 받지 못했어요. 위치 권한을 확인해 주세요', 'warn');
         });
       }
 
