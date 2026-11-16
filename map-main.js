@@ -407,6 +407,7 @@
 
       var currentGpxPolyline = null;
       var activeGpxSpotId = null;
+      var activeGpxUrl = null;       // 들머리가 여러 개면 켠 선(I14)
       var pendingUnlockSpotId = null;
       
 
@@ -715,6 +716,7 @@
         return [
           spot.trailhead_addr || '', spot.entryPoint || '', spot.desc_summary || '', spot.desc || '',
           spot.mediaUrls || '', spot.author_sns_url || spot.authorSnsUrl || '', spot.gpxUrl || '', spot.gpxCredit || '',
+          (spot.gpxTracks || []).map(function(t) { return t.url + '|' + t.trailhead + '|' + (t.km || ''); }).join(' '),
           [].concat(spot.youtubeUrls || []).join(' '), [].concat(spot.blogUrls || []).join(' '),
           spot.__detailLoaded ? '1' : '0', spot.__detailTier || '', spot.__detailLimited || '', spot.__detailError || ''
         ].join('\u0001');
@@ -3551,6 +3553,7 @@ function updateSmartResetButtons() {
         if (currentGpxPolyline) currentGpxPolyline.setMap(null);
         currentGpxPolyline = null;
         activeGpxSpotId = null;
+        activeGpxUrl = null;
         gpxTrack = null;
         try { localStorage.removeItem(GPX_ACTIVE_KEY); localStorage.removeItem(GPX_GUIDE_HIDDEN_KEY); } catch (e) {}
         var bar = document.getElementById('okbmGpxGuide');
@@ -3668,6 +3671,7 @@ function updateSmartResetButtons() {
         try { saved = JSON.parse(localStorage.getItem(GPX_ACTIVE_KEY) || 'null'); } catch (e) {}
         if (!saved || !saved.id || !Array.isArray(saved.pts) || saved.pts.length < 2 || !isKakaoMapReady()) return;
         drawGpxPath(String(saved.id), saved.pts);
+        activeGpxUrl = saved.url || null;
         checkGpxPosition(true);
       }
 
@@ -3702,7 +3706,8 @@ function updateSmartResetButtons() {
         'already pending': '이 박지에 보낸 기록이 아직 검수 중이에요',
         'too many pending': '검수 중인 기록이 5개라 더 보낼 수 없어요. 검수가 끝나면 보내 주세요',
         'consent required': '내 기록이라는 확인에 체크해 주세요',
-        'spot has gpx': '이 박지에는 이미 등산로가 등록돼 있어요'
+        'spot has gpx': '이 박지에는 이미 등산로가 등록돼 있어요',
+        'same trailhead': '이 들머리에서 출발한 길은 이미 있어요. 다른 들머리에서 출발한 기록을 보내 주세요'
       };
       window.OKBM_GPX_SEND_ERRORS = GPX_SEND_ERRORS;  // 후기 창(spot-tips.js)도 같은 문구를 쓴다
 
@@ -3736,6 +3741,8 @@ function updateSmartResetButtons() {
           '<p class="okbm-gpx-send-help">트랭글·램블러·가민 같은 등산 앱에서 이 박지에 다녀온 기록을 GPX 파일로 내보내 골라 주세요. 기록 시각과 기기 정보는 지우고 길(좌표)만 받아요.</p>' +
           '<label class="okbm-gpx-send-file"><input type="file" data-gpx-send-file><span>GPX 파일 고르기</span></label>' +
           '<div class="okbm-gpx-send-picked"></div>' +
+          '<p class="okbm-gpx-send-has"></p>' +
+          '<input type="text" class="okbm-gpx-send-th" data-gpx-send-th maxlength="40" autocomplete="off" placeholder="어디서 출발했나요? (선택) 예: 용추폭포 주차장" aria-label="어디서 출발했나요">' +
           '<textarea data-gpx-send-note maxlength="300" placeholder="길 안내에 도움이 될 메모(선택). 예: 출렁다리 지나 왼쪽 능선길"></textarea>' +
           '<label class="okbm-gpx-send-consent"><input type="checkbox" data-gpx-send-consent> 내가 직접 다녀온 기록이고, 낭만루트 지도에 써도 괜찮아요</label>' +
           '<div class="okbm-gpx-send-msg" aria-live="polite"></div>' +
@@ -3750,8 +3757,11 @@ function updateSmartResetButtons() {
         var msg = wrap.querySelector('.okbm-gpx-send-msg');
         var goBtn = wrap.querySelector('.okbm-gpx-send-go');
         // 고른 박지 이름을 보여 준다. 찾기로 연 창이면 옆에 '바꾸기'
+        var hasLine = wrap.querySelector('.okbm-gpx-send-has');
         var showSpot = function() {
           spotLine.textContent = gpxSpotLabel(spot);
+          var names = ((spot && spot.gpxTracks) || []).map(function(tr) { return tr.trailhead; }).filter(Boolean);
+          hasLine.textContent = (spot && spot.gpxUrl) ? ('이미 있는 들머리: ' + (names.length ? names.join(', ') : '1곳') + '. 다른 들머리에서 출발한 기록을 보내 주세요.') : '';
           if (picking) {
             var re = document.createElement('button');
             re.type = 'button';
@@ -3764,6 +3774,7 @@ function updateSmartResetButtons() {
           pickBox.hidden = true;
         };
         var showPicker = function() {
+          hasLine.textContent = '';
           spotLine.hidden = true;
           pickBox.hidden = false;
           results.innerHTML = '';
@@ -3812,7 +3823,7 @@ function updateSmartResetButtons() {
           goBtn.disabled = true;
           msg.textContent = '보내는 중…';
           try {
-            await sendGpxForSpot(sId, f, wrap.querySelector('[data-gpx-send-note]').value);
+            await sendGpxForSpot(sId, f, wrap.querySelector('[data-gpx-send-note]').value, 'spot', wrap.querySelector('[data-gpx-send-th]').value);
             msg.textContent = '';
             wrap.querySelector('.okbm-gpx-send-box').innerHTML = '<div class="okbm-gpx-send-head"><strong>보냈어요</strong><button type="button" data-gpx-send-act="close" aria-label="닫기">✕</button></div>' +
               '<p class="okbm-gpx-send-help">검수 뒤 박지에 등록되면 감사한 마음을 담아 낭만 포인트 50점을 드려요.<br>다른 분이 내 GPX를 사용하면 추가로 포인트를 드려요.</p>';
@@ -3838,14 +3849,54 @@ function updateSmartResetButtons() {
         return { url: upJson.url, points: upJson.points, km: upJson.km, tok: tok };
       }
 
-      async function sendGpxForSpot(sId, file, note, source) {
+      // 기록의 출발점: 박지에서 먼 쪽 끝(내려온 기록이면 끝점). 들머리별 선(I14)을 가르는 데 쓴다
+      async function gpxStartPoint(file, sId) {
+        try {
+          var pts = parseGpxPoints(await file.text());
+          if (pts.length < 2) return null;
+          var sp = (spots || []).find(function(s) { return String(s.id).trim() === String(sId); });
+          var a = pts[0], b = pts[pts.length - 1];
+          if (sp && isFinite(Number(sp.lat)) && isFinite(Number(sp.lng))) {
+            var k = gpxMeters(Number(sp.lat));
+            var da = Math.hypot((a[0] - sp.lat) * k.y, (a[1] - sp.lng) * k.x), db = Math.hypot((b[0] - sp.lat) * k.y, (b[1] - sp.lng) * k.x);
+            if (db > da) a = b;
+          }
+          return { lat: a[0], lng: a[1] };
+        } catch (e) { return null; }
+      }
+
+      // 들머리 이름을 안 적으면 출발점 250m 안 주차장 → '○○리 쪽'(카카오 지도). 검수 때 고칠 수 있다
+      function gpxStartName(pt) {
+        return new Promise(function(resolve) {
+          if (!pt || !isKakaoMapReady() || !kakao.maps.services) return resolve('');
+          var places = new kakao.maps.services.Places(), geocoder = new kakao.maps.services.Geocoder();
+          var opt = { location: new kakao.maps.LatLng(pt.lat, pt.lng), radius: 250, sort: kakao.maps.services.SortBy.DISTANCE };
+          var region = function() {
+            geocoder.coord2RegionCode(pt.lng, pt.lat, function(res, st) {
+              var r = st === kakao.maps.services.Status.OK && res.find(function(x) { return x.region_type === 'B'; });
+              resolve(r ? ((r.region_4depth_name || r.region_3depth_name) + ' 쪽') : '');
+            });
+          };
+          // 관광명소(AT4)는 산 이름 자체가 걸려 들머리 이름으로 쓰지 않는다
+          places.categorySearch('PK6', function(res, st) {
+            if (st === kakao.maps.services.Status.OK && res[0]) return resolve(res[0].place_name);
+            region();
+          }, opt);
+        });
+      }
+
+      async function sendGpxForSpot(sId, file, note, source, trailhead) {
+        var start = await gpxStartPoint(file, sId);
+        var th = String(trailhead || '').trim().slice(0, 40);
+        if (!th && start) th = String(await gpxStartName(start)).slice(0, 40);
         var upJson = await uploadGpxFile(file);
         var tok = upJson.tok;
         var cfg = getSupabaseRestConfig();
         var res = await fetch(cfg.url + '/rest/v1/rpc/okbm_submit_gpx', {
           method: 'POST',
           headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p_spot_id: sId, p_gpx_url: upJson.url, p_points: upJson.points, p_km: upJson.km, p_note: String(note || '').slice(0, 300), p_source: source || 'spot', p_consent: true })
+          body: JSON.stringify({ p_spot_id: sId, p_gpx_url: upJson.url, p_points: upJson.points, p_km: upJson.km, p_note: String(note || '').slice(0, 300), p_source: source || 'spot', p_consent: true,
+            p_trailhead: th || null, p_start_lat: start ? start.lat : null, p_start_lng: start ? start.lng : null })
         });
         if (!res.ok) {
           var body = await res.json().catch(function() { return null; });
@@ -3882,14 +3933,15 @@ function updateSmartResetButtons() {
 
       // 남이 보낸 GPX는 처음 켤 때 5점을 내고 연다(등록자는 2점, 화면엔 '소정의 포인트'로만 알린다). SUPABASE_H46
       // 포인트가 모자라면 그냥 연다: 단추가 들머리 관문(등록자 인스타·링크를 한 번 거침) 뒤에만 있어서다(대표님 11-05, 나중에 광고 자리)
-      async function gpxUseRpc(sId, mode) {
+      // 들머리별 선(I14)은 선마다 연다(okbm_gpx_track_use). 선 번호를 모르면(옛 서버) 박지로 연다
+      async function gpxUseRpc(sId, mode, trackId) {
         var tok = typeof window.okbmUploadAccessToken === 'function' ? await window.okbmUploadAccessToken() : '';
         if (!tok) throw new Error('login');
         var cfg = getSupabaseRestConfig();
-        var res = await fetch(cfg.url + '/rest/v1/rpc/okbm_gpx_use', {
+        var res = await fetch(cfg.url + '/rest/v1/rpc/' + (trackId ? 'okbm_gpx_track_use' : 'okbm_gpx_use'), {
           method: 'POST',
           headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p_spot_id: sId, p_mode: mode })
+          body: JSON.stringify(trackId ? { p_track_id: trackId, p_mode: mode } : { p_spot_id: sId, p_mode: mode })
         });
         var data = await res.json().catch(function() { return null; });
         if (!res.ok || !data) throw new Error((data && data.message) || ('HTTP ' + res.status));
@@ -3910,7 +3962,7 @@ function updateSmartResetButtons() {
             '<p class="okbm-gpx-send-note"></p>' +
           '</div>';
           wrap.querySelector('.okbm-gpx-send-help').textContent = (info.owner ? info.owner + '님이' : '다른 분이') + ' 보내 준 등산로예요. 5점이 차감되고 등록자에게 소정의 포인트가 갑니다.';
-          wrap.querySelector('.okbm-gpx-send-note').textContent = '지금 ' + (info.balance || 0) + '점 · 한 번 열면 이 박지 길은 계속 볼 수 있어요.';
+          wrap.querySelector('.okbm-gpx-send-note').textContent = '지금 ' + (info.balance || 0) + '점 · 한 번 열면 이 길은 계속 볼 수 있어요.';
           var done = function(v) { wrap.remove(); resolve(v); };
           wrap.addEventListener('click', function(e) {
             if (e.target === wrap) return done(false);
@@ -3922,16 +3974,16 @@ function updateSmartResetButtons() {
       }
 
       // 열어도 되면 true
-      async function gpxUseGate(sId) {
+      async function gpxUseGate(sId, trackId) {
         try {
-          var info = await gpxUseRpc(sId, 'check');
+          var info = await gpxUseRpc(sId, 'check', trackId);
           if (info.ok) return true;
           var mode = 'link';
           if (!info.short) {
             if (!(await gpxUseSheet(info))) return false;
             mode = 'points';
           }
-          var out = await gpxUseRpc(sId, mode);
+          var out = await gpxUseRpc(sId, mode, trackId);
           if (!out.ok) { showToast('길을 열지 못했어요. 다시 시도해 주세요'); return false; }
           if (out.paid) showToast('5점이 차감됐어요');
           if (typeof window.okbmMetric === 'function') window.okbmMetric(mode === 'link' ? 'feat_gpx_use_free' : 'feat_gpx_use_points', 'event');
@@ -3942,9 +3994,23 @@ function updateSmartResetButtons() {
         }
       }
 
+      // 박지의 선 목록에서 주소로 선을 찾는다. 열린 정보창 박지(상세를 받은 객체)를 먼저 본다
+      function gpxTrackOf(sId, url) {
+        var rows = [currentActiveSpot, (spots || []).find(function(s) { return String(s.id).trim() === sId; })];
+        for (var i = 0; i < rows.length; i++) {
+          var s = rows[i];
+          if (!s || String(s.id).trim() !== sId) continue;
+          var hit = (s.gpxTracks || []).find(function(t) { return t.url === url; });
+          if (hit) return hit;
+        }
+        return null;
+      }
+
+      // 정보창 들머리 단추마다 부른다(onclick 문자열은 CSP 해시라 그대로 둔다). 같은 선을 다시 누르면 끈다
       async function toggleGpxTrack(spotId, gpxUrl) {
         const sId = String(spotId).trim();
-        if (currentGpxPolyline && activeGpxSpotId === sId) {
+        const wantUrl = String(gpxUrl || '').trim();
+        if (currentGpxPolyline && activeGpxSpotId === sId && (!activeGpxUrl || activeGpxUrl === wantUrl)) {
           clearGpxGuide();
           refreshCurrentSpotPopup();
           return;
@@ -3960,7 +4026,8 @@ function updateSmartResetButtons() {
           return;
         }
 
-        if (!(await gpxUseGate(sId))) return;
+        const track = gpxTrackOf(sId, wantUrl);
+        if (!(await gpxUseGate(sId, track && track.id))) return;
 
         try {
           const res = await fetch(gpxUrl.trim());
@@ -3970,6 +4037,7 @@ function updateSmartResetButtons() {
           if (pts.length < 2) throw new Error('No coordinates found in GPX');
 
           drawGpxPath(sId, pts);
+          activeGpxUrl = wantUrl;
           saveGpxActive(sId, gpxUrl.trim(), pts);
           try { localStorage.removeItem(GPX_GUIDE_HIDDEN_KEY); } catch (e) {}
           showToast('등산로 선을 켰어요. 화면을 다시 켤 때마다 길 위 내 위치를 알려 드려요', { html: ICONS.HIKING });
@@ -3989,7 +4057,8 @@ function updateSmartResetButtons() {
         const url = String(gpxUrl || '').trim();
         if (!url || activeGpxSpotId !== sId) return;
         const spot = (spots || []).find(function(s) { return String(s.id).trim() === sId; }) || {};
-        const fileName = '낭만루트_' + String(spot.name || sId).replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 40) + '.gpx';
+        const track = gpxTrackOf(sId, url);
+        const fileName = '낭만루트_' + (String(spot.name || sId) + (track && track.trailhead ? '_' + track.trailhead : '')).replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 60) + '.gpx';
         if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_gpx_export', 'event');
 
         const isNativeApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
@@ -4184,6 +4253,7 @@ function updateSmartResetButtons() {
         const isFav = userBookmarks.has(sId), isDone = userVisited.has(sId);
         const memoText = userMemos[sId] || '', diffClass = getSpotDiffColorClass(spot.difficulty);
         const isGpxActive = (activeGpxSpotId === sId), isUnlocked = isSpotUnlocked(sId) || isAdminMode;
+        const gpxTrackList = (spot.gpxTracks && spot.gpxTracks.length) ? spot.gpxTracks : (spot.gpxUrl ? [{ id: null, url: spot.gpxUrl, trailhead: '', km: null, credit: spot.gpxCredit || '' }] : []);
         
         const targetUnlockLink = okbmSpotUnlockTarget(spot);
         const closeBtn = isMobileSheet ? '' : `<button type="button" class="sheet-close-btn" onclick="closePcSlidingDrawer()" title="닫기">✕</button>`;
@@ -4328,10 +4398,16 @@ function updateSmartResetButtons() {
                   </div>` : ''}
 
                 ${spot.gpxUrl && isUnlocked ? `
-                  <button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
-                    ${ICONS.GPX_TRACK} ${isGpxActive ? '지도에서 등산로 선 지우기' : (spot.gpxCredit ? escapeHtml(spot.gpxCredit) + '님이 등록하신 GPX 확인하기' : '등산로 GPX 코스 지도에 표시')}
-                  </button>
-                  ${isGpxActive ? `<button type="button" class="btn-gpx-send" data-gpx-export="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" data-metric-click="feat_spot_gpx_export_open">${ICONS.GPX_TRACK} 내 등산 앱으로 보내기 (가민·트랭글)</button>` : ''}
+                  ${gpxTrackList.length > 1 ? `<div class="gpx-track-head">들머리별 GPX ${gpxTrackList.length}개 · 출발할 들머리를 골라 주세요</div>` : ''}
+                  ${gpxTrackList.map(function(tr) {
+                    const on = isGpxActive && (!activeGpxUrl || activeGpxUrl === tr.url);
+                    const label = (tr.trailhead || (gpxTrackList.length > 1 ? '등산로' : '')) + (tr.km ? (tr.trailhead || gpxTrackList.length > 1 ? ' · ' : '') + tr.km + 'km' : '');
+                    const idle = label ? escapeHtml(label) : (spot.gpxCredit ? escapeHtml(spot.gpxCredit) + '님이 등록하신 GPX 확인하기' : '등산로 GPX 코스 지도에 표시');
+                    return `<button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${on ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(tr.url)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
+                    ${ICONS.GPX_TRACK} ${on ? (label ? escapeHtml(label) + ' · 선 지우기' : '지도에서 등산로 선 지우기') : idle}
+                  </button>`;
+                  }).join('')}
+                  ${isGpxActive ? `<button type="button" class="btn-gpx-send" data-gpx-export="${sId}" data-url="${escapeHtml(activeGpxUrl || spot.gpxUrl)}" data-metric-click="feat_spot_gpx_export_open">${ICONS.GPX_TRACK} 내 등산 앱으로 보내기 (가민·트랭글)</button>` : ''}
                   ${isGpxActive && typeof window.okbmThanksSlotHtml === 'function' ? (function() {
                     // 고마워요(I5): 선을 켰을 때만 GPX 올린 사람에게 한 줄. 관리자·공식 GPX면 빈 칸으로 남는다
                     setTimeout(function() { window.okbmThanksFill(sId); }, 0);
@@ -4343,6 +4419,9 @@ function updateSmartResetButtons() {
               ${!spot.gpxUrl && spot.__detailTier === 'member' ? `
                 <button type="button" class="btn-gpx-send" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_send_open">${ICONS.GPX_TRACK} 이 장소 GPX 등록하기</button>
                 <div class="gpx-credit-line">다른 낭만루터 분들에게 큰 도움이 됩니다. 소정의 포인트도 드려요.</div>
+              ` : ''}
+              ${spot.gpxUrl && spot.__detailTier === 'member' && isUnlocked ? `
+                <button type="button" class="btn-gpx-send btn-gpx-send-more" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_send_more">${ICONS.GPX_TRACK} 다른 들머리 GPX 보내기</button>
               ` : ''}
 
               <div class="summary-block-wrap">
@@ -9308,7 +9387,12 @@ var liveSearchTimer = null;
             '<div class="admin-inbox-meta">' +
               '보낸 사람: ' + escapeHtml(r.nickname || r.user_id || '') + '<br>' +
               '점 ' + escapeHtml(String(r.points || 0)) + '개 · ' + escapeHtml(String(r.km || 0)) + 'km' +
-              (r.spot_gpx_url ? '<br><span style="color:var(--warn);">이미 선이 있는 박지예요. 승인하면 바뀌어요.</span>' : '') +
+              (r.status === '검수대기'
+                ? '<br>들머리: <input type="text" data-gpx-admin-th="' + id + '" maxlength="40" value="' + escapeHtml(r.trailhead || '') + '" placeholder="들머리 이름" style="width:60%; min-width:160px; background:var(--bg-2); color:var(--tx-1); border:1px solid var(--line); border-radius:6px; padding:4px 6px; font:inherit; font-size:16px;">'
+                : (r.trailhead ? '<br>들머리: ' + escapeHtml(r.trailhead) : '')) +
+              (r.status === '검수대기' && Array.isArray(r.spot_tracks) && r.spot_tracks.length
+                ? '<br><span style="color:var(--warn);">이미 있는 들머리: ' + escapeHtml(r.spot_tracks.map(function(x) { return (x.trailhead || '이름 없음') + (x.km ? ' ' + x.km + 'km' : ''); }).join(', ')) + '. 승인하면 들머리가 하나 더 생겨요.</span>'
+                : '') +
               (r.note ? '<br>메모: <span style="white-space:pre-wrap;">' + escapeHtml(r.note) + '</span>' : '') +
               (r.reject_reason ? '<br><span style="color:#fda4af;">반려 사유: ' + escapeHtml(r.reject_reason) + '</span>' : '') +
             '</div>' +
@@ -9328,15 +9412,17 @@ var liveSearchTimer = null;
           if (act === 'preview') return previewAdminGpx(row);
           var approve = act === 'approve';
           var reason = null;
+          var thInput = box.querySelector('[data-gpx-admin-th="' + btn.getAttribute('data-id') + '"]');
+          var th = thInput ? thInput.value.trim().slice(0, 40) : '';
           if (approve) {
-            if (!confirm((row.spot_name || '이 박지') + '에 이 GPX를 붙이고 ' + (row.nickname || '보낸 분') + '님께 50점을 줄까요?')) return;
+            if (!confirm((row.spot_name || '이 박지') + '에 이 GPX를 붙이고' + (th ? '(들머리: ' + th + ')' : '') + ' ' + (row.nickname || '보낸 분') + '님께 50점을 줄까요?')) return;
           } else {
             reason = prompt('반려 사유를 적어 주세요(보낸 분이 볼 수 있어요)', '');
             if (reason === null) return;
           }
           btn.disabled = true;
           try {
-            var out = await adminGpxRpc('okbm_admin_gpx_review', { p_id: Number(row.id), p_approve: approve, p_reason: reason });
+            var out = await adminGpxRpc('okbm_admin_gpx_review', { p_id: Number(row.id), p_approve: approve, p_reason: reason, p_trailhead: th || null });
             if (approve) {
               if (window.__spotDetailCache) Object.keys(window.__spotDetailCache).forEach(function(k) { if (k.split(':')[0] === String(row.spot_id)) delete window.__spotDetailCache[k]; });
               var sp = (spots || []).find(function(s) { return String(s.id).trim() === String(row.spot_id); });

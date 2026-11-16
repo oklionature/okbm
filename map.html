@@ -315,7 +315,7 @@
         bindLazy('openSpotReviewSheet', window.okbmEnsureLounge);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.10.39" defer></script>
+    <script src="romantic-sync.js?v=2.10.40" defer></script>
     <script src="romantic-history.js?v=2.8.52" defer></script>
     <script src="my-badges.js?v=14" defer></script>
     <script src="romantic-points.js?v=18" defer></script>
@@ -875,6 +875,11 @@
         display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 4px; box-sizing: border-box;
       }
       .btn-gpx-track-toggle.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+      /* 들머리별 GPX(I14, 대표님 11-16): 선이 두 개 넘으면 단추 위에 한 줄 */
+      .gpx-track-head { font-size: var(--fs-caption); color: var(--tx-3); margin: 8px 0 0; }
+      .okbm-gpx-send-th { width: 100%; box-sizing: border-box; margin-top: 10px; background: var(--bg-2); color: var(--tx-1); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; font: inherit; font-size: 16px; }
+      .okbm-gpx-send-has { font-size: var(--fs-meta); color: var(--tx-2); background: var(--bg-2); border-radius: 8px; padding: 8px 10px; margin: 8px 0 0; line-height: 1.45; }
+      .okbm-gpx-send-has:empty { display: none; }
       /* 정보창 이름 줄 'GPX 구해요'(대표님 11-05 시안 A-1 무채색). 선이 없는 박지·회원 상세에만 */
       .gpx-wanted-badge { display: inline-flex; align-items: center; gap: 3px; height: 20px; padding: 0 7px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.28); background: rgba(255,255,255,0.06); color: #e5e7eb; font-size: 0.66rem; font-weight: 800; font-family: inherit; white-space: nowrap; flex-shrink: 0; cursor: pointer; vertical-align: middle; }
       .gpx-wanted-badge svg { width: 12px; height: 12px; }
@@ -1713,7 +1718,7 @@
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.121"></script>
+       <script src="map-main.js?v=1.0.122"></script>
     <script src="photo-map.js?v=26" defer></script>
     <script src="spot-tips.js?v=14" defer></script>
     <script src="map-gear-card.js?v=5" defer></script>

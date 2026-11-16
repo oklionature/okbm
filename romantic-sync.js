@@ -3985,6 +3985,7 @@ window.stripSpotDetailFields = function(spot) {
   delete out.authorSnsUrl;
   out.gpxUrl = '';
   out.gpxCredit = '';
+  out.gpxTracks = [];
   var brief = String(out.view_brief || '').trim();
   if (brief) {
     out.desc_summary = brief;
@@ -4115,6 +4116,15 @@ window.mergeSpotDetailInto = function(spot, detail) {
   var gpx = String(detail.gpx_url || '').trim();
   spot.gpxUrl = /^https:\/\/pub-13ec7c39d2394ecc879bb2ed4b86a43c\.r2\.dev\/gpx\/[A-Za-z0-9\/_.-]+\.gpx$/.test(gpx) ? gpx : '';
   spot.gpxCredit = spot.gpxUrl ? String(detail.gpx_credit || '').trim().slice(0, 40) : '';
+  // 들머리별 선(I14): [{ id, url, trailhead, km, credit }]. 옛 서버면 gpx_url 한 줄로 만든다(id 없음 → 박지로 연다)
+  var gpxRe = /^https:\/\/pub-13ec7c39d2394ecc879bb2ed4b86a43c\.r2\.dev\/gpx\/[A-Za-z0-9\/_.-]+\.gpx$/;
+  spot.gpxTracks = (Array.isArray(detail.gpx_tracks) ? detail.gpx_tracks : []).filter(function(t) {
+    return t && gpxRe.test(String(t.url || '').trim());
+  }).map(function(t) {
+    var km = Number(t.km);
+    return { id: Number(t.id) || null, url: String(t.url).trim(), trailhead: String(t.trailhead || '').trim().slice(0, 40), km: isFinite(km) && km > 0 ? km : null, credit: String(t.credit || '').trim().slice(0, 40) };
+  });
+  if (!spot.gpxTracks.length && spot.gpxUrl) spot.gpxTracks = [{ id: null, url: spot.gpxUrl, trailhead: '', km: null, credit: spot.gpxCredit }];
   // 'guest'면 비회원용 요약만 받은 상태. 로그인 후 다시 받는다. (E1 이전 서버는 tier 없음 = 전체)
   spot.__detailTier = detail.tier === 'guest' ? 'guest' : 'member';
   // E2: 회원 한도 초과면 'daily' | 'minute'. 이때 값은 비회원용 요약과 같다.
