@@ -1521,8 +1521,8 @@
       var filtered = pool.filter(function(g) {
         if (!g || !g.name) return false;
         if (!cleanQ) return true;
-        if (!g.__hay) g.__hay = (String(g.name) + ' ' + String(g.brand || '') + ' ' + String(g.name_en || '') + ' ' + String(g.brand_en || '') + ' ' + String(g.specs || '') + ' ' + (g.alias_names || []).map(function(a) { return Array.isArray(a) ? a[0] : ''; }).join(' ')).toLowerCase();
-        return g.__hay.includes(cleanQ);
+        if (!g.__hay) g.__hay = (String(g.name) + ' ' + String(g.brand || '') + ' ' + String(g.name_en || '') + ' ' + String(g.brand_en || '') + ' ' + String(g.specs || '') + ' ' + (g.alias_names || []).map(function(a) { return Array.isArray(a) ? a[0] : ''; }).join(' ')).toLowerCase().replace(/\s+/g, ''); // 띄어쓰기 빼고 맞춘다(11-16)
+        return g.__hay.includes(String(cleanQ).toLowerCase().replace(/\s+/g, ''));
       });
 
       // 담긴 개수는 카테고리별로 한 번만 센다(정렬 비교마다 배열을 다시 훑지 않도록).
@@ -2588,7 +2588,7 @@
     if (!words.length && QGR.cat === 'all') return '<div class="qgr-empty">장비 이름이나 브랜드를 적어 주세요.<br>예: 호넷, 니모, 헬리녹스</div>';
     var hits = all.filter(function(g) {
       if (QGR.cat !== 'all' && g.category_id !== QGR.cat) return false;
-      if (!g.__hay) g.__hay = (String(g.name) + ' ' + String(g.brand || '') + ' ' + String(g.name_en || '') + ' ' + String(g.brand_en || '') + ' ' + String(g.specs || '') + ' ' + (g.alias_names || []).map(function(a) { return Array.isArray(a) ? a[0] : ''; }).join(' ')).toLowerCase();
+      if (!g.__hay) g.__hay = (String(g.name) + ' ' + String(g.brand || '') + ' ' + String(g.name_en || '') + ' ' + String(g.brand_en || '') + ' ' + String(g.specs || '') + ' ' + (g.alias_names || []).map(function(a) { return Array.isArray(a) ? a[0] : ''; }).join(' ')).toLowerCase().replace(/\s+/g, ''); // 띄어쓰기 빼고 맞춘다(11-16)
       var hay = g.__hay;
       return words.every(function(w) { return hay.indexOf(w) !== -1; });
     });

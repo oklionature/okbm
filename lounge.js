@@ -1981,6 +1981,19 @@
     const s = String(name || '').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
     return s || String(name || '').trim();
   };
+  const gearNoSpace = function (s) { return String(s || '').toLowerCase().replace(/\s+/g, ''); };
+  // 적기만 한 장비 이름이 목록 장비 하나와 띄어쓰기 빼고 같으면 그 장비(브랜드를 빼고 적어도). 둘 이상이면 못 정한다
+  function gearByTypedName(typed) {
+    const key = gearNoSpace(typed);
+    if (!key) return null;
+    const hit = (window.GEARS_MASTER || []).filter(function (x) {
+      if (!x || !x.item_name) return false;
+      const full = gearNoSpace(x.item_name), short = gearNoSpace(gearShort(x.item_name)), brand = gearNoSpace(x.brand);
+      return full === key || short === key
+        || (brand && short.indexOf(brand) === 0 && short.slice(brand.length) === key);
+    });
+    return hit.length === 1 ? hit[0] : null;
+  }
   const GEAR_STOP = new Set(['초경량', '백패킹', '백패킹텐트', '텐트', '1인용', '2인용', '3인용', '4인용', '3계절용', '4계절용', '3-4계절용']);
   const gearTerm = function (name) {
     const s = gearShort(name);
@@ -2278,7 +2291,7 @@
       for (let k = 0; k < all.length && hits.length < 6; k++) {
         const g = all[k];
         if (!g || !g.item_name || g.id == null) continue;
-        const hay = (String(g.item_name) + ' ' + String(g.brand || '')).toLowerCase();
+        const hay = gearNoSpace(String(g.item_name) + String(g.brand || '')); // 띄어쓰기 빼고 맞춘다(11-16)
         if (words.every(function (w) { return hay.indexOf(w) !== -1; })) hits.push(g);
       }
       box.innerHTML = hits.map(function (g) {
@@ -3958,7 +3971,7 @@
       for (let i = 0; i < all.length && hits.length < 12; i++) {
         const g = all[i];
         if (!g || !g.item_name) continue;
-        const hay = (String(g.item_name) + ' ' + String(g.brand || '')).toLowerCase();
+        const hay = gearNoSpace(String(g.item_name) + String(g.brand || '')); // 띄어쓰기 빼고 맞춘다(11-16)
         if (words.every(function (w) { return hay.indexOf(w) !== -1; })) hits.push(g);
       }
       box.innerHTML = hits.map(function (g) {
@@ -4515,11 +4528,7 @@
     if ((!st.id || st.editRv) && st.cat === 'gear' && !st.gear) {
       const typed = String((f.querySelector('[data-gear-q]') || {}).value || '').trim();
       if (typed) {
-        const key = typed.toLowerCase();
-        const hit = (window.GEARS_MASTER || []).filter(function (x) {
-          return x && x.item_name && (String(x.item_name).toLowerCase() === key || gearShort(x.item_name).toLowerCase() === key);
-        });
-        const g = hit.length === 1 ? hit[0] : null;
+        const g = gearByTypedName(typed);
         st.gear = g ? { id: String(g.id), name: String(g.item_name).slice(0, 120), cat: GEAR_CAT[g.category_id] ? String(g.category_id) : 'other', weight_g: Number(g.weight_g) || 0 }
           : { id: '', name: typed.slice(0, 120), cat: st.gcat || 'other', weight_g: 0 };
         if (g) st.gcat = st.gear.cat;
