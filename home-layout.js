@@ -1,10 +1,10 @@
 // =========================================================================
-// 홈 개편 (2026-10-14): 바로가기 네 개 · 최근 다녀온 후기 · 인기 스팟 "후기 N · 찜 N"
+// 홈 개편 (2026-10-14): 바로가기 네 개 · 인기 스팟 "후기 N · 찜 N"
 // 시안: 인스타에니/낭만루트_앱점검/미리보기/미리보기.html "1. 첫 화면" 넷째 판
 //
 // · 바로가기(#homeQuickNav·#homeQuickBig [data-quick], 2026-10-31, 11-16 개편): 위 작은 세 칸 레디샷 · 후기 올리기 · 굴업도, 아래 큰 두 칸 동행 구하기 · 장비 후기. 누르면 그 화면으로 넘어간다.
 //   초보 가이드·박지 랭킹·자유게시판 바로가기는 그 밑 백패커 라운지(#okbmLoungeHome, lounge.js) 알약으로 옮겼다.
-// · 최근 다녀온 후기는 운영자 글을 빼고 회원이 공개한 글만, 다녀온 날짜가 최근인 것부터. 개수와 상관없이 바로가기 바로 밑(대표님 10-14).
+// · '최근 다녀온 후기' 칸은 11-16에 뺐다(대표님). 맨 위 피드 칸·낭만피드 탭과 겹치고, 그 밑 테마 박지가 홈에서 가장 많이 눌려(2주 37%) 그 칸을 위로 올렸다.
 // · 굴업도 들어가기(2026-11-02, 관리자만): 바로가기 밑 띠. 누르면 로그인 토큰을 주소 뒤 #tok=로 붙여 같이 접속 게임(Cloudflare)을 연다.
 //   게임 서버가 그 토큰으로 회원·닉네임을 확인한다. 11-02부터 띠는 비로그인에게도 보이고 누르면 로그인 창.
 //   11-02: 회원 모두에게 연다. 들어갈 때 낭만 포인트 15점(낸 때부터 1시간 동안 다시 들어와도 무료 — 11-03 H38, 관리자 무료, 모자라면 못 들어감).
@@ -18,21 +18,10 @@
   if (window.__okbmHomeLayoutLoaded) return;
   window.__okbmHomeLayoutLoaded = true;
 
-  var OPERATOR_UID = 'kakao_5060259862'; // 오라네(운영자). romantic-history.js openUserFeedCollectionModal과 같은 값
-  var RECENT_LIMIT = 12;
-  var RECENT_FETCH = 40; // 사진 없는 글을 거른 뒤에도 날짜 최근 12건이 남도록 더 가져온다
-
   var escapeHtml = typeof window.escapeHtml === 'function' ? window.escapeHtml : function (t) {
     return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
-  };
-  var okbmSafeImageUrl = function (u) {
-    return typeof window.okbmSafeImageUrl === 'function' ? window.okbmSafeImageUrl(u) : '';
-  };
-  // 화면에 보여 줄 사진은 img.romanticroute.kr로(romantic-sync.js okbmFastImageUrl)
-  var okbmFastImageUrl = function (u, width) {
-    return typeof window.okbmFastImageUrl === 'function' ? window.okbmFastImageUrl(u, width) : okbmSafeImageUrl(u);
   };
 
   // ---------- 모양 ----------
@@ -151,31 +140,6 @@
       '.np-dots i{width:6px;height:6px;border-radius:50%;background:#cfd8d2}',
       '.np-dots i.on{width:18px;border-radius:3px;background:#2f9e6a}',
       '.np-foot button{display:block;width:100%;height:50px;border:0;border-radius:14px;background:#2f9e6a;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer}',
-      // 11-16 GPX 알림(.ng, 시안 .claude/mockups/notice-1116-gpx/b.html): 지역 탭 + 두 줄 목록. 목록만 안에서 내려 본다
-      '.hn-frame.ngf{height:100%}',
-      '.hn-scroll.ng{height:100%;display:flex;flex-direction:column;overflow:hidden;background:#f7f9f6;color:#1d2b24;border-radius:20px;word-break:keep-all;letter-spacing:-.01em}',
-      '.ng-hero{position:relative;flex:none;height:96px;background:linear-gradient(180deg,#bfe3f5 0%,#e3f1ea 70%,#f7f9f6 100%);overflow:hidden}',
-      '.ng-hero svg{position:absolute;inset:0;width:100%;height:100%}',
-      '.ng-top{flex:none;padding:6px 20px 0}',
-      '.ng-top h2{margin:4px 0 0;font-size:22px;line-height:1.3;font-weight:800;letter-spacing:-.035em;color:#1d2b24}',
-      '.ng-top h2 em{font-style:normal;color:#2f9e6a}',
-      '.ng-lead{margin:6px 0 0;font-size:13.4px;line-height:1.5;color:#45524b}',
-      '.ng-lead b{color:#1d2b24}',
-      '.ng-tabs{flex:none;display:flex;gap:6px;overflow-x:auto;padding:12px 16px 2px;scrollbar-width:none}',
-      '.ng-tabs::-webkit-scrollbar{display:none}',
-      '.ng-tabs button{flex:none;padding:7px 12px;border-radius:999px;background:#fff;border:1px solid #dfe8e2;font:inherit;font-size:13px;font-weight:800;color:#55625b;cursor:pointer}',
-      '.ng-tabs button span{margin-left:3px;font-weight:700;color:#9aa69f}',
-      '.ng-tabs button.on{background:#2f9e6a;border-color:#2f9e6a;color:#fff}',
-      '.ng-tabs button.on span{color:#d5f0e2}',
-      '.ng-grid{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;margin:10px 14px 0;padding:6px 12px;border-radius:16px;background:#fff;box-shadow:0 6px 18px rgba(31,71,52,.07);display:grid;grid-template-columns:1fr 1fr;column-gap:12px;align-content:start}',
-      '.ng-grid button{display:block;min-width:0;padding:7px 0;border:0;border-bottom:1px solid #eef2ef;background:none;text-align:left;font:inherit;color:inherit;cursor:pointer}',
-      '.ng-grid b{display:block;font-size:13.6px;font-weight:800;color:#1d2b24}',
-      '.ng-grid small{display:block;margin-top:1px;font-size:11px;color:#7a867f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-      '.ng-th{display:inline-block;margin-left:3px;padding:0 4px;border-radius:4px;background:#fff1e3;color:#c4622d;font-size:10px;font-weight:800;vertical-align:1px}',
-      '.ng-foot{flex:none;padding:8px 16px 12px;background:#f7f9f6;box-shadow:0 -10px 18px #f7f9f6}',
-      '.ng-foot .ng-go{display:block;width:100%;height:50px;border:0;border-radius:14px;background:#2f9e6a;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer}',
-      '.ng-foot .ng-send{display:block;width:100%;height:36px;margin-top:2px;border:0;background:none;color:#1f7a50;font:inherit;font-size:14px;font-weight:700;cursor:pointer}',
-      '.ng-foot .ng-send b{text-decoration:underline;text-underline-offset:3px}',
       '.hn-x{position:absolute;top:10px;right:10px;z-index:2;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:15px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
       '.hq-btn.hq-isle em{color:#e0b45a}',
       '.gq-wrap{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);padding:0 12px calc(env(safe-area-inset-bottom) + 84px)}',
@@ -237,15 +201,7 @@
       '.insta-memo-title-line .insta-memo-spot-title{min-width:0}',
       '.hl-wrap{display:flex;flex-direction:column;gap:28px}',
       '.hl-wrap .lmh:empty{min-height:236px}', // lounge.js가 받기 전 자리만 잡아 둔다
-      '.hl-cap{display:flex;justify-content:space-between;align-items:center;padding-right:14px;margin-bottom:8px;font-size:12.5px;font-weight:800;color:var(--tx-3)}',
-      '.hr-card{flex:none;width:200px;border-radius:16px;overflow:hidden;background:#171A1F;border:1px solid #2A2F37;cursor:pointer;text-align:left;padding:0;color:inherit;font-family:inherit}',
-      '.hr-ph{position:relative;height:130px;background:#20242B}',
-      '.hr-ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}',
-      '.hr-bd{padding:10px 12px 12px}',
-      '.hr-who{display:flex;justify-content:space-between;gap:8px;font-size:var(--fs-meta);color:#7D8490;font-weight:700}',
-      '.hr-who span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-      '.hr-sp{margin:4px 0;font-size:var(--fs-title);font-weight:800;color:#F2F3F5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-      '.hr-mm{font-size:12px;line-height:1.45;color:#A3A9B3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:35px}'
+      '.hl-cap{display:flex;justify-content:space-between;align-items:center;padding-right:14px;margin-bottom:8px;font-size:12.5px;font-weight:800;color:var(--tx-3)}'
     ].join('\n');
     document.head.appendChild(css);
   }
@@ -407,74 +363,6 @@
       }
       close();
       if (window.okbmPoints && typeof window.okbmPoints.open === 'function') window.okbmPoints.open();   // 낭만 포인트 받는 법 창
-    });
-    document.body.appendChild(root);
-  }
-
-  // ---------- 11-16 GPX 알림(대표님: 77곳 GPX 목록, 시안 B 지역 탭) ----------
-  // 포인트 알림을 닫은 분께만 다음에 띄운다(두 알림이 한꺼번에 뜨지 않게). 박지를 누르면 지도의 그 박지로 간다.
-  // 목록은 11-16 기준 GPX가 있는 박지(야영 금지 태화산 뺌). [지역, [[박지 id, 이름, 세부, 들머리 수], ...]]
-  var GPX_NOTICE = { id: '20261116-gpx', n: 77, list: [["경기",[["110","건달산","정상 데크",1],["272","광교산","시루봉·능선 데크",1],["284","마구산","정상 데크",1],["17","마국산","정상 3층 전망데크",1],["273","모락산","국기봉 데크",1],["286","미역산","정상·하산 데크",1],["12","백족산","중턱 전망데크",1],["67","백족산","지네굴 동굴비박",1],["354","봉성산","재두루미 전망대",1],["570","불곡산","임꺽정봉 절벽 박지",1],["591","서리산 잣나무숲","유료 야영장",1],["259","석성산","정상 데크",1],["262","선장산","정상 전망데크",1],["13","시궁산","정상 넓은 데크",1],["113","왕방산","관모봉 전망정자 옆 공터",1],["51","용문산","백운봉 정상데크",1],["315","울업산","신선봉 제2전망대 데크",1],["18","원적산","원적봉",1],["571","원적산","천덕봉",1],["123","유명산","배너머 활공장",2],["9","자산","합수머리 강변노지",1],["40","조비산","암벽 동굴박지",1],["283","조비산","정상 데크·공터",1],["16","추읍산","정상 전망데크",1],["118","태행산","정상 전망데크",1]]],["강원",[["377","구봉대산","정상",1],["585","능경봉","헬기장 및 정상부근",1],["316","드름산","의암봉 전망데크",1],["378","민둥산","정상 부근 데크·능선",2],["388","사명산","정상 인근 헬기장",1],["42","쉰움산","오십정 돌침대",1],["41","오라봉","절벽 텐트박지",1],["248","운무산","정상 전망데크",1],["335","파로호","수달길 호수변 노지",1]]],["충북",[["36","고봉 바위틈","비박지",1],["47","금수산","학봉 손바닥바위",1],["29","두타산","중심봉 돌탑노지",1],["399","백화산","한성봉",1],["25","사랑산","코뿔소바위",1],["358","삼도봉","3도 화합탑 전망데크",1],["401","신선암봉","정상 암릉",1],["6","연어봉","절벽 돌침대",1],["24","올산","천연 바위박지",1],["432","장령산","운무대 전망데크",1]]],["충남",[["400","진악산","정상 전망데크",1],["577","팔봉산","정상테크, 정상 미투2봉가는길 용굴 속 노지",1]]],["전북",[["394","고덕산","정상 헬기장",1],["392","고리봉","정상",1],["390","기차산","장군봉 정상",1],["54","나래산","정상 전망박지",1],["307","대각산","신시도 3층 전망타워 데크",1],["393","만행산","정상 천황봉",1],["395","팔공산","헬기장",1],["367","회문산","작은지붕 헬기장 및 큰지붕 데크",1]]],["전남",[["391","금강산","정상 데크",1],["30","달마산","문바위 공룡능선",1],["558","마복산","정상 너머 절벽 암릉",1],["251","만덕산","신선대 암릉박지",1],["387","모후산","정상 헬기장",1],["376","백아산","마당바위",1],["353","병풍산","마당바위 천연 슬랩",1],["7","비금도 그림산","정상 전망데크",1],["398","오봉산","정상 전망데크",1],["26","완도 상왕산","백운봉 암릉돌침대",1],["74","일림산","철쭉군락지 전망데크",1],["383","진도 동석산","정상 암릉",1],["397","초암산","정상 헬기장",1]]],["경북",[["370","나각산","소라형 쌍둥이 전망데크",1]]],["경남",[["35","거제도 노자산","정상 전망데크",1],["70","와룡산","민재봉 철쭉데크",1],["375","용두암봉","절벽 끝 전망데크",1]]],["서울/인천",[["592","노적봉","을왕리 출렁다리 전망대",1],["105","덕적도","비조봉 솔로데크",1],["136","마니산","비밀박지",2],["264","무의도","무렝게티",1],["98","소야도","막끝전망대 뱃머리데크",1],["257","인왕산","해골바위 암릉",1]]]] };
-  function gpxNoticeGo(url) {
-    try { sessionStorage.setItem('okbm_entered_via_index', '1'); } catch (e) {}
-    if (typeof window.smoothNavigate === 'function') window.smoothNavigate(url); else window.location.assign(url);
-  }
-  function homeNoticeGpx() {
-    var key = 'okbm_home_notice_gpx';
-    try { if (localStorage.getItem(key) === GPX_NOTICE.id) return; } catch (e) { return; }
-    if (document.getElementById('okbmHomeNotice')) return;
-    var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-    var root = document.createElement('div');
-    root.id = 'okbmHomeNotice';
-    root.className = 'hn';
-    root.setAttribute('role', 'dialog');
-    root.setAttribute('aria-modal', 'true');
-    root.setAttribute('aria-label', 'GPX 등록 알림');
-    var hero = '<svg viewBox="0 0 390 96" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
-      '<circle cx="318" cy="30" r="15" fill="#ffd27a"/><circle cx="318" cy="30" r="25" fill="#ffd27a" opacity=".22"/>' +
-      '<path d="M0 74 L60 44 L105 62 L170 24 L232 60 L290 38 L390 68 V96 H0Z" fill="#a8d5b9"/>' +
-      '<path d="M0 86 L80 66 L150 80 L230 58 L300 78 L390 70 V96 H0Z" fill="#7fc09b"/>' +
-      '<path d="M28 90 C70 84 92 70 120 72 C150 74 150 52 170 40" stroke="#c4622d" stroke-width="2.4" fill="none" stroke-dasharray="1 5" stroke-linecap="round"/>' +
-      '<circle cx="28" cy="90" r="4" fill="#fff" stroke="#c4622d" stroke-width="2"/>' +
-      '<path d="M160 40 L170 27 L180 40Z" fill="#f08a3c"/><path d="M170 27 V40" stroke="#a24f16" stroke-width="1.4"/></svg>';
-    var tabs = GPX_NOTICE.list.map(function (g, i) {
-      return '<button type="button" role="tab" aria-selected="' + (i ? 'false' : 'true') + '" class="' + (i ? '' : 'on') + '" data-ng-tab="' + i + '">' + esc(g[0]) + '<span>' + g[1].length + '</span></button>';
-    }).join('');
-    var grid = function (i) {
-      return GPX_NOTICE.list[i][1].map(function (s) {
-        return '<button type="button" data-ng-spot="' + esc(s[0]) + '"><b>' + esc(s[1]) + (s[3] > 1 ? '<span class="ng-th">들머리 ' + s[3] + '</span>' : '') + '</b><small>' + esc(s[2]) + '</small></button>';
-      }).join('');
-    };
-    root.innerHTML = '<div class="hn-frame ngf"><button type="button" class="hn-x hg-x" data-metric-click="feat_home_notice_close" aria-label="닫기">✕</button>' +
-      '<div class="hn-scroll ng">' +
-        '<div class="ng-hero">' + hero + '</div>' +
-        '<div class="ng-top"><p class="np-ey">GPX 소식</p><h2>GPX가 <em>' + GPX_NOTICE.n + '곳</em>에<br>등록되었어요</h2>' +
-          '<p class="ng-lead">이제는 더욱더 <b>안전하고 정확하게</b> 찾아갈 수 있어요.<br>가고 싶은 박지의 GPX를 확인해 보세요.</p></div>' +
-        '<div class="ng-tabs" role="tablist">' + tabs + '</div>' +
-        '<div class="ng-grid">' + grid(0) + '</div>' +
-        '<div class="ng-foot"><button type="button" class="ng-go" data-ng-go="map" data-metric-click="feat_home_notice_gpx_map">가고 싶은 박지 GPX 확인하기</button>' +
-          '<button type="button" class="ng-send" data-ng-go="send" data-metric-click="feat_home_notice_gpx_send">등록되지 않았다면 <b>GPX 등록하기</b></button></div>' +
-      '</div></div>';
-    function close() {
-      try { localStorage.setItem(key, GPX_NOTICE.id); } catch (e) {}
-      root.remove();
-    }
-    root.querySelector('.hn-x').addEventListener('click', close);
-    root.querySelector('.hn-scroll').addEventListener('click', function (ev) {
-      var t = ev.target.closest('[data-ng-tab]');
-      if (t) {
-        var i = Number(t.getAttribute('data-ng-tab'));
-        root.querySelectorAll('[data-ng-tab]').forEach(function (b) { var on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
-        var g = root.querySelector('.ng-grid'); g.innerHTML = grid(i); g.scrollTop = 0;
-        try { t.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); } catch (e) {}
-        return;
-      }
-      var sp = ev.target.closest('[data-ng-spot]');
-      if (sp) { close(); gpxNoticeGo('map.html?id=' + encodeURIComponent(sp.getAttribute('data-ng-spot'))); return; }
-      var go = ev.target.closest('[data-ng-go]');
-      if (!go) return;
-      close();
-      gpxNoticeGo(go.getAttribute('data-ng-go') === 'send' ? 'map.html?gpxsend=1' : 'map.html');
     });
     document.body.appendChild(root);
   }
@@ -660,122 +548,6 @@
     });
   }
 
-  // ---------- 최근 다녀온 후기 ----------
-  var recentList = [];
-  function parseArr(v) {
-    if (Array.isArray(v)) return v;
-    if (typeof v === 'string' && v.trim().charAt(0) === '[') { try { return JSON.parse(v); } catch (e) {} }
-    if (typeof v === 'string' && v.trim().indexOf('https://') === 0) return [v.trim()];
-    return [];
-  }
-  // index-main.js fetchCommunityFeeds와 같은 모양으로 바꾼다 (피드 창이 그대로 쓴다)
-  function normalize(r) {
-    return {
-      id: r.id,
-      userId: r.user_id,
-      spot: r.spot || r.spot_name || '백패킹 필드',
-      spotId: r.spot_id || '',
-      elevation: r.elevation || '',
-      weightKg: r.weight_kg != null ? String(r.weight_kg) : '',
-      date: r.date || '',
-      memo: r.memo || '',
-      oneLineMemo: r.memo || '',
-      templateId: r.template_id || 1,
-      likes: r.likes_count != null ? Number(r.likes_count) : 0,
-      createdAt: r.created_at || '',
-      isPublished: r.is_published !== false,
-      is_published: r.is_published === true,
-      photos: parseArr(r.photos),
-      items: parseArr(r.items),
-      author: r.author || '낭만백패커',
-      nick: r.author || '낭만백패커',
-      photoMemos: parseArr(r.photo_memos_json || r.photo_memos),
-      instagram: String(r.instagram || '').trim()
-    };
-  }
-  function firstPhoto(f) {
-    var list = typeof window.okbmPublicPhotoUrls === 'function' ? window.okbmPublicPhotoUrls(f) : (f.photos || []);
-    var u = (list || []).find(function (x) { return typeof x === 'string' && x.indexOf('https://') === 0; });
-    return u || '';
-  }
-  function shortDate(f) {
-    var p = String(f.date || f.createdAt || '').match(/\d+/g);
-    return p && p.length >= 3 ? (String(p[1]).padStart(2, '0') + '.' + String(p[2]).padStart(2, '0')) : '';
-  }
-  // 카드에 보이는 다녀온 날짜. 연-월-일 숫자. 날짜가 없으면 올린 날.
-  function tripDateNum(f) {
-    var p = String((f && f.date) || '').match(/\d+/g);
-    var y = 0;
-    var m = 0;
-    var d = 0;
-    if (p && p.length >= 3) {
-      if (String(p[0]).length === 4) { y = +p[0]; m = +p[1]; d = +p[2]; }
-      else if (String(p[2]).length === 4) { y = +p[2]; m = +p[0]; d = +p[1]; }
-    }
-    if (!(y && m && d)) {
-      var iso = String((f && f.createdAt) || '').match(/(\d{4})-(\d{2})-(\d{2})/);
-      if (iso) { y = +iso[1]; m = +iso[2]; d = +iso[3]; }
-    }
-    return (y && m && d) ? (y * 10000 + m * 100 + d) : 0;
-  }
-  function byTripDateDesc(a, b) {
-    var diff = tripDateNum(b) - tripDateNum(a);
-    if (diff) return diff;
-    return String((b && b.createdAt) || '').localeCompare(String((a && a.createdAt) || ''));
-  }
-  function cardHtml(f) {
-    var photo = firstPhoto(f);
-    var spot = String(f.spot || '').replace(/\s*\(.*?\)/g, '').trim() || '백패킹 필드';
-    var memo = String(f.oneLineMemo || f.memo || '').replace(/\s+/g, ' ').trim();
-    return '<button type="button" class="hr-card okbm-press" data-recent-id="' + escapeHtml(f.id) + '" aria-label="' + escapeHtml(spot + ' 후기 보기') + '">' +
-      '<div class="hr-ph">' + (photo ? '<img src="' + escapeHtml(okbmFastImageUrl(photo, 640)) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">' : '') + '</div>' +
-      '<div class="hr-bd"><div class="hr-who"><span>' + escapeHtml(f.author) + '</span><span>' + escapeHtml(shortDate(f)) + '</span></div>' +
-      '<div class="hr-sp">' + escapeHtml(spot) + '</div>' +
-      '<div class="hr-mm">' + escapeHtml(memo) + '</div></div></button>';
-  }
-  function visibleRecent() {
-    var list = recentList.filter(function (f) {
-      if (typeof window.okbmIsHomePublicFeed === 'function' && !window.okbmIsHomePublicFeed(f)) return false;
-      if (typeof window.isFeedHiddenByUgc === 'function' && window.isFeedHiddenByUgc({ id: f.id, user_id: f.userId })) return false;
-      return !!firstPhoto(f);
-    });
-    return list.sort(byTripDateDesc).slice(0, RECENT_LIMIT);
-  }
-  function renderRecent() {
-    var sec = document.getElementById('homeRecentReviews');
-    var rail = document.getElementById('homeRecentReviewsRail');
-    if (!sec || !rail) return;
-    var list = visibleRecent();
-    if (!list.length) { sec.hidden = true; return; }
-    var html = list.map(cardHtml).join('');
-    if (rail.__okbmHtml !== html) { rail.innerHTML = html; rail.__okbmHtml = html; }
-    sec.hidden = false;
-  }
-  function loadRecent() {
-    var base = window.SUPABASE_URL;
-    if (!base || typeof window.okbmPublicFetch !== 'function') return Promise.resolve();
-    var select = window.FEEDS_HOME_SELECT || 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,instagram,likes_count,is_published,feed_type,created_at,items,template_id';
-    var url = base + '/rest/v1/feeds?select=' + encodeURIComponent(select) +
-      '&is_published=eq.true&user_id=neq.' + encodeURIComponent(OPERATOR_UID) +
-      '&order=date.desc.nullslast,created_at.desc&limit=' + RECENT_FETCH;
-    return window.okbmPublicFetch(url).then(function (res) {
-      if (!res.ok) throw new Error('recent feeds ' + res.status);
-      return res.json();
-    }).then(function (rows) {
-      recentList = (Array.isArray(rows) ? rows : []).map(normalize);
-      renderRecent();
-    }).catch(function (e) { console.warn('[home-layout:loadRecent]', e); });
-  }
-  function onRecentClick(e) {
-    var card = e.target && e.target.closest ? e.target.closest('[data-recent-id]') : null;
-    if (!card) return;
-    var id = card.getAttribute('data-recent-id');
-    if (typeof window.openSingleTripDualFeedModal !== 'function') return;
-    // 목록을 넘기면 누른 글 아래 다음 글이 이어서 붙는다. 홈에서는 그 글만 연다.
-    var one = visibleRecent().filter(function (f) { return String(f.id) === String(id); });
-    if (one.length) window.openSingleTripDualFeedModal(id, one, '최근 다녀온 후기');
-  }
-
   // ---------- 인기 스팟 "후기 N · 찜 N" ----------
   var statToken = 0;
   var reviewCache = {};
@@ -856,33 +628,14 @@
     window.addEventListener('okbm_admin_flag', paintGulupdo);
     [2000, 6000, 15000].forEach(function (ms) { setTimeout(paintGulupdo, ms); });   // 로그인·프로필이 늦게 와도 다시 본다
     homeNotice();
-    // 포인트 알림을 이미 닫은 분께만 GPX 알림(11-16). 방금 닫은 분은 다음에 들어올 때 본다
-    try { if (localStorage.getItem('okbm_home_notice_id') === HOME_NOTICE.id) homeNoticeGpx(); } catch (e) {}
-    var sec = document.getElementById('homeRecentReviews');
-    if (sec) {
-      sec.addEventListener('click', onQuickClick);
-      sec.addEventListener('click', onRecentClick);
-    }
     watchHeroPick();
     var trip = document.getElementById('homeTogetherTrip');
     if (trip) trip.addEventListener('click', onTogetherClick);
-    loadRecent();
     // 박지 목록이 온 뒤 인기 스팟 숫자를 다시 맞춘다 (먼저 그려졌으면 찜 수가 빠져 있다)
     if (window.__okbmSpotsBootReady && typeof window.__okbmSpotsBootReady.then === 'function') {
       window.__okbmSpotsBootReady.then(function () {
         if (typeof window.okbmRefreshHeroStat === 'function') window.okbmRefreshHeroStat();
       });
-    }
-    // 차단·신고로 숨길 글이 바뀌면 다시 거른다
-    var orig = window.rerenderCommunityFeedsNow;
-    if (typeof orig === 'function' && !orig.__okbmHomeLayout) {
-      var wrapped = function () {
-        var r = orig.apply(this, arguments);
-        try { renderRecent(); } catch (e) { console.warn('[home-layout:rerender]', e); }
-        return r;
-      };
-      wrapped.__okbmHomeLayout = true;
-      window.rerenderCommunityFeedsNow = wrapped;
     }
   }
 
