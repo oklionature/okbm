@@ -1610,7 +1610,10 @@
           showUserLocationDot(loc);
           map.setLevel(7, { animate: true }); map.panTo(loc);
           showToast('현재 내 위치로 이동했습니다', { html: ICONS.PIN });
-        }, (err) => showToast(err === 'unsupported' ? '위치 서비스를 지원하지 않습니다.' : 'GPS 권한을 허용해주세요', { html: ICONS.ALERT_CARD }));
+        }, (err) => {
+          if (err && err.code === 'later') return;   // 위치 설명 창에서 '나중에'
+          showToast(err === 'unsupported' ? '위치 서비스를 지원하지 않습니다.' : 'GPS 권한을 허용해주세요', { html: ICONS.ALERT_CARD });
+        });
       }
 
       function switchMasterTab(tabName) {
@@ -3757,8 +3760,47 @@ function updateSmartResetButtons() {
         // 11-16 대표님: 안드로이드도 GPX 길 안내가 되게 정확한 위치를 요청한다. 앱에 정밀 위치 권한(ACCESS_FINE_LOCATION)이
         // 없는 옛 안드로이드 앱(0.9.3까지)은 위치 플러그인이 알아서 대략 위치만 묻는다(@capacitor/geolocation getAlias).
         const highAccuracy = true;
-        if (useNativeGeo) nativeGeo.getCurrentPosition({ enableHighAccuracy: highAccuracy, timeout: 15000 }).then(onOk, onFail);
-        else navigator.geolocation.getCurrentPosition(onOk, onFail, { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 });
+        const ask = function() {
+          if (useNativeGeo) nativeGeo.getCurrentPosition({ enableHighAccuracy: highAccuracy, timeout: 15000 }).then(onOk, onFail);
+          else navigator.geolocation.getCurrentPosition(onOk, onFail, { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 });
+        };
+        okbmLocationRationale(useNativeGeo ? nativeGeo : null).then(function(go) {
+          if (go) ask(); else onFail({ code: 'later', message: 'later' });
+        });
+      }
+
+      // 11-16 대표님 A안: 위치를 아직 허락하지 않았으면 기기 허락 창 앞에 왜 필요한지 한 번 알려 준다.
+      // 안드로이드 허락 창에는 앱이 이유를 적을 칸이 없고, '정확한 위치'를 골라야 GPX 길 안내가 되기 때문.
+      // 이미 허락했거나(granted) 거절해 둔 경우(denied, 기기 창이 안 뜸)는 묻지 않고 바로 간다. '나중에'면 false.
+      function okbmLocationRationale(nativeGeo) {
+        var stateP = nativeGeo && typeof nativeGeo.checkPermissions === 'function'
+          ? Promise.resolve(nativeGeo.checkPermissions()).then(function(p) { return (p && p.location) || 'prompt'; })
+          : (navigator.permissions && typeof navigator.permissions.query === 'function'
+            ? navigator.permissions.query({ name: 'geolocation' }).then(function(r) { return r.state; })
+            : Promise.resolve('prompt'));
+        return stateP.catch(function() { return 'granted'; }).then(function(state) {
+          if (state === 'granted' || state === 'denied') return true;
+          return new Promise(function(resolve) {
+            var old = document.getElementById('okbmLocWhy');
+            if (old) old.remove();
+            var wrap = document.createElement('div');
+            wrap.id = 'okbmLocWhy';
+            wrap.className = 'okbm-gpx-send';
+            wrap.innerHTML = '<div class="okbm-gpx-send-box" role="dialog" aria-modal="true" aria-labelledby="okbmLocWhyTitle">' +
+              '<div class="okbm-gpx-send-head"><strong id="okbmLocWhyTitle">GPX 길 안내를 하려면 위치가 필요해요</strong><button type="button" data-loc-act="later" aria-label="닫기">✕</button></div>' +
+              '<p class="okbm-gpx-send-help">등산로를 켜면 내가 길 위에 있는지, 길에서 벗어났는지 알려 드려요. 산길은 폭이 좁아서 다음 창에서 <b>\'정확한 위치\'</b>를 골라 주셔야 제대로 안내돼요. 위치는 폰 안에서만 쓰고 저장하지 않아요.</p>' +
+              '<button type="button" class="okbm-gpx-send-go" data-loc-act="go" data-metric-click="feat_loc_why_go">위치 허락하기</button>' +
+              '<button type="button" class="okbm-loc-later" data-loc-act="later" data-metric-click="feat_loc_why_later">나중에</button>' +
+            '</div>';
+            var done = function(go) { wrap.remove(); resolve(go); };
+            wrap.addEventListener('click', function(e) {
+              if (e.target === wrap) return done(false);
+              var b = e.target && e.target.closest ? e.target.closest('[data-loc-act]') : null;
+              if (b) done(b.getAttribute('data-loc-act') === 'go');
+            });
+            document.body.appendChild(wrap);
+          });
+        });
       }
 
       function showUserLocationDot(loc) {
