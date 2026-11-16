@@ -3,7 +3,7 @@
 // 시안: 인스타에니/낭만루트_앱점검/미리보기/미리보기.html "1. 첫 화면" 넷째 판
 //
 // · 바로가기(#homeQuickNav·#homeQuickBig [data-quick], 2026-10-31, 11-16 개편): 위 작은 세 칸 레디샷 · 후기 올리기 · 굴업도, 아래 큰 두 칸 동행 구하기 · 낭만루트 공식 오픈채팅. 누르면 그 화면으로 넘어간다.
-//   공식 오픈채팅 칸(11-16)은 규칙·책임 문구를 보여 주고 '읽고 동의해요'를 체크해야 카톡 방이 열린다. 로그인한 낭만루터만(openOfficialChat).
+//   공식 오픈채팅 칸(11-16)은 규칙·책임 문구(카톡 방 공지와 같은 담담한 말투)를 보여 주고 '읽고 동의해요'를 체크해야 카톡 방이 열린다. 로그인한 낭만루터만(openOfficialChat).
 //   초보 가이드·박지 랭킹·자유게시판 바로가기는 그 밑 백패커 라운지(#okbmLoungeHome, lounge.js) 알약으로 옮겼다.
 // · '최근 다녀온 후기' 칸은 11-16에 뺐다(대표님). 맨 위 피드 칸·낭만피드 탭과 겹치고, 그 밑 테마 박지가 홈에서 가장 많이 눌려(2주 37%) 그 칸을 위로 올렸다.
 // · 굴업도 들어가기(2026-11-02, 관리자만): 바로가기 밑 띠. 누르면 로그인 토큰을 주소 뒤 #tok=로 붙여 같이 접속 게임(Cloudflare)을 연다.
@@ -270,15 +270,14 @@
       '<div class="oc-dim" id="ocDim"></div>' +
       '<div class="oc-sh" id="ocSheet" role="dialog" aria-modal="true" aria-labelledby="ocTitle"><div class="oc-gr"></div>' +
         '<h3 id="ocTitle">낭만루트 공식 오픈채팅</h3>' +
-        '<p class="oc-s">장비, 동행, 백패킹 이야기를 나누는 방이에요.</p>' +
+        '<p class="oc-s">낭만루트 건의부터 장비, 동행, 백패킹 이야기까지 나누는 방입니다.</p>' +
         '<ul>' +
-          '<li>같이 갈 사람은 앱 \'동행 구하기\'에 글을 올리고 방에는 링크를 붙여 주세요.</li>' +
-          '<li>광고·판매 글은 안 돼요.</li>' +
-          '<li>처음 같이 가는 분과는 둘보다 여럿이 가요.</li>' +
-          '<li>낭만루트는 K-LNT를 지향하는 방이에요.</li>' +
+          '<li>동행은 앱 \'동행 구하기\'에 등록 후 방에서 한 번 더 알려 주세요.</li>' +
+          '<li>광고, 판매, 다른 방 홍보는 금지합니다.</li>' +
+          '<li>낭만루트는 K-LNT를 지향하는 방입니다.</li>' +
         '</ul>' +
-        '<div class="oc-warn"><b>동행은 각자 책임지는 개인 모임이에요</b>낭만루트와 상관없이, 같이 가는 사람 한 명 한 명이 스스로 책임져요. 모집한 사람도 같이 가는 한 사람이에요.</div>' +
-        '<label class="oc-ck"><input type="checkbox" id="ocAgree">위 내용을 읽고 동의해요</label>' +
+        '<div class="oc-warn"><b>동행은 각자 책임지는 개인 모임입니다</b>백패킹을 즐기시는 분들은 모두 성인입니다. 낭만루트와 무관하게 함께 가는 사람 각자가 판단하고 책임집니다. 모집한 사람도 함께 가는 한 사람입니다.</div>' +
+        '<label class="oc-ck"><input type="checkbox" id="ocAgree">위 내용을 읽고 동의합니다</label>' +
         '<div class="oc-bt"><button type="button" class="oc-no" data-oc="close">닫기</button><button type="button" class="oc-go" data-oc="go" disabled>카톡에서 들어가기</button></div>' +
       '</div>');
     var sheet = document.getElementById('ocSheet');
