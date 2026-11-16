@@ -36,3 +36,9 @@ servers or used for ads or analytics. Background location is not requested.
   "GPX 등산로 길 안내가 더 정확해졌어요. 등산로를 켜고 산에 가면 정확한 위치로 길 위에 있는지, 길에서 벗어났는지 알려 드려요."
 - 빠른 검사는 통과했고(경고는 늘 나오는 가독화·디버그 기호 안내 2개뿐), 이때는 정밀 위치 신고서를 따로 묻지 않았다(앱 콘텐츠 '주의 필요' 없음).
   심사 중에 신고서를 요구하면 위 문구를 넣는다. 앱 묶음: Desktop/my-app (AndroidManifest ACCESS_FINE_LOCATION, build.gradle 13/0.9.4).
+
+## 아이폰 1.0.2 (2026-11-16)
+- 위치 허락 창 문구(NSLocationWhenInUseUsageDescription)를 "내 위치 주변의 박지를 보여 주고, GPX 등산로에서 길을 벗어나면 알려 드리려고 위치를 사용합니다."로 바꿨다(Desktop/my-app/ios/App/App/Info.plist).
+- 애플 개발자 프로그램 사용권 계약 갱신에 대표님이 동의한 뒤, 개발용 서명은 등록 기기가 없어 막혀서 서명 없이 묶고(xcodebuild archive CODE_SIGNING_ALLOWED=NO, MARKETING_VERSION=1.0.2 CURRENT_PROJECT_VERSION=3)
+  푸시 권한(App.entitlements)만 임시 서명으로 넣은 뒤 -exportArchive(build/ExportOptions.plist, app-store-connect, upload)로 배포 서명해 올렸다.
+- 앱 스토어 커넥트에 1.0.2를 만들고 빌드 3, 업그레이드 사항(안드로이드 출시 노트와 같은 문구)을 넣어 심사에 제출. 승인 후 자동 출시.
