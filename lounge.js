@@ -908,6 +908,24 @@
       '.lm-ta::placeholder,.lm-in::placeholder{color:var(--faint)}',
       '.lm-lbl{display:block;margin:20px 0 4px;font-size:13px;font-weight:700;color:var(--sub)}',
       '.lm-lbl b{color:#ff6b6b;font-weight:700}',
+      // 글쓰기 양식 (대표님 11-17: 밑줄 칸이라 고르기 창과 한 흐름으로 안 보인다) 채운 상자 칸, 큰 사진 칸, 아래 고정 단추
+      '.lm-pform .lm-in,.lm-pform .lm-ta{border:0;border-radius:12px;background:#26262c;transition:box-shadow .2s}',
+      '.lm-pform .lm-in{height:48px;padding:0 14px;font-weight:500}',
+      '.lm-pform .lm-ta{padding:12px 14px;resize:none}',
+      '.lm-pform .lm-in:focus,.lm-pform .lm-ta:focus{box-shadow:inset 0 0 0 1.5px var(--blue)}',
+      '.lm-pform .lm-lbl{margin:18px 0 8px}',
+      '.lm-pform .lm-chipline{gap:6px;font-size:13.5px;font-weight:600}',
+      '.lm-pform .lm-chipline button{min-height:36px;padding:0 14px;border-radius:18px;background:#26262c;color:#c7c7cc}',
+      '.lm-pform .lm-chipline button.on{background:var(--tx);color:#000}',
+      '.lm-phrow{display:flex;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:none}.lm-phrow::-webkit-scrollbar{display:none}',
+      '.lm-phrow .lm-thumbs{flex-wrap:nowrap;margin:0}',
+      '.lm-addph{flex:none;width:84px;height:96px;border-radius:12px;background:#26262c;box-shadow:inset 0 0 0 1.5px #34343c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#c7c7cc;font-size:12.5px;font-weight:700;cursor:pointer}',
+      '.lm-addph:active{opacity:.7}.lm-addph b{color:var(--tx)}',
+      '.lm-go{position:sticky;bottom:calc(-16px - env(safe-area-inset-bottom,0px));z-index:1;margin:20px -20px 0;padding:14px 20px calc(16px + env(safe-area-inset-bottom,0px));background:linear-gradient(rgba(28,28,32,0),#1c1c20 14px)}',
+      '.lm-sheet .lm-go .lm-btn{margin-top:0;transition:opacity .2s}',
+      '.lm-go .lm-btn.off{opacity:.4}',
+      '.lm-go .lm-hint{text-align:center}',
+      '.lm-pform [data-popts]{display:flex;flex-direction:column;gap:10px}',
       '.lm-two{display:flex;gap:12px}.lm-two>*{flex:1;min-width:0}',
       '.lm-chipline{display:flex;flex-wrap:wrap;gap:4px 20px;margin:4px 0 2px;font-size:15.5px;font-weight:700;color:var(--faint)}',
       // 단추는 글꼴을 물려받지 않아 얇고 작게 보였다(대표님 11-07). 누르기 쉽게 높이도 준다
@@ -924,9 +942,6 @@
       '.lm-pk.big i{width:48px;height:48px;background:var(--accent-fill);color:#fff}',
       '.lm-pk.big span{flex:1;min-width:0}.lm-pk.big b{font-size:17px}',
       '.lm-pk.k-story i{color:#34d399}.lm-pk.k-gear i{color:var(--star)}.lm-pk.k-poll i{color:#7fb2ff}.lm-pk.k-suggestion i{color:#c7c7cc}',
-      '.lm-chipline[data-ask-topics]{gap:6px;margin:6px 0 4px;font-size:13px;font-weight:600}',
-      '.lm-chipline[data-ask-topics] button{min-height:34px;padding:0 13px;border-radius:17px;background:#1f1f24;color:#c7c7cc}',
-      '.lm-chipline[data-ask-topics] button.on{background:var(--tx);color:#000}',
       '.lm-askgo{display:flex;align-items:center;justify-content:center;gap:8px;width:100%}',
       '.lm-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;font-size:13.5px;border-bottom:1px solid var(--div)}',
       '.lm-switch i{flex:none;position:relative;width:44px;height:26px;border-radius:13px;background:#3a3a40;transition:background .2s}',
@@ -4326,6 +4341,10 @@
       return `<div class="lm-thumb${pick ? ' rvon' : ''}"><img src="${escapeHtml(okbmFastImageUrl(ph.url))}" alt="" decoding="async"><button type="button" data-a="photo-del" data-v="${i}" aria-label="사진 ${i + 1} 빼기">${ico(P.x, 14)}</button>${rvOn ? `<button type="button" class="rvp${pick ? ' on' : ''}" data-a="rv-photo" data-v="${i}" aria-pressed="${pick}">${pick ? '장비 사진' : '장비 사진으로'}</button>` : ''}</div>`;
     }).join('');
   }
+  // 큰 사진 칸: '+ 사진 n/5' 네모 뒤로 고른 사진이 같은 줄에 붙는다 (대표님 11-17: 파란 글씨 한 줄은 안 보인다)
+  function photoRowHtml() {
+    return '<div class="lm-phrow"><label class="lm-addph">' + ico(P.img, 24) + '<span><b data-pcount>' + (SH.photos || []).length + '</b>/5</span><input type="file" accept="image/*,.heic,.heif" multiple data-post-files hidden aria-label="사진 추가"></label><div class="lm-thumbs" data-thumbs>' + thumbsHtml() + '</div></div>';
+  }
   // 투표 보기 칸 (2~5개). 3번째부터 뺄 수 있다
   function pollOptHtml(i, value) {
     return `<div class="lm-popt-in">${inp('lmPollOpt' + i, 'opt', value, 'maxlength="40" placeholder="보기 ' + (i + 1) + '"')}${i >= 2 ? `<button type="button" data-a="poll-del" aria-label="보기 ${i + 1} 빼기">${ico(P.x, 16)}</button>` : ''}</div>`;
@@ -4476,6 +4495,18 @@
     if (!sheet) return;
     sheet.querySelectorAll('[data-rv-etc]').forEach(function (el) { st.rv.etc[el.dataset.rvEtc] = String(el.value || '').trim(); });
   }
+  // 올리기 단추: 꼭 채울 칸이 차야 켜진다. 꺼져 보여도 누르면 무엇이 빠졌는지 알려 준다
+  function paintGo() {
+    if (!sheet || SH.kind !== 'post') return;
+    const f = sheet.querySelector('form[data-form="post"]'), go = f && f.querySelector('[data-go]');
+    if (!go) return;
+    let ok = !!String((f.elements.title && f.elements.title.value) || '').trim();
+    if (ok && SH.cat === 'gear' && SH.gkind === 'review' && (!SH.id || SH.editRv)) {
+      const typed = String((f.querySelector('[data-gear-q]') || {}).value || '').trim();
+      ok = !!(SH.gear || typed) && !!SH.rv.rating && !!SH.rv.period && !!SH.rv.uses;
+    }
+    go.classList.toggle('off', !ok);
+  }
   // 제목이 비었거나 저절로 채운 그대로면 '장비 이름 사용 후기'로 채운다(대표님 11-09)
   function rvAutoTitle(st) {
     if (!sheet || st.id) return;
@@ -4502,18 +4533,19 @@
     if (tip && !st.gear) tip.textContent = on ? '후기는 장비를 골라야 올라가요. 목록에 없으면 이름을 적고 \'직접 추가\'를 눌러요.' : '특정 장비 이야기면 골라 주세요. 중고 시세 단추가 같이 붙어요.';
     const mine = sheet.querySelector('[data-rv-mine]');
     const ph = sheet.querySelector('[data-rv-photo-hint]');
-    if (ph) ph.hidden = !on;
+    if (ph) ph.hidden = !(on && (st.photos || []).length); // 사진을 고른 뒤에만
     if (sheet.querySelector('[data-thumbs]')) refreshThumbs();
     if (mine) {
       mine.hidden = !(on && st.gear);
       mine.textContent = st.gear && st.gear.id ? '올리면 이 장비가 내 장비에 들어가요.' : '목록에 없는 장비라 내 장비에는 안 들어가요. 낭만플랜 장비관리에서 직접 등록할 수 있어요.';
     }
     if (on) rvAutoTitle(st);
+    paintGo();
   }
   function rvTextsHtml(p) {
     const val = p ? rvSplitBody(p.body) : {};
     return '<div data-rv-texts hidden>' + RV_TEXTS.map(function (d) {
-      return '<label class="lm-lbl" for="' + d[0] + '">' + esc(d[1]) + ' <span style="font-weight:600;color:var(--sub)">선택</span></label><textarea class="lm-ta" id="' + d[0] + '" name="' + d[0] + '" maxlength="900" placeholder="' + esc(d[2]) + '" style="min-height:64px">' + esc(val[d[0]] || '') + '</textarea>';
+      return '<label class="lm-lbl" for="' + d[0] + '">' + esc(d[1]) + ' <span style="font-weight:600;color:var(--sub)">선택</span></label><textarea class="lm-ta" id="' + d[0] + '" name="' + d[0] + '" maxlength="900" placeholder="' + esc(d[2]) + '" style="min-height:72px">' + esc(val[d[0]] || '') + '</textarea>';
     }).join('') + '</div>';
   }
   // 저장할 정리 칸과 글 내용. 모자라면 { err }
@@ -4641,9 +4673,9 @@
   // 점수 표시는 노골적이라 뺐고, 설명은 뜻이 끊기는 자리에서 줄을 바꾼다(대표님 11-17)
   const PICKS = [
     ['ask', 'ask', '질문하기', ['초보 질문도 환영해요', '답이 달리면 알려 드려요']],
-    ['story', 'hill', '백패킹 이야기', ['다녀온 박지,', '소소한 일상']],
-    ['gear', 'pack', '장비 후기', ['쓰던 장비,', '별점과 한 줄이면 돼요']],
-    ['poll', 'bars', '투표 만들기', ['보기만 적으면 끝']],
+    ['story', 'hill', '백패킹 이야기', ['백패킹에 관한', '소소한 이야기']],
+    ['gear', 'pack', '장비 후기', ['내가 써 본 장비,', '다음 사람을 위한 후기']],
+    ['poll', 'bars', '투표 만들기', ['평소에 궁금했던 걸', '투표해 보세요']],
     ['suggestion', 'lock', '건의', ['나와 운영팀만 봐요']]
   ];
   function openPostPick() {
@@ -4652,56 +4684,50 @@
       return '<button type="button" class="lm-pk k-' + x[0] + (i ? '' : ' big') + '" data-a="pick-post" data-v="' + x[0] + '"><i>' + ico(P[x[1]], i ? 21 : 24) + '</i><span><b>' + esc(x[2]) + '</b><small>' + x[3].map(esc).join('<br>') + '</small></span></button>';
     }).join('') + '</div>', { kind: 'post-pick' });
   }
-  // 질문하기 (대표님 11-17 시안 3): 주제 칩은 고르면 제목 앞에 [장비]처럼 붙는다(따로 저장할 칸이 없어서)
-  const ASK_TOPICS = ['장비', '박지', '날씨·계절', '초보', '기타'];
-  const askTopicsHtml = function () {
-    return ASK_TOPICS.map(function (x) {
-      const on = SH.topic === x;
-      return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="atopic" data-v="' + esc(x) + '">' + esc(x) + '</button>';
-    }).join('');
-  };
-  function paintAskTopics() {
-    const el = sheet && sheet.querySelector('[data-ask-topics]');
-    if (el) el.innerHTML = askTopicsHtml();
-  }
+  // 질문하기 (대표님 11-17 시안 3)
   function postFormHtml(p, cat) {
     const poll = cat === 'poll', gear = cat === 'gear';
     if (!p && SH.ask) {
       return `<h3 id="loungeSheetTitle">질문하기</h3><p class="lm-ssub">선배 낭만루터가 답해 드려요<br>답이 달리면 알림으로 알려 드려요</p>
-      <form data-form="post" novalidate autocomplete="off">
-        <div class="lm-chipline" role="radiogroup" aria-label="주제 (고르면 제목 앞에 붙어요)" data-ask-topics>${askTopicsHtml()}</div>
-        <label class="lm-lbl" for="lmPostTitle">궁금한 것 한 줄 <b aria-hidden="true">*</b></label>${inp('lmPostTitle', 'title', '', 'maxlength="72" required data-autofocus placeholder="예) 12월 선자령, 침낭 몇 도짜리면 될까요?"')}
+      <form data-form="post" class="lm-pform" novalidate autocomplete="off">
+        <label class="lm-lbl" for="lmPostTitle">궁금한 것 한 줄 <b aria-hidden="true">*</b></label>${inp('lmPostTitle', 'title', '', 'maxlength="72" required data-autofocus placeholder="예) 처음 백패킹 가는데 꼭 챙겨야 할 게 뭘까요?"')}
         <div data-body-field>${field('lmPostBody', '조금 더 알려 주면 답이 빨라져요 (선택)', '<textarea class="lm-ta" id="lmPostBody" name="body" maxlength="3000" placeholder="언제, 어디로, 지금 가진 장비는 뭔지" style="min-height:96px"></textarea>')}</div>
-        <span class="lm-lbl">사진 <span data-pcount>0</span>/5</span>
-        <div class="lm-thumbs" data-thumbs>${thumbsHtml()}</div>
-        <label class="lm-file">${ico(P.img, 18)}<span>사진 추가</span><input type="file" accept="image/*,.heic,.heif" multiple data-post-files hidden></label>
-        <button type="submit" class="lm-btn main lm-askgo">질문 올리기</button>
-        <p class="lm-hint" style="text-align:center">사진·내용 없이 한 줄만 올려도 돼요</p>
+        <span class="lm-lbl">사진 (선택)</span>${photoRowHtml()}
+        <div class="lm-go"><button type="submit" class="lm-btn main lm-askgo off" data-go>질문 올리기</button>
+        <p class="lm-hint">사진·내용 없이 한 줄만 올려도 돼요</p></div>
       </form>`;
     }
     const rv = gear && (p ? isRvPost(p) : SH.gkind === 'review');
-    const ttl = gear ? '장비 ' + (rv ? '후기' : '질문') + (p ? ' 고치기' : (rv ? ' 쓰기' : '하기')) : (p ? '글 고치기' : '새 글');
-    return `<h3 id="loungeSheetTitle">${ttl}</h3>
-      <form data-form="post" novalidate autocomplete="off">
-        ${gear ? '' : `<div class="lm-chipline" role="radiogroup" aria-label="분류">${POST_CATS.map(function (c) {
+    // 고르기 창에서 칸을 골라 들어오면 그 칸에 맞는 머리·안내·예시·단추 (대표님 11-17: 눌러 들어가도 예전과 똑같다). 고치기는 그대로
+    const M = !p ? FORM_MODES[SH.mode] : null;
+    const ttl = M ? M.h : gear ? '장비 ' + (rv ? '후기' : '질문') + (p ? ' 고치기' : (rv ? ' 쓰기' : '하기')) : (p ? '글 고치기' : '새 글');
+    // 사진은 내용을 다 쓴 뒤 맨 아래에서 (대표님 11-17: 처음부터 사진을 올리라고 하지 말 것)
+    const phHtml = '<span class="lm-lbl">사진 (선택)</span>' + photoRowHtml() + '<p class="lm-hint" data-rv-photo-hint hidden>사진 아래 \'장비 사진\'을 누르면 그 사진이 글 위 장비 카드와 장비 정보에 쓰여요.</p>';
+    return `<h3 id="loungeSheetTitle">${ttl}</h3>${M ? '<p class="lm-ssub">' + M.sub.map(esc).join('<br>') + '</p>' : ''}
+      <form data-form="post" class="lm-pform" novalidate autocomplete="off">
+        ${gear || M ? '' : `<div class="lm-chipline" role="radiogroup" aria-label="분류">${POST_CATS.map(function (c) {
           const on = c[0] === cat;
           return '<button type="button" role="radio" aria-checked="' + on + '" class="' + (on ? 'on' : '') + '" data-a="pcat" data-v="' + c[0] + '"' + (p ? ' disabled' : '') + '>' + (c[0] === 'suggestion' ? ico(P.lock, 13) + ' ' : '') + esc(c[1]) + '</button>';
         }).join('')}</div>`}
-        <p class="lm-hint" data-private-note ${cat === 'suggestion' ? '' : 'hidden'}>건의는 나와 운영팀만 볼 수 있어요. 답변이 달리면 알림으로 알려 드려요.</p>
+        <p class="lm-hint" data-private-note ${cat === 'suggestion' && !M ? '' : 'hidden'}>건의는 나와 운영팀만 볼 수 있어요. 답변이 달리면 알림으로 알려 드려요.</p>
         ${p && !gear ? '<p class="lm-hint">분류는 올린 뒤에 바꿀 수 없어요.</p>' : ''}
         ${gearFieldsHtml(p, cat, SH)}
-        <label class="lm-lbl" for="lmPostTitle"><span data-title-lbl>${poll ? '질문' : '제목'}</span> <b aria-hidden="true">*</b></label>${inp('lmPostTitle', 'title', p && p.title, 'maxlength="80" required data-autofocus placeholder="' + (poll ? '무엇을 물어볼까요?' : '제목') + '"')}
+        <label class="lm-lbl" for="lmPostTitle"><span data-title-lbl>${M && M.tl ? M.tl : poll ? '질문' : '제목'}</span> <b aria-hidden="true">*</b></label>${inp('lmPostTitle', 'title', p && p.title, 'maxlength="80" required data-autofocus placeholder="' + (M && M.tp ? M.tp : poll ? '무엇을 물어볼까요?' : '제목') + '"')}
         ${!p || isRvPost(p) ? rvTextsHtml(p) : ''}
         ${pollFieldsHtml(p, cat)}
-        <div data-body-field>${field('lmPostBody', poll ? '설명 (선택)' : '내용', '<textarea class="lm-ta" id="lmPostBody" name="body" maxlength="3000" placeholder="' + (poll ? '덧붙일 말이 있으면 적어요' : '어떤 이야기를 나눌까요?') + '" style="min-height:' + (poll ? 72 : 140) + 'px">' + esc(p && p.body) + '</textarea>')}</div>
-        <span class="lm-lbl">사진 <span data-pcount>${(SH.photos || []).length}</span>/5</span>
-        <p class="lm-hint" data-rv-photo-hint hidden>사진 아래 '장비 사진'을 누르면 그 사진이 글 위 장비 카드와 장비 정보에 쓰여요.</p>
-        <div class="lm-thumbs" data-thumbs>${thumbsHtml()}</div>
-        <label class="lm-file">${ico(P.img, 18)}<span>사진 추가</span><input type="file" accept="image/*,.heic,.heif" multiple data-post-files hidden></label>
+        <div data-body-field>${field('lmPostBody', M && M.bl ? M.bl : poll ? '설명 (선택)' : '내용', '<textarea class="lm-ta" id="lmPostBody" name="body" maxlength="3000" placeholder="' + (M && M.bp ? M.bp : poll ? '덧붙일 말이 있으면 적어요' : '어떤 이야기를 나눌까요?') + '" style="min-height:' + (poll ? 72 : 140) + 'px">' + esc(p && p.body) + '</textarea>')}</div>
+        ${phHtml}
         ${p ? '' : '<p class="lm-hint" data-rv-mine hidden style="margin-top:16px">올리면 이 장비가 내 장비에 들어가요.</p>'}
-        <button type="submit" class="lm-btn main">${p ? '저장' : '올리기'}</button>
+        <div class="lm-go"><button type="submit" class="lm-btn main${p ? '' : ' off'}" data-go>${p ? '저장' : M ? M.btn : '올리기'}</button></div>
       </form>`;
   }
+  // 고르기 칸별 양식 문구 (대표님 11-17). 장비 후기는 칸이 이미 따로 있어 머리·안내·단추만
+  const FORM_MODES = {
+    story: { h: '백패킹 이야기', sub: ['백패킹에 관한', '소소한 이야기'], tl: '제목', tp: '예) 첫 백패킹 가기 전날, 설레서 잠이 안 와요', bl: '이야기', bp: '백패킹 하며 겪은 일, 요즘 드는 생각을 편하게 적어요', btn: '이야기 올리기' },
+    poll: { h: '투표 만들기', sub: ['평소에 궁금했던 걸', '투표해 보세요'], tl: '질문', tp: '예) 백패킹 갈 때 의자 챙기세요?', bl: '설명 (선택)', bp: '덧붙일 말이 있으면 적어요', btn: '투표 올리기' },
+    suggestion: { h: '건의', sub: ['나와 운영팀만 볼 수 있어요', '답변이 달리면 알림으로 알려 드려요'], tl: '제목', tp: '예) 지도에서 화장실 위치도 보고 싶어요', bl: '내용', bp: '어떤 화면에서, 무엇이 불편했는지 적어 주세요', btn: '건의 보내기' },
+    gear: { h: '장비 후기', sub: ['나의 장비 사용 후기를', '알려 주세요'], btn: '후기 올리기' }
+  };
   function openPostForm(p, cat0, pre) {
     if (needLogin('로그인하면 글을 쓸 수 있어요')) return;
     if (p && !isMine(p.user_id)) return;
@@ -4709,7 +4735,7 @@
     const st = { kind: 'post', id: p ? p.id : null, cat: cat, pollDays: 7, pollKind: 'choice', pollSource: 'spot', photos: postPhotos(p || {}).map(function (u) { return { url: u }; }),
       gkind: (pre && pre.kind) || S.gkind, gear: (pre && pre.gear) || null,
       gcat: (pre && pre.gear && pre.gear.cat) || (pre && pre.cat) || (S.gcat !== 'all' ? S.gcat : null), rv: newRv(), autoTitle: '',
-      ask: !p && !!(pre && pre.ask), topic: '' };
+      ask: !p && !!(pre && pre.ask), mode: !p && pre && pre.mode ? pre.mode : '' };
     if (isRvPost(p)) {
       st.editRv = true;
       st.gkind = 'review';
@@ -4729,6 +4755,8 @@
     if (!sheet || !PHOTO_MAX[SH.kind]) return;
     sheet.querySelector('[data-thumbs]').innerHTML = thumbsHtml();
     sheet.querySelector('[data-pcount]').textContent = String(SH.photos.length);
+    const hint = sheet.querySelector('[data-rv-photo-hint]');
+    if (hint) hint.hidden = !(SH.kind === 'post' && SH.cat === 'gear' && SH.gkind === 'review' && SH.photos.length);
   }
   async function onPostFiles(input) {
     const files = Array.prototype.slice.call(input.files || []);
@@ -4779,7 +4807,6 @@
       body = got.body;
     }
     if (!title) { toast(st.ask ? '궁금한 것을 한 줄 적어 주세요' : '제목을 적어 주세요', true); f.elements.title.focus(); return; }
-    if (st.ask && st.topic && title.indexOf('[' + st.topic + ']') !== 0) title = ('[' + st.topic + '] ' + title).slice(0, 80);
     if (st.photos.some(function (ph) { return ph.uploading; })) { toast('사진을 올리는 중이에요. 잠시 뒤 다시 눌러 주세요', true); return; }
     const photos = st.photos.map(function (ph) { return ph.url; }).filter(function (u) { return okbmSafeImageUrl(u); }).slice(0, 5);
     const row0 = { user_id: me, category: st.cat, title: title, body: body, photos: photos };
@@ -5560,10 +5587,9 @@
         if (v === 'ask') { openPostForm(null, 'backpacking', { ask: true }); break; }
         openPostForm(null, v === 'poll' || v === 'gear' ? v : null, v === 'gear' ? { kind: 'review' } : null); break;
       case 'pick-post':
-        if (v === 'gear') openPostForm(null, 'gear', { kind: 'review' });
-        else openPostForm(null, v === 'poll' || v === 'suggestion' ? v : 'backpacking', v === 'ask' ? { ask: true } : null);
+        if (v === 'gear') openPostForm(null, 'gear', { kind: 'review', mode: 'gear' });
+        else openPostForm(null, v === 'poll' || v === 'suggestion' ? v : 'backpacking', v === 'ask' ? { ask: true } : { mode: v });
         break;
-      case 'atopic': if (SH.kind === 'post' && SH.ask) { SH.topic = SH.topic === v ? '' : v; paintAskTopics(); } break;
       // 홈 알약 '전체 보기': 그 말머리를 고른 채로 자유게시판을 연다
       case 'hub-all': {
         if (v === 'gear') { S.gt.kind = 'review'; openLoungeWindow(TAB_GEAR, null, t); break; }
@@ -5824,6 +5850,7 @@
     }
     if (t.hasAttribute && t.hasAttribute('data-t3-q')) { t3State(t.dataset.post).q[Number(t.dataset.i)] = t.value; clearTimeout(searchTimer); searchTimer = setTimeout(function () { t3Suggest(t); }, 120); return; }
     if (!sheet || !sheet.contains(t)) return;
+    if (SH.kind === 'post') paintGo();
     if (t.dataset.about != null && SH.items && SH.items[Number(t.dataset.about)]) SH.items[Number(t.dataset.about)].about = t.value;
     else if (t.dataset.link != null && SH.items && SH.items[Number(t.dataset.link)]) SH.items[Number(t.dataset.link)].link_url = t.value.trim();
     else if (t.dataset.price != null && SH.items && SH.items[Number(t.dataset.price)]) SH.items[Number(t.dataset.price)].price_krw = Number(t.value) || 0;
