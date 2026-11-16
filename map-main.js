@@ -3629,7 +3629,7 @@ function updateSmartResetButtons() {
       var GPX_GUIDE_HIDDEN_KEY = 'okbm_gpx_guide_hidden';
       var GPX_OFF_ROUTE_M = 50;
       var GPX_FAR_M = 5000;          // 이보다 멀면 아직 산에 안 간 것으로 보고 경고하지 않는다
-      var GPX_BAD_ACCURACY_M = 150;  // 위치 오차가 이보다 크면 길 위치를 말하지 않는다(안드로이드 앱은 대략 위치)
+      var GPX_BAD_ACCURACY_M = 150;  // 위치 오차가 이보다 크면 길 위치를 말하지 않는다(대략 위치만 허락한 폰)
       var gpxTrack = null;           // { pts: [[lat, lng], ...], cum: [누적 m], spotAlong: m | null }
       var gpxCheckBusy = false, gpxLastCheckAt = 0;
 
@@ -3754,8 +3754,9 @@ function updateSmartResetButtons() {
         const nativeGeo = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation;
         const useNativeGeo = !!(nativeGeo && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
         if (!useNativeGeo && !navigator.geolocation) return onFail('unsupported');
-        // 안드로이드 앱은 대략 위치 권한만 받는다(구글 플레이 위치 정책, 2027-01-27). 아이폰은 그대로 정확한 위치.
-        const highAccuracy = !(useNativeGeo && typeof window.Capacitor.getPlatform === 'function' && window.Capacitor.getPlatform() === 'android');
+        // 11-16 대표님: 안드로이드도 GPX 길 안내가 되게 정확한 위치를 요청한다. 앱에 정밀 위치 권한(ACCESS_FINE_LOCATION)이
+        // 없는 옛 안드로이드 앱(0.9.3까지)은 위치 플러그인이 알아서 대략 위치만 묻는다(@capacitor/geolocation getAlias).
+        const highAccuracy = true;
         if (useNativeGeo) nativeGeo.getCurrentPosition({ enableHighAccuracy: highAccuracy, timeout: 15000 }).then(onOk, onFail);
         else navigator.geolocation.getCurrentPosition(onOk, onFail, { enableHighAccuracy: true, timeout: 20000, maximumAge: 10000 });
       }
