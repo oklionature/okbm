@@ -1608,6 +1608,7 @@
           if (!map) return;
           const loc = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
           showUserLocationDot(loc);
+          if (showGpxGuideAt(pos, loc)) return;   // 등산로를 켜 둔 산길: 같은 위치로 길 안내 줄까지
           map.setLevel(7, { animate: true }); map.panTo(loc);
           showToast('현재 내 위치로 이동했습니다', { html: ICONS.PIN });
         }, (err) => {
@@ -3625,16 +3626,16 @@ function updateSmartResetButtons() {
       }
 
       // GPX 길 안내 (11-05): 켜 둔 선은 휴대폰에 저장해 앱·사이트를 다시 열어도 남는다(데이터가 안 터져도 선은 그린다).
-      // 화면을 다시 켤 때마다 위치를 한 번 받아 선 위 어디쯤인지(길에서 떨어진 거리, 박지까지 길 따라 남은 거리)를 보여 주고,
-      // 50m 넘게 벗어났으면 진동과 빨간 줄로 알린다. 화면이 꺼져 있는 동안 위치를 계속 따라가지는 않는다.
+      // '내 위치'나 '다시 확인'을 누르면 위치를 한 번 받아 선 위 어디쯤인지(길에서 떨어진 거리, 박지까지 길 따라 남은 거리)를 보여 주고,
+      // 50m 넘게 벗어났으면 진동과 빨간 줄로 알린다. 누르지 않으면 위치를 읽지 않는다(11-17).
       var GPX_ACTIVE_KEY = 'okbm_gpx_active';
-      // 길 안내 줄의 ✕는 안내 줄만 닫는다(선은 그대로). 다시 켤 때까지 위치 확인·진동도 멈춘다(대표님 11-05)
+      // 길 안내 줄의 ✕는 안내 줄만 닫는다(선은 그대로). 다시 켤 때까지 길 안내·진동도 멈춘다(대표님 11-05)
       var GPX_GUIDE_HIDDEN_KEY = 'okbm_gpx_guide_hidden';
       var GPX_OFF_ROUTE_M = 50;
       var GPX_FAR_M = 5000;          // 이보다 멀면 아직 산에 안 간 것으로 보고 경고하지 않는다
       var GPX_BAD_ACCURACY_M = 150;  // 위치 오차가 이보다 크면 길 위치를 말하지 않는다(대략 위치만 허락한 폰)
       var gpxTrack = null;           // { pts: [[lat, lng], ...], cum: [누적 m], spotAlong: m | null }
-      var gpxCheckBusy = false, gpxLastCheckAt = 0;
+      var gpxCheckBusy = false;
 
       function gpxMeters(lat0) {
         return { y: 110540, x: 111320 * Math.cos(lat0 * Math.PI / 180) };
@@ -3739,7 +3740,7 @@ function updateSmartResetButtons() {
           var btn = e.target && e.target.closest ? e.target.closest('[data-gpx-act]') : null;
           if (!btn) return;
           if (btn.getAttribute('data-gpx-act') === 'off') hideGpxGuide();
-          else checkGpxPosition(true, true);
+          else checkGpxPosition();
         });
         document.body.appendChild(bar);
         return bar;
@@ -3753,11 +3754,9 @@ function updateSmartResetButtons() {
       }
 
       // 앱 안에서는 기기 위치 기능을 쓴다. 웹 위치 기능을 쓰면 아이폰이 앱 허락 창 뒤에 사이트 허락 창을 한 번 더 띄운다.
-      // silent: 지도를 열거나 화면을 다시 켤 때처럼 낭만루터가 누르지 않은 확인. 이미 허락받은 위치만 조용히 읽고
-      // 아무 창도 띄우지 않는다(11-16 대표님: 위치 단추·GPX를 누를 때만 묻는다).
-      // 누를 때: 설명 창은 폰마다 한 번만 띄운다. 한 번 물은 뒤 '대략적인 위치'만 받았으면 다시 묻지 않고 대략 위치로 간다.
+      // 낭만루터가 누를 때만 부른다(11-17). 설명 창은 폰마다 한 번만 띄운다. 한 번 물은 뒤 '대략적인 위치'만 받았으면 다시 묻지 않고 대략 위치로 간다.
       var LOC_WHY_SHOWN_KEY = 'okbm_loc_why_shown';
-      function getDevicePosition(onOk, onFail, silent) {
+      function getDevicePosition(onOk, onFail) {
         const nativeGeo = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation;
         const useNativeGeo = !!(nativeGeo && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
         if (!useNativeGeo && !navigator.geolocation) return onFail('unsupported');
@@ -3768,7 +3767,6 @@ function updateSmartResetButtons() {
         };
         okbmLocationPerm(useNativeGeo ? nativeGeo : null).then(function(perm) {
           if (perm.fine) return ask(true);
-          if (silent) return perm.coarse ? ask(false) : onFail({ code: 'silent', message: 'not granted' });
           if (perm.denied) return ask(true);   // 거절해 둔 상태: 기기 창이 안 뜨고 실패 → '권한을 허용해주세요' 안내
           if (perm.canAskFine && !okbmLocWhyShown()) {
             return okbmLocationRationale().then(function(go) {
@@ -3848,58 +3846,53 @@ function updateSmartResetButtons() {
         } else { userLocationOverlay.setPosition(loc); userLocationOverlay.setMap(map); }
       }
 
-      // force: 15초 안에 다시 확인하지 않는 제한을 건너뛴다. userTap: 낭만루터가 GPX·'다시 확인'을 눌렀을 때만 true.
-      // 누르지 않은 확인(지도 열 때·화면 다시 켤 때)은 위치를 이미 허락받았을 때만 조용히 읽는다.
-      function checkGpxPosition(force, userTap) {
+      // 위치는 낭만루터가 누를 때만 읽는다(11-17 대표님: 지도를 열거나 화면을 다시 켤 때 몰래 읽으면 폰 위쪽에 위치 사용 표시가 뜨고 배터리만 쓴다).
+      // 누르는 곳: '내 위치', 등산로 선 켜기, 길 안내 줄 '다시 확인'.
+      function checkGpxPosition() {
         if (!gpxTrack || !isKakaoMapReady() || gpxCheckBusy || isGpxGuideHidden()) return;
-        if (!force && Date.now() - gpxLastCheckAt < 15000) return;
         gpxCheckBusy = true;
-        gpxLastCheckAt = Date.now();
-        // 11-16 대표님: 길에서 멀리 있을 땐(집에서 미리 볼 때) 안내 줄을 띄우지 않는다. 이미 떠 있을 때만 '확인 중'을 보여 준다
         var barShown = !!document.getElementById('okbmGpxGuide');
         if (barShown) setGpxGuide('내 위치 확인 중…', '');
         getDevicePosition(function(pos) {
           gpxCheckBusy = false;
-          if (!gpxTrack) return;
-          var lat = pos.coords.latitude, lng = pos.coords.longitude, acc = Number(pos.coords.accuracy) || 0;
-          var loc = new kakao.maps.LatLng(lat, lng);
-          var near = nearestOnGpx(gpxTrack, lat, lng);
-          if (!near) return;
-          // 11-17 대표님: 파란 내 위치 점은 '내 위치'를 눌렀을 때만. 지도를 열거나 화면을 다시 켤 때의 조용한 확인은 점을 찍지 않는다.
-          // 산길(5km 안)에서 등산로 '다시 확인'을 눌렀을 때만 길 안내와 함께 점을 보여 준다.
-          if (userTap && near.dist <= GPX_FAR_M) showUserLocationDot(loc);
-          if (near.dist > GPX_FAR_M) {
-            // 아직 산에 안 간 것: 안내 줄을 치운다. 들머리에서 앱을 다시 열면(visibilitychange) 저절로 다시 본다
-            var far = document.getElementById('okbmGpxGuide');
-            if (far) far.remove();
-            return;
-          }
-          // 산길이 보이게 확대한다(이미 더 가까이 보고 있으면 그대로)
-          if (map.getLevel() > 5) map.setLevel(5, { animate: false });
-          map.panTo(loc);
-          if (acc > GPX_BAD_ACCURACY_M) {
-            setGpxGuide('위치가 정확하지 않아요(±' + gpxDistanceText(acc) + '). 하늘이 트인 곳에서 다시 확인해 주세요', 'warn');
-            return;
-          }
-          var spotAlong = gpxSpotAlong();
-          var left = spotAlong != null ? Math.abs(spotAlong - near.along) : null;
-          var leftText = left != null ? (left < 30 ? ' · 박지에 거의 다 왔어요' : ' · 박지까지 길 따라 ' + gpxDistanceText(left)) : '';
-          if (near.dist > GPX_OFF_ROUTE_M) {
-            setGpxGuide('길에서 ' + gpxDistanceText(near.dist) + ' 벗어났어요 · 길은 ' + gpxDirectionWord(lat, lng, near.lat, near.lng) + '에 있어요', 'off');
-            if (typeof triggerHaptic === 'function') triggerHaptic(400);
-            else if (navigator.vibrate) navigator.vibrate([300, 120, 300]);
-            if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_gpx_guide_offroute', 'event');
-          } else {
-            setGpxGuide('길 위에 있어요' + leftText, 'ok');
-          }
+          var loc = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+          showUserLocationDot(loc);
+          showGpxGuideAt(pos, loc);
         }, function(err) {
           gpxCheckBusy = false;
-          if (err && err.code === 'silent') {
-            if (barShown) { var bar = document.getElementById('okbmGpxGuide'); if (bar) bar.remove(); }
-            return;
-          }
           if (barShown) setGpxGuide('위치를 받지 못했어요. 위치 권한을 확인해 주세요', 'warn');
-        }, !userTap);
+        });
+      }
+
+      // 받은 위치로 길 안내 줄을 고친다. 산길(선에서 5km 안)이면 산길이 보이게 확대하고 true.
+      // 11-16 대표님: 길에서 멀리 있을 땐(집에서 미리 볼 때) 안내 줄을 띄우지 않는다.
+      function showGpxGuideAt(pos, loc) {
+        if (!gpxTrack || isGpxGuideHidden()) return false;
+        var lat = pos.coords.latitude, lng = pos.coords.longitude, acc = Number(pos.coords.accuracy) || 0;
+        var near = nearestOnGpx(gpxTrack, lat, lng);
+        if (!near || near.dist > GPX_FAR_M) {
+          var far = document.getElementById('okbmGpxGuide');
+          if (far) far.remove();
+          return false;
+        }
+        if (map.getLevel() > 5) map.setLevel(5, { animate: false });
+        map.panTo(loc);
+        if (acc > GPX_BAD_ACCURACY_M) {
+          setGpxGuide('위치가 정확하지 않아요(±' + gpxDistanceText(acc) + '). 하늘이 트인 곳에서 다시 확인해 주세요', 'warn');
+          return true;
+        }
+        var spotAlong = gpxSpotAlong();
+        var left = spotAlong != null ? Math.abs(spotAlong - near.along) : null;
+        var leftText = left != null ? (left < 30 ? ' · 박지에 거의 다 왔어요' : ' · 박지까지 길 따라 ' + gpxDistanceText(left)) : '';
+        if (near.dist > GPX_OFF_ROUTE_M) {
+          setGpxGuide('길에서 ' + gpxDistanceText(near.dist) + ' 벗어났어요 · 길은 ' + gpxDirectionWord(lat, lng, near.lat, near.lng) + '에 있어요', 'off');
+          if (typeof triggerHaptic === 'function') triggerHaptic(400);
+          else if (navigator.vibrate) navigator.vibrate([300, 120, 300]);
+          if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_gpx_guide_offroute', 'event');
+        } else {
+          setGpxGuide('길 위에 있어요' + leftText, 'ok');
+        }
+        return true;
       }
 
       function saveGpxActive(sId, url, pts) {
@@ -3915,12 +3908,7 @@ function updateSmartResetButtons() {
         if (!saved || !saved.id || !Array.isArray(saved.pts) || saved.pts.length < 2 || !isKakaoMapReady()) return;
         drawGpxPath(String(saved.id), saved.pts);
         activeGpxUrl = saved.url || null;
-        checkGpxPosition(true);
       }
-
-      document.addEventListener('visibilitychange', function() {
-        if (document.visibilityState === 'visible' && gpxTrack) checkGpxPosition(false);
-      });
 
       function parseGpxPoints(gpxText) {
         const xml = new DOMParser().parseFromString(gpxText, 'text/xml');
@@ -4283,9 +4271,9 @@ function updateSmartResetButtons() {
           activeGpxUrl = wantUrl;
           saveGpxActive(sId, gpxUrl.trim(), pts);
           try { localStorage.removeItem(GPX_GUIDE_HIDDEN_KEY); } catch (e) {}
-          showToast('등산로 선을 켰어요. 화면을 다시 켤 때마다 길 위 내 위치를 알려 드려요', { html: ICONS.HIKING });
+          showToast('GPX를 켰어요. \'내 위치\'를 누르면 정확한 위치를 알려드려요', { html: ICONS.HIKING });
           refreshCurrentSpotPopup();
-          checkGpxPosition(true, true);
+          checkGpxPosition();
         } catch (err) {
           showToast('등산로 파일을 불러올 수 없습니다.', { html: ICONS.ALERT_CARD });
         }
