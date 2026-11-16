@@ -212,12 +212,7 @@
     '.okbm-ring>svg{display:block;width:100%;height:100%}',
     // 플로깅 피드 테두리
     // 앱은 화면이 상태바(시계 줄) 뒤까지 깔려 윗선이 가려진다: 머리줄처럼 상태바 높이만큼 내려 시작한다
-    '.okbm-plog-frame{position:absolute;inset:0;top:var(--okbm-status-top, env(safe-area-inset-top, 0px));border:4px solid #34d399;border-radius:18px;pointer-events:none;z-index:399;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),inset 0 0 22px rgba(52,211,153,.45)}',
-    // 낭만피드 플로깅 띠: 머리줄(아바타·이름·박지) 바로 아래 (대표님 11-16)
-    '.okbm-plog-band{position:absolute;top:calc(var(--okbm-status-top, 0px) + 64px);left:14px;max-width:calc(100% - 28px);z-index:400;pointer-events:none;display:inline-flex;align-items:center;gap:6px;padding:6px 12px 6px 9px;border-radius:999px;background:linear-gradient(90deg,#059669,#047857);border:1px solid #6ee7b7;box-shadow:0 2px 12px rgba(0,0,0,.55),0 0 14px rgba(52,211,153,.4);color:#ecfdf5;font-size:0.78rem;line-height:1.2;white-space:nowrap;overflow:hidden}',
-    '.okbm-plog-band svg{width:15px;height:15px;flex:none;color:#ffffff}',
-    '.okbm-plog-band b{font-weight:900;color:#ffffff;flex:none}',
-    '.okbm-plog-band span{font-weight:700;overflow:hidden;text-overflow:ellipsis}',
+    '.okbm-plog-frame{position:absolute;inset:0;top:var(--okbm-status-top, env(safe-area-inset-top, 0px));border:3px solid #34d399;border-radius:18px;pointer-events:none;z-index:399;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35)}',
     '.okbm-plog-chip{display:inline-flex;align-items:center;gap:3px;flex-shrink:0;padding:2px 8px 2px 6px;border-radius:999px;background:rgba(4,30,20,.82);border:1px solid rgba(52,211,153,.55);color:#a7f3d0;font-size:0.7rem;font-weight:800;line-height:1.2;text-shadow:none}',
     '.okbm-plog-chip svg{width:13px;height:13px;color:#34d399}',
     '.okbm-plog-rail{border:1.5px solid #34d399 !important}'

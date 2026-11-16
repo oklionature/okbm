@@ -7894,7 +7894,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     return out;
   };
 
-  // 플로깅 피드는 맨 앞에 하나, 그 뒤로 새 글 하나마다 하나씩 끼운다(대표님 11-16). 다 끼우면 그 뒤는 원래 순서.
+  // 플로깅 피드는 맨 앞에 하나, 그 뒤로 새 글 5개마다 하나씩 끼운다(대표님 11-16). 다 끼우면 그 뒤는 원래 순서.
   // 공개 플로깅 피드를 다녀온 날짜 최신순으로 따로 받아, 날짜 자리에서는 빼고 이 자리에만 둔다.
   var PLOG_PICK_POOL = 30;
   window.__okbmPlogPickRows = window.__okbmPlogPickRows || [];
@@ -7937,15 +7937,19 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
   };
 
   // list는 예전 글까지 끼운 목록. newBefore = 이미 보인 새 글(예전 글·플로깅 글 아닌 것) 수. 0이면 맨 앞에도 하나 둔다.
+  // 새 글 하나마다는 너무 잦아 5개마다로 줄였다(대표님 11-16).
+  var PLOG_PICK_EVERY = 5;
   window.okbmInterleavePlogPicks = function(list, plogs, newBefore, isEnd) {
     var oldIds = window.__okbmOldPickIds || new Set();
     var out = [];
+    var n = newBefore || 0;
     var p = 0;
-    if (!(newBefore > 0) && plogs.length) out.push(plogs[p++]);
+    if (n === 0 && plogs.length) out.push(plogs[p++]);
     list.forEach(function(item) {
       out.push(item);
       if (oldIds.has(String(item && item.id || '').trim())) return;
-      if (p < plogs.length) out.push(plogs[p++]);
+      n += 1;
+      if (n % PLOG_PICK_EVERY === 0 && p < plogs.length) out.push(plogs[p++]);
     });
     if (isEnd) {
       for (; p < plogs.length; p++) out.push(plogs[p]);
@@ -8923,8 +8927,6 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       headerBarHtml +
       okbmFeedPhotoCountHtml(cardId, totalPhotosCount) +
       (isPlogged ? '<div class="okbm-plog-frame" aria-hidden="true"></div>' : '') +
-      // 플로깅 피드는 머리줄 아래에 띠 한 줄을 더 둔다(대표님 11-16, 모양은 badge-ring.js CSS)
-      (isPlogged ? '<div class="okbm-plog-band">' + (typeof window.okbmPlogIcon === 'function' ? window.okbmPlogIcon() : '') + '<b>플로깅 피드</b><span>· 박지 주변 쓰레기를 주웠어요</span></div>' : '') +
 
       '<div class="reel-media-stage">' +
         '<div style="width:100% !important; height:100% !important; position:relative; overflow:hidden; background:#000000;">' +
@@ -9314,7 +9316,7 @@ window.renderHistoryStage = function(isLoading, opts) {
 
     currentList = sortDescFn(currentList);
 
-    // 최신 글 2개마다 예전 글 1개, 그다음 플로깅 글을 맨 앞과 새 글 하나마다 끼운다.
+    // 최신 글 2개마다 예전 글 1개, 그다음 플로깅 글을 맨 앞과 새 글 5개마다 끼운다.
     // 예전 글·플로깅 글은 최신순 자리에서 빼고 뽑힌 순서대로 끼운다(둘 다인 글은 플로깅 자리로).
     if (oldPickIds.size || plogPickIds.size) {
       var pickById = {};
