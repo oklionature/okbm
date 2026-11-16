@@ -847,6 +847,27 @@
       .th-tab-gpx { flex-shrink: 0; font-size: 0.6rem; font-weight: 900; letter-spacing: 0.02em; padding: 1px 5px; border-radius: 4px; border: 1px solid currentColor; opacity: 0.8; }
       .th-panel { display: flex; flex-direction: column; gap: 4px; }
       .th-panel[hidden], .btn-gpx-track-toggle[hidden] { display: none !important; }
+      /* 관리자 들머리 고치기(I22) */
+      .btn-th-admin { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 10px; border-radius: 8px; border: 1px dashed var(--line-strong); background: none; color: var(--tx-2); font: inherit; font-size: 0.74rem; font-weight: 800; cursor: pointer; }
+      .th-admin-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+      .th-admin-card { border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: var(--bg-2); display: flex; flex-direction: column; gap: 8px; }
+      .th-admin-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+      .th-admin-top:empty { display: none; }
+      .th-admin-main { font-size: 0.66rem; font-weight: 900; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 1px 6px; }
+      .th-admin-hint { font-size: var(--fs-meta); color: var(--tx-3); }
+      .th-admin-f { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-meta); color: var(--tx-2); font-weight: 700; }
+      .th-admin-f input { width: 100%; box-sizing: border-box; height: 42px; padding: 0 10px; background: var(--bg-1); color: var(--tx-1); border: 1px solid var(--line-strong); border-radius: 8px; font: inherit; font-size: 16px; font-weight: 400; }
+      .th-admin-row { display: flex; gap: 6px; }
+      .th-admin-row input { flex: 1; min-width: 0; }
+      .th-admin-row button { flex: none; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line-strong); background: none; color: var(--tx-1); font: inherit; font-size: var(--fs-meta); font-weight: 700; cursor: pointer; }
+      .th-admin-track { display: flex; align-items: center; gap: 8px; font-size: var(--fs-meta); color: var(--tx-2); }
+      .th-admin-track span { flex: none; font-weight: 700; }
+      .th-admin-track select { flex: 1; min-width: 0; height: 36px; background: var(--bg-1); color: var(--tx-1); border: 1px solid var(--line-strong); border-radius: 8px; font: inherit; font-size: 16px; }
+      .th-admin-btns { display: flex; gap: 6px; }
+      .th-admin-btns button { flex: 1; min-height: 40px; border-radius: 8px; font: inherit; font-size: var(--fs-body); font-weight: 800; cursor: pointer; }
+      .th-admin-save { background: var(--accent-fill); color: var(--on-accent); border: 0; }
+      .th-admin-del { background: none; color: var(--danger); border: 1px solid var(--danger); flex: 0 0 30% !important; }
+      .th-admin-add { width: 100%; margin-top: 10px; min-height: 42px; border-radius: 10px; border: 1px dashed var(--line-strong); background: none; color: var(--tx-1); font: inherit; font-size: var(--fs-body); font-weight: 800; cursor: pointer; }
 
     /* 수정 코드 */
       .navi-btn-cell { flex: 1; min-height: 34px; padding: 6px 2px; border-radius: 8px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: 1px solid var(--border-hairline); display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.15s ease; box-sizing: border-box; }
@@ -1727,7 +1748,7 @@
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.124"></script>
+       <script src="map-main.js?v=1.0.125"></script>
     <script src="photo-map.js?v=26" defer></script>
     <script src="spot-tips.js?v=14" defer></script>
     <script src="map-gear-card.js?v=5" defer></script>

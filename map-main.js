@@ -3399,6 +3399,130 @@ function updateSmartResetButtons() {
         }, true);
       }
 
+      // 관리자 들머리 고치기(I22): 이름·주소·좌표 저장, 새 들머리, 지우기, GPX 선 옮기기. 고칠 때마다 상세를 새로 받아 정보창을 다시 그린다
+      async function okbmReloadSpotDetail(spot) {
+        var id = String(spot.id).trim();
+        Object.keys(window.__spotDetailCache || {}).forEach(function(k) { if (k.split(':')[0] === id) delete window.__spotDetailCache[k]; });
+        spot.__detailLoaded = false;
+        await ensureSpotDetailLoaded(spot);
+        applySpotDetailToOpenUi(spot);
+      }
+      function okbmTrailheadAdminCard(h, ths, tracks, mainId) {
+        var esc = escapeHtml;
+        var thOf = function(tr) { return (tr.trailheadId && ths.some(function(o) { return o.id === tr.trailheadId; })) ? tr.trailheadId : mainId; };
+        var mine = h.id ? tracks.filter(function(tr) { return tr.id && thOf(tr) === h.id; }) : [];
+        var ll = h.lat != null ? h.lat.toFixed(6) + ', ' + h.lng.toFixed(6) : '';
+        return '<div class="th-admin-card" data-th-card="' + (h.id || '') + '">' +
+          '<div class="th-admin-top">' + (h.main ? '<span class="th-admin-main">대표</span><span class="th-admin-hint">박지 들머리와 같아요. 여기서 고치면 박지 정보도 바뀌어요</span>' : (h.id ? '' : '<span class="th-admin-hint">새 들머리</span>')) + '</div>' +
+          '<label class="th-admin-f">이름<input data-f="name" maxlength="40" autocomplete="off" value="' + esc(h.name || '') + '" placeholder="예: 수리재 전 갓길 (1~2대)"></label>' +
+          '<label class="th-admin-f">주소<input data-f="addr" maxlength="200" autocomplete="off" value="' + esc(h.addr || '') + '" placeholder="복사·화면에 보이는 주소"></label>' +
+          '<label class="th-admin-f">좌표 (위도, 경도)<span class="th-admin-row"><input data-f="ll" inputmode="decimal" autocomplete="off" value="' + ll + '" placeholder="비우면 주소로 찾아 안내"><button type="button" data-th-act="geo">주소로 찾기</button></span></label>' +
+          mine.map(function(tr) {
+            return '<div class="th-admin-track"><span>GPX ' + esc(tr.km ? tr.km + 'km' : '') + (tr.credit ? ' · ' + esc(tr.credit) : '') + '</span>' +
+              '<select data-th-track="' + tr.id + '" aria-label="이 GPX 선의 들머리">' + ths.map(function(o) { return '<option value="' + o.id + '"' + (o.id === h.id ? ' selected' : '') + '>' + esc(o.name) + '</option>'; }).join('') + '</select></div>';
+          }).join('') +
+          '<div class="th-admin-btns"><button type="button" class="th-admin-save" data-th-act="save">저장</button>' + (h.id && !h.main ? '<button type="button" class="th-admin-del" data-th-act="del">지우기</button>' : '') + '</div>' +
+        '</div>';
+      }
+      function okbmOpenTrailheadAdmin(spotId) {
+        if (!isAdminMode) return;
+        var sId = String(spotId || '').trim();
+        var spot = (currentActiveSpot && String(currentActiveSpot.id).trim() === sId) ? currentActiveSpot : (spots || []).find(function(x) { return String(x.id).trim() === sId; });
+        if (!spot) return;
+        var old = document.getElementById('okbmThAdmin');
+        if (old) old.remove();
+        var wrap = document.createElement('div');
+        wrap.id = 'okbmThAdmin';
+        wrap.className = 'okbm-gpx-send';
+        var render = function() {
+          var ths = spot.trailheads || [];
+          var mainId = (ths.find(function(h) { return h.main; }) || ths[0] || {}).id;
+          wrap.innerHTML = '<div class="okbm-gpx-send-box" role="dialog" aria-modal="true" aria-labelledby="okbmThAdminTitle">' +
+            '<div class="okbm-gpx-send-head"><strong id="okbmThAdminTitle">들머리 고치기</strong><button type="button" data-th-act="close" aria-label="닫기">✕</button></div>' +
+            '<div class="okbm-gpx-send-spot">' + escapeHtml(spot.spot_main || spot.name || '') + '</div>' +
+            '<div class="th-admin-list">' + ths.map(function(h) { return okbmTrailheadAdminCard(h, ths, spot.gpxTracks || [], mainId); }).join('') + '</div>' +
+            '<button type="button" class="th-admin-add" data-th-act="add">+ 들머리 넣기</button>' +
+            '<div class="okbm-gpx-send-msg" role="status"></div>' +
+          '</div>';
+        };
+        render();
+        document.body.appendChild(wrap);
+        var msg = function(t, ok) { var m = wrap.querySelector('.okbm-gpx-send-msg'); if (m) { m.textContent = t || ''; m.style.color = ok ? 'var(--accent)' : ''; } };
+        var errText = function(e) {
+          var m = String(e && e.message || e);
+          if (/name required/.test(m)) return '이름을 적어 주세요';
+          if (/bad coords/.test(m)) return '좌표가 우리나라 밖이에요. 위도, 경도 순서로 적어 주세요';
+          if (/main trailhead/.test(m)) return '대표 들머리는 지울 수 없어요';
+          if (/not authorized/.test(m)) return '관리자만 고칠 수 있어요';
+          return '저장하지 못했어요: ' + m;
+        };
+        var after = async function(text) {
+          await okbmReloadSpotDetail(spot);
+          render();
+          msg(text, true);
+        };
+        wrap.addEventListener('change', async function(e) {
+          var sel = e.target && e.target.closest ? e.target.closest('[data-th-track]') : null;
+          if (!sel) return;
+          msg('옮기는 중…', true);
+          try {
+            await adminGpxRpc('okbm_admin_track_trailhead', { p_track_id: Number(sel.getAttribute('data-th-track')), p_trailhead_id: Number(sel.value) });
+            await after('GPX 선을 옮겼어요');
+          } catch (err) { msg(errText(err)); }
+        });
+        wrap.addEventListener('click', async function(e) {
+          if (e.target === wrap) return wrap.remove();
+          var btn = e.target && e.target.closest ? e.target.closest('[data-th-act]') : null;
+          if (!btn) return;
+          var act = btn.getAttribute('data-th-act');
+          if (act === 'close') return wrap.remove();
+          if (act === 'add') {
+            if (wrap.querySelector('[data-th-card=""]')) return;
+            wrap.querySelector('.th-admin-list').insertAdjacentHTML('beforeend', okbmTrailheadAdminCard({ id: null, name: '', addr: '', lat: null, lng: null, main: false }, spot.trailheads || [], [], null));
+            var nc = wrap.querySelector('[data-th-card=""] [data-f="name"]');
+            if (nc) { nc.scrollIntoView({ block: 'center' }); nc.focus(); }
+            return;
+          }
+          var card = btn.closest('[data-th-card]');
+          if (!card) return;
+          var id = Number(card.getAttribute('data-th-card')) || null;
+          var val = function(f) { return String(card.querySelector('[data-f="' + f + '"]').value || '').trim(); };
+          if (act === 'geo') {
+            var addr = val('addr');
+            if (!addr) return msg('주소를 먼저 적어 주세요');
+            var c = await searchCoordsByQuery(addr).catch(function() { return null; });
+            if (!c) return msg('이 주소로 위치를 못 찾았어요. 좌표를 직접 넣어 주세요');
+            card.querySelector('[data-f="ll"]').value = c.lat.toFixed(6) + ', ' + c.lng.toFixed(6);
+            return msg('주소로 찾은 좌표를 넣었어요. 저장을 눌러야 바뀌어요', true);
+          }
+          if (act === 'del') {
+            if (!window.confirm('이 들머리를 지울까요? 묶인 GPX 선은 대표 들머리로 옮겨요.')) return;
+            msg('지우는 중…', true);
+            try { await adminGpxRpc('okbm_admin_trailhead_delete', { p_id: id }); await after('지웠어요'); } catch (err) { msg(errText(err)); }
+            return;
+          }
+          if (act === 'save') {
+            var llRaw = val('ll'), lat = null, lng = null;
+            if (llRaw) {
+              var mm = llRaw.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)\s*$/);
+              if (!mm) return msg('좌표는 "위도, 경도"로 적어 주세요. 예: 36.986567, 128.064102');
+              lat = Number(mm[1]); lng = Number(mm[2]);
+            }
+            msg('저장하는 중…', true);
+            try {
+              await adminGpxRpc('okbm_admin_trailhead_save', { p_id: id, p_spot_id: sId, p_name: val('name'), p_addr: val('addr'), p_lat: lat, p_lng: lng });
+              await after('저장했어요');
+            } catch (err) { msg(errText(err)); }
+          }
+        });
+      }
+      document.addEventListener('click', function(e) {
+        var btn = e.target && e.target.closest ? e.target.closest('[data-th-admin]') : null;
+        if (!btn) return;
+        e.stopPropagation();
+        okbmOpenTrailheadAdmin(btn.getAttribute('data-th-admin'));
+      }, true);
+
       async function navigateToNaviApp(type, trailheadName, address, fallbackLat, fallbackLng, exact) {
         var labelName = String(trailheadName || '').trim();
         var targetQuery = (address && String(address).trim()) ? String(address).trim() : labelName;
@@ -4292,7 +4416,7 @@ function updateSmartResetButtons() {
           const isMainTh = h.id === thMainId;
           const name = isMainTh ? tName : h.name;
           const addr = isMainTh ? cleanAddress : escapeHtml(h.addr || (h.lat != null ? h.lat.toFixed(5) + ', ' + h.lng.toFixed(5) : ''));
-          const exact = !isMainTh && h.lat != null;
+          const exact = h.lat != null;  // 관리자가 좌표를 넣은 들머리(대표 포함)는 주소 검색 없이 그 좌표로
           const navLat = exact ? String(h.lat) : safeLat, navLng = exact ? String(h.lng) : safeLng;
           const navAttrs = `data-name="${escapeHtml(name)}" data-addr="${addr}" data-lat="${navLat}" data-lng="${navLng}"${exact ? ' data-exact="1"' : ''}`;
           return `<div class="th-panel" data-th-panel="${h.id}"${multiTh && h.id !== thSelId ? ' hidden' : ''}>
@@ -4434,6 +4558,7 @@ function updateSmartResetButtons() {
             ` : memberDetailState ? renderMemberSpotDetailStateHtml(sId, memberDetailState) : `
              <div class="entry-module-container" style="position:relative; width:100%; display:flex; flex-direction:column; gap:4px; margin:4px 0;">
                 ${thTabsHtml}${thPanelsHtml}
+                ${isAdminMode && spot.__detailTier === 'member' ? `<button type="button" class="btn-th-admin" data-th-admin="${escapeHtml(sId)}">${ICONS.EDIT} 들머리 고치기</button>` : ''}
 
                 ${summary.access ? `
                   <div class="summary-card summary-card-access" style="margin-top:2px;">
