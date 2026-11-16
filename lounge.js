@@ -468,10 +468,8 @@
       '#okbmHomeHub .hh-st{font-style:normal;color:var(--blue)}',
       '#okbmHomeHub .hh-cl{padding:18px 0;text-align:center;font-size:11.5px;color:var(--sub)}',
       '#okbmHomeHub .hh-empty{padding:28px 0 22px;text-align:center;font-size:13px;color:var(--sub)}',
-      // 11-17 참여 중심: 제목 옆 투표 참여 표시, 설문 칸 빨간 점, 투표 강조 줄, 사진 붙은 글, 장비 사진 카드, 큰 투표 카드
-      '#okbmLoungeHomeTitle{display:flex;align-items:center;gap:8px}',
-      '#okbmLoungeHomeTitle .hh-live{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:8px;background:rgba(52,211,153,.12);color:#34d399;font-size:12px;font-weight:700;letter-spacing:0;white-space:nowrap}',
-      '#okbmLoungeHomeTitle .hh-live i{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 0 3px rgba(52,211,153,.25)}',
+      // 11-17 참여 중심: 설문 칸 빨간 점, 투표 강조 줄, 사진 붙은 글, 장비 사진 카드, 큰 투표 카드
+      // (제목 옆 '투표 N명 참여 중'은 바로 밑 투표 줄과 겹치고 과해서 뺐다, 대표님 11-17)
       '#okbmHomeHub .hh-chips button{position:relative}',
       '#okbmHomeHub .hh-dot{position:absolute;top:4px;right:7px;width:6px;height:6px;border-radius:50%;background:#ff5a5f}',
       '#okbmHomeHub .hh-write{background:var(--accent-fill,#2b6fd6);color:#fff}',
@@ -3383,13 +3381,6 @@
     if (!el) return;
     const key = HUB.some(function (h) { return h[0] === S.hub; }) ? S.hub : 'board';
     const poll = D.status === 'ready' ? hubPoll() : null;
-    const live = poll && !poll.closed && poll.total ? poll.total : 0;
-    const title = document.getElementById('okbmLoungeHomeTitle');
-    if (title) {
-      let badge = title.querySelector('.hh-live');
-      if (live && !badge) { badge = document.createElement('span'); badge.className = 'hh-live'; title.appendChild(badge); }
-      if (badge) { if (live) badge.innerHTML = '<i></i>투표 ' + live + '명 참여 중'; else badge.remove(); }
-    }
     const dot = poll && !poll.closed && !poll.voted ? 'poll' : '';
     el.innerHTML = '<div class="hh-chips" role="tablist" aria-label="라운지">' + HUB.map(function (h) {
       return '<button type="button" role="tab" data-a="hub" data-v="' + h[0] + '" class="' + (h[0] === key ? 'on' : '') + '" aria-selected="' + (h[0] === key) + '">' + esc(h[1]) + (h[0] === dot ? '<b class="hh-dot" aria-label="참여할 투표 있음"></b>' : '') + '</button>';
