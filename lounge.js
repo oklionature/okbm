@@ -842,7 +842,7 @@
       '.lm-pinbox>.lmx:last-child{border-bottom:0}',
       '.lm-wait{margin:16px 0 4px}',
       '.lm-wh{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}',
-      '.lm-wh b{font-size:15px;font-weight:800;color:var(--tx)}.lm-wh span{font-size:12px;font-weight:800;color:var(--star)}',
+      '.lm-wh b{font-size:15px;font-weight:800;color:var(--tx)}',
       '.lm-wr{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px;scroll-padding:0 20px;scroll-snap-type:x proximity}',
       '.lm-wr::-webkit-scrollbar{display:none}',
       '.lm-wc{flex:0 0 250px;display:flex;align-items:center;gap:10px;padding:10px;border-radius:14px;background:#16161a;text-align:left;color:var(--tx);scroll-snap-align:start}',
@@ -919,17 +919,15 @@
       '.lm-pk:active{opacity:.75}',
       '.lm-pk i{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.07)}',
       '.lm-pk b{display:block;font-size:15.5px;font-weight:700}',
-      '.lm-pk small{display:block;margin-top:4px;font-size:12.5px;color:#a1a1a8;line-height:1.4}',
-      '.lm-pk em{position:absolute;top:12px;right:12px;font-style:normal;font-size:11.5px;font-weight:800;color:#8a5d00;background:#ffe9b0;padding:3px 7px;border-radius:7px}',
+      '.lm-pk small{display:block;margin-top:4px;font-size:12.5px;color:#a1a1a8;line-height:1.45;word-break:keep-all}',
       '.lm-pk.big{grid-column:span 2;flex-direction:row;align-items:center;gap:14px;background:linear-gradient(120deg,rgba(43,111,214,.3),rgba(43,111,214,.08));box-shadow:inset 0 0 0 1px rgba(76,148,248,.35)}',
       '.lm-pk.big i{width:48px;height:48px;background:var(--accent-fill);color:#fff}',
-      '.lm-pk.big span{flex:1;min-width:0}.lm-pk.big b{font-size:17px}.lm-pk.big em{position:static;flex:none}',
+      '.lm-pk.big span{flex:1;min-width:0}.lm-pk.big b{font-size:17px}',
       '.lm-pk.k-story i{color:#34d399}.lm-pk.k-gear i{color:var(--star)}.lm-pk.k-poll i{color:#7fb2ff}.lm-pk.k-suggestion i{color:#c7c7cc}',
       '.lm-chipline[data-ask-topics]{gap:6px;margin:6px 0 4px;font-size:13px;font-weight:600}',
       '.lm-chipline[data-ask-topics] button{min-height:34px;padding:0 13px;border-radius:17px;background:#1f1f24;color:#c7c7cc}',
       '.lm-chipline[data-ask-topics] button.on{background:var(--tx);color:#000}',
       '.lm-askgo{display:flex;align-items:center;justify-content:center;gap:8px;width:100%}',
-      '.lm-askgo em{font-style:normal;font-size:12px;font-weight:800;background:rgba(255,255,255,.2);padding:3px 7px;border-radius:7px}',
       '.lm-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;font-size:13.5px;border-bottom:1px solid var(--div)}',
       '.lm-switch i{flex:none;position:relative;width:44px;height:26px;border-radius:13px;background:#3a3a40;transition:background .2s}',
       '.lm-switch i::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s var(--ease)}',
@@ -2565,7 +2563,7 @@
     return pin.concat(poll, story, etc);
   }
   // 첫 댓글을 기다리는 글 (대표님 11-17 시안 1): 고정 칸 바로 밑 가로 카드. 지난 14일 댓글 단 사람이 16명뿐이라
-  // 댓글 0개인 남의 최근 글(21일 안)을 사진 있는 것부터 보여 주고, 누르면 그 글을 펼친다(장비 글은 장비 탭에서). 댓글 +10점은 TASK_POINTS_1116 표 그대로
+  // 댓글 0개인 남의 최근 글(21일 안)을 사진 있는 것부터 보여 주고, 누르면 그 글을 펼친다(장비 글은 장비 탭에서)
   const WAIT_DAYS = 21, WAIT_N = 6;
   function waitPosts() {
     const since = Date.now() - WAIT_DAYS * 864e5, seen = {};
@@ -2581,7 +2579,7 @@
   function waitHtml() {
     const list = waitPosts();
     if (!list.length) return '';
-    return '<div class="lm-wait"><div class="lm-wh"><b>첫 댓글을 기다리는 글</b><span>첫 댓글 +10점</span></div><div class="lm-wr">' + list.map(function (p) {
+    return '<div class="lm-wait"><div class="lm-wh"><b>첫 댓글을 기다리는 글</b></div><div class="lm-wr">' + list.map(function (p) {
       const ph = postPhotos(p)[0];
       const tag = p.category === 'gear' ? (p.gear_kind === 'review' ? '장비 후기' : '장비 질문') : '이야기';
       return `<button type="button" class="lm-wc" data-a="lounge" data-v="${p.category === 'gear' ? TAB_GEAR : 2}" data-id="${esc(p.id)}">${ph ? `<img src="${escapeHtml(okbmFastImageUrl(ph, 160))}" alt="" loading="lazy" decoding="async">` : `<i>${esc(tag)}</i>`}<span class="lm-wx"><b>${esc(p.title)}</b><small>${esc([p.nickname || '낭만루터', ago(p.created_at)].join(' · '))}</small><em>첫 댓글 달기</em></span></button>`;
@@ -3352,7 +3350,7 @@
   }
   // 홈 라운지가 눈에 띄고 참여하고 싶게 (대표님 11-17, 시안 mockups/ui-polish-1117 라운지짧게).
   // 높이는 그대로: 게시판 칸은 투표 강조 한 줄 + 글 세 줄(작은 사진·좋아요·댓글), 장비 칸은 사진 카드, 설문 칸은 큰 투표 카드.
-  // 지난 14일 투표는 98명, 댓글은 16명이라 한 번 누르는 투표를 앞에 세운다. 포인트 숫자는 TASK_POINTS_1116 표 그대로(투표 +2, 장비 후기 +10)
+  // 지난 14일 투표는 98명, 댓글은 16명이라 한 번 누르는 투표를 앞에 세운다. 점수 표시는 노골적이라 넣지 않는다(대표님 11-17)
   const HUB_BOARD_N = 3;
   // 맨 위에 세울 투표: 게시판 글 중 가장 최근 설문, 없으면 설문 칸의 첫 글 (게시판 칸 규칙 11-05 그대로)
   function hubPoll() {
@@ -3376,7 +3374,7 @@
   function hubPollRow(h) {
     const head = h.closed ? '투표 마감' : '<i></i>지금 투표 중';
     const sub = [h.total ? h.total + '명' : '', h.leader ? '1위 ' + esc(h.leader) : ''].filter(Boolean).join(' · ');
-    const go = h.closed || h.voted ? '결과 보기' : '참여 +2';
+    const go = h.closed || h.voted ? '결과 보기' : '참여하기';
     return `<button type="button" class="hh-poll" data-a="lounge" data-v="2" data-id="${esc(h.p.id)}"><span class="hh-px"><em>${head}${sub ? ' · ' + sub : ''}</em><b>${esc(h.p.title)}</b></span><span class="hh-go">${go}</span></button>`;
   }
   function hubPostRow(p) {
@@ -3387,7 +3385,7 @@
     const line = h.top3 && h.leader
       ? `<span class="hh-rk1">1</span><span><b>${esc(h.leader)}</b>${h.firsts ? h.firsts + '명이 1등으로 골랐어요 · ' : ''}${h.voted || h.closed ? '2·3위는 결과에서 보여요' : '2·3위는 투표하면 보여요'}</span>`
       : `<span><b>${h.total}명 참여</b>${esc(pollLeft(h.p, h.closed))}</span>`;
-    const cta = h.closed || h.voted ? '결과 보기' : (h.top3 ? '나도 3곳 고르기 +2점' : '투표하기 +2점');
+    const cta = h.closed || h.voted ? '결과 보기' : (h.top3 ? '나도 3곳 고르기' : '투표하기');
     return `<button type="button" class="hh-pcard" data-a="lounge" data-v="2" data-id="${esc(h.p.id)}"><em>${h.closed ? '투표 마감' : '지금 투표 중'}${h.total ? ' · ' + h.total + '명 참여' : ''}</em><b>${esc(h.p.title)}</b><span class="hh-ld">${line}</span><span class="hh-cta">${cta}</span></button>`;
   }
   function hubGearCard(p) {
@@ -3402,7 +3400,7 @@
       // 사진 있는 후기를 앞에 (사진 칸이 비면 텐트 그림이라 덜 눈에 띈다), 그 안에서는 최신순 그대로
       const cards = gear.filter(hubThumb).concat(gear.filter(function (p) { return !hubThumb(p); })).slice(0, 8).map(hubGearCard).join('');
       return (cards ? '<div class="hh-rail">' + cards + '</div>' : '<div class="hh-empty">첫 장비 후기를 올려 보세요</div>')
-        + hubFoot('data-a="hub-all" data-v="gear"', '장비 전체 보기', 'gear', '후기 쓰기 +10');
+        + hubFoot('data-a="hub-all" data-v="gear"', '장비 전체 보기', 'gear', '후기 쓰기');
     }
     if (key === 'board') {
       if (!postsBy.all) return '<div class="hh-empty">불러오는 중…</div>';
@@ -4639,18 +4637,19 @@
     paintGearPick();
   }
   // 게시판 글쓰기는 게시판 말머리만, 장비 글쓰기는 장비만(대표님 11-09). 장비 창은 들어온 곳에서 질문/후기가 정해진다
-  // 글쓰기 고르기 (대표님 11-17 시안 2): 빈 양식 대신 무엇을 올릴지 먼저. 포인트는 TASK_POINTS_1116 표 그대로(글·투표 +5, 장비 후기 +10)
+  // 글쓰기 고르기 (대표님 11-17 시안 2): 빈 양식 대신 무엇을 올릴지 먼저.
+  // 점수 표시는 노골적이라 뺐고, 설명은 뜻이 끊기는 자리에서 줄을 바꾼다(대표님 11-17)
   const PICKS = [
-    ['ask', 'ask', '질문하기', '초보 질문도 환영해요. 답이 달리면 알려 드려요', '+5'],
-    ['story', 'hill', '백패킹 이야기', '다녀온 박지, 소소한 일상', '+5'],
-    ['gear', 'pack', '장비 후기', '쓰던 장비, 별점과 한 줄이면 돼요', '+10'],
-    ['poll', 'bars', '투표 만들기', '보기만 적으면 끝', '+5'],
-    ['suggestion', 'lock', '건의', '나와 운영팀만 봐요', '']
+    ['ask', 'ask', '질문하기', ['초보 질문도 환영해요', '답이 달리면 알려 드려요']],
+    ['story', 'hill', '백패킹 이야기', ['다녀온 박지,', '소소한 일상']],
+    ['gear', 'pack', '장비 후기', ['쓰던 장비,', '별점과 한 줄이면 돼요']],
+    ['poll', 'bars', '투표 만들기', ['보기만 적으면 끝']],
+    ['suggestion', 'lock', '건의', ['나와 운영팀만 봐요']]
   ];
   function openPostPick() {
     if (needLogin('로그인하면 글을 쓸 수 있어요')) return;
     openSheet('<h3 id="loungeSheetTitle">무엇을 올릴까요?</h3><p class="lm-ssub">고르면 거기에 맞는 칸만 나와요</p><div class="lm-pkgrid">' + PICKS.map(function (x, i) {
-      return '<button type="button" class="lm-pk k-' + x[0] + (i ? '' : ' big') + '" data-a="pick-post" data-v="' + x[0] + '"><i>' + ico(P[x[1]], i ? 21 : 24) + '</i><span><b>' + esc(x[2]) + '</b><small>' + esc(x[3]) + '</small></span>' + (x[4] ? '<em>' + x[4] + '</em>' : '') + '</button>';
+      return '<button type="button" class="lm-pk k-' + x[0] + (i ? '' : ' big') + '" data-a="pick-post" data-v="' + x[0] + '"><i>' + ico(P[x[1]], i ? 21 : 24) + '</i><span><b>' + esc(x[2]) + '</b><small>' + x[3].map(esc).join('<br>') + '</small></span></button>';
     }).join('') + '</div>', { kind: 'post-pick' });
   }
   // 질문하기 (대표님 11-17 시안 3): 주제 칩은 고르면 제목 앞에 [장비]처럼 붙는다(따로 저장할 칸이 없어서)
@@ -4668,7 +4667,7 @@
   function postFormHtml(p, cat) {
     const poll = cat === 'poll', gear = cat === 'gear';
     if (!p && SH.ask) {
-      return `<h3 id="loungeSheetTitle">질문하기</h3><p class="lm-ssub">선배 낭만루터가 답해 드려요. 답이 달리면 알림으로 알려 드려요</p>
+      return `<h3 id="loungeSheetTitle">질문하기</h3><p class="lm-ssub">선배 낭만루터가 답해 드려요<br>답이 달리면 알림으로 알려 드려요</p>
       <form data-form="post" novalidate autocomplete="off">
         <div class="lm-chipline" role="radiogroup" aria-label="주제 (고르면 제목 앞에 붙어요)" data-ask-topics>${askTopicsHtml()}</div>
         <label class="lm-lbl" for="lmPostTitle">궁금한 것 한 줄 <b aria-hidden="true">*</b></label>${inp('lmPostTitle', 'title', '', 'maxlength="72" required data-autofocus placeholder="예) 12월 선자령, 침낭 몇 도짜리면 될까요?"')}
@@ -4676,7 +4675,7 @@
         <span class="lm-lbl">사진 <span data-pcount>0</span>/5</span>
         <div class="lm-thumbs" data-thumbs>${thumbsHtml()}</div>
         <label class="lm-file">${ico(P.img, 18)}<span>사진 추가</span><input type="file" accept="image/*,.heic,.heif" multiple data-post-files hidden></label>
-        <button type="submit" class="lm-btn main lm-askgo">질문 올리기<em>+5점</em></button>
+        <button type="submit" class="lm-btn main lm-askgo">질문 올리기</button>
         <p class="lm-hint" style="text-align:center">사진·내용 없이 한 줄만 올려도 돼요</p>
       </form>`;
     }
