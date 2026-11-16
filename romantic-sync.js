@@ -3986,6 +3986,7 @@ window.stripSpotDetailFields = function(spot) {
   out.gpxUrl = '';
   out.gpxCredit = '';
   out.gpxTracks = [];
+  out.trailheads = [];
   var brief = String(out.view_brief || '').trim();
   if (brief) {
     out.desc_summary = brief;
@@ -4122,9 +4123,17 @@ window.mergeSpotDetailInto = function(spot, detail) {
     return t && gpxRe.test(String(t.url || '').trim());
   }).map(function(t) {
     var km = Number(t.km);
-    return { id: Number(t.id) || null, url: String(t.url).trim(), trailhead: String(t.trailhead || '').trim().slice(0, 40), km: isFinite(km) && km > 0 ? km : null, credit: String(t.credit || '').trim().slice(0, 40) };
+    return { id: Number(t.id) || null, url: String(t.url).trim(), trailhead: String(t.trailhead || '').trim().slice(0, 40), trailheadId: Number(t.trailhead_id) || null, km: isFinite(km) && km > 0 ? km : null, credit: String(t.credit || '').trim().slice(0, 40) };
   });
-  if (!spot.gpxTracks.length && spot.gpxUrl) spot.gpxTracks = [{ id: null, url: spot.gpxUrl, trailhead: '', km: null, credit: spot.gpxCredit }];
+  if (!spot.gpxTracks.length && spot.gpxUrl) spot.gpxTracks = [{ id: null, url: spot.gpxUrl, trailhead: '', trailheadId: null, km: null, credit: spot.gpxCredit }];
+  // 들머리 목록(I20): [{ id, name, addr, lat, lng, main }]. 대표 들머리가 맨 앞. 좌표가 있으면 내비가 그 좌표로 바로 간다
+  spot.trailheads = (Array.isArray(detail.trailheads) ? detail.trailheads : []).filter(function(h) {
+    return h && Number(h.id) && String(h.name || '').trim();
+  }).map(function(h) {
+    var lat = Number(h.lat), lng = Number(h.lng);
+    var ok = h.lat != null && h.lng != null && isFinite(lat) && isFinite(lng) && lat > 32 && lat < 39.5 && lng > 124 && lng < 132;
+    return { id: Number(h.id), name: String(h.name).trim().slice(0, 40), addr: String(h.addr || '').trim().slice(0, 200), lat: ok ? lat : null, lng: ok ? lng : null, main: h.main === true };
+  });
   // 'guest'면 비회원용 요약만 받은 상태. 로그인 후 다시 받는다. (E1 이전 서버는 tier 없음 = 전체)
   spot.__detailTier = detail.tier === 'guest' ? 'guest' : 'member';
   // E2: 회원 한도 초과면 'daily' | 'minute'. 이때 값은 비회원용 요약과 같다.

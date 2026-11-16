@@ -315,7 +315,7 @@
         bindLazy('openSpotReviewSheet', window.okbmEnsureLounge);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.10.40" defer></script>
+    <script src="romantic-sync.js?v=2.10.41" defer></script>
     <script src="romantic-history.js?v=2.8.52" defer></script>
     <script src="my-badges.js?v=14" defer></script>
     <script src="romantic-points.js?v=19" defer></script>
@@ -839,6 +839,14 @@
       .btn-copy-entry { flex: 1; background: var(--bg-card); border: 1px solid var(--border-titanium); color: var(--text-secondary); border-radius: 7px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-height: 40px; }
       .entry-guide-chip { font-size: 0.73rem; color: var(--accent-amber); background: rgba(245,158,11,0.14); border: 1px solid rgba(245,158,11,0.28); padding: 4px 8px; border-radius: 6px; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
       .entry-row-2 { display: flex; gap: 4px; width: 100%; margin-top: 2px; }
+      /* 들머리 탭(I20, 대표님 11-16): 박지 하나에 들머리가 여럿이면 골라서 주소·내비·GPX를 본다 */
+      .th-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 1px 0 2px; }
+      .th-tabs::-webkit-scrollbar { display: none; }
+      .th-tab { flex: 0 0 auto; max-width: 78%; display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--bg-2); color: var(--tx-2); font: inherit; font-size: 0.76rem; font-weight: 800; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .th-tab.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+      .th-tab-gpx { flex-shrink: 0; font-size: 0.6rem; font-weight: 900; letter-spacing: 0.02em; padding: 1px 5px; border-radius: 4px; border: 1px solid currentColor; opacity: 0.8; }
+      .th-panel { display: flex; flex-direction: column; gap: 4px; }
+      .th-panel[hidden], .btn-gpx-track-toggle[hidden] { display: none !important; }
 
     /* 수정 코드 */
       .navi-btn-cell { flex: 1; min-height: 34px; padding: 6px 2px; border-radius: 8px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: 1px solid var(--border-hairline); display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.15s ease; box-sizing: border-box; }
@@ -1719,7 +1727,7 @@
         </div>
       </div>
     </div>
-       <script src="map-main.js?v=1.0.123"></script>
+       <script src="map-main.js?v=1.0.124"></script>
     <script src="photo-map.js?v=26" defer></script>
     <script src="spot-tips.js?v=14" defer></script>
     <script src="map-gear-card.js?v=5" defer></script>

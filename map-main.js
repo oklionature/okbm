@@ -716,7 +716,8 @@
         return [
           spot.trailhead_addr || '', spot.entryPoint || '', spot.desc_summary || '', spot.desc || '',
           spot.mediaUrls || '', spot.author_sns_url || spot.authorSnsUrl || '', spot.gpxUrl || '', spot.gpxCredit || '',
-          (spot.gpxTracks || []).map(function(t) { return t.url + '|' + t.trailhead + '|' + (t.km || ''); }).join(' '),
+          (spot.gpxTracks || []).map(function(t) { return t.url + '|' + t.trailhead + '|' + (t.km || '') + '|' + (t.trailheadId || ''); }).join(' '),
+          (spot.trailheads || []).map(function(h) { return h.id + '|' + h.name + '|' + h.addr + '|' + (h.lat || '') + ',' + (h.lng || ''); }).join(' '),
           [].concat(spot.youtubeUrls || []).join(' '), [].concat(spot.blogUrls || []).join(' '),
           spot.__detailLoaded ? '1' : '0', spot.__detailTier || '', spot.__detailLimited || '', spot.__detailError || ''
         ].join('\u0001');
@@ -3377,13 +3378,37 @@ function updateSmartResetButtons() {
         });
       }
 
-      async function navigateToNaviApp(type, trailheadName, address, fallbackLat, fallbackLng) {
+      // 박지마다 고른 들머리(I20). 정보창을 다시 그려도 고른 탭을 지킨다
+      function okbmTrailheadSelected(sId, list) {
+        var sel = (window.__okbmThSel || {})[sId];
+        return list.some(function(h) { return h.id === sel; }) ? sel : list[0].id;
+      }
+      if (!window.__okbmThTabBound) {
+        window.__okbmThTabBound = true;
+        document.addEventListener('click', function(e) {
+          var tab = e.target && e.target.closest ? e.target.closest('[data-th-tab]') : null;
+          if (!tab) return;
+          e.stopPropagation();
+          var id = tab.dataset.thTab;
+          window.__okbmThSel = window.__okbmThSel || {};
+          window.__okbmThSel[tab.dataset.spot] = Number(id);
+          var box = tab.closest('.entry-module-container') || document;
+          box.querySelectorAll('[data-th-tab]').forEach(function(b) { var on = b.dataset.thTab === id; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+          box.querySelectorAll('[data-th-panel]').forEach(function(p) { p.hidden = p.dataset.thPanel !== id; });
+          box.querySelectorAll('.btn-gpx-track-toggle[data-th]').forEach(function(b) { b.hidden = b.dataset.th !== id; });
+        }, true);
+      }
+
+      async function navigateToNaviApp(type, trailheadName, address, fallbackLat, fallbackLng, exact) {
         var labelName = String(trailheadName || '').trim();
         var targetQuery = (address && String(address).trim()) ? String(address).trim() : labelName;
         var naviTitle = labelName || targetQuery;
 
         var targetLat = null, targetLng = null;
-        if (entryCoordsCache.has(targetQuery)) {
+        if (exact && fallbackLat && fallbackLng) {
+          // GPX 출발점으로 만든 들머리(I20): 좌표가 정확하니 주소 검색·이름 맞추기를 건너뛴다
+          targetLat = fallbackLat; targetLng = fallbackLng;
+        } else if (entryCoordsCache.has(targetQuery)) {
           var cached = entryCoordsCache.get(targetQuery);
           targetLat = cached.lat; targetLng = cached.lng;
         } else if (address && String(address).trim()) {
@@ -3397,7 +3422,7 @@ function updateSmartResetButtons() {
         }
 
         // 주소 좌표 근처에서 들머리 이름과 맞는 등록 장소만 채택 (전국 이름 검색 금지)
-        if (targetLat !== null && targetLng !== null && labelName) {
+        if (!exact && targetLat !== null && targetLng !== null && labelName) {
           try {
             var matchedPoi = await searchNearbyMatchingPoi(labelName, targetLat, targetLng);
             if (matchedPoi && matchedPoi.lat && matchedPoi.lng) {
@@ -3450,7 +3475,8 @@ function updateSmartResetButtons() {
               naviBtn.dataset.name,
               naviBtn.dataset.addr,
               isFinite(lat) ? lat : 0,
-              isFinite(lng) ? lng : 0
+              isFinite(lng) ? lng : 0,
+              naviBtn.dataset.exact === '1'
             );
             return;
           }
@@ -4256,6 +4282,38 @@ function updateSmartResetButtons() {
         const memoText = userMemos[sId] || '', diffClass = getSpotDiffColorClass(spot.difficulty);
         const isGpxActive = (activeGpxSpotId === sId), isUnlocked = isSpotUnlocked(sId) || isAdminMode;
         const gpxTrackList = (spot.gpxTracks && spot.gpxTracks.length) ? spot.gpxTracks : (spot.gpxUrl ? [{ id: null, url: spot.gpxUrl, trailhead: '', km: null, credit: spot.gpxCredit || '' }] : []);
+        // 들머리 목록(I20): 대표 들머리(박지 들머리 주소) + GPX 출발점으로 생긴 들머리. 2곳 넘으면 탭으로 고른다
+        const thList = (spot.trailheads && spot.trailheads.length) ? spot.trailheads : [{ id: 0, name: tName, addr: '', lat: null, lng: null, main: true }];
+        const thMainId = (thList.find(function(h) { return h.main; }) || thList[0]).id;
+        const multiTh = thList.length > 1;
+        const thSelId = okbmTrailheadSelected(sId, thList);
+        const thOfTrack = function(tr) { return (tr.trailheadId && thList.some(function(h) { return h.id === tr.trailheadId; })) ? tr.trailheadId : thMainId; };
+        const thPanelsHtml = thList.map(function(h) {
+          const isMainTh = h.id === thMainId;
+          const name = isMainTh ? tName : h.name;
+          const addr = isMainTh ? cleanAddress : escapeHtml(h.addr || (h.lat != null ? h.lat.toFixed(5) + ', ' + h.lng.toFixed(5) : ''));
+          const exact = !isMainTh && h.lat != null;
+          const navLat = exact ? String(h.lat) : safeLat, navLng = exact ? String(h.lng) : safeLng;
+          const navAttrs = `data-name="${escapeHtml(name)}" data-addr="${addr}" data-lat="${navLat}" data-lng="${navLng}"${exact ? ' data-exact="1"' : ''}`;
+          return `<div class="th-panel" data-th-panel="${h.id}"${multiTh && h.id !== thSelId ? ' hidden' : ''}>
+                <div class="entry-row-1">
+                  <div class="entry-address-2line" style="cursor:text; user-select:text; -webkit-user-select:text; pointer-events:auto;" onclick="event.stopPropagation();">${ICONS.NAV} ${escapeHtml(name)}: ${addr}</div>
+                  <button type="button" class="btn-copy-entry js-copy-entry" data-addr="${addr}">${ICONS.COPY} 복사</button>
+                </div>
+                ${isMainTh && guide ? `<div class="entry-guide-chip">${ICONS.TIP} 길 안내: ${escapeHtml(guide)}</div>` : ''}
+                <div class="entry-row-2">
+                  <button type="button" class="navi-btn-cell cell-kakao js-navi-app" data-navi="kakao" ${navAttrs}>카카오</button>
+                  <button type="button" class="navi-btn-cell cell-tmap js-navi-app" data-navi="tmap" ${navAttrs}>티맵</button>
+                  <button type="button" class="navi-btn-cell cell-naver js-navi-app" data-navi="naver" ${navAttrs}>네이버</button>
+                  <button type="button" class="navi-btn-cell cell-reserve js-navi-app" data-navi="roadview" ${navAttrs}>${ICONS.ROADVIEW} 로드뷰</button>
+                </div>
+              </div>`;
+        }).join('');
+        const thTabsHtml = multiTh ? `<div class="th-tabs" role="tablist">${thList.map(function(h) {
+          const on = h.id === thSelId;
+          const hasGpx = gpxTrackList.some(function(tr) { return thOfTrack(tr) === h.id; });
+          return `<button type="button" class="th-tab${on ? ' active' : ''}" role="tab" aria-selected="${on ? 'true' : 'false'}" data-th-tab="${h.id}" data-spot="${escapeHtml(sId)}">${escapeHtml(h.id === thMainId ? tName : h.name)}${hasGpx ? '<span class="th-tab-gpx">GPX</span>' : ''}</button>`;
+        }).join('')}</div>` : '';
         
         const targetUnlockLink = okbmSpotUnlockTarget(spot);
         const closeBtn = isMobileSheet ? '' : `<button type="button" class="sheet-close-btn" onclick="closePcSlidingDrawer()" title="닫기">✕</button>`;
@@ -4375,17 +4433,7 @@ function updateSmartResetButtons() {
               </div>
             ` : memberDetailState ? renderMemberSpotDetailStateHtml(sId, memberDetailState) : `
              <div class="entry-module-container" style="position:relative; width:100%; display:flex; flex-direction:column; gap:4px; margin:4px 0;">
-                <div class="entry-row-1">
-                  <div class="entry-address-2line" style="cursor:text; user-select:text; -webkit-user-select:text; pointer-events:auto;" onclick="event.stopPropagation();">${ICONS.NAV} ${escapeHtml(tName)}: ${cleanAddress}</div>
-                  <button type="button" class="btn-copy-entry js-copy-entry" data-addr="${cleanAddress}">${ICONS.COPY} 복사</button>
-                </div>
-                ${guide ? `<div class="entry-guide-chip">${ICONS.TIP} 길 안내: ${escapeHtml(guide)}</div>` : ''}
-                <div class="entry-row-2">
-                  <button type="button" class="navi-btn-cell cell-kakao js-navi-app" data-navi="kakao" data-name="${escapeHtml(tName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">카카오</button>
-                  <button type="button" class="navi-btn-cell cell-tmap js-navi-app" data-navi="tmap" data-name="${escapeHtml(tName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">티맵</button>
-                  <button type="button" class="navi-btn-cell cell-naver js-navi-app" data-navi="naver" data-name="${escapeHtml(tName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">네이버</button>
-                  <button type="button" class="navi-btn-cell cell-reserve js-navi-app" data-navi="roadview" data-name="${escapeHtml(tName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">${ICONS.ROADVIEW} 로드뷰</button>
-                </div>
+                ${thTabsHtml}${thPanelsHtml}
 
                 ${summary.access ? `
                   <div class="summary-card summary-card-access" style="margin-top:2px;">
@@ -4400,12 +4448,13 @@ function updateSmartResetButtons() {
                   </div>` : ''}
 
                 ${spot.gpxUrl && isUnlocked ? `
-                  ${gpxTrackList.length > 1 ? `<div class="gpx-track-head">들머리별 GPX ${gpxTrackList.length}개 · 출발할 들머리를 골라 주세요</div>` : ''}
+                  ${gpxTrackList.length > 1 && !multiTh ? `<div class="gpx-track-head">들머리별 GPX ${gpxTrackList.length}개 · 출발할 들머리를 골라 주세요</div>` : ''}
                   ${gpxTrackList.map(function(tr) {
                     const on = isGpxActive && (!activeGpxUrl || activeGpxUrl === tr.url);
                     const label = (tr.trailhead || (gpxTrackList.length > 1 ? '등산로' : '')) + (tr.km ? (tr.trailhead || gpxTrackList.length > 1 ? ' · ' : '') + tr.km + 'km' : '');
                     const idle = label ? escapeHtml(label) : (spot.gpxCredit ? escapeHtml(spot.gpxCredit) + '님이 등록하신 GPX 확인하기' : '등산로 GPX 코스 지도에 표시');
-                    return `<button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${on ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(tr.url)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
+                    const trTh = thOfTrack(tr);
+                    return `<button data-metric-click="feat_spot_gpx" type="button" class="btn-gpx-track-toggle ${on ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(tr.url)}" data-th="${trTh}"${multiTh && trTh !== thSelId ? ' hidden' : ''} onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
                     ${ICONS.GPX_TRACK} ${on ? (label ? escapeHtml(label) + ' · 선 지우기' : '지도에서 등산로 선 지우기') : idle}
                   </button>`;
                   }).join('')}
