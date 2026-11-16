@@ -8503,6 +8503,7 @@ window._pastTripRenderPhotoStage = function() {
   var badgeEl = document.getElementById('pastTripPhotoIndexBadge');
   if (countEl) countEl.textContent = photos.length + '장 / 최대 10장';
   if (badgeEl) badgeEl.textContent = photos.length ? ((idx + 1) + ' / ' + photos.length) : '0 / 0';
+  if (typeof window._ptwSyncSteps === 'function') window._ptwSyncSteps();
   if (stage) {
     if (!photos.length) {
       stage.innerHTML =
@@ -9157,6 +9158,8 @@ window._pastTripShowSpotDetail = function(show) {
 window._pastTripSetSpotBadge = function(kind) {
   var badge = document.getElementById('pastTripSpotStatusBadge');
   if (!badge) return;
+  window.__ptwSpotKind = kind || '';
+  if (typeof window._ptwSyncSteps === 'function') window._ptwSyncSteps();
   if (typeof window._pastTripSyncReview === 'function') setTimeout(window._pastTripSyncReview, 0);
   if (kind === 'registered') {
     badge.textContent = '등록 장소 · 마이데이터 합산 가능';
@@ -9630,7 +9633,15 @@ window.openPastTripRegisterModal = function(ev) {
 
   var fieldCss = 'height:42px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.84rem; font-weight:700; outline:none; box-sizing:border-box; width:100%;';
   modal.innerHTML =
-    '<style>#pastTripPhotoSwipeTrack::-webkit-scrollbar{display:none}#pastTripSpotSuggest::-webkit-scrollbar,#pastTripGearSuggest::-webkit-scrollbar{display:none}' +
+    '<style>' +
+      // 단계를 채우면 번호가 초록 체크로 바뀌고 위 점·선이 다음 단계까지 찬다(11-17, mockups/motion 8번). 채움 판정은 _ptwSyncSteps
+      '.ptw-prog{display:flex;align-items:center;padding:10px 28px 2px;flex-shrink:0}.ptw-prog .d{width:8px;height:8px;border-radius:50%;background:#2a2a30;flex:none;transition:background-color .25s,transform .25s}.ptw-prog .d.on{background:#34d399;transform:scale(1.25)}' +
+      '.ptw-prog .l{flex:1;height:2px;margin:0 4px;background:#2a2a30;border-radius:1px;overflow:hidden}.ptw-prog .l i{display:block;height:100%;background:#34d399;transform:scaleX(0);transform-origin:left;transition:transform .45s cubic-bezier(.32,.72,0,1)}.ptw-prog .l.on i{transform:scaleX(1)}' +
+      '.ptw-n{position:relative;transition:background-color .25s}.ptw-n .ptw-ck{position:absolute;width:12px;height:12px;opacity:0}.ptw-n .ptw-ck path{stroke-dasharray:24;stroke-dashoffset:24}' +
+      '.ptw-step.ptw-ok .ptw-n{background:#34d399;color:transparent;animation:ptwPop .42s cubic-bezier(.2,.9,.3,1.3)}.ptw-step.ptw-ok .ptw-ck{opacity:1}.ptw-step.ptw-ok .ptw-ck path{animation:ptwDraw .3s .1s ease-out forwards}' +
+      '@keyframes ptwPop{0%{transform:scale(.7)}55%{transform:scale(1.25)}100%{transform:scale(1)}}@keyframes ptwDraw{to{stroke-dashoffset:0}}' +
+      '@media (prefers-reduced-motion: reduce){.ptw-step.ptw-ok .ptw-n,.ptw-step.ptw-ok .ptw-ck path{animation-duration:1ms!important;animation-delay:0ms!important}.ptw-prog .d,.ptw-prog .l i{transition:none}}' +
+      '#pastTripPhotoSwipeTrack::-webkit-scrollbar{display:none}#pastTripSpotSuggest::-webkit-scrollbar,#pastTripGearSuggest::-webkit-scrollbar{display:none}' +
       '#pastTripPhotoStage>div[onclick]{aspect-ratio:auto !important;height:150px !important}.ptw-step{display:flex;flex-direction:column;gap:8px}.ptw-h{display:flex;align-items:center;gap:8px;justify-content:space-between}' +
       '.ptw-h h5{margin:0;font-size:0.86rem;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px}.ptw-n{width:20px;height:20px;border-radius:50%;background:#2a2a30;color:#ffffff;font-size:0.68rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center}' +
       '.ptw-sub{font-size:0.64rem;color:#6b6b73;font-weight:700}.ptw-date{display:flex;align-items:center;gap:8px}.ptw-date label{font-size:0.74rem;font-weight:800;color:#8b8b93;flex:none}.ptw-date button{height:38px !important;font-size:0.84rem !important;flex:1}' +
@@ -9667,9 +9678,10 @@ window.openPastTripRegisterModal = function(ev) {
         '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">후기 올리기</span>' +
         '<div style="width:30px;"></div>' +
       '</div>' +
+      '<div class="ptw-prog" aria-hidden="true"><span class="d"></span><span class="l"><i></i></span><span class="d"></span><span class="l"><i></i></span><span class="d"></span></div>' +
       '<div style="flex:1 1 0%; min-height:0; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:18px; box-sizing:border-box;">' +
         '<div class="ptw-step">' +
-          '<div class="ptw-h"><h5><span class="ptw-n">1</span>사진 <span id="pastTripPhotoCountLabel" class="ptw-sub">0장 / 최대 10장</span></h5>' +
+          '<div class="ptw-h"><h5><span class="ptw-n">1<svg class="ptw-ck" viewBox="0 0 24 24" fill="none" stroke="#04130c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>사진 <span id="pastTripPhotoCountLabel" class="ptw-sub">0장 / 최대 10장</span></h5>' +
             '<div style="display:flex; align-items:center; gap:6px;">' +
               '<span id="pastTripPhotoIndexBadge" style="font-size:0.62rem; color:#d1d1d6; background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:10px; font-weight:900;">0 / 0</span>' +
               '<button type="button" onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="height:30px; padding:0 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:#f2f2f3; font-size:0.72rem; font-weight:800; cursor:pointer;">사진 추가</button>' +
@@ -9680,7 +9692,7 @@ window.openPastTripRegisterModal = function(ev) {
           '<div id="pastTripPhotoStatus" style="font-size:0.68rem; color:#6b6b73;"></div>' +
         '</div>' +
         '<div class="ptw-step">' +
-          '<div class="ptw-h"><h5><span class="ptw-n">2</span>장소</h5>' +
+          '<div class="ptw-h"><h5><span class="ptw-n">2<svg class="ptw-ck" viewBox="0 0 24 24" fill="none" stroke="#04130c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>장소</h5>' +
             '<span id="pastTripSpotStatusBadge" style="font-size:0.62rem; color:#6b6b73; font-weight:700; text-align:right; line-height:1.35; min-width:0;">등록 장소를 선택하면 마이데이터에 합산됩니다.</span>' +
           '</div>' +
           '<div id="pastTripGeoBox" class="ptw-geo" hidden></div>' +
@@ -9702,7 +9714,7 @@ window.openPastTripRegisterModal = function(ev) {
           '<div id="pastTripDateSource" class="ptw-sub" hidden></div>' +
         '</div>' +
         '<div class="ptw-step">' +
-          '<div class="ptw-h"><h5><span class="ptw-n">3</span>한 줄 소감</h5>' +
+          '<div class="ptw-h"><h5><span class="ptw-n">3<svg class="ptw-ck" viewBox="0 0 24 24" fill="none" stroke="#04130c" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>한 줄 소감</h5>' +
             '<span id="pastTripMemoCount" style="font-size:0.68rem; color:#6b6b73;">0/120</span>' +
           '</div>' +
           '<div style="display:inline-flex; gap:4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:3px; align-self:flex-start;">' +
@@ -9783,6 +9795,26 @@ window.onPastTripSpotTyped = function() {
   window._pastTripRenderSpotSuggest(name);
 };
 
+// 후기 올리기 단계 1 사진 · 2 장소 · 3 한 줄 소감이 채워졌는지 보고 번호·점·선을 바꾼다
+window._ptwSyncSteps = function() {
+  var modal = document.getElementById('pastTripRegisterModal');
+  if (!modal) return;
+  var st = window.__pastTripRegisterState || {};
+  var memo = document.getElementById('pastTripMemoInput');
+  var memoDone = st.memoMode === 'per_photo'
+    ? (st.photoMemos || []).some(function(m) { return String(m || '').trim(); })
+    : !!(memo && String(memo.value || '').trim());
+  var done = [(st.photos || []).length > 0, window.__ptwSpotKind === 'registered' || window.__ptwSpotKind === 'unregistered', memoDone];
+  var steps = modal.querySelectorAll('.ptw-step');
+  var dots = modal.querySelectorAll('.ptw-prog .d');
+  var lines = modal.querySelectorAll('.ptw-prog .l');
+  done.forEach(function(ok, i) {
+    if (steps[i]) steps[i].classList.toggle('ptw-ok', ok);
+    if (dots[i]) dots[i].classList.toggle('on', ok);
+    if (lines[i]) lines[i].classList.toggle('on', ok);
+  });
+};
+
 window.updatePastTripMemoCount = function() {
   var input = document.getElementById('pastTripMemoInput');
   var countEl = document.getElementById('pastTripMemoCount');
@@ -9803,6 +9835,7 @@ window.updatePastTripMemoCount = function() {
     countEl.style.color = (cur >= 1 && cur <= 120) ? '#f2f2f3' : '#6b6b73';
   }
   window.__pastTripRegisterState = st;
+  window._ptwSyncSteps();
 };
 
 window.submitPastTripRegister = async function() {

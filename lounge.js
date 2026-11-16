@@ -3327,7 +3327,8 @@
     }).join('') + (D.admin ? '<button type="button" class="hm-card add" data-a="new-news" data-v="magazine">' + ico(P.plus, 20) + '<span>매거진 올리기</span></button>' : '') + '</div>';
   }
   // 소식·매거진 보기 (아래에서 올라오는 창). 사진이 여러 장이면 옆으로 넘긴다
-  function openNews(id) {
+  // fromEl: 홈 매거진 줄에서 누른 표지. 표지가 커져 첫 장이 되고, 닫으면 표지 자리로 돌아간다(okbm-motion.js, 11-17)
+  function openNews(id, fromEl) {
     const n = D.news.find(function (x) { return String(x.id) === String(id); });
     if (!n) return;
     // 기능 사용 세기 (H8, 11-16 대표님): 매거진은 전체(feat_mag_open)와 한 편마다(feat_mag_ + id 앞 8자리), 소식은 feat_news_open.
@@ -3339,6 +3340,8 @@
         if (key.length === 8) window.okbmMetric('feat_mag_' + key);
       } else window.okbmMetric('feat_news_open');
     }
+    const coverImg = fromEl && fromEl.classList.contains('hm-card') ? fromEl.querySelector('img') : null;
+    const coverRect = coverImg ? coverImg.getBoundingClientRect() : null;
     const imgs = newsImgs(n);
     const link = n.link_url && HTTPS_RE.test(n.link_url) ? n.link_url : '';
     // 본문 끝 줄이 유튜브 주소면 표지 밑에 '영상 속 그 장소' 창처럼 유튜브 플레이어를 바로 띄우고 설명은 그 밑으로 (대표님 11-06)
@@ -3352,6 +3355,17 @@
       ${link ? `<a class="lm-btn main" style="display:flex;align-items:center;justify-content:center;margin-top:16px;text-decoration:none" href="${escapeHtml(okbmSafeExternalUrl(link))}" target="_blank" rel="noopener noreferrer">자세히 보기</a>` : ''}
       ${D.admin ? `<div class="lmx-links" style="margin-top:14px"><button type="button" data-a="edit-news" data-v="${esc(n.id)}">수정</button><button type="button" class="red" data-a="del-news" data-v="${esc(n.id)}">삭제</button></div>` : ''}`,
     { kind: 'news-view', id: n.id });
+    const motion = window.okbmMotion;
+    const view = sheet && sheet.querySelector('.hm-view');
+    const book = motion && n.kind === 'magazine' && view ? motion.bookify(view) : null;
+    const cover = coverRect && coverRect.bottom > 0 && coverRect.top < window.innerHeight ? coverImg : null;
+    if (motion && cover && view && sheet) {
+      sheet.style.transition = 'none';
+      void sheet.offsetHeight;
+      requestAnimationFrame(function () { if (sheet) sheet.style.transition = ''; });
+      motion.flyIn(cover, book ? book.current() : view.querySelector('img'), sheet, { r1: '12px', fromRect: coverRect });
+      SH.okmBack = { cover: cover, page: book ? book.current : function () { return view.querySelector('img'); } };
+    }
   }
   // 운영팀 올리기·고치기
   function newsFormHtml(n, kind) {
@@ -3668,6 +3682,8 @@
     s.removeAttribute('role');
     unregister('loungeSheet');
     if (typeof st.resolve === 'function') { try { st.resolve(false); } catch (e) {} }
+    // 스크롤 잠금을 풀기 전에 재야 표지 자리가 맞다
+    if (instant !== true && st.okmBack && window.okbmMotion) window.okbmMotion.flyBack(st.okmBack.page(), st.okmBack.cover, { r1: '12px' });
     if (!win) unlockScroll();
     if (instant === true || reduce) { s.remove(); if (sc) sc.remove(); }
     else {
@@ -5388,7 +5404,7 @@
         if (v === 'gear' && !postsBy.gear) loadPosts('gear').then(paintHub).catch(function (err) { console.warn('[lounge.js:hub]', err); delete postsBy.gear; });
         break;
       }
-      case 'news': openNews(v); break;
+      case 'news': openNews(v, t); break;
       case 'new-news': openNewsForm(null, v); break;
       case 'edit-news': { const n = D.news.find(function (x) { return String(x.id) === String(v); }); if (n) openNewsForm(n); break; }
       case 'del-news':

@@ -901,9 +901,17 @@
     })();
 
     // 🚪 [테마 스팟 뷰어 모달 닫기 엔진]
-    window.closeSecretSpotHeroModal = function() {
+    // opts.quiet: 지도로 넘어가는 등 다른 화면으로 갈 때는 카드로 돌아가는 움직임을 보이지 않는다
+    window.closeSecretSpotHeroModal = function(opts) {
       var modalEl = document.getElementById('secretSpotHeroModal');
       if (!modalEl) return;
+      if (!(opts && opts.quiet) && window.okbmMotion && themeHeroCardBox && themeHeroCardBox.isConnected) {
+        var backId = String(themeHeroNav ? themeHeroNav.ids[themeHeroNav.idx] : themeHeroCardId);
+        var backCard = Array.prototype.find.call(themeHeroCardBox.querySelectorAll(':scope > [data-spot-id]'), function(el) {
+          return el.dataset.spotId === backId;
+        });
+        if (backCard) window.okbmMotion.flyBack(modalEl.querySelector('.insta-card'), backCard.querySelector('img'));
+      }
       if (typeof window.unregisterModalClose === 'function') {
         window.unregisterModalClose('secretSpotHeroModal');
       }
@@ -959,6 +967,8 @@
 
     // 테마 스팟 창에서 옆 피드로 넘길 순서. 카드를 누른 줄(홈 테마 줄·전체 보기 칸)의 카드 순서를 그대로 쓴다(대표님 11-16)
     var themeHeroNav = null; // { ids: [...], idx: n }
+    // 누른 카드에서 창이 펼쳐지고 닫으면 그 줄의 카드 자리로 돌아간다(okbm-motion.js flyIn/flyBack, 11-17)
+    var themeHeroFromCard = null, themeHeroCardBox = null, themeHeroCardId = '';
 
     // 🖼️ [3:4 대형 화보 뷰어: 풀커버 + 사진 속 닷 + 하단 5대 메인독 탑재]
     // cardEl: 누른 테마 카드(있으면 그 줄 순서로 옆 피드 넘기기). nav: 창 안에서 옆 피드로 넘길 때 { dir: 1 | -1 }
@@ -966,6 +976,9 @@
       if (!nav) {
         if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_hero_photo'); // 기능 사용 세기 (H8)
         themeHeroNav = null;
+        themeHeroFromCard = cardEl || null;
+        themeHeroCardBox = cardEl ? cardEl.parentElement : null;
+        themeHeroCardId = String(spotOrFeedId || '');
         if (cardEl && cardEl.parentElement) {
           var navIds = Array.prototype.map.call(cardEl.parentElement.querySelectorAll(':scope > [data-spot-id]'), function(el) { return el.dataset.spotId; });
           var navIdx = navIds.indexOf(String(spotOrFeedId));
@@ -1137,9 +1150,13 @@
       var old = document.getElementById('secretSpotHeroModal');
       if (old) old.remove();
       document.body.appendChild(modalEl);
+      if (themeHeroFromCard && window.okbmMotion) {
+        window.okbmMotion.flyIn(themeHeroFromCard.querySelector('img'), modalEl.querySelector('.insta-card'), modalEl);
+      }
+      themeHeroFromCard = null;
       bindThemeHeroFeedSwipe(modalEl, photosList.length > 1, nav ? nav.dir : 0);
       bindMemoLink(modalEl.querySelector('.okbm-memo-link'), function(box) {
-        window.closeSecretSpotHeroModal();
+        window.closeSecretSpotHeroModal({ quiet: true });
         location.href = 'map.html?' + (box.dataset.mapId
           ? ('id=' + encodeURIComponent(box.dataset.mapId))
           : ('spot=' + encodeURIComponent(box.dataset.spot)));

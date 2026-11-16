@@ -7,6 +7,11 @@
 //    COIN        포인트 알림 앞 동전(한 바퀴 돈다)
 // 4. upBusy/upDone/upFail  지난 기록 '올리기': 동그라미로 줄어 돌다가 초록 체크, 실패면 흔들고 '다시 올리기'(romantic-sync.js)
 // 5. starPop(btn, on, {colors, ring, count})  라운지 하트도 같은 움직임을 분홍으로(lounge.js, 11-17)
+// 7. 고른 표시 미끄러짐: 홈 테마 칩·라운지 정렬 단추에서 고른 표시가 누른 칸으로 미끄러진다(11-17, 시안 7번)
+//    단추가 다시 그려져도 되게, 누르기 전 자리와 다시 그린 뒤 자리를 재서 잠깐 띄운 알약을 옮긴다
+// 8. flyIn / flyBack: 누른 카드 사진이 그대로 커져 창 사진이 되고, 닫으면 그 카드 자리로 돌아간다(홈 테마 스팟·매거진, 11-17 시안 6·10번)
+// 9. profileIn: 피드에서 누른 동그란 사진이 프로필 머리 자리로 날아가고 숫자가 굴러 들어온다. 창이 닫히면 사진이 돌아간다(user-profile.js, 11-17 시안 9번)
+// 10. bookify: 매거진 카드뉴스(4:5)를 옆 스크롤 대신 책장처럼 한 장씩 넘긴다. 누르거나 옆으로 밀면 넘어간다(lounge.js, 11-17 시안 10번)
 // 6. pullRefresh  낭만피드 맨 위에서 당기면 로고 산이 드러나고 해가 떠오른다. 놓으면 새로 받는다(romantic-history.js, 11-17)
 //    로고 산 모양은 인스타에니/로고/등장_해돋이/조각/산.geojson을 옮긴 것(영상 끝 카드 해돋이와 같은 움직임)
 //
@@ -46,6 +51,14 @@
     '.okm-ptr.okm-flash .okm-ptr-glow{animation:okmSunFlash .8s ease-out}',
     '@keyframes okmSunGlow{0%,100%{opacity:.25;transform:scale(.85)}50%{opacity:.85;transform:scale(1.25)}}',
     '@keyframes okmSunFlash{0%{opacity:0;transform:scale(.9)}15%{opacity:1;transform:scale(1.5)}100%{opacity:0;transform:scale(1.7)}}',
+    '.okm-seg-anim>button,.okm-seg-anim>.n-cat-chip{position:relative;z-index:1;transition:none!important}',
+    '.okm-seg-anim>.on,.okm-seg-anim>.active{background:transparent!important;box-shadow:none!important;border-color:transparent!important}',
+    '.okm-seg-pill{position:absolute;z-index:0;pointer-events:none}',
+    '.hm-view.okm-book{position:relative;display:block;overflow:visible;aspect-ratio:4/5;perspective:1100px;margin:12px 0 0;touch-action:pan-y}',
+    '.hm-view.okm-book img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform-origin:left center;backface-visibility:hidden;-webkit-backface-visibility:hidden}',
+    '.okm-book-dots{display:flex;gap:5px;justify-content:center;margin-top:10px}',
+    '.okm-book-dots i{width:5px;height:5px;border-radius:3px;background:rgba(255,255,255,.3);transition:width .3s,background-color .3s}',
+    '.okm-book-dots i.on{width:14px;background:#fff}',
     '@keyframes okmFill{from{transform:scaleX(0)}to{transform:scaleX(1)}}',
     '@keyframes okmBeat{0%{transform:scale(1)}35%{transform:scale(1.35)}60%{transform:scale(.9)}100%{transform:scale(1)}}',
     '@keyframes okmDraw{to{stroke-dashoffset:0}}',
@@ -374,6 +387,224 @@
     scroller.addEventListener('touchcancel', release);
   }
 
+  var SEG_BTN = '.lm-seg>button,.lm-sseg>button,.netflix-category-bar>.n-cat-chip';
+  function segKind(box) {
+    return ['lm-seg', 'lm-sseg', 'netflix-category-bar'].filter(function (c) { return box.classList.contains(c); })[0];
+  }
+  function segOn(box) {
+    return box.querySelector(':scope>.on,:scope>.active');
+  }
+  // 다시 그려져 바뀐 줄은 같은 종류·같은 이름표 가운데 원래 자리에 가장 가까운 것으로 찾는다
+  function findSeg(old) {
+    if (old.box.isConnected) return old.box;
+    var best = null, bestD = 1e9;
+    document.querySelectorAll('.' + old.kind).forEach(function (b) {
+      if ((b.getAttribute('aria-label') || '') !== old.label) return;
+      var r = b.getBoundingClientRect();
+      var d = Math.abs(r.top - old.rect.top) + Math.abs(r.left - old.rect.left);
+      if (r.width && d < bestD) { best = b; bestD = d; }
+    });
+    return bestD < 60 ? best : null;
+  }
+  function slideSeg(old) {
+    var box = findSeg(old);
+    var on = box && segOn(box);
+    if (!on || on.getBoundingClientRect().width === 0) return;
+    // 막 바뀐 단추는 색이 옮아가는 중이라, 옮김을 끄고 다 바뀐 색을 읽는다
+    on.style.transition = 'none';
+    var cs = getComputedStyle(on);
+    var look = { bg: cs.backgroundColor, shadow: cs.boxShadow, radius: cs.borderRadius };
+    var br = box.getBoundingClientRect(), to = on.getBoundingClientRect();
+    if (Math.abs(to.left - old.from.left) < 2 && Math.abs(to.top - old.from.top) < 2) { on.style.transition = ''; return; }
+    ensurePositioned(box);
+    var pill = document.createElement('span');
+    pill.className = 'okm-seg-pill';
+    pill.style.background = look.bg;
+    pill.style.boxShadow = look.shadow;
+    pill.style.borderRadius = look.radius;
+    var x0 = old.from.left - br.left + box.scrollLeft, y0 = old.from.top - br.top + box.scrollTop;
+    var x1 = to.left - br.left + box.scrollLeft, y1 = to.top - br.top + box.scrollTop;
+    pill.style.left = '0px'; pill.style.top = '0px';
+    box.insertBefore(pill, box.firstChild);
+    box.classList.add('okm-seg-anim');
+    pill.animate([
+      { transform: 'translate(' + x0 + 'px,' + y0 + 'px)', width: old.from.width + 'px', height: old.from.height + 'px' },
+      { transform: 'translate(' + x1 + 'px,' + y1 + 'px)', width: to.width + 'px', height: to.height + 'px' }
+    ], { duration: 380, easing: 'cubic-bezier(.32,.72,0,1)', fill: 'forwards' }).onfinish = function () {
+      box.classList.remove('okm-seg-anim');
+      on.style.transition = 'none';
+      void on.offsetWidth;
+      pill.remove();
+      requestAnimationFrame(function () { on.style.transition = ''; });
+    };
+    if (box.scrollWidth > box.clientWidth + 2) {
+      var want = x1 - (box.clientWidth - to.width) / 2;
+      box.scrollTo({ left: Math.max(0, want), behavior: 'smooth' });
+    }
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest && e.target.closest(SEG_BTN);
+    if (!b || reduce()) return;
+    var box = b.parentElement, on = segOn(box);
+    if (!on || on === b) return;
+    var old = { box: box, kind: segKind(box), label: box.getAttribute('aria-label') || '', rect: box.getBoundingClientRect(), from: on.getBoundingClientRect() };
+    setTimeout(function () { slideSeg(old); }, 0);
+  }, true);
+
+  function visibleRect(el) {
+    if (!el || !el.isConnected) return null;
+    var r = el.getBoundingClientRect();
+    if (!r.width || !r.height || r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) return null;
+    return r;
+  }
+  function ghostAt(r, src, radius) {
+    var g = document.createElement('div');
+    g.style.cssText = 'position:fixed;z-index:2147483000;overflow:hidden;pointer-events:none;background:#17171b;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;border-radius:' + radius;
+    if (src) g.innerHTML = '<img src="' + String(src).replace(/"/g, '&quot;') + '" alt="" style="width:100%;height:100%;object-fit:cover;display:block">';
+    document.body.appendChild(g);
+    return g;
+  }
+  function flyBox(g, r0, r1, rad0, rad1, ms) {
+    return g.animate([
+      { left: r0.left + 'px', top: r0.top + 'px', width: r0.width + 'px', height: r0.height + 'px', borderRadius: rad0 },
+      { left: r1.left + 'px', top: r1.top + 'px', width: r1.width + 'px', height: r1.height + 'px', borderRadius: rad1 }
+    ], { duration: ms, easing: 'cubic-bezier(.32,.72,0,1)', fill: 'forwards' });
+  }
+  // fromImg(카드 사진) → toBox(창 안 사진 칸). host는 막 붙인 창 전체
+  function flyIn(fromImg, toBox, host, opts) {
+    opts = opts || {};
+    // 창을 열며 화면 스크롤을 잠그면 그 순간 카드 자리가 틀리게 재지므로, 부르는 쪽이 열기 전에 잰 자리(opts.fromRect)를 먼저 쓴다
+    var r0 = opts.fromRect || visibleRect(fromImg), r1 = toBox && toBox.getBoundingClientRect();
+    if (!r0 || !r1 || !r1.width || !canAnimate(toBox)) return;
+    var g = ghostAt(r0, fromImg.currentSrc || fromImg.src, opts.r0 || '12px');
+    toBox.style.visibility = 'hidden';
+    fromImg.style.visibility = 'hidden';
+    if (host) host.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out' });
+    flyBox(g, r0, r1, opts.r0 || '12px', opts.r1 || '16px', 400).onfinish = function () {
+      toBox.style.visibility = '';
+      fromImg.style.visibility = '';
+      g.remove();
+    };
+  }
+  // 창을 닫을 때: fromBox(창 사진 칸) → toImg(돌아갈 카드 사진). 창은 부르는 쪽이 바로 지운다
+  function flyBack(fromBox, toImg, opts) {
+    opts = opts || {};
+    var r0 = fromBox && fromBox.getBoundingClientRect(), r1 = visibleRect(toImg);
+    if (!r0 || !r0.width || !r1 || reduce()) return;
+    var g = ghostAt(r0, toImg.currentSrc || toImg.src, opts.r1 || '16px');
+    toImg.style.visibility = 'hidden';
+    flyBox(g, r0, r1, opts.r1 || '16px', opts.r0 || '12px', 340).onfinish = function () {
+      toImg.style.visibility = '';
+      g.remove();
+    };
+  }
+
+  // 피드에서 프로필을 여는 단추(data-metric-click="feat_user_feed_open")를 누르면 그 안 사진을 기억해 둔다
+  var lastAvatarTap = null;
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest && e.target.closest('[data-metric-click="feat_user_feed_open"]');
+    if (!b) return;
+    var img = b.querySelector('img');
+    lastAvatarTap = img && img.getBoundingClientRect().width ? { img: img, at: Date.now() } : null;
+  }, true);
+
+  // 프로필 창 머리(paintHeader)를 그릴 때마다 부른다. 누른 사진이 있으면 한 번만 날리고, 숫자가 생긴 첫 그림에서 한 번 굴린다
+  function profileIn(modal) {
+    if (!modal || reduce()) return;
+    var av = modal.querySelector('.mr-av');
+    if (lastAvatarTap && Date.now() - lastAvatarTap.at < 2500 && av) {
+      var tap = lastAvatarTap;
+      lastAvatarTap = null;
+      modal.__okmRoll = true;
+      var r0 = visibleRect(tap.img), r1 = av.getBoundingClientRect();
+      if (r0 && r1.width) {
+        var g = ghostAt(r0, tap.img.currentSrc || tap.img.src, '50%');
+        av.style.visibility = 'hidden';
+        flyBox(g, r0, r1, '50%', '50%', 420).onfinish = function () { av.style.visibility = ''; g.remove(); };
+        watchProfileClose(modal, tap.img);
+      }
+    }
+    if (modal.__okmRoll) {
+      var nums = modal.querySelectorAll('.mr-stats .mr-st b');
+      var ready = nums.length && Array.prototype.every.call(nums, function (b) { return /\d/.test(b.textContent); });
+      if (ready) {
+        modal.__okmRoll = false;
+        nums.forEach(function (b, k) { setTimeout(function () { rollIn(b, true); }, 160 + k * 70); });
+      }
+    }
+  }
+  // 창이 문서에서 빠지는 순간, 마지막으로 잰 머리 사진 자리에서 피드 사진 자리로 돌려보낸다
+  function watchProfileClose(modal, img) {
+    var last = null;
+    function measure() {
+      var av = modal.querySelector('.mr-av');
+      last = av ? av.getBoundingClientRect() : null;
+    }
+    setTimeout(measure, 450);
+    modal.addEventListener('scroll', measure, true);
+    var mo = new MutationObserver(function () {
+      if (modal.isConnected) return;
+      mo.disconnect();
+      var r1 = visibleRect(img);
+      if (!last || !last.width || last.bottom < 0 || !r1 || reduce()) return;
+      var g = ghostAt(last, img.currentSrc || img.src, '50%');
+      img.style.visibility = 'hidden';
+      flyBox(g, last, r1, '50%', '50%', 340).onfinish = function () { img.style.visibility = ''; g.remove(); };
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function bookify(view) {
+    var pages = view ? Array.prototype.slice.call(view.querySelectorAll(':scope > img')) : [];
+    if (pages.length < 2 || view.__okmBook) return null;
+    view.__okmBook = true;
+    view.classList.add('okm-book');
+    var dots = document.createElement('div');
+    dots.className = 'okm-book-dots';
+    dots.setAttribute('aria-hidden', 'true');
+    dots.innerHTML = pages.map(function () { return '<i></i>'; }).join('');
+    view.parentNode.insertBefore(dots, view.nextSibling);
+    var cur = 0, busy = false;
+    function layout() {
+      pages.forEach(function (pg, i) {
+        pg.style.zIndex = String(pages.length - i);
+        pg.style.transform = i < cur ? 'rotateY(-100deg)' : '';
+        pg.style.visibility = i < cur ? 'hidden' : '';
+        pg.setAttribute('aria-hidden', i === cur ? 'false' : 'true');
+      });
+      Array.prototype.forEach.call(dots.children, function (d, i) { d.classList.toggle('on', i === cur); });
+    }
+    function turn(dir) {
+      var next = cur + dir;
+      if (busy || next < 0 || next >= pages.length) return;
+      if (typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(6); } catch (e) {} }
+      var pg = dir > 0 ? pages[cur] : pages[next];
+      if (reduce() || !pg.animate) { cur = next; layout(); return; }
+      busy = true;
+      pg.style.visibility = '';
+      var a = dir > 0 ? ['rotateY(0deg)', 'rotateY(-100deg)'] : ['rotateY(-100deg)', 'rotateY(0deg)'];
+      var f = dir > 0 ? ['brightness(1)', 'brightness(.55)'] : ['brightness(.55)', 'brightness(1)'];
+      pg.animate([{ transform: a[0], filter: f[0] }, { transform: a[1], filter: f[1] }], { duration: 520, easing: 'cubic-bezier(.45,.05,.3,1)' }).onfinish = function () {
+        cur = next; layout(); busy = false;
+      };
+    }
+    var sx = null, sy = null, swiped = false;
+    view.addEventListener('pointerdown', function (e) { sx = e.clientX; sy = e.clientY; swiped = false; });
+    view.addEventListener('pointerup', function (e) {
+      if (sx == null) return;
+      var dx = e.clientX - sx, dy = e.clientY - sy;
+      sx = null;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { swiped = true; turn(dx < 0 ? 1 : -1); }
+    });
+    view.addEventListener('click', function (e) {
+      if (swiped) { swiped = false; return; }
+      var r = view.getBoundingClientRect();
+      turn(e.clientX - r.left > r.width * 0.4 ? 1 : -1);
+    });
+    layout();
+    return { current: function () { return pages[cur]; } };
+  }
+
   window.okbmMotion = {
     starPop: starPop,
     rollIn: rollIn,
@@ -385,6 +616,10 @@
     upBusy: upBusy,
     upDone: upDone,
     upFail: upFail,
-    pullRefresh: pullRefresh
+    pullRefresh: pullRefresh,
+    flyIn: flyIn,
+    flyBack: flyBack,
+    profileIn: profileIn,
+    bookify: bookify
   };
 })();

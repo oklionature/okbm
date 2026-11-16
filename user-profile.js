@@ -252,6 +252,7 @@
     var wrap = m && $('userCollectionHeaderWrapper');
     if (!wrap) return;
     wrap.innerHTML = headerHtml(m);
+    if (window.okbmMotion) window.okbmMotion.profileIn(m);
     var foot = m.querySelector('[data-up-tab="foot"]');
     var hideTotal = !flag(m.dataset.isSelf) && flag(m.dataset.hideTotal);
     if (foot) foot.style.display = hideTotal ? 'none' : '';
