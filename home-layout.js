@@ -2,7 +2,8 @@
 // 홈 개편 (2026-10-14): 바로가기 네 개 · 인기 스팟 "후기 N · 찜 N"
 // 시안: 인스타에니/낭만루트_앱점검/미리보기/미리보기.html "1. 첫 화면" 넷째 판
 //
-// · 바로가기(#homeQuickNav·#homeQuickBig [data-quick], 2026-10-31, 11-16 개편): 위 작은 세 칸 레디샷 · 후기 올리기 · 굴업도, 아래 큰 두 칸 동행 구하기 · 장비 후기. 누르면 그 화면으로 넘어간다.
+// · 바로가기(#homeQuickNav·#homeQuickBig [data-quick], 2026-10-31, 11-16 개편): 위 작은 세 칸 레디샷 · 후기 올리기 · 굴업도, 아래 큰 두 칸 동행 구하기 · 낭만루트 공식 오픈채팅. 누르면 그 화면으로 넘어간다.
+//   공식 오픈채팅 칸(11-16)은 규칙·책임 문구를 보여 주고 '읽고 동의해요'를 체크해야 카톡 방이 열린다. 로그인한 낭만루터만(openOfficialChat).
 //   초보 가이드·박지 랭킹·자유게시판 바로가기는 그 밑 백패커 라운지(#okbmLoungeHome, lounge.js) 알약으로 옮겼다.
 // · '최근 다녀온 후기' 칸은 11-16에 뺐다(대표님). 맨 위 피드 칸·낭만피드 탭과 겹치고, 그 밑 테마 박지가 홈에서 가장 많이 눌려(2주 37%) 그 칸을 위로 올렸다.
 // · 굴업도 들어가기(2026-11-02, 관리자만): 바로가기 밑 띠. 누르면 로그인 토큰을 주소 뒤 #tok=로 붙여 같이 접속 게임(Cloudflare)을 연다.
@@ -32,7 +33,7 @@
     css.textContent = [
       // 세 칸을 설명 칸에 바로 붙인다(홈 칸 사이 기본 간격 28px을 당김). 첫 화면에 히어로와 같이 보이게
       '.hq{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:0 14px;margin-top:-20px}',
-      // 11-16 아래 큰 두 칸(동행 구하기·장비 후기): 글은 왼쪽, 그림은 오른쪽. 위 세 칸에 바로 붙인다
+      // 11-16 아래 큰 두 칸(동행 구하기·공식 오픈채팅): 글은 왼쪽, 그림은 오른쪽. 위 세 칸에 바로 붙인다
       '.hq-big{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:-21px}',
       '.hq-big .hq-btn{position:relative;align-items:flex-start;height:74px;padding:0 14px;gap:4px;overflow:hidden}',
       '.hq-big .hq-btn b{font-size:17px}',
@@ -43,12 +44,29 @@
       '.hq-btn.hq-join em{color:#34d399;font-weight:700}',
       '.hq-btn.hq-join svg{color:#34d399}',
       '.hq-btn.hq-gear svg{color:#e0b45a}',
-      // 큰 칸 '백패커 라운지'(11-16): 둘째 줄 추천순 1위 제목, 셋째 줄 '인기 1위 · 하트 N' (lounge.js가 채움)
-      '.hq-btn.hq-lounge{border-color:rgba(255,214,120,.35);gap:2px}',
-      '.hq-big .hq-btn.hq-lounge em{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;color:#e9e9ee;font-weight:600}',
-      '.hq-big .hq-btn .hq-k{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:#e0b45a}',
-      '.hq-big .hq-btn .hq-k[hidden]{display:none}',
-      '.hq-big .hq-btn .hq-k svg{position:static;width:12px;height:12px;margin:0;color:#ff6b8a;opacity:1}',
+      // 큰 칸 '낭만루트 공식 오픈채팅'(11-16): 카톡처럼 노란색. 이름이 길어 두 줄, 말풍선은 오른쪽 위로 올려 밑줄과 안 겹치게
+      '.hq-btn.hq-chat{gap:1px;border-color:rgba(254,229,0,.45);background:linear-gradient(135deg,rgba(254,229,0,.13),rgba(254,229,0,.03)) #0c0d10}',
+      '.hq-big .hq-btn.hq-chat b{font-size:15px;line-height:1.25;white-space:normal;text-align:left}',
+      '.hq-big .hq-btn.hq-chat em{font-size:12px;color:#FEE500;font-weight:700}',
+      '.hq-big .hq-btn.hq-chat svg{top:14px;margin-top:0;width:20px;height:20px;color:#FEE500}',
+      // 공식 오픈채팅 들어가기 전 규칙·동의 창(아래에서 올라오는 판)
+      '.oc-dim{position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.62)}',
+      '.oc-sh{position:fixed;left:0;right:0;bottom:0;z-index:2147483647;max-width:480px;margin:0 auto;max-height:92vh;overflow:auto;box-sizing:border-box;background:#121317;border-radius:20px 20px 0 0;border-top:1px solid #26272c;padding:14px 20px calc(18px + env(safe-area-inset-bottom, 0px));color:#F2F3F5;letter-spacing:-.02em;word-break:keep-all}',
+      '.oc-sh .oc-gr{width:38px;height:4px;border-radius:2px;background:#3a3b40;margin:0 auto 14px}',
+      '.oc-sh h3{margin:0 0 4px;font-size:18px;font-weight:900}',
+      '.oc-sh .oc-s{margin:0 0 10px;font-size:13.5px;color:#a1a1aa;line-height:1.5}',
+      '.oc-sh ul{margin:0;padding:0;list-style:none;border-top:1px solid #23242a}',
+      '.oc-sh li{position:relative;padding:8px 0 8px 16px;font-size:14px;line-height:1.45;color:#e4e4e7;border-bottom:1px solid #23242a}',
+      '.oc-sh li::before{content:"";position:absolute;left:3px;top:15px;width:6px;height:6px;border-radius:50%;background:#FEE500}',
+      '.oc-warn{margin-top:12px;padding:11px 13px;border-radius:12px;background:rgba(255,107,138,.08);border:1px solid rgba(255,107,138,.35);font-size:13.5px;line-height:1.5;color:#f4d4dc}',
+      '.oc-warn b{display:block;margin-bottom:3px;color:#ff8fa8}',
+      '.oc-ck{display:flex;align-items:center;gap:9px;margin-top:12px;padding:4px 0;font-size:14px;font-weight:700;cursor:pointer}',
+      '.oc-ck input{width:20px;height:20px;margin:0;accent-color:#FEE500;flex:none}',
+      '.oc-bt{display:flex;gap:8px;margin-top:12px}',
+      '.oc-bt button{flex:1;height:48px;border:0;border-radius:12px;font-family:inherit;font-weight:900;font-size:15px;cursor:pointer}',
+      '.oc-bt .oc-no{flex:0 0 90px;background:#23242a;color:#c7c7cc}',
+      '.oc-bt .oc-go{background:#FEE500;color:#191600}',
+      '.oc-bt .oc-go:disabled{background:#3a3820;color:#8a8660;cursor:default}',
       // 11-09 '장비 후기' 칸: 노란 테두리·NEW(굴업도 줄 NEW는 11-09에 뺌), NEW는 일주일만(.hq-new를 start()에서 붙인다)
       '.hq-btn.hq-gear{position:relative;border-color:rgba(255,214,120,.35)}',
       '.hq-new{position:absolute;top:-7px;right:6px;font-style:normal;font-size:10px;font-weight:900;color:#1a1206;background:#f5b94a;border-radius:5px;padding:2px 5px;line-height:1.2}',
@@ -225,11 +243,7 @@
     else if (kind === 'rank' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(3);
     else if (kind === 'board' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(2);
     else if (kind === 'gear' && typeof window.openLoungeWindow === 'function') window.openLoungeWindow(5);   // 라운지 장비 탭
-    // 큰 칸 '백패커 라운지'(11-16): 자유게시판 추천순. lounge.js가 아직이면 받은 뒤 연다
-    else if (kind === 'lounge') {
-      if (typeof window.okbmOpenLoungeHot === 'function') window.okbmOpenLoungeHot();
-      else if (typeof window.okbmEnsureLounge === 'function') window.okbmEnsureLounge().then(function () { if (typeof window.okbmOpenLoungeHot === 'function') window.okbmOpenLoungeHot(); }).catch(function (err) { console.warn('[home-layout.js:lounge]', err); });
-    }
+    else if (kind === 'openchat') openOfficialChat();
     else if (kind === 'join' && typeof window.openTripJoinListModal === 'function') window.openTripJoinListModal();
     else if (kind === 'write' && typeof window.openPastTripRegisterModal === 'function') {
       // 홈에서 열면 올린 뒤·닫은 뒤 홈으로 돌아온다 (낭만플랜에서 연 것과 같은 처리: 마이리포트로 넘어가지 않음)
@@ -237,6 +251,50 @@
       window.openPastTripRegisterModal(e);
     }
     else if (kind === 'feed' && typeof window.navigateToDockTab === 'function') window.navigateToDockTab('history');
+  }
+
+  // ---------- 낭만루트 공식 오픈채팅(11-16) ----------
+  // 대표님이 연 카톡 방. 로그인한 낭만루터만 들어가고, 들어가기 전에 규칙·책임 문구를 보고 '읽고 동의해요'를 체크해야 한다.
+  // 책임 문구는 이용약관(terms.html '동행 등 회원끼리 만나며 생긴 문제는 당사자끼리')과 같은 뜻. 카톡 방 공지에도 같은 말을 둔다.
+  var OFFICIAL_CHAT_URL = 'https://open.kakao.com/o/gkwghhOi';
+  function closeOfficialChat() {
+    ['ocDim', 'ocSheet'].forEach(function (id) { var el = document.getElementById(id); if (el) el.remove(); });
+  }
+  function openOfficialChat() {
+    if (typeof window.isUserLoggedIn === 'function' && !window.isUserLoggedIn()) {
+      if (typeof window.openLoginModal === 'function') window.openLoginModal({ message: '로그인하면 낭만루트 공식 오픈채팅에 들어갈 수 있어요.' });
+      return;
+    }
+    closeOfficialChat();
+    document.body.insertAdjacentHTML('beforeend',
+      '<div class="oc-dim" id="ocDim"></div>' +
+      '<div class="oc-sh" id="ocSheet" role="dialog" aria-modal="true" aria-labelledby="ocTitle"><div class="oc-gr"></div>' +
+        '<h3 id="ocTitle">낭만루트 공식 오픈채팅</h3>' +
+        '<p class="oc-s">장비, 동행, 백패킹 이야기를 나누는 방이에요.</p>' +
+        '<ul>' +
+          '<li>같이 갈 사람은 앱 \'동행 구하기\'에 글을 올리고 방에는 링크를 붙여 주세요.</li>' +
+          '<li>광고·판매 글은 안 돼요.</li>' +
+          '<li>처음 같이 가는 분과는 둘보다 여럿이 가요.</li>' +
+          '<li>낭만루트는 K-LNT를 지향하는 방이에요.</li>' +
+        '</ul>' +
+        '<div class="oc-warn"><b>동행은 각자 책임지는 개인 모임이에요</b>낭만루트와 상관없이, 같이 가는 사람 한 명 한 명이 스스로 책임져요. 모집한 사람도 같이 가는 한 사람이에요.</div>' +
+        '<label class="oc-ck"><input type="checkbox" id="ocAgree">위 내용을 읽고 동의해요</label>' +
+        '<div class="oc-bt"><button type="button" class="oc-no" data-oc="close">닫기</button><button type="button" class="oc-go" data-oc="go" disabled>카톡에서 들어가기</button></div>' +
+      '</div>');
+    var sheet = document.getElementById('ocSheet');
+    var go = sheet.querySelector('[data-oc="go"]');
+    document.getElementById('ocDim').addEventListener('click', closeOfficialChat);
+    document.getElementById('ocAgree').addEventListener('change', function (e) { go.disabled = !e.target.checked; });
+    sheet.addEventListener('click', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('[data-oc]') : null;
+      if (!b) return;
+      if (b.getAttribute('data-oc') === 'close') return closeOfficialChat();
+      if (go.disabled) return;
+      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_official_chat');
+      closeOfficialChat();
+      // 동행 글 오픈채팅(index-main.js handleTripChatJoinClick)과 같은 방식으로 연다
+      window.open(OFFICIAL_CHAT_URL, '_blank', 'noopener,noreferrer');
+    });
   }
 
   // ---------- 굴업도 들어가기(같이 접속 게임, 관리자 시험 중) ----------

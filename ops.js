@@ -20,6 +20,7 @@
     quick_event: '바로가기: 이번 달 행사(10/21까지)',
     feat_quick_rank: '바로가기: 박지 랭킹',
     quick_join: '바로가기: 동행 찾기',
+    quick_openchat: '바로가기: 공식 오픈채팅',
     quick_board: '바로가기: 자유게시판',
     quick_write: '바로가기: 후기 올리기',
     recent_reviews: '최근 다녀온 후기',
@@ -27,7 +28,7 @@
     guides: '처음 가는 백패킹',
     together: '함께하기'
   };
-  var HOME_ORDER = ['hero', 'hero_detail', 'hero_gear', 'quick_guide', 'feat_quick_rank', 'quick_board', 'quick_join', 'quick_write', 'quick_event',
+  var HOME_ORDER = ['hero', 'hero_detail', 'hero_gear', 'quick_guide', 'feat_quick_rank', 'quick_board', 'quick_join', 'quick_openchat', 'quick_write', 'quick_event',
     'recent_reviews', 'theme', 'events', 'video', 'guides', 'tripjoin', 'together', 'lounge', 'ready'];
   var DOCK = [['dock_home', '낭만루터'], ['dock_map', '낭만루트'], ['dock_plan', '낭만플랜'], ['dock_history', '낭만피드'], ['dock_report', '낭만리포트']];
   var DEVICE = [['device_ios', '아이폰 사파리'], ['device_ios_home', '아이폰 홈 화면'], ['device_android', '안드로이드 웹'], ['device_app', '낭만루트 앱'], ['device_other', 'PC·기타']];
@@ -46,6 +47,7 @@
     ['feat_trip_detail', '홈', '원정대 글 자세히 보기'],
     ['feat_trip_submit', '홈', '원정대 글 올리기·고치기'],
     ['feat_trip_chat', '홈', '원정대 참여·채팅'],
+    ['feat_official_chat', '홈', '공식 오픈채팅 들어감(동의 후)'],
     ['feat_trip_close', '홈', '원정대 마감 바꾸기'],
     ['feat_lounge_open', '라운지', '라운지 창 열기'],
     ['feat_lounge_tab_events', '라운지', '탭: 이번 달 행사'],

@@ -3408,23 +3408,7 @@
     if (adm) adm.textContent = D.admin ? '관리자' : '';
     for (let i = 0; i < wpanes.length; i++) rerenderPane(i);
   }
-  function renderAll() { timeSig = timeSigNow(); renderHome(); paintDealSurfaces(); rerenderWindow(); paintHomeLoungeTop(); }
-  // 홈 바로가기 큰 칸 '백패커 라운지'(index.html #hqLoungeTop, I28): 추천순 1위 글 제목과 '인기 1위 · 하트 N'.
-  // 좋아요 받은 글이 없으면 가장 최근 글 제목만
-  function paintHomeLoungeTop() {
-    const el = document.getElementById('hqLoungeTop'), k = document.getElementById('hqLoungeK');
-    if (!el || D.status !== 'ready') return;
-    const top = visiblePosts('hot|all')[0];
-    if (top && Number(top.likes_count) > 0) {
-      el.textContent = top.title;
-      if (k) { k.innerHTML = '인기 1위 · ' + ico(P.heart, 12) + (Number(top.likes_count) || 0); k.hidden = false; }
-      return;
-    }
-    const last = visiblePosts('all').filter(function (p) { return !p.is_pinned && !p.is_private && p.category !== 'gear'; })
-      .sort(function (a, b) { return String(b.created_at).localeCompare(String(a.created_at)); })[0];
-    el.textContent = last ? last.title : '\u00a0';
-    if (k) k.hidden = true;
-  }
+  function renderAll() { timeSig = timeSigNow(); renderHome(); paintDealSurfaces(); rerenderWindow(); }
   // 신청·오픈 시각이 지나면 순서와 글씨가 바뀐다. 1분마다 상태(맨 위로·제자리)가 바뀌었으면 전부 다시 그리고,
   // 아니면 홈 두 칸('37분 뒤' 같은 꼬리표)만 다시 그린다. 펼친 글·인스타 게시물은 상태가 바뀔 때만 다시 그려진다.
   function timeSigNow() {
@@ -5676,13 +5660,6 @@
   }
 
   window.openLoungeWindow = function (tab, itemId) { openLoungeWindow(tab, itemId, null); };
-  // 홈 '백패커 라운지' 칸: 자유게시판 '전체'를 추천순으로 연다(기억한 정렬은 그대로, I28)
-  window.okbmOpenLoungeHot = function () {
-    S.cat = 'all'; S.bsort = 'hot';
-    if (!postsBy['hot|all']) loadPosts('hot|all').then(renderBoardList).catch(function (err) { console.warn('[lounge.js:openHot]', err); });
-    rerenderPane(2);
-    openLoungeWindow(2, null, null);
-  };
   // 낭만플랜 장비관리에서 부른다: 그 장비 후기 쓰기, 그 장비 모아 보기 (I8). g = { id, name, cat }
   window.okbmLoungeGearReview = function (g) {
     if (!g || !g.name) return;
