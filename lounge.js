@@ -468,6 +468,41 @@
       '#okbmHomeHub .hh-st{font-style:normal;color:var(--blue)}',
       '#okbmHomeHub .hh-cl{padding:18px 0;text-align:center;font-size:11.5px;color:var(--sub)}',
       '#okbmHomeHub .hh-empty{padding:28px 0 22px;text-align:center;font-size:13px;color:var(--sub)}',
+      // 11-17 참여 중심: 제목 옆 투표 참여 표시, 설문 칸 빨간 점, 투표 강조 줄, 사진 붙은 글, 장비 사진 카드, 큰 투표 카드
+      '#okbmLoungeHomeTitle{display:flex;align-items:center;gap:8px}',
+      '#okbmLoungeHomeTitle .hh-live{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:8px;background:rgba(52,211,153,.12);color:#34d399;font-size:12px;font-weight:700;letter-spacing:0;white-space:nowrap}',
+      '#okbmLoungeHomeTitle .hh-live i{width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 0 3px rgba(52,211,153,.25)}',
+      '#okbmHomeHub .hh-chips button{position:relative}',
+      '#okbmHomeHub .hh-dot{position:absolute;top:4px;right:7px;width:6px;height:6px;border-radius:50%;background:#ff5a5f}',
+      '#okbmHomeHub .hh-write{background:var(--accent-fill,#2b6fd6);color:#fff}',
+      '#okbmHomeHub .hh-poll{width:100%;display:flex;align-items:center;gap:12px;margin-top:6px;padding:10px 10px 10px 14px;border-radius:14px;text-align:left;color:var(--tx);background:linear-gradient(90deg,rgba(255,195,66,.18),rgba(255,195,66,.04));box-shadow:inset 0 0 0 1px rgba(255,195,66,.22)}',
+      '#okbmHomeHub .hh-poll:active,#okbmHomeHub .hh-pr:active,#okbmHomeHub .hh-gc:active,#okbmHomeHub .hh-pcard:active{opacity:.7}',
+      '#okbmHomeHub .hh-px{flex:1;min-width:0}',
+      '#okbmHomeHub .hh-poll em{display:flex;align-items:center;gap:5px;font-style:normal;font-size:11.5px;font-weight:800;color:var(--star);white-space:nowrap;overflow:hidden}',
+      '#okbmHomeHub .hh-poll em i{flex:none;width:6px;height:6px;border-radius:50%;background:#ff5a5f}',
+      '#okbmHomeHub .hh-px b{display:block;margin-top:3px;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '#okbmHomeHub .hh-go{flex:none;display:flex;align-items:center;height:34px;padding:0 12px;border-radius:17px;background:var(--star);color:#1a1200;font-size:13px;font-weight:800}',
+      '#okbmHomeHub .hh-pr{width:100%;display:flex;align-items:center;gap:12px;min-height:52px;padding:8px 2px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;color:var(--tx)}',
+      '#okbmHomeHub .hh-pr .hh-px b{margin-top:0;font-size:14px;font-weight:600}',
+      '#okbmHomeHub .hh-pr small,#okbmHomeHub .hh-gc small{display:flex;align-items:center;gap:8px;margin-top:2px;font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden}',
+      '#okbmHomeHub .hh-pr small span,#okbmHomeHub .hh-gc small span{display:inline-flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums}',
+      '#okbmHomeHub .hh-pr img{flex:none;width:36px;height:36px;border-radius:9px;object-fit:cover;background:#1c1c20}',
+      '#okbmHomeHub .hh-pr+.hh-foot,#okbmHomeHub .hh-rail+.hh-foot{border-top:0}',
+      '#okbmHomeHub .hh-rail{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:8px -14px 0;padding:0 14px;scroll-padding:0 14px;scroll-snap-type:x proximity}',
+      '#okbmHomeHub .hh-rail::-webkit-scrollbar{display:none}',
+      '#okbmHomeHub .hh-gc{flex:0 0 128px;min-width:0;text-align:left;color:var(--tx);scroll-snap-align:start}',
+      '#okbmHomeHub .hh-gph{position:relative;display:grid;place-items:center;width:128px;height:128px;border-radius:14px;overflow:hidden;background:#1c1c20;color:var(--sub)}',
+      '#okbmHomeHub .hh-gph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}',
+      '#okbmHomeHub .hh-gph em{position:absolute;left:7px;top:7px;font-style:normal;font-size:11px;font-weight:800;color:var(--star);background:rgba(0,0,0,.6);padding:3px 6px;border-radius:6px}',
+      '#okbmHomeHub .hh-gc b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:8px;font-size:13px;font-weight:600;line-height:1.35}',
+      '#okbmHomeHub .hh-pcard{width:100%;display:block;margin-top:6px;padding:12px 14px;border-radius:16px;text-align:left;color:var(--tx);background:radial-gradient(120% 140% at 100% 0%,rgba(255,195,66,.2),rgba(255,195,66,0) 60%),#16161a}',
+      '#okbmHomeHub .hh-pcard em{font-style:normal;font-size:11.5px;font-weight:800;color:var(--star)}',
+      '#okbmHomeHub .hh-pcard>b{display:block;margin-top:5px;font-size:16px;font-weight:800}',
+      '#okbmHomeHub .hh-ld{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;color:var(--sub)}',
+      '#okbmHomeHub .hh-ld b{display:block;font-size:14px;font-weight:700;color:var(--tx)}',
+      '#okbmHomeHub .hh-rk1{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--star);color:#1a1200;font-weight:900}',
+      '#okbmHomeHub .hh-cta{display:flex;align-items:center;justify-content:center;height:40px;margin-top:10px;border-radius:12px;background:#fff;color:#000;font-size:14px;font-weight:800}',
+      '#okbmHomeHub .hh-pcard+.hh-row{border-top:0}',
       '#okbmHomeMag .hm-head{padding:0 14px;margin-bottom:10px;font-size:var(--fs-title,16px);font-weight:900;color:var(--tx)}',
       '#okbmHomeMag .hm-rail{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 14px;scroll-padding:0 14px;scroll-snap-type:x proximity}',
       '#okbmHomeMag .hm-rail::-webkit-scrollbar{display:none}',
@@ -3260,39 +3295,77 @@
     return '<div class="hh-cols">' + hubCol('평점 높은', rate) + hubCol('후기 많은', many) + hubCol('GPX 올린', gpx) + '</div>'
       + hubFoot('data-a="lounge" data-v="3"', '후기·랭킹 전체 보기', '', '');
   }
+  // 홈 라운지가 눈에 띄고 참여하고 싶게 (대표님 11-17, 시안 mockups/ui-polish-1117 라운지짧게).
+  // 높이는 그대로: 게시판 칸은 투표 강조 한 줄 + 글 세 줄(작은 사진·좋아요·댓글), 장비 칸은 사진 카드, 설문 칸은 큰 투표 카드.
+  // 지난 14일 투표는 98명, 댓글은 16명이라 한 번 누르는 투표를 앞에 세운다. 포인트 숫자는 TASK_POINTS_1116 표 그대로(투표 +2, 장비 후기 +10)
+  const HUB_BOARD_N = 3;
+  // 맨 위에 세울 투표: 게시판 글 중 가장 최근 설문, 없으면 설문 칸의 첫 글 (게시판 칸 규칙 11-05 그대로)
+  function hubPoll() {
+    const open = function (p) { return p.category === 'poll' && !p.is_private; };
+    const p = (postsBy.all ? visiblePosts('all').find(open) : null) || (postsBy.poll ? visiblePosts('poll').find(open) : null);
+    if (!p) return null;
+    const top3 = p.poll_kind === 'top3';
+    const r = (top3 ? D.top3[p.id] : D.poll[p.id]) || {};
+    const voted = top3 ? Array.isArray(r.mine) && r.mine.length > 0 : r.mine != null;
+    const closed = !!r.closed || !!(p.poll_ends_at && new Date(p.poll_ends_at) <= Date.now());
+    return { p: p, top3: top3, total: Number(r.total) || 0, leader: top3 && r.leader ? t3Short(r.leader) : '', firsts: top3 && r.leader ? Number(r.leader.firsts) || 0 : 0, voted: voted, closed: closed };
+  }
+  const hubCounts = function (p) {
+    const l = Number(p.likes_count) || 0, c = Number(p.comments_count) || 0;
+    return (l ? '<span>' + ico(P.heart, 12) + l + '</span>' : '') + (c ? '<span>' + ico(P.chat, 12) + c + '</span>' : '');
+  };
+  const hubThumb = function (p) {
+    const ph = !p.is_private && Array.isArray(p.photos) ? p.photos.find(function (u) { return okbmSafeImageUrl(u); }) : '';
+    return ph ? escapeHtml(okbmFastImageUrl(ph, 240)) : '';
+  };
+  function hubPollRow(h) {
+    const head = h.closed ? '투표 마감' : '<i></i>지금 투표 중';
+    const sub = [h.total ? h.total + '명' : '', h.leader ? '1위 ' + esc(h.leader) : ''].filter(Boolean).join(' · ');
+    const go = h.closed || h.voted ? '결과 보기' : '참여 +2';
+    return `<button type="button" class="hh-poll" data-a="lounge" data-v="2" data-id="${esc(h.p.id)}"><span class="hh-px"><em>${head}${sub ? ' · ' + sub : ''}</em><b>${esc(h.p.title)}</b></span><span class="hh-go">${go}</span></button>`;
+  }
+  function hubPostRow(p) {
+    const th = hubThumb(p);
+    return `<button type="button" class="hh-pr" data-a="lounge" data-v="2" data-id="${esc(p.id)}"><span class="hh-px"><b>${esc(p.title)}</b><small>${esc(p.nickname || '낭만루터')}${hubCounts(p)}</small></span>${th ? `<img src="${th}" alt="" loading="lazy" decoding="async">` : ''}</button>`;
+  }
+  function hubPollCard(h) {
+    const line = h.top3 && h.leader
+      ? `<span class="hh-rk1">1</span><span><b>${esc(h.leader)}</b>${h.firsts ? h.firsts + '명이 1등으로 골랐어요 · ' : ''}${h.voted || h.closed ? '2·3위는 결과에서 보여요' : '2·3위는 투표하면 보여요'}</span>`
+      : `<span><b>${h.total}명 참여</b>${esc(pollLeft(h.p, h.closed))}</span>`;
+    const cta = h.closed || h.voted ? '결과 보기' : (h.top3 ? '나도 3곳 고르기 +2점' : '투표하기 +2점');
+    return `<button type="button" class="hh-pcard" data-a="lounge" data-v="2" data-id="${esc(h.p.id)}"><em>${h.closed ? '투표 마감' : '지금 투표 중'}${h.total ? ' · ' + h.total + '명 참여' : ''}</em><b>${esc(h.p.title)}</b><span class="hh-ld">${line}</span><span class="hh-cta">${cta}</span></button>`;
+  }
+  function hubGearCard(p) {
+    const th = hubThumb(p);
+    return `<button type="button" class="hh-gc" data-a="lounge" data-v="${TAB_GEAR}" data-id="${esc(p.id)}"><span class="hh-gph">${th ? `<img src="${th}" alt="" loading="lazy" decoding="async">` : ico(P.tent, 26)}<em>${p.gear_kind === 'review' ? '후기' : '질문'}</em></span><b>${esc(p.title)}</b><small>${esc(p.nickname || '낭만루터')}${hubCounts(p)}</small></button>`;
+  }
   function hubBody(key) {
     if (D.status !== 'ready') return '<div class="hh-empty">불러오는 중…</div>';
-    if (key === 'gear') { // 장비 말머리 글: 질문·후기 꼬리표, 오른쪽에 종류 (I2)
+    if (key === 'gear') {
       if (!postsBy.gear) return '<div class="hh-empty">불러오는 중…</div>';
-      const rows = visiblePosts('gear').slice(0, HUB_N).map(function (p) {
-        return hubRow('data-a="lounge" data-v="' + TAB_GEAR + '" data-id="' + esc(p.id) + '"', p.gear_kind === 'review' ? '후기' : '질문', p.title, GEAR_CAT[p.gear_cat] || '');
-      }).join('');
-      return (rows || '<div class="hh-empty">첫 장비 후기를 올려 보세요</div>') + hubFoot('data-a="hub-all" data-v="gear"', '장비 전체 보기', 'gear', '후기 쓰기');
+      const gear = visiblePosts('gear').filter(function (p) { return !p.is_private; });
+      // 사진 있는 후기를 앞에 (사진 칸이 비면 텐트 그림이라 덜 눈에 띈다), 그 안에서는 최신순 그대로
+      const cards = gear.filter(hubThumb).concat(gear.filter(function (p) { return !hubThumb(p); })).slice(0, 8).map(hubGearCard).join('');
+      return (cards ? '<div class="hh-rail">' + cards + '</div>' : '<div class="hh-empty">첫 장비 후기를 올려 보세요</div>')
+        + hubFoot('data-a="hub-all" data-v="gear"', '장비 전체 보기', 'gear', '후기 쓰기 +10');
     }
-    if (key === 'board' || key === 'poll') {
-      const st = postsBy[key === 'poll' ? 'poll' : 'all'];
-      if (!st) return '<div class="hh-empty">불러오는 중…</div>';
-      let list = visiblePosts(key === 'poll' ? 'poll' : 'all').filter(function (p) { return !p.is_private; });
-      // 게시판 칸은 가장 최근 설문·투표 하나를 맨 위에, 나머지 두 줄은 일반 글(대표님 11-05)
-      if (key === 'board') {
-        const poll = list.find(function (p) { return p.category === 'poll'; })
-          || visiblePosts('poll').find(function (p) { return !p.is_private; });
-        // 장비 후기가 몰려도 장비는 한 줄만, 백패킹이야기를 앞에(대표님 11-09)
-        const rest = allOrder(list.filter(function (p) { return p.category !== 'poll'; }));
-        list = poll ? [poll].concat(rest) : rest;
-      }
-      list = list.slice(0, HUB_N);
-      const rows = list.map(function (p) {
-        const poll = p.category === 'poll';
-        const top3 = poll && p.poll_kind === 'top3';
-        const r = top3 ? D.top3[p.id] : D.poll[p.id];
-        // TOP 3는 참여 수 옆에 지금 1위를 붙인다 (I6)
-        const meta = top3 ? (r && Number(r.total) ? [(Number(r.total) || 0) + '명', r.leader ? '1위 ' + t3Short(r.leader) : ''].filter(Boolean).join(' · ') : '참여하기')
-          : poll ? (r ? (Number(r.total) || 0) + '명 참여' : '참여하기') : [p.nickname, Number(p.comments_count) ? '댓글 ' + p.comments_count : ''].filter(Boolean).join(' · ');
-        return hubRow('data-a="lounge" data-v="2" data-id="' + esc(p.id) + '"', top3 ? 'TOP 3' : poll ? '설문' : p.category === 'gear' ? '장비' : '', p.title, meta);
+    if (key === 'board') {
+      if (!postsBy.all) return '<div class="hh-empty">불러오는 중…</div>';
+      const h = hubPoll();
+      // 장비 후기가 몰려도 장비는 한 줄만, 백패킹이야기를 앞에(대표님 11-09)
+      const rest = allOrder(visiblePosts('all').filter(function (p) { return !p.is_private && p.category !== 'poll'; })).slice(0, HUB_BOARD_N);
+      const body = (h ? hubPollRow(h) : '') + rest.map(hubPostRow).join('');
+      return (body || '<div class="hh-empty">첫 글을 기다리고 있어요</div>') + hubFoot('data-a="hub-all" data-v="all"', '게시판 전체 보기', '', '질문하기');
+    }
+    if (key === 'poll') {
+      if (!postsBy.poll) return '<div class="hh-empty">불러오는 중…</div>';
+      const h = hubPoll();
+      const others = visiblePosts('poll').filter(function (p) { return !p.is_private && (!h || p.id !== h.p.id); }).slice(0, 1).map(function (p) {
+        const r = (p.poll_kind === 'top3' ? D.top3[p.id] : D.poll[p.id]) || {};
+        return hubRow('data-a="lounge" data-v="2" data-id="' + esc(p.id) + '"', p.poll_kind === 'top3' ? 'TOP 3' : '설문', p.title, Number(r.total) ? r.total + '명 참여' : '참여하기');
       }).join('');
-      return (rows || '<div class="hh-empty">' + (key === 'poll' ? '첫 설문을 올려 보세요' : '첫 글을 기다리고 있어요') + '</div>')
-        + (key === 'poll' ? hubFoot('data-a="hub-all" data-v="poll"', '설문 전체 보기', 'poll', '설문 만들기') : hubFoot('data-a="hub-all" data-v="all"', '게시판 전체 보기', '', '글쓰기'));
+      return (h ? hubPollCard(h) + others : '<div class="hh-empty">첫 설문을 올려 보세요</div>')
+        + hubFoot('data-a="hub-all" data-v="poll"', '설문 전체 보기', 'poll', '설문 만들기');
     }
     if (key === 'review') return hubRankBody();
     const tipList = tips();
@@ -3309,8 +3382,17 @@
     const el = document.getElementById('okbmHomeHub');
     if (!el) return;
     const key = HUB.some(function (h) { return h[0] === S.hub; }) ? S.hub : 'board';
+    const poll = D.status === 'ready' ? hubPoll() : null;
+    const live = poll && !poll.closed && poll.total ? poll.total : 0;
+    const title = document.getElementById('okbmLoungeHomeTitle');
+    if (title) {
+      let badge = title.querySelector('.hh-live');
+      if (live && !badge) { badge = document.createElement('span'); badge.className = 'hh-live'; title.appendChild(badge); }
+      if (badge) { if (live) badge.innerHTML = '<i></i>투표 ' + live + '명 참여 중'; else badge.remove(); }
+    }
+    const dot = poll && !poll.closed && !poll.voted ? 'poll' : '';
     el.innerHTML = '<div class="hh-chips" role="tablist" aria-label="라운지">' + HUB.map(function (h) {
-      return '<button type="button" role="tab" data-a="hub" data-v="' + h[0] + '" class="' + (h[0] === key ? 'on' : '') + '" aria-selected="' + (h[0] === key) + '">' + esc(h[1]) + '</button>';
+      return '<button type="button" role="tab" data-a="hub" data-v="' + h[0] + '" class="' + (h[0] === key ? 'on' : '') + '" aria-selected="' + (h[0] === key) + '">' + esc(h[1]) + (h[0] === dot ? '<b class="hh-dot" aria-label="참여할 투표 있음"></b>' : '') + '</button>';
     }).join('') + '</div><div class="hh-body" role="tabpanel">' + hubBody(key) + '</div>';
   }
 
