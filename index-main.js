@@ -910,7 +910,7 @@
         var backCard = Array.prototype.find.call(themeHeroCardBox.querySelectorAll(':scope > [data-spot-id]'), function(el) {
           return el.dataset.spotId === backId;
         });
-        if (backCard) window.okbmMotion.flyBack(modalEl.querySelector('.insta-card'), backCard.querySelector('img'));
+        if (backCard) window.okbmMotion.flyBack(modalEl.querySelector('.insta-card'), backCard.querySelector('img'), { r1: '0px' });
       }
       if (typeof window.unregisterModalClose === 'function') {
         window.unregisterModalClose('secretSpotHeroModal');
@@ -1046,7 +1046,7 @@
       var heroSafetyHtml = '';
       var isOwnThemeFeed = heroUserId && typeof window.isCurrentUserId === 'function' && window.isCurrentUserId(heroUserId);
       if (heroFeedId && !isOwnThemeFeed && typeof window.openUgcSafetyMenu === 'function') {
-        heroSafetyHtml = '<button type="button" data-feed-id="' + escapeHtml(heroFeedId) + '" data-user-id="' + escapeHtml(heroUserId) + '" data-author="' + escapeHtml(author) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openUgcSafetyMenu(this.dataset.feedId, this.dataset.userId, this.dataset.author, event);" title="더보기" aria-label="더보기" style="position:absolute; top:10px; right:40px; z-index:30; width:24px; height:24px; border-radius:50%; background:#0c1017; border:1px solid rgba(255,255,255,0.18); color:#cbd5e1; display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer;">' +
+        heroSafetyHtml = '<button type="button" data-feed-id="' + escapeHtml(heroFeedId) + '" data-user-id="' + escapeHtml(heroUserId) + '" data-author="' + escapeHtml(author) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openUgcSafetyMenu(this.dataset.feedId, this.dataset.userId, this.dataset.author, event);" title="더보기" aria-label="더보기" style="flex-shrink:0; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.08); border:0; color:#d1d1d6; display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer;">' +
           '<svg viewBox="0 0 24 24" style="width:13px; height:13px; pointer-events:none;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
         '</button>';
       }
@@ -1076,14 +1076,13 @@
       var slidesHtml = photosList.map(function(u) {
         return `
           <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000;">
-            <img src="${escapeHtml(okbmViewImageUrl(u))}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.96) contrast(1.04);" />
-            <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 25%, transparent 70%, rgba(0,0,0,0.75) 100%); pointer-events:none;"></div>
+            <img src="${escapeHtml(okbmViewImageUrl(u))}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;" />
           </div>
         `;
       }).join('');
 
       var dotsHtml = (photosList.length > 1) ? `
-        <div id="secretSpotDotsWrap" style="position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; align-items:center; gap:4px; height:8px; z-index:25; pointer-events:none;">
+        <div id="secretSpotDotsWrap" style="flex-shrink:0; display:flex; justify-content:center; align-items:center; gap:4px; height:4px; padding:8px 0 2px; pointer-events:none;">
           ${photosList.map(function(_, bIdx) {
             var dotW = (bIdx === 0) ? '12px' : '4px';
             var dotBg = (bIdx === 0) ? '#ffffff' : 'rgba(255,255,255,0.35)';
@@ -1107,32 +1106,30 @@
 
       modalEl.innerHTML = `
         <!-- 상단 고정 본문: 마우스 휠로 홈(일행구하기)이 밀려 올라오지 않게 overflow 잠금 -->
-        <div style="flex:1 1 0%; min-height:0; overflow:hidden; overscroll-behavior:none; touch-action:pan-x; contain:content; padding:calc(10px + env(safe-area-inset-top, 0px)) 14px 14px 14px; display:flex; justify-content:center; align-items:center; box-sizing:border-box;">
-          <div class="ssh-stage" style="width:100%; max-width:440px; display:flex; flex-direction:column; gap:8px; margin:0; box-sizing:border-box;">
+        <!-- 11-17 대표님 A안: 이름·점점점·X는 사진 위 한 줄로 빼고, 사진은 화면 폭 끝까지·메모 칸 위까지 꽉. 사진 위 어두운 그림자는 뺐다 -->
+        <div style="flex:1 1 0%; min-height:0; overflow:hidden; overscroll-behavior:none; touch-action:pan-x; contain:content; padding:env(safe-area-inset-top, 0px) 0 12px 0; display:flex; box-sizing:border-box;">
+          <div class="ssh-stage" style="width:100%; max-width:480px; height:100%; display:flex; flex-direction:column; margin:0 auto; box-sizing:border-box;">
 
-            <div class="insta-card" style="position:relative; width:100%; aspect-ratio:3/4; max-height:calc(var(--vh, 1vh) * 62); border-radius:16px; overflow:hidden; background:#000; border:1px solid rgba(255,255,255,0.18); box-shadow:0 8px 24px rgba(0,0,0,0.45); box-sizing:border-box; flex-shrink:0;">
-              
-              <!-- ✕ 초슬림 투명 글래스 닫기 앵커 -->
-              <button type="button" onclick="window.closeSecretSpotHeroModal();" style="position:absolute; top:10px; right:10px; z-index:30; width:24px; height:24px; border-radius:50%; background:#0c1017; border:1px solid rgba(255,255,255,0.18); color:#cbd5e1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; transition:all 0.15s ease;">
-                <svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
+            <div style="flex-shrink:0; display:flex; align-items:center; gap:8px; height:52px; padding:0 12px 0 16px; box-sizing:border-box;">
+              <div style="flex:1; min-width:0; font-size:1rem; font-weight:900; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(spotName)}</div>
               ${heroSafetyHtml}
+              <button type="button" onclick="window.closeSecretSpotHeroModal();" style="flex-shrink:0; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.08); border:0; color:#d1d1d6; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">
+                <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
 
+            <div class="insta-card" style="position:relative; width:100%; flex:1 1 auto; min-height:0; overflow:hidden; background:#000; box-sizing:border-box;">
               <!-- 📷 가로 스와이프 트랙 -->
               <div class="ssh-track" onscroll="window.updateSecretSpotStoryBars(this);" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">
                 ${slidesHtml}
               </div>
-
-              <!-- 🔘 사진 속 닷 인디케이터 -->
-              ${dotsHtml}
-
-              <div style="position:absolute; bottom:22px; left:0; right:0; padding:0 14px; z-index:20; pointer-events:none; display:flex; flex-direction:column; gap:2px;">
-                <div style="font-size:1.15rem; font-weight:900; color:#ffffff; text-shadow:0 2px 8px rgba(0,0,0,0.9);">${escapeHtml(spotName)}</div>
-              </div>
             </div>
 
+            <!-- 🔘 사진 아래 닷 인디케이터 -->
+            ${dotsHtml}
+
             <!-- 하단 글래스 메모: 칸 어디를 눌러도 지도 자세히보기(아래 bindMemoLink). 장비 세팅보기는 장비를 올린 글이 거의 없어 뺐다 -->
-            <div class="insta-glass-memo okbm-memo-link" data-map-id="${escapeHtml(mapSpotId)}" data-spot="${escapeHtml(cleanMapSpotName)}">
+            <div class="insta-glass-memo okbm-memo-link" data-map-id="${escapeHtml(mapSpotId)}" data-spot="${escapeHtml(cleanMapSpotName)}" style="flex-shrink:0; margin:8px 14px 0; width:auto !important; box-sizing:border-box;">
               <div class="insta-memo-quote" id="secretSpotQuoteText" style="font-size:0.75rem; line-height:1.45; color:#cbd5e1; display:-webkit-box; -webkit-line-clamp:3; line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">
                 “${escapeHtml(firstMemoText)}”
               </div>
@@ -1151,7 +1148,7 @@
       if (old) old.remove();
       document.body.appendChild(modalEl);
       if (themeHeroFromCard && window.okbmMotion) {
-        window.okbmMotion.flyIn(themeHeroFromCard.querySelector('img'), modalEl.querySelector('.insta-card'), modalEl);
+        window.okbmMotion.flyIn(themeHeroFromCard.querySelector('img'), modalEl.querySelector('.insta-card'), modalEl, { r1: '0px' });
       }
       themeHeroFromCard = null;
       bindThemeHeroFeedSwipe(modalEl, photosList.length > 1, nav ? nav.dir : 0);

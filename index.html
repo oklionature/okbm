@@ -1461,6 +1461,17 @@
       -webkit-transform: translateZ(0);
       contain: layout size style;
     }
+    /* 테마 스팟 확대 창(11-17 A안): 사진이 화면 폭 끝까지·메모 칸 위까지 꽉 찬다. 공용 .insta-card의 3:4·그림자·테두리를 끈다 */
+    #secretSpotHeroModal .insta-card {
+      flex: 1 1 auto !important;
+      aspect-ratio: auto !important;
+      max-height: none;
+      margin: 0;
+      border-radius: 0;
+      border: 0;
+      box-shadow: none;
+      background: #000;
+    }
     #secretSpotHeroModal .insta-glass-memo {
       height: 94px !important;
     }
@@ -2652,7 +2663,7 @@ window.okbmIsHomePublicFeed = function(f) {
   <script src="home-layout.js?v=63"></script>
   <script src="readyshot-quick.js?v=1.0.1" defer></script>
   <script src="spot-tips.js?v=14" defer></script>
-  <script src="index-main.js?v=1.0.57"></script>
+  <script src="index-main.js?v=1.0.58"></script>
   <script src="home-metrics.js?v=5" defer></script>
   <script src="home-screen-guide.js?v=4" defer></script>
 
