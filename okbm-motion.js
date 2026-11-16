@@ -600,21 +600,18 @@
       }
     }
   }
-  // 창이 문서에서 빠지는 순간, 빠진 창을 껍데기로 다시 띄워 피드 사진 자리로 동그랗게 줄이고 사진도 그 자리로 돌려보낸다.
+  // 창이 문서에서 빠지는 순간 사진만 피드 자리로 돌려보낸다. 창은 바로 사라져 뒤 화면이 그대로 보인다
+  // (창을 동그랗게 줄이면 피드 사진 자리와 겹치는 프로필 머리 로고 칸이 작은 원 안에 남아 부자연스러웠다, 대표님 11-17).
   // 같은 사람 창을 다시 그렸으면(관심 누르기 등) 새 창을 지켜보고, 피드 사진이 다른 창에 덮였으면(기록 열기) 아무것도 안 한다
   function watchProfileClose(modal, face, btn) {
     var img = face.el;
-    var last = null, scrolled = [];
+    var last = null;
     function measure() {
       var av = modal.querySelector('.mr-av');
       last = av ? av.getBoundingClientRect() : null;
     }
     setTimeout(measure, 480);
-    modal.addEventListener('scroll', function (e) {
-      measure();
-      if (scrolled.indexOf(e.target) < 0) scrolled.push(e.target);
-      e.target.__okmTop = e.target.scrollTop;
-    }, true);
+    modal.addEventListener('scroll', measure, true);
     var mo = new MutationObserver(function () {
       if (modal.isConnected) return;
       mo.disconnect();
@@ -628,7 +625,6 @@
       var hit = document.elementFromPoint(r1.left + r1.width / 2, r1.top + r1.height / 2);
       var home = btn || img;
       if (!hit || !(home === hit || home.contains(hit) || hit.contains(home))) return;
-      shrinkShell(modal, r1, scrolled);
       if (!last || !last.width || last.bottom < 0) return;
       var g = avatarGhost(last, face, false); // 사진이면 회색 바탕 없이 돌아간다
       g.style.zIndex = PROFILE_Z;
@@ -636,36 +632,6 @@
       flyBox(g, last, r1, '50%', '50%', 260).onfinish = function () { img.style.visibility = ''; g.remove(); };
     });
     mo.observe(document.body, { childList: true, subtree: true });
-  }
-  // 닫힌 창을 똑같이 복사해(id는 지워 다른 코드가 못 찾게) 보던 스크롤 그대로 띄우고, 사진 자리로 원을 줄인 뒤 지운다
-  function shrinkShell(modal, to, scrolled) {
-    var all = modal.querySelectorAll('*');
-    var shell = modal.cloneNode(true);
-    shell.removeAttribute('id');
-    shell.querySelectorAll('[id]').forEach(function (el) { el.removeAttribute('id'); });
-    shell.setAttribute('aria-hidden', 'true');
-    shell.inert = true;
-    shell.style.pointerEvents = 'none';
-    var av = shell.querySelector('.mr-av');
-    if (av) av.style.visibility = 'hidden';
-    document.body.appendChild(shell);
-    var copies = shell.querySelectorAll('*');
-    scrolled.forEach(function (el) {
-      if (!el.__okmTop) return;
-      if (el === modal) { shell.scrollTop = el.__okmTop; return; }
-      var i = Array.prototype.indexOf.call(all, el);
-      if (i >= 0 && copies[i]) copies[i].scrollTop = el.__okmTop;
-    });
-    var sr = shell.getBoundingClientRect();
-    var cx = to.left + to.width / 2 - sr.left, cy = to.top + to.height / 2 - sr.top;
-    // 끝에서 빨라지며 줄고(머리 쪽 로고 칸이 작은 원 안에 오래 남지 않게), 절반쯤부터 흐려져 사라진다(대표님 11-17)
-    var a = shell.animate([
-      { clipPath: circleAt(farCorner(sr.width, sr.height, cx, cy), cx, cy) },
-      { clipPath: circleAt(to.width / 2, cx, cy) }
-    ], { duration: 280, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
-    shell.animate([{ opacity: 1 }, { opacity: 1, offset: 0.45 }, { opacity: 0 }], { duration: 280, easing: 'linear', fill: 'forwards' });
-    a.onfinish = function () { shell.remove(); };
-    setTimeout(function () { if (shell.isConnected) shell.remove(); }, 700);
   }
 
   function bookify(view) {
