@@ -4478,6 +4478,7 @@ function updateSmartResetButtons() {
                 ${getSpotStatusBadges(spot)}
                 ${campBanCreditChipHtml(spot)}
                 ${!spot.gpxUrl && spot.__detailTier === 'member' ? `<button type="button" class="gpx-wanted-badge" data-gpx-send="${sId}" data-metric-click="feat_spot_gpx_wanted">${ICONS.GPX_TRACK}<span>GPX 구해요</span></button>` : ''}
+                ${spot.gpxUrl && spot.__detailTier === 'member' ? `<span class="gpx-wanted-badge gpx-has-badge">${ICONS.GPX_TRACK}<span>GPX 등록됨</span></span>` : ''}
               </div>
               <div class="js-spot-title-actions" style="display:flex; align-items:center; gap:6px; flex-shrink:0;" onclick="event.stopPropagation();">${closeBtn}</div>
             </div>
