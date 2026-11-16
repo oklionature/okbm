@@ -719,7 +719,7 @@
         var sId = escapeHtml(String(f.id || sName));
 
         return `
-          <div data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId)" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; box-sizing:border-box; transition:transform 0.15s ease;">
+          <div data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId, this)" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; box-sizing:border-box; transition:transform 0.15s ease;">
             <div style="width:100%; aspect-ratio:4/3; position:relative; background:#000; overflow:hidden;">
               <img src="${escapeHtml(okbmViewImageUrl(item.photoUrl))}" alt="${escapeHtml(sName)}" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;" />
               <div style="position:absolute; bottom:6px; right:6px; background:#0c1017; color:#fde047; font-size:0.58rem; font-weight:900; font-family:var(--font-en); padding:2px 6px; border-radius:4px; border:1px solid rgba(253,224,71,0.35);">${escapeHtml(badgeText)}</div>
@@ -861,7 +861,7 @@
         var sId = escapeHtml(String(f.id || sName));
 
         return `
-          <div class="n-trailer-card" data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId)" style="width:118px !important; flex-shrink:0; cursor:pointer;">
+          <div class="n-trailer-card" data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId, this)" style="width:118px !important; flex-shrink:0; cursor:pointer;">
             <div class="n-trailer-thumb">
               <img src="${escapeHtml(okbmViewImageUrl(item.photoUrl, 320))}" alt="${escapeHtml(sName)}" loading="lazy" decoding="async" />
               <div class="n-trailer-weight-chip">${escapeHtml(badgeText)}</div>
@@ -957,11 +957,21 @@
       }
     };
 
+    // 테마 스팟 창에서 옆 피드로 넘길 순서. 카드를 누른 줄(홈 테마 줄·전체 보기 칸)의 카드 순서를 그대로 쓴다(대표님 11-16)
+    var themeHeroNav = null; // { ids: [...], idx: n }
+
     // 🖼️ [3:4 대형 화보 뷰어: 풀커버 + 사진 속 닷 + 하단 5대 메인독 탑재]
-    window.openSecretSpotHeroViewer = function(spotOrFeedId) {
-      if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_hero_photo'); // 기능 사용 세기 (H8)
-      var old = document.getElementById('secretSpotHeroModal');
-      if (old) old.remove();
+    // cardEl: 누른 테마 카드(있으면 그 줄 순서로 옆 피드 넘기기). nav: 창 안에서 옆 피드로 넘길 때 { dir: 1 | -1 }
+    window.openSecretSpotHeroViewer = function(spotOrFeedId, cardEl, nav) {
+      if (!nav) {
+        if (typeof window.okbmMetric === 'function') window.okbmMetric('feat_hero_photo'); // 기능 사용 세기 (H8)
+        themeHeroNav = null;
+        if (cardEl && cardEl.parentElement) {
+          var navIds = Array.prototype.map.call(cardEl.parentElement.querySelectorAll(':scope > [data-spot-id]'), function(el) { return el.dataset.spotId; });
+          var navIdx = navIds.indexOf(String(spotOrFeedId));
+          if (navIds.length > 1 && navIdx !== -1) themeHeroNav = { ids: navIds, idx: navIdx };
+        }
+      }
 
       var targetKey = String(spotOrFeedId || '').trim();
       var cleanTargetKey = targetKey.replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
@@ -986,7 +996,7 @@
       // 테마 칸에서 더 받은 피드는 사진 3장만 들고 있다. 그 글 하나를 통째로 받아 바꿔 넣고 다시 연다
       if (matchedFeed && matchedFeed.__themeLite) {
         loadThemeFeedFull(matchedFeed).then(function() {
-          window.openSecretSpotHeroViewer(spotOrFeedId);
+          window.openSecretSpotHeroViewer(spotOrFeedId, null, nav || { dir: 0 });
         });
         return;
       }
@@ -1006,7 +1016,7 @@
         });
       }
 
-      if (!matchedFeed && !matchedSpot) return;
+      if (!matchedFeed && !matchedSpot) return themeHeroNavFailed(nav);
 
       var spotName = matchedFeed ? (matchedFeed.spot || matchedFeed.spotName) : (matchedSpot.name || matchedSpot.spot_main || '장소');
       var cleanMapSpotName = matchedSpot
@@ -1044,7 +1054,7 @@
       }
 
       if (photosList.length === 0) {
-        return;
+        return themeHeroNavFailed(nav);
       }
 
       var photoMemosArr = matchedFeed ? getRecordPhotoMemos(matchedFeed) : [];
@@ -1085,8 +1095,8 @@
       modalEl.innerHTML = `
         <!-- 상단 고정 본문: 마우스 휠로 홈(일행구하기)이 밀려 올라오지 않게 overflow 잠금 -->
         <div style="flex:1 1 0%; min-height:0; overflow:hidden; overscroll-behavior:none; touch-action:pan-x; contain:content; padding:calc(10px + env(safe-area-inset-top, 0px)) 14px 14px 14px; display:flex; justify-content:center; align-items:center; box-sizing:border-box;">
-          <div style="width:100%; max-width:440px; display:flex; flex-direction:column; gap:8px; margin:0; box-sizing:border-box;">
-            
+          <div class="ssh-stage" style="width:100%; max-width:440px; display:flex; flex-direction:column; gap:8px; margin:0; box-sizing:border-box;">
+
             <div class="insta-card" style="position:relative; width:100%; aspect-ratio:3/4; max-height:calc(var(--vh, 1vh) * 62); border-radius:16px; overflow:hidden; background:#000; border:1px solid rgba(255,255,255,0.18); box-shadow:0 8px 24px rgba(0,0,0,0.45); box-sizing:border-box; flex-shrink:0;">
               
               <!-- ✕ 초슬림 투명 글래스 닫기 앵커 -->
@@ -1096,7 +1106,7 @@
               ${heroSafetyHtml}
 
               <!-- 📷 가로 스와이프 트랙 -->
-              <div onscroll="window.updateSecretSpotStoryBars(this);" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">
+              <div class="ssh-track" onscroll="window.updateSecretSpotStoryBars(this);" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">
                 ${slidesHtml}
               </div>
 
@@ -1123,7 +1133,11 @@
 
         `;
 
+      // 옆 피드로 넘길 때는 새 피드를 다 찾은 뒤에 옛 창을 바꿔 끼운다(사이에 빈 화면이 생기지 않게)
+      var old = document.getElementById('secretSpotHeroModal');
+      if (old) old.remove();
       document.body.appendChild(modalEl);
+      bindThemeHeroFeedSwipe(modalEl, photosList.length > 1, nav ? nav.dir : 0);
       bindMemoLink(modalEl.querySelector('.okbm-memo-link'), function(box) {
         window.closeSecretSpotHeroModal();
         location.href = 'map.html?' + (box.dataset.mapId
@@ -1144,6 +1158,106 @@
       }, { passive: false });
     };
 
+
+    // 테마 스팟 창: 사진 위에서 밀면 사진이 넘어가고(.ssh-track 가로 스크롤), 사진 밖(검은 바탕·설명 칸)에서
+    // 좌우로 밀면 손가락을 따라 화면이 끌리다 70px 넘게 밀고 놓으면 옆 피드로 넘어간다(대표님 11-16).
+    // 사진이 한 장뿐이면 사진 위에서 밀어도 옆 피드로 넘긴다. 처음·끝에서는 조금만 끌린다.
+    function bindThemeHeroFeedSwipe(modalEl, photoSwipes, enterDir) {
+      var stage = modalEl.querySelector('.ssh-stage');
+      if (!stage) return;
+      if (enterDir) {
+        stage.style.transform = 'translateX(' + (enterDir * 100) + 'vw)';
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            stage.style.transition = 'transform 0.22s ease-out';
+            stage.style.transform = 'translateX(0)';
+          });
+        });
+      }
+      if (!themeHeroNav) return;
+      var ids = themeHeroNav.ids;
+      var idx = themeHeroNav.idx;
+      preloadThemeHeroFeed(ids[idx + 1]);
+      preloadThemeHeroFeed(ids[idx - 1]);
+
+      var sx = 0, sy = 0, dx = 0, mode = 'off'; // 'off' | '' (아직 모름) | 'h' | 'v'
+      var busy = false;
+      modalEl.addEventListener('touchstart', function(e) {
+        modalEl.__okbmSwiped = false;
+        if (busy || e.touches.length !== 1 || (photoSwipes && e.target.closest('.ssh-track'))) { mode = 'off'; return; }
+        sx = e.touches[0].clientX;
+        sy = e.touches[0].clientY;
+        dx = 0;
+        mode = '';
+        stage.style.transition = 'none';
+      }, { passive: true });
+      modalEl.addEventListener('touchmove', function(e) {
+        if (mode === 'off' || mode === 'v') return;
+        var mx = e.touches[0].clientX - sx;
+        var my = e.touches[0].clientY - sy;
+        if (!mode) {
+          if (Math.abs(mx) < 8 && Math.abs(my) < 8) return;
+          mode = Math.abs(mx) > Math.abs(my) ? 'h' : 'v';
+          if (mode === 'v') return;
+        }
+        var hasTarget = mx < 0 ? idx + 1 < ids.length : idx > 0;
+        dx = hasTarget ? mx : mx * 0.25;
+        stage.style.transform = 'translateX(' + dx + 'px)';
+      }, { passive: true });
+      function onEnd() {
+        if (mode !== 'h') { mode = 'off'; return; }
+        mode = 'off';
+        modalEl.__okbmSwiped = true;
+        var dir = dx < 0 ? 1 : -1;
+        var nextIdx = idx + dir;
+        if (Math.abs(dx) < 70 || nextIdx < 0 || nextIdx >= ids.length) {
+          stage.style.transition = 'transform 0.2s ease-out';
+          stage.style.transform = 'translateX(0)';
+          return;
+        }
+        busy = true;
+        stage.style.transition = 'transform 0.18s ease-in';
+        stage.style.transform = 'translateX(' + (-dir * 100) + 'vw)';
+        setTimeout(function() {
+          if (!document.body.contains(modalEl)) return;
+          themeHeroNav.idx = nextIdx;
+          window.openSecretSpotHeroViewer(ids[nextIdx], null, { dir: dir });
+        }, 180);
+      }
+      // 옆 피드를 못 열면(받는 사이 지워진 글 등) 밀어 둔 화면을 제자리로 돌린다(themeHeroNavFailed)
+      modalEl.__okbmNavFail = function() {
+        themeHeroNav.idx = idx;
+        busy = false;
+        stage.style.transition = 'transform 0.2s ease-out';
+        stage.style.transform = 'translateX(0)';
+      };
+      modalEl.addEventListener('touchend', onEnd);
+      modalEl.addEventListener('touchcancel', onEnd);
+      // 밀고 놓은 손가락이 설명 칸 누름(지도 자세히보기)으로 이어지지 않게
+      modalEl.addEventListener('click', function(e) {
+        if (!modalEl.__okbmSwiped) return;
+        modalEl.__okbmSwiped = false;
+        e.preventDefault();
+        e.stopPropagation();
+      }, true);
+    }
+
+    function themeHeroNavFailed(nav) {
+      if (!nav) return;
+      var cur = document.getElementById('secretSpotHeroModal');
+      if (cur && cur.__okbmNavFail) cur.__okbmNavFail();
+    }
+
+    // 옆 피드 첫 사진을 미리 받아 둔다(넘길 때 검은 칸이 덜 보이게)
+    function preloadThemeHeroFeed(id) {
+      if (!id) return;
+      var key = String(id).trim();
+      var pool = getHomeFeedPool()
+        .concat(Array.isArray(window.__okbmThemeExtraFeeds) ? window.__okbmThemeExtraFeeds : []);
+      var f = pool.find(function(x) { return x && String(x.id).trim() === key; });
+      var url = f && window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(f)[0];
+      if (url) new Image().src = okbmViewImageUrl(url);
+    }
 
     // 설명 칸(사진 아래)을 누르면 자세히보기. 칸 안의 '자세히 ›' 버튼은 키보드로 닿는 자리이고 누르면 칸으로 올라온다.
     // 칸 안의 다른 버튼(작성자 모아보기·⋯)은 각자 stopPropagation 하므로 여기로 오지 않는다.
