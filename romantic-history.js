@@ -7894,7 +7894,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     return out;
   };
 
-  // 플로깅 피드는 맨 앞에 하나, 그 뒤로 새 글 5개마다 하나씩 끼운다(대표님 11-16). 다 끼우면 그 뒤는 원래 순서.
+  // 플로깅 피드는 맨 앞에 하나, 그 뒤로 새 글 4개마다 하나씩 끼운다(대표님 11-16). 다 끼우면 그 뒤는 원래 순서.
   // 공개 플로깅 피드를 다녀온 날짜 최신순으로 따로 받아, 날짜 자리에서는 빼고 이 자리에만 둔다.
   var PLOG_PICK_POOL = 30;
   window.__okbmPlogPickRows = window.__okbmPlogPickRows || [];
@@ -7937,8 +7937,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
   };
 
   // list는 예전 글까지 끼운 목록. newBefore = 이미 보인 새 글(예전 글·플로깅 글 아닌 것) 수. 0이면 맨 앞에도 하나 둔다.
-  // 새 글 하나마다는 너무 잦아 5개마다로 줄였다(대표님 11-16).
-  var PLOG_PICK_EVERY = 5;
+  // 새 글 하나마다는 너무 잦아 4개마다로 줄였다(대표님 11-16).
+  var PLOG_PICK_EVERY = 4;
   window.okbmInterleavePlogPicks = function(list, plogs, newBefore, isEnd) {
     var oldIds = window.__okbmOldPickIds || new Set();
     var out = [];
@@ -9316,7 +9316,7 @@ window.renderHistoryStage = function(isLoading, opts) {
 
     currentList = sortDescFn(currentList);
 
-    // 최신 글 2개마다 예전 글 1개, 그다음 플로깅 글을 맨 앞과 새 글 5개마다 끼운다.
+    // 최신 글 2개마다 예전 글 1개, 그다음 플로깅 글을 맨 앞과 새 글 4개마다 끼운다.
     // 예전 글·플로깅 글은 최신순 자리에서 빼고 뽑힌 순서대로 끼운다(둘 다인 글은 플로깅 자리로).
     if (oldPickIds.size || plogPickIds.size) {
       var pickById = {};
