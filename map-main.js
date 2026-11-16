@@ -3005,6 +3005,8 @@ function updateSmartResetButtons() {
           askGuestLoginForSpot(spot);
           return;
         }
+        // 박지 정보창 5점(대표님 11-16): 처음 여는 박지면 spot-open-points.js가 묻거나 결제한 뒤 다시 부른다
+        if (typeof window.okbmSpotOpenGate === 'function' && !window.okbmSpotOpenGate(spot, function() { focusSpotOnMap(spot); })) return;
         if (window.__okbmSpotFocusTimer) {
           clearTimeout(window.__okbmSpotFocusTimer);
           window.__okbmSpotFocusTimer = null;

@@ -85,6 +85,25 @@
       '.hg-btns button{height:48px;border:0;border-radius:14px;background:#2f9e6a;color:#fff;font-family:inherit;font-size:16.5px;font-weight:700;cursor:pointer}',
       '.hg-btns button.sec{height:34px;background:transparent;color:#1f7a50;font-size:14px;font-weight:600}',
       '.hn-x.hg-x{background:rgba(29,43,36,.12);border:0;color:#1d2b24}',
+      // 11-16 포인트 개편 알림(.hg.pt): 칸이 넷이라 한 화면에 들어가게 촘촘히, 숫자 칸·점수 알약·플로깅 칸
+      '.hg.pt .hg-hero{padding:28px 18px 92px}',
+      '.hg.pt .hg-hero svg{height:96px}',
+      '.hg.pt .hg-hero h2{font-size:24px}',
+      '.hg.pt .hg-vis{margin-top:11px;font-size:14px;font-weight:600;color:#2d3b34}',
+      '.hg-st{margin-top:12px;display:grid;grid-template-columns:repeat(2,1fr);gap:6px}',
+      '.hg-st div{padding:9px 6px 8px;border-radius:12px;background:rgba(255,255,255,.72);text-align:center}',
+      '.hg-st b{display:block;font-size:15.5px;font-weight:800;letter-spacing:-.03em;color:#1f7a50}',
+      '.hg-st span{display:block;margin-top:2px;font-size:11.5px;font-weight:600;color:#55625b}',
+      '.hg.pt .hg-w{margin-top:-58px}',
+      '.hg.pt .hg-blk{margin-top:7px;padding:11px 14px 10px;border-radius:15px}',
+      '.hg.pt .hg-q{font-size:16px;line-height:1.35}',
+      '.hg.pt .hg-d{margin-top:4px;font-size:12.8px;line-height:1.5}',
+      '.hg-chips{margin:7px 0 0;display:flex;flex-wrap:wrap;gap:4px}',
+      '.hg-chips i{font-style:normal;font-size:12px;font-weight:700;padding:4px 8px;border-radius:999px;background:#e6f3ec;color:#1f7a50}',
+      '.hg-chips b{font-weight:800;margin-left:3px}',
+      '.hg-blk.lnt{background:#effaf3;box-shadow:0 8px 24px rgba(31,71,52,.08),inset 0 0 0 1.5px #8fd4ae}',
+      '.hg.pt .hg-end{margin:10px 4px 0;font-size:14px}',
+      '.hg.pt .hg-btns{padding:8px 16px 14px}',
       '.hn-x{position:absolute;top:10px;right:10px;z-index:2;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:15px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
       '.hq-btn.hq-isle em{color:#e0b45a}',
       '.gq-wrap{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);padding:0 12px calc(env(safe-area-inset-bottom) + 84px)}',
@@ -222,9 +241,10 @@
   }
   // ---------- 홈 첫 알림창(11-02 대표님: 지도 말고 낭만루터에서 뜨게) ----------
   // 11-09: 앱 출시 그림 알림을 내리고, 라운지 장비 탭 개편 알림을 글자판으로 띄운다(앱·웹 모두).
-  // 바꿀 때: HOME_NOTICE.id를 새 값으로 바꾸면 전에 닫은 사람에게도 한 번 뜬다. 시안: .claude/mockups/notice-1109-gear/v10/v07a1.html
+  // 바꿀 때: HOME_NOTICE.id를 새 값으로 바꾸면 전에 닫은 사람에게도 한 번 뜬다. 11-16: 낭만 포인트 개편 알림(시안 .claude/mockups/notice-1116-points/v1.html, 문구 TASK_POINTS_1116.md 7번).
+  // 시안: .claude/mockups/notice-1109-gear/v10/v07a1.html
   var HOME_NOTICE = {
-    id: '20261109-gear',
+    id: '20261116-points',
     mag: '158728fc-eda4-4ac9-9638-52d5e89ae6d4'   // '매거진에서 이용 방법 보기'로 열 라운지 매거진 id(lounge_news). 비어 있으면 장비 탭을 연다
   };
   var HG_RIDGE = '<svg viewBox="0 0 390 170" preserveAspectRatio="none" aria-hidden="true"><path d="M0 120 L60 70 L105 98 L170 40 L230 92 L285 58 L340 96 L390 72 V170 H0Z" fill="#c9e3d6"/><path d="M0 140 L70 104 L130 128 L200 86 L265 124 L330 100 L390 122 V170 H0Z" fill="#9fcfb6"/><path d="M0 170 V150 L90 132 L170 150 L250 128 L320 146 L390 136 V170Z" fill="#f4f8f6"/></svg>';
@@ -237,18 +257,21 @@
     root.className = 'hn';
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
-    root.setAttribute('aria-label', '라운지 장비 탭 개편 알림');
+    root.setAttribute('aria-label', '낭만루트 업데이트 알림');
     root.innerHTML = '<div class="hn-frame"><button type="button" class="hn-x hg-x" data-metric-click="feat_home_notice_close" aria-label="닫기">✕</button>' +
-      '<div class="hn-scroll hg">' +
-        '<div class="hg-hero">' + HG_RIDGE + '<div class="hg-hin"><p class="hg-ey">앱 출시 일주일</p><h2>어느새 약 2,500분이<br>낭만루터가 되어 주셨어요</h2><p class="hg-thx">진심으로 고맙습니다.</p>' +
-          '<p class="hg-vis">낭만루트는 백패커 여러분의 경험을 모아<br><b>모두에게 도움이 되는 앱</b>이 되고 싶어요.</p></div></div>' +
+      '<div class="hn-scroll hg pt">' +
+        '<div class="hg-hero">' + HG_RIDGE + '<div class="hg-hin"><p class="hg-ey">낭만루트 업데이트</p><h2>낭만루트는<br>백패커들의 커뮤니티가 되고 싶어요</h2><p class="hg-thx">3천 분 가까이 낭만루터가 되어 주셨어요.</p>' +
+          '<div class="hg-st"><div><b>460곳 넘는</b><span>박지</span></div><div><b>1,500개 넘게</b><span>피드·별·댓글</span></div></div>' +
+          '<p class="hg-vis">박지 찾기부터 장비, 동행, 플로깅, 다녀온 이야기까지.<br>낭만루터들이 모든 걸 함께 나누는 곳이 되길 바라요.</p></div></div>' +
         '<div class="hg-w">' +
-          '<div class="hg-blk"><p class="hg-q">박지처럼, 이제 <em>장비 이야기</em>도<br>함께 나누고 싶어요</p><p class="hg-d">그래서 라운지 장비 탭을 개편했어요.<br>장비마다 별점과 후기를 모아 보고,<br>궁금한 장비는 질문할 수 있어요.</p></div>' +
-          '<div class="hg-blk"><p class="hg-q">광고가 아닌 <em>진짜 이야기</em>가<br>다음 사람의 기준이 돼요</p><p class="hg-d">직접 써 본 사람의 한 줄 경험이<br>누군가의 첫 장비, 다음 장비를 고르는 기준이 돼요.<br>후기가 쌓이면 가장 많이 쓰는 텐트·침낭·배낭도 보여요.</p></div>' +
-          '<div class="hg-blk"><p class="hg-q">써 본 장비가 있다면<br><em>한 줄</em>만 남겨 주세요</p><p class="hg-d">잘 아는 장비라면 질문에 답도 달아 주세요.<br>후기·질문·답변에는 낭만 포인트도 드려요.</p></div>' +
-          '<p class="hg-end">같이 만들어 가는 낭만루트가 될게요.</p>' +
+          '<div class="hg-blk"><p class="hg-q"><em>나누면</em> 쌓여요</p><p class="hg-d">피드, 박지 후기, 장비 후기, 장비 질문 답변,<br>댓글, 박지 제보까지 모든 활동에 드려요.</p>' +
+            '<p class="hg-chips"><i>피드<b>20</b></i><i>댓글·후기<b>10</b></i><i>수정 건의·GPX<b>100</b></i><i>박지 제보<b>200</b></i></p></div>' +
+          '<div class="hg-blk lnt"><p class="hg-q">자연을 지키면 <em>두 배로</em></p><p class="hg-d">K-LNT 7원칙을 지키고 쓰레기를 주워 온<br>플로깅 피드는 두 배로 드려요.</p></div>' +
+          '<div class="hg-blk"><p class="hg-q">얻어 간 만큼 <em>나눠 주세요</em></p><p class="hg-d">지금까지 낭만루터들이 보내 준<br>박지 제보·수정 건의·GPX가 100건이 넘어요.<br>이제 박지 정보창을 열 때 5점이 들어요.<br>한 번 연 곳은 계속 볼 수 있어요.</p></div>' +
+          '<div class="hg-blk"><p class="hg-q">부담은 <em>거의 없어요</em></p><p class="hg-d">오늘 50점을 넣어 드렸고,<br>출석만 해도 매일 10점이 쌓여요.</p></div>' +
+          '<p class="hg-end">함께 나눌수록 모두의 백패킹이 풍성해져요.</p>' +
         '</div>' +
-        '<div class="hg-btns"><button type="button" data-hg="gear" data-metric-click="feat_home_notice_go">장비 탭 가기</button><button type="button" class="sec" data-hg="mag" data-metric-click="feat_home_notice_mag">매거진에서 이용 방법 보기</button></div>' +
+        '<div class="hg-btns"><button type="button" data-hg="points" data-metric-click="feat_home_notice_go">포인트 모으는 법 보기</button></div>' +
       '</div></div>';
     function close() {
       try { localStorage.setItem(key, HOME_NOTICE.id); } catch (e) {}
@@ -259,9 +282,7 @@
       var b = ev.target.closest('[data-hg]');
       if (!b) return;
       close();
-      var go = b.getAttribute('data-hg');
-      if (go === 'mag' && HOME_NOTICE.mag && typeof window.openLoungeNews === 'function') window.openLoungeNews(HOME_NOTICE.mag);
-      else if (typeof window.openLoungeWindow === 'function') window.openLoungeWindow(5);   // 5 = 라운지 장비 탭
+      if (window.okbmPoints && typeof window.okbmPoints.open === 'function') window.okbmPoints.open();   // 낭만 포인트 받는 법 창
     });
     document.body.appendChild(root);
   }
