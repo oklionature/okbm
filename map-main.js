@@ -3863,9 +3863,11 @@ function updateSmartResetButtons() {
           if (!gpxTrack) return;
           var lat = pos.coords.latitude, lng = pos.coords.longitude, acc = Number(pos.coords.accuracy) || 0;
           var loc = new kakao.maps.LatLng(lat, lng);
-          showUserLocationDot(loc);
           var near = nearestOnGpx(gpxTrack, lat, lng);
           if (!near) return;
+          // 11-17 대표님: 파란 내 위치 점은 '내 위치'를 눌렀을 때만. 지도를 열거나 화면을 다시 켤 때의 조용한 확인은 점을 찍지 않는다.
+          // 산길(5km 안)에서 등산로 '다시 확인'을 눌렀을 때만 길 안내와 함께 점을 보여 준다.
+          if (userTap && near.dist <= GPX_FAR_M) showUserLocationDot(loc);
           if (near.dist > GPX_FAR_M) {
             // 아직 산에 안 간 것: 안내 줄을 치운다. 들머리에서 앱을 다시 열면(visibilitychange) 저절로 다시 본다
             var far = document.getElementById('okbmGpxGuide');
