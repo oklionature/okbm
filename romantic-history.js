@@ -1244,6 +1244,7 @@
       window.packingHistoryList,
       window.__allLoadedFeeds,
       window.__okbmOldPickRows,
+      window.__okbmPlogPickRows,
       window.__currentScopedPastTripLogs,
       (window.__memoryStore && window.__memoryStore['okbm_packing_history']) ? window.__memoryStore['okbm_packing_history'] : null
     ];
@@ -4214,6 +4215,7 @@ window.toggleFeedStar = async function(cardId, e) {
       (typeof window.safeGetStorage === 'function') ? window.safeGetStorage('okbm_packing_history', []) : null,
       window.__allLoadedFeeds,
       window.__okbmOldPickRows,
+      window.__okbmPlogPickRows,
       window.__currentScopedPastTripLogs,
       window.__currentScopedSavedFeeds,
       (typeof safeGetJSON === 'function') ? safeGetJSON('okbm_cached_community_feeds', []) : null
@@ -7892,9 +7894,69 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     return out;
   };
 
+  // 플로깅 피드는 맨 앞에 하나, 그 뒤로 새 글 하나마다 하나씩 끼운다(대표님 11-16). 다 끼우면 그 뒤는 원래 순서.
+  // 공개 플로깅 피드를 다녀온 날짜 최신순으로 따로 받아, 날짜 자리에서는 빼고 이 자리에만 둔다.
+  var PLOG_PICK_POOL = 30;
+  window.__okbmPlogPickRows = window.__okbmPlogPickRows || [];
+  window.__okbmPlogPickIds = window.__okbmPlogPickIds || new Set();
+
+  window.okbmLoadPlogPicks = function() {
+    if (window.__okbmPlogPickPromise) return window.__okbmPlogPickPromise;
+    window.__okbmPlogPickPromise = (async function() {
+      var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
+      var targetKey = window.SUPABASE_ANON_KEY || '';
+      if (!targetKey) return [];
+      var headers = (typeof window.okbmPublicRestHeaders === 'function')
+        ? window.okbmPublicRestHeaders()
+        : {
+          'apikey': targetKey,
+          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + targetKey)),
+          'Content-Type': 'application/json'
+        };
+      var projectionColumns = 'id,user_id,author,author_photo,instagram,spot,spot_id,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,comments_count,last_comment,plogging_photo,is_published,feed_type,created_at';
+      var url = targetUrl + '/rest/v1/feeds?select=' + projectionColumns + '&is_published=eq.true&plogging_photo=like.https*&order=date.desc.nullslast,created_at.desc&limit=' + PLOG_PICK_POOL;
+      try {
+        var res = (typeof window.okbmPublicFetch === 'function') ? await window.okbmPublicFetch(url, { headers: headers }) : await fetch(url, { headers: headers });
+        if (!res || !res.ok) return [];
+        var rows = await res.json();
+        var ordered = (Array.isArray(rows) ? rows : []).filter(function(r) {
+          return r && r.id && !(window.okbmIsExplicitlyPrivate && window.okbmIsExplicitlyPrivate(r));
+        });
+        window.__okbmPlogPickRows = ordered;
+        window.__okbmPlogPickIds = new Set(ordered.map(function(r) { return String(r.id); }));
+        if (ordered.length && window.__okbmHistoryModalOpen && typeof window.renderHistoryStage === 'function') {
+          window.renderHistoryStage(false, { sync: true });
+        }
+        return ordered;
+      } catch (ePlog) {
+        console.warn('[romantic-history.js:okbmLoadPlogPicks]', ePlog);
+        return [];
+      }
+    })();
+    return window.__okbmPlogPickPromise;
+  };
+
+  // list는 예전 글까지 끼운 목록. newBefore = 이미 보인 새 글(예전 글·플로깅 글 아닌 것) 수. 0이면 맨 앞에도 하나 둔다.
+  window.okbmInterleavePlogPicks = function(list, plogs, newBefore, isEnd) {
+    var oldIds = window.__okbmOldPickIds || new Set();
+    var out = [];
+    var p = 0;
+    if (!(newBefore > 0) && plogs.length) out.push(plogs[p++]);
+    list.forEach(function(item) {
+      out.push(item);
+      if (oldIds.has(String(item && item.id || '').trim())) return;
+      if (p < plogs.length) out.push(plogs[p++]);
+    });
+    if (isEnd) {
+      for (; p < plogs.length; p++) out.push(plogs[p]);
+    }
+    return out;
+  };
+
   if (typeof window.location === 'undefined' || String(window.location.pathname || '').indexOf('map.html') === -1) {
     window.okbmPrefetchVaultFeeds();
     window.okbmLoadOldPicks();
+    window.okbmLoadPlogPicks();
   }
 
   window.fetchMoreCommunityFeeds = async function() {
@@ -7905,7 +7967,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     var reelContainer = document.getElementById('reelsVerticalContainer');
     // 끼워 넣은 예전 글은 서버 페이지 자리에 세지 않는다
-    var currentRenderedCount = reelContainer ? reelContainer.querySelectorAll('.reel-page-snap:not([data-vault-intro]):not([data-old-pick])').length : 0;
+    var currentRenderedCount = reelContainer ? reelContainer.querySelectorAll('.reel-page-snap:not([data-vault-intro]):not([data-old-pick]):not([data-plog-pick])').length : 0;
     var offset = Math.max(currentRenderedCount, window.__feedPaginationOffset || 0);
 
     try {
@@ -8854,11 +8916,15 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
 
-    var oldPickAttr = (window.__okbmOldPickIds && window.__okbmOldPickIds.has(String(record.id || ''))) ? ' data-old-pick="1"' : '';
+    var pickRecId = String(record.id || '');
+    var oldPickAttr = (window.__okbmPlogPickIds && window.__okbmPlogPickIds.has(pickRecId)) ? ' data-plog-pick="1"'
+      : ((window.__okbmOldPickIds && window.__okbmOldPickIds.has(pickRecId)) ? ' data-old-pick="1"' : '');
     return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap"' + oldPickAttr + ' data-reel-idx="' + idx + '" data-feed-id="' + cardId + '" data-ready-shot-sig="' + escapeHtml(okbmReadyShotCardSig(record)) + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '">' +
       headerBarHtml +
       okbmFeedPhotoCountHtml(cardId, totalPhotosCount) +
       (isPlogged ? '<div class="okbm-plog-frame" aria-hidden="true"></div>' : '') +
+      // 플로깅 피드는 머리줄 아래에 띠 한 줄을 더 둔다(대표님 11-16, 모양은 badge-ring.js CSS)
+      (isPlogged ? '<div class="okbm-plog-band">' + (typeof window.okbmPlogIcon === 'function' ? window.okbmPlogIcon() : '') + '<b>플로깅 피드</b><span>· 박지 주변 쓰레기를 주웠어요</span></div>' : '') +
 
       '<div class="reel-media-stage">' +
         '<div style="width:100% !important; height:100% !important; position:relative; overflow:hidden; background:#000000;">' +
@@ -9199,8 +9265,12 @@ window.renderHistoryStage = function(isLoading, opts) {
     var combinedList = [];
     var addedIds = new Set();
     var oldPickIds = window.__okbmOldPickIds || new Set();
+    var plogPickIds = window.__okbmPlogPickIds || new Set();
     if (oldPickIds.size && Array.isArray(window.__okbmOldPickRows)) {
       ssotFeedPool = ssotFeedPool.concat(window.__okbmOldPickRows);
+    }
+    if (plogPickIds.size && Array.isArray(window.__okbmPlogPickRows)) {
+      ssotFeedPool = ssotFeedPool.concat(window.__okbmPlogPickRows);
     }
 
     ssotFeedPool.forEach(function(item, idx) {
@@ -9244,17 +9314,23 @@ window.renderHistoryStage = function(isLoading, opts) {
 
     currentList = sortDescFn(currentList);
 
-    // 최신 글 2개마다 예전 글 1개. 예전 글은 최신순 자리에서 빼고 뽑힌 순서대로 끼운다.
-    if (oldPickIds.size) {
+    // 최신 글 2개마다 예전 글 1개, 그다음 플로깅 글을 맨 앞과 새 글 하나마다 끼운다.
+    // 예전 글·플로깅 글은 최신순 자리에서 빼고 뽑힌 순서대로 끼운다(둘 다인 글은 플로깅 자리로).
+    if (oldPickIds.size || plogPickIds.size) {
       var pickById = {};
+      var plogById = {};
       var chronoList = [];
       currentList.forEach(function(r) {
         var rid = String(r.id || '').trim();
-        if (oldPickIds.has(rid)) pickById[rid] = r;
+        if (plogPickIds.has(rid)) plogById[rid] = r;
+        else if (oldPickIds.has(rid)) pickById[rid] = r;
         else chronoList.push(r);
       });
-      var pickList = window.__okbmOldPickRows.map(function(r) { return pickById[String(r.id)]; }).filter(Boolean);
-      currentList = window.okbmInterleaveOldPicks(chronoList, pickList, 0, 0, window.__feedHasMore === false);
+      var listEnded = window.__feedHasMore === false;
+      var pickList = (window.__okbmOldPickRows || []).map(function(r) { return pickById[String(r.id)]; }).filter(Boolean);
+      var plogList = (window.__okbmPlogPickRows || []).map(function(r) { return plogById[String(r.id)]; }).filter(Boolean);
+      currentList = window.okbmInterleaveOldPicks(chronoList, pickList, 0, 0, listEnded);
+      currentList = window.okbmInterleavePlogPicks(currentList, plogList, 0, listEnded);
     }
 
     if (!isLoading) {
@@ -9369,30 +9445,37 @@ window.renderHistoryStage = function(isLoading, opts) {
       var reelContainer = document.getElementById('reelsVerticalContainer');
       // 빈 배열은 마지막 페이지라는 뜻: 남은 예전 글만 끝에 붙인다
       if (!reelContainer || !Array.isArray(newItems)) return;
-      if (newItems.length === 0 && !(window.__okbmOldPickIds && window.__okbmOldPickIds.size)) return;
+      var appendPickIds = window.__okbmOldPickIds || new Set();
+      var appendPlogIds = window.__okbmPlogPickIds || new Set();
+      if (newItems.length === 0 && !appendPickIds.size && !appendPlogIds.size) return;
 
       newItems = window.okbmApplyUgcSafetyFilter(newItems);
 
       var existingCards = reelContainer.querySelectorAll('.reel-page-snap:not([data-vault-intro])');
       var startIdx = existingCards.length;
 
-      // 예전 글로 이미 끼웠거나 끼울 글은 최신순 자리에서 빼고, 이어서 2개마다 하나씩 끼운다
-      var appendPickIds = window.__okbmOldPickIds || new Set();
-      if (appendPickIds.size) {
+      // 예전 글·플로깅 글로 이미 끼웠거나 끼울 글은 최신순 자리에서 빼고, 이어서 같은 규칙으로 끼운다
+      if (appendPickIds.size || appendPlogIds.size) {
         var shownIds = new Set();
         var shownChrono = 0;
         existingCards.forEach(function(card) {
           shownIds.add(String(card.getAttribute('data-feed-id') || ''));
-          if (!card.hasAttribute('data-old-pick') && !card.hasAttribute('data-vault-empty')) shownChrono += 1;
+          if (!card.hasAttribute('data-old-pick') && !card.hasAttribute('data-plog-pick') && !card.hasAttribute('data-vault-empty')) shownChrono += 1;
         });
         var chronoAdd = newItems.filter(function(item) {
           var iid = String(item && item.id || '').trim();
-          return iid && !appendPickIds.has(iid) && !shownIds.has(iid);
+          return iid && !appendPickIds.has(iid) && !appendPlogIds.has(iid) && !shownIds.has(iid);
         });
-        var pendingPicks = window.okbmApplyUgcSafetyFilter(window.__okbmOldPickRows.filter(function(r) {
+        var pendingPicks = window.okbmApplyUgcSafetyFilter((window.__okbmOldPickRows || []).filter(function(r) {
+          var rid = String(r.id);
+          return !shownIds.has(rid) && !appendPlogIds.has(rid);
+        }));
+        var pendingPlogs = window.okbmApplyUgcSafetyFilter((window.__okbmPlogPickRows || []).filter(function(r) {
           return !shownIds.has(String(r.id));
         }));
-        newItems = window.okbmInterleaveOldPicks(chronoAdd, pendingPicks, shownChrono, 0, window.__feedHasMore === false);
+        var appendEnded = window.__feedHasMore === false;
+        newItems = window.okbmInterleaveOldPicks(chronoAdd, pendingPicks, shownChrono, 0, appendEnded);
+        newItems = window.okbmInterleavePlogPicks(newItems, pendingPlogs, shownChrono, appendEnded);
       }
       if (!newItems.length) return;
 
