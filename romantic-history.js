@@ -9418,6 +9418,11 @@ window.renderHistoryStage = function(isLoading, opts) {
       if (snapScroller) snapScroller.scrollTop = 0;
     }
     okbmWatchVaultIntroSeen(document.getElementById('reelsVerticalContainer'));
+    if (window.okbmMotion) {
+      window.okbmMotion.pullRefresh(document.getElementById('reelsVerticalContainer'), function() {
+        return typeof window.okbmRefreshVault === 'function' ? window.okbmRefreshVault() : null;
+      });
+    }
 
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('history');
@@ -9846,7 +9851,7 @@ window.renderHistoryStage = function(isLoading, opts) {
 
     var loadVaultFromNetwork = function() {
       var feedRefBeforeOpen = window.__allLoadedFeeds;
-      window.fetchCommunityFeeds(true).then(function(feeds) {
+      return window.fetchCommunityFeeds(true).then(function(feeds) {
         var liveModal = document.getElementById('romanticHistoryModal');
         var liveContent = liveModal ? liveModal.querySelector('.romantic-history-content') : null;
         if (!window.__okbmHistoryModalOpen) return;
@@ -9857,6 +9862,14 @@ window.renderHistoryStage = function(isLoading, opts) {
         var serverOk = Array.isArray(feeds) && feeds === window.__allLoadedFeeds && feeds !== feedRefBeforeOpen;
         paintVaultFromList(serverOk ? feeds : null, serverOk);
       });
+    };
+
+    // 낭만피드 맨 위에서 당겨서 새로고침(okbm-motion.js pullRefresh). 15초 안에 다시 당기면 받지 않고 움직임만 보여 준다(서버 부담)
+    window.okbmRefreshVault = function() {
+      if (window.__okbmFeedPaintedAt && Date.now() - window.__okbmFeedPaintedAt < 15000) {
+        return new Promise(function(done) { setTimeout(done, 700); });
+      }
+      return loadVaultFromNetwork();
     };
 
     // 다른 탭에 다녀온 거면(10분 안) 다시 받아 처음부터 그리지 않고 보던 자리 그대로 보여 준다.

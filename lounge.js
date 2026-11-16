@@ -4865,6 +4865,13 @@
     if (was) D.liked.delete(id); else D.liked.add(id);
     forEachPost(id, function (x) { x.likes_count = Math.max(0, (Number(x.likes_count) || 0) + step); });
     paintLike(id);
+    const motion = window.okbmMotion;
+    if (motion && layer) {
+      layer.querySelectorAll('[data-a="like"]').forEach(function (b) {
+        if (b.dataset.v === String(id)) motion.starPop(b, !was, { colors: ['#ff4d6d', '#ffffff', '#ffb3c1'], ring: '#ff4d6d', count: b.querySelector('span') });
+      });
+    }
+    if (!was && typeof window.triggerHaptic === 'function') { try { window.triggerHaptic(10); } catch (hapErr) {} }
     tick();
     try {
       const res = was
