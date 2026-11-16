@@ -85,25 +85,72 @@
       '.hg-btns button{height:48px;border:0;border-radius:14px;background:#2f9e6a;color:#fff;font-family:inherit;font-size:16.5px;font-weight:700;cursor:pointer}',
       '.hg-btns button.sec{height:34px;background:transparent;color:#1f7a50;font-size:14px;font-weight:600}',
       '.hn-x.hg-x{background:rgba(29,43,36,.12);border:0;color:#1d2b24}',
-      // 11-16 포인트 개편 알림(.hg.pt): 칸이 넷이라 한 화면에 들어가게 촘촘히, 숫자 칸·점수 알약·플로깅 칸
-      '.hg.pt .hg-hero{padding:28px 18px 92px}',
-      '.hg.pt .hg-hero svg{height:96px}',
-      '.hg.pt .hg-hero h2{font-size:24px}',
-      '.hg.pt .hg-vis{margin-top:11px;font-size:14px;font-weight:600;color:#2d3b34}',
-      '.hg-st{margin-top:12px;display:grid;grid-template-columns:repeat(2,1fr);gap:6px}',
-      '.hg-st div{padding:9px 6px 8px;border-radius:12px;background:rgba(255,255,255,.72);text-align:center}',
-      '.hg-st b{display:block;font-size:15.5px;font-weight:800;letter-spacing:-.03em;color:#1f7a50}',
-      '.hg-st span{display:block;margin-top:2px;font-size:11.5px;font-weight:600;color:#55625b}',
-      '.hg.pt .hg-w{margin-top:-58px}',
-      '.hg.pt .hg-blk{margin-top:7px;padding:11px 14px 10px;border-radius:15px}',
-      '.hg.pt .hg-q{font-size:16px;line-height:1.35}',
-      '.hg.pt .hg-d{margin-top:4px;font-size:12.8px;line-height:1.5}',
-      '.hg-chips{margin:7px 0 0;display:flex;flex-wrap:wrap;gap:4px}',
-      '.hg-chips i{font-style:normal;font-size:12px;font-weight:700;padding:4px 8px;border-radius:999px;background:#e6f3ec;color:#1f7a50}',
-      '.hg-chips b{font-weight:800;margin-left:3px}',
-      '.hg-blk.lnt{background:#effaf3;box-shadow:0 8px 24px rgba(31,71,52,.08),inset 0 0 0 1.5px #8fd4ae}',
-      '.hg.pt .hg-end{margin:10px 4px 0;font-size:14px}',
-      '.hg.pt .hg-btns{padding:8px 16px 14px}',
+      // 11-16 포인트 개편 알림 두 장(.np): 밝은 아침 톤. 1장 이야기·선순환, 2장 모으기·쓰기. 단추는 아래에 붙어 늘 보인다
+      // 시안 .claude/mockups/notice-1116-points/v3/f1.html·f2.html
+      '.hn-scroll.np{background:#f7f9f6;color:#1d2b24;border-radius:20px;word-break:keep-all;letter-spacing:-.01em}',
+      '.np-pg{display:flex;flex-direction:column;min-height:100%}',
+      '.np-pg[hidden]{display:none}',
+      '.np-hero{position:relative;flex:none;height:84px;background:linear-gradient(180deg,#bfe3f5 0%,#ffe6cc 70%,#fff2df 100%);overflow:hidden}',
+      '.np-hero svg{position:absolute;inset:0;width:100%;height:100%}',
+      '.np-body{padding:10px 20px 0}',
+      '.np-thx{margin:0 0 5px;padding:6px 11px;border-radius:10px;background:#fff2df;font-size:12.6px;font-weight:600;color:#7a4a1c;line-height:1.45}',
+      '.np-thx b{color:#c4622d;font-weight:800}',
+      '.np-thx small{display:block;margin-top:3px;font-size:11.6px;font-weight:500;color:#8a6a4c}',
+      '.np-thx small b{color:#7a4a1c}',
+      '.np-ey{margin:0;font-size:12.5px;font-weight:800;letter-spacing:.05em;color:#e0782d}',
+      '.np h2{margin:4px 0 0;font-size:21px;line-height:1.32;font-weight:800;letter-spacing:-.035em;color:#1d2b24}',
+      '.np h2 em{font-style:normal;color:#2f9e6a}',
+      '.np-story{margin:6px 0 0;font-size:12.8px;line-height:1.5;color:#45524b}',
+      '.np-story b{color:#1d2b24}',
+      '.np-wish{margin:8px 14px 0;padding:11px 14px;border-radius:18px;background:#fff;box-shadow:0 8px 24px rgba(31,71,52,.09)}',
+      '.np-wish h3{margin:0;font-size:14.5px;font-weight:800;color:#1d2b24}',
+      '.np-wish h3 em{font-style:normal;color:#2f9e6a}',
+      '.np-loop{position:relative;margin:4px auto 0;width:300px;max-width:100%;height:128px}',
+      '.np-loop svg{position:absolute;inset:0;width:100%;height:100%}',
+      '.np-nd{position:absolute;width:118px;padding:6px;border-radius:12px;text-align:center;font-size:12.4px;font-weight:800;line-height:1.3}',
+      '.np-nd small{display:block;font-size:10.8px;font-weight:600;opacity:.85}',
+      '.np-n1{left:0;top:0;background:#e6f4ec;color:#1f7a50}',
+      '.np-n2{right:0;top:0;background:#fff1e3;color:#c4622d}',
+      '.np-n3{right:0;bottom:0;background:#fdf3d8;color:#9a6a10}',
+      '.np-n4{left:0;bottom:0;background:#e8f1fb;color:#2d6aa8}',
+      '.np-mid{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:58px;height:58px;border-radius:50%;background:#2f9e6a;color:#fff;display:grid;place-items:center;font-size:11.5px;font-weight:800;line-height:1.2;text-align:center;box-shadow:0 0 0 5px #e6f4ec}',
+      '.np-sum{margin:8px 0 0;font-size:12px;font-weight:700;color:#7a867f;text-align:center}',
+      '.np-st{margin-top:5px;display:grid;grid-template-columns:repeat(3,1fr);gap:5px}',
+      '.np-st div{padding:5px 4px;border-radius:10px;background:#f2f7f3;text-align:center}',
+      '.np-st b{display:block;font-size:15px;font-weight:900;color:#2f9e6a;letter-spacing:-.02em}',
+      '.np-st span{font-size:10.8px;font-weight:600;color:#55625b}',
+      '.np-wish p.np-and{margin:5px 0 0;font-size:12px;line-height:1.5;color:#55625b;text-align:center;letter-spacing:-.02em}',
+      '.np-why{margin:8px 14px 0;padding:10px 14px;border-radius:16px;background:#2f9e6a;color:#fff}',
+      '.np-why b{display:block;font-size:14.5px;font-weight:800}',
+      '.np-why p{margin:2px 0 0;font-size:12px;line-height:1.55;color:#e3f5ec}',
+      '.np-why p.np-cash{margin-top:6px;padding:5px 9px;border-radius:9px;background:rgba(255,255,255,.18);color:#fff;font-weight:800;letter-spacing:-.03em}',
+      '.np-top{padding:30px 20px 8px;background:linear-gradient(180deg,#fff2df 0%,#f7f9f6 100%)}',
+      '.np-top h2{font-size:24px;margin-top:6px}',
+      '.np-safe{margin:4px 14px 0;display:flex;gap:8px;align-items:center;padding:11px 14px;border-radius:12px;background:#2f9e6a;color:#fff;font-size:13.6px;line-height:1.45;font-weight:600}',
+      '.np-safe b{font-weight:900}',
+      '.np-safe svg{flex:none;width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}',
+      '.np-gift{margin:8px 14px 0;display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:14px;background:#fdf3d8}',
+      '.np-gift i{font-style:normal;flex:none;padding:4px 9px;border-radius:999px;background:#e0b45a;color:#2a1d04;font-weight:900;font-size:14px}',
+      '.np-gift b{display:block;font-size:14px;font-weight:800;color:#5a4214}',
+      '.np-gift span{font-size:12px;color:#7a5a12}',
+      '.np-card{margin:8px 14px 0;padding:11px 14px 6px;border-radius:16px;background:#fff;box-shadow:0 6px 18px rgba(31,71,52,.08)}',
+      '.np-card h3{margin:0 0 3px;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:800;color:#1d2b24}',
+      '.np-card h3 i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:900;color:#fff}',
+      '.np-in h3 i{background:#2f9e6a}',
+      '.np-out h3 i{background:#e2553f}',
+      '.np-r{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:6px 0;border-top:1px solid #eef2ef}',
+      '.np-r:first-of-type{border-top:0}',
+      '.np-r span{font-size:13.6px;font-weight:600;color:#1d2b24}',
+      '.np-r small{display:block;font-size:11.3px;font-weight:500;color:#7a867f;margin-top:1px}',
+      '.np-r small.g{color:#2f9e6a;font-weight:600}',
+      '.np-r em{flex:none;font-style:normal;font-size:15px;font-weight:900;font-variant-numeric:tabular-nums}',
+      '.np-in em{color:#c48a12}',
+      '.np-out em{color:#e2553f}',
+      '.np-foot{position:sticky;bottom:0;margin-top:auto;padding:12px 16px 14px;background:linear-gradient(180deg,rgba(247,249,246,0) 0,#f7f9f6 14px)}',
+      '.np-dots{display:flex;gap:5px;justify-content:center;margin:0 0 8px}',
+      '.np-dots i{width:6px;height:6px;border-radius:50%;background:#cfd8d2}',
+      '.np-dots i.on{width:18px;border-radius:3px;background:#2f9e6a}',
+      '.np-foot button{display:block;width:100%;height:50px;border:0;border-radius:14px;background:#2f9e6a;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer}',
       '.hn-x{position:absolute;top:10px;right:10px;z-index:2;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:15px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
       '.hq-btn.hq-isle em{color:#e0b45a}',
       '.gq-wrap{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);padding:0 12px calc(env(safe-area-inset-bottom) + 84px)}',
@@ -241,10 +288,10 @@
   }
   // ---------- 홈 첫 알림창(11-02 대표님: 지도 말고 낭만루터에서 뜨게) ----------
   // 11-09: 앱 출시 그림 알림을 내리고, 라운지 장비 탭 개편 알림을 글자판으로 띄운다(앱·웹 모두).
-  // 바꿀 때: HOME_NOTICE.id를 새 값으로 바꾸면 전에 닫은 사람에게도 한 번 뜬다. 11-16: 낭만 포인트 개편 알림(시안 .claude/mockups/notice-1116-points/v1.html, 문구 TASK_POINTS_1116.md 7번).
+  // 바꿀 때: HOME_NOTICE.id를 새 값으로 바꾸면 전에 닫은 사람에게도 한 번 뜬다. 11-16: 낭만 포인트 개편 알림 두 장(시안 .claude/mockups/notice-1116-points/v3/f1·f2, 문구 TASK_POINTS_1116.md 7번).
   // 시안: .claude/mockups/notice-1109-gear/v10/v07a1.html
   var HOME_NOTICE = {
-    id: '20261116-points',
+    id: '20261116-points-v2',   // 11-16 두 장으로 다시 써서 먼저 닫은 분께도 한 번 더
     mag: '158728fc-eda4-4ac9-9638-52d5e89ae6d4'   // '매거진에서 이용 방법 보기'로 열 라운지 매거진 id(lounge_news). 비어 있으면 장비 탭을 연다
   };
   var HG_RIDGE = '<svg viewBox="0 0 390 170" preserveAspectRatio="none" aria-hidden="true"><path d="M0 120 L60 70 L105 98 L170 40 L230 92 L285 58 L340 96 L390 72 V170 H0Z" fill="#c9e3d6"/><path d="M0 140 L70 104 L130 128 L200 86 L265 124 L330 100 L390 122 V170 H0Z" fill="#9fcfb6"/><path d="M0 170 V150 L90 132 L170 150 L250 128 L320 146 L390 136 V170Z" fill="#f4f8f6"/></svg>';
@@ -257,30 +304,82 @@
     root.className = 'hn';
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
-    root.setAttribute('aria-label', '낭만루트 업데이트 알림');
+    root.setAttribute('aria-label', '낭만 포인트 개편 알림');
+    var hero = '<svg viewBox="0 0 390 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
+      '<circle cx="300" cy="56" r="24" fill="#ffd27a"/><circle cx="300" cy="56" r="38" fill="#ffd27a" opacity=".25"/>' +
+      '<path d="M0 116 L70 74 L120 98 L190 56 L250 94 L310 70 L390 104 V150 H0Z" fill="#a8d5b9"/>' +
+      '<path d="M0 134 L80 108 L150 126 L230 98 L300 122 L390 112 V150 H0Z" fill="#7fc09b"/>' +
+      '<path d="M0 150 V140 L120 132 L240 142 L390 134 V150Z" fill="#f7f9f6"/>' +
+      '<path d="M152 132 L176 104 L200 132Z" fill="#f08a3c"/><path d="M176 104 L176 132" stroke="#a24f16" stroke-width="1.6"/>' +
+      '<path d="M206 133 L226 110 L246 133Z" fill="#2f9e6a"/><path d="M226 110 L226 133" stroke="#185c3c" stroke-width="1.6"/></svg>';
+    var ring = '<svg viewBox="0 0 300 134" preserveAspectRatio="none" aria-hidden="true"><defs><marker id="npAr" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L8 4 L0 8z" fill="#9fb5a8"/></marker></defs>' +
+      '<path d="M120 20 H178" stroke="#9fb5a8" stroke-width="1.8" fill="none" marker-end="url(#npAr)"/>' +
+      '<path d="M240 42 V70" stroke="#9fb5a8" stroke-width="1.8" fill="none" marker-end="url(#npAr)"/>' +
+      '<path d="M180 112 H122" stroke="#9fb5a8" stroke-width="1.8" fill="none" marker-end="url(#npAr)"/>' +
+      '<path d="M60 90 V44" stroke="#9fb5a8" stroke-width="1.8" fill="none" marker-end="url(#npAr)"/></svg>';
+    var safe = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>';
     root.innerHTML = '<div class="hn-frame"><button type="button" class="hn-x hg-x" data-metric-click="feat_home_notice_close" aria-label="닫기">✕</button>' +
-      '<div class="hn-scroll hg pt">' +
-        '<div class="hg-hero">' + HG_RIDGE + '<div class="hg-hin"><p class="hg-ey">낭만루트 업데이트</p><h2>낭만루트는<br>백패커들의 커뮤니티가 되고 싶어요</h2><p class="hg-thx">3천 분 가까이 낭만루터가 되어 주셨어요.</p>' +
-          '<div class="hg-st"><div><b>460곳 넘는</b><span>박지</span></div><div><b>1,500개 넘게</b><span>피드·별·댓글</span></div></div>' +
-          '<p class="hg-vis">박지 찾기부터 장비, 동행, 플로깅, 다녀온 이야기까지.<br>낭만루터들이 모든 걸 함께 나누는 곳이 되길 바라요.</p></div></div>' +
-        '<div class="hg-w">' +
-          '<div class="hg-blk"><p class="hg-q"><em>나누면</em> 쌓여요</p><p class="hg-d">피드, 박지 후기, 장비 후기, 장비 질문 답변,<br>댓글, 박지 제보까지 모든 활동에 드려요.</p>' +
-            '<p class="hg-chips"><i>피드<b>20</b></i><i>댓글·후기<b>10</b></i><i>수정 건의·GPX<b>100</b></i><i>박지 제보<b>200</b></i></p></div>' +
-          '<div class="hg-blk lnt"><p class="hg-q">자연을 지키면 <em>두 배로</em></p><p class="hg-d">K-LNT 7원칙을 지키고 쓰레기를 주워 온<br>플로깅 피드는 두 배로 드려요.</p></div>' +
-          '<div class="hg-blk"><p class="hg-q">얻어 간 만큼 <em>나눠 주세요</em></p><p class="hg-d">지금까지 낭만루터들이 보내 준<br>박지 제보·수정 건의·GPX가 100건이 넘어요.<br>이제 박지 정보창을 열 때 5점이 들어요.<br>한 번 연 곳은 계속 볼 수 있어요.</p></div>' +
-          '<div class="hg-blk"><p class="hg-q">부담은 <em>거의 없어요</em></p><p class="hg-d">오늘 50점을 넣어 드렸고,<br>출석만 해도 매일 10점이 쌓여요.</p></div>' +
-          '<p class="hg-end">함께 나눌수록 모두의 백패킹이 풍성해져요.</p>' +
+      '<div class="hn-scroll np">' +
+        // 1장: 이야기 · 낭만루트가 바라는 백패킹(선순환) · 그래서 포인트를 바꿨어요
+        '<div class="np-pg" data-np="1">' +
+          '<div class="np-hero">' + hero + '</div>' +
+          '<div class="np-body">' +
+            '<p class="np-thx">어느새 <b>3천 분 가까이</b> 낭만루터가 되어 주셨어요. 고맙습니다.<small><b>낭만루터</b>는 낭만을 찾는 사람들, 낭만루트에서 함께 활동하는 분들을 부르는 이름이에요.</small></p>' +
+            '<p class="np-ey">낭만루트 이야기</p>' +
+            '<h2>"덕분에 잘 다녀왔어요"<br>이 한마디가 <em>오가는 곳</em>이길 바라요</h2>' +
+            '<p class="np-story">며칠 전 낭만루터분들과 백패킹을 다녀왔어요. 한 낭만루터분이 꾸준히 올린 피드와 GPX를 보고 다녀오신 분들이 <b>"덕분에 잘 다녀왔어요"</b> 하며 고마움을 전했대요. 참 기분이 좋았어요. 낭만루트를 만든 이유가 바로 이거예요.</p>' +
+          '</div>' +
+          '<div class="np-wish"><h3>낭만루트가 바라는 <em>백패킹</em></h3>' +
+            '<div class="np-loop">' + ring +
+              '<div class="np-nd np-n1">기록을 남기고<small>피드·GPX·장비 후기</small></div>' +
+              '<div class="np-nd np-n2">누군가 다녀오고<small>그 기록을 보고</small></div>' +
+              '<div class="np-nd np-n3">고마움을 전하고<small>피드에 별·댓글<br>GPX에 [고마워요]</small></div>' +
+              '<div class="np-nd np-n4">또 남겨요<small>다음 사람을 위해</small></div>' +
+              '<div class="np-mid">함께<br>채우는<br>낭만</div>' +
+            '</div>' +
+            '<p class="np-sum">지금까지 낭만루터와 함께 채운 것</p>' +
+            '<div class="np-st"><div><b>460곳+</b><span>박지</span></div><div><b>1,500개+</b><span>피드·별·댓글</span></div><div><b>100건+</b><span>제보·건의·GPX</span></div></div>' +
+            '<p class="np-and">박지도, 장비도, 추억이 담긴 피드도 앞으로도 함께 채워 가고 싶어요.</p>' +
+          '</div>' +
+          '<div class="np-why"><b>이 선순환을 위해 낭만 포인트를 바꿨어요</b><p>나누는 모든 활동에 포인트를 더 드리고, 박지 정보창을 열 때는 조금 쓰도록 했어요. 받은 만큼 다시 나누는 흐름이 자연스럽게 돌도록요.</p><p class="np-cash">낭만 포인트는 활동으로만 얻을 수 있어요.</p></div>' +
+          '<div class="np-foot"><div class="np-dots"><i class="on"></i><i></i></div><button type="button" data-np-go="2" data-metric-click="feat_home_notice_next">어떻게 바뀌었는지 보기</button></div>' +
         '</div>' +
-        '<div class="hg-btns"><button type="button" data-hg="points" data-metric-click="feat_home_notice_go">포인트 모으는 법 보기</button></div>' +
+        // 2장: 모으기 · 쓰기
+        '<div class="np-pg" data-np="2" hidden>' +
+          '<div class="np-top"><p class="np-ey">낭만 포인트</p><h2>이렇게 <em>바뀌었어요</em></h2></div>' +
+          '<div class="np-safe">' + safe + '<span>낭만 포인트는 돈으로 사는 게 아니라,<br><b>활동으로만 얻을 수 있어요.</b></span></div>' +
+          '<div class="np-gift"><i>+50</i><div><b>오늘 모두에게 50점을 넣어 드렸어요</b><span>박지 정보창 열 곳을 바로 열 수 있어요</span></div></div>' +
+          '<div class="np-card np-in"><h3><i>+</i>이렇게 모아요</h3>' +
+            '<div class="np-r"><span>매일 출석<small>7일 연속이면 +100 더</small></span><em>+10</em></div>' +
+            '<div class="np-r"><span>댓글 · 한 줄 · 별점 · 장비 후기</span><em>+10</em></div>' +
+            '<div class="np-r"><span>피드 올리기<small class="g">K-LNT 지킨 플로깅 피드는 두 배(+40)</small></span><em>+20</em></div>' +
+            '<div class="np-r"><span>수정 건의 · GPX 반영</span><em>+100</em></div>' +
+            '<div class="np-r"><span>새 박지 제보 등록</span><em>+200</em></div>' +
+          '</div>' +
+          '<div class="np-card np-out"><h3><i>−</i>이렇게 써요</h3>' +
+            '<div class="np-r"><span>박지 정보창 열기<small>박지마다 처음 한 번, 연 곳은 계속 볼 수 있어요</small></span><em>−5</em></div>' +
+            '<div class="np-r"><span>다른 분 GPX 열기<small>선마다 처음 한 번, 올린 분께 2점이 가요</small></span><em>−5</em></div>' +
+            '<div class="np-r"><span>굴업도 같이 접속<small>처음 한 번 무료, 그 뒤로 1시간에 한 번</small></span><em>−15</em></div>' +
+            '<div class="np-r"><span>닉네임 바꾸기<small>처음 한 번 무료</small></span><em>−500</em></div>' +
+          '</div>' +
+          '<div class="np-foot"><div class="np-dots"><i></i><i class="on"></i></div><button type="button" data-np-go="points" data-metric-click="feat_home_notice_go">포인트 모으는 법 보기</button></div>' +
+        '</div>' +
       '</div></div>';
     function close() {
       try { localStorage.setItem(key, HOME_NOTICE.id); } catch (e) {}
       root.remove();
     }
     root.querySelector('.hn-x').addEventListener('click', close);
-    root.querySelector('.hg-btns').addEventListener('click', function (ev) {
-      var b = ev.target.closest('[data-hg]');
+    root.querySelector('.hn-scroll').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-np-go]');
       if (!b) return;
+      var go = b.getAttribute('data-np-go');
+      if (go === '2') {
+        root.querySelector('[data-np="1"]').hidden = true;
+        root.querySelector('[data-np="2"]').hidden = false;
+        root.querySelector('.hn-scroll').scrollTop = 0;
+        return;
+      }
       close();
       if (window.okbmPoints && typeof window.okbmPoints.open === 'function') window.okbmPoints.open();   // 낭만 포인트 받는 법 창
     });
