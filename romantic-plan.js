@@ -4148,6 +4148,13 @@ window.saveCurrentPackingRecord = function() {
     okbmPlanSheetShell(html);
   };
 
+  // 기록 없는 지난 날: 누르자마자 등록 창을 띄우지 않고, 단추를 눌러야 연다(대표님 11-16)
+  window.okbmOpenPlanPastDaySheet = function(k) {
+    var info = okbmPlanDayInfo(k);
+    okbmPlanSheetShell(okbmPlanHeadHtml(k, '이날 남긴 기록이 없어요') + okbmPlanEventsHtml(info.events) +
+      '<button type="button" class="js-pds-past-write" data-date="' + escapeHtml(k) + '" style="height:50px; border-radius:14px; background:#5bb8f0; color:#00131f; border:none; font-size:0.95rem; font-weight:900; cursor:pointer; flex-shrink:0;">이날 기록 남기기</button>');
+  };
+
   // 전체 일정: 다가오는 일정 / 지난 기록
   window.okbmOpenPlanAllSheet = function(tab) {
     tab = tab === 'past' ? 'past' : 'up';
@@ -4235,6 +4242,12 @@ window.saveCurrentPackingRecord = function() {
         return;
       }
       if ((el = t.closest('.js-pds-save'))) { okbmPlanSaveCreate(el); return; }
+      if ((el = t.closest('.js-pds-past-write'))) {
+        okbmPlanCloseSheet();
+        window.activeSelectedDateKey = el.dataset.date || window.activeSelectedDateKey;
+        if (typeof window.openPastTripRegisterFromPlan === 'function') window.openPastTripRegisterFromPlan();
+        return;
+      }
       if ((el = t.closest('.js-pds-change'))) { window.okbmOpenPlanCreateSheet(el.dataset.date || ''); return; }
       if ((el = t.closest('.js-pds-memo-save'))) {
         var mk = el.dataset.date || '';
@@ -4762,6 +4775,8 @@ window.saveCurrentPackingRecord = function() {
       });
     }
 
+    // 날짜를 누를 때 쓴다: 그날 기록(피드)과 일정·메모가 있는지
+    var planDayMarks = {};
     for (var d = 1; d <= lastDayOfMonth; d++) {
       var isSelected = (d === activeDay);
       var isToday = (Number(viewYear) === todayYear && Number(viewMonth) === todayMonth && Number(d) === todayDate);
@@ -4777,6 +4792,10 @@ window.saveCurrentPackingRecord = function() {
       // 일요일·공휴일은 빨간 숫자 (OKBM_KR_HOLIDAYS)
       var isRedDay = ((firstDayIndex + d - 1) % 7 === 0) || !!window.okbmPlanHolidayName(thisDateKey);
       var hasMemoOnly = !!String((planMemosObj && planMemosObj[thisDateKey]) || '').trim();
+      planDayMarks[thisDateKey] = {
+        recId: (dayRecord && dayRecord.id) ? String(dayRecord.id).trim() : '',
+        filled: isRecorded || !!planSpotDays[d] || hasMemoOnly
+      };
       var packCheck = (hasPlan && isSavedPlan)
         ? '<span aria-label="패킹 완료" style="position:absolute; top:-3px; right:-3px; width:11px; height:11px; border-radius:50%; background:#34d399; border:1px solid #0c1017; display:flex; align-items:center; justify-content:center; pointer-events:none;"><svg viewBox="0 0 24 24" style="width:8px; height:8px; fill:none; stroke:#052e16; stroke-width:4; stroke-linecap:round; stroke-linejoin:round;"><polyline points="20 6 9 17 4 12"/></svg></span>'
         : '';
@@ -4832,6 +4851,8 @@ window.saveCurrentPackingRecord = function() {
         'oncontextmenu="return false;">' +
         '<div style="' + circleStyle + '">' + d + indicatorDot + packCheck + '</div>' + evBand + '</div>';
     }
+
+    window.__okbmPlanDayMarks = planDayMarks;
 
     for (var te = 0; te < (42 - (firstDayIndex + lastDayOfMonth)); te++) {
       calendarDaysHtml += '<div style="height:100% !important;"></div>';
@@ -7213,6 +7234,9 @@ window.saveCurrentPackingRecord = function() {
       window.__touchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
     var dateKey = year + '.' + String(month).padStart(2, '0') + '.' + String(day).padStart(2, '0');
+    // 일정·기록·메모가 없는 날은 지울 것이 없으니 길게 눌러도 삭제 확인 창을 띄우지 않는다
+    var mark = (window.__okbmPlanDayMarks || {})[dateKey];
+    if (!mark || !mark.filled) return;
 
     window.__longPressTimer = setTimeout(function() {
       window.__longPressTriggered = true;
@@ -7237,7 +7261,14 @@ window.saveCurrentPackingRecord = function() {
       if (pastHud) pastHud.remove();
       window.activePlanSubMode = 'calendar';
       window.renderPlanStage();
-      if (typeof window.openPastTripRegisterFromPlan === 'function') window.openPastTripRegisterFromPlan();
+      // 기록이 있는 날은 그 기록을 열고, 없는 날은 '이날 기록 남기기' 단추가 있는 작은 창을 띄운다
+      var pastMark = (window.__okbmPlanDayMarks || {})[dateKey];
+      if (pastMark && pastMark.recId && typeof window.okbmOpenDirectFeed === 'function') {
+        // 못 불러오면 okbmOpenDirectFeed가 '피드를 찾을 수 없습니다'를 띄운다. 기록이 있는 날이니 등록 창은 열지 않는다.
+        window.okbmOpenDirectFeed(pastMark.recId);
+        return;
+      }
+      window.okbmOpenPlanPastDaySheet(dateKey);
       return;
     }
 
