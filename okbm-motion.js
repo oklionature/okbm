@@ -522,20 +522,39 @@
     };
   }
 
-  // 피드·히어로 피드에서 프로필을 여는 단추를 누르면 그 안 얼굴 자리를 기억해 둔다.
-  // 사진이 있으면 사진, 없으면 사진 없는 얼굴 그림이 든 동그라미(11-17 대표님: 사진 없는 낭만루터도 같은 움직임)
-  var AUTHOR_BTN = '[data-metric-click="feat_user_feed_open"],#heroProfileChip';
+  // 프로필을 여는 자리(피드·히어로·댓글·알림·라운지·관심 목록·지도 제보자 등)를 누르면 누른 곳에서 가장 가까운 동그란 얼굴을 기억해 둔다.
+  // 사진이면 사진, 없으면 사람 모양 그림이나 글자가 든 동그라미 그대로(11-17 대표님: 어디서 열든 같은 움직임)
+  var AUTHOR_BTN = '[data-metric-click="feat_user_feed_open"],#heroProfileChip,[data-author],[data-user-id],[data-cmt-user],[data-notif-user],[data-a="user"],[data-uid]';
   var lastAvatarTap = null;
-  function avatarOf(b) {
-    var img = b.querySelector('img');
-    if (img && img.getBoundingClientRect().width && img.getAttribute('src')) return { el: img, img: img };
-    var ph = b.querySelector('.avatar-placeholder-svg');
-    var holder = b.querySelector('.hero-av-ph') || (ph && ph.parentElement !== b ? ph.parentElement : null) || b;
-    var r = holder.getBoundingClientRect();
-    if (!r.width || Math.abs(r.width - r.height) > 4) return null;
-    return { el: holder, img: null, svg: ph };
+  function isRound(el) {
+    var r = el.getBoundingClientRect();
+    if (r.width < 14 || r.width > 96 || Math.abs(r.width - r.height) > 4) return false;
+    var br = getComputedStyle(el).borderTopLeftRadius || '', v = parseFloat(br) || 0;
+    return br.indexOf('%') >= 0 ? v >= 40 : v >= r.width * 0.4;
   }
-  // 얼굴 유령: 사진이면 사진, 아니면 같은 바탕색 동그라미에 얼굴 그림
+  // 여는 단추에서 시작해 두 겹 위까지 넓혀 가며, 누른 곳에서 가장 가까운 동그라미를 고른다(같은 자리면 안쪽 작은 것)
+  function findFace(target, x, y) {
+    var op = target.closest(AUTHOR_BTN);
+    if (!op || op.closest('#userFeedCollectionModal')) return null;
+    for (var up = 0, scope = op; up < 3 && scope && scope !== document.body; up++, scope = scope.parentElement) {
+      var list = [scope].concat(Array.prototype.slice.call(scope.querySelectorAll('img,span,div,button,i,a'), 0, 80));
+      var best = null, bd = 1e9;
+      list.forEach(function (el) {
+        if (!isRound(el)) return;
+        var r = el.getBoundingClientRect();
+        var d = Math.sqrt(Math.pow(r.left + r.width / 2 - x, 2) + Math.pow(r.top + r.height / 2 - y, 2)) + r.width * 0.01;
+        // 같은 자리·같은 크기면 뒤에 오는(안쪽) 것: 바깥 단추의 기본 회색 바탕 대신 안쪽 얼굴 색을 쓴다
+        if (d <= bd + 0.5) { bd = Math.min(bd, d); best = el; }
+      });
+      if (best && bd < 180) {
+        var img = best.tagName === 'IMG' ? best : best.querySelector('img');
+        if (img && !(img.getBoundingClientRect().width && img.getAttribute('src'))) img = null;
+        return { el: best, img: img, svg: best.querySelector('svg'), rect: best.getBoundingClientRect() };
+      }
+    }
+    return null;
+  }
+  // 얼굴 유령: 사진이면 사진, 아니면 같은 바탕색 동그라미에 사람 모양 그림이나 첫 글자
   function avatarGhost(r, av, solid) {
     if (av.img) {
       var gi = ghostAt(r, av.img.currentSrc || av.img.src, '50%');
@@ -543,21 +562,31 @@
       return gi;
     }
     var g = ghostAt(r, '', '50%');
-    var bg = getComputedStyle(av.el).backgroundColor;
+    var cs = getComputedStyle(av.el), bg = cs.backgroundColor, bgi = cs.backgroundImage;
     g.style.background = (!bg || bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') ? '#090d14' : bg;
+    if (bgi && bgi !== 'none') g.style.backgroundImage = bgi;
     if (av.svg) {
       var sv = av.svg.cloneNode(true);
       sv.removeAttribute('class');
       sv.style.cssText = 'position:absolute;left:50%;top:50%;width:46%;height:46%;transform:translate(-50%,-50%)';
       g.appendChild(sv);
+    } else {
+      var ch = String(av.el.textContent || '').trim().charAt(0);
+      if (ch) {
+        g.style.containerType = 'size';
+        var t = document.createElement('span');
+        t.textContent = ch;
+        t.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:44cqw;line-height:1;color:' + cs.color;
+        g.appendChild(t);
+      }
     }
     return g;
   }
   document.addEventListener('click', function (e) {
-    var b = e.target && e.target.closest && e.target.closest(AUTHOR_BTN);
-    if (!b) return;
-    var av = avatarOf(b);
-    lastAvatarTap = av ? { av: av, btn: b, at: Date.now() } : null;
+    var t = e.target;
+    if (!t || !t.closest || !t.closest(AUTHOR_BTN)) return;
+    var face = findFace(t, e.clientX, e.clientY);
+    lastAvatarTap = face ? { av: face, btn: t.closest(AUTHOR_BTN), at: Date.now() } : null;
   }, true);
 
   // 프로필 창은 피드 위 z 2147483642라 사진 유령은 그보다 위에 띄운다
@@ -576,7 +605,8 @@
       lastAvatarTap = null;
       modal.__okmRoll = true;
       var src = tap.av.el;
-      var r0 = visibleRect(src), r1 = av.getBoundingClientRect(), mr = modal.getBoundingClientRect();
+      // 댓글·알림 창처럼 프로필을 열며 닫히는 곳은 누른 순간 잰 자리를 쓴다
+      var r0 = (src.isConnected && visibleRect(src)) || tap.av.rect, r1 = av.getBoundingClientRect(), mr = modal.getBoundingClientRect();
       if (r0 && r1.width && mr.width) {
         var cx = r0.left + r0.width / 2 - mr.left, cy = r0.top + r0.height / 2 - mr.top;
         modal.animate([
@@ -623,8 +653,9 @@
       var r1 = visibleRect(img);
       if (!r1 || reduce()) return;
       var hit = document.elementFromPoint(r1.left + r1.width / 2, r1.top + r1.height / 2);
-      var home = btn || img;
-      if (!hit || !(home === hit || home.contains(hit) || hit.contains(home))) return;
+      // 누른 단추나 얼굴이 맨 위에 보일 때만 돌아간다(이름을 눌렀으면 단추는 이름, 얼굴은 옆 동그라미)
+      var onTop = !!hit && [btn, img].some(function (h) { return h && (h === hit || h.contains(hit) || hit.contains(h)); });
+      if (!onTop) return;
       if (!last || !last.width || last.bottom < 0) return;
       var g = avatarGhost(last, face, false); // 사진이면 회색 바탕 없이 돌아간다
       g.style.zIndex = PROFILE_Z;
