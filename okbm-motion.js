@@ -601,8 +601,9 @@
       if (!last || !last.width || last.bottom < 0) return;
       var g = ghostAt(last, img.currentSrc || img.src, '50%');
       g.style.zIndex = PROFILE_Z;
+      g.style.background = 'transparent'; // 돌아갈 때 회색 바탕이 사진 둘레에 남지 않게
       img.style.visibility = 'hidden';
-      flyBox(g, last, r1, '50%', '50%', 380).onfinish = function () { img.style.visibility = ''; g.remove(); };
+      flyBox(g, last, r1, '50%', '50%', 260).onfinish = function () { img.style.visibility = ''; g.remove(); };
     });
     mo.observe(document.body, { childList: true, subtree: true });
   }
@@ -627,12 +628,14 @@
     });
     var sr = shell.getBoundingClientRect();
     var cx = to.left + to.width / 2 - sr.left, cy = to.top + to.height / 2 - sr.top;
+    // 끝에서 빨라지며 줄고(머리 쪽 로고 칸이 작은 원 안에 오래 남지 않게), 절반쯤부터 흐려져 사라진다(대표님 11-17)
     var a = shell.animate([
       { clipPath: circleAt(farCorner(sr.width, sr.height, cx, cy), cx, cy) },
       { clipPath: circleAt(to.width / 2, cx, cy) }
-    ], { duration: 420, easing: 'cubic-bezier(.5,0,.2,1)', fill: 'forwards' });
+    ], { duration: 280, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
+    shell.animate([{ opacity: 1 }, { opacity: 1, offset: 0.45 }, { opacity: 0 }], { duration: 280, easing: 'linear', fill: 'forwards' });
     a.onfinish = function () { shell.remove(); };
-    setTimeout(function () { if (shell.isConnected) shell.remove(); }, 900);
+    setTimeout(function () { if (shell.isConnected) shell.remove(); }, 700);
   }
 
   function bookify(view) {
