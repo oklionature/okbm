@@ -151,6 +151,31 @@
       '.np-dots i{width:6px;height:6px;border-radius:50%;background:#cfd8d2}',
       '.np-dots i.on{width:18px;border-radius:3px;background:#2f9e6a}',
       '.np-foot button{display:block;width:100%;height:50px;border:0;border-radius:14px;background:#2f9e6a;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer}',
+      // 11-16 GPX 알림(.ng, 시안 .claude/mockups/notice-1116-gpx/b.html): 지역 탭 + 두 줄 목록. 목록만 안에서 내려 본다
+      '.hn-frame.ngf{height:100%}',
+      '.hn-scroll.ng{height:100%;display:flex;flex-direction:column;overflow:hidden;background:#f7f9f6;color:#1d2b24;border-radius:20px;word-break:keep-all;letter-spacing:-.01em}',
+      '.ng-hero{position:relative;flex:none;height:96px;background:linear-gradient(180deg,#bfe3f5 0%,#e3f1ea 70%,#f7f9f6 100%);overflow:hidden}',
+      '.ng-hero svg{position:absolute;inset:0;width:100%;height:100%}',
+      '.ng-top{flex:none;padding:6px 20px 0}',
+      '.ng-top h2{margin:4px 0 0;font-size:22px;line-height:1.3;font-weight:800;letter-spacing:-.035em;color:#1d2b24}',
+      '.ng-top h2 em{font-style:normal;color:#2f9e6a}',
+      '.ng-lead{margin:6px 0 0;font-size:13.4px;line-height:1.5;color:#45524b}',
+      '.ng-lead b{color:#1d2b24}',
+      '.ng-tabs{flex:none;display:flex;gap:6px;overflow-x:auto;padding:12px 16px 2px;scrollbar-width:none}',
+      '.ng-tabs::-webkit-scrollbar{display:none}',
+      '.ng-tabs button{flex:none;padding:7px 12px;border-radius:999px;background:#fff;border:1px solid #dfe8e2;font:inherit;font-size:13px;font-weight:800;color:#55625b;cursor:pointer}',
+      '.ng-tabs button span{margin-left:3px;font-weight:700;color:#9aa69f}',
+      '.ng-tabs button.on{background:#2f9e6a;border-color:#2f9e6a;color:#fff}',
+      '.ng-tabs button.on span{color:#d5f0e2}',
+      '.ng-grid{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;margin:10px 14px 0;padding:6px 12px;border-radius:16px;background:#fff;box-shadow:0 6px 18px rgba(31,71,52,.07);display:grid;grid-template-columns:1fr 1fr;column-gap:12px;align-content:start}',
+      '.ng-grid button{display:block;min-width:0;padding:7px 0;border:0;border-bottom:1px solid #eef2ef;background:none;text-align:left;font:inherit;color:inherit;cursor:pointer}',
+      '.ng-grid b{display:block;font-size:13.6px;font-weight:800;color:#1d2b24}',
+      '.ng-grid small{display:block;margin-top:1px;font-size:11px;color:#7a867f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+      '.ng-th{display:inline-block;margin-left:3px;padding:0 4px;border-radius:4px;background:#fff1e3;color:#c4622d;font-size:10px;font-weight:800;vertical-align:1px}',
+      '.ng-foot{flex:none;padding:8px 16px 12px;background:#f7f9f6;box-shadow:0 -10px 18px #f7f9f6}',
+      '.ng-foot .ng-go{display:block;width:100%;height:50px;border:0;border-radius:14px;background:#2f9e6a;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer}',
+      '.ng-foot .ng-send{display:block;width:100%;height:36px;margin-top:2px;border:0;background:none;color:#1f7a50;font:inherit;font-size:14px;font-weight:700;cursor:pointer}',
+      '.ng-foot .ng-send b{text-decoration:underline;text-underline-offset:3px}',
       '.hn-x{position:absolute;top:10px;right:10px;z-index:2;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.55);color:#fff;font-size:15px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
       '.hq-btn.hq-isle em{color:#e0b45a}',
       '.gq-wrap{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);padding:0 12px calc(env(safe-area-inset-bottom) + 84px)}',
@@ -382,6 +407,74 @@
       }
       close();
       if (window.okbmPoints && typeof window.okbmPoints.open === 'function') window.okbmPoints.open();   // 낭만 포인트 받는 법 창
+    });
+    document.body.appendChild(root);
+  }
+
+  // ---------- 11-16 GPX 알림(대표님: 77곳 GPX 목록, 시안 B 지역 탭) ----------
+  // 포인트 알림을 닫은 분께만 다음에 띄운다(두 알림이 한꺼번에 뜨지 않게). 박지를 누르면 지도의 그 박지로 간다.
+  // 목록은 11-16 기준 GPX가 있는 박지(야영 금지 태화산 뺌). [지역, [[박지 id, 이름, 세부, 들머리 수], ...]]
+  var GPX_NOTICE = { id: '20261116-gpx', n: 77, list: [["경기",[["110","건달산","정상 데크",1],["272","광교산","시루봉·능선 데크",1],["284","마구산","정상 데크",1],["17","마국산","정상 3층 전망데크",1],["273","모락산","국기봉 데크",1],["286","미역산","정상·하산 데크",1],["12","백족산","중턱 전망데크",1],["67","백족산","지네굴 동굴비박",1],["354","봉성산","재두루미 전망대",1],["570","불곡산","임꺽정봉 절벽 박지",1],["591","서리산 잣나무숲","유료 야영장",1],["259","석성산","정상 데크",1],["262","선장산","정상 전망데크",1],["13","시궁산","정상 넓은 데크",1],["113","왕방산","관모봉 전망정자 옆 공터",1],["51","용문산","백운봉 정상데크",1],["315","울업산","신선봉 제2전망대 데크",1],["18","원적산","원적봉",1],["571","원적산","천덕봉",1],["123","유명산","배너머 활공장",2],["9","자산","합수머리 강변노지",1],["40","조비산","암벽 동굴박지",1],["283","조비산","정상 데크·공터",1],["16","추읍산","정상 전망데크",1],["118","태행산","정상 전망데크",1]]],["강원",[["377","구봉대산","정상",1],["585","능경봉","헬기장 및 정상부근",1],["316","드름산","의암봉 전망데크",1],["378","민둥산","정상 부근 데크·능선",2],["388","사명산","정상 인근 헬기장",1],["42","쉰움산","오십정 돌침대",1],["41","오라봉","절벽 텐트박지",1],["248","운무산","정상 전망데크",1],["335","파로호","수달길 호수변 노지",1]]],["충북",[["36","고봉 바위틈","비박지",1],["47","금수산","학봉 손바닥바위",1],["29","두타산","중심봉 돌탑노지",1],["399","백화산","한성봉",1],["25","사랑산","코뿔소바위",1],["358","삼도봉","3도 화합탑 전망데크",1],["401","신선암봉","정상 암릉",1],["6","연어봉","절벽 돌침대",1],["24","올산","천연 바위박지",1],["432","장령산","운무대 전망데크",1]]],["충남",[["400","진악산","정상 전망데크",1],["577","팔봉산","정상테크, 정상 미투2봉가는길 용굴 속 노지",1]]],["전북",[["394","고덕산","정상 헬기장",1],["392","고리봉","정상",1],["390","기차산","장군봉 정상",1],["54","나래산","정상 전망박지",1],["307","대각산","신시도 3층 전망타워 데크",1],["393","만행산","정상 천황봉",1],["395","팔공산","헬기장",1],["367","회문산","작은지붕 헬기장 및 큰지붕 데크",1]]],["전남",[["391","금강산","정상 데크",1],["30","달마산","문바위 공룡능선",1],["558","마복산","정상 너머 절벽 암릉",1],["251","만덕산","신선대 암릉박지",1],["387","모후산","정상 헬기장",1],["376","백아산","마당바위",1],["353","병풍산","마당바위 천연 슬랩",1],["7","비금도 그림산","정상 전망데크",1],["398","오봉산","정상 전망데크",1],["26","완도 상왕산","백운봉 암릉돌침대",1],["74","일림산","철쭉군락지 전망데크",1],["383","진도 동석산","정상 암릉",1],["397","초암산","정상 헬기장",1]]],["경북",[["370","나각산","소라형 쌍둥이 전망데크",1]]],["경남",[["35","거제도 노자산","정상 전망데크",1],["70","와룡산","민재봉 철쭉데크",1],["375","용두암봉","절벽 끝 전망데크",1]]],["서울/인천",[["592","노적봉","을왕리 출렁다리 전망대",1],["105","덕적도","비조봉 솔로데크",1],["136","마니산","비밀박지",2],["264","무의도","무렝게티",1],["98","소야도","막끝전망대 뱃머리데크",1],["257","인왕산","해골바위 암릉",1]]]] };
+  function gpxNoticeGo(url) {
+    try { sessionStorage.setItem('okbm_entered_via_index', '1'); } catch (e) {}
+    if (typeof window.smoothNavigate === 'function') window.smoothNavigate(url); else window.location.assign(url);
+  }
+  function homeNoticeGpx() {
+    var key = 'okbm_home_notice_gpx';
+    try { if (localStorage.getItem(key) === GPX_NOTICE.id) return; } catch (e) { return; }
+    if (document.getElementById('okbmHomeNotice')) return;
+    var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+    var root = document.createElement('div');
+    root.id = 'okbmHomeNotice';
+    root.className = 'hn';
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-label', 'GPX 등록 알림');
+    var hero = '<svg viewBox="0 0 390 96" preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
+      '<circle cx="318" cy="30" r="15" fill="#ffd27a"/><circle cx="318" cy="30" r="25" fill="#ffd27a" opacity=".22"/>' +
+      '<path d="M0 74 L60 44 L105 62 L170 24 L232 60 L290 38 L390 68 V96 H0Z" fill="#a8d5b9"/>' +
+      '<path d="M0 86 L80 66 L150 80 L230 58 L300 78 L390 70 V96 H0Z" fill="#7fc09b"/>' +
+      '<path d="M28 90 C70 84 92 70 120 72 C150 74 150 52 170 40" stroke="#c4622d" stroke-width="2.4" fill="none" stroke-dasharray="1 5" stroke-linecap="round"/>' +
+      '<circle cx="28" cy="90" r="4" fill="#fff" stroke="#c4622d" stroke-width="2"/>' +
+      '<path d="M160 40 L170 27 L180 40Z" fill="#f08a3c"/><path d="M170 27 V40" stroke="#a24f16" stroke-width="1.4"/></svg>';
+    var tabs = GPX_NOTICE.list.map(function (g, i) {
+      return '<button type="button" role="tab" aria-selected="' + (i ? 'false' : 'true') + '" class="' + (i ? '' : 'on') + '" data-ng-tab="' + i + '">' + esc(g[0]) + '<span>' + g[1].length + '</span></button>';
+    }).join('');
+    var grid = function (i) {
+      return GPX_NOTICE.list[i][1].map(function (s) {
+        return '<button type="button" data-ng-spot="' + esc(s[0]) + '"><b>' + esc(s[1]) + (s[3] > 1 ? '<span class="ng-th">들머리 ' + s[3] + '</span>' : '') + '</b><small>' + esc(s[2]) + '</small></button>';
+      }).join('');
+    };
+    root.innerHTML = '<div class="hn-frame ngf"><button type="button" class="hn-x hg-x" data-metric-click="feat_home_notice_close" aria-label="닫기">✕</button>' +
+      '<div class="hn-scroll ng">' +
+        '<div class="ng-hero">' + hero + '</div>' +
+        '<div class="ng-top"><p class="np-ey">GPX 소식</p><h2>GPX가 <em>' + GPX_NOTICE.n + '곳</em>에<br>등록되었어요</h2>' +
+          '<p class="ng-lead">이제는 더욱더 <b>안전하고 정확하게</b> 찾아갈 수 있어요.<br>가고 싶은 박지의 GPX를 확인해 보세요.</p></div>' +
+        '<div class="ng-tabs" role="tablist">' + tabs + '</div>' +
+        '<div class="ng-grid">' + grid(0) + '</div>' +
+        '<div class="ng-foot"><button type="button" class="ng-go" data-ng-go="map" data-metric-click="feat_home_notice_gpx_map">가고 싶은 박지 GPX 확인하기</button>' +
+          '<button type="button" class="ng-send" data-ng-go="send" data-metric-click="feat_home_notice_gpx_send">등록되지 않았다면 <b>GPX 등록하기</b></button></div>' +
+      '</div></div>';
+    function close() {
+      try { localStorage.setItem(key, GPX_NOTICE.id); } catch (e) {}
+      root.remove();
+    }
+    root.querySelector('.hn-x').addEventListener('click', close);
+    root.querySelector('.hn-scroll').addEventListener('click', function (ev) {
+      var t = ev.target.closest('[data-ng-tab]');
+      if (t) {
+        var i = Number(t.getAttribute('data-ng-tab'));
+        root.querySelectorAll('[data-ng-tab]').forEach(function (b) { var on = b === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+        var g = root.querySelector('.ng-grid'); g.innerHTML = grid(i); g.scrollTop = 0;
+        try { t.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); } catch (e) {}
+        return;
+      }
+      var sp = ev.target.closest('[data-ng-spot]');
+      if (sp) { close(); gpxNoticeGo('map.html?id=' + encodeURIComponent(sp.getAttribute('data-ng-spot'))); return; }
+      var go = ev.target.closest('[data-ng-go]');
+      if (!go) return;
+      close();
+      gpxNoticeGo(go.getAttribute('data-ng-go') === 'send' ? 'map.html?gpxsend=1' : 'map.html');
     });
     document.body.appendChild(root);
   }
@@ -763,6 +856,8 @@
     window.addEventListener('okbm_admin_flag', paintGulupdo);
     [2000, 6000, 15000].forEach(function (ms) { setTimeout(paintGulupdo, ms); });   // 로그인·프로필이 늦게 와도 다시 본다
     homeNotice();
+    // 포인트 알림을 이미 닫은 분께만 GPX 알림(11-16). 방금 닫은 분은 다음에 들어올 때 본다
+    try { if (localStorage.getItem('okbm_home_notice_id') === HOME_NOTICE.id) homeNoticeGpx(); } catch (e) {}
     var sec = document.getElementById('homeRecentReviews');
     if (sec) {
       sec.addEventListener('click', onQuickClick);
