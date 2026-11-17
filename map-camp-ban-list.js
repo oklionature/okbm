@@ -68,6 +68,14 @@
       '.okbm-ban-handle svg{width:16px;height:16px;color:#fb7185}',
       '.okbm-ban-handle .vt{writing-mode:vertical-rl;font-size:12px;font-weight:800;letter-spacing:.08em}',
       '.okbm-ban-handle .cnt{font-size:11px;font-weight:900;color:#fb7185;font-variant-numeric:tabular-nums}',
+      // 지도를 열고 3초 뒤 얇은 탭으로 접힌다(대표님 11-17: 항상 떠 있으면 보기 안 좋다). 누르는 범위는 왼쪽으로 넓혀 둔다.
+      '.okbm-ban-handle{transition:width .3s ease,padding .3s ease,gap .3s ease}',
+      '.okbm-ban-handle .vt,.okbm-ban-handle .cnt{transition:opacity .2s ease;overflow:hidden}',
+      '.okbm-ban-handle.fold{width:14px;padding:12px 0;gap:0;border-radius:8px 0 0 8px}',
+      '.okbm-ban-handle.fold svg{width:10px;height:10px}',
+      '.okbm-ban-handle.fold .vt,.okbm-ban-handle.fold .cnt{opacity:0;width:0;height:0}',
+      '.okbm-ban-handle.fold::before{content:"";position:absolute;top:-8px;bottom:-8px;left:-26px;right:0}',
+      '@media (prefers-reduced-motion:reduce){.okbm-ban-handle{transition:none}}',
       '.okbm-ban-dim{position:fixed;inset:0;z-index:1500;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .28s}',
       '.okbm-ban-panel{position:fixed;right:0;top:0;bottom:calc(56px + env(safe-area-inset-bottom,0px));width:min(340px,88vw);z-index:1501;background:#0f0f11;border-left:1px solid rgba(255,255,255,.14);transform:translateX(102%);transition:transform .32s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;box-shadow:-12px 0 30px rgba(0,0,0,.5);color:#f4f4f5;padding-top:var(--okbm-status-top,0px);box-sizing:border-box;word-break:keep-all;visibility:hidden}',
       '.okbm-ban-open .okbm-ban-dim{opacity:1;pointer-events:auto}',
@@ -178,7 +186,14 @@
   function updateCount() {
     var n = state.rows.length;
     document.querySelectorAll('[data-ban-count]').forEach(function (el) { el.textContent = n; });
-    if (els.handle) els.handle.hidden = n === 0;
+    if (!els.handle) return;
+    var wasHidden = els.handle.hidden;
+    els.handle.hidden = n === 0;
+    if (wasHidden && n > 0) {
+      els.handle.classList.remove('fold');
+      clearTimeout(state.foldTimer);
+      state.foldTimer = setTimeout(function () { els.handle.classList.add('fold'); }, 3000);
+    }
   }
 
   function filtered() {
