@@ -87,7 +87,8 @@
       '.okbm-ban-n{font-size:13px;font-weight:900;color:#fb7185;background:rgba(244,63,94,.16);border:1px solid rgba(244,63,94,.45);border-radius:10px;padding:1px 8px}',
       '.okbm-ban-x{width:32px;height:32px;border:none;background:none;color:#a1a1aa;border-radius:8px;display:grid;place-items:center;cursor:pointer}',
       '.okbm-ban-x svg{width:18px;height:18px}',
-      '.okbm-ban-copy{margin:0;font-size:12px;color:#a1a1aa;line-height:1.55}',
+      '.okbm-ban-copy{margin:4px 0 2px;padding:11px 13px 12px;border-radius:12px;background:rgba(74,222,128,.09);border:1px solid rgba(74,222,128,.32);border-left:4px solid #4ade80;font-size:14.5px;font-weight:600;color:#e4e4e7;line-height:1.6;letter-spacing:-.01em}',
+      '.okbm-ban-copy b{display:block;margin:3px 0;font-size:17px;font-weight:900;color:#4ade80}',
       '.okbm-ban-chips{display:flex;gap:6px;overflow-x:auto;padding:4px 0 2px;scrollbar-width:none}',
       '.okbm-ban-chips::-webkit-scrollbar{display:none}',
       '.okbm-ban-chip{flex:0 0 auto;font-size:12px;font-weight:700;padding:5px 11px;border-radius:14px;background:#17171b;color:#a1a1aa;border:1px solid rgba(255,255,255,.08);cursor:pointer;font-family:inherit}',
@@ -147,7 +148,7 @@
         '<div class="okbm-ban-ph">' +
           '<div class="okbm-ban-row1"><h2>야영 금지된 곳 <span class="okbm-ban-n"><span data-ban-count></span>곳</span></h2>' +
           '<button type="button" class="okbm-ban-x" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
-          '<p class="okbm-ban-copy">우리가 조금 더 LNT를 신경 써야 하는 이유예요.<br>아니 온 듯 다녀가요.<br>우리가 아끼는 박지가 다음엔 갈 수 없는 곳이 될지 몰라요.</p>' +
+          '<p class="okbm-ban-copy">우리가 조금 더 LNT를 신경 써야 하는 이유예요.<b>아니 온 듯 다녀가요.</b>우리가 아끼는 박지가 다음엔 갈 수 없는 곳이 될지 몰라요.</p>' +
           '<div class="okbm-ban-chips"></div>' +
         '</div>' +
         '<div class="okbm-ban-list"></div>' +
