@@ -2130,6 +2130,18 @@ function updateSmartResetButtons() {
           }).join('') +
         '</div>';
       }
+      // 야영 금지 목록 창(map-camp-ban-list.js)에서 부른다. mode 'pan'은 지도만 그 자리로 옮기고(포인트 안 씀),
+      // 'open'은 박지를 눌렀을 때와 같이 정보창을 연다(비회원 로그인 안내·정보창 5점 관문 그대로).
+      window.okbmCampBanFocus = function(spotId, mode) {
+        var sId = String(spotId || '').trim();
+        var spot = (spots || []).find(function(s) { return String(s.id).trim() === sId; });
+        if (!spot) return false;
+        if (mode === 'open') { focusSpotOnMap(spot); return true; }
+        if (!map || !spot.lat || !spot.lng) return false;
+        if (map.getLevel() > 8) map.setLevel(8, { animate: false });
+        map.panTo(new kakao.maps.LatLng(spot.lat, spot.lng));
+        return true;
+      };
       window.openCampBanPhoto = function(spotId, idx) {
         var sId = String(spotId || '').trim();
         var spot = (spots || []).find(function(s) { return String(s.id).trim() === sId; });
