@@ -160,8 +160,14 @@
       if (c && Date.now() - c.at < FEED_CACHE_MS && Array.isArray(c.rows)) return Promise.resolve(c.rows);
     } catch (e) {}
     var base = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-    var url = base + '/rest/v1/feeds?select=' + FEED_COLS + '&is_published=eq.true&feed_type=neq.snap&order=created_at.desc&limit=3000';
-    var p = typeof window.okbmPublicFetch === 'function' ? window.okbmPublicFetch(url) : fetch(url, { headers: restHeaders() });
+    var path = '/rest/v1/feeds?select=' + FEED_COLS + '&is_published=eq.true&feed_type=neq.snap&order=created_at.desc&limit=3000';
+    var url = base + path;
+    var direct = function () {
+      return typeof window.okbmPublicFetch === 'function' ? window.okbmPublicFetch(url) : fetch(url, { headers: restHeaders() });
+    };
+    // 공개 글 목록은 누구에게나 같아서 Cloudflare 보관함(workers/public-cache, 5분)에서 먼저 받는다. 내 글은 fetchMyFeeds가 따로 받는다
+    var p = fetch('https://romantic-public-cache.ggumfree.workers.dev' + path)
+      .then(function (r) { return r.ok ? r : direct(); }, direct);
     return p.then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
       if (Array.isArray(rows) && rows.length) {
         try { sessionStorage.setItem(FEED_CACHE_KEY, JSON.stringify({ at: Date.now(), rows: rows })); } catch (e) {}

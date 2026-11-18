@@ -1,4 +1,4 @@
-# 누구에게나 똑같이 보이는 공개 내용(라운지·추천 영상)을 몇 분 담아 두고 나눠 주는 Worker.
+# 누구에게나 똑같이 보이는 공개 내용(라운지·추천 영상·비회원 박지 목록·사진지도 공개 피드)을 몇 분 담아 두고 나눠 주는 Worker.
 # 배포: 이 폴더에서 `env -u CLOUDFLARE_API_TOKEN npx --yes wrangler@4 deploy`
 name = "romantic-public-cache"
 main = "worker.js"

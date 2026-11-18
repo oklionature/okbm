@@ -4305,7 +4305,21 @@ window.okbmFetchSpotRows = async function(opts) {
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var anonKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
   var getRows = async function(select, token, signal) {
-    var res = await fetch(targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(select) + '&order=id.asc', {
+    var path = '/rest/v1/spots?select=' + encodeURIComponent(select) + '&order=id.asc';
+    // 비회원 목록은 누구에게나 같아서 Cloudflare 보관함(workers/public-cache)에서 받는다.
+    // 보관함은 박지 판 번호로 열쇠를 바꿔서 박지를 고치면 바로 새 목록이 나간다. 안 되면 Supabase로 받는다.
+    if (token === anonKey && select === window.SPOTS_GUEST_SELECT) {
+      try {
+        var cached = await fetch('https://romantic-public-cache.ggumfree.workers.dev' + path, { signal: signal || opts.signal });
+        if (cached.ok) {
+          var cachedRows = await cached.json();
+          if (Array.isArray(cachedRows)) return cachedRows;
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') throw e;
+      }
+    }
+    var res = await fetch(targetUrl + path, {
       method: 'GET',
       headers: { 'apikey': anonKey, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
       signal: signal || opts.signal
