@@ -56,7 +56,7 @@
 - `workers/public-cache`(romantic-public-cache.ggumfree.workers.dev)가 lounge_guides·lounge_deals·lounge_events·lounge_news·featured_videos GET을 비회원 열쇠로만 받아 5분 담아 둔다. 사용자 로그인 정보는 넘기지 않는다. workers.dev에서도 Cache API가 HIT으로 동작함을 확인.
 - lounge.js `publicRows`: 관리자가 아니면 보관함에서 받고, 안 되면 Supabase로. 관리자 저장·숨김·삭제 뒤 `reloadAdminData`가 `/purge`를 불러 판을 바꾼다(Worker가 okbm_is_admin으로 확인). 추천 영상은 index-main.js가 보관함 먼저.
 - 2단계(같은 날): 비회원 박지 목록(romantic-sync.js okbmFetchSpotRows, SPOTS_GUEST_SELECT일 때)과 포토맵 공개 피드(photo-map.js fetchPublicFeeds)도 보관함으로. 박지는 Worker가 get_spots_version을 열쇠에 넣어 박지를 고치면 바로 새 목록이 나간다(하루 보관). 피드는 is_published=eq.true 요청만 받고 5분 보관. 비회원 열쇠로는 좌표(campsite_lat)가 권한 오류라 섞일 수 없음을 확인.
-- 다음: 홈 피드 3종(좋아요 수는 실시간 원칙 — 내용과 숫자를 나눠 받기), get_public_profile 묶어 묻기(하루 6,900회), 내 users 행 덜 자주 받기(하루 3,600회).
+- 다음: 홈 피드 3종(좋아요 수는 실시간 원칙 — 내용과 숫자를 나눠 받기), ~~get_public_profile 묶어 묻기~~ → 11-18 romantic-history.js resolveUserMasterPhoto가 남의 프로필 사진(없음도)을 localStorage okbm_avatar_memo_v1에 하루 기억, '사진 없음' 답은 다시 묻지 않게 고침(하루 7,685회: 페이지를 넘길 때마다 다시 묻고, 사진 없는 사람은 세 번 더 물었다), 내 users 행 덜 자주 받기(하루 3,600회).
 
 ## 할 일
 ### 1. 지도도 박지 목록 캐시를 쓰고, 바뀌었을 때만 새로 받기 (효과 가장 큼) — 끝

@@ -2544,6 +2544,32 @@ window.normalizeHistoryRecord = function(r, idx) {
     }, 800 * (n + 1));
   }
 
+  // 남의 프로필 사진(없음도)을 휴대폰에 하루 기억한다. 페이지를 넘기거나 앱을 다시 켜도 다시 묻지 않는다
+  // (2026-11-18: 피드를 볼 때마다 글쓴이마다 get_public_profile을 물어 하루 7,700번이었다)
+  var AVATAR_MEMO_KEY = 'okbm_avatar_memo_v1', AVATAR_MEMO_MS = 24 * 60 * 60 * 1000;
+  var avatarMemo = null;
+  function okbmAvatarMemoLoad() {
+    if (avatarMemo) return avatarMemo;
+    avatarMemo = {};
+    try {
+      var raw = JSON.parse(localStorage.getItem(AVATAR_MEMO_KEY) || '{}') || {};
+      var now = Date.now();
+      Object.keys(raw).forEach(function(id) {
+        var e = raw[id];
+        if (e && typeof e.at === 'number' && now - e.at < AVATAR_MEMO_MS) avatarMemo[id] = e;
+      });
+    } catch (e) {}
+    return avatarMemo;
+  }
+  function okbmAvatarMemoGet(uId) {
+    var e = okbmAvatarMemoLoad()[uId];
+    return e && Date.now() - e.at < AVATAR_MEMO_MS ? e : null;
+  }
+  function okbmAvatarMemoSet(uId, url) {
+    okbmAvatarMemoLoad()[uId] = { u: url || '', at: Date.now() };
+    try { localStorage.setItem(AVATAR_MEMO_KEY, JSON.stringify(avatarMemo)); } catch (e) {}
+  }
+
   window.resolveUserMasterPhoto = function(userId, authorName, fallbackPhoto) {
     var uId = String(userId || '').trim();
     if (!uId || uId === 'guest') return okbmAvatarDisplayUrl(fallbackPhoto);
@@ -2575,6 +2601,16 @@ window.normalizeHistoryRecord = function(r, idx) {
     var safeFallback = okbmAvatarDisplayUrl(fallbackPhoto);
     if (!isMe && myCover && safeFallback === myCover) safeFallback = '';
     if (safeFallback) window.__userProfilePhotoMap[uId] = safeFallback;
+
+    var memo = okbmAvatarMemoGet(uId);
+    if (memo) {
+      var memoUrl = okbmAvatarDisplayUrl(memo.u);
+      if (memoUrl && !(myCover && memoUrl === myCover)) {
+        window.__userProfilePhotoMap[uId] = memoUrl;
+        return memoUrl;
+      }
+      if (!memo.u) return safeFallback || ''; // 사진을 안 올린 사람: 하루 동안 다시 묻지 않는다
+    }
 
     window.__userProfileFetchingMap = window.__userProfileFetchingMap || {};
     var inflight = window.__userProfileFetchingMap[uId];
@@ -2621,13 +2657,15 @@ window.normalizeHistoryRecord = function(r, idx) {
             window.okbmApplyRouterPublicProfile(uData);
           }
           var remoteUrl = (uData && uData.id) ? okbmAvatarDisplayUrl(uData.hero_cover_url || uData.photo_url || '') : '';
+          if (uData && uData.id) okbmAvatarMemoSet(uId, remoteUrl);
           if (remoteUrl) {
             window.__userProfilePhotoAttempts = window.__userProfilePhotoAttempts || {};
             window.__userProfilePhotoAttempts[uId] = 0;
             window.okbmPaintUserAvatarNodes(uId, remoteUrl);
             return remoteUrl;
           }
-          return '';
+          // 서버가 답했는데 사진이 없으면 false(다시 묻지 않음), 답을 못 받았으면 ''(잠시 뒤 다시)
+          return (uData && uData.id) ? false : '';
         }).catch(function() {
           return '';
         }).finally(function() {
@@ -2637,7 +2675,7 @@ window.normalizeHistoryRecord = function(r, idx) {
         });
         window.__userProfileFetchingMap[uId] = job;
         job.then(function(url) {
-          if (!url) okbmScheduleProfilePhotoRetry(uId);
+          if (url === '') okbmScheduleProfilePhotoRetry(uId);
         });
       }
     }
