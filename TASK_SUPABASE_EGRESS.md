@@ -47,6 +47,16 @@
   - 관리자가 목록 카드에서 '핀'으로 위치만 옮기면 상세 없이 저장돼 소개·들머리 주소·영상이 지워질 수 있었다. `commitAdminPinMove`가 먼저 상세를 받고, 못 받으면 저장하지 않는다.
   - 잰 크기(비회원 목록, gzip): 80KB → 54KB. 처음 적은 예상(35KB)보다 덜 준다. 더 줄이려면 80자를 줄이면 되지만 지도 목록 카드(세 줄)가 짧아진다.
 
+## 2026-11-18 로그로 잰 하루 전송량 (Supabase 로그 탐색기 edge_logs 24시간 + curl gzip 크기)
+- 하루 요청 101,474건, 에러 약 1%. 무한 반복 같은 고장은 없음. 하루 Egress 약 240MB 중 GET 상위 60가지가 약 133MB.
+- 큰 것: 포토맵 피드 limit=3000(321회×78KB=25MB), 박지 목록(200회×76KB=15MB), 라운지 가이드(837회×18KB=15MB), 홈 피드 3종(약 35MB), 라운지 혜택·행사·소식·추천 영상(각 약 830회, 합 16MB).
+- 잔요청: get_public_profile 하루 6,900회(피드 카드마다 따로 물음), OPTIONS 미리 묻기 1만 건 넘음.
+
+## 3번 1단계 끝 (2026-11-18)
+- `workers/public-cache`(romantic-public-cache.ggumfree.workers.dev)가 lounge_guides·lounge_deals·lounge_events·lounge_news·featured_videos GET을 비회원 열쇠로만 받아 5분 담아 둔다. 사용자 로그인 정보는 넘기지 않는다. workers.dev에서도 Cache API가 HIT으로 동작함을 확인.
+- lounge.js `publicRows`: 관리자가 아니면 보관함에서 받고, 안 되면 Supabase로. 관리자 저장·숨김·삭제 뒤 `reloadAdminData`가 `/purge`를 불러 판을 바꾼다(Worker가 okbm_is_admin으로 확인). 추천 영상은 index-main.js가 보관함 먼저.
+- 다음: 박지 비회원 목록·포토맵 피드·홈 피드(숨김·비공개 즉시 비우기, 올린 사람은 바로 받기와 같이), 프로필 묶어 묻기.
+
 ## 할 일
 ### 1. 지도도 박지 목록 캐시를 쓰고, 바뀌었을 때만 새로 받기 (효과 가장 큼) — 끝
 - `loadSpotsMasterEngine()`이 `fetchMasterSpotsFromSupabase()` 캐시를 함께 쓰게 한다. 비회원 대략 좌표 캐시를 회원 화면에 쓰지 않는 `okbmSpotListFitsViewer` 규칙은 지킨다.

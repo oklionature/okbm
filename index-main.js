@@ -1406,7 +1406,7 @@
       var feedsGridHtml = '';
       if (userFeeds.length === 0) {
         feedsGridHtml = '<div style="grid-column:1/-1; padding:60px 14px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;">' +
-          '<div style="width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.06); border:1px dashed rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; color:#64748b; font-size:1.2rem;">⛺</div>' +
+          '<div style="width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.06); border:1px dashed rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; color:#64748b; font-size:1.2rem;"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;"><path d="M3.5 21 14 3M20.5 21 10 3M15.5 21 12 15l-3.5 6M2 21h20"/></svg></div>' +
           '<div style="font-size:0.84rem; font-weight:800; color:#cbd5e1;">등록된 백패킹 피드가 없습니다.</div>' +
           '<div style="font-size:0.68rem; color:#64748b;">이 대원은 아직 공개 피드를 작성하지 않았습니다.</div>' +
         '</div>';
@@ -2654,8 +2654,15 @@ var adBannersHtml = item.channelName ? `
       try {
         var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
         var targetKey = window.SUPABASE_ANON_KEY || '';
-        var featuredUrl = targetUrl + '/rest/v1/featured_videos?select=*&is_active=eq.true&order=sort_order.asc,id.asc';
-        var res = await (typeof window.okbmPublicFetch === 'function'
+        var featuredPath = '/rest/v1/featured_videos?select=*&is_active=eq.true&order=sort_order.asc,id.asc';
+        var featuredUrl = targetUrl + featuredPath;
+        // 추천 영상은 누구에게나 같아서 Cloudflare 보관함(workers/public-cache)에서 먼저 받는다
+        var res = null;
+        try {
+          res = await fetch('https://romantic-public-cache.ggumfree.workers.dev' + featuredPath);
+          if (!res.ok) res = null;
+        } catch (e) { res = null; }
+        if (!res) res = await (typeof window.okbmPublicFetch === 'function'
           ? window.okbmPublicFetch(featuredUrl)
           : fetch(featuredUrl, {
           headers: {
@@ -3070,7 +3077,7 @@ var adBannersHtml = item.channelName ? `
           tripData.tripId = realUuid;
           tripData.userId = curUid;
 
-          showToast('원정대 공고가 등록되었습니다!', 'success');
+          showToast('원정대 공고를 등록했어요', 'success');
           return realUuid;
         }
       } catch (err) {
@@ -4094,7 +4101,7 @@ var adBannersHtml = item.channelName ? `
           localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
         }
 
-        showToast('원정대 공고가 성공적으로 수정되었습니다!', 'success');
+        showToast('원정대 공고를 수정했어요', 'success');
         triggerHaptic(15);
 
         if (typeof window.closeTripCreateModal === 'function') window.closeTripCreateModal();
@@ -4551,7 +4558,7 @@ var adBannersHtml = item.channelName ? `
         }
       }
 
-      showToast('원정대 공고가 등록되었습니다! 달력과 즉시 연동됩니다.', 'success');
+      showToast('원정대 공고를 등록했어요. 달력에도 바로 들어가요', 'success');
       renderHomeTripJoinSlider();
 
       if (typeof window.renderPlanStage === 'function') {

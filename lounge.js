@@ -1041,11 +1041,34 @@
     if (res && res.error) throw res.error;
     return res ? res.data : null;
   }
+  // 누구에게나 같은 공개 표(행사·가이드·할인·소식)는 Cloudflare 보관함(workers/public-cache)에서 받는다.
+  // 관리자는 숨긴 행도 봐야 해서 Supabase를 바로 본다. 보관함이 안 되면 Supabase로 받는다.
+  const PUBLIC_CACHE = 'https://romantic-public-cache.ggumfree.workers.dev';
+  async function publicRows(table, builder) {
+    if (!D.admin && builder.url) {
+      try {
+        const r = await fetch(PUBLIC_CACHE + '/rest/v1/' + table + builder.url.search);
+        if (r.ok) return await r.json();
+      } catch (e) { console.warn('[lounge.js:publicRows]', table, e); }
+    }
+    return q(builder);
+  }
+  // 관리자가 고친 뒤: 보관함 판을 바꿔 다른 사람도 바로 새 내용을 받게 한다
+  async function purgePublic(table) {
+    try {
+      if (typeof window.okbmPublicBearer !== 'function') return;
+      await fetch(PUBLIC_CACHE + '/purge', {
+        method: 'POST',
+        headers: { Authorization: window.okbmPublicBearer(), 'content-type': 'application/json' },
+        body: JSON.stringify({ tables: [table] }),
+      });
+    } catch (e) { console.warn('[lounge.js:purgePublic]', table, e); }
+  }
   async function loadEvents() {
     const c = sb();
     if (!c) throw new Error('no_client');
     const t = todayKey();
-    const rows = await q(c.from('lounge_events').select('*')
+    const rows = await publicRows('lounge_events', c.from('lounge_events').select('*')
       .or('end_date.gte.' + t + ',and(end_date.is.null,start_date.gte.' + t + ')')
       .order('start_date', { ascending: true }).limit(60));
     D.events = Array.isArray(rows) ? rows : [];
@@ -1053,28 +1076,28 @@
   async function loadPastEvents() {
     const c = sb();
     if (!c) return;
-    const rows = await q(c.from('lounge_events').select('*').lt('start_date', todayKey())
+    const rows = await publicRows('lounge_events', c.from('lounge_events').select('*').lt('start_date', todayKey())
       .order('start_date', { ascending: false }).limit(30));
     D.pastEvents = (Array.isArray(rows) ? rows : []).filter(function (e) { return evView(e).past; });
   }
   async function loadGuides() {
     const c = sb();
     if (!c) throw new Error('no_client');
-    const rows = await q(c.from('lounge_guides').select('*')
+    const rows = await publicRows('lounge_guides', c.from('lounge_guides').select('*')
       .order('sort', { ascending: true }).order('created_at', { ascending: true }).limit(100));
     D.guides = Array.isArray(rows) ? rows : [];
   }
   async function loadDeals() {
     const c = sb();
     if (!c) throw new Error('no_client');
-    const rows = await q(c.from('lounge_deals').select('*')
+    const rows = await publicRows('lounge_deals', c.from('lounge_deals').select('*')
       .order('sort', { ascending: true }).order('created_at', { ascending: true }).limit(80));
     D.deals = Array.isArray(rows) ? rows : [];
   }
   async function loadNews() {
     const c = sb();
     if (!c) throw new Error('no_client');
-    const rows = await q(c.from('lounge_news').select('id,kind,title,body,link_url,images,sort,is_active,created_at')
+    const rows = await publicRows('lounge_news', c.from('lounge_news').select('id,kind,title,body,link_url,images,sort,is_active,created_at')
       .order('sort', { ascending: true }).order('created_at', { ascending: false }).limit(60));
     D.news = Array.isArray(rows) ? rows : [];
   }
@@ -4235,6 +4258,7 @@
 
   // ----- 저장·고정·숨김·삭제 공통 -----
   async function reloadAdminData(table) {
+    await purgePublic(table);
     try {
       if (table === 'lounge_events') {
         await loadEvents();

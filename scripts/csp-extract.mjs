@@ -152,6 +152,7 @@ const CONNECT_COMMON = [
   "'self'",
   `https://${SUPABASE_HOST}`, `wss://${SUPABASE_HOST}`, // REST·RPC·Edge Functions·Realtime
   "https://romantic-upload-worker.ggumfree.workers.dev", // 사진 업로드·CSP 신고
+  "https://romantic-public-cache.ggumfree.workers.dev",  // 라운지·추천 영상 공개 내용 보관(Supabase 전송량 줄이기, 11-18)
   "https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev", // 우리 사진(R2)
   "https://*.kakao.com", "https://*.kakaocdn.net",       // Kakao SDK(API·로그인·공유), 지도 SDK(daumcdn은 2026-12 종료)
   "https://openapi.naver.com",                           // 네이버 프로필(fetch 폴백)
