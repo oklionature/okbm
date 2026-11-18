@@ -19,7 +19,7 @@
 
   // 예전 판(SVG)으로 보기: 주소 끝 ?pm=svg (그 파일이 window.okbmPhotoMap을 만든다)
   if (/[?&]pm=svg\b/.test(location.search)) {
-    var old = document.createElement('script'); old.src = 'photo-map-svg.js?v=12'; document.head.appendChild(old);
+    var old = document.createElement('script'); old.src = 'photo-map-svg.js?v=13'; document.head.appendChild(old);
     return;
   }
 
@@ -1096,17 +1096,17 @@
 
     var btns = [];
     if (guest) btns.push(['login', '로그인하고 박지 정보 보기', '']);
-    else if (st === 'none') { btns.push(['visit', '✓ 다녀왔어요', 'ghost']); btns.push(['write', '📷 후기 올리기', '']); }
-    else if (ask) { btns.push(['later', '나중에', 'ghost']); btns.push(['write', '📷 후기 남기기', '']); }
-    else if (st === 'visited') { btns.push(['unvisit', '다녀옴 취소', 'ghost']); btns.push(['write', '📷 사진 올리고 색 입히기', '']); }
-    else { btns.push(['info', '박지 정보 보기', 'ghost']); btns.push(['write', '📷 후기 올리기', '']); }
+    else if (st === 'none') { btns.push(['visit', '✓ 다녀왔어요', 'ghost']); btns.push(['write', '후기 올리기', '']); }
+    else if (ask) { btns.push(['later', '나중에', 'ghost']); btns.push(['write', '후기 남기기', '']); }
+    else if (st === 'visited') { btns.push(['unvisit', '다녀옴 취소', 'ghost']); btns.push(['write', '사진 올리고 색 입히기', '']); }
+    else { btns.push(['info', '박지 정보 보기', 'ghost']); btns.push(['write', '후기 올리기', '']); }
 
     card.innerHTML =
       '<div class="pm-grab"></div><button type="button" class="pm-x" data-pm="close" aria-label="닫기">×</button>' +
       (photos.length ? '<div class="pm-gal' + (look.gray ? ' pm-gal-gray' : '') + '">' + photos.map(function (u) { return '<img alt="" loading="lazy" data-orig="' + esc(u) + '" src="' + esc(cdnUrl(u, 1080) || u) + '">'; }).join('') + '</div>' +
         (photos.length > 1 ? '<div class="pm-gcount">1 / ' + photos.length + '</div>' : '') : '<div class="pm-nophoto"></div>') +
       '<div class="pm-sheet-t"><b>' + esc(name) + (sub ? ' · ' + esc(sub) : '') + '</b><small>' + esc(place) + ' · ' + esc(line) + '</small>' + (note ? '<i>' + esc(note) + '</i>' : '') + '</div>' +
-      '<div class="pm-btns">' + btns.map(function (x) { return '<button type="button" class="' + x[2] + '" data-pm="' + x[0] + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>';
+      '<div class="pm-btns">' + btns.map(function (x) { return '<button type="button" class="' + x[2] + '" data-pm="' + x[0] + '">' + (x[0] === 'write' ? '<svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></svg>' : '') + esc(x[1]) + '</button>'; }).join('') + '</div>';
     card.classList.toggle('pm-sheet-plain', !photos.length);
     e.dim.style.display = 'block'; card.style.display = 'block';
     card.style.animation = 'none'; void card.offsetHeight; card.style.animation = '';

@@ -648,7 +648,7 @@
         }
         var lntModal = document.getElementById('lntModalOverlay');
         if (lntModal) lntModal.style.display = 'none';
-        showToast('들머리 주소와 4대 내비가 해금되었습니다!', { html: ICONS.UNLOCK });
+        showToast('들머리 주소와 4대 내비가 열렸어요', { html: ICONS.UNLOCK });
         refreshCurrentSpotPopup();
       }
 
@@ -3086,7 +3086,7 @@ function updateSmartResetButtons() {
 
         userBookmarks = new Set((safeGetJSON('okbm_bookmarks', [])).map(s => String(s).trim()));
         if (isNowBookmarked) {
-          showToast('찜 목록에 추가되었습니다!', { html: ICONS.HEART });
+          showToast('찜 목록에 추가했어요', { html: ICONS.HEART });
         }
 
         document.querySelectorAll('.btn-action-fav').forEach(btn => {

@@ -323,7 +323,7 @@ function ensurePhotoStudioDOM() {
         <button type="button" id="btnStudioRatio11" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="window.setStudioRatio('1/1')">1:1</button>
         <button type="button" id="btnStudioRatio45" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="window.setStudioRatio('4/5')">4:5</button>
         <button type="button" id="btnStudioRatio916" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="window.setStudioRatio('9/16')">9:16</button>
-        <button type="button" id="btnStudioRatioFree" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#ffffff; border:1px dashed rgba(255,255,255,0.4); white-space:nowrap;" onclick="window.setStudioRatio('free')">자유 🎚️</button>
+        <button type="button" id="btnStudioRatioFree" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#ffffff; border:1px dashed rgba(255,255,255,0.4); white-space:nowrap;" onclick="window.setStudioRatio('free')"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:12px;height:12px;vertical-align:-2px;margin-right:3px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>자유</button>
       </div>
     </div>
   `;
@@ -1442,7 +1442,7 @@ window.saveStudioCardToPhone = async function() {
     link.click();
     setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
     if (typeof triggerHaptic === 'function') triggerHaptic(15);
-    if (typeof showToast === 'function') showToast('📸 인스타 공유용 고화질 레디샷이 저장되었습니다!', 'success', 2400);
+    if (typeof showToast === 'function') showToast('인스타 공유용 고화질 레디샷을 저장했어요', 'success', 2400);
   } catch (e) {
     console.error('saveStudioCardToPhone error:', e);
     if (typeof showToast === 'function') showToast('저장 중 오류가 발생했습니다.', 'warn');
@@ -3573,7 +3573,7 @@ window.saveCurrentPackingRecord = function() {
   }
 
   if (allItems.length === 0) {
-    if (typeof showToast === 'function') showToast('선택된 장비가 없습니다. 배낭에 장비를 담아주세요!', 'warn');
+    if (typeof showToast === 'function') showToast('고른 장비가 없어요. 배낭에 장비를 담아 주세요', 'warn');
     return;
   }
 

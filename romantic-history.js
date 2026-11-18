@@ -2781,7 +2781,7 @@ window.normalizeHistoryRecord = function(r, idx) {
     if (deleteActionBar && deleteBtnText) {
       if (selectedCount > 0) {
         deleteActionBar.style.display = 'flex';
-        deleteBtnText.innerText = '선택한 ' + selectedCount + '개 기록 영구 삭제 🗑️';
+        deleteBtnText.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" style="width:15px;height:15px;vertical-align:-2px;margin-right:5px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>' + '선택한 ' + Number(selectedCount) + '개 기록 영구 삭제';
       } else {
         deleteActionBar.style.display = 'none';
       }

@@ -456,8 +456,13 @@
     }
   };
 
+  // 내 장비 별: 이모지 대신 선 아이콘(채운 별 = 내 장비, 빈 별 = 아직 아님)
+  var PLAN_STAR_PATH = '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>';
+  var PLAN_STAR_ON = '<svg viewBox="0 0 24 24" aria-hidden="true" style="width:1em;height:1em;vertical-align:-0.125em;fill:#fbbf24;stroke:#fbbf24;stroke-width:1.5;stroke-linejoin:round;">' + PLAN_STAR_PATH + '</svg>';
+  var PLAN_STAR_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true" style="width:1em;height:1em;vertical-align:-0.125em;fill:none;stroke:#475569;opacity:0.6;stroke-width:1.75;stroke-linejoin:round;">' + PLAN_STAR_PATH + '</svg>';
+  var PLAN_STAR_BADGE = '<svg viewBox="0 0 24 24" aria-hidden="true" style="width:0.95em;height:0.95em;vertical-align:-0.15em;margin-right:2px;fill:none;stroke:#fbbf24;stroke-width:2;stroke-linejoin:round;">' + PLAN_STAR_PATH + '</svg>';
   var PLAN_CATEGORY_PALETTE = {
-    fav:         { color: '#fde047', label: '⭐ 내장비', bg: 'rgba(253,224,71,0.08)',  border: 'rgba(253,224,71,0.25)' },
+    fav:         { color: '#fde047', label: '내 장비', bg: 'rgba(253,224,71,0.08)',  border: 'rgba(253,224,71,0.25)' },
     all:         { color: '#e2e8f0', label: '전체',     bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.22)' },
     shelter:     { color: '#10b981', label: '텐트·타프', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)' },
     sleep:       { color: '#14b8a6', label: '침낭·매트', bg: 'rgba(20,184,166,0.08)',  border: 'rgba(20,184,166,0.25)' },
@@ -1372,7 +1377,7 @@
 
       var starBtn = row.querySelector('.gear-db-star-btn');
       if (starBtn) {
-        starBtn.innerHTML = isFav ? '⭐' : '<span style="color:#475569; opacity:0.4;">☆</span>';
+        starBtn.innerHTML = isFav ? PLAN_STAR_ON : PLAN_STAR_OFF;
       }
 
       var nameEl = row.querySelector('.gear-db-name');
@@ -1406,7 +1411,7 @@
             var fBadge = document.createElement('span');
             fBadge.className = 'gear-db-fav-badge';
             fBadge.style.cssText = 'font-size:0.58rem; font-weight:800; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; padding:1px 5px; border-radius:4px; flex-shrink:0;';
-            fBadge.textContent = '⭐ 내 장비';
+            fBadge.innerHTML = PLAN_STAR_BADGE + '내 장비';
             if (metaRow.firstChild && metaRow.firstChild.classList && metaRow.firstChild.classList.contains('gear-db-added-badge')) {
               metaRow.insertBefore(fBadge, metaRow.firstChild.nextSibling);
             } else {
@@ -1686,7 +1691,8 @@
           </div>
 
           <div style="position:relative; width:100%; display:flex; align-items:center;">
-            <input type="text" id="gearSearchFixedInput" class="modal-input" placeholder="🔍 브랜드, 장비명,검색..." oninput="window.handleGearSearchInput(this.value)" style="border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.035); color:#ffffff; font-size:0.85rem; padding:0 32px 0 12px; height:42px; border-radius:8px; width:100%; box-sizing:border-box; outline:none;" />
+            <svg viewBox="0 0 24 24" aria-hidden="true" style="position:absolute; left:11px; width:16px; height:16px; fill:none; stroke:#94a3b8; stroke-width:1.75; stroke-linecap:round; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="text" id="gearSearchFixedInput" class="modal-input" placeholder="브랜드, 장비명 검색" oninput="window.handleGearSearchInput(this.value)" style="border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.035); color:#ffffff; font-size:0.85rem; padding:0 32px 0 34px; height:42px; border-radius:8px; width:100%; box-sizing:border-box; outline:none;" />
             <button type="button" id="btnGearSearchClear" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.15); border:none; color:#cbd5e1; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;" onclick="window.clearGearSearchInput()">✕</button>
           </div>
 
@@ -2354,7 +2360,7 @@
       var isFav = window.favoriteGearSet && window.favoriteGearSet.has(g.name);
 
       var addedBadge = isAdded ? '<span class="gear-db-added-badge" style="font-size:0.58rem; font-weight:800; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#f8fafc; padding:1px 5px; border-radius:4px; flex-shrink:0;">담김 ' + countInPack + '개</span>' : '';
-      var myGearBadge = isFav ? '<span class="gear-db-fav-badge" style="font-size:0.58rem; font-weight:800; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; padding:1px 5px; border-radius:4px; flex-shrink:0;">⭐ 내 장비</span>' : '';
+      var myGearBadge = isFav ? '<span class="gear-db-fav-badge" style="font-size:0.58rem; font-weight:800; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; padding:1px 5px; border-radius:4px; flex-shrink:0;">' + PLAN_STAR_BADGE + '내 장비</span>' : '';
       var brandHtml = g.brand ? '<span style="font-size:0.60rem; font-weight:700; color:#94a3b8; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:1px 4px; border-radius:3px; flex-shrink:0;">' + escapeHtml(g.brand) + '</span>' : '';
       var verifiedBadgeHtml = g.verified ? '<span style="font-size:0.58rem; font-weight:700; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:#cbd5e1; padding:1px 4px; border-radius:3px; flex-shrink:0;">실측</span>' : '';
 
@@ -2363,7 +2369,7 @@
           <div style="flex:1; min-width:0; padding-right:8px; display:flex; flex-direction:column; gap:2px;" onclick="event.stopPropagation(); if (!window.__longPressTriggered) window.openGearDetailFromEl(this);">
             <div style="display:flex; align-items:center; gap:5px;">
               <button type="button" class="gear-db-star-btn" data-okbm-idx="${Number(idx)}" onclick="event.stopPropagation(); window.toggleFavoriteGearByIndex(Number(this.dataset.okbmIdx), event);" style="background:none; border:none; font-size:1.0rem; cursor:pointer; padding:0 2px;">
-                ${isFav ? '⭐' : '<span style="color:#475569; opacity:0.4;">☆</span>'}
+                ${isFav ? PLAN_STAR_ON : PLAN_STAR_OFF}
               </button>
               <div class="gear-db-name" style="font-size:0.78rem; font-weight:800; color:${isAdded ? '#ffffff' : '#e2e8f0'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
                 ${escapeHtml(g.name)}
@@ -5490,7 +5496,7 @@ window.saveCurrentPackingRecord = function() {
         </div>
 
         <div class="pk-card" style="padding:14px 16px; display:flex; align-items:center; gap:6px; flex-shrink:0;">
-          <span style="color:#fbbf24; font-size:15px;">⭐</span>
+          <span style="color:#fbbf24; font-size:15px; display:inline-flex;">${PLAN_STAR_ON}</span>
           <b style="font-size:15px; font-weight:900; color:var(--tx-1, #f2f2f3);">내 장비</b>
           <span class="pk-g" id="mgrFavCountLabel">(${filteredFavGears.length}개)</span>
           <span class="pk-g" style="margin-left:auto;">${investLabelText}</span>
@@ -5507,7 +5513,7 @@ window.saveCurrentPackingRecord = function() {
           ${filteredFavGears.length === 0 ? `
             <div class="pk-shelf-empty">
               등록된 장비가 없습니다.<br>
-              상단에서 직접 등록하거나 배낭계산기에서 ⭐을 눌러보세요.
+              상단에서 직접 등록하거나 배낭계산기에서 별을 눌러보세요.
             </div>
           ` : '<div class="pk-card" style="padding:0 14px;">' + filteredFavGears.map(function(g, gi) {
             var meta = gearMetaObj[g.name] || { purchaseDate: '', price: '', status: 'ok', memo: '' };
@@ -6114,7 +6120,7 @@ window.saveCurrentPackingRecord = function() {
           card.remove();
           var countLabel = document.getElementById('mgrFavCountLabel');
           if (countLabel && window.favoriteGearSet) {
-            countLabel.innerText = '⭐ 내 장비 프로필 관리 (' + window.favoriteGearSet.size + '개)';
+            countLabel.innerText = '(' + window.favoriteGearSet.size + '개)';
           }
         }, 200);
         return;
