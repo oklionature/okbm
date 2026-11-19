@@ -2218,7 +2218,7 @@
         // 회원 프로필을 거는 칸이라 낭만루트 공식 글은 뺀다. 같은 박지는 이름이 달라도 좋아요가 가장 많은 글 하나만 남긴다
         // (allCleanFeeds가 좋아요·최신 순이라 처음 만난 글이 그 박지의 1등)
         // 다섯 자리 중 하나(맨 앞)는 플로깅 피드(대표님 11-07). 별이 많아 원래 순위 5곳 안에 든 플로깅 피드가 있으면 그대로 두고,
-        // 없으면 따로 받은 최근 플로깅 피드(fetchHeroPloggingFeeds) 중 별이 가장 많은 글을 맨 앞에 넣는다
+        // 없으면 따로 받은 최근 플로깅 피드(__okbmHeroPloggingFeeds) 중 별이 가장 많은 글을 맨 앞에 넣는다
         var heroSpotPool = getThemeSpotPool();
         var seenHeroSpots = {};
         var takeHeroSpot = function(f) {
@@ -2236,7 +2236,7 @@
           }
         };
         // 후보는 최근 7일 안에 올라온 글이 먼저다(대표님 11-16: 몇 주째 같은 사진). 전체 기간 좋아요 순 30개만 보면
-        // 11월 초 글이 계속 1~5등을 지켜서, 따로 받은 최근 7일 글(fetchHeroWeekFeeds)을 좋아요 순으로 앞에 세우고
+        // 11월 초 글이 계속 1~5등을 지켜서, 따로 받은 최근 7일 글(__okbmHeroWeekFeeds)을 좋아요 순으로 앞에 세우고
         // 모자라면 전체 순위로 채운다. 저장본이 묵었을 수 있어 올린 시각으로 한 번 더 거른다
         var heroWeekCut = Date.now() - 7 * 24 * 3600 * 1000;
         var heroWeekPool = sortFeedsByStarsAndDate(window.__okbmHeroWeekFeeds || []).filter(function(f) {
@@ -2310,92 +2310,92 @@
         console.warn('[index.html:initDynamicHeroAndFeeds cache]', bootErr);
       }
 
-      // 이주의 인기 피드 플로깅 자리 후보: 최근에 올라온 플로깅 피드 10개(첫 그림은 위에서 읽은 저장본).
-      // 그중 별(좋아요)이 가장 많은 글이 자리를 받는다(같으면 최근 글). 별이 적어도 최근 글이면 걸린다(대표님 11-07)
-      var fetchHeroPloggingFeeds = async function(homeSelect) {
+      // 홈 인기 칸 피드(인기 30·이번 주 40·플로깅 10)는 공개 글만이라 누구에게나 같다.
+      // Supabase 전송량을 줄이려고 Cloudflare 보관함(workers/public-cache, 5분)에서 먼저 받고, 안 되면 Supabase로(11-19).
+      var fetchHomeFeedRows = async function(path) {
         try {
-          if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return;
-          var url = window.SUPABASE_URL + '/rest/v1/feeds?select=' + encodeURIComponent(homeSelect) +
-            '&is_published=eq.true&plogging_photo=not.is.null&order=created_at.desc&limit=10';
-          var r = await (typeof window.okbmPublicFetch === 'function'
-            ? window.okbmPublicFetch(url)
-            : fetch(url, { headers: { 'apikey': window.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY } }));
-          if (!r.ok) return;
-          var rows = await r.json();
-          if (!Array.isArray(rows)) return;
-          window.__okbmHeroPloggingFeeds = rows.map(normalizeHomeFeedRow).sort(function(a, b) {
-            return (b.likes || 0) - (a.likes || 0) || String(b.createdAt).localeCompare(String(a.createdAt));
-          });
-          try { localStorage.setItem('okbm_cached_hero_plogging', JSON.stringify(window.__okbmHeroPloggingFeeds)); } catch (e) {}
-        } catch (e) {
-          console.warn('[fetchHeroPloggingFeeds]', e);
-        }
+          var cached = await fetch('https://romantic-public-cache.ggumfree.workers.dev' + path);
+          if (cached.ok) {
+            var cachedRows = await cached.json();
+            if (Array.isArray(cachedRows)) return cachedRows;
+          }
+        } catch (eCache) {}
+        if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return null;
+        var url = window.SUPABASE_URL + path;
+        var r = await (typeof window.okbmPublicFetch === 'function'
+          ? window.okbmPublicFetch(url)
+          : fetch(url, { headers: { 'apikey': window.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY } }));
+        if (!r.ok) return null;
+        var rows = await r.json();
+        return Array.isArray(rows) ? rows : null;
       };
 
-      // 이주의 인기 피드 후보: 최근 7일 안에 올라온 공개 글을 좋아요 순으로 40개(대표님 11-16)
-      var fetchHeroWeekFeeds = async function(homeSelect) {
+      // 보관함 내용은 5분까지 늦을 수 있다. 좋아요 수는 지금 값으로 바꾸고(대표님: 숫자는 실시간),
+      // 그사이 지우거나 비공개로 돌린 글은 대답에 없으니 뺀다. 이 확인이 실패하면 받은 그대로 쓴다.
+      var refreshHomeFeedsLive = async function(lists) {
+        var seen = {};
+        lists.forEach(function(rows) {
+          (rows || []).forEach(function(row) { if (row && row.id != null) seen[String(row.id)] = true; });
+        });
+        var ids = Object.keys(seen);
+        if (!ids.length || !window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return lists;
+        var url = window.SUPABASE_URL + '/rest/v1/feeds?select=id,likes_count&is_published=eq.true&id=in.(' +
+          ids.map(function(id) { return '%22' + encodeURIComponent(id) + '%22'; }).join(',') + ')';
+        var live;
         try {
-          if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return;
-          var since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
-          var url = window.SUPABASE_URL + '/rest/v1/feeds?select=' + encodeURIComponent(homeSelect) +
-            '&is_published=eq.true&created_at=gte.' + encodeURIComponent(since) + '&order=likes_count.desc,created_at.desc&limit=40';
           var r = await (typeof window.okbmPublicFetch === 'function'
             ? window.okbmPublicFetch(url)
             : fetch(url, { headers: { 'apikey': window.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY } }));
-          if (!r.ok) return;
-          var rows = await r.json();
-          if (!Array.isArray(rows)) return;
-          window.__okbmHeroWeekFeeds = rows.map(normalizeHomeFeedRow);
-          try { localStorage.setItem('okbm_cached_hero_week', JSON.stringify(window.__okbmHeroWeekFeeds)); } catch (e) {}
-        } catch (e) {
-          console.warn('[fetchHeroWeekFeeds]', e);
+          if (!r.ok) return lists;
+          live = await r.json();
+        } catch (eLive) {
+          return lists;
         }
+        if (!Array.isArray(live)) return lists;
+        var likesById = {};
+        live.forEach(function(row) { likesById[String(row.id)] = row.likes_count; });
+        return lists.map(function(rows) {
+          if (!rows) return rows;
+          return rows.filter(function(row) { return Object.prototype.hasOwnProperty.call(likesById, String(row.id)); })
+            .map(function(row) { return Object.assign({}, row, { likes_count: likesById[String(row.id)] }); });
+        });
+      };
+
+      var byLikesThenRecent = function(a, b) {
+        return (b.likes || 0) - (a.likes || 0) || String(b.createdAt).localeCompare(String(a.createdAt));
       };
 
       setTimeout(async function() {
         try {
-          var rawRows = null;
           var homeSelect = window.FEEDS_HOME_SELECT || 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,instagram,likes_count,is_published,feed_type,created_at,items,template_id';
           // 플로깅 피드를 알아보려고(녹색 테두리·플로깅 자리) 플로깅 사진 칸도 받는다
           if (homeSelect.indexOf('plogging_photo') === -1) homeSelect += ',plogging_photo';
-          var guestMode = !(typeof isUserLoggedIn === 'function' && isUserLoggedIn());
-          var ploggingJob = fetchHeroPloggingFeeds(homeSelect);
-          var weekJob = fetchHeroWeekFeeds(homeSelect);
+          var base = '/rest/v1/feeds?select=' + encodeURIComponent(homeSelect) + '&is_published=eq.true';
+          // 이번 주 기준 시각은 정시로 내린다. 매번 다른 시각이면 보관함 열쇠가 달라져 담아 둔 것을 못 쓴다.
+          var sinceMs = Date.now() - 7 * 24 * 3600 * 1000;
+          var since = new Date(sinceMs - sinceMs % 3600000).toISOString();
+          var got = await Promise.all([
+            // 홈 인기 피드 30개
+            fetchHomeFeedRows(base + '&order=likes_count.desc,created_at.desc&limit=30'),
+            // 이주의 인기 피드 후보: 최근 7일 안에 올라온 공개 글을 좋아요 순으로 40개(대표님 11-16)
+            fetchHomeFeedRows(base + '&created_at=gte.' + encodeURIComponent(since) + '&order=likes_count.desc,created_at.desc&limit=40'),
+            // 플로깅 자리 후보: 최근에 올라온 플로깅 피드 10개. 그중 별이 가장 많은 글이 자리를 받는다
+            // (같으면 최근 글). 별이 적어도 최근 글이면 걸린다(대표님 11-07)
+            fetchHomeFeedRows(base + '&plogging_photo=not.is.null&order=created_at.desc&limit=10')
+          ].map(function(job) { return job.catch(function() { return null; }); }));
+          got = await refreshHomeFeedsLive(got);
+          var rawRows = got[0], weekRows = got[1], ploggingRows = got[2];
 
-          if (!guestMode && window.supabaseClient) {
-            var sbRes = await window.supabaseClient
-              .from('feeds')
-              .select(homeSelect)
-              .eq('is_published', true)
-              .order('likes_count', { ascending: false })
-              .order('created_at', { ascending: false })
-              .limit(30);
-            if (sbRes.data && Array.isArray(sbRes.data) && sbRes.data.length > 0) {
-              rawRows = sbRes.data;
-            }
+          if (Array.isArray(ploggingRows)) {
+            window.__okbmHeroPloggingFeeds = ploggingRows.map(normalizeHomeFeedRow).sort(byLikesThenRecent);
+            try { localStorage.setItem('okbm_cached_hero_plogging', JSON.stringify(window.__okbmHeroPloggingFeeds)); } catch (e) {}
           }
-
-          if (!rawRows && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-            var homeUrl = window.SUPABASE_URL + '/rest/v1/feeds?select=' + encodeURIComponent(homeSelect) + '&is_published=eq.true&order=likes_count.desc,created_at.desc&limit=30';
-            var res = await (typeof window.okbmPublicFetch === 'function'
-              ? window.okbmPublicFetch(homeUrl)
-              : fetch(homeUrl, {
-                headers: {
-                  'apikey': window.SUPABASE_ANON_KEY,
-                  'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY,
-                  'Content-Type': 'application/json'
-                }
-              }));
-            if (res.ok) {
-              var data = await res.json();
-              if (Array.isArray(data)) rawRows = data;
-            }
+          if (Array.isArray(weekRows)) {
+            window.__okbmHeroWeekFeeds = weekRows.map(normalizeHomeFeedRow).sort(byLikesThenRecent);
+            try { localStorage.setItem('okbm_cached_hero_week', JSON.stringify(window.__okbmHeroWeekFeeds)); } catch (e) {}
           }
-
-          await ploggingJob;
-          await weekJob;
           if (Array.isArray(rawRows) && rawRows.length > 0) {
-            var normalizedFeeds = rawRows.map(normalizeHomeFeedRow);
+            var normalizedFeeds = rawRows.map(normalizeHomeFeedRow).sort(byLikesThenRecent);
 
             try {
               localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(normalizedFeeds.slice(0, 15)));
