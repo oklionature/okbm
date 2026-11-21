@@ -113,7 +113,7 @@
     sheet(
       '<h3>박지 정보창을 열까요?</h3>' +
       '<p>박지 정보창을 열 때 낭만 포인트 <b>' + PRICE + '점</b>이 들어요.<br>한 번 연 곳은 계속 볼 수 있어요.</p>' +
-      '<p class="so-s">지금 ' + num(bal) + '점 · 출석만 해도 매일 10점이 쌓여요</p>' +
+      '<p class="so-s">지금 ' + num(bal) + '점 · 출석만 해도 매일 20점이 쌓여요</p>' +
       '<div class="so-b"><button type="button" data-so="no">다음에</button><button type="button" class="on" data-so="pay">' + PRICE + '점 쓰고 열기</button></div>',
       function (what, wrap, btn) {
         if (what === 'no') { wrap.remove(); return; }
@@ -131,7 +131,7 @@
     sheet(
       '<h3>낭만 포인트가 모자라요</h3>' +
       '<p>박지 정보창을 열려면 ' + PRICE + '점이 필요해요.<br>지금 <b>' + num(bal) + '점</b>이에요.</p>' +
-      '<p class="so-s">출석 10점 · 댓글·후기 10점 · 피드 20점이 쌓여요</p>' +
+      '<p class="so-s">출석 20점 · 별 5점 · 댓글 15점 · 피드 20점이 쌓여요</p>' +
       '<div class="so-b"><button type="button" data-so="no">닫기</button><button type="button" class="on" data-so="how">모으는 법 보기</button></div>',
       function (what, wrap) {
         wrap.remove();

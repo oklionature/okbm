@@ -15,12 +15,12 @@
   'use strict';
   if (window.okbmPoints) return;
 
-  // [까닭, 이름, 점수 글자, 하루 상한(점수, 없으면 0)] — 11-02 대표님 조정, 11-16 개편(TASK_POINTS_1116.md, SUPABASE_I16)
+  // [까닭, 이름, 점수 글자, 하루 상한(점수, 없으면 0)] — 11-02 대표님 조정, 11-16 개편(TASK_POINTS_1116.md, SUPABASE_I16), 11-21 출석·별·댓글 올림(SUPABASE_I33)
   var RULES = [
     ['feed', '피드 올리기', '20', 60],
     ['plog', '플로깅 피드', '+20', 40],
-    ['comment', '댓글 쓰기', '10', 60],
-    ['star_give', '별 누르기', '2', 20],
+    ['comment', '댓글 쓰기', '15', 90],
+    ['star_give', '별 누르기', '5', 30],
     ['star_get', '별 받기', '1', 20],
     ['like_get', '좋아요 받기', '1', 20],
     ['post', '게시판 글·투표 올리기', '5', 10],
@@ -28,8 +28,8 @@
     ['gear_review', '장비 후기', '10', 30],
     ['tip', '한 줄 후기', '10', 30],
     ['review', '별점 후기', '10', 30],
-    ['attend', '매일 출석', '10', 10],
-    ['attend7', '7일 연속 출석', '+100', 0],
+    ['attend', '매일 출석', '20', 20],
+    ['attend7', '연속 출석', '+30~300', 0],
     ['correction', '수정 건의 채택', '100', 0],
     ['proposal', '박지 제보 반영', '200', 0],
     ['gpx', 'GPX 등산로 반영', '100', 0]
@@ -39,7 +39,7 @@
     feed: '다녀온 박지 사진을 올려 주세요. 하루 3개까지 쌓여요.',
     plog: 'K-LNT 7원칙을 지키고 주운 쓰레기 사진도 같이 올리면 두 배로 드려요. 하루 2개까지예요.',
     comment: '다른 분 피드나 게시판 글에 댓글을 달아 주세요. 장비 질문에 단 답변도 같아요. 글 하나에 한 번만, 하루 6개까지 쌓여요.',
-    star_give: '피드가 좋으면 별을 눌러 주세요. 게시물당 한 번만 체크돼요. 하루 10개까지예요.',
+    star_give: '피드가 좋으면 별을 눌러 주세요. 게시물당 한 번만 체크돼요. 하루 6개까지예요.',
     star_get: '내 피드에 별이 달리면 쌓여요.',
     like_get: '라운지 내 글에 좋아요가 달리면 쌓여요.',
     post: '라운지 게시판에 글이나 투표를 올려 주세요. 하루 2개까지예요.',
@@ -48,12 +48,12 @@
     tip: '다녀온 박지에 한 줄 남겨 주세요. 박지마다 한 번, 하루 3개까지예요.',
     review: '다녀온 박지에 별점 후기를 남겨 주세요. 박지마다 한 번, 하루 3개까지예요.',
     attend: '로그인하고 앱만 열어도 쌓여요.',
-    attend7: '7일 동안 하루도 안 빠지고 들어오면 드려요.',
+    attend7: '하루도 안 빠지고 들어오면 3일째 +30, 7일째 +100, 14일째 +150, 30일째 +300을 더 드려요. 30일을 채우거나 하루 빠지면 1일째부터 다시 세요.',
     correction: '박지 정보가 틀렸으면 알려 주세요. 고쳐지면 드려요.',
     proposal: '나만 아는 박지를 알려 주세요. 등록되면 드려요.',
     gpx: '다녀온 박지의 등산 앱 기록(GPX)을 보내 주세요. 박지에 등록되면 감사한 마음을 담아 드려요.'
   };
-  var DAY_MAX = 340; // 피드 60 + 플로깅 40 + 댓글 60 + 별 20 + 받은 별 20 + 받은 라운지 좋아요 20(I28, 누른 좋아요는 별 20에 합쳐 셈) +게시판 글 10 + 투표 10 + 장비 후기 30 + 한 줄 30 + 별점 30 + 출석 10 (11-16)
+  var DAY_MAX = 390; // 피드 60 + 플로깅 40 + 댓글 90 + 별 30 + 받은 별 20 + 받은 라운지 좋아요 20(I28, 누른 좋아요는 별 20에 합쳐 셈) +게시판 글 10 + 투표 10 + 장비 후기 30 + 한 줄 30 + 별점 30 + 출석 20 (11-21)
   var SPEND = [
     ['박지 정보창 열기', '5점', '박지마다 처음 한 번, 한 번 연 곳은 계속 볼 수 있어요'],
     ['닉네임 바꾸기', '500점', '처음 한 번은 무료예요'],
@@ -116,7 +116,18 @@
     '.pt-spend .pt-li:first-child{border-top:0}',
     '.pt-fold+.pt-fold{margin-top:0;border-top:0}',
     '.pt-more{display:block;width:100%;margin-top:4px;padding:12px 0;border:0;border-top:1px solid var(--line,rgba(255,255,255,.08));background:none;color:var(--tx-2,#d1d1d6);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}',
-    '.pt-lead{margin:14px 0 0;font-size:13px;color:var(--tx-2,#d1d1d6);line-height:1.55}'
+    '.pt-lead{margin:14px 0 0;font-size:13px;color:var(--tx-2,#d1d1d6);line-height:1.55}',
+    '.pt-stk{margin-top:16px;padding:14px 14px 12px;border-radius:14px;background:var(--bg-2,#151518)}',
+    '.pt-stk-h{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;font-weight:800}',
+    '.pt-stk-h small{font-size:12px;font-weight:600;color:var(--tx-3,#8b8b93)}',
+    '.pt-stk-r{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}',
+    '.pt-stk-c{display:flex;flex-direction:column;align-items:center;gap:5px}',
+    '.pt-stk-c i{width:100%;max-width:38px;aspect-ratio:1;border-radius:50%;border:1.5px dashed var(--line-2,rgba(255,255,255,.22));display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:700;color:var(--tx-3,#8b8b93);font-variant-numeric:tabular-nums}',
+    '.pt-stk-c.on i{border:0;background:#fbbf24;color:#1a1408}',
+    '.pt-stk-c.on i svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}',
+    '.pt-stk-c.b i{border-style:solid;border-color:#fbbf24;color:#fbbf24}',
+    '.pt-stk-c small{height:14px;font-size:11px;font-weight:700;color:#fbbf24;font-variant-numeric:tabular-nums}',
+    '.pt-stk-s{margin-top:10px;font-size:12px;color:var(--tx-3,#8b8b93);line-height:1.5}'
   ].join('');
 
   function ensureCss() {
@@ -212,7 +223,7 @@
       if (res && res.error) throw res.error;
       try { localStorage.setItem(key, day); } catch (e) {}
       var g = res && res.data ? res.data : {};
-      if (Number(g.streak_bonus) > 0) toast('7일 연속 출석! +' + num(g.gained) + ' 낭만 포인트', true);
+      if (Number(g.streak_bonus) > 0) toast(num(g.streak) + '일 연속 출석! +' + num(g.gained) + ' 낭만 포인트', true);
       else if (Number(g.attend) > 0) toast('출석 +' + num(g.attend) + ' 낭만 포인트', true);
       return load(true).then(syncBalance);
     }).catch(function (e) { console.warn('[romantic-points:attend]', e); });
@@ -256,9 +267,30 @@
   }
 
   // ---------------------------------------------------------------- 전체 창
+  // 연속 출석 도장판(11-21 대표님): 서버 I33과 같은 계단. 30일을 채우면 1일째부터 다시
+  var STREAK = { 3: 30, 7: 100, 14: 150, 30: 300 };
+  function streakHtml(d) {
+    var n = Math.max(0, Number(d && d.streak) || 0);
+    var pos = n ? ((n - 1) % 30) + 1 : 0;
+    var start = pos ? Math.floor((pos - 1) / 7) * 7 : 0;
+    var cells = '';
+    for (var i = 1; i <= 7; i++) {
+      var day = start + i;
+      if (day > 30) { cells += '<span class="pt-stk-c"></span>'; continue; }
+      var on = day <= pos, bonus = STREAK[day];
+      cells += '<span class="pt-stk-c' + (on ? ' on' : bonus ? ' b' : '') + '"><i>' +
+        (on ? '<svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>' : day) + '</i><small>' + (bonus ? '+' + bonus : '') + '</small></span>';
+    }
+    var next = [3, 7, 14, 30].filter(function (x) { return x > pos; })[0];
+    var sub = next ? (next - pos) + '일 더 오면 ' + next + '일째 보너스 +' + STREAK[next] + '이에요. 하루 빠지면 1일째부터 다시 세요.' : '30일을 다 채웠어요. 내일부터 다시 1일째예요.';
+    return '<div class="pt-stk"><div class="pt-stk-h">연속 출석 ' + pos + '일째<small>매일 +20</small></div>' +
+      '<div class="pt-stk-r">' + cells + '</div>' +
+      '<p class="pt-stk-s">' + sub + '</p></div>';
+  }
   function sheetHtml(d) {
     var today = d ? (d.today || {}) : {};
     var h = '<p class="pt-lead">피드 올리고, 댓글 달고, 별 누르면 포인트가 쌓여요. 글을 지우거나 별을 취소하면 그만큼 빠져요. 매일 밤 12시에 새로 시작해요.</p>';
+    if (d) h += streakHtml(d);
     h += '<div class="pt-sec">받는 법<small>오늘 +' + num(todaySum(today)) + ' / ' + DAY_MAX + '</small></div>';
     h += RULES.map(function (r) {
       var got = Number(today[r[0]]) || 0;
