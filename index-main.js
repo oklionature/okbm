@@ -857,17 +857,19 @@
         var f = item.feed;
         var sName = item.cleanSpotName;
         var author = f.author || f.nick || '낭만백패커';
-        var badgeText = f.elevation ? (String(f.elevation).includes('m') ? f.elevation : f.elevation + 'm') : (f.weightKg ? (f.weightKg + 'kg') : 'FIELD');
+        // 해발은 사진 위 상자 대신 이름 밑에 산 모양과 함께 둔다(11-21 대표님 정리안 7번). 해발이 없으면 배낭 무게, 둘 다 없으면 비운다
+        var altText = f.elevation ? (String(f.elevation).includes('m') ? f.elevation : f.elevation + 'm') : (f.weightKg ? (f.weightKg + 'kg') : '');
+        var altHtml = altText ? '<span class="n-trailer-alt">' + (f.elevation ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>' : '') + escapeHtml(altText) + '</span>' : '';
         var sId = escapeHtml(String(f.id || sName));
 
         return `
           <div class="n-trailer-card" data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId, this)" style="width:118px !important; flex-shrink:0; cursor:pointer;">
             <div class="n-trailer-thumb">
               <img src="${escapeHtml(okbmViewImageUrl(item.photoUrl, 320))}" alt="${escapeHtml(sName)}" loading="lazy" decoding="async" />
-              <div class="n-trailer-weight-chip">${escapeHtml(badgeText)}</div>
             </div>
             <div class="n-trailer-info">
               <span class="n-trailer-spot-name">${escapeHtml(sName)}</span>
+              ${altHtml}
               <span class="n-trailer-author-date" style="font-weight:700; display:flex; align-items:center; gap:3px;">
                 <svg viewBox="0 0 24 24" style="width:10px; height:10px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span>${escapeHtml(author)}</span>

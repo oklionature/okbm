@@ -3210,7 +3210,8 @@
     if (g) g.textContent = gn ? gn + '편' : '\u00a0';
     if (e) e.textContent = en ? en + '개' : '\u00a0';
   }
-  // 바로가기 밑 두 칸 (2026-10-21): 왼쪽 이달의 행사, 오른쪽 할인 소식. 칸마다 3줄, 제목 옆 '전체 ›'.
+  // 이번 달 소식 (11-21 대표님 정리안 5번): 두 칸으로 나눠 제목이 잘리던 행사·할인을 한 칸으로 합치고, 위에서 행사·할인을 골라 본다. 3줄, '전체 ›'는 고른 쪽 탭을 연다.
+  // (전: 2026-10-21 왼쪽 이달의 행사, 오른쪽 할인 소식 두 칸)
   // 행사는 참가할 수 있는 가까운 날부터(homeEventList), 할인은 진행중을 마감이 가까운 순(ongoingDeals).
   // 제목 밑 금색 한 줄(신청·오픈 일시). 제목 두 줄 자르기가 깨지지 않게 감싸서 따로 둔다
   function hdText(title, line, hot) {
@@ -3251,6 +3252,7 @@
     }
     return '<button type="button" class="hd-row" data-a="lounge" data-v="' + TAB_DEAL + '" data-id="' + esc(d.id) + '"><span class="hd-k"><b>' + esc(dealMark(d)) + '</b><small' + (hot ? ' class="hot"' : '') + '>' + esc(chip) + '</small></span>' + hdText(d.title, dealLine(d, false), hot) + '</button>';
   }
+  let hdTab = 'ev';   // 이번 달 소식에서 고른 쪽: 'ev' 행사, 'deal' 할인
   function paintDealSurfaces() {
     const strip = document.getElementById('homeDealStrip');
     if (!strip) return;
@@ -3261,11 +3263,19 @@
     const dealN = now.length;
     if (!evs.length && !dealN) { strip.hidden = true; strip.innerHTML = ''; return; }
     strip.hidden = false;
+    // 고른 쪽이 비었으면 다른 쪽을 보여 준다
+    const tab = hdTab === 'deal' ? (dealN ? 'deal' : 'ev') : (evs.length ? 'ev' : 'deal');
+    const evN = thisMonthEvents().length || evs.length;
+    const tabBtn = function (key, label, n) {
+      return '<button type="button" role="tab" class="hd-tab" data-a="hd-tab" data-v="' + key + '" aria-selected="' + (tab === key) + '">' + label + '<i>' + n + '</i></button>';
+    };
+    const rows = tab === 'ev'
+      ? evs.slice(0, HOME_N).map(hdEvRow).join('')
+      : now.slice(0, HOME_N).map(hdDealRow).join('');
     strip.innerHTML =
-      '<div class="hd-col hd-ev"><div class="hd-h"><b>이달의 행사<i>' + (thisMonthEvents().length || evs.length) + '</i></b><button type="button" data-a="lounge" data-v="0">전체 ›</button></div>'
-      + (evs.length ? evs.slice(0, HOME_N).map(hdEvRow).join('') : '<div class="hd-empty">다가오는 행사가 아직 없어요</div>') + '</div>'
-      + '<div class="hd-col hd-deal"><div class="hd-h"><b>할인 소식<i>' + dealN + '</i></b><button type="button" data-a="lounge" data-v="' + TAB_DEAL + '">전체 ›</button></div>'
-      + (now.length ? now.slice(0, HOME_N).map(hdDealRow).join('') : '<div class="hd-empty">진행중인 할인이 없어요</div>') + '</div>';
+      '<div class="hd-h"><b>이번 달 소식</b><button type="button" data-a="lounge" data-v="' + (tab === 'ev' ? 0 : TAB_DEAL) + '">전체 ›</button></div>'
+      + '<div class="hd-tabs" role="tablist">' + tabBtn('ev', '행사', evN) + tabBtn('deal', '할인', dealN) + '</div>'
+      + '<div class="hd-list" role="tabpanel">' + rows + '</div>';
   }
   function renderSplit() {
     paintNews();
@@ -5393,6 +5403,7 @@
         break;
       }
       case 'lounge': openLoungeWindow(v != null ? Number(v) : S.tab, t.dataset.id || null, t); break;
+      case 'hd-tab': if (v !== hdTab) { hdTab = v; paintDealSurfaces(); } break;
       case 'wclose': closeLoungeWindow(); break;
       case 'tab': if (inWin) winTo(Number(v)); else switchTab(Number(v)); break;
       case 'spot': closeSheet(true); closeLoungeWindow(true); openSpotOnMap(v); break;

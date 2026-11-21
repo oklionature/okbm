@@ -180,31 +180,31 @@
       '#okbmLoungeHome{gap:14px}',
       '#okbmLoungeHome #homeDealStrip{margin:10px 14px 0}',
       '#okbmLoungeHome #okbmHomeMag{margin-top:14px}',
-      // 바로가기 밑 두 칸: 왼쪽 이달의 행사, 오른쪽 할인 소식 (lounge.js가 #homeDealStrip에 그린다)
+      // 이번 달 소식 (11-21 대표님 정리안 5번): 행사·할인을 한 칸으로, 위 고르는 단추로 바꿔 본다 (lounge.js가 #homeDealStrip에 그린다)
+      // 두 칸일 때 한 칸이 170px 남짓이라 제목이 잘리고 글자가 11~12px였다. 글자 13px 이상, 누르는 곳 40px 이상
       // 홈 칸 사이 기본 간격(28px)에서 8px을 당겨 바로가기와 20px만 띄운다
-      '.hd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:-8px 14px 0;color:#F2F3F5}',
-      '.hd-col{min-width:0;border-radius:14px;background:#0c0d10;border:1px solid rgba(255,255,255,.08);padding:11px 9px 3px}',
-      '.hd-h{display:flex;justify-content:space-between;align-items:center;gap:4px;margin-bottom:4px;padding:0 2px}',
-      '.hd-h b{font-size:13.5px;font-weight:900;letter-spacing:-.02em;white-space:nowrap}',
-      '.hd-h b i{font-style:normal;margin-left:3px;font-size:11.5px;font-weight:800;color:#8b8b93}',
-      '.hd-h button{flex:none;font:inherit;font-size:11.5px;font-weight:800;color:#8e8e93;background:none;border:0;padding:4px 0;cursor:pointer}',
-      '.hd-row{width:100%;display:flex;gap:7px;align-items:flex-start;padding:8px 2px;border:0;border-top:1px solid rgba(255,255,255,.07);background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}',
-      '.hd-row:first-of-type{border-top:0}',
+      '.hd{display:block;margin:-8px 14px 0;color:#F2F3F5}',
+      '.hd-h{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px}',
+      '.hd-h b{font-size:var(--fs-section,16px);font-weight:900;letter-spacing:-.02em}',
+      '.hd-h button{flex:none;height:44px;padding:0 0 0 12px;font:inherit;font-size:13px;font-weight:800;color:#8e8e93;background:none;border:0;cursor:pointer}',
+      '.hd-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:2px 0 4px;border-radius:12px;background:#0c0d10;border:1px solid rgba(255,255,255,.08)}',
+      '.hd-tab{display:flex;align-items:center;justify-content:center;height:40px;border:0;border-radius:9px;background:none;color:#8e8e93;font:inherit;font-size:14px;font-weight:700;cursor:pointer}',
+      '.hd-tab[aria-selected="true"]{background:#2a2a30;color:#F2F3F5}',
+      '.hd-tab i{font-style:normal;margin-left:5px;font-weight:600;opacity:.75;font-variant-numeric:tabular-nums}',
+      '.hd-row{width:100%;display:flex;gap:12px;align-items:flex-start;min-height:56px;padding:12px 2px;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}',
       '.hd-row:active{opacity:.6}',
-      // 날짜 칸: '~11/20'(52px)이 40px 칸을 넘어 행사 이름과 겹쳤다. 칸을 50px로, '~'는 작게
-      '.hd-k{flex:none;width:50px;text-align:center}',
-      '.hd-tl{font-style:normal;font-size:10.5px;font-weight:800;margin-right:1px;color:#8b8b93}',
-      '.hd-k b{display:block;font-size:14.5px;font-weight:900;letter-spacing:-.04em;line-height:1.1;white-space:nowrap;font-variant-numeric:tabular-nums}',
-      // 행사|할인 (2026-10-31): 날짜·할인율은 흰 글씨, 남은 날은 회색 글씨. 오늘·내일만 붉은 글씨(꼬리표 바탕 없음)
-      '.hd-k small{display:block;margin-top:3px;font-size:10.5px;font-weight:800;white-space:nowrap;color:#8e8e93}',
+      // 날짜 칸: '~11/22'과 '오늘 종료'가 들어가게 64px
+      '.hd-k{flex:none;width:64px}',
+      '.hd-tl{font-style:normal;font-size:13px;font-weight:700;margin-right:1px;color:#8b8b93}',
+      '.hd-k b{display:block;font-size:16px;font-weight:800;letter-spacing:-.02em;line-height:1.35;white-space:nowrap;font-variant-numeric:tabular-nums}',
+      // 날짜·할인율은 흰 글씨, 남은 날은 회색 글씨. 오늘·내일만 붉은 글씨(꼬리표 바탕 없음)
+      '.hd-k small{display:block;margin-top:2px;font-size:13px;font-weight:700;white-space:nowrap;color:#8e8e93}',
       '.hd-k small.hot{color:#ff8a7e}',
-      '.hd-x{flex:1;min-width:0;padding-top:1px;font-size:12px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere}',
+      '.hd-x{flex:1;min-width:0;font-size:15px;font-weight:600;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere}',
       // 신청·오픈 일시 한 줄(lounge.js hdText): 제목 밑 금색, 오늘·내일이면 빨강
-      '.hd-xw{flex:1;min-width:0;padding-top:1px}',
-      '.hd-xw .hd-x{padding-top:0}',
-      '.hd-ap{display:block;margin-top:3px;font-size:11px;font-weight:800;font-style:normal;line-height:1.3;color:#ffc342;word-break:keep-all;font-variant-numeric:tabular-nums}',
+      '.hd-xw{flex:1;min-width:0}',
+      '.hd-ap{display:block;margin-top:3px;font-size:13px;font-weight:700;font-style:normal;line-height:1.35;color:#ffc342;word-break:keep-all;font-variant-numeric:tabular-nums}',
       '.hd-ap.hot{color:#ff6b6b}',
-      '.hd-empty{padding:14px 2px 12px;font-size:11.5px;color:#8b8b93}',
       // 시안: 인기 스팟 제목은 로고 줄 오른쪽(사진 쪽으로 15px 내림), 카드는 이름·숫자·설명·버튼만
       '.header-top-row{display:flex;align-items:center;justify-content:space-between}',
       '.hh-pick{position:relative;top:15px;font-size:13px;font-weight:800;color:#ffd77a;font-variant-numeric:tabular-nums;white-space:nowrap;transition:opacity .3s ease}',
@@ -214,6 +214,11 @@
       // 시안: 테마 칩은 글자만, 카드는 사진·고도·이름만
       '#heroTrailerSectionWrap .n-cat-chip svg{display:none}',
       '#heroTrailerSectionWrap .n-trailer-author-date{display:none !important}',
+      // 정리안 7번(11-21 대표님): 제목 앞 파란 아이콘을 빼고, 칩은 손가락 크기(40px), 해발은 이름 밑에 산 모양과 함께
+      '#heroTrailerSectionWrap .n-rail-title .icon-svg{display:none !important}',
+      '#heroTrailerSectionWrap .n-cat-chip{height:40px;padding:0 16px;font-size:14px}',
+      '#heroTrailerSectionWrap .n-trailer-alt{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;line-height:1.3;color:var(--tx-3);font-variant-numeric:tabular-nums;white-space:nowrap}',
+      '#heroTrailerSectionWrap .n-trailer-alt svg{width:14px;height:14px;flex:none}',
       '.hl-head{display:flex;justify-content:space-between;align-items:center;padding-right:14px}',
       '.hl-link{background:none;border:0;padding:0;font-family:inherit;font-size:var(--fs-meta);font-weight:800;color:var(--accent);cursor:pointer}',
       '.tg{display:flex;gap:10px;padding-right:14px}',
