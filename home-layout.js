@@ -399,7 +399,7 @@
           '<div class="np-safe">' + safe + '<span>낭만 포인트는 돈으로 사는 게 아니라,<br><b>활동으로만 얻을 수 있어요.</b></span></div>' +
           '<div class="np-gift"><i>+50</i><div><b>오늘 모두에게 50점을 넣어 드렸어요</b><span>박지 정보창 열 곳을 바로 열 수 있어요</span></div></div>' +
           '<div class="np-card np-in"><h3><i>+</i>이렇게 모아요</h3>' +
-            '<div class="np-r"><span>매일 출석<small>연속 3일 +30 · 7일 +100 · 14일 +150 · 30일 +300 더</small></span><em>+20</em></div>' +
+            '<div class="np-r"><span>매일 출석<small>7일 연속이면 +100 더</small></span><em>+20</em></div>' +
             '<div class="np-r"><span>댓글</span><em>+15</em></div>' +
             '<div class="np-r"><span>한 줄 · 별점 · 장비 후기</span><em>+10</em></div>' +
             '<div class="np-r"><span>별 누르기</span><em>+5</em></div>' +
