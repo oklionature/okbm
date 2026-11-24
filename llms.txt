@@ -4,12 +4,12 @@
 
 낭만루트는 자연에서 하룻밤을 보내는 백패커를 위한 국내 아웃도어 서비스입니다. 전국 백패킹 박지를 지역별로 정리하고 고도, 난이도, 거리, 지형을 함께 보여 줍니다. 박지 목록은 운영진과 회원 제보로 만들고 국립·도립·군립공원 안의 장소는 야영이 금지라 싣지 않습니다. 정확한 좌표와 들머리, 코스는 장소 보존을 위해 로그인한 회원에게만 공개합니다.
 
-- 기준일: 2026-11-23
-- 공개 박지: 455곳
+- 기준일: 2026-11-24
+- 공개 박지: 457곳
 
 ## 주요 페이지
 
-- [전국 백패킹 박지 목록](https://romanticroute.kr/spot/): 지역별 박지 455곳
+- [전국 백패킹 박지 목록](https://romanticroute.kr/spot/): 지역별 박지 457곳
 - [전국 백패킹 박지 통계](https://romanticroute.kr/stats/): 지역별·높이별·거리별·난이도별 박지 수 (매일 갱신)
 - [낭만루트 지도](https://romanticroute.kr/map.html): 박지 위치·들머리·코스 (로그인 회원 공개)
 - [개인정보처리방침](https://romanticroute.kr/privacy.html)
@@ -17,7 +17,7 @@
 
 ## 지역별 박지
 
-- [서울·인천 백패킹 38곳](https://romanticroute.kr/region/seoul-incheon/)
+- [서울·인천 백패킹 39곳](https://romanticroute.kr/region/seoul-incheon/)
 - [경기 백패킹 92곳](https://romanticroute.kr/region/gyeonggi/)
 - [강원 백패킹 68곳](https://romanticroute.kr/region/gangwon/)
 - [충북 백패킹 25곳](https://romanticroute.kr/region/chungbuk/)
@@ -25,16 +25,16 @@
 - [전북 백패킹 30곳](https://romanticroute.kr/region/jeonbuk/)
 - [전남 백패킹 53곳](https://romanticroute.kr/region/jeonnam/)
 - [경북 백패킹 55곳](https://romanticroute.kr/region/gyeongbuk/)
-- [경남 백패킹 62곳](https://romanticroute.kr/region/gyeongnam/)
+- [경남 백패킹 63곳](https://romanticroute.kr/region/gyeongnam/)
 - [제주 백패킹 5곳](https://romanticroute.kr/region/jeju/)
 
 ## 테마별 박지
 
-- [초보 백패킹 165곳](https://romanticroute.kr/theme/beginner/): 난이도가 쉬움(1~2/5)이고 들머리에서 1km 안쪽만 걸으면 닿는 박지 165곳을 모았어요.
-- [퇴근박 백패킹 184곳](https://romanticroute.kr/theme/afterwork/): 난이도 보통(3/5) 이하에 들머리에서 1.5km 안쪽이라 퇴근하고 바로 떠나기 좋은 박지 184곳이에요.
-- [섬 백패킹 94곳](https://romanticroute.kr/theme/island/): 섬에 있는 백패킹 박지 94곳을 모았어요.
-- [해변 백패킹 65곳](https://romanticroute.kr/theme/beach/): 바다를 앞에 둔 해변·해수욕장·해안 박지 65곳을 모았어요.
-- [데크 백패킹 247곳](https://romanticroute.kr/theme/deck/): 나무 데크가 있는 박지 247곳을 모았어요.
+- [초보 백패킹 166곳](https://romanticroute.kr/theme/beginner/): 난이도가 쉬움(1~2/5)이고 들머리에서 1km 안쪽만 걸으면 닿는 박지 166곳을 모았어요.
+- [퇴근박 백패킹 185곳](https://romanticroute.kr/theme/afterwork/): 난이도 보통(3/5) 이하에 들머리에서 1.5km 안쪽이라 퇴근하고 바로 떠나기 좋은 박지 185곳이에요.
+- [섬 백패킹 95곳](https://romanticroute.kr/theme/island/): 섬에 있는 백패킹 박지 95곳을 모았어요.
+- [해변 백패킹 66곳](https://romanticroute.kr/theme/beach/): 바다를 앞에 둔 해변·해수욕장·해안 박지 66곳을 모았어요.
+- [데크 백패킹 248곳](https://romanticroute.kr/theme/deck/): 나무 데크가 있는 박지 248곳을 모았어요.
 - [돌박지 백패킹 102곳](https://romanticroute.kr/theme/rock/): 암릉이나 너럭바위처럼 바위 위에 텐트를 설치하는 박지 102곳이에요.
 - [계곡 백패킹 18곳](https://romanticroute.kr/theme/valley/): 계곡을 끼고 있는 박지 18곳을 모았어요.
 - [오지 백패킹 22곳](https://romanticroute.kr/theme/remote/): 난이도 어려움(4~5/5)에 들머리에서 2km 넘게 걸어야 닿는 박지 22곳이에요. 백패킹 경험을 쌓은 뒤에 도전하길 권해요.
@@ -57,7 +57,7 @@
 
 ## 시·군별 박지
 
-- [옹진 백패킹 19곳](https://romanticroute.kr/city/ongjin/)
+- [옹진 백패킹 20곳](https://romanticroute.kr/city/ongjin/)
 - [포항 백패킹 13곳](https://romanticroute.kr/city/pohang/)
 - [용인 백패킹 11곳](https://romanticroute.kr/city/yongin/)
 - [가평 백패킹 10곳](https://romanticroute.kr/city/gapyeong/)
@@ -105,6 +105,7 @@
 - [인제 백패킹 4곳](https://romanticroute.kr/city/inje/)
 - [제주 백패킹 4곳](https://romanticroute.kr/city/jeju/)
 - [청도 백패킹 4곳](https://romanticroute.kr/city/cheongdo/)
+- [합천 백패킹 4곳](https://romanticroute.kr/city/hapcheon/)
 - [화순 백패킹 4곳](https://romanticroute.kr/city/hwasun/)
 - [남원 백패킹 3곳](https://romanticroute.kr/city/namwon/)
 - [밀양 백패킹 3곳](https://romanticroute.kr/city/milyang/)
@@ -121,7 +122,6 @@
 - [진도 백패킹 3곳](https://romanticroute.kr/city/jindo/)
 - [충주 백패킹 3곳](https://romanticroute.kr/city/chungju/)
 - [함양 백패킹 3곳](https://romanticroute.kr/city/hamyang/)
-- [합천 백패킹 3곳](https://romanticroute.kr/city/hapcheon/)
 - [홍성 백패킹 3곳](https://romanticroute.kr/city/hongseong/)
 - [화천 백패킹 3곳](https://romanticroute.kr/city/hwacheon/)
 - [강원 고성 백패킹 2곳](https://romanticroute.kr/city/gangwon-goseong/)
