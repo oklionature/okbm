@@ -1828,6 +1828,7 @@
         
         const tools = document.getElementById('adminDataTools');
         if (tools) tools.style.display = isAdminMode ? 'flex' : 'none';
+        if (isAdminMode && typeof window.okbmRefreshAdminInboxBadge === 'function') window.okbmRefreshAdminInboxBadge();
 
         document.querySelectorAll('.btn-del, .btn-edit, .btn-quick-add').forEach(btn => {
           btn.style.display = isAdminMode ? 'inline-block' : 'none';
@@ -2166,7 +2167,7 @@ function updateSmartResetButtons() {
         var noticeEl = document.getElementById('modalNotice');
         var reasonInput = document.getElementById('modalInputCorrectionReason');
         if (titleEl) titleEl.innerHTML = ICONS.BAN + ' <span>[' + escapeHtml(spot ? (spot.spot_main || spot.name) : '박지') + '] 막힌 곳 제보</span>';
-        if (noticeEl) noticeEl.innerHTML = ICONS.ALERT_CARD + ' <span>확인한 뒤 야영금지로 바꿔요. <strong>현수막이나 안내판 사진</strong>을 같이 올려 주세요.</span>';
+        if (noticeEl) noticeEl.innerHTML = ICONS.ALERT_CARD + ' <span>확인한 뒤 야영금지로 바꿔요. <strong>현수막이나 안내판 사진</strong>을 같이 올려 주세요. 채택되면 낭만 포인트 100점을 드려요.</span>';
         if (reasonInput) reasonInput.value = '[막힌 곳] ';
       };
       window.openCampBanPhoto = function(spotId, idx) {
@@ -7755,7 +7756,7 @@ var liveSearchTimer = null;
           if (titleEl) titleEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg><span>장소 제보하기</span>`;
           if (noticeEl) {
             noticeEl.style.display = 'flex';
-            noticeEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0; color:#f59e0b;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>제보해주신 소중한 장소는 확인 후 전국 지도에 정식 등록됩니다.</span>`;
+            noticeEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0; color:#f59e0b;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>제보해주신 소중한 장소는 확인 후 전국 지도에 정식 등록됩니다. 등록되면 낭만 포인트 200점을 드려요.</span>`;
           }
           if (btnEl) btnEl.innerText = '장소 제보 접수하기';
 
@@ -7983,7 +7984,7 @@ var liveSearchTimer = null;
         if (titleEl) titleEl.innerHTML = ICONS.EDIT + ` <span>[${escapeHtml(targetSpot.spot_main || targetSpot.name)}] 정보 수정 건의</span>`;
         if (noticeEl) {
           noticeEl.style.display = 'flex';
-          noticeEl.innerHTML = ICONS.ALERT_CARD + ` <span>달라진 점을 적어 주세요. <strong>사진이나 링크</strong>가 있으면 함께 올려 주시면 더 빨리 확인할 수 있어요.</span>`;
+          noticeEl.innerHTML = ICONS.ALERT_CARD + ` <span>달라진 점을 적어 주세요. <strong>사진이나 링크</strong>가 있으면 함께 올려 주시면 더 빨리 확인할 수 있어요. 채택되면 낭만 포인트 100점을 드려요.</span>`;
         }
         if (btnEl) btnEl.innerText = '수정 건의 접수하기';
       };
@@ -8000,7 +8001,7 @@ var liveSearchTimer = null;
         if (titleEl) titleEl.innerHTML = ICONS.EDIT + ' <span>[' + escapeHtml(spotName || '장소') + '] 정보 수정 건의</span>';
         if (noticeEl) {
           noticeEl.style.display = 'flex';
-          noticeEl.innerHTML = ICONS.ALERT_CARD + ' <span>달라진 점을 적어 주세요. <strong>사진이나 링크</strong>가 있으면 함께 올려 주시면 더 빨리 확인할 수 있어요.</span>';
+          noticeEl.innerHTML = ICONS.ALERT_CARD + ' <span>달라진 점을 적어 주세요. <strong>사진이나 링크</strong>가 있으면 함께 올려 주시면 더 빨리 확인할 수 있어요. 채택되면 낭만 포인트 100점을 드려요.</span>';
         }
         if (btnEl) btnEl.innerText = '수정 건의 접수하기';
         var overlay = document.getElementById('customModalOverlay');
@@ -9541,40 +9542,100 @@ var liveSearchTimer = null;
         overlay.innerHTML = '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; background:#0c1017; display:flex; flex-direction:column; box-sizing:border-box;">' +
           '<div style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); border-bottom:1px solid rgba(255,255,255,0.08);">' +
             '<button type="button" onclick="document.getElementById(\'adminSpotInboxModal\').remove();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer;">◀</button>' +
-            '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">장소 검수함</span>' +
+            '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">검수함</span>' +
             '<button type="button" onclick="window.renderAdminSpotInboxList();" style="background:none; border:none; color:#7dd3fc; font-size:0.72rem; font-weight:800; cursor:pointer;">새로고침</button>' +
           '</div>' +
+          '<div id="adminInboxTabs" class="okbm-inbox-tabs"></div>' +
           '<div id="adminSpotInboxList" style="flex:1; min-height:0; overflow-y:auto; padding:12px 16px 20px; color:#94a3b8; font-size:0.78rem;">불러오는 중</div>' +
         '</div>';
         document.body.appendChild(overlay);
         await window.renderAdminSpotInboxList();
       };
 
-      window.renderAdminSpotInboxList = async function() {
+      // 검수함 네 칸(대표님 11-27): 박지 제보 · 수정 건의(막힌 곳 포함) · GPX · 장비 요청.
+      // 칸마다 대기 수, 처음 열면 대기가 있는 첫 칸. 대기는 오래된 것부터, 처리됨은 접어 둔다.
+      var INBOX_TABS = [['proposal', '박지 제보'], ['correction', '수정 건의'], ['gpx', 'GPX'], ['gear', '장비 요청']];
+      async function fetchAdminInboxAll() {
+        var out = await Promise.all([
+          fetchAdminSpotInboxItems().catch(function() { return null; }),
+          adminGpxRpc('okbm_admin_gpx_list').catch(function() { return null; }),
+          (typeof window.okbmFetchGearRequests === 'function' ? window.okbmFetchGearRequests() : Promise.resolve(null)).catch(function() { return null; })
+        ]);
+        var items = Array.isArray(out[0]) ? out[0] : [];
+        var gpx = Array.isArray(out[1]) ? out[1] : [];
+        var gear = Array.isArray(out[2]) ? out[2] : [];
+        var counts = {
+          proposal: items.filter(function(it) { return it.type !== 'correction' && isPendingInboxStatus(it.status); }).length,
+          correction: items.filter(function(it) { return it.type === 'correction' && isPendingInboxStatus(it.status); }).length,
+          gpx: gpx.filter(function(r) { return r.status === '검수대기'; }).length,
+          gear: gear.filter(function(r) { return r.status === '검토중'; }).length
+        };
+        return { items: items, gpx: gpx, gear: gear, counts: counts, failed: !out[0] };
+      }
+      // 관리자 도구 줄 '검수함' 단추 옆 빨간 숫자(네 칸 대기 합)
+      function paintAdminInboxBadge(counts) {
+        var btn = document.querySelector('#adminDataTools .admin-tool-review');
+        if (!btn) return;
+        var total = counts ? (counts.proposal + counts.correction + counts.gpx + counts.gear) : 0;
+        var b = btn.querySelector('.okbm-inbox-badge');
+        if (!b) { b = document.createElement('span'); b.className = 'okbm-inbox-badge'; btn.appendChild(b); }
+        b.textContent = total > 99 ? '99+' : String(total);
+        b.hidden = !total;
+        btn.setAttribute('aria-label', '검수함' + (total ? ', 대기 ' + total + '건' : ''));
+      }
+      var adminBadgeAt = 0;
+      window.okbmRefreshAdminInboxBadge = async function(force) {
+        if (!window.isAdminMode) return;
+        if (!force && Date.now() - adminBadgeAt < 60000) return;
+        adminBadgeAt = Date.now();
+        try { paintAdminInboxBadge((await fetchAdminInboxAll()).counts); } catch (e) {}
+      };
+
+      // useCache: 칸만 바꿀 때는 받아 둔 목록으로 바로 그린다(새로고침·처리 뒤에는 다시 받는다)
+      window.renderAdminSpotInboxList = async function(useCache) {
         var listEl = document.getElementById('adminSpotInboxList');
+        var tabsEl = document.getElementById('adminInboxTabs');
         if (!listEl) return;
-        listEl.textContent = '불러오는 중';
-        var items = [];
-        try {
-          items = await fetchAdminSpotInboxItems();
-        } catch (e) {
-          listEl.textContent = '목록을 불러오지 못했습니다.';
+        var all = useCache === true && window.__adminInboxData;
+        if (!all) {
+          listEl.textContent = '불러오는 중';
+          all = window.__adminInboxData = await fetchAdminInboxAll();
+        }
+        if (!document.getElementById('adminSpotInboxList')) return;
+        adminBadgeAt = Date.now();
+        paintAdminInboxBadge(all.counts);
+        var tab = window.__adminInboxTab;
+        if (!tab) {
+          var first = INBOX_TABS.find(function(t) { return all.counts[t[0]] > 0; });
+          tab = window.__adminInboxTab = first ? first[0] : 'proposal';
+        }
+        if (tabsEl) {
+          tabsEl.innerHTML = INBOX_TABS.map(function(t) {
+            var n = all.counts[t[0]];
+            return '<button type="button" data-inbox-tab="' + t[0] + '" class="' + (t[0] === tab ? 'on' : '') + (n ? ' has' : '') + '" aria-pressed="' + (t[0] === tab) + '"><span>' + t[1] + '</span><b>' + n + '</b></button>';
+          }).join('');
+          tabsEl.onclick = function(e) {
+            var b = e.target.closest('[data-inbox-tab]');
+            if (!b) return;
+            window.__adminInboxTab = b.getAttribute('data-inbox-tab');
+            window.renderAdminSpotInboxList(true);
+          };
+        }
+        listEl.scrollTop = 0;
+        if (tab === 'gpx') { listEl.innerHTML = ''; renderAdminGpxInbox(listEl); return; }
+        if (tab === 'gear') {
+          if (typeof window.okbmRenderGearRequestInbox === 'function') window.okbmRenderGearRequestInbox(listEl, all.gear, window.renderAdminSpotInboxList);
+          else listEl.textContent = '장비 요청을 불러오지 못했습니다.';
           return;
         }
-        if (!Array.isArray(items)) items = [];
-        items.sort(function(a, b) {
-          var at = Date.parse(a && a.created_at) || 0;
-          var bt = Date.parse(b && b.created_at) || 0;
-          return bt - at;
-        });
-        window.__adminSpotInboxCache = items;
-        var pending = items.filter(function(it) { return isPendingInboxStatus(it.status); });
-        var done = items.filter(function(it) { return !isPendingInboxStatus(it.status); });
-        if (!items.length) {
-          listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">접수된 제보/수정 건의가 없습니다.</div>';
-          renderAdminGpxInbox(listEl);
-          return;
-        }
+        if (all.failed) { listEl.textContent = '목록을 불러오지 못했습니다.'; return; }
+        var isCorr = tab === 'correction';
+        var items = all.items.filter(function(it) { return (it.type === 'correction') === isCorr; });
+        window.__adminSpotInboxCache = all.items;
+        var at = function(x) { return Date.parse(x && x.created_at) || 0; };
+        var pending = items.filter(function(it) { return isPendingInboxStatus(it.status); }).sort(function(a, b) { return at(a) - at(b); });
+        var done = items.filter(function(it) { return !isPendingInboxStatus(it.status); }).sort(function(a, b) { return at(b) - at(a); });
+        var label = isCorr ? '수정 건의' : '박지 제보';
 
         var formatWhen = function(iso) {
           if (typeof window.okbmFormatReportTime === 'function') {
@@ -9591,8 +9652,9 @@ var liveSearchTimer = null;
 
         var renderCard = function(item, processed) {
           var title = item.spot_main || item.name || '이름 없음';
-          var kind = item.type === 'correction' ? '수정건의' : '신규제보';
-          var kindColor = item.type === 'correction' ? '#fb7185' : '#38bdf8';
+          var blocked = item.type === 'correction' && /^\s*\[막힌 곳\]/.test(String(item.correctionReason || ''));
+          var kind = blocked ? '막힌 곳' : (item.type === 'correction' ? '수정건의' : '신규제보');
+          var kindColor = blocked ? '#fda4af' : (item.type === 'correction' ? '#fb7185' : '#38bdf8');
           var coord = (item.lat && item.lng) ? (item.lat + ', ' + item.lng) : '좌표 없음';
           var reason = item.correctionReason || '';
           var evidenceHtml = renderInboxEvidence(item);
@@ -9610,9 +9672,9 @@ var liveSearchTimer = null;
               '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.rejectAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#be123c; color:#fff;">반려</button>';
           return '<div class="admin-inbox-card">' +
             '<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">' +
-              '<span style="font-size:0.62rem; font-weight:900; color:' + kindColor + '; border:1px solid ' + kindColor + '55; border-radius:4px; padding:1px 6px;">' + kind + '</span>' +
-              '<span style="font-size:0.62rem; color:#94a3b8;">' + escapeHtml(item.status || '대기') + '</span>' +
-              (when ? '<span style="font-size:0.62rem; color:#64748b; margin-left:auto;">' + when + '</span>' : '') +
+              '<span style="font-size:0.6875rem; font-weight:900; color:' + kindColor + '; border:1px solid ' + kindColor + '55; border-radius:4px; padding:1px 6px;">' + kind + '</span>' +
+              '<span style="font-size:0.6875rem; color:#94a3b8;">' + escapeHtml(item.status || '대기') + '</span>' +
+              (when ? '<span style="font-size:0.6875rem; color:#64748b; margin-left:auto;">' + when + '</span>' : '') +
             '</div>' +
             '<h4>' + escapeHtml(title) + (item.spot_sub ? ' · ' + escapeHtml(item.spot_sub) : '') + '</h4>' +
             '<div class="admin-inbox-meta">' +
@@ -9628,10 +9690,9 @@ var liveSearchTimer = null;
         };
 
         listEl.innerHTML =
-          '<div style="font-size:0.72rem; font-weight:800; color:#a7f3d0; margin:0 0 8px;">대기 ' + pending.length + '건 · 최신 등록순</div>' +
-          (pending.length ? pending.map(function(it) { return renderCard(it, false); }).join('') : '<div style="margin-bottom:14px; color:#64748b;">대기 건이 없습니다.</div>') +
-          (done.length ? '<div style="font-size:0.72rem; font-weight:800; color:#94a3b8; margin:16px 0 8px;">처리됨 ' + done.length + '건</div>' + done.map(function(it) { return renderCard(it, true); }).join('') : '');
-        renderAdminGpxInbox(listEl);
+          '<div style="font-size:0.75rem; font-weight:800; color:#a7f3d0; margin:0 0 8px;">' + label + ' 대기 ' + pending.length + '건 · 오래된 것부터</div>' +
+          (pending.length ? pending.map(function(it) { return renderCard(it, false); }).join('') : '<div style="margin-bottom:14px; color:#94a3b8;">대기 건이 없습니다.</div>') +
+          (done.length ? '<details><summary style="font-size:0.75rem; font-weight:800; color:#94a3b8; margin:16px 0 8px; cursor:pointer;">처리됨 ' + done.length + '건</summary>' + done.map(function(it) { return renderCard(it, true); }).join('') + '</details>' : '');
       };
 
       // GPX 등산로 검수 (SUPABASE_H44). 장소 검수함 맨 위에 붙인다. 승인하면 박지에 선·보낸 사람이 붙고 50점이 들어간다.
@@ -9727,7 +9788,7 @@ var liveSearchTimer = null;
           } catch (err) {
             showToast('처리하지 못했어요: ' + err.message);
           }
-          renderAdminGpxInbox(listEl);
+          window.renderAdminSpotInboxList();
         });
       }
 

@@ -7,7 +7,7 @@
 //   - 받는 순간 '+10 낭만 포인트' 작은 알림: 피드 저장·별 누름(window 함수를 감싼다)·댓글(feed-comments.js가 check를 부른다) 뒤에
 //     잔액을 다시 받아 늘어난 만큼 알린다. 상한을 채웠으면 '오늘 피드 포인트는 다 받았어요'.
 // · 출석: 로그인한 채 앱을 연 날 한 번 okbm_points_attend를 부른다(이 기기에서 그날 이미 불렀으면 안 부름).
-// · 내역은 '적립 내역 보기'를 눌러야 펼쳐지고 10건씩 '더 보기'(최대 50건, 11-02)
+// · 최근 내역은 받는 법 위에 5건 펼쳐 두고 10건씩 '더 보기'(최대 50건). 검토 중인 내 제보 수도 같이(11-27)
 // · 쓰는 곳(닉네임·굴업도 입장권·피드 테두리·프로필 테두리)은 2단계라 '포인트는 어디에 쓰나요?'를 눌러야 펼쳐지고 Coming soon으로만 보인다.
 // 인라인 onclick 없음(CSP).
 // =========================================================================
@@ -32,11 +32,13 @@
     ['attend7', '7일 연속 출석', '+100', 0],
     ['correction', '수정 건의 채택', '100', 0],
     ['proposal', '박지 제보 반영', '200', 0],
-    ['gpx', 'GPX 등산로 반영', '100', 0]
+    ['gpx', 'GPX 등산로 반영', '100', 0],
+    ['gear_req', '장비 등록 요청 승인', '30', 0]
   ];
   // 설명은 옆 사람한테 말하듯(대표님 11-02: AI 말투 말고)
   var NOTE = {
     feed: '다녀온 박지 사진을 올려 주세요. 하루 3개까지 쌓여요.',
+    gear_req: '목록에 없는 장비를 알려 주세요. 확인해서 목록에 올리면 쌓여요.',
     plog: 'K-LNT 7원칙을 지키고 주운 쓰레기 사진도 같이 올리면 두 배로 드려요. 하루 2개까지예요.',
     comment: '다른 분 피드나 게시판 글에 댓글을 달아 주세요. 장비 질문에 단 답변도 같아요. 글 하나에 한 번만, 하루 3개까지 쌓여요.',
     star_give: '피드가 좋으면 별을 눌러 주세요. 게시물당 한 번만 체크돼요. 하루 3개까지예요.',
@@ -72,7 +74,7 @@
   var CAP = {};
   RULES.forEach(function (r) { if (r[3]) CAP[r[0]] = r[3]; });
 
-  var S = { data: null, at: 0, loading: null, balance: null, uid: '', capShown: {}, spendOpen: false, histOpen: false, histShow: 10 };
+  var S = { data: null, at: 0, loading: null, balance: null, uid: '', capShown: {}, spendOpen: false, histShow: 5, pending: 0 };
 
   var CSS = [
     '.pt-card{display:block;width:100%;text-align:left;color:#f2f2f3;font:inherit;cursor:pointer}',
@@ -110,6 +112,8 @@
     '.pt-h small{flex:none;font-size:12px;color:var(--tx-3,#8b8b93);font-variant-numeric:tabular-nums}',
     '.pt-h b{flex:none;width:52px;text-align:right;font-weight:800;font-variant-numeric:tabular-nums;color:#fbbf24}',
     '.pt-h b.m{color:var(--tx-3,#8b8b93)}',
+    '.pt-pend{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 12px;margin-bottom:6px;border-radius:10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.28);font-size:13.5px;font-weight:700;color:#fbbf24}',
+    '.pt-pend small{font-size:12px;font-weight:600;color:var(--tx-3,#8b8b93)}',
     '.pt-empty{padding:18px 0;text-align:center;font-size:13px;color:var(--tx-3,#8b8b93);line-height:1.6}',
     '.pt-fold{display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:20px;padding:13px 0;border:0;border-top:1px solid var(--line,rgba(255,255,255,.08));border-bottom:1px solid var(--line,rgba(255,255,255,.08));background:none;color:var(--tx-2,#d1d1d6);font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer}',
     '.pt-fold i{font-style:normal;font-size:13px;color:var(--tx-3,#8b8b93)}',
@@ -282,10 +286,36 @@
       '<div class="pt-stk-r">' + cells + '</div>' +
       '<p class="pt-stk-s">' + sub + '</p></div>';
   }
+  // 최근 내역은 받는 법 위에 펼쳐 둔다. 처음 5건, '더 보기'로 10건씩(대표님 11-27: 내역이 안 보인다는 건의)
+  function histHtml(d) {
+    var hist = d && Array.isArray(d.history) ? d.history : [];
+    var h = '<div class="pt-sec">최근 내역</div>';
+    if (S.pending > 0) h += '<div class="pt-pend">검토 중인 제보 ' + num(S.pending) + '건<small>채택되면 포인트가 들어와요</small></div>';
+    h += hist.length ? hist.slice(0, S.histShow).map(function (x) {
+      var dl = Number(x.d) || 0;
+      return '<div class="pt-h"><span>' + esc(label(String(x.r || ''), x.d, x.n)) + '</span><small>' + esc(fmtTime(x.t)) + '</small><b' + (dl < 0 ? ' class="m"' : '') + '>' + (dl > 0 ? '+' : '') + num(dl) + '</b></div>';
+    }).join('') + (hist.length > S.histShow ? '<button type="button" class="pt-more" data-pt-more="1">더 보기</button>' : '') : '<div class="pt-empty">' + (d ? '아직 받은 포인트가 없어요.<br>피드를 올리거나 댓글·별을 남겨 보세요.' : '포인트를 받는 중이에요') + '</div>';
+    return h;
+  }
+  // 검토 중인 내 제보·수정 건의 수. 포인트는 채택될 때 들어와서, 보낸 뒤엔 아무것도 안 바뀐 것처럼 보였다(11-27)
+  function loadPending() {
+    var uid = myId(), c = client();
+    if (!uid || !c || typeof c.from !== 'function') return;
+    // 새 박지 제보는 proposals(검수대기), 수정 건의·막힌 곳 제보는 spot_corrections(수정건의대기)에 쌓인다
+    var count = function (table, status) {
+      return Promise.resolve(c.from(table).select('id', { count: 'exact', head: true }).eq('user_id', uid).eq('status', status))
+        .then(function (res) { return res && !res.error ? Number(res.count) || 0 : 0; }).catch(function () { return 0; });
+    };
+    Promise.all([count('proposals', '검수대기'), count('spot_corrections', '수정건의대기')]).then(function (n) {
+      S.pending = n[0] + n[1];
+      repaint();
+    });
+  }
   function sheetHtml(d) {
     var today = d ? (d.today || {}) : {};
     var h = '<p class="pt-lead">피드 올리고, 댓글 달고, 별 누르면 포인트가 쌓여요. 글을 지우거나 별을 취소하면 그만큼 빠져요. 매일 밤 12시에 새로 시작해요.</p>';
     if (d) h += streakHtml(d);
+    h += histHtml(d);
     h += '<div class="pt-sec">받는 법<small>오늘 +' + num(todaySum(today)) + ' / ' + DAY_MAX + '</small></div>';
     h += RULES.map(function (r) {
       var got = Number(today[r[0]]) || 0;
@@ -300,14 +330,6 @@
         return '<div class="pt-li' + (x[3] ? '' : ' soon') + '"><b>' + esc(x[0]) + '</b><span class="p">' + esc(x[1]) + '</span><span>' + esc(x[2]) + '</span></div>';
       }).join('') + '</div>';
     }
-    var hist = d && Array.isArray(d.history) ? d.history : [];
-    // 내역도 접어 두고, 펼치면 10건씩 더 본다(대표님 11-02: 끝도 없이 내려감)
-    h += '<button type="button" class="pt-fold" data-pt-hist="1" aria-expanded="' + (S.histOpen ? 'true' : 'false') + '">적립 내역 보기<i>' + (S.histOpen ? '접기' : '›') + '</i></button>';
-    if (!S.histOpen) return h;
-    h += hist.length ? hist.slice(0, S.histShow).map(function (x) {
-      var dl = Number(x.d) || 0;
-      return '<div class="pt-h"><span>' + esc(label(String(x.r || ''), x.d, x.n)) + '</span><small>' + esc(fmtTime(x.t)) + '</small><b' + (dl < 0 ? ' class="m"' : '') + '>' + (dl > 0 ? '+' : '') + num(dl) + '</b></div>';
-    }).join('') + (hist.length > S.histShow ? '<button type="button" class="pt-more" data-pt-more="1">더 보기</button>' : '') : '<div class="pt-empty">' + (d ? '아직 받은 포인트가 없어요.<br>피드를 올리거나 댓글·별을 남겨 보세요.' : '포인트를 받는 중이에요') + '</div>';
     return h;
   }
   function openSheet() {
@@ -315,8 +337,8 @@
     metric('feat_points_open');
     var old = document.getElementById('okbmPointsAll');
     if (old) old.remove();
-    S.histOpen = false;
-    S.histShow = 10;
+    S.histShow = 5;
+    S.pending = 0;
     var el = document.createElement('div');
     el.id = 'okbmPointsAll';
     el.className = 'pt-all';
@@ -327,6 +349,7 @@
     document.body.appendChild(el);
     repaint();
     load(true).then(syncBalance);
+    loadPending();
   }
 
   function repaint() {
@@ -342,8 +365,7 @@
     var t = e.target && e.target.closest ? e.target : null;
     if (!t) return;
     if (t.closest('[data-pt-spend]')) { S.spendOpen = !S.spendOpen; if (S.spendOpen) metric('feat_points_spend'); repaint(); return; }
-    if (t.closest('[data-pt-hist]')) { S.histOpen = !S.histOpen; S.histShow = 10; if (S.histOpen) metric('feat_points_hist'); repaint(); return; }
-    if (t.closest('[data-pt-more]')) { S.histShow += 10; repaint(); return; }
+    if (t.closest('[data-pt-more]')) { S.histShow += 10; metric('feat_points_hist'); repaint(); return; }
     if (t.closest('[data-pt-close]')) { var a = document.getElementById('okbmPointsAll'); if (a) a.remove(); return; }
     if (t.closest('[data-pt-open]')) { e.preventDefault(); openSheet(); }
   });

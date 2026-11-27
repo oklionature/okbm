@@ -1583,7 +1583,7 @@
         shelfContainer.__okbmShelfKey = '';
         shelfContainer.innerHTML = (curTab === 'fav' && !cleanQ)
           ? '<div class="pk-shelf-empty">별을 누른 장비가 여기 모여요.<br>전체에서 내 장비를 찾아 별을 눌러 보세요.<br><button type="button" onclick="window.setCalcCategoryTab(\'all\')">전체 장비 보기</button></div>'
-          : '<div class="pk-shelf-empty">맞는 장비가 없어요.<br>검색어를 바꾸거나 + 로 직접 등록해 보세요.</div>';
+          : '<div class="pk-shelf-empty">맞는 장비가 없어요.<br>검색어를 바꾸거나 + 로 직접 등록해 보세요.<button type="button" class="okbm-grq-link" data-grq-open="plan">모두가 쓰게 장비 등록 요청하기 ›</button></div>';
       } else {
         // 처음엔 40개만 그리고 스크롤 끝에서 80개씩 더 붙인다(검색 결과도 동일).
         // 같은 탭·검색어로 다시 그릴 때(카테고리 로딩, 장비 등록 등)는 보던 개수와 스크롤 위치를 유지한다.
@@ -1702,6 +1702,7 @@
               <input type="number" id="customInputGearWeight" class="modal-input" placeholder="무게 (g)" style="flex:1; font-size:0.76rem; padding:7px 9px; border-radius:6px; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
               <button type="button" class="modal-btn" style="flex:1; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#fff; font-weight:900; padding:7px 0; font-size:0.76rem; border-radius:6px; box-sizing:border-box;" onclick="window.addCustomGearToCurrentCategory()">+ 장비 등록</button>
             </div>
+            <button type="button" class="okbm-grq-link" data-grq-open="plan">목록에 없는 장비인가요? 모두가 쓰게 등록 요청하기 ›</button>
           </div>
         </div>
 
@@ -3269,10 +3270,31 @@ window.saveCurrentPackingRecord = function() {
     if (allRows && allRows.length) {
       applyFetchedGears(allRows, { merge: false });
       okbmMarkAllGearCatsLoaded();
+      await okbmAppendUserGears(GEAR_SPLIT_CATS);
       okbmRefreshPresetGearListIfOpen();
       return allRows;
     }
     return [];
+  }
+
+  // 낭만루터 요청으로 승인된 장비(I35, gears 표 gear_r*). 장비 파일에는 다음 정리 때 들어가니 그 전까지 서버에서 더한다
+  var okbmUserGearsPromise = null;
+  function okbmFetchUserGears() {
+    if (okbmUserGearsPromise) return okbmUserGearsPromise;
+    var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
+    var targetKey = window.SUPABASE_ANON_KEY || '';
+    okbmUserGearsPromise = fetch(targetUrl + '/rest/v1/gears?select=id,category_id,item_name,weight_g,brand,specs_detail,verified,weight_type,evidence&id=like.gear_r*&order=id.asc&limit=1000', {
+      headers: { 'apikey': targetKey, 'Authorization': 'Bearer ' + targetKey }
+    }).then(function(r) { return r.ok ? r.json() : []; }).then(function(rows) { return Array.isArray(rows) ? rows : []; })
+      .catch(function() { okbmUserGearsPromise = null; return []; });
+    return okbmUserGearsPromise;
+  }
+  async function okbmAppendUserGears(catIds) {
+    var rows = await okbmFetchUserGears();
+    var want = {};
+    (catIds || []).forEach(function(id) { want[id] = true; });
+    rows = rows.filter(function(r) { return r && want[String(r.category_id)] && window.__okbmGearCatLoaded[String(r.category_id)]; });
+    if (rows.length) applyFetchedGears(rows, { merge: true, append: true });
   }
 
   window.ensureGearCategoryLoaded = async function(catId) {
@@ -3306,6 +3328,7 @@ window.saveCurrentPackingRecord = function() {
       }
       applyFetchedGears(data, { merge: true, categoryId: target });
       window.__okbmGearCatLoaded[target] = true;
+      await okbmAppendUserGears([target]);
       try { localStorage.setItem('okbm_gear_version', CURRENT_GEAR_VERSION); } catch (e) {}
       okbmRefreshPresetGearListIfOpen();
       return data;
@@ -3317,6 +3340,17 @@ window.saveCurrentPackingRecord = function() {
       delete window.__okbmGearCatPromises[target];
     }
   };
+
+  // '모두가 쓰게 등록 요청'(I35): 적던 이름·지금 종류를 넘긴다(gear-request.js)
+  document.addEventListener('click', function(e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-grq-open="plan"]') : null;
+    if (!b) return;
+    e.preventDefault();
+    var nameEl = document.getElementById('customInputGearName');
+    var qEl = document.getElementById('gearSearchFixedInput');
+    var opts = { name: (nameEl && nameEl.value.trim()) || (qEl && qEl.value.trim()) || '', categoryId: window.currentOpeningCategoryId };
+    if (typeof window.okbmOpenGearRequest === 'function') window.okbmOpenGearRequest(opts);
+  });
 
   window.ensureAllGearCategoriesLoaded = async function(isForce) {
     if (isForce) {
@@ -3352,6 +3386,7 @@ window.saveCurrentPackingRecord = function() {
       }));
       await applyQueue;
       if (okCount > 0) okbmFinalizeFetchedGears(appliedRows);
+      if (okCount > 0) await okbmAppendUserGears(GEAR_SPLIT_CATS);
       if (okCount === 0) {
         window.__okbmGearSplitUnavailable = true;
         return okbmLoadGearMonolithFallback();
@@ -3481,7 +3516,14 @@ window.saveCurrentPackingRecord = function() {
         if (r && r.id) seen[String(r.id)] = true;
       });
       Object.keys(sheetGearsByCategory).forEach(function(catId) {
-        cache[catId] = sheetGearsByCategory[catId].slice();
+        if (opts.append) {
+          // 승인된 요청 장비(gear_r*)는 그 종류 목록 뒤에 붙인다. 같은 id는 한 번만
+          var have = {};
+          (cache[catId] || []).forEach(function(g) { if (g && g.id) have[String(g.id)] = true; });
+          cache[catId] = (cache[catId] || []).concat(sheetGearsByCategory[catId].filter(function(g) { return !have[String(g.id)]; }));
+        } else {
+          cache[catId] = sheetGearsByCategory[catId].slice();
+        }
       });
       compactMasterRows.forEach(function(r) {
         if (r && r.id && !seen[String(r.id)]) {

@@ -4218,7 +4218,9 @@
       }
       box.innerHTML = hits.map(function (g) {
         return '<button type="button" data-a="gear-add" data-v="' + esc(g.id) + '"><span>' + esc(g.item_name) + '</span><small>' + esc((GEAR_CAT[g.category_id] || '') + ' · ' + ((Number(g.weight_g) || 0) / 1000).toFixed(2) + 'kg') + '</small></button>';
-      }).join('') + '<button type="button" data-a="gear-custom"><span>직접 추가: ' + esc(cur) + '</span><small>목록에 없을 때</small></button>';
+      }).join('') + '<button type="button" data-a="gear-custom"><span>직접 추가: ' + esc(cur) + '</span><small>목록에 없을 때</small></button>' +
+        // 목록에 없는 장비는 등록 요청도 받는다(I35, 대표님 11-27)
+        (window.okbmOpenGearRequest ? '<button type="button" data-a="gear-request"><span>모두가 쓰게 장비 등록 요청</span><small>확인 뒤 목록에 올려요</small></button>' : '');
     });
   }
   function addItem(it) {
@@ -5851,6 +5853,11 @@
         const g = (window.GEARS_MASTER || []).find(function (x) { return x && String(x.id) === String(v); });
         if (g && SH.kind === 'post') { pickGear({ id: String(g.id), name: String(g.item_name).slice(0, 120), cat: GEAR_CAT[g.category_id] ? String(g.category_id) : 'other', weight_g: Number(g.weight_g) || 0 }); break; }
         if (g) addItem({ gear_id: String(g.id), category_id: String(g.category_id || 'other'), name: String(g.item_name).slice(0, 120), weight_g: Number(g.weight_g) || 0, price_krw: 0, link_url: '' });
+        break;
+      }
+      case 'gear-request': {
+        const qv = String((sheet.querySelector('[data-gear-q]') || {}).value || '').trim();
+        if (window.okbmOpenGearRequest) window.okbmOpenGearRequest({ name: qv.slice(0, 120), categoryId: SH.gcat });
         break;
       }
       case 'gear-custom': {
