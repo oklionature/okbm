@@ -13,10 +13,10 @@
     ['wear', '의류'], ['electronics', '전자기기'], ['camp', '캠핑 용품'], ['other', '기타']
   ];
   var ERR = {
-    gear_request_daily_limit: '하루에 5개까지 보낼 수 있어요. 내일 다시 보내 주세요.',
-    gear_requests_len_chk: '링크는 http로 시작하는 주소로 적어 주세요.',
-    gear_request_duplicate: '같은 장비 요청이 이미 들어와 있어요. 확인하고 올릴게요.',
-    gear_request_exists: '이미 목록에 있는 장비예요. 장비 찾기에서 담아 주세요.'
+    gear_request_daily_limit: '하루 5건까지 요청할 수 있습니다.',
+    gear_requests_len_chk: '링크는 http로 시작하는 주소로 입력하세요.',
+    gear_request_duplicate: '같은 장비의 추가 요청이 이미 접수되어 있습니다.',
+    gear_request_exists: '장비 데이터베이스에 이미 있는 장비입니다.'
   };
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -114,13 +114,13 @@
   }
   function simHtml(r) {
     if (!r.list.length) return '';
-    return '<div class="grq-sim-h">' + (r.exact ? '이미 목록에 있는 장비예요. 이 장비를 담아 주세요.' : '혹시 이 장비인가요? 맞으면 이 장비를 담아 주세요.') + '</div>' +
+    return '<div class="grq-sim-h">' + (r.exact ? '장비 데이터베이스에 이미 있는 장비입니다. 아래 장비를 선택하세요.' : '비슷한 장비가 있습니다. 같은 장비면 아래에서 선택하세요.') + '</div>' +
       r.list.map(function (g) {
         var w = Number(g.weight_g) || 0;
         return '<button type="button" class="grq-sim-row' + (g === r.exact ? ' ex' : '') + '" data-sim="' + esc(g.item_name) + '"><b>' + esc(g.item_name) + '</b><small>' +
           esc([catTitle(g.category_id), String(g.brand || ''), w ? (w / 1000).toFixed(2) + 'kg' : ''].filter(Boolean).join(' · ')) + '</small></button>';
       }).join('') +
-      (r.exact ? '' : '<div class="grq-sim-f">목록에 없는 다른 장비면 그대로 보내 주세요. 연식·색상이 다르면 하고 싶은 말에 적어 주세요.</div>');
+      (r.exact ? '' : '<div class="grq-sim-f">다른 장비면 그대로 요청하세요. 연식·색상 차이는 메모에 적어 주세요.</div>');
   }
   // 고른 장비를 지금 화면의 검색 칸에 넣어 찾아 준다
   function useListed(name) {
@@ -137,25 +137,46 @@
   }
 
   // ---------------------------------------------------------------- 요청 보내기
+  // 낭만플랜 '직접 등록'도 같이 쓴다: 브랜드를 적은 장비가 데이터베이스에 없으면 검수함으로 보낸다(대표님 11-27)
+  window.okbmGearFindSimilar = findSimilar;
+  window.okbmSendGearRequest = function (o) {
+    var c = client();
+    if (!c || !myId()) return Promise.reject(new Error('not_logged_in'));
+    var cat = CATS.some(function (x) { return x[0] === o.categoryId; }) ? o.categoryId : 'other';
+    return Promise.resolve(c.from('gear_requests').insert({
+      user_id: myId(), category_id: cat, brand: o.brand, item_name: o.name,
+      weight_g: o.weight, link: o.link || null, note: o.note || null,
+      similar_names: o.similar && o.similar.length ? o.similar.slice(0, 5) : null
+    })).then(function (res) {
+      if (res && res.error) throw res.error;
+      metric('feat_gear_request_send');
+      return true;
+    });
+  };
+  window.okbmGearRequestError = function (e) {
+    var m = String((e && e.message) || '');
+    var key = Object.keys(ERR).find(function (k) { return m.indexOf(k) !== -1; });
+    return key ? ERR[key] : '';
+  };
   window.okbmOpenGearRequest = function (opts) {
     opts = opts || {};
     metric('feat_gear_request_open');
     if (!myId()) {
-      toast('장비 등록 요청은 로그인 후 보낼 수 있어요.', 'info');
+      toast('로그인 후 이용할 수 있습니다.', 'info');
       if (typeof window.openLoginModal === 'function') window.openLoginModal();
       return;
     }
     var cat = CATS.some(function (c) { return c[0] === opts.categoryId; }) ? opts.categoryId : 'shelter';
-    var dim = sheet('장비 등록 요청',
-      '<p class="grq-note">목록에 없는 장비를 알려 주세요. 확인한 뒤 모두의 장비 목록에 올려요. 등록되면 낭만 포인트 30점을 드려요.</p>' +
+    var dim = sheet('장비 데이터베이스 추가 요청',
+      '<p class="grq-note">장비 데이터베이스에 없는 장비를 등록합니다. 검수 후 반영되며, 반영 시 30포인트가 적립됩니다.</p>' +
       '<div class="grq-f"><label for="grqCat">종류</label><select id="grqCat">' + catOptions(cat) + '</select></div>' +
       '<div class="grq-f"><label for="grqBrand">브랜드</label><input id="grqBrand" maxlength="60" placeholder="예: 니모" autocomplete="off"></div>' +
       '<div class="grq-f"><label for="grqName">장비 이름</label><input id="grqName" maxlength="120" placeholder="예: 호넷 오스모 1P" autocomplete="off" value="' + esc(opts.name || '') + '"></div>' +
       '<div class="grq-sim" aria-live="polite"></div>' +
       '<div class="grq-f"><label for="grqW">무게<small>g, 제조사 표기</small></label><input id="grqW" type="number" inputmode="numeric" min="1" max="50000" placeholder="예: 879"></div>' +
       '<div class="grq-f"><label for="grqLink">제조사·판매처 링크<small>무게를 확인할 수 있는 곳</small></label><input id="grqLink" type="url" inputmode="url" maxlength="500" placeholder="https://"></div>' +
-      '<div class="grq-f"><label for="grqNote">하고 싶은 말<small>선택</small></label><textarea id="grqNote" maxlength="500" placeholder="예: 2025년형이에요. 색상마다 무게가 같아요."></textarea></div>' +
-      '<button type="button" class="grq-go">요청 보내기</button>');
+      '<div class="grq-f"><label for="grqNote">메모<small>선택</small></label><textarea id="grqNote" maxlength="500" placeholder="예: 2025년형이에요. 색상마다 무게가 같아요."></textarea></div>' +
+      '<button type="button" class="grq-go">추가 요청</button>');
     var $ = function (id) { return dim.querySelector('#' + id); };
     if (!opts.name) setTimeout(function () { var b = $('grqBrand'); if (b) b.focus(); }, 50);
     var sim = { exact: null, list: [] };
@@ -164,7 +185,7 @@
     function paintSim() {
       sim = findSimilar($('grqBrand').value, $('grqName').value);
       simBox.innerHTML = simHtml(sim);
-      dim.querySelector('.grq-go').textContent = sim.exact ? '이미 있는 장비라 보낼 수 없어요' : '요청 보내기';
+      dim.querySelector('.grq-go').textContent = sim.exact ? '이미 등록된 장비입니다' : '추가 요청';
       dim.querySelector('.grq-go').disabled = !!sim.exact;
     }
     function schedSim() { clearTimeout(simTimer); simTimer = setTimeout(paintSim, 150); }
@@ -176,8 +197,8 @@
       var nm = r.getAttribute('data-sim');
       metric('feat_gear_request_listed');
       dim.remove();
-      if (useListed(nm)) toast('목록에 있는 장비예요. 찾아 드렸어요.');
-      else toast('\'' + nm + '\'은(는) 이미 목록에 있어요. 장비 찾기에서 담아 주세요.', 'info');
+      if (useListed(nm)) toast('장비 데이터베이스에서 찾았습니다.');
+      else toast('장비 데이터베이스에 있는 장비입니다: ' + nm, 'info');
     });
     // 장비 목록이 아직 없으면 받아 온 뒤 다시 본다
     if (!gearList().length && typeof window.loadGearDbFromGoogleSheet === 'function') {
@@ -188,14 +209,14 @@
       var btn = this;
       var brand = $('grqBrand').value.trim(), name = $('grqName').value.trim();
       var w = parseInt($('grqW').value, 10), link = $('grqLink').value.trim(), note = $('grqNote').value.trim();
-      if (!brand) { toast('브랜드를 적어 주세요.', 'info'); $('grqBrand').focus(); return; }
-      if (!name) { toast('장비 이름을 적어 주세요.', 'info'); $('grqName').focus(); return; }
-      if (!(w > 0)) { toast('무게를 g로 적어 주세요.', 'info'); $('grqW').focus(); return; }
+      if (!brand) { toast('브랜드를 입력하세요.', 'info'); $('grqBrand').focus(); return; }
+      if (!name) { toast('장비 이름을 입력하세요.', 'info'); $('grqName').focus(); return; }
+      if (!(w > 0)) { toast('무게(g)를 입력하세요.', 'info'); $('grqW').focus(); return; }
       if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
       sim = findSimilar(brand, name);
-      if (sim.exact) { paintSim(); toast('이미 목록에 있는 장비예요. 이 장비를 담아 주세요.', 'info'); return; }
+      if (sim.exact) { paintSim(); toast('장비 데이터베이스에 이미 있는 장비입니다.', 'info'); return; }
       var c = client();
-      if (!c) { toast('잠시 뒤 다시 보내 주세요.', 'error'); return; }
+      if (!c) { toast('요청하지 못했습니다. 잠시 후 다시 시도하세요.', 'error'); return; }
       btn.disabled = true;
       Promise.resolve(c.from('gear_requests').insert({
         user_id: myId(), category_id: $('grqCat').value, brand: brand, item_name: name,
@@ -205,12 +226,12 @@
         if (res && res.error) throw res.error;
         metric('feat_gear_request_send');
         dim.remove();
-        toast('장비 등록 요청을 보냈어요. 확인한 뒤 목록에 올릴게요.');
+        toast('장비 데이터베이스 추가 요청이 접수되었습니다.');
       }).catch(function (e) {
         btn.disabled = false;
         var m = String((e && e.message) || '');
         var key = Object.keys(ERR).find(function (k) { return m.indexOf(k) !== -1; });
-        toast(key ? ERR[key] : '보내지 못했어요. 잠시 뒤 다시 보내 주세요.', 'error');
+        toast(key ? ERR[key] : '요청하지 못했습니다. 잠시 후 다시 시도하세요.', 'error');
         console.warn('[gear-request]', e);
       });
     });
