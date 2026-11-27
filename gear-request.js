@@ -143,8 +143,7 @@
   }
 
   // ---------------------------------------------------------------- 데이터베이스 양식(대표님 11-27)
-  // 장비 데이터베이스(gears_master.json) 한 줄과 같은 칸: 영문 브랜드·영문 이름·무게 기준·최소 무게·종류별 사양·공식/판매처 링크.
-  // 사양 항목은 종류마다 데이터베이스에서 가장 많이 쓰는 이름 그대로(11-27 세어 봄).
+  // 종류별 사양 항목: 데이터베이스(gears_master.json)에서 가장 많이 쓰는 이름 그대로(11-27 세어 봄).
   var SPEC_KEYS = {
     shelter: ['인원', '구조', '시즌', '형태', '소재', '이너 사이즈', '수납 사이즈', '전실'],
     sleep: ['종류', '형태', '충전재', '충전량', '필파워', '컴포트 온도', '리밋 온도', 'R-Value', '두께', '사이즈', '수납 사이즈'],
@@ -156,31 +155,15 @@
     camp: ['사용 사이즈', '수납 사이즈', '내하중', '좌면 높이', '소재'],
     other: ['종류', '소재', '사이즈', '수납 사이즈', '구성']
   };
-  var SPEC_HINT = {
-    '인원': '1P', '구조': '자립형', '시즌': '3시즌', '이너 사이즈': '210 × 80cm', '수납 사이즈': '45 × 11cm', '전실': '1개',
-    '컴포트 온도': '-2℃', '리밋 온도': '-8℃', 'R-Value': '4.2', '충전량': '600g', '필파워': '800FP', '두께': '7.6cm',
-    '용량': '50L', '최대 하중': '15kg', '토르소 길이': '41~51cm', '출력': '3,000W', '연료': '이소부탄',
-    '밝기': '400루멘', '배터리': '1,500mAh', '충전': 'USB-C', '방수': 'IPX4', '내하중': '120kg', '좌면 높이': '30cm'
-  };
-  var WEIGHT_TYPES = ['패킹 무게', '본체 무게', '최소 무게', '실측'];
+  // 사용자에게는 공식 링크만 받는다(대표님 11-27). 영문 이름·무게 기준·사양은 검수함에 들어온 뒤 자동화가
+  // 공식 링크를 보고 채운다(okbm_gear_request_fill, TASK_GEAR_REQUEST.md). SPEC_KEYS는 그 자동화가 쓰는 항목 이름이다.
   function dbFieldsHtml(cat, keep) {
     keep = keep || {};
-    var v = function (k) { return esc(keep[k] || ''); };
-    var keys = SPEC_KEYS[cat] || SPEC_KEYS.other;
-    var specs = keep.specs || {};
     return '<div class="grq-db">' +
-      '<div class="grq-2"><div class="grq-f"><label>영문 브랜드<small>선택</small></label><input data-db="brand_en" maxlength="60" placeholder="NEMO" value="' + v('brand_en') + '"></div>' +
-      '<div class="grq-f"><label>무게 기준</label><select data-db="weight_type">' + WEIGHT_TYPES.map(function (t) { return '<option' + ((keep.weight_type || '패킹 무게') === t ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div></div>' +
-      '<div class="grq-f"><label>영문 이름<small>선택</small></label><input data-db="name_en" maxlength="160" placeholder="Hornet OSMO 1P" value="' + v('name_en') + '"></div>' +
-      '<div class="grq-f"><label>최소 무게(g)<small>선택 · 폴·본체만 등</small></label><input data-db="weight_min_g" type="number" inputmode="numeric" min="1" max="50000" value="' + v('weight_min_g') + '"></div>' +
-      '<div class="grq-sub">사양<small>아는 것만 입력</small></div>' +
-      '<div class="grq-spec">' + keys.map(function (k) {
-        return '<div class="grq-f"><label>' + esc(k) + '</label><input data-spec="' + esc(k) + '" maxlength="200" placeholder="' + esc(SPEC_HINT[k] || '') + '" value="' + esc(specs[k] || '') + '"></div>';
-      }).join('') + '</div>' +
-      '<div class="grq-f"><label>공식 링크<small>필수 · 무게·사양을 확인할 수 있는 제조사 페이지</small></label><input data-db="link" type="url" inputmode="url" maxlength="500" placeholder="https://" value="' + v('link') + '"></div>' +
-      '<div class="grq-f"><label>판매처 링크<small>선택</small></label><input data-db="link_shop" type="url" inputmode="url" maxlength="500" placeholder="https://" value="' + v('link_shop') + '"></div>' +
+      '<div class="grq-f"><label>공식 링크<small>필수 · 무게를 확인할 수 있는 제조사 페이지</small></label><input data-db="link" type="url" inputmode="url" maxlength="500" placeholder="https://" value="' + esc(keep.link || '') + '"></div>' +
     '</div>';
   }
+  window.okbmGearSpecKeys = SPEC_KEYS;
   // 칸 값을 읽는다. keepOnly면 검사 없이 지금 값만(종류를 바꿔 다시 그릴 때)
   function dbFieldsRead(root, keepOnly) {
     var g = function (k) { var el = root.querySelector('[data-db="' + k + '"]'); return el ? el.value.trim() : ''; };
