@@ -14,7 +14,9 @@
   ];
   var ERR = {
     gear_request_daily_limit: '하루에 5개까지 보낼 수 있어요. 내일 다시 보내 주세요.',
-    gear_requests_len_chk: '링크는 http로 시작하는 주소로 적어 주세요.'
+    gear_requests_len_chk: '링크는 http로 시작하는 주소로 적어 주세요.',
+    gear_request_duplicate: '같은 장비 요청이 이미 들어와 있어요. 확인하고 올릴게요.',
+    gear_request_exists: '이미 목록에 있는 장비예요. 장비 찾기에서 담아 주세요.'
   };
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -55,6 +57,15 @@
     '.grq-btns .ok{background:#2b6fd6;border-color:#2b6fd6}',
     '.grq-sec{font-size:12px;font-weight:800;color:#a7f3d0;margin:0 0 8px}',
     '.grq-done summary{font-size:12px;font-weight:800;color:#94a3b8;cursor:pointer;margin:14px 0 8px}',
+    '.grq-sim{margin:-4px 0 12px}',
+    '.grq-sim:empty{display:none}',
+    '.grq-sim-h{font-size:12.5px;font-weight:800;color:#fbbf24;margin-bottom:6px}',
+    '.grq-sim-row{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;padding:9px 12px;margin-bottom:6px;border-radius:10px;background:#1a1a1f;border:1px solid rgba(251,191,36,.3);color:#f4f4f5;font-family:inherit;text-align:left;cursor:pointer}',
+    '.grq-sim-row.ex{border-color:#fbbf24;background:rgba(251,191,36,.1)}',
+    '.grq-sim-row b{font-size:13.5px;font-weight:800}',
+    '.grq-sim-row small{font-size:11.5px;color:#a1a1aa}',
+    '.grq-sim-f{font-size:12px;color:#a1a1aa;line-height:1.5}',
+    '.grq-warn{color:#fbbf24;font-weight:700}',
     '.grq-empty{padding:30px 0;text-align:center;color:#71717a;font-size:13px}',
     '.okbm-grq-link{display:block;width:100%;margin-top:6px;padding:9px 0;border:0;background:none;color:#fbbf24;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;text-align:center}'
   ].join('\n');
@@ -79,6 +90,52 @@
     return CATS.map(function (c) { return '<option value="' + c[0] + '"' + (c[0] === sel ? ' selected' : '') + '>' + esc(catTitle(c[0])) + '</option>'; }).join('');
   }
 
+  // ---------------------------------------------------------------- 목록에 있는지(대표님 11-27)
+  // 브랜드·이름을 칠 때 앱 장비 목록(GEARS_MASTER)에서 비슷한 장비를 찾는다. 띄어쓰기·대소문자는 무시한다.
+  // 이름이 똑같으면(브랜드를 붙여도·떼어도) 보내기를 막고, 비슷하기만 하면 보내되 검수함에 같이 보인다.
+  function norm(x) { return String(x || '').toLowerCase().replace(/[\s·\-_/()]+/g, ''); }
+  function gearList() { return Array.isArray(window.GEARS_MASTER) ? window.GEARS_MASTER : []; }
+  function findSimilar(brand, name) {
+    var words = String(name || '').toLowerCase().split(/\s+/).map(norm).filter(function (w) { return w.length >= 1; });
+    var b = norm(brand);
+    if (!words.length || norm(name).length < 2) return { exact: null, list: [] };
+    var full = norm(name), withBrand = b + full;
+    var exact = null, list = [];
+    gearList().forEach(function (g) {
+      if (!g || !g.item_name) return;
+      var gn = norm(g.item_name), gb = norm(g.brand);
+      if (!exact && (gn === full || gn === withBrand || gb + gn === withBrand || gb + gn === full)) exact = g;
+      if (list.length >= 5) return;
+      var hay = gn + gb + norm(g.name_en) + norm(g.brand_en);
+      if (words.every(function (w) { return hay.indexOf(w) !== -1; }) && (!b || hay.indexOf(b) !== -1 || words.some(function (w) { return gn.indexOf(w) !== -1; }))) list.push(g);
+    });
+    if (exact && list.indexOf(exact) === -1) list.unshift(exact);
+    return { exact: exact, list: list.slice(0, 5) };
+  }
+  function simHtml(r) {
+    if (!r.list.length) return '';
+    return '<div class="grq-sim-h">' + (r.exact ? '이미 목록에 있는 장비예요. 이 장비를 담아 주세요.' : '혹시 이 장비인가요? 맞으면 이 장비를 담아 주세요.') + '</div>' +
+      r.list.map(function (g) {
+        var w = Number(g.weight_g) || 0;
+        return '<button type="button" class="grq-sim-row' + (g === r.exact ? ' ex' : '') + '" data-sim="' + esc(g.item_name) + '"><b>' + esc(g.item_name) + '</b><small>' +
+          esc([catTitle(g.category_id), String(g.brand || ''), w ? (w / 1000).toFixed(2) + 'kg' : ''].filter(Boolean).join(' · ')) + '</small></button>';
+      }).join('') +
+      (r.exact ? '' : '<div class="grq-sim-f">목록에 없는 다른 장비면 그대로 보내 주세요. 연식·색상이 다르면 하고 싶은 말에 적어 주세요.</div>');
+  }
+  // 고른 장비를 지금 화면의 검색 칸에 넣어 찾아 준다
+  function useListed(name) {
+    var ids = ['calcShelfSearchInput', 'qgrSearch', 'gearSearchFixedInput'];
+    for (var i = 0; i < ids.length; i++) {
+      var el = document.getElementById(ids[i]);
+      if (el && el.offsetParent) {
+        el.value = name;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        return true;
+      }
+    }
+    return false;
+  }
+
   // ---------------------------------------------------------------- 요청 보내기
   window.okbmOpenGearRequest = function (opts) {
     opts = opts || {};
@@ -94,12 +151,39 @@
       '<div class="grq-f"><label for="grqCat">종류</label><select id="grqCat">' + catOptions(cat) + '</select></div>' +
       '<div class="grq-f"><label for="grqBrand">브랜드</label><input id="grqBrand" maxlength="60" placeholder="예: 니모" autocomplete="off"></div>' +
       '<div class="grq-f"><label for="grqName">장비 이름</label><input id="grqName" maxlength="120" placeholder="예: 호넷 오스모 1P" autocomplete="off" value="' + esc(opts.name || '') + '"></div>' +
+      '<div class="grq-sim" aria-live="polite"></div>' +
       '<div class="grq-f"><label for="grqW">무게<small>g, 제조사 표기</small></label><input id="grqW" type="number" inputmode="numeric" min="1" max="50000" placeholder="예: 879"></div>' +
       '<div class="grq-f"><label for="grqLink">제조사·판매처 링크<small>무게를 확인할 수 있는 곳</small></label><input id="grqLink" type="url" inputmode="url" maxlength="500" placeholder="https://"></div>' +
       '<div class="grq-f"><label for="grqNote">하고 싶은 말<small>선택</small></label><textarea id="grqNote" maxlength="500" placeholder="예: 2025년형이에요. 색상마다 무게가 같아요."></textarea></div>' +
       '<button type="button" class="grq-go">요청 보내기</button>');
     var $ = function (id) { return dim.querySelector('#' + id); };
     if (!opts.name) setTimeout(function () { var b = $('grqBrand'); if (b) b.focus(); }, 50);
+    var sim = { exact: null, list: [] };
+    var simBox = dim.querySelector('.grq-sim');
+    var simTimer = 0;
+    function paintSim() {
+      sim = findSimilar($('grqBrand').value, $('grqName').value);
+      simBox.innerHTML = simHtml(sim);
+      dim.querySelector('.grq-go').textContent = sim.exact ? '이미 있는 장비라 보낼 수 없어요' : '요청 보내기';
+      dim.querySelector('.grq-go').disabled = !!sim.exact;
+    }
+    function schedSim() { clearTimeout(simTimer); simTimer = setTimeout(paintSim, 150); }
+    $('grqBrand').addEventListener('input', schedSim);
+    $('grqName').addEventListener('input', schedSim);
+    simBox.addEventListener('click', function (e) {
+      var r = e.target.closest('[data-sim]');
+      if (!r) return;
+      var nm = r.getAttribute('data-sim');
+      metric('feat_gear_request_listed');
+      dim.remove();
+      if (useListed(nm)) toast('목록에 있는 장비예요. 찾아 드렸어요.');
+      else toast('\'' + nm + '\'은(는) 이미 목록에 있어요. 장비 찾기에서 담아 주세요.', 'info');
+    });
+    // 장비 목록이 아직 없으면 받아 온 뒤 다시 본다
+    if (!gearList().length && typeof window.loadGearDbFromGoogleSheet === 'function') {
+      Promise.resolve(window.loadGearDbFromGoogleSheet(false)).then(function () { if (dim.isConnected) paintSim(); }).catch(function () {});
+    }
+    paintSim();
     dim.querySelector('.grq-go').addEventListener('click', function () {
       var btn = this;
       var brand = $('grqBrand').value.trim(), name = $('grqName').value.trim();
@@ -108,12 +192,15 @@
       if (!name) { toast('장비 이름을 적어 주세요.', 'info'); $('grqName').focus(); return; }
       if (!(w > 0)) { toast('무게를 g로 적어 주세요.', 'info'); $('grqW').focus(); return; }
       if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
+      sim = findSimilar(brand, name);
+      if (sim.exact) { paintSim(); toast('이미 목록에 있는 장비예요. 이 장비를 담아 주세요.', 'info'); return; }
       var c = client();
       if (!c) { toast('잠시 뒤 다시 보내 주세요.', 'error'); return; }
       btn.disabled = true;
       Promise.resolve(c.from('gear_requests').insert({
         user_id: myId(), category_id: $('grqCat').value, brand: brand, item_name: name,
-        weight_g: w, link: link || null, note: note || null
+        weight_g: w, link: link || null, note: note || null,
+        similar_names: sim.list.length ? sim.list.map(function (g) { return g.item_name; }).slice(0, 5) : null
       })).then(function (res) {
         if (res && res.error) throw res.error;
         metric('feat_gear_request_send');
@@ -149,6 +236,7 @@
       return '<div class="grq-meta">' + esc(r.nickname || '낭만루터') + ' · ' + esc(String(r.created_at || '').slice(5, 16).replace('T', ' ')) +
         (r.link ? '<br><a href="' + esc(r.link) + '" target="_blank" rel="noopener noreferrer">' + esc(r.link) + '</a>' : '<br>링크 없음') +
         (r.note ? '<br>' + esc(r.note) : '') +
+        (Array.isArray(r.similar_names) && r.similar_names.length ? '<br><span class="grq-warn">비슷한 장비가 목록에 있어요: ' + r.similar_names.map(esc).join(', ') + '</span>' : '') +
         (r.reject_reason ? '<br>반려 사유: ' + esc(r.reject_reason) : '') + '</div>';
     };
     var card = function (r) {
