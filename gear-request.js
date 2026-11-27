@@ -16,7 +16,8 @@
     gear_request_daily_limit: '하루 5건까지 요청할 수 있습니다.',
     gear_requests_len_chk: '링크는 http로 시작하는 주소로 입력하세요.',
     gear_request_duplicate: '같은 장비의 추가 요청이 이미 접수되어 있습니다.',
-    gear_request_exists: '장비 데이터베이스에 이미 있는 장비입니다.'
+    gear_request_exists: '장비 데이터베이스에 이미 있는 장비입니다.',
+    gear_request_link_required: '공식 링크를 입력하세요.'
   };
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -66,6 +67,11 @@
     '.grq-sim-row small{font-size:11.5px;color:#a1a1aa}',
     '.grq-sim-f{font-size:12px;color:#a1a1aa;line-height:1.5}',
     '.grq-warn{color:#fbbf24;font-weight:700}',
+    '.grq-db{margin:2px 0 4px}',
+    '.grq-sub{font-size:12.5px;font-weight:800;color:#d4d4d8;margin:4px 0 8px}',
+    '.grq-sub small{font-weight:600;color:#a1a1aa;margin-left:4px}',
+    '.grq-spec{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}',
+    '.grq-spec .grq-f{min-width:0}',
     '.grq-empty{padding:30px 0;text-align:center;color:#71717a;font-size:13px}',
     '.okbm-grq-link{display:block;width:100%;margin-top:6px;padding:9px 0;border:0;background:none;color:#fbbf24;font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;text-align:center}'
   ].join('\n');
@@ -136,6 +142,63 @@
     return false;
   }
 
+  // ---------------------------------------------------------------- 데이터베이스 양식(대표님 11-27)
+  // 장비 데이터베이스(gears_master.json) 한 줄과 같은 칸: 영문 브랜드·영문 이름·무게 기준·최소 무게·종류별 사양·공식/판매처 링크.
+  // 사양 항목은 종류마다 데이터베이스에서 가장 많이 쓰는 이름 그대로(11-27 세어 봄).
+  var SPEC_KEYS = {
+    shelter: ['인원', '구조', '시즌', '형태', '소재', '이너 사이즈', '수납 사이즈', '전실'],
+    sleep: ['종류', '형태', '충전재', '충전량', '필파워', '컴포트 온도', '리밋 온도', 'R-Value', '두께', '사이즈', '수납 사이즈'],
+    pack: ['용량', '프레임', '소재', '최대 하중', '토르소 길이'],
+    kitchen: ['종류', '용량', '연료', '출력', '연결 방식', '소재', '구성', '사이즈', '수납 사이즈'],
+    food: ['용량', '구성', '소재'],
+    wear: ['종류', '소재', '충전재', '사이즈 기준'],
+    electronics: ['종류', '밝기', '배터리', '충전', '방수', '사이즈'],
+    camp: ['사용 사이즈', '수납 사이즈', '내하중', '좌면 높이', '소재'],
+    other: ['종류', '소재', '사이즈', '수납 사이즈', '구성']
+  };
+  var SPEC_HINT = {
+    '인원': '1P', '구조': '자립형', '시즌': '3시즌', '이너 사이즈': '210 × 80cm', '수납 사이즈': '45 × 11cm', '전실': '1개',
+    '컴포트 온도': '-2℃', '리밋 온도': '-8℃', 'R-Value': '4.2', '충전량': '600g', '필파워': '800FP', '두께': '7.6cm',
+    '용량': '50L', '최대 하중': '15kg', '토르소 길이': '41~51cm', '출력': '3,000W', '연료': '이소부탄',
+    '밝기': '400루멘', '배터리': '1,500mAh', '충전': 'USB-C', '방수': 'IPX4', '내하중': '120kg', '좌면 높이': '30cm'
+  };
+  var WEIGHT_TYPES = ['패킹 무게', '본체 무게', '최소 무게', '실측'];
+  function dbFieldsHtml(cat, keep) {
+    keep = keep || {};
+    var v = function (k) { return esc(keep[k] || ''); };
+    var keys = SPEC_KEYS[cat] || SPEC_KEYS.other;
+    var specs = keep.specs || {};
+    return '<div class="grq-db">' +
+      '<div class="grq-2"><div class="grq-f"><label>영문 브랜드<small>선택</small></label><input data-db="brand_en" maxlength="60" placeholder="NEMO" value="' + v('brand_en') + '"></div>' +
+      '<div class="grq-f"><label>무게 기준</label><select data-db="weight_type">' + WEIGHT_TYPES.map(function (t) { return '<option' + ((keep.weight_type || '패킹 무게') === t ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div></div>' +
+      '<div class="grq-f"><label>영문 이름<small>선택</small></label><input data-db="name_en" maxlength="160" placeholder="Hornet OSMO 1P" value="' + v('name_en') + '"></div>' +
+      '<div class="grq-f"><label>최소 무게(g)<small>선택 · 폴·본체만 등</small></label><input data-db="weight_min_g" type="number" inputmode="numeric" min="1" max="50000" value="' + v('weight_min_g') + '"></div>' +
+      '<div class="grq-sub">사양<small>아는 것만 입력</small></div>' +
+      '<div class="grq-spec">' + keys.map(function (k) {
+        return '<div class="grq-f"><label>' + esc(k) + '</label><input data-spec="' + esc(k) + '" maxlength="200" placeholder="' + esc(SPEC_HINT[k] || '') + '" value="' + esc(specs[k] || '') + '"></div>';
+      }).join('') + '</div>' +
+      '<div class="grq-f"><label>공식 링크<small>필수 · 무게·사양을 확인할 수 있는 제조사 페이지</small></label><input data-db="link" type="url" inputmode="url" maxlength="500" placeholder="https://" value="' + v('link') + '"></div>' +
+      '<div class="grq-f"><label>판매처 링크<small>선택</small></label><input data-db="link_shop" type="url" inputmode="url" maxlength="500" placeholder="https://" value="' + v('link_shop') + '"></div>' +
+    '</div>';
+  }
+  // 칸 값을 읽는다. keepOnly면 검사 없이 지금 값만(종류를 바꿔 다시 그릴 때)
+  function dbFieldsRead(root, keepOnly) {
+    var g = function (k) { var el = root.querySelector('[data-db="' + k + '"]'); return el ? el.value.trim() : ''; };
+    var specs = {}, list = [];
+    root.querySelectorAll('[data-spec]').forEach(function (el) {
+      var val = el.value.trim();
+      if (val) { specs[el.getAttribute('data-spec')] = val; list.push([el.getAttribute('data-spec'), val.slice(0, 200)]); }
+    });
+    var fix = function (u) { return u && !/^https?:\/\//i.test(u) ? 'https://' + u : u; };
+    var out = { brand_en: g('brand_en'), name_en: g('name_en'), weight_type: g('weight_type') || '패킹 무게',
+      weight_min_g: parseInt(g('weight_min_g'), 10) || null, specs: specs, spec_list: list, link: fix(g('link')), link_shop: fix(g('link_shop')) };
+    if (keepOnly) return out;
+    if (!out.link) return { error: '공식 링크를 입력하세요.', focus: root.querySelector('[data-db="link"]') };
+    return out;
+  }
+  window.okbmGearDbFieldsHtml = dbFieldsHtml;
+  window.okbmGearDbFieldsRead = dbFieldsRead;
+
   // ---------------------------------------------------------------- 요청 보내기
   // 낭만플랜 '직접 등록'도 같이 쓴다: 브랜드를 적은 장비가 데이터베이스에 없으면 검수함으로 보낸다(대표님 11-27)
   window.okbmGearFindSimilar = findSimilar;
@@ -146,7 +209,11 @@
     return Promise.resolve(c.from('gear_requests').insert({
       user_id: myId(), category_id: cat, brand: o.brand, item_name: o.name,
       weight_g: o.weight, link: o.link || null, note: o.note || null,
-      similar_names: o.similar && o.similar.length ? o.similar.slice(0, 5) : null
+      similar_names: o.similar && o.similar.length ? o.similar.slice(0, 5) : null,
+      brand_en: (o.db && o.db.brand_en) || null, name_en: (o.db && o.db.name_en) || null,
+      weight_type: (o.db && o.db.weight_type) || null, weight_min_g: (o.db && o.db.weight_min_g) || null,
+      specs: o.db && o.db.spec_list && o.db.spec_list.length ? o.db.spec_list : null,
+      link_shop: (o.db && o.db.link_shop) || null
     })).then(function (res) {
       if (res && res.error) throw res.error;
       metric('feat_gear_request_send');
@@ -174,7 +241,7 @@
       '<div class="grq-f"><label for="grqName">장비 이름</label><input id="grqName" maxlength="120" placeholder="예: 호넷 오스모 1P" autocomplete="off" value="' + esc(opts.name || '') + '"></div>' +
       '<div class="grq-sim" aria-live="polite"></div>' +
       '<div class="grq-f"><label for="grqW">무게<small>g, 제조사 표기</small></label><input id="grqW" type="number" inputmode="numeric" min="1" max="50000" placeholder="예: 879"></div>' +
-      '<div class="grq-f"><label for="grqLink">제조사·판매처 링크<small>무게를 확인할 수 있는 곳</small></label><input id="grqLink" type="url" inputmode="url" maxlength="500" placeholder="https://"></div>' +
+      '<div data-grq-db>' + dbFieldsHtml(cat) + '</div>' +
       '<div class="grq-f"><label for="grqNote">메모<small>선택</small></label><textarea id="grqNote" maxlength="500" placeholder="예: 2025년형이에요. 색상마다 무게가 같아요."></textarea></div>' +
       '<button type="button" class="grq-go">추가 요청</button>');
     var $ = function (id) { return dim.querySelector('#' + id); };
@@ -190,6 +257,13 @@
     }
     function schedSim() { clearTimeout(simTimer); simTimer = setTimeout(paintSim, 150); }
     $('grqBrand').addEventListener('input', schedSim);
+    $('grqCat').addEventListener('change', function () {
+      var box = dim.querySelector('[data-grq-db]');
+      var keep = dbFieldsRead(box, true);
+      box.__specMem = Object.assign(box.__specMem || {}, keep.specs || {});
+      keep.specs = box.__specMem;
+      box.innerHTML = dbFieldsHtml($('grqCat').value, keep);
+    });
     $('grqName').addEventListener('input', schedSim);
     simBox.addEventListener('click', function (e) {
       var r = e.target.closest('[data-sim]');
@@ -208,23 +282,17 @@
     dim.querySelector('.grq-go').addEventListener('click', function () {
       var btn = this;
       var brand = $('grqBrand').value.trim(), name = $('grqName').value.trim();
-      var w = parseInt($('grqW').value, 10), link = $('grqLink').value.trim(), note = $('grqNote').value.trim();
+      var w = parseInt($('grqW').value, 10), note = $('grqNote').value.trim();
       if (!brand) { toast('브랜드를 입력하세요.', 'info'); $('grqBrand').focus(); return; }
       if (!name) { toast('장비 이름을 입력하세요.', 'info'); $('grqName').focus(); return; }
       if (!(w > 0)) { toast('무게(g)를 입력하세요.', 'info'); $('grqW').focus(); return; }
-      if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
+      var db = dbFieldsRead(dim.querySelector('[data-grq-db]'));
+      if (db.error) { toast(db.error, 'info'); if (db.focus) db.focus.focus(); return; }
       sim = findSimilar(brand, name);
       if (sim.exact) { paintSim(); toast('장비 데이터베이스에 이미 있는 장비입니다.', 'info'); return; }
-      var c = client();
-      if (!c) { toast('요청하지 못했습니다. 잠시 후 다시 시도하세요.', 'error'); return; }
       btn.disabled = true;
-      Promise.resolve(c.from('gear_requests').insert({
-        user_id: myId(), category_id: $('grqCat').value, brand: brand, item_name: name,
-        weight_g: w, link: link || null, note: note || null,
-        similar_names: sim.list.length ? sim.list.map(function (g) { return g.item_name; }).slice(0, 5) : null
-      })).then(function (res) {
-        if (res && res.error) throw res.error;
-        metric('feat_gear_request_send');
+      window.okbmSendGearRequest({ categoryId: $('grqCat').value, brand: brand, name: name, weight: w, link: db.link, note: note,
+        similar: sim.list.map(function (g) { return g.item_name; }), db: db }).then(function () {
         dim.remove();
         toast('장비 데이터베이스 추가 요청이 접수되었습니다.');
       }).catch(function (e) {
@@ -257,6 +325,10 @@
       return '<div class="grq-meta">' + esc(r.nickname || '낭만루터') + ' · ' + esc(String(r.created_at || '').slice(5, 16).replace('T', ' ')) +
         (r.link ? '<br><a href="' + esc(r.link) + '" target="_blank" rel="noopener noreferrer">' + esc(r.link) + '</a>' : '<br>링크 없음') +
         (r.note ? '<br>' + esc(r.note) : '') +
+        (r.name_en || r.brand_en ? '<br>영문: ' + esc([r.brand_en, r.name_en].filter(Boolean).join(' / ')) : '') +
+        '<br>무게 기준: ' + esc(r.weight_type || '패킹 무게') + (r.weight_min_g ? ' · 최소 ' + esc(r.weight_min_g) + 'g' : '') +
+        (Array.isArray(r.specs) && r.specs.length ? '<br>사양: ' + r.specs.map(function (x) { return esc(x[0]) + ' ' + esc(x[1]); }).join(' · ') : '') +
+        (r.link_shop ? '<br>판매처: <a href="' + esc(r.link_shop) + '" target="_blank" rel="noopener noreferrer">' + esc(r.link_shop) + '</a>' : '') +
         (Array.isArray(r.similar_names) && r.similar_names.length ? '<br><span class="grq-warn">비슷한 장비가 목록에 있어요: ' + r.similar_names.map(esc).join(', ') + '</span>' : '') +
         (r.reject_reason ? '<br>반려 사유: ' + esc(r.reject_reason) : '') + '</div>';
     };

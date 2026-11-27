@@ -2667,13 +2667,36 @@
           <span style="font-size:14px; font-weight:700; color:var(--tx-2, #d1d1d6);">등록하면서 지금 배낭에도 담기</span>
         </label>
         <label style="display:flex; align-items:flex-start; gap:10px; margin-top:10px; cursor:pointer; user-select:none; -webkit-user-select:none;">
-          <input type="checkbox" id="chkRegGearDb" checked style="width:20px; height:20px; accent-color:#5bb8f0; cursor:pointer; margin:0; flex-shrink:0;" />
-          <span style="font-size:14px; font-weight:700; color:var(--tx-2, #d1d1d6); line-height:1.4;">장비 데이터베이스에 추가 요청<small style="display:block; font-size:12px; font-weight:600; color:var(--tx-3, #8b8b93); margin-top:2px;">브랜드를 입력한 장비만 요청됩니다. 검수 후 반영되며, 반영 시 30포인트가 적립됩니다.</small></span>
+          <input type="checkbox" id="chkRegGearDb" style="width:20px; height:20px; accent-color:#5bb8f0; cursor:pointer; margin:0; flex-shrink:0;" />
+          <span style="font-size:14px; font-weight:700; color:var(--tx-2, #d1d1d6); line-height:1.4;">장비 데이터베이스에 추가 요청<small style="display:block; font-size:12px; font-weight:600; color:var(--tx-3, #8b8b93); margin-top:2px;">장비 데이터베이스에 없는 장비를 등록합니다. 검수 후 반영되며, 반영 시 30포인트가 적립됩니다.</small></span>
         </label>
+        <div id="regGearDbBox" hidden style="margin-top:12px; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.03);"></div>
         <div style="display:flex; gap:8px; margin-top:16px;">
           <button type="button" class="pk-dock-sub" data-qgr-close>취소</button>
           <button type="button" class="pk-dock-save" data-qgr-submit>등록 완료</button>
         </div>`;
+  }
+  // 장비 데이터베이스 칸(gear-request.js 양식)을 지금 분류에 맞춰 그린다. 적던 값은 남긴다
+  function qgrCurrentCat() {
+    var catEl = document.getElementById('regGearCat');
+    var nameEl = document.getElementById('regGearName');
+    var c = catEl && catEl.value ? normalizePlanGearCategoryId(catEl.value) : (inferPlanGearCategoryFromText(nameEl ? nameEl.value.trim() : '') || 'other');
+    return c === 'food' ? 'other' : c;
+  }
+  function qgrPaintDbBox() {
+    var box = document.getElementById('regGearDbBox');
+    var chk = document.getElementById('chkRegGearDb');
+    if (!box || !chk) return;
+    box.hidden = !chk.checked;
+    if (!chk.checked || typeof window.okbmGearDbFieldsHtml !== 'function') return;
+    var cat = qgrCurrentCat();
+    if (box.getAttribute('data-cat') === cat && box.innerHTML) return;
+    var keep = box.innerHTML && typeof window.okbmGearDbFieldsRead === 'function' ? window.okbmGearDbFieldsRead(box, true) : {};
+    // 다른 분류에서 적은 사양도 기억해 두었다가, 그 분류로 돌아오면 다시 채운다
+    box.__specMem = Object.assign(box.__specMem || {}, keep.specs || {});
+    keep.specs = box.__specMem;
+    box.innerHTML = window.okbmGearDbFieldsHtml(cat, keep);
+    box.setAttribute('data-cat', cat);
   }
   function qgrClose() {
     var modal = document.getElementById('quickGearDetailModal');
@@ -2769,6 +2792,7 @@
         hid.value = hid.value === v ? '' : v; // 같은 걸 다시 누르면 이름 보고 자동
         modal.querySelectorAll('[data-qgr-cat]').forEach(function(b) { b.classList.toggle('on', b.getAttribute('data-qgr-cat') === hid.value); });
         window.previewQuickGearCategory(document.getElementById('regGearName').value);
+        qgrPaintDbBox();
         return;
       }
       if (t.closest('[data-qgr-submit]')) window.submitQuickGearRegister();
@@ -2781,7 +2805,11 @@
         sTimer = setTimeout(paintList, 120);
       } else if (e.target.id === 'regGearName') {
         window.previewQuickGearCategory(e.target.value);
+        qgrPaintDbBox();
       }
+    });
+    modal.addEventListener('change', function(e) {
+      if (e.target.id === 'chkRegGearDb') qgrPaintDbBox();
     });
     // 키보드: 처음 높이보다 120px 넘게 줄면 키보드가 올라온 것으로 본다
     var vh = function() { return window.visualViewport ? window.visualViewport.height : window.innerHeight; };
@@ -2867,6 +2895,22 @@
       if (typeof showToast === 'function') showToast('장비명과 무게(g)를 입력해주세요.', 'warn');
       return;
     }
+    // 장비 데이터베이스 추가 요청을 켰으면 브랜드·무게·공식 링크가 있어야 한다. 모자라면 저장하지 않고 알린다
+    var dbData = null, dbSimilar = [];
+    if (wantDb && typeof window.okbmSendGearRequest === 'function') {
+      if (!brand) { if (typeof showToast === 'function') showToast('장비 데이터베이스 추가 요청은 브랜드를 입력하세요.', 'warn'); if (brandEl) brandEl.focus(); return; }
+      if (!(weight > 0)) { if (typeof showToast === 'function') showToast('장비 데이터베이스 추가 요청은 무게(g)를 입력하세요.', 'warn'); weightEl.focus(); return; }
+      var dbBox = document.getElementById('regGearDbBox');
+      dbData = dbBox && typeof window.okbmGearDbFieldsRead === 'function' ? window.okbmGearDbFieldsRead(dbBox) : { error: '공식 링크를 입력하세요.' };
+      if (dbData.error) { if (typeof showToast === 'function') showToast(dbData.error, 'warn'); if (dbData.focus) dbData.focus.focus(); return; }
+      var simR = typeof window.okbmGearFindSimilar === 'function' ? window.okbmGearFindSimilar(brand, name) : { exact: null, list: [] };
+      if (simR.exact) {
+        dbData = null;
+        if (typeof showToast === 'function') showToast('장비 데이터베이스에 이미 있는 장비입니다. 내 장비에만 등록합니다.', 'info');
+      } else {
+        dbSimilar = simR.list.map(function(g) { return g.item_name; });
+      }
+    }
 
     var newCustom = {
       id: 'custom_' + Date.now(),
@@ -2943,19 +2987,15 @@
     QGR.changed = false; // 아래에서 다시 그린다
     qgrClose();
 
-    // 장비 데이터베이스 추가 요청(대표님 11-27): 브랜드를 적었고 데이터베이스에 없는 장비면 검수함으로 보낸다.
-    // 이름이 똑같은 장비가 이미 있으면 보내지 않는다. 비슷한 장비 이름은 요청에 남겨 검수 때 비교한다.
-    if (wantDb && brand && weight > 0 && typeof window.okbmSendGearRequest === 'function') {
-      var simR = typeof window.okbmGearFindSimilar === 'function' ? window.okbmGearFindSimilar(brand, name) : { exact: null, list: [] };
-      if (!simR.exact) {
-        window.okbmSendGearRequest({ categoryId: catId, brand: brand, name: name, weight: weight, similar: simR.list.map(function(g) { return g.item_name; }) })
-          .then(function() { if (typeof showToast === 'function') showToast('장비 데이터베이스 추가 요청이 접수되었습니다.', 'success'); })
-          .catch(function(err) {
-            var msg = typeof window.okbmGearRequestError === 'function' ? window.okbmGearRequestError(err) : '';
-            if (msg && typeof showToast === 'function') showToast(msg, 'info');
-            console.warn('[romantic-plan.js:gear db request]', err);
-          });
-      }
+    // 장비 데이터베이스 추가 요청(대표님 11-27): 위에서 검사를 마친 칸을 검수함으로 보낸다
+    if (dbData) {
+      window.okbmSendGearRequest({ categoryId: catId, brand: brand, name: name, weight: weight, link: dbData.link, similar: dbSimilar, db: dbData })
+        .then(function() { if (typeof showToast === 'function') showToast('장비 데이터베이스 추가 요청이 접수되었습니다.', 'success'); })
+        .catch(function(err) {
+          var msg = typeof window.okbmGearRequestError === 'function' ? window.okbmGearRequestError(err) : '';
+          if (typeof showToast === 'function') showToast(msg || '장비 데이터베이스 추가 요청을 보내지 못했습니다.', 'info');
+          console.warn('[romantic-plan.js:gear db request]', err);
+        });
     }
 
     if (typeof syncUserDataToCloud === 'function') {
@@ -3303,7 +3343,7 @@ window.saveCurrentPackingRecord = function() {
     if (okbmUserGearsPromise) return okbmUserGearsPromise;
     var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
     var targetKey = window.SUPABASE_ANON_KEY || '';
-    okbmUserGearsPromise = fetch(targetUrl + '/rest/v1/gears?select=id,category_id,item_name,weight_g,brand,specs_detail,verified,weight_type,evidence&id=like.gear_r*&order=id.asc&limit=1000', {
+    okbmUserGearsPromise = fetch(targetUrl + '/rest/v1/gears?select=id,category_id,item_name,weight_g,brand,specs_detail,verified,weight_type,evidence,name_en,brand_en,specs,links,weight_min_g,weight_min_label&id=like.gear_r*&order=id.asc&limit=1000', {
       headers: { 'apikey': targetKey, 'Authorization': 'Bearer ' + targetKey }
     }).then(function(r) { return r.ok ? r.json() : []; }).then(function(rows) { return Array.isArray(rows) ? rows : []; })
       .catch(function() { okbmUserGearsPromise = null; return []; });
