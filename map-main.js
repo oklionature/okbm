@@ -1861,6 +1861,15 @@
         toggleAdminMode();
       }
 
+      // 관리자 깃발이 나중에 켜지면(로그인이 늦게 끝난 경우) 그때 관리자 표시를 켠다(11-27).
+      // 전에는 지도 열 때 한 번만 묻고, 그때 로그인 정보가 없으면 끝까지 안 떴다.
+      window.addEventListener('okbm_admin_flag', function(e) {
+        var on = !!(e && e.detail && e.detail.isAdmin);
+        var verTag = document.getElementById('versionTagBtn');
+        if (verTag) verTag.hidden = !on;
+        if (on && isAdminMode && typeof window.okbmRefreshAdminInboxBadge === 'function') window.okbmRefreshAdminInboxBadge(true);
+      });
+
       window.bootMapAdminTools = async function() {
         if (window.__okbmMapAdminBooting) return;
         window.__okbmMapAdminBooting = true;

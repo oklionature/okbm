@@ -2177,17 +2177,20 @@ function okbmPersistAdminFlag(isAdmin) {
   return window.__okbmIsAdmin === true;
 }
 
+// 관리자 확인(11-27): 요청이 잠깐 실패하면 '관리자 아님'으로 굳어 관리자 표시가 들쭉날쭉했다.
+// 줄을 못 받으면 1.5초 뒤 한 번 더 묻는다.
 window.okbmRefreshAdminFlagFromServer = async function() {
   var userId = okbmGetCurrentUserId();
   if (!userId) {
     return okbmPersistAdminFlag(false);
   }
-  try {
-    var row = await okbmFindUserById(userId);
-    return okbmPersistAdminFlag(!!(row && row.is_admin === true));
-  } catch (e) {
-    return okbmPersistAdminFlag(false);
+  for (var tryNo = 0; tryNo < 2; tryNo++) {
+    var row = null;
+    try { row = await okbmFindUserById(userId); } catch (e) { row = null; }
+    if (row) return okbmPersistAdminFlag(row.is_admin === true);
+    if (tryNo === 0) await new Promise(function(ok) { setTimeout(ok, 1500); });
   }
+  return okbmPersistAdminFlag(false);
 };
 
 window.okbmFetchFeedById = async function(feedId) {
