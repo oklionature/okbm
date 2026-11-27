@@ -1583,7 +1583,7 @@
         shelfContainer.__okbmShelfKey = '';
         shelfContainer.innerHTML = (curTab === 'fav' && !cleanQ)
           ? '<div class="pk-shelf-empty">별을 누른 장비가 여기 모여요.<br>전체에서 내 장비를 찾아 별을 눌러 보세요.<br><button type="button" onclick="window.setCalcCategoryTab(\'all\')">전체 장비 보기</button></div>'
-          : '<div class="pk-shelf-empty">맞는 장비가 없어요.<br>검색어를 바꾸거나 + 로 직접 등록해 보세요.<button type="button" class="okbm-grq-link" data-grq-open="plan">모두가 쓰게 장비 등록 요청하기 ›</button></div>';
+          : '<div class="pk-shelf-empty">맞는 장비가 없어요.<br>검색어를 바꾸거나 + 로 직접 등록해 보세요.<br>모두가 쓰게 하려면 위 \'등록 요청\'을 눌러 주세요.</div>';
       } else {
         // 처음엔 40개만 그리고 스크롤 끝에서 80개씩 더 붙인다(검색 결과도 동일).
         // 같은 탭·검색어로 다시 그릴 때(카테고리 로딩, 장비 등록 등)는 보던 개수와 스크롤 위치를 유지한다.
@@ -2608,7 +2608,7 @@
     });
     var fav = window.favoriteGearSet || new Set();
     var head = '<div class="qgr-cnt">' + (words.length ? '\'' + escapeHtml(QGR.q.trim()) + '\' ' : '') + '찾은 장비 ' + hits.length + '개' + (hits.length > 60 ? ' · 위 60개' : '') + '</div>';
-    if (!hits.length) return head + '<div class="qgr-empty">목록에 없어요. 위 \'직접 등록\'으로 넣어 주세요.</div>';
+    if (!hits.length) return head + '<div class="qgr-empty">목록에 없어요. 위 \'직접 등록\'으로 내 장비에 넣거나, \'등록 요청\'으로 모두의 목록에 올려 주세요.</div>';
     return head + hits.slice(0, 60).map(function(g) {
       var has = okbmGearIsFav(g);
       var w = Number(g.weight) || 0;
@@ -2632,6 +2632,7 @@
       + '<div class="qgr-cats">' + ['all'].concat(MY_GEAR_CAT_IDS).map(function(id) {
         return '<button type="button" class="qgr-chip' + (id === QGR.cat ? ' on' : '') + '" data-qgr-fcat="' + id + '">' + escapeHtml(id === 'all' ? '전체' : planGearCategoryLabel(id)) + '</button>';
       }).join('') + '</div>'
+      + '<button type="button" class="okbm-grq-link" data-grq-open="plan">찾는 장비가 목록에 없나요? 모두가 쓰게 등록 요청 ›</button>'
       + '<div class="qgr-list" data-qgr-list>' + qgrListHtml() + '</div>';
   }
   function qgrDirectHtml(initName, addToPack) {
@@ -3346,9 +3347,12 @@ window.saveCurrentPackingRecord = function() {
     var b = e.target && e.target.closest ? e.target.closest('[data-grq-open="plan"]') : null;
     if (!b) return;
     e.preventDefault();
-    var nameEl = document.getElementById('customInputGearName');
-    var qEl = document.getElementById('gearSearchFixedInput');
-    var opts = { name: (nameEl && nameEl.value.trim()) || (qEl && qEl.value.trim()) || '', categoryId: window.currentOpeningCategoryId };
+    var val = function(id) { var el = document.getElementById(id); return el && el.offsetParent ? el.value.trim() : ''; };
+    var name = val('customInputGearName') || val('gearSearchFixedInput') || val('qgrSearch') || val('calcShelfSearchInput');
+    var cat = window.currentOpeningCategoryId;
+    if (!cat && document.getElementById('qgrSearch') && typeof QGR !== 'undefined' && QGR.cat !== 'all') cat = QGR.cat;
+    if (!cat && window.__activeCalcCategoryTab && window.__activeCalcCategoryTab !== 'all' && window.__activeCalcCategoryTab !== 'fav') cat = window.__activeCalcCategoryTab;
+    var opts = { name: name, categoryId: cat };
     if (typeof window.okbmOpenGearRequest === 'function') window.okbmOpenGearRequest(opts);
   });
 
@@ -5356,6 +5360,7 @@ window.saveCurrentPackingRecord = function() {
             </label>
             <button type="button" class="pk-add" onclick="window.openQuickGearRegisterModal()" aria-label="장비 직접 등록">+</button>
           </div>
+          <button type="button" class="okbm-grq-link" data-grq-open="plan">찾는 장비가 목록에 없나요? 모두가 쓰게 등록 요청 ›</button>
 
           <div id="calcCategoryTabsBar" class="pk-chips"></div>
         </div>
