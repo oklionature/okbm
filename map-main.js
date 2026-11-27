@@ -2142,6 +2142,33 @@ function updateSmartResetButtons() {
         map.panTo(new kakao.maps.LatLng(spot.lat, spot.lng));
         return true;
       };
+      // 야영금지 창의 '제보 및 수정건의'(대표님 11-27): 박지를 지도에서 누르지 않고 이름으로 찾는다.
+      // 띄어쓰기를 빼고 박지 이름·보조 이름·시군에서 찾는다. 20개까지.
+      window.okbmFindSpots = function(q) {
+        var key = String(q || '').replace(/\s+/g, '').toLowerCase();
+        if (!key) return [];
+        var out = [];
+        (spots || []).some(function(s) {
+          var hay = (String(s.spot_main || s.name || '') + String(s.spot_sub || '') + String(s.cityName || '')).replace(/\s+/g, '').toLowerCase();
+          if (hay.indexOf(key) !== -1) {
+            out.push({ id: String(s.id).trim(), spot_main: s.spot_main || s.name || '', spot_sub: s.spot_sub || '', region: s.region || '', cityName: s.cityName || '', banned: s.camp_status === 'banned' });
+          }
+          return out.length >= 20;
+        });
+        return out;
+      };
+      // mode 'blocked'는 수정 건의 창을 '막힌 곳 제보' 모양으로 연다. 보내는 곳은 수정 건의와 같다(검수함 → 야영금지 채택).
+      window.okbmOpenSpotReport = function(spotId, mode) {
+        window.openSpotCorrectionModal(spotId);
+        if (mode !== 'blocked' || !window.__isSpotCorrectionMode) return;
+        var spot = (spots || []).find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
+        var titleEl = document.getElementById('modalTitle');
+        var noticeEl = document.getElementById('modalNotice');
+        var reasonInput = document.getElementById('modalInputCorrectionReason');
+        if (titleEl) titleEl.innerHTML = ICONS.BAN + ' <span>[' + escapeHtml(spot ? (spot.spot_main || spot.name) : '박지') + '] 막힌 곳 제보</span>';
+        if (noticeEl) noticeEl.innerHTML = ICONS.ALERT_CARD + ' <span>확인한 뒤 야영금지로 바꿔요. <strong>현수막이나 안내판 사진</strong>을 같이 올려 주세요.</span>';
+        if (reasonInput) reasonInput.value = '[막힌 곳] ';
+      };
       window.openCampBanPhoto = function(spotId, idx) {
         var sId = String(spotId || '').trim();
         var spot = (spots || []).find(function(s) { return String(s.id).trim() === sId; });

@@ -20,6 +20,7 @@
     ['경상', ['경북', '경남', '대구', '부산', '울산']],
     ['제주', ['제주']]
   ];
+  var PEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
   var BAN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>';
 
   var state = { rows: [], grp: '전체', exp: null, loaded: false, loading: null };
@@ -65,6 +66,9 @@
     st.textContent = [
       '.okbm-ban-handle{position:fixed;right:0;top:calc(var(--okbm-status-top,0px) + 62px);z-index:var(--z-hud,100);width:34px;padding:10px 0 9px;border-radius:12px 0 0 12px;background:rgba(15,15,17,.94);border:1px solid rgba(255,255,255,.14);border-right:none;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:-4px 4px 14px rgba(0,0,0,.4);color:#f4f4f5;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}',
       '.okbm-ban-handle[hidden]{display:none}',
+      '.okbm-side-tabs{position:fixed;right:0;top:calc(var(--okbm-status-top,0px) + 62px);z-index:var(--z-hud,100);display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none}',
+      '.okbm-side-tabs .okbm-ban-handle{position:relative;top:auto;right:auto;pointer-events:auto}',
+      '.okbm-ban-handle.rp svg{color:#fbbf24}',
       '.okbm-ban-handle svg{width:16px;height:16px;color:#fb7185}',
       '.okbm-ban-handle .vt{writing-mode:vertical-rl;font-size:12px;font-weight:800;letter-spacing:.08em}',
       '.okbm-ban-handle .cnt{font-size:11px;font-weight:900;color:#fb7185;font-variant-numeric:tabular-nums}',
@@ -96,6 +100,27 @@
       '.okbm-ban-chip small{font-size:11px;color:#71717a;margin-left:3px;font-weight:500}',
       '.okbm-ban-chip.on{background:#f4f4f5;color:#111;border-color:#f4f4f5}',
       '.okbm-ban-chip.on small{color:#52525b}',
+      '.okbm-ban-rbtn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;height:42px;margin-top:2px;border-radius:10px;border:1px solid rgba(251,191,36,.45);background:rgba(251,191,36,.10);color:#fbbf24;font-family:inherit;font-size:13.5px;font-weight:800;cursor:pointer}',
+      '.okbm-ban-rbtn svg{width:15px;height:15px}',
+      '.okbm-ban-rp{flex:1;overflow-y:auto;padding:12px 16px 16px;display:flex;flex-direction:column;gap:12px;overscroll-behavior:contain}',
+      '.okbm-ban-rp>*{flex-shrink:0}',
+      '.okbm-ban-rp[hidden],.okbm-ban-ph [hidden],.okbm-ban-list[hidden]{display:none}',
+      '.okbm-ban-back{align-self:flex-start;background:none;border:0;color:#a1a1aa;font-family:inherit;font-size:13px;font-weight:700;padding:4px 0;cursor:pointer}',
+      '.okbm-ban-new-btn{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;padding:12px 14px;border-radius:12px;background:#17171b;border:1px solid rgba(255,255,255,.12);color:#f4f4f5;font-family:inherit;text-align:left;cursor:pointer}',
+      '.okbm-ban-new-btn b{font-size:14.5px;font-weight:800}',
+      '.okbm-ban-new-btn span{font-size:12px;color:#a1a1aa}',
+      '.okbm-ban-sec{font-size:12px;font-weight:700;color:#71717a;margin-top:4px}',
+      '.okbm-ban-seg{display:flex;gap:6px}',
+      '.okbm-ban-seg button{flex:1;height:38px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:#17171b;color:#a1a1aa;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer}',
+      '.okbm-ban-seg button.on{background:#2b2b33;border-color:rgba(255,255,255,.4);color:#fff}',
+      '.okbm-ban-q{width:100%;height:42px;box-sizing:border-box;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:#17171b;color:#f4f4f5;font-family:inherit;font-size:16px;padding:0 12px;outline:none}',
+      '.okbm-ban-q:focus{border-color:rgba(255,255,255,.4)}',
+      '.okbm-ban-res{display:flex;flex-direction:column;gap:6px}',
+      '.okbm-ban-hit{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;padding:10px 12px;border-radius:10px;background:#17171b;border:1px solid rgba(255,255,255,.08);color:#f4f4f5;font-family:inherit;text-align:left;cursor:pointer}',
+      '.okbm-ban-hit b{font-size:14px;font-weight:800}',
+      '.okbm-ban-hit span{font-size:11.5px;color:#a1a1aa}',
+      '.okbm-ban-hit em{font-style:normal;font-size:10.5px;font-weight:800;color:#fb7185}',
+      '.okbm-ban-hint{font-size:12px;color:#71717a;line-height:1.55;text-align:center;padding:12px 0}',
       '.okbm-ban-list{flex:1;overflow-y:auto;padding:0 0 16px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}',
       '.okbm-ban-mh{position:sticky;top:0;z-index:1;background:rgba(15,15,17,.96);font-size:11.5px;font-weight:700;color:#71717a;padding:12px 16px 6px;letter-spacing:.04em}',
       '.okbm-ban-cards{padding:4px 12px 0;display:flex;flex-direction:column;gap:8px}',
@@ -137,9 +162,23 @@
     h.setAttribute('data-metric-click', 'feat_camp_ban_list');
     h.innerHTML = BAN_SVG + '<span class="vt">야영금지</span><span class="cnt" data-ban-count></span>';
     h.hidden = true;
-    h.addEventListener('click', open);
-    document.body.appendChild(h);
+    h.addEventListener('click', function () { open(); });
+    // 제보 손잡이(대표님 11-27): 야영금지 손잡이 밑. 새 박지 제보·막힌 곳 제보·정보 수정 건의를 한 화면에서.
+    var r = document.createElement('button');
+    r.type = 'button';
+    r.className = 'okbm-ban-handle rp';
+    r.setAttribute('aria-label', '제보 및 수정건의 열기');
+    r.setAttribute('data-metric-click', 'feat_report_handle');
+    r.innerHTML = PEN_SVG + '<span class="vt">제보</span>';
+    r.addEventListener('click', function () { open('report'); });
+    var tabs = document.createElement('div');
+    tabs.className = 'okbm-side-tabs';
+    tabs.appendChild(h);
+    tabs.appendChild(r);
+    document.body.appendChild(tabs);
     els.handle = h;
+    els.rhandle = r;
+    setTimeout(function () { r.classList.add('fold'); }, 3000);
 
     var wrap = document.createElement('div');
     wrap.className = 'okbm-ban-root';
@@ -147,12 +186,21 @@
       '<div class="okbm-ban-dim"></div>' +
       '<aside class="okbm-ban-panel" role="dialog" aria-modal="true" aria-label="야영 금지된 곳">' +
         '<div class="okbm-ban-ph">' +
-          '<div class="okbm-ban-row1"><h2>야영 금지된 곳 <span class="okbm-ban-n"><span data-ban-count></span>곳</span></h2>' +
+          '<div class="okbm-ban-row1"><h2 data-rp-title hidden>제보 및 수정건의</h2><h2 data-ban-title>야영 금지된 곳 <span class="okbm-ban-n"><span data-ban-count></span>곳</span></h2>' +
           '<button type="button" class="okbm-ban-x" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
           '<p class="okbm-ban-copy">우리가 조금 더 <em>LNT</em>를<br>신경 써야 하는 이유예요.<b>아니 온 듯 다녀가요.</b>우리가 아끼는 박지가 다음엔<br>갈 수 없는 곳이 될지 몰라요.</p>' +
+          '<button type="button" class="okbm-ban-rbtn" data-metric-click="feat_camp_ban_report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>제보 및 수정건의</button>' +
           '<div class="okbm-ban-chips"></div>' +
         '</div>' +
         '<div class="okbm-ban-list"></div>' +
+        '<div class="okbm-ban-rp" hidden>' +
+          '<button type="button" class="okbm-ban-back" data-rp-back>‹ 야영금지 목록으로</button>' +
+          '<button type="button" class="okbm-ban-new-btn" data-rp-new><b>새 박지 제보</b><span>아직 지도에 없는 곳을 알려 주세요</span></button>' +
+          '<div class="okbm-ban-sec">지도에 있는 박지</div>' +
+          '<div class="okbm-ban-seg"><button type="button" class="on" data-rp-mode="blocked">막힌 곳 제보</button><button type="button" data-rp-mode="fix">정보 수정 건의</button></div>' +
+          '<input type="search" class="okbm-ban-q" placeholder="박지 이름으로 찾기 (예: 백운산)" aria-label="박지 이름으로 찾기" enterkeyhint="search">' +
+          '<div class="okbm-ban-res"></div>' +
+        '</div>' +
       '</aside>';
     document.body.appendChild(wrap);
     els.root = wrap;
@@ -163,6 +211,14 @@
     wrap.querySelector('.okbm-ban-x').addEventListener('click', close);
     els.chips.addEventListener('click', onChip);
     els.list.addEventListener('click', onList);
+    els.rp = wrap.querySelector('.okbm-ban-rp');
+    els.q = wrap.querySelector('.okbm-ban-q');
+    els.res = wrap.querySelector('.okbm-ban-res');
+    els.copy = wrap.querySelector('.okbm-ban-copy');
+    els.rbtn = wrap.querySelector('.okbm-ban-rbtn');
+    els.rbtn.addEventListener('click', function () { showReport(true); });
+    els.rp.addEventListener('click', onReport);
+    els.q.addEventListener('input', renderHits);
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && isOpen()) close(); });
     swipeToClose();
   }
@@ -259,9 +315,10 @@
     els.list.innerHTML = '<div class="okbm-ban-empty">목록을 불러오지 못했어요.<br>잠시 뒤 다시 열어 주세요.</div>';
   }
 
-  function open() {
+  function open(mode) {
     if (!els.root) return;
     state.exp = null;
+    showReport(mode === 'report');
     if (state.loaded) render(); else els.list.innerHTML = '<div class="okbm-ban-empty">불러오는 중이에요.</div>';
     els.root.classList.add('okbm-ban-open');
     els.list.scrollTop = 0;
@@ -307,6 +364,50 @@
     var top = els.list.scrollTop;
     render();
     els.list.scrollTop = top;
+  }
+
+  // 제보 및 수정건의(대표님 11-27): 박지를 지도에서 누르지 않고 이 창에서 고른다.
+  // 새 박지 제보는 지도 제보 창 그대로, 막힌 곳·수정 건의는 map-main.js의 수정 건의 창으로 보낸다(같은 검수함).
+  function showReport(on) {
+    els.rp.hidden = !on;
+    els.list.hidden = on;
+    els.chips.hidden = on;
+    els.copy.hidden = on;
+    els.rbtn.hidden = on;
+    els.root.querySelector('[data-rp-title]').hidden = !on;
+    els.root.querySelector('[data-ban-title]').hidden = on;
+    if (on) { els.q.value = ''; renderHits(); }
+  }
+  function renderHits() {
+    var q = els.q.value.trim();
+    if (!q) { els.res.innerHTML = '<div class="okbm-ban-hint">산 이름이나 시군 이름을 적으면<br>등록된 박지가 나와요.</div>'; return; }
+    var hits = typeof window.okbmFindSpots === 'function' ? window.okbmFindSpots(q) : [];
+    if (!hits.length) { els.res.innerHTML = '<div class="okbm-ban-hint">맞는 박지가 없어요.<br>지도에 없는 곳이면 위의 \'새 박지 제보\'로 알려 주세요.</div>'; return; }
+    els.res.innerHTML = hits.map(function (h) {
+      return '<button type="button" class="okbm-ban-hit" data-rp-spot="' + esc(h.id) + '"><b>' + esc(h.spot_main) + '</b>' +
+        '<span>' + esc([h.spot_sub, regionLabel(h.region) + ' ' + h.cityName].filter(function (x) { return String(x).trim(); }).join(' · ')) + '</span>' +
+        (h.banned ? '<em>이미 야영금지</em>' : '') + '</button>';
+    }).join('');
+  }
+  function onReport(e) {
+    var t = e.target;
+    if (t.closest('[data-rp-back]')) { showReport(false); return; }
+    if (t.closest('[data-rp-new]')) {
+      close();
+      if (typeof window.openUserProposalModal === 'function') window.openUserProposalModal();
+      return;
+    }
+    var m = t.closest('[data-rp-mode]');
+    if (m) {
+      state.rpMode = m.getAttribute('data-rp-mode');
+      els.rp.querySelectorAll('[data-rp-mode]').forEach(function (b) { b.classList.toggle('on', b === m); });
+      return;
+    }
+    var hit = t.closest('[data-rp-spot]');
+    if (hit && typeof window.okbmOpenSpotReport === 'function') {
+      close();
+      window.okbmOpenSpotReport(hit.getAttribute('data-rp-spot'), state.rpMode || 'blocked');
+    }
   }
 
   // 오른쪽으로 밀어서 닫기
