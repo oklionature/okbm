@@ -5586,6 +5586,14 @@ window.saveCurrentPackingRecord = function() {
           <button type="button" class="pk-dock-sub" onclick="window.openQuickGearRegisterModal({ addToPack: false });" style="height:38px; font-size:13px; background:var(--bg-3, #2a2a30);">+ 등록하기</button>
         </div>
 
+        <button type="button" class="pk-card" data-okbm-arg="${escapeHtml(activeCatFilter)}" onclick="window.okbmOpenGearCompare(this.dataset.okbmArg)" style="padding:14px 16px; display:flex; align-items:center; gap:12px; flex-shrink:0; width:100%; text-align:left; cursor:pointer; border:none; font:inherit; color:inherit;">
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:15px; font-weight:900; color:var(--tx-1, #f2f2f3);">장비 비교하기</div>
+            <div class="pk-g" style="margin-top:3px; font-weight:600;">살 장비를 가벼운 순으로 찾아보고 후기까지 봐요</div>
+          </div>
+          <span style="color:var(--tx-3, #8b8b93); font-size:20px; font-weight:800;">›</span>
+        </button>
+
         <div class="pk-card" style="padding:14px 16px; display:flex; align-items:center; gap:6px; flex-shrink:0;">
           <span style="color:#fbbf24; font-size:15px; display:inline-flex;">${PLAN_STAR_ON}</span>
           <b style="font-size:15px; font-weight:900; color:var(--tx-1, #f2f2f3);">내 장비</b>
@@ -5752,6 +5760,10 @@ window.saveCurrentPackingRecord = function() {
     if (old) old.remove();
     var g = grvMasterGear(name) || { id: '', name: name, cat: resolvePlanGearCategoryId(name) || 'other' };
     grvLounge(function () { if (typeof window.okbmLoungeGearOpen === 'function') window.okbmLoungeGearOpen(g); });
+  };
+  // 장비관리 '장비 비교하기' → 라운지 장비 탭 비교 칸(TASK_GEAR_COMPARE). cat = 장비관리에서 고른 칸
+  window.okbmOpenGearCompare = function (cat) {
+    grvLounge(function () { if (typeof window.okbmLoungeGearCompare === 'function') window.okbmLoungeGearCompare(cat); });
   };
   window.okbmGearRvOpenPost = function (id) {
     var old = document.getElementById('gearMetaEditSheet');
